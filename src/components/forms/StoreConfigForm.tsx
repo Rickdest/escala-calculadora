@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Percent, DollarSign, Settings2 } from 'lucide-react';
-import { StoreConfig } from '@/types/store';
+import { X, Percent, DollarSign, Settings2, Save, Loader2 } from 'lucide-react';
 import { useStore } from '@/contexts/StoreContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,15 +13,18 @@ interface StoreConfigFormProps {
 export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
   const { currentStore, updateStoreConfig } = useStore();
   
-  const [shopeeFee, setShopeeFee] = useState(currentStore?.config.shopeeFee?.toString() || '12');
+  const [shopeeFeePercent, setShopeeFeePercent] = useState(currentStore?.config.shopeeFeePercent?.toString() || '12');
+  const [shopeeFeeFixed, setShopeeFeeFixed] = useState(currentStore?.config.shopeeFeeFixed?.toString() || '2');
   const [taxes, setTaxes] = useState(currentStore?.config.taxes?.toString() || '6');
   const [desiredMargin, setDesiredMargin] = useState(currentStore?.config.desiredMargin?.toString() || '30');
   const [enablePackaging, setEnablePackaging] = useState(currentStore?.config.enablePackaging ?? true);
   const [enableAds, setEnableAds] = useState(currentStore?.config.enableAds ?? true);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (currentStore) {
-      setShopeeFee(currentStore.config.shopeeFee.toString());
+      setShopeeFeePercent(currentStore.config.shopeeFeePercent.toString());
+      setShopeeFeeFixed((currentStore.config.shopeeFeeFixed || 0).toString());
       setTaxes(currentStore.config.taxes.toString());
       setDesiredMargin(currentStore.config.desiredMargin.toString());
       setEnablePackaging(currentStore.config.enablePackaging);
@@ -30,157 +32,205 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
     }
   }, [currentStore]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!currentStore) return;
     
+    setIsSaving(true);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
     updateStoreConfig(currentStore.id, {
-      shopeeFee: parseFloat(shopeeFee) || 0,
+      shopeeFeePercent: parseFloat(shopeeFeePercent) || 0,
+      shopeeFeeFixed: parseFloat(shopeeFeeFixed) || 0,
       taxes: parseFloat(taxes) || 0,
       desiredMargin: parseFloat(desiredMargin) || 0,
       enablePackaging,
       enableAds,
     });
     
+    setIsSaving(false);
     onClose();
   };
 
   if (!currentStore) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm animate-fade-in">
-      <div className="fixed inset-x-0 bottom-0 z-50 bg-card rounded-t-3xl shadow-xl animate-slide-in-bottom max-h-[85vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 bg-foreground/20 backdrop-blur-sm animate-fade-up">
+      <div className="fixed inset-x-0 bottom-0 z-50 bg-card rounded-t-3xl shadow-2xl animate-slide-up max-h-[88vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <div className="flex items-center gap-2">
-            <Settings2 className="w-5 h-5 text-primary" />
-            <h2 className="text-lg font-semibold">Configurações da Loja</h2>
+        <div className="flex items-center justify-between p-5 border-b border-border/50">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl gradient-primary">
+              <Settings2 className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold">Configurações</h2>
+              <p className="text-xs text-muted-foreground">{currentStore.name}</p>
+            </div>
           </div>
           <button 
             onClick={onClose}
-            className="p-2 hover:bg-secondary rounded-xl transition-colors"
+            className="p-2.5 hover:bg-secondary rounded-xl transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          <p className="text-sm text-muted-foreground">
-            Configure as taxas e margens para <span className="font-medium text-foreground">{currentStore.name}</span>
-          </p>
-
-          {/* Shopee Fee */}
-          <div className="space-y-2">
-            <Label htmlFor="shopeeFee" className="flex items-center gap-2">
+        <div className="flex-1 overflow-y-auto p-5 space-y-6">
+          {/* Shopee Fees */}
+          <div className="space-y-4">
+            <h3 className="font-bold text-sm flex items-center gap-2">
               <Percent className="w-4 h-4 text-primary" />
-              Taxa da Shopee
-            </Label>
-            <div className="relative">
-              <Input
-                id="shopeeFee"
-                type="number"
-                step="0.1"
-                min="0"
-                max="100"
-                value={shopeeFee}
-                onChange={(e) => setShopeeFee(e.target.value)}
-                placeholder="12"
-                className="pr-8 input-focus"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
+              Taxas da Shopee
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="shopeeFeePercent" className="text-sm font-medium">Taxa Percentual</Label>
+                <div className="relative">
+                  <Input
+                    id="shopeeFeePercent"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="100"
+                    value={shopeeFeePercent}
+                    onChange={(e) => setShopeeFeePercent(e.target.value)}
+                    placeholder="12"
+                    className="pr-10 input-modern h-12"
+                  />
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">%</span>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="shopeeFeeFixed" className="text-sm font-medium">Taxa Fixa</Label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">R$</span>
+                  <Input
+                    id="shopeeFeeFixed"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={shopeeFeeFixed}
+                    onChange={(e) => setShopeeFeeFixed(e.target.value)}
+                    placeholder="2.00"
+                    className="pl-12 input-modern h-12"
+                  />
+                </div>
+              </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              Comissão cobrada pela Shopee sobre vendas
+              A taxa fixa é cobrada por venda além da comissão percentual
             </p>
           </div>
 
           {/* Taxes */}
-          <div className="space-y-2">
-            <Label htmlFor="taxes" className="flex items-center gap-2">
+          <div className="space-y-4">
+            <h3 className="font-bold text-sm flex items-center gap-2">
               <DollarSign className="w-4 h-4 text-primary" />
               Impostos
-            </Label>
-            <div className="relative">
-              <Input
-                id="taxes"
-                type="number"
-                step="0.1"
-                min="0"
-                max="100"
-                value={taxes}
-                onChange={(e) => setTaxes(e.target.value)}
-                placeholder="6"
-                className="pr-8 input-focus"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
+            </h3>
+            <div className="space-y-2">
+              <Label htmlFor="taxes" className="text-sm font-medium">Alíquota</Label>
+              <div className="relative">
+                <Input
+                  id="taxes"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  value={taxes}
+                  onChange={(e) => setTaxes(e.target.value)}
+                  placeholder="6"
+                  className="pr-10 input-modern h-12"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">%</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                MEI, Simples Nacional, etc.
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Impostos sobre a venda (MEI, Simples, etc.)
-            </p>
           </div>
 
           {/* Desired Margin */}
-          <div className="space-y-2">
-            <Label htmlFor="desiredMargin" className="flex items-center gap-2">
+          <div className="space-y-4">
+            <h3 className="font-bold text-sm flex items-center gap-2">
               <Percent className="w-4 h-4 text-success" />
-              Margem Desejada
-            </Label>
-            <div className="relative">
-              <Input
-                id="desiredMargin"
-                type="number"
-                step="0.1"
-                min="0"
-                max="100"
-                value={desiredMargin}
-                onChange={(e) => setDesiredMargin(e.target.value)}
-                placeholder="30"
-                className="pr-8 input-focus"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
+              Meta de Margem
+            </h3>
+            <div className="space-y-2">
+              <Label htmlFor="desiredMargin" className="text-sm font-medium">Margem Desejada</Label>
+              <div className="relative">
+                <Input
+                  id="desiredMargin"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  value={desiredMargin}
+                  onChange={(e) => setDesiredMargin(e.target.value)}
+                  placeholder="30"
+                  className="pr-10 input-modern h-12"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">%</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Produtos abaixo serão destacados em vermelho
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Meta de margem de lucro para seus produtos
-            </p>
           </div>
 
           {/* Optional Costs Toggles */}
-          <div className="space-y-4 pt-4 border-t border-border">
-            <h3 className="font-medium text-sm">Custos Opcionais</h3>
+          <div className="space-y-4 pt-4 border-t border-border/50">
+            <h3 className="font-bold text-sm">Custos Opcionais</h3>
             
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="enablePackaging">Custo de Embalagem</Label>
-                <p className="text-xs text-muted-foreground">Incluir embalagem no cálculo</p>
+            <div className="glass-card p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="enablePackaging" className="text-sm font-medium">Custo de Embalagem</Label>
+                  <p className="text-xs text-muted-foreground">Incluir no cálculo</p>
+                </div>
+                <Switch
+                  id="enablePackaging"
+                  checked={enablePackaging}
+                  onCheckedChange={setEnablePackaging}
+                />
               </div>
-              <Switch
-                id="enablePackaging"
-                checked={enablePackaging}
-                onCheckedChange={setEnablePackaging}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div>
-                <Label htmlFor="enableAds">Shopee Ads</Label>
-                <p className="text-xs text-muted-foreground">Incluir custos de anúncios</p>
+              
+              <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                <div>
+                  <Label htmlFor="enableAds" className="text-sm font-medium">Shopee Ads</Label>
+                  <p className="text-xs text-muted-foreground">Incluir no cálculo</p>
+                </div>
+                <Switch
+                  id="enableAds"
+                  checked={enableAds}
+                  onCheckedChange={setEnableAds}
+                />
               </div>
-              <Switch
-                id="enableAds"
-                checked={enableAds}
-                onCheckedChange={setEnableAds}
-              />
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-border safe-bottom">
+        <div className="p-5 border-t border-border/50 safe-bottom bg-card">
           <Button 
             onClick={handleSave}
-            className="w-full h-12 text-base font-semibold"
+            className="w-full h-14 text-base font-bold gradient-primary hover:opacity-90 transition-opacity"
+            disabled={isSaving}
           >
-            Salvar Configurações
+            {isSaving ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              <>
+                <Save className="w-5 h-5 mr-2" />
+                Salvar Configurações
+              </>
+            )}
           </Button>
         </div>
       </div>

@@ -72,7 +72,7 @@ export default function Stores() {
         subtitle={`${stores.length} loja${stores.length !== 1 ? 's' : ''}`}
         showStoreSelector={false}
         action={
-          <Button size="sm" onClick={() => setIsAdding(true)}>
+          <Button size="sm" onClick={() => setIsAdding(true)} className="gradient-primary">
             <Plus className="w-4 h-4" />
           </Button>
         }
@@ -81,14 +81,14 @@ export default function Stores() {
       <div className="px-4 py-6 space-y-4">
         {/* Add New Store */}
         {isAdding && (
-          <div className="bg-card rounded-2xl p-4 animate-scale-in" style={{ boxShadow: 'var(--shadow-card)' }}>
+          <div className="glass-card p-4 animate-scale-up">
             <div className="flex items-center gap-3">
               <div className="flex-1">
                 <Input
                   value={newStoreName}
                   onChange={(e) => setNewStoreName(e.target.value)}
                   placeholder="Nome da nova loja..."
-                  className="input-focus"
+                  className="input-modern h-12"
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleAddStore();
@@ -96,11 +96,11 @@ export default function Stores() {
                   }}
                 />
               </div>
-              <Button size="icon" onClick={handleAddStore} disabled={!newStoreName.trim()}>
-                <Check className="w-4 h-4" />
+              <Button size="icon" onClick={handleAddStore} disabled={!newStoreName.trim()} className="h-12 w-12 gradient-primary">
+                <Check className="w-5 h-5" />
               </Button>
-              <Button size="icon" variant="secondary" onClick={() => setIsAdding(false)}>
-                <X className="w-4 h-4" />
+              <Button size="icon" variant="secondary" onClick={() => setIsAdding(false)} className="h-12 w-12">
+                <X className="w-5 h-5" />
               </Button>
             </div>
           </div>
@@ -118,19 +118,19 @@ export default function Stores() {
                 <div 
                   key={store.id}
                   className={cn(
-                    'bg-card rounded-2xl p-4 card-interactive',
+                    'glass-card-hover p-4',
                     isSelected && 'ring-2 ring-primary'
                   )}
                   style={{ animationDelay: `${index * 50}ms` }}
                   onClick={() => !isEditing && setCurrentStore(store)}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-4">
                     <div className={cn(
-                      'w-12 h-12 rounded-xl flex items-center justify-center',
-                      isSelected ? 'bg-primary' : 'bg-secondary'
+                      'w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0',
+                      isSelected ? 'gradient-primary' : 'bg-secondary'
                     )}>
                       <Store className={cn(
-                        'w-6 h-6',
+                        'w-7 h-7',
                         isSelected ? 'text-primary-foreground' : 'text-muted-foreground'
                       )} />
                     </div>
@@ -141,7 +141,7 @@ export default function Stores() {
                           <Input
                             value={editingName}
                             onChange={(e) => setEditingName(e.target.value)}
-                            className="h-8 input-focus"
+                            className="h-10 input-modern"
                             autoFocus
                             onClick={(e) => e.stopPropagation()}
                             onKeyDown={(e) => {
@@ -152,31 +152,31 @@ export default function Stores() {
                           />
                           <Button 
                             size="icon" 
-                            className="h-8 w-8" 
+                            className="h-10 w-10 gradient-primary" 
                             onClick={(e) => { e.stopPropagation(); handleSaveEdit(); }}
                           >
-                            <Check className="w-3 h-3" />
+                            <Check className="w-4 h-4" />
                           </Button>
                           <Button 
                             size="icon" 
                             variant="secondary" 
-                            className="h-8 w-8"
+                            className="h-10 w-10"
                             onClick={(e) => { e.stopPropagation(); handleCancelEdit(); }}
                           >
-                            <X className="w-3 h-3" />
+                            <X className="w-4 h-4" />
                           </Button>
                         </div>
                       ) : (
                         <>
-                          <p className="font-semibold text-foreground truncate">{store.name}</p>
-                          <div className="flex items-center gap-3 mt-1">
-                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                          <p className="font-bold text-foreground truncate text-lg">{store.name}</p>
+                          <div className="flex items-center gap-4 mt-1">
+                            <span className="text-xs text-muted-foreground flex items-center gap-1 font-medium">
                               <Package className="w-3 h-3" />
                               {stats.totalProducts} produtos
                             </span>
                             {stats.totalProducts > 0 && (
                               <span className={cn(
-                                'text-xs font-medium',
+                                'text-xs font-bold',
                                 stats.avgMargin >= store.config.desiredMargin ? 'text-success' : 'text-warning'
                               )}>
                                 {stats.avgMargin.toFixed(1)}% margem
@@ -190,8 +190,8 @@ export default function Stores() {
                     {!isEditing && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <button className="p-2 hover:bg-secondary rounded-lg transition-colors">
-                            <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                          <button className="p-2.5 hover:bg-secondary rounded-xl transition-colors">
+                            <MoreVertical className="w-5 h-5 text-muted-foreground" />
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
@@ -212,8 +212,8 @@ export default function Stores() {
                   </div>
 
                   {isSelected && !isEditing && (
-                    <div className="mt-3 pt-3 border-t border-border">
-                      <span className="text-xs font-medium text-primary">✓ Loja Selecionada</span>
+                    <div className="mt-4 pt-4 border-t border-border/50">
+                      <span className="text-xs font-bold text-primary">✓ Loja Selecionada</span>
                     </div>
                   )}
                 </div>
@@ -221,15 +221,15 @@ export default function Stores() {
             })}
           </div>
         ) : (
-          <div className="text-center py-16">
-            <div className="w-16 h-16 rounded-2xl bg-secondary mx-auto flex items-center justify-center mb-4">
-              <Store className="w-8 h-8 text-muted-foreground" />
+          <div className="text-center py-20">
+            <div className="w-20 h-20 rounded-2xl bg-secondary mx-auto flex items-center justify-center mb-4">
+              <Store className="w-10 h-10 text-muted-foreground" />
             </div>
-            <h3 className="font-semibold text-foreground mb-1">Nenhuma loja</h3>
-            <p className="text-sm text-muted-foreground mb-4">
+            <h3 className="font-bold text-foreground mb-2 text-lg">Nenhuma loja</h3>
+            <p className="text-sm text-muted-foreground mb-6">
               Crie sua primeira loja para começar
             </p>
-            <Button onClick={() => setIsAdding(true)}>
+            <Button onClick={() => setIsAdding(true)} className="gradient-primary">
               <Plus className="w-4 h-4 mr-2" />
               Criar Loja
             </Button>

@@ -1,5 +1,6 @@
-import { Home, Package, BarChart3, Store, Settings } from 'lucide-react';
+import { Home, Package, BarChart3, Store, Settings, Moon, Sun } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -13,10 +14,11 @@ const navItems = [
 export function BottomNavigation() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
 
   return (
-    <nav className="bottom-nav z-50">
-      <div className="flex items-center justify-around">
+    <nav className="bottom-nav">
+      <div className="flex items-center justify-around max-w-lg mx-auto">
         {navItems.map(({ icon: Icon, label, path }) => {
           const isActive = location.pathname === path;
           
@@ -25,7 +27,7 @@ export function BottomNavigation() {
               key={path}
               onClick={() => navigate(path)}
               className={cn(
-                'bottom-nav-item flex-1 max-w-[80px]',
+                'bottom-nav-item flex-1 max-w-[72px]',
                 isActive && 'bottom-nav-item-active'
               )}
             >
@@ -34,10 +36,11 @@ export function BottomNavigation() {
                   'w-5 h-5 transition-colors',
                   isActive ? 'text-primary' : 'text-muted-foreground'
                 )} 
+                strokeWidth={isActive ? 2.5 : 2}
               />
               <span 
                 className={cn(
-                  'text-[10px] font-medium transition-colors',
+                  'text-[10px] font-semibold transition-colors',
                   isActive ? 'text-primary' : 'text-muted-foreground'
                 )}
               >
@@ -46,6 +49,21 @@ export function BottomNavigation() {
             </button>
           );
         })}
+        
+        {/* Theme Toggle */}
+        <button
+          onClick={toggleTheme}
+          className="bottom-nav-item flex-1 max-w-[72px]"
+        >
+          {theme === 'light' ? (
+            <Moon className="w-5 h-5 text-muted-foreground" strokeWidth={2} />
+          ) : (
+            <Sun className="w-5 h-5 text-muted-foreground" strokeWidth={2} />
+          )}
+          <span className="text-[10px] font-semibold text-muted-foreground">
+            {theme === 'light' ? 'Escuro' : 'Claro'}
+          </span>
+        </button>
       </div>
     </nav>
   );
