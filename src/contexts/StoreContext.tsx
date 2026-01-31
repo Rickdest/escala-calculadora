@@ -14,7 +14,7 @@ interface StoreContextType {
   deleteProduct: (productId: string) => void;
   duplicateProduct: (productId: string) => Product | null;
   calculateProduct: (product: Product, config: StoreConfig) => ProductCalculation;
-  getStoreStats: (store: Store) => { avgMargin: number; totalProducts: number; productsAboveTarget: number; productsBelowTarget: number };
+  getStoreStats: (store: Store) => { avgMargin: number; totalProducts: number; productsAboveTarget: number; productsBelowTarget: number; totalProfit: number };
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -39,6 +39,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       try {
         const parsed = JSON.parse(savedStores).map((store: Store) => ({
           ...store,
+          config: {
+            ...DEFAULT_STORE_CONFIG,
+            ...store.config,
+          },
           createdAt: new Date(store.createdAt),
           updatedAt: new Date(store.updatedAt),
           products: store.products.map((p: Product) => ({
@@ -198,19 +202,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const calculateProduct = useCallback((product: Product, config: StoreConfig): ProductCalculation => {
     const grossRevenue = product.salePrice;
-    const shopeeFeeValue = grossRevenue * (config.shopeeFee / 100);
+    const shopeeFeePercentValue = grossRevenue * (config.shopeeFeePercent / 100);
+    const shopeeFeeFixedValue = config.shopeeFeeFixed || 0;
+    const totalShopeeFee = shopeeFeePercentValue + shopeeFeeFixedValue;
     const taxesValue = grossRevenue * (config.taxes / 100);
     const packagingCost = config.enablePackaging ? product.packagingCost : 0;
     const adsCost = config.enableAds ? product.adsCost : 0;
     
-    const totalCosts = product.costPrice + packagingCost + adsCost + shopeeFeeValue + taxesValue;
+    const totalCosts = product.costPrice + packagingCost + adsCost + totalShopeeFee + taxesValue;
     const netProfit = grossRevenue - totalCosts;
     const realMargin = grossRevenue > 0 ? (netProfit / grossRevenue) * 100 : 0;
     const marginDifference = realMargin - config.desiredMargin;
     
     return {
       grossRevenue,
-      shopeeFee: shopeeFeeValue,
+      shopeeFeePercent: shopeeFeePercentValue,
+      shopeeFeeFixed: shopeeFeeFixedValue,
+      totalShopeeFee,
       taxes: taxesValue,
       totalCosts,
       netProfit,
@@ -222,19 +230,21 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const getStoreStats = useCallback((store: Store) => {
     if (store.products.length === 0) {
-      return { avgMargin: 0, totalProducts: 0, productsAboveTarget: 0, productsBelowTarget: 0 };
+      return { avgMargin: 0, totalProducts: 0, productsAboveTarget: 0, productsBelowTarget: 0, totalProfit: 0 };
     }
     
     const calculations = store.products.map(p => calculateProduct(p, store.config));
     const avgMargin = calculations.reduce((sum, c) => sum + c.realMargin, 0) / calculations.length;
     const productsAboveTarget = calculations.filter(c => c.isAboveTarget).length;
     const productsBelowTarget = calculations.filter(c => !c.isAboveTarget).length;
+    const totalProfit = calculations.reduce((sum, c) => sum + c.netProfit, 0);
     
     return {
       avgMargin,
       totalProducts: store.products.length,
       productsAboveTarget,
       productsBelowTarget,
+      totalProfit,
     };
   }, [calculateProduct]);
 

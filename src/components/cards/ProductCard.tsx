@@ -34,18 +34,22 @@ export function ProductCard({
   const TrendIcon = calculation.isAboveTarget ? TrendingUp : TrendingDown;
 
   return (
-    <div className="card-interactive bg-card rounded-2xl p-4 animate-slide-in-bottom">
-      <div className="flex gap-3">
+    <div className="glass-card-hover p-4">
+      <div className="flex gap-4">
         {/* Product Image or Icon */}
         <div className="flex-shrink-0">
           {product.imageUrl ? (
             <img 
               src={product.imageUrl} 
               alt={product.name}
-              className="w-16 h-16 rounded-xl object-cover"
+              className="w-18 h-18 rounded-xl object-cover"
+              style={{ width: '72px', height: '72px' }}
             />
           ) : (
-            <div className="w-16 h-16 rounded-xl bg-secondary flex items-center justify-center">
+            <div 
+              className="rounded-xl bg-secondary flex items-center justify-center"
+              style={{ width: '72px', height: '72px' }}
+            >
               <Package className="w-8 h-8 text-muted-foreground" />
             </div>
           )}
@@ -54,13 +58,13 @@ export function ProductCard({
         {/* Product Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-semibold text-foreground truncate">
+            <h3 className="font-bold text-foreground truncate text-base">
               {product.name}
             </h3>
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="p-1 hover:bg-secondary rounded-lg transition-colors">
+                <button className="p-1.5 hover:bg-secondary rounded-lg transition-colors flex-shrink-0">
                   <MoreVertical className="w-4 h-4 text-muted-foreground" />
                 </button>
               </DropdownMenuTrigger>
@@ -84,41 +88,41 @@ export function ProductCard({
             </DropdownMenu>
           </div>
 
-          <div className="flex items-center gap-4 mt-2">
+          <div className="flex items-center gap-4 mt-1.5">
             <div>
-              <p className="text-xs text-muted-foreground">Venda</p>
-              <p className="text-sm font-semibold">{formatCurrency(product.salePrice)}</p>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Venda</p>
+              <p className="text-sm font-bold">{formatCurrency(product.salePrice)}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Custo</p>
-              <p className="text-sm font-medium text-muted-foreground">{formatCurrency(product.costPrice)}</p>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Custo</p>
+              <p className="text-sm font-semibold text-muted-foreground">{formatCurrency(product.costPrice)}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Calculation Results */}
-      <div className="mt-4 pt-4 border-t border-border">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground">Lucro Líquido</p>
-            <p className={cn(
-              'text-lg font-bold',
-              calculation.netProfit >= 0 ? 'text-success' : 'text-destructive'
-            )}>
-              {formatCurrency(calculation.netProfit)}
-            </p>
-          </div>
-          
+      <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between">
+        <div>
+          <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Lucro</p>
+          <p className={cn(
+            'text-xl font-extrabold',
+            calculation.netProfit >= 0 ? 'text-success' : 'text-destructive'
+          )}>
+            {formatCurrency(calculation.netProfit)}
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-3">
           <div className="text-right">
-            <p className="text-xs text-muted-foreground">Margem</p>
-            <div className="flex items-center gap-1.5">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Margem</p>
+            <div className="flex items-center gap-1.5 justify-end">
               <TrendIcon className={cn(
                 'w-4 h-4',
                 marginStatus === 'success' ? 'text-success' : 'text-destructive'
               )} />
               <span className={cn(
-                'text-lg font-bold',
+                'text-xl font-extrabold',
                 marginStatus === 'success' ? 'text-success' : 'text-destructive'
               )}>
                 {calculation.realMargin.toFixed(1)}%
@@ -127,7 +131,7 @@ export function ProductCard({
           </div>
           
           <div className={cn(
-            'px-3 py-1.5 rounded-full text-xs font-semibold',
+            'px-3 py-2 rounded-xl text-xs font-bold',
             marginStatus === 'success' 
               ? 'bg-success-muted text-success' 
               : 'bg-danger-muted text-danger'

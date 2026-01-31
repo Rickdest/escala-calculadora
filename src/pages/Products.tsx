@@ -98,29 +98,29 @@ export default function Products() {
     <AppLayout>
       <PageHeader 
         title="Produtos"
-        subtitle={`${products.length} produto${products.length !== 1 ? 's' : ''}`}
+        subtitle={`${products.length} produto${products.length !== 1 ? 's' : ''} cadastrados`}
         action={
-          <Button size="sm" onClick={() => setShowProductForm(true)}>
+          <Button size="sm" onClick={() => setShowProductForm(true)} className="gradient-primary">
             <Plus className="w-4 h-4" />
           </Button>
         }
       />
 
-      <div className="px-4 py-4 space-y-4">
+      <div className="px-4 py-5 space-y-4">
         {/* Search and Filter */}
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar produto..."
-              className="pl-9 input-focus"
+              className="pl-11 input-modern h-12"
             />
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="secondary" size="icon">
+              <Button variant="secondary" className="h-12 px-4">
                 <SlidersHorizontal className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -147,6 +147,7 @@ export default function Products() {
             {products.map(({ product, calc }, index) => (
               <div 
                 key={product.id} 
+                className="animate-fade-up"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
                 <ProductCard
@@ -160,21 +161,21 @@ export default function Products() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-16">
-            <div className="w-16 h-16 rounded-2xl bg-secondary mx-auto flex items-center justify-center mb-4">
-              <Package className="w-8 h-8 text-muted-foreground" />
+          <div className="text-center py-20">
+            <div className="w-20 h-20 rounded-2xl bg-secondary mx-auto flex items-center justify-center mb-4">
+              <Package className="w-10 h-10 text-muted-foreground" />
             </div>
-            <h3 className="font-semibold text-foreground mb-1">
+            <h3 className="font-bold text-foreground mb-2 text-lg">
               {searchQuery ? 'Nenhum produto encontrado' : 'Nenhum produto ainda'}
             </h3>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm text-muted-foreground mb-6">
               {searchQuery 
                 ? 'Tente buscar com outros termos' 
-                : 'Adicione seu primeiro produto para começar'
+                : 'Adicione seu primeiro produto'
               }
             </p>
             {!searchQuery && (
-              <Button onClick={() => setShowProductForm(true)}>
+              <Button onClick={() => setShowProductForm(true)} className="gradient-primary">
                 <Plus className="w-4 h-4 mr-2" />
                 Adicionar Produto
               </Button>

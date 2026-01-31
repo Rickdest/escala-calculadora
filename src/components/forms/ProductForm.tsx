@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { X, Camera, Calculator, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { X, Camera, Calculator, TrendingUp, TrendingDown, AlertTriangle, Save, Loader2 } from 'lucide-react';
 import { Product, ProductCalculation, StoreConfig } from '@/types/store';
 import { useStore } from '@/contexts/StoreContext';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
   const [packagingCost, setPackagingCost] = useState(product?.packagingCost?.toString() || '0');
   const [adsCost, setAdsCost] = useState(product?.adsCost?.toString() || '0');
   const [imageUrl, setImageUrl] = useState(product?.imageUrl || '');
+  const [isSaving, setIsSaving] = useState(false);
 
   const config = currentStore?.config;
 
@@ -50,10 +51,15 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
     }).format(value);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!currentStore || !name || !costPrice || !salePrice) return;
+
+    setIsSaving(true);
+
+    // Simulate save delay for UX feedback
+    await new Promise(resolve => setTimeout(resolve, 300));
 
     const productData = {
       ...(product?.id && { id: product.id }),
@@ -67,6 +73,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
     };
 
     onSave(productData);
+    setIsSaving(false);
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,30 +87,30 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
     }
   };
 
+  const isValid = name && costPrice && salePrice;
   const TrendIcon = calculation?.isAboveTarget ? TrendingUp : TrendingDown;
-  const marginStatus = calculation?.isAboveTarget ? 'success' : 'danger';
 
   return (
-    <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm animate-fade-in">
-      <div className="fixed inset-x-0 bottom-0 z-50 bg-card rounded-t-3xl shadow-xl animate-slide-in-bottom max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 bg-foreground/20 backdrop-blur-sm animate-fade-up">
+      <div className="fixed inset-x-0 bottom-0 z-50 bg-card rounded-t-3xl shadow-2xl animate-slide-up max-h-[92vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <h2 className="text-lg font-semibold">
+        <div className="flex items-center justify-between p-5 border-b border-border/50">
+          <h2 className="text-lg font-bold">
             {product ? 'Editar Produto' : 'Novo Produto'}
           </h2>
           <button 
             onClick={onClose}
-            className="p-2 hover:bg-secondary rounded-xl transition-colors"
+            className="p-2.5 hover:bg-secondary rounded-xl transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-5">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-5">
           {/* Image Upload */}
           <div className="flex justify-center">
-            <label className="cursor-pointer">
+            <label className="cursor-pointer group">
               <input
                 type="file"
                 accept="image/*"
@@ -115,16 +122,16 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                   <img 
                     src={imageUrl} 
                     alt="Preview" 
-                    className="w-24 h-24 rounded-2xl object-cover"
+                    className="w-28 h-28 rounded-2xl object-cover ring-2 ring-border group-hover:ring-primary transition-all"
                   />
-                  <div className="absolute inset-0 bg-foreground/20 rounded-2xl flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                    <Camera className="w-6 h-6 text-background" />
+                  <div className="absolute inset-0 bg-foreground/30 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Camera className="w-7 h-7 text-background" />
                   </div>
                 </div>
               ) : (
-                <div className="w-24 h-24 rounded-2xl bg-secondary flex flex-col items-center justify-center gap-1 hover:bg-secondary/80 transition-colors">
-                  <Camera className="w-6 h-6 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">Foto</span>
+                <div className="w-28 h-28 rounded-2xl bg-secondary flex flex-col items-center justify-center gap-2 group-hover:bg-secondary/80 transition-colors ring-2 ring-transparent group-hover:ring-primary/30">
+                  <Camera className="w-7 h-7 text-muted-foreground" />
+                  <span className="text-xs font-medium text-muted-foreground">Adicionar</span>
                 </div>
               )}
             </label>
@@ -132,13 +139,13 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
 
           {/* Name */}
           <div className="space-y-2">
-            <Label htmlFor="name">Nome do Produto *</Label>
+            <Label htmlFor="name" className="text-sm font-semibold">Nome do Produto *</Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Ex: Camiseta Básica"
-              className="input-focus"
+              className="input-modern h-12"
               required
             />
           </div>
@@ -146,9 +153,9 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
           {/* Prices */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="costPrice">Preço de Custo *</Label>
+              <Label htmlFor="costPrice" className="text-sm font-semibold">Custo *</Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
                 <Input
                   id="costPrice"
                   type="number"
@@ -157,15 +164,15 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                   value={costPrice}
                   onChange={(e) => setCostPrice(e.target.value)}
                   placeholder="0,00"
-                  className="pl-10 input-focus"
+                  className="pl-12 input-modern h-12"
                   required
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="salePrice">Preço de Venda *</Label>
+              <Label htmlFor="salePrice" className="text-sm font-semibold">Venda *</Label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
                 <Input
                   id="salePrice"
                   type="number"
@@ -174,7 +181,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                   value={salePrice}
                   onChange={(e) => setSalePrice(e.target.value)}
                   placeholder="0,00"
-                  className="pl-10 input-focus"
+                  className="pl-12 input-modern h-12"
                   required
                 />
               </div>
@@ -182,48 +189,50 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
           </div>
 
           {/* Optional Costs */}
-          {config?.enablePackaging && (
-            <div className="space-y-2">
-              <Label htmlFor="packagingCost">Custo de Embalagem</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
-                <Input
-                  id="packagingCost"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={packagingCost}
-                  onChange={(e) => setPackagingCost(e.target.value)}
-                  placeholder="0,00"
-                  className="pl-10 input-focus"
-                />
+          <div className="grid grid-cols-2 gap-4">
+            {config?.enablePackaging && (
+              <div className="space-y-2">
+                <Label htmlFor="packagingCost" className="text-sm font-semibold">Embalagem</Label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
+                  <Input
+                    id="packagingCost"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={packagingCost}
+                    onChange={(e) => setPackagingCost(e.target.value)}
+                    placeholder="0,00"
+                    className="pl-12 input-modern h-12"
+                  />
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {config?.enableAds && (
-            <div className="space-y-2">
-              <Label htmlFor="adsCost">Custo de Shopee Ads</Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">R$</span>
-                <Input
-                  id="adsCost"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={adsCost}
-                  onChange={(e) => setAdsCost(e.target.value)}
-                  placeholder="0,00"
-                  className="pl-10 input-focus"
-                />
+            {config?.enableAds && (
+              <div className="space-y-2">
+                <Label htmlFor="adsCost" className="text-sm font-semibold">Shopee Ads</Label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
+                  <Input
+                    id="adsCost"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={adsCost}
+                    onChange={(e) => setAdsCost(e.target.value)}
+                    placeholder="0,00"
+                    className="pl-12 input-modern h-12"
+                  />
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Live Calculation */}
           {calculation && (
             <div className={cn(
-              'rounded-2xl p-4 space-y-3 animate-scale-in',
+              'rounded-2xl p-5 space-y-4 animate-scale-up',
               calculation.isAboveTarget ? 'bg-success-muted' : 'bg-danger-muted'
             )}>
               <div className="flex items-center gap-2">
@@ -232,23 +241,23 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                   calculation.isAboveTarget ? 'text-success' : 'text-danger'
                 )} />
                 <span className={cn(
-                  'font-semibold',
+                  'font-bold text-sm',
                   calculation.isAboveTarget ? 'text-success' : 'text-danger'
                 )}>
-                  Cálculo em Tempo Real
+                  Prévia do Cálculo
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-6">
                 <div>
                   <p className={cn(
-                    'text-xs',
-                    calculation.isAboveTarget ? 'text-success/70' : 'text-danger/70'
+                    'text-xs font-medium opacity-70',
+                    calculation.isAboveTarget ? 'text-success' : 'text-danger'
                   )}>
                     Lucro Líquido
                   </p>
                   <p className={cn(
-                    'text-xl font-bold',
+                    'number-lg',
                     calculation.isAboveTarget ? 'text-success' : 'text-danger'
                   )}>
                     {formatCurrency(calculation.netProfit)}
@@ -256,18 +265,18 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                 </div>
                 <div className="text-right">
                   <p className={cn(
-                    'text-xs',
-                    calculation.isAboveTarget ? 'text-success/70' : 'text-danger/70'
+                    'text-xs font-medium opacity-70',
+                    calculation.isAboveTarget ? 'text-success' : 'text-danger'
                   )}>
                     Margem Real
                   </p>
-                  <div className="flex items-center justify-end gap-1">
+                  <div className="flex items-center justify-end gap-1.5">
                     <TrendIcon className={cn(
                       'w-5 h-5',
                       calculation.isAboveTarget ? 'text-success' : 'text-danger'
                     )} />
                     <span className={cn(
-                      'text-xl font-bold',
+                      'number-lg',
                       calculation.isAboveTarget ? 'text-success' : 'text-danger'
                     )}>
                       {calculation.realMargin.toFixed(1)}%
@@ -276,11 +285,26 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                 </div>
               </div>
 
+              {/* Cost breakdown */}
+              <div className={cn(
+                'pt-3 border-t text-xs space-y-1',
+                calculation.isAboveTarget ? 'border-success/20' : 'border-danger/20'
+              )}>
+                <div className="flex justify-between opacity-70">
+                  <span>Taxa Shopee ({config?.shopeeFeePercent}% + R${config?.shopeeFeeFixed?.toFixed(2)})</span>
+                  <span>{formatCurrency(calculation.totalShopeeFee)}</span>
+                </div>
+                <div className="flex justify-between opacity-70">
+                  <span>Impostos ({config?.taxes}%)</span>
+                  <span>{formatCurrency(calculation.taxes)}</span>
+                </div>
+              </div>
+
               {!calculation.isAboveTarget && (
-                <div className="flex items-center gap-2 pt-2 border-t border-danger/20">
+                <div className="flex items-center gap-2 pt-3 border-t border-danger/20">
                   <AlertTriangle className="w-4 h-4 text-danger" />
-                  <span className="text-xs text-danger">
-                    Margem {Math.abs(calculation.marginDifference).toFixed(1)}% abaixo do desejado ({config?.desiredMargin}%)
+                  <span className="text-xs font-medium text-danger">
+                    {Math.abs(calculation.marginDifference).toFixed(1)}% abaixo da meta de {config?.desiredMargin}%
                   </span>
                 </div>
               )}
@@ -288,15 +312,25 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
           )}
         </form>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-border safe-bottom">
+        {/* Footer with Save Button */}
+        <div className="p-5 border-t border-border/50 safe-bottom bg-card">
           <Button 
             type="submit" 
             onClick={handleSubmit}
-            className="w-full h-12 text-base font-semibold"
-            disabled={!name || !costPrice || !salePrice}
+            className="w-full h-14 text-base font-bold gradient-primary hover:opacity-90 transition-opacity"
+            disabled={!isValid || isSaving}
           >
-            {product ? 'Salvar Alterações' : 'Adicionar Produto'}
+            {isSaving ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              <>
+                <Save className="w-5 h-5 mr-2" />
+                {product ? 'Salvar Alterações' : 'Salvar Produto'}
+              </>
+            )}
           </Button>
         </div>
       </div>

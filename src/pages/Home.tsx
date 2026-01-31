@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { Plus, Settings2, Package, TrendingUp, AlertTriangle, ArrowRight, Store } from 'lucide-react';
+import { Plus, Settings2, Package, TrendingUp, TrendingDown, ArrowRight, Store, Zap, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { StatCard } from '@/components/cards/StatCard';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { StoreConfigForm } from '@/components/forms/StoreConfigForm';
 import { Button } from '@/components/ui/button';
@@ -25,23 +24,23 @@ export default function Home() {
   if (!currentStore) {
     return (
       <AppLayout>
-        <div className="flex flex-col items-center justify-center min-h-[80vh] px-6 text-center">
-          <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center mb-6 animate-bounce-subtle">
-            <Store className="w-10 h-10 text-primary" />
+        <div className="flex flex-col items-center justify-center min-h-[85vh] px-6 text-center">
+          <div className="w-24 h-24 rounded-3xl gradient-primary flex items-center justify-center mb-8 shadow-lg">
+            <Zap className="w-12 h-12 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">
-            Bem-vindo ao Escala!
+          <h1 className="text-3xl font-extrabold text-foreground mb-3">
+            Escala Calculadora
           </h1>
-          <p className="text-muted-foreground mb-8 max-w-sm">
-            Crie sua primeira loja para começar a precificar seus produtos na Shopee.
+          <p className="text-muted-foreground mb-8 max-w-xs leading-relaxed">
+            Precifique seus produtos da Shopee com inteligência e maximize seus lucros.
           </p>
           <Button 
             onClick={handleCreateFirstStore}
             size="lg"
-            className="h-14 px-8 text-base font-semibold"
+            className="h-14 px-10 text-base font-bold gradient-primary hover:opacity-90"
           >
             <Plus className="w-5 h-5 mr-2" />
-            Criar Minha Loja
+            Começar Agora
           </Button>
         </div>
       </AppLayout>
@@ -49,6 +48,12 @@ export default function Home() {
   }
 
   const stats = getStoreStats(currentStore);
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(value);
+  };
 
   const handleSaveProduct = (productData: any) => {
     addProduct(productData);
@@ -64,87 +69,112 @@ export default function Home() {
   return (
     <AppLayout>
       <PageHeader 
-        title="Escala Calculadora"
+        title="Escala"
         subtitle="Precificação Inteligente"
       />
 
       <div className="px-4 py-6 space-y-6">
-        {/* Quick Actions */}
-        <div className="flex gap-3">
-          <Button 
-            onClick={() => setShowProductForm(true)}
-            className="flex-1 h-14 text-base font-semibold"
-          >
-            <Plus className="w-5 h-5 mr-2" />
-            Novo Produto
-          </Button>
-          <Button 
-            onClick={() => setShowConfigForm(true)}
-            variant="secondary"
-            className="h-14 px-4"
-          >
-            <Settings2 className="w-5 h-5" />
-          </Button>
-        </div>
+        {/* Main CTA */}
+        <Button 
+          onClick={() => setShowProductForm(true)}
+          className="w-full h-16 text-lg font-bold gradient-primary hover:opacity-90 shadow-lg"
+        >
+          <Plus className="w-6 h-6 mr-3" />
+          Adicionar Produto
+        </Button>
 
-        {/* Stats Grid */}
+        {/* Stats Cards */}
         <div className="grid grid-cols-2 gap-4">
-          <StatCard
-            icon={TrendingUp}
-            label="Margem Média"
-            value={stats.avgMargin.toFixed(1)}
-            suffix="%"
-            variant={stats.avgMargin >= currentStore.config.desiredMargin ? 'success' : 'warning'}
-          />
-          <StatCard
-            icon={Package}
-            label="Produtos"
-            value={stats.totalProducts}
-            variant="primary"
-          />
+          <div className="glass-card p-5 animate-fade-up">
+            <div className="flex items-center gap-2 mb-3">
+              <div className={cn(
+                'p-2 rounded-xl',
+                stats.avgMargin >= currentStore.config.desiredMargin ? 'bg-success-muted' : 'bg-warning-muted'
+              )}>
+                <Target className={cn(
+                  'w-5 h-5',
+                  stats.avgMargin >= currentStore.config.desiredMargin ? 'text-success' : 'text-warning'
+                )} />
+              </div>
+            </div>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-1">Margem Média</p>
+            <p className={cn(
+              'number-xl',
+              stats.avgMargin >= currentStore.config.desiredMargin ? 'text-success' : 'text-warning'
+            )}>
+              {stats.avgMargin.toFixed(1)}%
+            </p>
+          </div>
+          
+          <div className="glass-card p-5 animate-fade-up stagger-1">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-2 rounded-xl bg-primary/10">
+                <Package className="w-5 h-5 text-primary" />
+              </div>
+            </div>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-1">Produtos</p>
+            <p className="number-xl text-primary">{stats.totalProducts}</p>
+          </div>
         </div>
 
-        {/* Performance Overview */}
+        {/* Profit Summary */}
         {stats.totalProducts > 0 && (
-          <div className="space-y-3">
+          <div className="glass-card p-5 animate-fade-up stagger-2">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-foreground">Desempenho</h2>
-              <button 
-                onClick={() => navigate('/analysis')}
-                className="text-sm text-primary font-medium flex items-center gap-1"
-              >
-                Ver Análise
-                <ArrowRight className="w-4 h-4" />
-              </button>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-1">Lucro Total (todos produtos)</p>
+                <p className={cn(
+                  'number-lg',
+                  stats.totalProfit >= 0 ? 'text-success' : 'text-destructive'
+                )}>
+                  {formatCurrency(stats.totalProfit)}
+                </p>
+              </div>
+              <div className="text-right">
+                <div className={cn(
+                  'inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold',
+                  stats.productsAboveTarget > stats.productsBelowTarget ? 'bg-success-muted text-success' : 'bg-danger-muted text-danger'
+                )}>
+                  {stats.productsAboveTarget > stats.productsBelowTarget ? (
+                    <TrendingUp className="w-4 h-4" />
+                  ) : (
+                    <TrendingDown className="w-4 h-4" />
+                  )}
+                  {stats.productsAboveTarget}/{stats.totalProducts} na meta
+                </div>
+              </div>
             </div>
-            
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-success-muted rounded-2xl p-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <TrendingUp className="w-4 h-4 text-success" />
-                  <span className="text-xs font-medium text-success">Acima da Meta</span>
-                </div>
-                <p className="text-2xl font-bold text-success">{stats.productsAboveTarget}</p>
+          </div>
+        )}
+
+        {/* Quick Performance */}
+        {stats.totalProducts > 0 && (
+          <div className="grid grid-cols-2 gap-3 animate-fade-up stagger-3">
+            <div className="bg-success-muted rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="w-4 h-4 text-success" />
+                <span className="text-xs font-bold text-success">Acima da Meta</span>
               </div>
-              <div className="bg-danger-muted rounded-2xl p-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <AlertTriangle className="w-4 h-4 text-danger" />
-                  <span className="text-xs font-medium text-danger">Abaixo da Meta</span>
-                </div>
-                <p className="text-2xl font-bold text-danger">{stats.productsBelowTarget}</p>
+              <p className="number-md text-success">{stats.productsAboveTarget}</p>
+            </div>
+            <div className="bg-danger-muted rounded-2xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingDown className="w-4 h-4 text-danger" />
+                <span className="text-xs font-bold text-danger">Abaixo da Meta</span>
               </div>
+              <p className="number-md text-danger">{stats.productsBelowTarget}</p>
             </div>
           </div>
         )}
 
         {/* Top Products */}
         {topProducts.length > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-3 animate-fade-up stagger-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-foreground">Melhores Margens</h2>
+              <h2 className="font-bold text-foreground">Melhores Margens</h2>
               <button 
                 onClick={() => navigate('/products')}
-                className="text-sm text-primary font-medium flex items-center gap-1"
+                className="text-sm text-primary font-semibold flex items-center gap-1"
               >
                 Ver Todos
                 <ArrowRight className="w-4 h-4" />
@@ -155,26 +185,33 @@ export default function Home() {
               {topProducts.map(({ product, calc }, index) => (
                 <div 
                   key={product.id}
-                  className="flex items-center justify-between bg-card rounded-xl p-3 card-interactive"
+                  className="glass-card-hover p-4 flex items-center justify-between"
                   onClick={() => navigate('/products')}
                 >
                   <div className="flex items-center gap-3">
                     <div className={cn(
-                      'w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold',
-                      index === 0 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'
+                      'w-10 h-10 rounded-xl flex items-center justify-center text-sm font-extrabold',
+                      index === 0 ? 'gradient-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'
                     )}>
                       {index + 1}
                     </div>
-                    <span className="font-medium text-foreground truncate max-w-[150px]">
+                    <span className="font-semibold text-foreground truncate max-w-[140px]">
                       {product.name}
                     </span>
                   </div>
-                  <span className={cn(
-                    'font-bold',
-                    calc.isAboveTarget ? 'text-success' : 'text-danger'
-                  )}>
-                    {calc.realMargin.toFixed(1)}%
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      'font-extrabold text-lg',
+                      calc.isAboveTarget ? 'text-success' : 'text-danger'
+                    )}>
+                      {calc.realMargin.toFixed(1)}%
+                    </span>
+                    {calc.isAboveTarget ? (
+                      <TrendingUp className="w-4 h-4 text-success" />
+                    ) : (
+                      <TrendingDown className="w-4 h-4 text-danger" />
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -183,34 +220,30 @@ export default function Home() {
 
         {/* Empty State */}
         {stats.totalProducts === 0 && (
-          <div className="text-center py-12">
-            <div className="w-16 h-16 rounded-2xl bg-secondary mx-auto flex items-center justify-center mb-4">
-              <Package className="w-8 h-8 text-muted-foreground" />
+          <div className="text-center py-12 animate-fade-up">
+            <div className="w-20 h-20 rounded-2xl bg-secondary mx-auto flex items-center justify-center mb-4">
+              <Package className="w-10 h-10 text-muted-foreground" />
             </div>
-            <h3 className="font-semibold text-foreground mb-1">Nenhum produto ainda</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Adicione seu primeiro produto para começar
+            <h3 className="font-bold text-foreground mb-2 text-lg">Nenhum produto ainda</h3>
+            <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
+              Adicione seu primeiro produto para começar a precificar com inteligência
             </p>
-            <Button onClick={() => setShowProductForm(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Adicionar Produto
-            </Button>
           </div>
         )}
 
-        {/* Store Config Reminder */}
+        {/* Store Config Card */}
         <div 
           onClick={() => setShowConfigForm(true)}
-          className="bg-accent rounded-2xl p-4 card-interactive"
+          className="glass-card-hover p-4 animate-fade-up stagger-5"
         >
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-xl">
-              <Settings2 className="w-5 h-5 text-primary" />
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl gradient-primary">
+              <Settings2 className="w-5 h-5 text-primary-foreground" />
             </div>
             <div className="flex-1">
-              <p className="font-medium text-foreground">Taxas da Loja</p>
-              <p className="text-xs text-muted-foreground">
-                Shopee: {currentStore.config.shopeeFee}% · Impostos: {currentStore.config.taxes}% · Meta: {currentStore.config.desiredMargin}%
+              <p className="font-bold text-foreground">Taxas da Loja</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Shopee: {currentStore.config.shopeeFeePercent}% + R${(currentStore.config.shopeeFeeFixed || 0).toFixed(2)} · Impostos: {currentStore.config.taxes}% · Meta: {currentStore.config.desiredMargin}%
               </p>
             </div>
             <ArrowRight className="w-5 h-5 text-muted-foreground" />
