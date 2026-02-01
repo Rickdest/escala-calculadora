@@ -13,7 +13,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const STORAGE_KEY = 'escala-theme';
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('light');
+  const [theme, setThemeState] = useState<Theme>('dark');
 
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY) as Theme;
@@ -21,9 +21,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       setThemeState(saved);
       document.documentElement.classList.toggle('dark', saved === 'dark');
     } else {
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setThemeState(prefersDark ? 'dark' : 'light');
-      document.documentElement.classList.toggle('dark', prefersDark);
+      // Default to dark theme
+      setThemeState('dark');
+      document.documentElement.classList.add('dark');
     }
   }, []);
 

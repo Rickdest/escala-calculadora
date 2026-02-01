@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Settings2, Percent, DollarSign, Package, Save, Check, Loader2, Moon, Sun } from 'lucide-react';
+import { Settings2, Percent, DollarSign, Package, Save, Check, Loader2, Moon, Sun, LogOut, Store } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Input } from '@/components/ui/input';
@@ -11,8 +13,10 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 
 export default function Settings() {
+  const navigate = useNavigate();
   const { currentStore, updateStoreConfig } = useStore();
   const { theme, setTheme } = useTheme();
+  const { user, signOut } = useAuth();
   
   const [shopeeFeePercent, setShopeeFeePercent] = useState(currentStore?.config.shopeeFeePercent?.toString() || '12');
   const [shopeeFeeFixed, setShopeeFeeFixed] = useState((currentStore?.config.shopeeFeeFixed || 0).toString());
@@ -325,6 +329,40 @@ export default function Settings() {
             </>
           )}
         </Button>
+
+        {/* Manage Stores */}
+        <Button 
+          onClick={() => navigate('/stores')}
+          variant="outline"
+          className="w-full h-12"
+        >
+          <Store className="w-5 h-5 mr-2" />
+          Gerenciar Lojas
+        </Button>
+
+        {/* Logout Section */}
+        <div className="pt-6 border-t border-border/50">
+          <div className="glass-card p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Conta</p>
+                <p className="text-xs text-muted-foreground">{user?.email}</p>
+              </div>
+              <Button 
+                onClick={async () => {
+                  await signOut();
+                  navigate('/auth');
+                }}
+                variant="outline"
+                size="sm"
+                className="text-destructive hover:text-destructive"
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                Sair
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     </AppLayout>
   );

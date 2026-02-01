@@ -14,7 +14,122 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      products: {
+        Row: {
+          ads_cost: number | null
+          cost_price: number
+          created_at: string
+          id: string
+          image_url: string | null
+          name: string
+          packaging_cost: number | null
+          sale_price: number
+          store_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ads_cost?: number | null
+          cost_price: number
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name: string
+          packaging_cost?: number | null
+          sale_price: number
+          store_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ads_cost?: number | null
+          cost_price?: number
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          name?: string
+          packaging_cost?: number | null
+          sale_price?: number
+          store_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      stores: {
+        Row: {
+          created_at: string
+          desired_margin: number | null
+          enable_ads: boolean | null
+          enable_packaging: boolean | null
+          id: string
+          name: string
+          shopee_fee_fixed: number | null
+          shopee_fee_percent: number | null
+          taxes: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          desired_margin?: number | null
+          enable_ads?: boolean | null
+          enable_packaging?: boolean | null
+          id?: string
+          name: string
+          shopee_fee_fixed?: number | null
+          shopee_fee_percent?: number | null
+          taxes?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          desired_margin?: number | null
+          enable_ads?: boolean | null
+          enable_packaging?: boolean | null
+          id?: string
+          name?: string
+          shopee_fee_fixed?: number | null
+          shopee_fee_percent?: number | null
+          taxes?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
