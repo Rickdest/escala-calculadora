@@ -1,20 +1,18 @@
-import { Home, Package, BarChart3, Store, Settings, Moon, Sun } from 'lucide-react';
+import { Home, Package, BarChart3, Store, Settings, GraduationCap } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useTheme } from '@/contexts/ThemeContext';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { icon: Home, label: 'Início', path: '/' },
   { icon: Package, label: 'Produtos', path: '/products' },
   { icon: BarChart3, label: 'Análise', path: '/analysis' },
-  { icon: Store, label: 'Lojas', path: '/stores' },
+  { icon: GraduationCap, label: 'Educação', path: '/education' },
   { icon: Settings, label: 'Config', path: '/settings' },
 ];
 
 export function BottomNavigation() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
 
   return (
     <nav className="bottom-nav">
@@ -49,21 +47,6 @@ export function BottomNavigation() {
             </button>
           );
         })}
-        
-        {/* Theme Toggle */}
-        <button
-          onClick={toggleTheme}
-          className="bottom-nav-item flex-1 max-w-[72px]"
-        >
-          {theme === 'light' ? (
-            <Moon className="w-5 h-5 text-muted-foreground" strokeWidth={2} />
-          ) : (
-            <Sun className="w-5 h-5 text-muted-foreground" strokeWidth={2} />
-          )}
-          <span className="text-[10px] font-semibold text-muted-foreground">
-            {theme === 'light' ? 'Escuro' : 'Claro'}
-          </span>
-        </button>
       </div>
     </nav>
   );

@@ -8,6 +8,7 @@ import { ProductForm } from '@/components/forms/ProductForm';
 import { StoreConfigForm } from '@/components/forms/StoreConfigForm';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import logo from '@/assets/logo.png';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -25,12 +26,7 @@ export default function Home() {
     return (
       <AppLayout>
         <div className="flex flex-col items-center justify-center min-h-[85vh] px-6 text-center">
-          <div className="w-24 h-24 rounded-3xl gradient-primary flex items-center justify-center mb-8 shadow-lg">
-            <Zap className="w-12 h-12 text-primary-foreground" />
-          </div>
-          <h1 className="text-3xl font-extrabold text-foreground mb-3">
-            Escala Calculadora
-          </h1>
+          <img src={logo} alt="Escala" className="w-52 h-auto mb-6" />
           <p className="text-muted-foreground mb-8 max-w-xs leading-relaxed">
             Precifique seus produtos da Shopee com inteligência e maximize seus lucros.
           </p>
@@ -70,7 +66,7 @@ export default function Home() {
     <AppLayout>
       <PageHeader 
         title="Escala"
-        subtitle="Precificação Inteligente"
+        showLogo={true}
       />
 
       <div className="px-4 py-6 space-y-6">
