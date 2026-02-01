@@ -6,8 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import logo from '@/assets/logo.png';
-
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
@@ -59,10 +57,10 @@ export default function Auth() {
   return (
     <div className="min-h-screen bg-background gradient-mesh flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-sm space-y-8">
-        {/* Logo */}
+        {/* Header */}
         <div className="flex flex-col items-center">
-          <img src={logo} alt="Escala" className="w-48 h-auto mb-4" />
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-4xl font-bold text-primary">Escala</h1>
+          <p className="text-sm text-muted-foreground mt-2">
             Precificação Inteligente para Shopee
           </p>
         </div>
@@ -135,13 +133,20 @@ export default function Auth() {
             </Button>
           </form>
 
-          <div className="text-center">
+          <div className="flex flex-col gap-2 text-center">
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
               className="text-sm text-primary hover:underline font-medium"
             >
               {isLogin ? 'Não tem conta? Criar agora' : 'Já tem conta? Entrar'}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              Continuar sem conta
             </button>
           </div>
         </div>

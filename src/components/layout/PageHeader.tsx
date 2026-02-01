@@ -7,31 +7,23 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import logo from '@/assets/logo.png';
 
 interface PageHeaderProps {
   title: string;
   subtitle?: string;
   showStoreSelector?: boolean;
-  showLogo?: boolean;
   action?: React.ReactNode;
 }
 
-export function PageHeader({ title, subtitle, showStoreSelector = true, showLogo = false, action }: PageHeaderProps) {
+export function PageHeader({ title, subtitle, showStoreSelector = true, action }: PageHeaderProps) {
   const { stores, currentStore, setCurrentStore } = useStore();
 
   return (
     <header className="sticky top-0 z-40 bg-background/70 backdrop-blur-xl border-b border-border/30 px-4 py-4 safe-top">
       <div className="flex items-center justify-between max-w-lg mx-auto">
         <div className="flex-1">
-          <div className="flex items-center gap-2">
-            {showLogo ? (
-              <img src={logo} alt="Escala" className="h-8 w-auto" />
-            ) : (
-              <h1 className="text-xl font-bold text-foreground">{title}</h1>
-            )}
-          </div>
-          {subtitle && !showLogo && (
+          <h1 className="text-xl font-bold text-foreground">{title}</h1>
+          {subtitle && (
             <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>
           )}
         </div>
