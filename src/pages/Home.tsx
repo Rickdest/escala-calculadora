@@ -64,10 +64,7 @@ export default function Home() {
 
   return (
     <AppLayout>
-      <PageHeader 
-        title="Escala"
-        showLogo={true}
-      />
+      <PageHeader title="Escala" />
 
       <div className="px-4 py-6 space-y-6">
         {/* Main CTA */}
