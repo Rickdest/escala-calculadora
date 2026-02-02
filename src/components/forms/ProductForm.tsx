@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react';
-import { X, Camera, Calculator, TrendingUp, TrendingDown, AlertTriangle, Save, Loader2 } from 'lucide-react';
-import { Product, ProductCalculation, StoreConfig } from '@/types/store';
+import { X, Camera, Calculator, TrendingUp, TrendingDown, AlertTriangle, Save, Loader2, Plus, Trash2, ChevronDown } from 'lucide-react';
+import { Product, ProductCalculation, StoreConfig, ProductVariation } from '@/types/store';
 import { useStore } from '@/contexts/StoreContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 
 interface ProductFormProps {
@@ -22,6 +24,10 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
   const [packagingCost, setPackagingCost] = useState(product?.packagingCost?.toString() || '0');
   const [adsCost, setAdsCost] = useState(product?.adsCost?.toString() || '0');
   const [imageUrl, setImageUrl] = useState(product?.imageUrl || '');
+  const [stockQuantity, setStockQuantity] = useState(product?.stockQuantity?.toString() || '0');
+  const [hasVariations, setHasVariations] = useState(product?.hasVariations || false);
+  const [variations, setVariations] = useState<ProductVariation[]>(product?.variations || []);
+  const [variationsOpen, setVariationsOpen] = useState(product?.hasVariations || false);
   const [isSaving, setIsSaving] = useState(false);
 
   const config = currentStore?.config;
@@ -37,12 +43,15 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
       salePrice: parseFloat(salePrice) || 0,
       packagingCost: parseFloat(packagingCost) || 0,
       adsCost: parseFloat(adsCost) || 0,
+      stockQuantity: parseInt(stockQuantity) || 0,
+      hasVariations,
+      variations,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
     
     return calculateProduct(tempProduct, config);
-  }, [config, costPrice, salePrice, packagingCost, adsCost, calculateProduct, currentStore?.id, name]);
+  }, [config, costPrice, salePrice, packagingCost, adsCost, calculateProduct, currentStore?.id, name, stockQuantity, hasVariations, variations]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -58,7 +67,6 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
 
     setIsSaving(true);
 
-    // Simulate save delay for UX feedback
     await new Promise(resolve => setTimeout(resolve, 300));
 
     const productData = {
@@ -70,6 +78,9 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
       packagingCost: parseFloat(packagingCost) || 0,
       adsCost: parseFloat(adsCost) || 0,
       imageUrl: imageUrl || undefined,
+      stockQuantity: parseInt(stockQuantity) || 0,
+      hasVariations,
+      variations: hasVariations ? variations : [],
     };
 
     onSave(productData);
@@ -85,6 +96,25 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const addVariation = () => {
+    const newVariation: ProductVariation = {
+      id: Math.random().toString(36).substring(2, 15),
+      name: '',
+      costPrice: parseFloat(costPrice) || 0,
+      salePrice: parseFloat(salePrice) || 0,
+      stockQuantity: 0,
+    };
+    setVariations([...variations, newVariation]);
+  };
+
+  const updateVariation = (id: string, updates: Partial<ProductVariation>) => {
+    setVariations(variations.map(v => v.id === id ? { ...v, ...updates } : v));
+  };
+
+  const removeVariation = (id: string) => {
+    setVariations(variations.filter(v => v.id !== id));
   };
 
   const isValid = name && costPrice && salePrice;
@@ -188,6 +218,20 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             </div>
           </div>
 
+          {/* Stock */}
+          <div className="space-y-2">
+            <Label htmlFor="stockQuantity" className="text-sm font-semibold">Quantidade em Estoque</Label>
+            <Input
+              id="stockQuantity"
+              type="number"
+              min="0"
+              value={stockQuantity}
+              onChange={(e) => setStockQuantity(e.target.value)}
+              placeholder="0"
+              className="input-modern h-12"
+            />
+          </div>
+
           {/* Optional Costs */}
           <div className="grid grid-cols-2 gap-4">
             {config?.enablePackaging && (
@@ -226,6 +270,105 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                   />
                 </div>
               </div>
+            )}
+          </div>
+
+          {/* Variations Section */}
+          <div className="glass-card p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-sm font-semibold">Variações</Label>
+                <p className="text-xs text-muted-foreground">Tamanhos, cores, etc.</p>
+              </div>
+              <Switch
+                checked={hasVariations}
+                onCheckedChange={(checked) => {
+                  setHasVariations(checked);
+                  setVariationsOpen(checked);
+                  if (checked && variations.length === 0) {
+                    addVariation();
+                  }
+                }}
+              />
+            </div>
+
+            {hasVariations && (
+              <Collapsible open={variationsOpen} onOpenChange={setVariationsOpen}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" size="sm" className="w-full justify-between">
+                    <span>{variations.length} variações</span>
+                    <ChevronDown className={cn("w-4 h-4 transition-transform", variationsOpen && "rotate-180")} />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="space-y-3 pt-3">
+                  {variations.map((variation, index) => (
+                    <div key={variation.id} className="bg-secondary/50 rounded-xl p-3 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-muted-foreground">Variação {index + 1}</span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeVariation(variation.id)}
+                          className="h-8 w-8 p-0 text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <Input
+                        value={variation.name}
+                        onChange={(e) => updateVariation(variation.id, { name: e.target.value })}
+                        placeholder="Ex: P, M, G ou Azul, Vermelho"
+                        className="input-modern h-10 text-sm"
+                      />
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <Label className="text-xs">Custo</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={variation.costPrice}
+                            onChange={(e) => updateVariation(variation.id, { costPrice: parseFloat(e.target.value) || 0 })}
+                            className="input-modern h-9 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Venda</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={variation.salePrice}
+                            onChange={(e) => updateVariation(variation.id, { salePrice: parseFloat(e.target.value) || 0 })}
+                            className="input-modern h-9 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Estoque</Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={variation.stockQuantity}
+                            onChange={(e) => updateVariation(variation.id, { stockQuantity: parseInt(e.target.value) || 0 })}
+                            className="input-modern h-9 text-sm"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addVariation}
+                    className="w-full"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Adicionar Variação
+                  </Button>
+                </CollapsibleContent>
+              </Collapsible>
             )}
           </div>
 
@@ -298,6 +441,18 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                   <span>Impostos ({config?.taxes}%)</span>
                   <span>{formatCurrency(calculation.taxes)}</span>
                 </div>
+                {(config?.affiliateCommission || 0) > 0 && (
+                  <div className="flex justify-between opacity-70">
+                    <span>Comissão Afiliados ({config?.affiliateCommission}%)</span>
+                    <span>{formatCurrency(calculation.affiliateCommission)}</span>
+                  </div>
+                )}
+                {(config?.shopeeCampaigns || 0) > 0 && (
+                  <div className="flex justify-between opacity-70">
+                    <span>Campanhas ({config?.shopeeCampaigns}%)</span>
+                    <span>{formatCurrency(calculation.shopeeCampaigns)}</span>
+                  </div>
+                )}
               </div>
 
               {!calculation.isAboveTarget && (

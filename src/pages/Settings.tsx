@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings2, Percent, DollarSign, Package, Save, Check, Loader2, Moon, Sun, LogOut, Store } from 'lucide-react';
+import { Settings2, Percent, DollarSign, Package, Save, Check, Loader2, Moon, Sun, LogOut, Store, User, Users, Megaphone } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -18,10 +18,12 @@ export default function Settings() {
   const { theme, setTheme } = useTheme();
   const { user, signOut } = useAuth();
   
-  const [shopeeFeePercent, setShopeeFeePercent] = useState(currentStore?.config.shopeeFeePercent?.toString() || '12');
-  const [shopeeFeeFixed, setShopeeFeeFixed] = useState((currentStore?.config.shopeeFeeFixed || 0).toString());
-  const [taxes, setTaxes] = useState(currentStore?.config.taxes?.toString() || '6');
-  const [desiredMargin, setDesiredMargin] = useState(currentStore?.config.desiredMargin?.toString() || '30');
+  const [shopeeFeePercent, setShopeeFeePercent] = useState(currentStore?.config.shopeeFeePercent?.toString() || '20');
+  const [shopeeFeeFixed, setShopeeFeeFixed] = useState((currentStore?.config.shopeeFeeFixed || 4).toString());
+  const [taxes, setTaxes] = useState(currentStore?.config.taxes?.toString() || '0');
+  const [desiredMargin, setDesiredMargin] = useState(currentStore?.config.desiredMargin?.toString() || '17');
+  const [affiliateCommission, setAffiliateCommission] = useState((currentStore?.config.affiliateCommission || 0).toString());
+  const [shopeeCampaigns, setShopeeCampaigns] = useState((currentStore?.config.shopeeCampaigns || 0).toString());
   const [enablePackaging, setEnablePackaging] = useState(currentStore?.config.enablePackaging ?? true);
   const [enableAds, setEnableAds] = useState(currentStore?.config.enableAds ?? true);
   const [saved, setSaved] = useState(false);
@@ -34,6 +36,8 @@ export default function Settings() {
       setShopeeFeeFixed((currentStore.config.shopeeFeeFixed || 0).toString());
       setTaxes(currentStore.config.taxes.toString());
       setDesiredMargin(currentStore.config.desiredMargin.toString());
+      setAffiliateCommission((currentStore.config.affiliateCommission || 0).toString());
+      setShopeeCampaigns((currentStore.config.shopeeCampaigns || 0).toString());
       setEnablePackaging(currentStore.config.enablePackaging);
       setEnableAds(currentStore.config.enableAds);
     }
@@ -50,6 +54,8 @@ export default function Settings() {
       shopeeFeeFixed: parseFloat(shopeeFeeFixed) || 0,
       taxes: parseFloat(taxes) || 0,
       desiredMargin: parseFloat(desiredMargin) || 0,
+      affiliateCommission: parseFloat(affiliateCommission) || 0,
+      shopeeCampaigns: parseFloat(shopeeCampaigns) || 0,
       enablePackaging,
       enableAds,
     });
@@ -78,8 +84,25 @@ export default function Settings() {
       />
 
       <div className="px-4 py-6 space-y-6">
+        {/* User Profile Link */}
+        {user && (
+          <Button
+            onClick={() => navigate('/profile')}
+            variant="outline"
+            className="w-full h-14 justify-start gap-4 animate-fade-up"
+          >
+            <div className="p-2 rounded-xl bg-primary/10">
+              <User className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1 text-left">
+              <p className="font-semibold">Meu Perfil</p>
+              <p className="text-xs text-muted-foreground">{user.email}</p>
+            </div>
+          </Button>
+        )}
+
         {/* Theme Toggle */}
-        <div className="glass-card p-5 animate-fade-up">
+        <div className="glass-card p-5 animate-fade-up stagger-1">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-xl bg-secondary">
@@ -118,7 +141,7 @@ export default function Settings() {
         </div>
 
         {/* Store Info */}
-        <div className="glass-card p-5 animate-fade-up stagger-1">
+        <div className="glass-card p-5 animate-fade-up stagger-2">
           <div className="flex items-center gap-4">
             <div className="p-3 rounded-xl gradient-primary">
               <Settings2 className="w-6 h-6 text-primary-foreground" />
@@ -133,7 +156,7 @@ export default function Settings() {
         </div>
 
         {/* Shopee Fees */}
-        <div className="space-y-4 animate-fade-up stagger-2">
+        <div className="space-y-4 animate-fade-up stagger-3">
           <h3 className="font-bold text-sm flex items-center gap-2">
             <Percent className="w-4 h-4 text-primary" />
             Taxas da Shopee
@@ -152,7 +175,7 @@ export default function Settings() {
                     max="100"
                     value={shopeeFeePercent}
                     onChange={(e) => setShopeeFeePercent(e.target.value)}
-                    placeholder="12"
+                    placeholder="20"
                     className="pr-10 input-modern h-12"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">%</span>
@@ -170,7 +193,7 @@ export default function Settings() {
                     min="0"
                     value={shopeeFeeFixed}
                     onChange={(e) => setShopeeFeeFixed(e.target.value)}
-                    placeholder="2.00"
+                    placeholder="4.00"
                     className="pl-12 input-modern h-12"
                   />
                 </div>
@@ -182,8 +205,70 @@ export default function Settings() {
           </div>
         </div>
 
+        {/* Affiliate Commission */}
+        <div className="space-y-4 animate-fade-up stagger-4">
+          <h3 className="font-bold text-sm flex items-center gap-2">
+            <Users className="w-4 h-4 text-primary" />
+            Comissão de Afiliados
+          </h3>
+
+          <div className="glass-card p-5">
+            <div className="space-y-2">
+              <Label htmlFor="affiliateCommission" className="text-sm font-semibold">Taxa de Afiliados</Label>
+              <div className="relative">
+                <Input
+                  id="affiliateCommission"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  value={affiliateCommission}
+                  onChange={(e) => setAffiliateCommission(e.target.value)}
+                  placeholder="0"
+                  className="pr-10 input-modern h-12"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">%</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Opcional - Comissão paga a afiliados por venda
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Shopee Campaigns */}
+        <div className="space-y-4 animate-fade-up stagger-5">
+          <h3 className="font-bold text-sm flex items-center gap-2">
+            <Megaphone className="w-4 h-4 text-primary" />
+            Campanhas da Shopee
+          </h3>
+
+          <div className="glass-card p-5">
+            <div className="space-y-2">
+              <Label htmlFor="shopeeCampaigns" className="text-sm font-semibold">Desconto em Campanhas</Label>
+              <div className="relative">
+                <Input
+                  id="shopeeCampaigns"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  value={shopeeCampaigns}
+                  onChange={(e) => setShopeeCampaigns(e.target.value)}
+                  placeholder="0"
+                  className="pr-10 input-modern h-12"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">%</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Opcional - Desconto oferecido em campanhas promocionais
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Taxes */}
-        <div className="space-y-4 animate-fade-up stagger-3">
+        <div className="space-y-4">
           <h3 className="font-bold text-sm flex items-center gap-2">
             <DollarSign className="w-4 h-4 text-primary" />
             Impostos
@@ -201,7 +286,7 @@ export default function Settings() {
                   max="100"
                   value={taxes}
                   onChange={(e) => setTaxes(e.target.value)}
-                  placeholder="6"
+                  placeholder="0"
                   className="pr-10 input-modern h-12"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">%</span>
@@ -214,7 +299,7 @@ export default function Settings() {
         </div>
 
         {/* Desired Margin */}
-        <div className="space-y-4 animate-fade-up stagger-4">
+        <div className="space-y-4">
           <h3 className="font-bold text-sm flex items-center gap-2">
             <Percent className="w-4 h-4 text-success" />
             Meta de Margem
@@ -232,7 +317,7 @@ export default function Settings() {
                   max="100"
                   value={desiredMargin}
                   onChange={(e) => setDesiredMargin(e.target.value)}
-                  placeholder="30"
+                  placeholder="17"
                   className="pr-10 input-modern h-12"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold">%</span>
@@ -245,7 +330,7 @@ export default function Settings() {
         </div>
 
         {/* Optional Costs */}
-        <div className="space-y-4 animate-fade-up stagger-5">
+        <div className="space-y-4">
           <h3 className="font-bold text-sm flex items-center gap-2">
             <Package className="w-4 h-4 text-primary" />
             Custos Opcionais
@@ -281,26 +366,34 @@ export default function Settings() {
         </div>
 
         {/* Current Summary */}
-        <div className="bg-accent rounded-2xl p-5 animate-fade-up">
+        <div className="bg-accent rounded-2xl p-5">
           <h4 className="font-bold text-accent-foreground mb-4">Resumo Atual</h4>
-          <div className="grid grid-cols-4 gap-3 text-center">
+          <div className="grid grid-cols-3 gap-3 text-center">
             <div>
               <p className="number-md text-primary">{shopeeFeePercent}%</p>
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Taxa %</p>
             </div>
             <div>
               <p className="number-md text-primary">R${parseFloat(shopeeFeeFixed || '0').toFixed(2)}</p>
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Taxa Fixa</p>
-            </div>
-            <div>
-              <p className="number-md text-primary">{taxes}%</p>
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Impostos</p>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Fixa</p>
             </div>
             <div>
               <p className="number-md text-success">{desiredMargin}%</p>
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Meta</p>
             </div>
           </div>
+          {(parseFloat(affiliateCommission) > 0 || parseFloat(shopeeCampaigns) > 0) && (
+            <div className="grid grid-cols-2 gap-3 text-center mt-3 pt-3 border-t border-border/30">
+              <div>
+                <p className="number-md text-primary">{affiliateCommission}%</p>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Afiliados</p>
+              </div>
+              <div>
+                <p className="number-md text-primary">{shopeeCampaigns}%</p>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Campanhas</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Save Button */}
@@ -341,28 +434,30 @@ export default function Settings() {
         </Button>
 
         {/* Logout Section */}
-        <div className="pt-6 border-t border-border/50">
-          <div className="glass-card p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-semibold text-foreground">Conta</p>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
+        {user && (
+          <div className="pt-6 border-t border-border/50">
+            <div className="glass-card p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Conta</p>
+                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                </div>
+                <Button 
+                  onClick={async () => {
+                    await signOut();
+                    navigate('/auth');
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sair
+                </Button>
               </div>
-              <Button 
-                onClick={async () => {
-                  await signOut();
-                  navigate('/auth');
-                }}
-                variant="outline"
-                size="sm"
-                className="text-destructive hover:text-destructive"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Sair
-              </Button>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </AppLayout>
   );

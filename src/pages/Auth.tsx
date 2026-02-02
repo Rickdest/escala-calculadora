@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, Loader2, Eye, EyeOff, ArrowRight, Sparkles } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
@@ -56,23 +57,51 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-background gradient-mesh flex flex-col items-center justify-center px-4">
-      <div className="w-full max-w-sm space-y-8">
+      <div className="w-full max-w-sm space-y-6">
         {/* Header */}
-        <div className="flex flex-col items-center">
-          <h1 className="text-4xl font-bold text-primary">Escala</h1>
-          <p className="text-sm text-muted-foreground mt-2">
+        <div className="flex flex-col items-center text-center">
+          <h1 className="text-5xl font-bold text-primary tracking-tight">Escala</h1>
+          <p className="text-base text-muted-foreground mt-2">
             Precificação Inteligente para Shopee
           </p>
         </div>
 
+        {/* Continue Without Account - Primary CTA */}
+        <div className="space-y-3">
+          <Button
+            onClick={() => navigate('/')}
+            size="lg"
+            className="w-full h-14 text-base font-bold gradient-primary hover:opacity-90 transition-all"
+          >
+            <Sparkles className="w-5 h-5 mr-2" />
+            Começar Agora
+            <ArrowRight className="w-5 h-5 ml-2" />
+          </Button>
+          <p className="text-xs text-center text-muted-foreground">
+            Use gratuitamente sem criar conta
+          </p>
+        </div>
+
+        {/* Divider */}
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-border" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-3 text-muted-foreground font-medium">
+              ou entre para sincronizar
+            </span>
+          </div>
+        </div>
+
         {/* Form */}
-        <div className="glass-card p-6 space-y-6">
+        <div className="glass-card p-6 space-y-5">
           <div className="text-center">
-            <h2 className="text-xl font-bold text-foreground">
+            <h2 className="text-lg font-bold text-foreground">
               {isLogin ? 'Entrar na conta' : 'Criar conta'}
             </h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              {isLogin ? 'Acesse seus produtos e lojas' : 'Comece a precificar seus produtos'}
+            <p className="text-xs text-muted-foreground mt-1">
+              {isLogin ? 'Sincronize seus dados entre dispositivos' : 'Salve seus produtos na nuvem'}
             </p>
           </div>
 
@@ -119,7 +148,8 @@ export default function Auth() {
 
             <Button
               type="submit"
-              className="w-full h-12 text-base font-bold gradient-primary hover:opacity-90"
+              variant="outline"
+              className="w-full h-12 text-base font-semibold"
               disabled={loading}
             >
               {loading ? (
@@ -133,20 +163,13 @@ export default function Auth() {
             </Button>
           </form>
 
-          <div className="flex flex-col gap-2 text-center">
+          <div className="text-center">
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
               className="text-sm text-primary hover:underline font-medium"
             >
               {isLogin ? 'Não tem conta? Criar agora' : 'Já tem conta? Entrar'}
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/')}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              Continuar sem conta
             </button>
           </div>
         </div>

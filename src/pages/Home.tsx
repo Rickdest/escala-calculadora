@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Settings2, Package, TrendingUp, TrendingDown, ArrowRight, Store, Zap, Target } from 'lucide-react';
+import { Plus, Settings2, Package, TrendingUp, TrendingDown, ArrowRight, Store, Zap, Target, GraduationCap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -8,7 +8,6 @@ import { ProductForm } from '@/components/forms/ProductForm';
 import { StoreConfigForm } from '@/components/forms/StoreConfigForm';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import logo from '@/assets/logo.png';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -26,7 +25,7 @@ export default function Home() {
     return (
       <AppLayout>
         <div className="flex flex-col items-center justify-center min-h-[85vh] px-6 text-center">
-          <img src={logo} alt="Escala" className="w-52 h-auto mb-6" />
+          <h1 className="text-5xl font-bold text-primary tracking-tight mb-2">Escala</h1>
           <p className="text-muted-foreground mb-8 max-w-xs leading-relaxed">
             Precifique seus produtos da Shopee com inteligência e maximize seus lucros.
           </p>
@@ -236,7 +235,26 @@ export default function Home() {
             <div className="flex-1">
               <p className="font-bold text-foreground">Taxas da Loja</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Shopee: {currentStore.config.shopeeFeePercent}% + R${(currentStore.config.shopeeFeeFixed || 0).toFixed(2)} · Impostos: {currentStore.config.taxes}% · Meta: {currentStore.config.desiredMargin}%
+                Shopee: {currentStore.config.shopeeFeePercent}% + R${(currentStore.config.shopeeFeeFixed || 0).toFixed(2)} · Meta: {currentStore.config.desiredMargin}%
+              </p>
+            </div>
+            <ArrowRight className="w-5 h-5 text-muted-foreground" />
+          </div>
+        </div>
+
+        {/* Education Link */}
+        <div 
+          onClick={() => navigate('/education')}
+          className="glass-card-hover p-4 animate-fade-up stagger-6"
+        >
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-secondary">
+              <GraduationCap className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-foreground">Educação</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Tutoriais e cursos para vender mais
               </p>
             </div>
             <ArrowRight className="w-5 h-5 text-muted-foreground" />
