@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Percent, DollarSign, Settings2, Save, Loader2 } from 'lucide-react';
+import { X, Percent, DollarSign, Settings2, Save, Loader2, Users, Megaphone } from 'lucide-react';
 import { useStore } from '@/contexts/StoreContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,10 +13,12 @@ interface StoreConfigFormProps {
 export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
   const { currentStore, updateStoreConfig } = useStore();
   
-  const [shopeeFeePercent, setShopeeFeePercent] = useState(currentStore?.config.shopeeFeePercent?.toString() || '12');
-  const [shopeeFeeFixed, setShopeeFeeFixed] = useState(currentStore?.config.shopeeFeeFixed?.toString() || '2');
-  const [taxes, setTaxes] = useState(currentStore?.config.taxes?.toString() || '6');
-  const [desiredMargin, setDesiredMargin] = useState(currentStore?.config.desiredMargin?.toString() || '30');
+  const [shopeeFeePercent, setShopeeFeePercent] = useState(currentStore?.config.shopeeFeePercent?.toString() || '20');
+  const [shopeeFeeFixed, setShopeeFeeFixed] = useState(currentStore?.config.shopeeFeeFixed?.toString() || '4');
+  const [taxes, setTaxes] = useState(currentStore?.config.taxes?.toString() || '0');
+  const [desiredMargin, setDesiredMargin] = useState(currentStore?.config.desiredMargin?.toString() || '17');
+  const [affiliateCommission, setAffiliateCommission] = useState((currentStore?.config.affiliateCommission || 0).toString());
+  const [shopeeCampaigns, setShopeeCampaigns] = useState((currentStore?.config.shopeeCampaigns || 0).toString());
   const [enablePackaging, setEnablePackaging] = useState(currentStore?.config.enablePackaging ?? true);
   const [enableAds, setEnableAds] = useState(currentStore?.config.enableAds ?? true);
   const [isSaving, setIsSaving] = useState(false);
@@ -27,6 +29,8 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
       setShopeeFeeFixed((currentStore.config.shopeeFeeFixed || 0).toString());
       setTaxes(currentStore.config.taxes.toString());
       setDesiredMargin(currentStore.config.desiredMargin.toString());
+      setAffiliateCommission((currentStore.config.affiliateCommission || 0).toString());
+      setShopeeCampaigns((currentStore.config.shopeeCampaigns || 0).toString());
       setEnablePackaging(currentStore.config.enablePackaging);
       setEnableAds(currentStore.config.enableAds);
     }
@@ -43,6 +47,8 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
       shopeeFeeFixed: parseFloat(shopeeFeeFixed) || 0,
       taxes: parseFloat(taxes) || 0,
       desiredMargin: parseFloat(desiredMargin) || 0,
+      affiliateCommission: parseFloat(affiliateCommission) || 0,
+      shopeeCampaigns: parseFloat(shopeeCampaigns) || 0,
       enablePackaging,
       enableAds,
     });
@@ -96,7 +102,7 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
                     max="100"
                     value={shopeeFeePercent}
                     onChange={(e) => setShopeeFeePercent(e.target.value)}
-                    placeholder="12"
+                    placeholder="20"
                     className="pr-10 input-modern h-12"
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">%</span>
@@ -114,7 +120,7 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
                     min="0"
                     value={shopeeFeeFixed}
                     onChange={(e) => setShopeeFeeFixed(e.target.value)}
-                    placeholder="2.00"
+                    placeholder="4.00"
                     className="pl-12 input-modern h-12"
                   />
                 </div>
@@ -123,6 +129,62 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
             <p className="text-xs text-muted-foreground">
               A taxa fixa é cobrada por venda além da comissão percentual
             </p>
+          </div>
+
+          {/* Affiliate Commission */}
+          <div className="space-y-4">
+            <h3 className="font-bold text-sm flex items-center gap-2">
+              <Users className="w-4 h-4 text-primary" />
+              Comissão de Afiliados (Opcional)
+            </h3>
+            <div className="space-y-2">
+              <Label htmlFor="affiliateCommission" className="text-sm font-medium">Taxa de Afiliados</Label>
+              <div className="relative">
+                <Input
+                  id="affiliateCommission"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  value={affiliateCommission}
+                  onChange={(e) => setAffiliateCommission(e.target.value)}
+                  placeholder="0"
+                  className="pr-10 input-modern h-12"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">%</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Comissão paga a afiliados por cada venda
+              </p>
+            </div>
+          </div>
+
+          {/* Shopee Campaigns */}
+          <div className="space-y-4">
+            <h3 className="font-bold text-sm flex items-center gap-2">
+              <Megaphone className="w-4 h-4 text-primary" />
+              Campanhas da Shopee (Opcional)
+            </h3>
+            <div className="space-y-2">
+              <Label htmlFor="shopeeCampaigns" className="text-sm font-medium">Desconto em Campanhas</Label>
+              <div className="relative">
+                <Input
+                  id="shopeeCampaigns"
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  value={shopeeCampaigns}
+                  onChange={(e) => setShopeeCampaigns(e.target.value)}
+                  placeholder="0"
+                  className="pr-10 input-modern h-12"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">%</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Desconto oferecido em campanhas promocionais
+              </p>
+            </div>
           </div>
 
           {/* Taxes */}
@@ -142,7 +204,7 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
                   max="100"
                   value={taxes}
                   onChange={(e) => setTaxes(e.target.value)}
-                  placeholder="6"
+                  placeholder="0"
                   className="pr-10 input-modern h-12"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">%</span>
@@ -170,7 +232,7 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
                   max="100"
                   value={desiredMargin}
                   onChange={(e) => setDesiredMargin(e.target.value)}
-                  placeholder="30"
+                  placeholder="17"
                   className="pr-10 input-modern h-12"
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">%</span>

@@ -47,6 +47,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           updatedAt: new Date(store.updatedAt),
           products: store.products.map((p: Product) => ({
             ...p,
+            stockQuantity: p.stockQuantity ?? 0,
+            hasVariations: p.hasVariations ?? false,
+            variations: p.variations ?? [],
             createdAt: new Date(p.createdAt),
             updatedAt: new Date(p.updatedAt),
           })),
@@ -141,6 +144,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const addProduct = useCallback((productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Product => {
     const newProduct: Product = {
       ...productData,
+      stockQuantity: productData.stockQuantity ?? 0,
+      hasVariations: productData.hasVariations ?? false,
+      variations: productData.variations ?? [],
       id: generateId(),
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -208,8 +214,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const taxesValue = grossRevenue * (config.taxes / 100);
     const packagingCost = config.enablePackaging ? product.packagingCost : 0;
     const adsCost = config.enableAds ? product.adsCost : 0;
+    const affiliateCommissionValue = grossRevenue * ((config.affiliateCommission || 0) / 100);
+    const shopeeCampaignsValue = grossRevenue * ((config.shopeeCampaigns || 0) / 100);
     
-    const totalCosts = product.costPrice + packagingCost + adsCost + totalShopeeFee + taxesValue;
+    const totalCosts = product.costPrice + packagingCost + adsCost + totalShopeeFee + taxesValue + affiliateCommissionValue + shopeeCampaignsValue;
     const netProfit = grossRevenue - totalCosts;
     const realMargin = grossRevenue > 0 ? (netProfit / grossRevenue) * 100 : 0;
     const marginDifference = realMargin - config.desiredMargin;
@@ -220,6 +228,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       shopeeFeeFixed: shopeeFeeFixedValue,
       totalShopeeFee,
       taxes: taxesValue,
+      affiliateCommission: affiliateCommissionValue,
+      shopeeCampaigns: shopeeCampaignsValue,
       totalCosts,
       netProfit,
       realMargin,

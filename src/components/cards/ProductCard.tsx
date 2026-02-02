@@ -1,4 +1,4 @@
-import { Package, TrendingUp, TrendingDown, MoreVertical, Copy, Trash2, Edit } from 'lucide-react';
+import { Package, TrendingUp, TrendingDown, MoreVertical, Copy, Trash2, Edit, Boxes } from 'lucide-react';
 import { Product, ProductCalculation } from '@/types/store';
 import { cn } from '@/lib/utils';
 import {
@@ -96,6 +96,16 @@ export function ProductCard({
             <div>
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Custo</p>
               <p className="text-sm font-semibold text-muted-foreground">{formatCurrency(product.costPrice)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Estoque</p>
+              <p className={cn(
+                'text-sm font-semibold',
+                product.stockQuantity === 0 ? 'text-destructive' :
+                product.stockQuantity <= 5 ? 'text-warning' : 'text-muted-foreground'
+              )}>
+                {product.stockQuantity}
+              </p>
             </div>
           </div>
         </div>

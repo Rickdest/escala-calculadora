@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react';
-import { TrendingUp, TrendingDown, Percent, Package, ArrowUpDown, DollarSign } from 'lucide-react';
+import { TrendingUp, TrendingDown, Percent, Package, ArrowUpDown, DollarSign, Download, FileSpreadsheet, FileText } from 'lucide-react';
 import { useStore } from '@/contexts/StoreContext';
 import { SortOption } from '@/types/store';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { MarginDistributionChart, TopProductsChart, ProfitSummaryChart } from '@/components/charts/AnalyticsCharts';
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { exportToCSV, exportToPDF } from '@/lib/exportUtils';
 
 const sortOptions: { value: SortOption; label: string }[] = [
   { value: 'margin-high', label: 'Maior Margem' },
@@ -66,6 +68,16 @@ export default function Analysis() {
     }).format(value);
   };
 
+  const handleExportCSV = () => {
+    if (!currentStore || products.length === 0) return;
+    exportToCSV(products, currentStore.name);
+  };
+
+  const handleExportPDF = () => {
+    if (!currentStore || products.length === 0) return;
+    exportToPDF(products, currentStore);
+  };
+
   if (!currentStore || !stats) {
     return (
       <AppLayout>
@@ -82,6 +94,27 @@ export default function Analysis() {
       <PageHeader 
         title="Análise"
         subtitle={currentStore.name}
+        action={
+          products.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline">
+                  <Download className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleExportCSV}>
+                  <FileSpreadsheet className="w-4 h-4 mr-2" />
+                  Exportar CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportPDF}>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Exportar PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )
+        }
       />
 
       <div className="px-4 py-6 space-y-6">

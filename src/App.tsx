@@ -13,6 +13,8 @@ import Stores from "./pages/Stores";
 import Settings from "./pages/Settings";
 import Education from "./pages/Education";
 import Auth from "./pages/Auth";
+import Profile from "./pages/Profile";
+import Stock from "./pages/Stock";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,6 +68,8 @@ const App = () => (
                 <Route path="/stores" element={<ProtectedRoute><Stores /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/education" element={<ProtectedRoute><Education /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/stock" element={<ProtectedRoute><Stock /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
