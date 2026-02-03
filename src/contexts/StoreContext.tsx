@@ -214,8 +214,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const taxesValue = grossRevenue * (config.taxes / 100);
     const packagingCost = config.enablePackaging ? product.packagingCost : 0;
     const adsCost = config.enableAds ? product.adsCost : 0;
-    const affiliateCommissionValue = grossRevenue * ((config.affiliateCommission || 0) / 100);
-    const shopeeCampaignsValue = grossRevenue * ((config.shopeeCampaigns || 0) / 100);
+    const affiliateCommissionValue = config.enableAffiliateCommission ? grossRevenue * ((config.affiliateCommission || 0) / 100) : 0;
+    const shopeeCampaignsValue = config.enableShopeeCampaigns ? grossRevenue * ((config.shopeeCampaigns || 0) / 100) : 0;
     
     const totalCosts = product.costPrice + packagingCost + adsCost + totalShopeeFee + taxesValue + affiliateCommissionValue + shopeeCampaignsValue;
     const netProfit = grossRevenue - totalCosts;

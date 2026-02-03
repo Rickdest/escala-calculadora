@@ -6,6 +6,8 @@ export interface StoreConfig {
   currency: string;
   enablePackaging: boolean;
   enableAds: boolean;
+  enableAffiliateCommission: boolean; // toggle for affiliate commission
+  enableShopeeCampaigns: boolean; // toggle for campaigns
   affiliateCommission: number; // percentage for affiliates
   shopeeCampaigns: number; // percentage for campaigns
 }
@@ -69,6 +71,8 @@ export const DEFAULT_STORE_CONFIG: StoreConfig = {
   currency: 'BRL',
   enablePackaging: true,
   enableAds: true,
+  enableAffiliateCommission: false,
+  enableShopeeCampaigns: false,
   affiliateCommission: 0,
   shopeeCampaigns: 0,
 };
