@@ -21,6 +21,8 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
   const [shopeeCampaigns, setShopeeCampaigns] = useState((currentStore?.config.shopeeCampaigns || 0).toString());
   const [enablePackaging, setEnablePackaging] = useState(currentStore?.config.enablePackaging ?? true);
   const [enableAds, setEnableAds] = useState(currentStore?.config.enableAds ?? true);
+  const [enableAffiliateCommission, setEnableAffiliateCommission] = useState(currentStore?.config.enableAffiliateCommission ?? false);
+  const [enableShopeeCampaigns, setEnableShopeeCampaigns] = useState(currentStore?.config.enableShopeeCampaigns ?? false);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -33,6 +35,8 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
       setShopeeCampaigns((currentStore.config.shopeeCampaigns || 0).toString());
       setEnablePackaging(currentStore.config.enablePackaging);
       setEnableAds(currentStore.config.enableAds);
+      setEnableAffiliateCommission(currentStore.config.enableAffiliateCommission ?? false);
+      setEnableShopeeCampaigns(currentStore.config.enableShopeeCampaigns ?? false);
     }
   }, [currentStore]);
 
@@ -51,6 +55,8 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
       shopeeCampaigns: parseFloat(shopeeCampaigns) || 0,
       enablePackaging,
       enableAds,
+      enableAffiliateCommission,
+      enableShopeeCampaigns,
     });
     
     setIsSaving(false);
@@ -216,46 +222,64 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
                 />
               </div>
 
-              <div className="flex items-center justify-between pt-3 border-t border-border/50">
-                <div>
-                  <Label htmlFor="affiliateCommission" className="text-sm font-medium">Comissão de Afiliados</Label>
-                  <p className="text-xs text-muted-foreground">Percentual sobre a venda</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="affiliateCommission"
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="100"
-                    value={affiliateCommission}
-                    onChange={(e) => setAffiliateCommission(e.target.value)}
-                    placeholder="0"
-                    className="w-20 h-10 text-center input-modern"
+              <div className="pt-3 border-t border-border/50 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="enableAffiliateCommission" className="text-sm font-medium">Comissão de Afiliados</Label>
+                    <p className="text-xs text-muted-foreground">Percentual sobre a venda</p>
+                  </div>
+                  <Switch
+                    id="enableAffiliateCommission"
+                    checked={enableAffiliateCommission}
+                    onCheckedChange={setEnableAffiliateCommission}
                   />
-                  <span className="text-muted-foreground font-medium">%</span>
                 </div>
+                {enableAffiliateCommission && (
+                  <div className="flex items-center gap-2 pl-4">
+                    <Input
+                      id="affiliateCommission"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="100"
+                      value={affiliateCommission}
+                      onChange={(e) => setAffiliateCommission(e.target.value)}
+                      placeholder="0"
+                      className="w-24 h-10 text-center input-modern"
+                    />
+                    <span className="text-muted-foreground font-medium">%</span>
+                  </div>
+                )}
               </div>
 
-              <div className="flex items-center justify-between pt-3 border-t border-border/50">
-                <div>
-                  <Label htmlFor="shopeeCampaigns" className="text-sm font-medium">Campanhas da Shopee</Label>
-                  <p className="text-xs text-muted-foreground">Desconto em campanhas</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Input
-                    id="shopeeCampaigns"
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="100"
-                    value={shopeeCampaigns}
-                    onChange={(e) => setShopeeCampaigns(e.target.value)}
-                    placeholder="0"
-                    className="w-20 h-10 text-center input-modern"
+              <div className="pt-3 border-t border-border/50 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="enableShopeeCampaigns" className="text-sm font-medium">Campanhas da Shopee</Label>
+                    <p className="text-xs text-muted-foreground">Desconto em campanhas</p>
+                  </div>
+                  <Switch
+                    id="enableShopeeCampaigns"
+                    checked={enableShopeeCampaigns}
+                    onCheckedChange={setEnableShopeeCampaigns}
                   />
-                  <span className="text-muted-foreground font-medium">%</span>
                 </div>
+                {enableShopeeCampaigns && (
+                  <div className="flex items-center gap-2 pl-4">
+                    <Input
+                      id="shopeeCampaigns"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="100"
+                      value={shopeeCampaigns}
+                      onChange={(e) => setShopeeCampaigns(e.target.value)}
+                      placeholder="0"
+                      className="w-24 h-10 text-center input-modern"
+                    />
+                    <span className="text-muted-foreground font-medium">%</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
