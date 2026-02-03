@@ -35,15 +35,21 @@ export default function Stock() {
   }, [currentStore, searchQuery, filter]);
 
   const stats = useMemo(() => {
-    if (!currentStore) return { total: 0, low: 0, out: 0 };
+    if (!currentStore) return { total: 0, low: 0, out: 0, totalValue: 0 };
 
     const low = currentStore.products.filter(p => p.stockQuantity > 0 && p.stockQuantity <= 5).length;
     const out = currentStore.products.filter(p => p.stockQuantity === 0).length;
+    
+    // Calculate total stock value (cost price × quantity for each product)
+    const totalValue = currentStore.products.reduce((sum, p) => {
+      return sum + (p.costPrice * p.stockQuantity);
+    }, 0);
 
     return {
       total: currentStore.products.length,
       low,
       out,
+      totalValue,
     };
   }, [currentStore]);
 
@@ -70,8 +76,23 @@ export default function Stock() {
       />
 
       <div className="px-4 py-5 space-y-4">
+        {/* Total Stock Value */}
+        <div className="glass-card p-5 animate-fade-up">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-1">Valor Total em Estoque</p>
+              <p className="text-2xl font-extrabold text-primary">
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.totalValue)}
+              </p>
+            </div>
+            <div className="p-3 rounded-xl bg-primary/10">
+              <Package className="w-6 h-6 text-primary" />
+            </div>
+          </div>
+        </div>
+
         {/* Stats Cards */}
-        <div className="grid grid-cols-3 gap-3 animate-fade-up">
+        <div className="grid grid-cols-3 gap-3 animate-fade-up stagger-1">
           <button
             onClick={() => setFilter('all')}
             className={cn(

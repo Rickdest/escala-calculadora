@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Plus, Settings2, Package, TrendingUp, TrendingDown, ArrowRight, Store, Zap, Target, GraduationCap } from 'lucide-react';
+import { Plus, Settings2, Package, TrendingUp, TrendingDown, ArrowRight, Store, Zap, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { StoreConfigForm } from '@/components/forms/StoreConfigForm';
+import { EducationBanner } from '@/components/home/EducationBanner';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
@@ -66,6 +67,9 @@ export default function Home() {
       <PageHeader title="Escala" />
 
       <div className="px-4 py-6 space-y-6">
+        {/* Education Banner - Prominent at top */}
+        <EducationBanner />
+
         {/* Main CTA */}
         <Button 
           onClick={() => setShowProductForm(true)}
@@ -242,24 +246,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Education Link */}
-        <div 
-          onClick={() => navigate('/education')}
-          className="glass-card-hover p-4 animate-fade-up stagger-6"
-        >
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-secondary">
-              <GraduationCap className="w-5 h-5 text-primary" />
-            </div>
-            <div className="flex-1">
-              <p className="font-bold text-foreground">Educação</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Tutoriais e cursos para vender mais
-              </p>
-            </div>
-            <ArrowRight className="w-5 h-5 text-muted-foreground" />
-          </div>
-        </div>
       </div>
 
       {showProductForm && (
