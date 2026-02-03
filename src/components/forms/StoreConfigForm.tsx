@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Percent, DollarSign, Settings2, Save, Loader2, Users, Megaphone } from 'lucide-react';
+import { X, Percent, DollarSign, Settings2, Save, Loader2 } from 'lucide-react';
 import { useStore } from '@/contexts/StoreContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -131,62 +131,6 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
             </p>
           </div>
 
-          {/* Affiliate Commission */}
-          <div className="space-y-4">
-            <h3 className="font-bold text-sm flex items-center gap-2">
-              <Users className="w-4 h-4 text-primary" />
-              Comissão de Afiliados (Opcional)
-            </h3>
-            <div className="space-y-2">
-              <Label htmlFor="affiliateCommission" className="text-sm font-medium">Taxa de Afiliados</Label>
-              <div className="relative">
-                <Input
-                  id="affiliateCommission"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="100"
-                  value={affiliateCommission}
-                  onChange={(e) => setAffiliateCommission(e.target.value)}
-                  placeholder="0"
-                  className="pr-10 input-modern h-12"
-                />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">%</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Comissão paga a afiliados por cada venda
-              </p>
-            </div>
-          </div>
-
-          {/* Shopee Campaigns */}
-          <div className="space-y-4">
-            <h3 className="font-bold text-sm flex items-center gap-2">
-              <Megaphone className="w-4 h-4 text-primary" />
-              Campanhas da Shopee (Opcional)
-            </h3>
-            <div className="space-y-2">
-              <Label htmlFor="shopeeCampaigns" className="text-sm font-medium">Desconto em Campanhas</Label>
-              <div className="relative">
-                <Input
-                  id="shopeeCampaigns"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="100"
-                  value={shopeeCampaigns}
-                  onChange={(e) => setShopeeCampaigns(e.target.value)}
-                  placeholder="0"
-                  className="pr-10 input-modern h-12"
-                />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">%</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Desconto oferecido em campanhas promocionais
-              </p>
-            </div>
-          </div>
-
           {/* Taxes */}
           <div className="space-y-4">
             <h3 className="font-bold text-sm flex items-center gap-2">
@@ -270,6 +214,48 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
                   checked={enableAds}
                   onCheckedChange={setEnableAds}
                 />
+              </div>
+
+              <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                <div>
+                  <Label htmlFor="affiliateCommission" className="text-sm font-medium">Comissão de Afiliados</Label>
+                  <p className="text-xs text-muted-foreground">Percentual sobre a venda</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="affiliateCommission"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="100"
+                    value={affiliateCommission}
+                    onChange={(e) => setAffiliateCommission(e.target.value)}
+                    placeholder="0"
+                    className="w-20 h-10 text-center input-modern"
+                  />
+                  <span className="text-muted-foreground font-medium">%</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                <div>
+                  <Label htmlFor="shopeeCampaigns" className="text-sm font-medium">Campanhas da Shopee</Label>
+                  <p className="text-xs text-muted-foreground">Desconto em campanhas</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="shopeeCampaigns"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="100"
+                    value={shopeeCampaigns}
+                    onChange={(e) => setShopeeCampaigns(e.target.value)}
+                    placeholder="0"
+                    className="w-20 h-10 text-center input-modern"
+                  />
+                  <span className="text-muted-foreground font-medium">%</span>
+                </div>
               </div>
             </div>
           </div>
