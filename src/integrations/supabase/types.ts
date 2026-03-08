@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      ads_reports: {
+        Row: {
+          ads_data: Json
+          id: string
+          imported_at: string
+          report_period: string | null
+          shop_name: string | null
+          store_id: string
+          user_id: string
+        }
+        Insert: {
+          ads_data?: Json
+          id?: string
+          imported_at?: string
+          report_period?: string | null
+          shop_name?: string | null
+          store_id: string
+          user_id: string
+        }
+        Update: {
+          ads_data?: Json
+          id?: string
+          imported_at?: string
+          report_period?: string | null
+          shop_name?: string | null
+          store_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ads_reports_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       education_content: {
         Row: {
           content_data: Json
