@@ -50,6 +50,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             stockQuantity: p.stockQuantity ?? 0,
             hasVariations: p.hasVariations ?? false,
             variations: p.variations ?? [],
+            adsRevenue: p.adsRevenue ?? 0,
             createdAt: new Date(p.createdAt),
             updatedAt: new Date(p.updatedAt),
           })),

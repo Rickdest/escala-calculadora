@@ -43,6 +43,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
       salePrice: parseFloat(salePrice) || 0,
       packagingCost: parseFloat(packagingCost) || 0,
       adsCost: parseFloat(adsCost) || 0,
+      adsRevenue: 0,
       stockQuantity: parseInt(stockQuantity) || 0,
       hasVariations,
       variations,
