@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, Percent, DollarSign, Settings2, Save, Loader2 } from 'lucide-react';
+import { X, Percent, DollarSign, Settings2, Save, Loader2, Info } from 'lucide-react';
 import { useStore } from '@/contexts/StoreContext';
+import { SHOPEE_FEE_RANGES } from '@/types/store';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -13,8 +14,11 @@ interface StoreConfigFormProps {
 export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
   const { currentStore, updateStoreConfig } = useStore();
   
+  const [useAutoShopeeFees, setUseAutoShopeeFees] = useState(currentStore?.config.useAutoShopeeFees ?? true);
   const [shopeeFeePercent, setShopeeFeePercent] = useState(currentStore?.config.shopeeFeePercent?.toString() || '20');
   const [shopeeFeeFixed, setShopeeFeeFixed] = useState(currentStore?.config.shopeeFeeFixed?.toString() || '4');
+  const [isCpfSeller, setIsCpfSeller] = useState(currentStore?.config.isCpfSeller ?? false);
+  const [hasOver450Orders, setHasOver450Orders] = useState(currentStore?.config.hasOver450Orders ?? false);
   const [taxes, setTaxes] = useState(currentStore?.config.taxes?.toString() || '0');
   const [desiredMargin, setDesiredMargin] = useState(currentStore?.config.desiredMargin?.toString() || '17');
   const [affiliateCommission, setAffiliateCommission] = useState((currentStore?.config.affiliateCommission || 0).toString());
@@ -27,8 +31,11 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
 
   useEffect(() => {
     if (currentStore) {
+      setUseAutoShopeeFees(currentStore.config.useAutoShopeeFees ?? true);
       setShopeeFeePercent(currentStore.config.shopeeFeePercent.toString());
       setShopeeFeeFixed((currentStore.config.shopeeFeeFixed || 0).toString());
+      setIsCpfSeller(currentStore.config.isCpfSeller ?? false);
+      setHasOver450Orders(currentStore.config.hasOver450Orders ?? false);
       setTaxes(currentStore.config.taxes.toString());
       setDesiredMargin(currentStore.config.desiredMargin.toString());
       setAffiliateCommission((currentStore.config.affiliateCommission || 0).toString());
@@ -47,8 +54,11 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
     await new Promise(resolve => setTimeout(resolve, 300));
     
     updateStoreConfig(currentStore.id, {
+      useAutoShopeeFees,
       shopeeFeePercent: parseFloat(shopeeFeePercent) || 0,
       shopeeFeeFixed: parseFloat(shopeeFeeFixed) || 0,
+      isCpfSeller,
+      hasOver450Orders,
       taxes: parseFloat(taxes) || 0,
       desiredMargin: parseFloat(desiredMargin) || 0,
       affiliateCommission: parseFloat(affiliateCommission) || 0,
@@ -96,45 +106,113 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
               Taxas da Shopee
             </h3>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="shopeeFeePercent" className="text-sm font-medium">Taxa Percentual</Label>
-                <div className="relative">
-                  <Input
-                    id="shopeeFeePercent"
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="100"
-                    value={shopeeFeePercent}
-                    onChange={(e) => setShopeeFeePercent(e.target.value)}
-                    placeholder="20"
-                    className="pr-10 input-modern h-12"
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">%</span>
+            {/* Auto vs Manual Toggle */}
+            <div className="glass-card p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm font-medium">Taxas automáticas (Março 2026)</Label>
+                  <p className="text-xs text-muted-foreground">Calcula automaticamente por faixa de preço</p>
                 </div>
+                <Switch
+                  checked={useAutoShopeeFees}
+                  onCheckedChange={setUseAutoShopeeFees}
+                />
               </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="shopeeFeeFixed" className="text-sm font-medium">Taxa Fixa</Label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">R$</span>
-                  <Input
-                    id="shopeeFeeFixed"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={shopeeFeeFixed}
-                    onChange={(e) => setShopeeFeeFixed(e.target.value)}
-                    placeholder="4.00"
-                    className="pl-12 input-modern h-12"
-                  />
+
+              {useAutoShopeeFees ? (
+                <div className="space-y-3">
+                  {/* Fee ranges table */}
+                  <div className="rounded-xl border border-border/50 overflow-hidden">
+                    <div className="grid grid-cols-3 gap-0 text-[10px] uppercase tracking-wide font-semibold text-muted-foreground bg-secondary/50 px-3 py-2">
+                      <span>Faixa de Preço</span>
+                      <span className="text-center">Comissão</span>
+                      <span className="text-right">Taxa Fixa</span>
+                    </div>
+                    {SHOPEE_FEE_RANGES.map((range, i) => (
+                      <div key={i} className="grid grid-cols-3 gap-0 px-3 py-2.5 border-t border-border/30 text-sm">
+                        <span className="font-medium text-foreground">{range.label}</span>
+                        <span className="text-center text-muted-foreground">{range.percent}%</span>
+                        <span className="text-right text-muted-foreground">R${range.fixed.toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* CPF Seller Options */}
+                  <div className="pt-3 border-t border-border/50 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-sm font-medium">Vendedor CPF</Label>
+                        <p className="text-xs text-muted-foreground">Ativar taxa adicional para CPF</p>
+                      </div>
+                      <Switch
+                        checked={isCpfSeller}
+                        onCheckedChange={(v) => {
+                          setIsCpfSeller(v);
+                          if (!v) setHasOver450Orders(false);
+                        }}
+                      />
+                    </div>
+                    
+                    {isCpfSeller && (
+                      <div className="flex items-center justify-between pl-4">
+                        <div>
+                          <Label className="text-sm font-medium">+450 pedidos em 90 dias</Label>
+                          <p className="text-xs text-muted-foreground">Adicional de R$3,00 por item</p>
+                        </div>
+                        <Switch
+                          checked={hasOver450Orders}
+                          onCheckedChange={setHasOver450Orders}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-start gap-2 p-3 rounded-xl bg-primary/5 border border-primary/10">
+                    <Info className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-muted-foreground">
+                      Tabela vigente desde março de 2026. A comissão já contempla a taxa de transação.
+                    </p>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="shopeeFeePercent" className="text-sm font-medium">Taxa Percentual</Label>
+                    <div className="relative">
+                      <Input
+                        id="shopeeFeePercent"
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                        value={shopeeFeePercent}
+                        onChange={(e) => setShopeeFeePercent(e.target.value)}
+                        placeholder="20"
+                        className="pr-10 input-modern h-12"
+                      />
+                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">%</span>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="shopeeFeeFixed" className="text-sm font-medium">Taxa Fixa</Label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">R$</span>
+                      <Input
+                        id="shopeeFeeFixed"
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={shopeeFeeFixed}
+                        onChange={(e) => setShopeeFeeFixed(e.target.value)}
+                        placeholder="4.00"
+                        className="pl-12 input-modern h-12"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-            <p className="text-xs text-muted-foreground">
-              A taxa fixa é cobrada por venda além da comissão percentual
-            </p>
           </div>
 
           {/* Taxes */}
