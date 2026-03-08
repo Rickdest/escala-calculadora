@@ -75,6 +75,7 @@ const App = () => (
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/stock" element={<ProtectedRoute><Stock /></ProtectedRoute>} />
                 <Route path="/roas" element={<ProtectedRoute><Roas /></ProtectedRoute>} />
+                <Route path="/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
