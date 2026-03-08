@@ -4,11 +4,16 @@ export interface ShopeeAdRow {
   status: string;
   adType: string;
   productId: string;
+  positioning: string;
+  keyword: string;
+  matchType: string;
+  bidMethod: string;
   impressions: number;
   clicks: number;
   ctr: number;
   conversions: number;
   directConversions: number;
+  conversionRate: number;
   itemsSold: number;
   directItemsSold: number;
   gmv: number;
@@ -16,6 +21,9 @@ export interface ShopeeAdRow {
   spend: number;
   roas: number;
   directRoas: number;
+  productImpressions: number;
+  productClicks: number;
+  productCtr: number;
 }
 
 export interface ShopeeAdsReport {
