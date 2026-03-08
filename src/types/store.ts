@@ -23,14 +23,10 @@ export function getShopeeFeeForPrice(salePrice: number): ShopeeFeeRange {
 }
 
 export interface StoreConfig {
-  // Legacy fields kept for compatibility but no longer used directly
-  shopeeFeePercent: number;
-  shopeeFeeFixed: number;
-  useAutoShopeeFees: boolean; // true = use tiered fees based on price
-  isCpfSeller: boolean; // CPF seller toggle
-  hasOver450Orders: boolean; // CPF seller with >450 orders in 90 days
-  taxes: number; // percentage
-  desiredMargin: number; // percentage
+  isCpfSeller: boolean;
+  hasOver450Orders: boolean;
+  taxes: number;
+  desiredMargin: number;
   currency: string;
   enablePackaging: boolean;
   enableAds: boolean;
