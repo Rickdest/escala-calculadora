@@ -178,10 +178,9 @@ export default function Products() {
 
       <div className="px-4 py-5 space-y-4">
         <Tabs defaultValue="products" className="w-full">
-          <TabsList className="w-full grid grid-cols-3">
+          <TabsList className="w-full grid grid-cols-2">
             <TabsTrigger value="products">Produtos</TabsTrigger>
             <TabsTrigger value="analysis">Análise</TabsTrigger>
-            <TabsTrigger value="roas">ROAS</TabsTrigger>
           </TabsList>
 
           {/* Products Tab */}
