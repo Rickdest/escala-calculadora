@@ -339,7 +339,7 @@ export default function Products() {
                 )}
 
                 {/* Charts */}
-                <div className="space-y-4">
+                <div className="space-y-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 md:space-y-0">
                   <MarginDistributionChart />
                   <TopProductsChart />
                   <ProfitSummaryChart />

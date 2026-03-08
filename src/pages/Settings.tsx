@@ -89,7 +89,7 @@ export default function Settings() {
         subtitle={currentStore.name}
       />
 
-      <div className="px-4 py-6 space-y-6">
+      <div className="px-4 py-6 space-y-6 md:max-w-2xl">
         {/* User Profile Link */}
         {user && (
           <Button

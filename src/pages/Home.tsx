@@ -145,7 +145,7 @@ export default function Home() {
 
         {/* Quick Performance */}
         {stats.totalProducts > 0 && (
-          <div className="grid grid-cols-2 gap-3 animate-fade-up stagger-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-fade-up stagger-3">
             <div className="bg-success-muted rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-2">
                 <TrendingUp className="w-4 h-4 text-success" />
