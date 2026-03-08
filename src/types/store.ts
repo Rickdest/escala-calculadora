@@ -88,9 +88,6 @@ export interface ProductCalculation {
 export type SortOption = 'name' | 'margin-high' | 'margin-low' | 'profit-high' | 'profit-low' | 'recent' | 'stock-low' | 'stock-high';
 
 export const DEFAULT_STORE_CONFIG: StoreConfig = {
-  shopeeFeePercent: 20,
-  shopeeFeeFixed: 4,
-  useAutoShopeeFees: true,
   isCpfSeller: false,
   hasOver450Orders: false,
   taxes: 0,

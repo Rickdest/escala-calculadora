@@ -209,18 +209,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const calculateProduct = useCallback((product: Product, config: StoreConfig): ProductCalculation => {
     const grossRevenue = product.salePrice;
     
-    // Determine Shopee fees: auto (tiered) or manual
-    let feePercent: number;
-    let feeFixed: number;
-    
-    if (config.useAutoShopeeFees !== false) {
-      const range = getShopeeFeeForPrice(grossRevenue);
-      feePercent = range.percent;
-      feeFixed = range.fixed;
-    } else {
-      feePercent = config.shopeeFeePercent;
-      feeFixed = config.shopeeFeeFixed || 0;
-    }
+    // Always use tiered fees based on price
+    const range = getShopeeFeeForPrice(grossRevenue);
+    const feePercent = range.percent;
+    const feeFixed = range.fixed;
     
     const shopeeFeePercentValue = grossRevenue * (feePercent / 100);
     const shopeeFeeFixedValue = feeFixed;
