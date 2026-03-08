@@ -2,14 +2,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useStore } from '@/contexts/StoreContext';
 import { getShopeeFeeForPrice, Product } from '@/types/store';
 import { cn } from '@/lib/utils';
-import { Target, AlertTriangle, TrendingUp, TrendingDown, Sliders, Upload, FileSpreadsheet, Trash2, Eye } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Target, AlertTriangle, TrendingUp, TrendingDown, Sliders, Upload, FileSpreadsheet, Trash2, Eye, Package, ChevronRight, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
@@ -137,6 +130,306 @@ function RoasDisplay({ roasData, status }: { roasData: RoasResult; status: strin
   );
 }
 
+// ─── Product Selector Card ───
+
+function ProductSelector({ products, selectedId, onSelect }: { products: Product[]; selectedId: string; onSelect: (id: string) => void }) {
+  const [search, setSearch] = useState('');
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return products;
+    const q = search.toLowerCase();
+    return products.filter(p => p.name.toLowerCase().includes(q));
+  }, [products, search]);
+
+  return (
+    <div className="space-y-3">
+      {products.length > 4 && (
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar produto..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="pl-9 input-modern h-9 text-sm"
+          />
+        </div>
+      )}
+      <div className="grid gap-2 max-h-[240px] overflow-y-auto pr-1">
+        {filtered.map(p => {
+          const isActive = p.id === selectedId;
+          const roasData = calcRoasFromValues(p.salePrice, p.costPrice, p.adsCost, p.adsRevenue);
+          const hasAds = p.adsCost > 0;
+
+          return (
+            <button
+              key={p.id}
+              onClick={() => onSelect(p.id)}
+              className={cn(
+                'w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 border',
+                isActive
+                  ? 'bg-primary/10 border-primary/40 shadow-sm'
+                  : 'bg-card/50 border-border/30 hover:bg-secondary/50 hover:border-border/60'
+              )}
+            >
+              <div className={cn(
+                'w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0',
+                isActive ? 'bg-primary/20' : 'bg-secondary'
+              )}>
+                {p.imageUrl ? (
+                  <img src={p.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover" />
+                ) : (
+                  <Package className={cn('w-5 h-5', isActive ? 'text-primary' : 'text-muted-foreground')} />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className={cn('text-sm font-semibold truncate', isActive ? 'text-primary' : 'text-foreground')}>{p.name}</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-xs text-muted-foreground">{formatCurrency(p.salePrice)}</span>
+                  {hasAds && roasData.roasAtual !== null && !roasData.margemInsuficiente && (
+                    <span className={cn('text-[10px] font-bold px-1.5 py-0.5 rounded-full',
+                      roasData.roasAtual >= (roasData.roasIdeal || 0) ? 'bg-success/15 text-success' :
+                      roasData.roasAtual >= (roasData.roasEmpate || 0) ? 'bg-warning/15 text-warning' :
+                      'bg-destructive/15 text-destructive'
+                    )}>
+                      ROAS {roasData.roasAtual.toFixed(1)}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <ChevronRight className={cn('w-4 h-4 flex-shrink-0 transition-colors', isActive ? 'text-primary' : 'text-muted-foreground/40')} />
+            </button>
+          );
+        })}
+      </div>
+      {filtered.length === 0 && search.trim() && (
+        <p className="text-center text-xs text-muted-foreground py-3">Nenhum produto encontrado</p>
+      )}
+    </div>
+  );
+}
+
+// ─── Product Import Section (inside product tab) ───
+
+interface SavedReport {
+  id: string;
+  report_period: string;
+  shop_name: string;
+  imported_at: string;
+  ads_data: ShopeeAdRow[];
+  product_id: string | null;
+}
+
+function ProductAdsImport({ product, storeId }: { product: Product; storeId: string }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+  const [parsedReport, setParsedReport] = useState<ShopeeAdsReport | null>(null);
+  const [savedReports, setSavedReports] = useState<SavedReport[]>([]);
+  const [viewingReport, setViewingReport] = useState<SavedReport | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [showImport, setShowImport] = useState(false);
+
+  const loadReports = useCallback(async () => {
+    setLoading(true);
+    const { data } = await supabase
+      .from('ads_reports')
+      .select('*')
+      .eq('store_id', storeId)
+      .eq('product_id', product.id)
+      .order('imported_at', { ascending: false });
+
+    if (data) {
+      setSavedReports(data.map(r => ({
+        ...r,
+        ads_data: (r.ads_data as unknown as ShopeeAdRow[]) || [],
+        product_id: (r as any).product_id || null,
+      })));
+    }
+    setLoading(false);
+  }, [storeId, product.id]);
+
+  useEffect(() => { loadReports(); }, [loadReports]);
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.name.endsWith('.csv')) {
+      toast.error('Selecione um arquivo CSV exportado da Shopee');
+      return;
+    }
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const report = parseShopeeCSV(text);
+      if (!report || report.ads.length === 0) {
+        toast.error('Não foi possível ler o relatório. Verifique se é um CSV de Ads da Shopee.');
+        return;
+      }
+      setParsedReport(report);
+      toast.success(`${report.ads.length} anúncios encontrados!`);
+    } catch {
+      toast.error('Erro ao ler o arquivo');
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleSaveReport = async () => {
+    if (!parsedReport) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { toast.error('Faça login para salvar relatórios'); return; }
+
+    const { error } = await supabase.from('ads_reports').insert([{
+      user_id: user.id,
+      store_id: storeId,
+      product_id: product.id,
+      report_period: parsedReport.period,
+      shop_name: parsedReport.shopName,
+      ads_data: JSON.parse(JSON.stringify(parsedReport.ads)),
+    }]);
+
+    if (error) {
+      toast.error('Erro ao salvar relatório');
+      console.error(error);
+    } else {
+      toast.success('Relatório salvo!');
+      setParsedReport(null);
+      loadReports();
+    }
+  };
+
+  const handleDeleteReport = async (id: string) => {
+    const { error } = await supabase.from('ads_reports').delete().eq('id', id);
+    if (!error) {
+      toast.success('Relatório removido');
+      loadReports();
+      if (viewingReport?.id === id) setViewingReport(null);
+    }
+  };
+
+  const displayAds = viewingReport ? viewingReport.ads_data : parsedReport?.ads;
+  const displayTitle = viewingReport
+    ? `${viewingReport.shop_name} — ${viewingReport.report_period}`
+    : parsedReport
+      ? `${parsedReport.shopName} — ${parsedReport.period}`
+      : null;
+
+  return (
+    <div className="space-y-3 pt-2">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Relatórios de Ads</p>
+        <Button size="sm" variant="outline" className="h-7 text-xs gap-1.5" onClick={() => setShowImport(!showImport)}>
+          <Upload className="w-3.5 h-3.5" />
+          Importar CSV
+        </Button>
+      </div>
+
+      {showImport && (
+        <div className="glass-card p-3 space-y-2 border border-primary/20">
+          <p className="text-xs text-muted-foreground">Exporte o relatório de Ads da Shopee (CSV) e importe aqui.</p>
+          <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileSelect} className="hidden" />
+          <Button onClick={() => fileInputRef.current?.click()} disabled={importing} variant="outline" size="sm" className="w-full h-9">
+            <Upload className="w-3.5 h-3.5 mr-1.5" />
+            {importing ? 'Importando...' : 'Selecionar arquivo CSV'}
+          </Button>
+        </div>
+      )}
+
+      {/* Parsed Preview */}
+      {parsedReport && !viewingReport && (
+        <div className="glass-card p-3 space-y-3 border border-primary/30">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-bold">{parsedReport.shopName}</p>
+              <p className="text-[10px] text-muted-foreground">{parsedReport.period}</p>
+            </div>
+            <Button size="sm" onClick={handleSaveReport} className="gradient-primary h-7 text-xs">
+              💾 Salvar
+            </Button>
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { label: 'Investido', value: formatCurrency(parsedReport.totals.totalSpend), color: 'text-destructive' },
+              { label: 'Receita', value: formatCurrency(parsedReport.totals.totalGmv), color: 'text-success' },
+              { label: 'ROAS', value: parsedReport.totals.avgRoas.toFixed(2), color: 'text-primary' },
+              { label: 'Vendidos', value: String(parsedReport.totals.totalItemsSold), color: 'text-foreground' },
+            ].map(item => (
+              <div key={item.label} className="p-2 rounded-lg bg-secondary/50 text-center">
+                <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">{item.label}</p>
+                <p className={cn('text-sm font-extrabold tabular-nums', item.color)}>{item.value}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Saved Reports */}
+      {savedReports.length > 0 && (
+        <div className="space-y-1.5">
+          {savedReports.map(report => (
+            <div key={report.id} className={cn('glass-card p-2.5 flex items-center gap-2.5', viewingReport?.id === report.id && 'border border-primary/40')}>
+              <FileSpreadsheet className="w-6 h-6 text-primary flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold truncate">{report.shop_name || 'Relatório'}</p>
+                <p className="text-[10px] text-muted-foreground">{report.report_period} • {report.ads_data.length} anúncios</p>
+              </div>
+              <div className="flex gap-1 flex-shrink-0">
+                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setViewingReport(viewingReport?.id === report.id ? null : report)}>
+                  <Eye className="w-3.5 h-3.5" />
+                </Button>
+                <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => handleDeleteReport(report.id)}>
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {loading && <p className="text-center text-xs text-muted-foreground py-2">Carregando...</p>}
+
+      {/* Ads Detail Table */}
+      {displayAds && displayAds.length > 0 && (
+        <div className="glass-card p-3 space-y-2">
+          {displayTitle && <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{displayTitle}</p>}
+          <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
+            {displayAds.map((ad, i) => {
+              const roasVal = ad.roas;
+              const adStatus = ad.spend === 0 ? null : roasVal >= 5 ? 'success' : roasVal >= 2 ? 'warning' : 'danger';
+              return (
+                <div key={i} className="p-2.5 rounded-lg bg-secondary/30 space-y-1.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-xs font-bold truncate flex-1">{ad.adName}</p>
+                    <span className={cn('text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0',
+                      ad.status === 'Pausado' ? 'bg-warning/20 text-warning' : ad.status === 'Encerrado' ? 'bg-muted text-muted-foreground' : 'bg-success/20 text-success'
+                    )}>{ad.status}</span>
+                  </div>
+                  {(ad.keyword || ad.positioning) && (
+                    <div className="flex flex-wrap gap-1">
+                      {ad.keyword && ad.keyword !== '-' && <span className="text-[9px] bg-primary/10 text-primary font-semibold px-1.5 py-0.5 rounded-full">🔍 {ad.keyword}</span>}
+                      {ad.positioning && ad.positioning !== '-' && <span className="text-[9px] bg-secondary text-muted-foreground font-medium px-1.5 py-0.5 rounded-full">📍 {ad.positioning}</span>}
+                    </div>
+                  )}
+                  <div className="grid grid-cols-4 gap-2 text-[10px]">
+                    <div><p className="text-muted-foreground">Gasto</p><p className="font-bold text-destructive">{formatCurrency(ad.spend)}</p></div>
+                    <div><p className="text-muted-foreground">GMV</p><p className="font-bold text-success">{formatCurrency(ad.gmv)}</p></div>
+                    <div><p className="text-muted-foreground">ROAS</p><p className={cn('font-bold', adStatus ? statusColors[adStatus as keyof typeof statusColors] : 'text-muted-foreground')}>{roasVal.toFixed(2)}</p></div>
+                    <div><p className="text-muted-foreground">Vendidos</p><p className="font-bold">{ad.itemsSold}</p></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {!loading && savedReports.length === 0 && !parsedReport && !showImport && (
+        <p className="text-[10px] text-muted-foreground text-center py-2">Nenhum relatório importado para este produto</p>
+      )}
+    </div>
+  );
+}
+
 // ─── Product Analysis Sub-tab ───
 
 function ProductAnalysis() {
@@ -183,18 +476,21 @@ function ProductAnalysis() {
 
   return (
     <div className="space-y-4">
-      <div className="glass-card p-4 space-y-4">
+      {/* Product Selector */}
+      <div className="glass-card p-4 space-y-3">
         <Label className="text-sm font-bold">Selecione o Produto</Label>
-        <Select value={selectedProductId} onValueChange={setSelectedProductId}>
-          <SelectTrigger><SelectValue placeholder="Escolha um produto..." /></SelectTrigger>
-          <SelectContent>
-            {currentStore.products.map(p => (
-              <SelectItem key={p.id} value={p.id}>{p.name} — {formatCurrency(p.salePrice)}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {selectedProduct && (
-          <>
+        <ProductSelector
+          products={currentStore.products}
+          selectedId={selectedProductId}
+          onSelect={setSelectedProductId}
+        />
+      </div>
+
+      {selectedProduct && (
+        <>
+          {/* Ads Input */}
+          <div className="glass-card p-4 space-y-3">
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Dados de Ads</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs text-muted-foreground">Gasto em Ads (R$)</Label>
@@ -206,22 +502,24 @@ function ProductAnalysis() {
               </div>
             </div>
             <p className="text-[10px] text-muted-foreground">💾 Valores salvos automaticamente</p>
-          </>
-        )}
-      </div>
-
-      {roasData && <RoasDisplay roasData={roasData} status={status} />}
-
-      {roasData && !roasData.margemInsuficiente && selectedProduct && (
-        <>
-          <div className="glass-card p-4 space-y-2">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Detalhamento</p>
-            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Preço de Venda</span><span className="font-semibold">{formatCurrency(selectedProduct.salePrice)}</span></div>
-            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Taxa Shopee</span><span className="font-semibold text-destructive">-{formatCurrency(roasData.taxaShopee)}</span></div>
-            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Valor Recebido</span><span className="font-semibold">{formatCurrency(roasData.valorRecebido)}</span></div>
-            <div className="flex justify-between text-sm"><span className="text-muted-foreground">Custo do Produto</span><span className="font-semibold text-destructive">-{formatCurrency(selectedProduct.costPrice)}</span></div>
-            <div className="flex justify-between text-sm pt-2 border-t border-border/50"><span className="font-bold">Lucro antes de Ads</span><span className={cn('font-bold', roasData.lucroBruto >= 0 ? 'text-success' : 'text-destructive')}>{formatCurrency(roasData.lucroBruto)}</span></div>
           </div>
+
+          {roasData && <RoasDisplay roasData={roasData} status={status} />}
+
+          {roasData && !roasData.margemInsuficiente && (
+            <div className="glass-card p-4 space-y-2">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">Detalhamento</p>
+              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Preço de Venda</span><span className="font-semibold">{formatCurrency(selectedProduct.salePrice)}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Taxa Shopee</span><span className="font-semibold text-destructive">-{formatCurrency(roasData.taxaShopee)}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Valor Recebido</span><span className="font-semibold">{formatCurrency(roasData.valorRecebido)}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Custo do Produto</span><span className="font-semibold text-destructive">-{formatCurrency(selectedProduct.costPrice)}</span></div>
+              <div className="flex justify-between text-sm pt-2 border-t border-border/50"><span className="font-bold">Lucro antes de Ads</span><span className={cn('font-bold', roasData.lucroBruto >= 0 ? 'text-success' : 'text-destructive')}>{formatCurrency(roasData.lucroBruto)}</span></div>
+            </div>
+          )}
+
+          {/* Import section inside product */}
+          <ProductAdsImport product={selectedProduct} storeId={currentStore.id} />
+
           <div className="glass-card p-4 bg-primary/5 border border-primary/20">
             <p className="text-xs text-muted-foreground leading-relaxed"><strong>ROAS de empate</strong> é o mínimo para não ter prejuízo. <strong>ROAS ideal</strong> indica lucro saudável para escalar.</p>
           </div>
@@ -280,14 +578,9 @@ function RoasSimulator() {
 
   return (
     <div className="space-y-4">
-      <div className="glass-card p-4 space-y-4">
+      <div className="glass-card p-4 space-y-3">
         <Label className="text-sm font-bold">Selecione o Produto</Label>
-        <Select value={selectedProductId} onValueChange={setSelectedProductId}>
-          <SelectTrigger><SelectValue placeholder="Escolha um produto..." /></SelectTrigger>
-          <SelectContent>
-            {currentStore.products.map(p => (<SelectItem key={p.id} value={p.id}>{p.name} — {formatCurrency(p.salePrice)}</SelectItem>))}
-          </SelectContent>
-        </Select>
+        <ProductSelector products={currentStore.products} selectedId={selectedProductId} onSelect={setSelectedProductId} />
       </div>
 
       {selectedProduct && (
@@ -436,275 +729,8 @@ function RoasRanking() {
       )}
 
       <div className="glass-card p-4 bg-primary/5 border border-primary/20">
-        <p className="text-xs text-muted-foreground leading-relaxed">Preencha o <strong>Gasto</strong> e a <strong>Receita de Ads</strong> na aba "Produto" ou importe um relatório da Shopee na aba "Importar".</p>
+        <p className="text-xs text-muted-foreground leading-relaxed">Preencha o <strong>Gasto</strong> e a <strong>Receita de Ads</strong> na aba "Produto" para ver os dados no ranking.</p>
       </div>
-    </div>
-  );
-}
-
-// ─── Import Sub-tab ───
-
-interface SavedReport {
-  id: string;
-  report_period: string;
-  shop_name: string;
-  imported_at: string;
-  ads_data: ShopeeAdRow[];
-}
-
-function AdsImport() {
-  const { currentStore } = useStore();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [importing, setImporting] = useState(false);
-  const [parsedReport, setParsedReport] = useState<ShopeeAdsReport | null>(null);
-  const [savedReports, setSavedReports] = useState<SavedReport[]>([]);
-  const [viewingReport, setViewingReport] = useState<SavedReport | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const loadReports = useCallback(async () => {
-    if (!currentStore) return;
-    setLoading(true);
-    const { data } = await supabase
-      .from('ads_reports')
-      .select('*')
-      .eq('store_id', currentStore.id)
-      .order('imported_at', { ascending: false });
-
-    if (data) {
-      setSavedReports(data.map(r => ({
-        ...r,
-        ads_data: (r.ads_data as unknown as ShopeeAdRow[]) || [],
-      })));
-    }
-    setLoading(false);
-  }, [currentStore?.id]);
-
-  useEffect(() => { loadReports(); }, [loadReports]);
-
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.name.endsWith('.csv')) {
-      toast.error('Selecione um arquivo CSV exportado da Shopee');
-      return;
-    }
-
-    setImporting(true);
-    try {
-      const text = await file.text();
-      const report = parseShopeeCSV(text);
-      if (!report || report.ads.length === 0) {
-        toast.error('Não foi possível ler o relatório. Verifique se é um CSV de Ads da Shopee.');
-        return;
-      }
-      setParsedReport(report);
-      toast.success(`${report.ads.length} anúncios encontrados!`);
-    } catch {
-      toast.error('Erro ao ler o arquivo');
-    } finally {
-      setImporting(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
-
-  const handleSaveReport = async () => {
-    if (!parsedReport || !currentStore) return;
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      toast.error('Faça login para salvar relatórios');
-      return;
-    }
-
-    const { error } = await supabase.from('ads_reports').insert([{
-      user_id: user.id,
-      store_id: currentStore.id,
-      report_period: parsedReport.period,
-      shop_name: parsedReport.shopName,
-      ads_data: JSON.parse(JSON.stringify(parsedReport.ads)),
-    }]);
-
-    if (error) {
-      toast.error('Erro ao salvar relatório');
-      console.error(error);
-    } else {
-      toast.success('Relatório salvo!');
-      setParsedReport(null);
-      loadReports();
-    }
-  };
-
-  const handleDeleteReport = async (id: string) => {
-    const { error } = await supabase.from('ads_reports').delete().eq('id', id);
-    if (!error) {
-      toast.success('Relatório removido');
-      loadReports();
-      if (viewingReport?.id === id) setViewingReport(null);
-    }
-  };
-
-  if (!currentStore) return <EmptyState icon={Upload} text="Selecione uma loja primeiro" />;
-
-  const displayAds = viewingReport ? viewingReport.ads_data : parsedReport?.ads;
-  const displayTitle = viewingReport 
-    ? `${viewingReport.shop_name} — ${viewingReport.report_period}` 
-    : parsedReport 
-      ? `${parsedReport.shopName} — ${parsedReport.period}` 
-      : null;
-
-  return (
-    <div className="space-y-4">
-      {/* Upload Area */}
-      <div className="glass-card p-4 space-y-3">
-        <p className="text-sm font-bold">Importar Relatório da Shopee</p>
-        <p className="text-xs text-muted-foreground">Exporte o relatório de Ads da Shopee em CSV e importe aqui.</p>
-        <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileSelect} className="hidden" />
-        <Button onClick={() => fileInputRef.current?.click()} disabled={importing} variant="outline" className="w-full h-12">
-          <Upload className="w-4 h-4 mr-2" />
-          {importing ? 'Importando...' : 'Selecionar arquivo CSV'}
-        </Button>
-      </div>
-
-      {/* Parsed Preview */}
-      {parsedReport && !viewingReport && (
-        <div className="glass-card p-4 space-y-3 border border-primary/30">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-bold">{parsedReport.shopName}</p>
-              <p className="text-xs text-muted-foreground">{parsedReport.period}</p>
-            </div>
-            <Button size="sm" onClick={handleSaveReport} className="gradient-primary">
-              💾 Salvar
-            </Button>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 rounded-lg bg-secondary/50 text-center">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Investido</p>
-              <p className="text-lg font-extrabold text-destructive tabular-nums">{formatCurrency(parsedReport.totals.totalSpend)}</p>
-            </div>
-            <div className="p-3 rounded-lg bg-secondary/50 text-center">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Receita (GMV)</p>
-              <p className="text-lg font-extrabold text-success tabular-nums">{formatCurrency(parsedReport.totals.totalGmv)}</p>
-            </div>
-            <div className="p-3 rounded-lg bg-secondary/50 text-center">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">ROAS Médio</p>
-              <p className="text-lg font-extrabold text-primary tabular-nums">{parsedReport.totals.avgRoas.toFixed(2)}</p>
-            </div>
-            <div className="p-3 rounded-lg bg-secondary/50 text-center">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Itens Vendidos</p>
-              <p className="text-lg font-extrabold text-foreground tabular-nums">{parsedReport.totals.totalItemsSold}</p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Saved Reports */}
-      {savedReports.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Relatórios Salvos</p>
-          {savedReports.map(report => (
-            <div key={report.id} className={cn('glass-card p-3 flex items-center gap-3', viewingReport?.id === report.id && 'border border-primary/40')}>
-              <FileSpreadsheet className="w-8 h-8 text-primary flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold truncate">{report.shop_name || 'Relatório'}</p>
-                <p className="text-[10px] text-muted-foreground">{report.report_period} • {report.ads_data.length} anúncios</p>
-              </div>
-              <div className="flex gap-1.5 flex-shrink-0">
-                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setViewingReport(viewingReport?.id === report.id ? null : report)}>
-                  <Eye className="w-4 h-4" />
-                </Button>
-                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDeleteReport(report.id)}>
-                  <Trash2 className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {loading && <p className="text-center text-sm text-muted-foreground py-4">Carregando...</p>}
-
-      {/* Ads Detail Table */}
-      {displayAds && displayAds.length > 0 && (
-        <div className="glass-card p-4 space-y-3">
-          {displayTitle && <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{displayTitle}</p>}
-          <div className="space-y-2 max-h-[400px] overflow-y-auto">
-            {displayAds.map((ad, i) => {
-              const roasVal = ad.roas;
-              const adStatus = ad.spend === 0 ? null : roasVal >= 5 ? 'success' : roasVal >= 2 ? 'warning' : 'danger';
-              return (
-                <div key={i} className="p-3 rounded-lg bg-secondary/30 space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-sm font-bold truncate flex-1">{ad.adName}</p>
-                    <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0',
-                      ad.status === 'Pausado' ? 'bg-warning/20 text-warning' : ad.status === 'Encerrado' ? 'bg-muted text-muted-foreground' : 'bg-success/20 text-success'
-                    )}>{ad.status}</span>
-                  </div>
-
-                  {/* Positioning / Keyword Info */}
-                  {(ad.keyword || ad.positioning) && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {ad.keyword && ad.keyword !== '-' && (
-                        <span className="text-[10px] bg-primary/10 text-primary font-semibold px-2 py-0.5 rounded-full">🔍 {ad.keyword}</span>
-                      )}
-                      {ad.positioning && ad.positioning !== '-' && (
-                        <span className="text-[10px] bg-secondary text-muted-foreground font-medium px-2 py-0.5 rounded-full">📍 {ad.positioning}</span>
-                      )}
-                      {ad.matchType && ad.matchType !== '-' && (
-                        <span className="text-[10px] bg-secondary text-muted-foreground font-medium px-2 py-0.5 rounded-full">{ad.matchType}</span>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-4 gap-2 text-[10px]">
-                    <div>
-                      <p className="text-muted-foreground">Gasto</p>
-                      <p className="font-bold text-destructive">{formatCurrency(ad.spend)}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">GMV</p>
-                      <p className="font-bold text-success">{formatCurrency(ad.gmv)}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">ROAS</p>
-                      <p className={cn('font-bold', adStatus ? statusColors[adStatus as keyof typeof statusColors] : 'text-muted-foreground')}>{roasVal.toFixed(2)}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Vendidos</p>
-                      <p className="font-bold">{ad.itemsSold}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-3 text-[10px] text-muted-foreground">
-                    <span>{ad.impressions.toLocaleString()} imp.</span>
-                    <span>{ad.clicks.toLocaleString()} cliques</span>
-                    <span>CTR: {ad.ctr.toFixed(2)}%</span>
-                    <span>Conv: {ad.conversionRate.toFixed(2)}%</span>
-                  </div>
-
-                  {/* Product-level metrics for store ads */}
-                  {ad.productImpressions > 0 && (
-                    <div className="pt-1.5 border-t border-border/30 flex gap-3 text-[10px] text-muted-foreground">
-                      <span>📦 Prod: {ad.productImpressions.toLocaleString()} imp.</span>
-                      <span>{ad.productClicks.toLocaleString()} cliques</span>
-                      <span>CTR: {ad.productCtr.toFixed(2)}%</span>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {!loading && savedReports.length === 0 && !parsedReport && (
-        <div className="glass-card p-4 bg-primary/5 border border-primary/20">
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            📊 Acesse <strong>Shopee Seller Center → Anúncios → Relatórios</strong>, exporte em CSV e importe aqui para acompanhar seu ROAS ao longo do tempo.
-          </p>
-        </div>
-      )}
     </div>
   );
 }
@@ -726,16 +752,14 @@ export function RoasAnalysis() {
   return (
     <div className="space-y-4">
       <Tabs defaultValue="product" className="w-full">
-        <TabsList className="w-full grid grid-cols-4">
+        <TabsList className="w-full grid grid-cols-3">
           <TabsTrigger value="product" className="text-xs">Produto</TabsTrigger>
           <TabsTrigger value="simulator" className="text-xs">Simulador</TabsTrigger>
           <TabsTrigger value="ranking" className="text-xs">Ranking</TabsTrigger>
-          <TabsTrigger value="import" className="text-xs">Importar</TabsTrigger>
         </TabsList>
         <TabsContent value="product" className="mt-4"><ProductAnalysis /></TabsContent>
         <TabsContent value="simulator" className="mt-4"><RoasSimulator /></TabsContent>
         <TabsContent value="ranking" className="mt-4"><RoasRanking /></TabsContent>
-        <TabsContent value="import" className="mt-4"><AdsImport /></TabsContent>
       </Tabs>
     </div>
   );
