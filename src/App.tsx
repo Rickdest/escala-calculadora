@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { StoreProvider } from "@/contexts/StoreContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import Home from "./pages/Home";
 import Products from "./pages/Products";
 import Analysis from "./pages/Analysis";
@@ -16,6 +17,7 @@ import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Stock from "./pages/Stock";
 import Roas from "./pages/Roas";
+import Paywall from "./pages/Paywall";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,6 +59,7 @@ const App = () => (
     <ThemeProvider>
       <TooltipProvider>
         <AuthProvider>
+          <SubscriptionProvider>
           <StoreProvider>
             <Toaster />
             <Sonner />
@@ -72,10 +75,12 @@ const App = () => (
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/stock" element={<ProtectedRoute><Stock /></ProtectedRoute>} />
                 <Route path="/roas" element={<ProtectedRoute><Roas /></ProtectedRoute>} />
+                <Route path="/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
           </StoreProvider>
+          </SubscriptionProvider>
         </AuthProvider>
       </TooltipProvider>
     </ThemeProvider>
