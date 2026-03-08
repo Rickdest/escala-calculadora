@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
-const ADMIN_EMAIL = 'richard.aragao@outlook.com';
-
 export function useAdmin() {
   const { user } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -17,34 +15,17 @@ export function useAdmin() {
         return;
       }
 
-      // Check if user email matches admin email
-      if (user.email === ADMIN_EMAIL) {
-        // Check/create admin role in database
-        const { data: existingRole } = await supabase
-          .from('user_roles')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('role', 'admin')
-          .single();
+      // Check admin role via database function (server-side validated)
+      const { data, error } = await supabase.rpc('has_role', {
+        _user_id: user.id,
+        _role: 'admin',
+      });
 
-        if (!existingRole) {
-          // Create admin role for this user
-          await supabase
-            .from('user_roles')
-            .insert({ user_id: user.id, role: 'admin' });
-        }
-
-        setIsAdmin(true);
+      if (error) {
+        console.error('Error checking admin role:', error);
+        setIsAdmin(false);
       } else {
-        // Check if user has admin role in database
-        const { data: role } = await supabase
-          .from('user_roles')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('role', 'admin')
-          .single();
-
-        setIsAdmin(!!role);
+        setIsAdmin(!!data);
       }
 
       setLoading(false);
