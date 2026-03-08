@@ -148,6 +148,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       stockQuantity: productData.stockQuantity ?? 0,
       hasVariations: productData.hasVariations ?? false,
       variations: productData.variations ?? [],
+      adsRevenue: productData.adsRevenue ?? 0,
       id: generateId(),
       createdAt: new Date(),
       updatedAt: new Date(),
