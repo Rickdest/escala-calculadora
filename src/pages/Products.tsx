@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { ProductCard } from '@/components/cards/ProductCard';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { MarginDistributionChart, TopProductsChart, ProfitSummaryChart } from '@/components/charts/AnalyticsCharts';
+import { RoasAnalysis } from '@/components/charts/RoasAnalysis';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -177,9 +178,10 @@ export default function Products() {
 
       <div className="px-4 py-5 space-y-4">
         <Tabs defaultValue="products" className="w-full">
-          <TabsList className="w-full grid grid-cols-2">
+          <TabsList className="w-full grid grid-cols-3">
             <TabsTrigger value="products">Produtos</TabsTrigger>
             <TabsTrigger value="analysis">Análise</TabsTrigger>
+            <TabsTrigger value="roas">ROAS</TabsTrigger>
           </TabsList>
 
           {/* Products Tab */}
@@ -418,6 +420,11 @@ export default function Products() {
                 <p className="text-sm text-muted-foreground">Adicione produtos para ver análises e gráficos</p>
               </div>
             )}
+          </TabsContent>
+
+          {/* ROAS Tab */}
+          <TabsContent value="roas" className="space-y-4 mt-4">
+            <RoasAnalysis />
           </TabsContent>
         </Tabs>
       </div>
