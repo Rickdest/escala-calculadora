@@ -420,11 +420,6 @@ export default function Products() {
               </div>
             )}
           </TabsContent>
-
-          {/* ROAS Tab */}
-          <TabsContent value="roas" className="space-y-4 mt-4">
-            <RoasAnalysis />
-          </TabsContent>
         </Tabs>
       </div>
 
