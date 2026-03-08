@@ -59,6 +59,7 @@ const App = () => (
     <ThemeProvider>
       <TooltipProvider>
         <AuthProvider>
+          <SubscriptionProvider>
           <StoreProvider>
             <Toaster />
             <Sonner />
