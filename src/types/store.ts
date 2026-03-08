@@ -1,15 +1,43 @@
+export interface ShopeeFeeRange {
+  minPrice: number;
+  maxPrice: number | null; // null = no upper limit
+  percent: number;
+  fixed: number;
+  label: string;
+}
+
+export const SHOPEE_FEE_RANGES: ShopeeFeeRange[] = [
+  { minPrice: 0, maxPrice: 79.99, percent: 20, fixed: 4, label: 'Até R$79,99' },
+  { minPrice: 80, maxPrice: 149.99, percent: 14, fixed: 16, label: 'R$80 a R$149,99' },
+  { minPrice: 150, maxPrice: 299.99, percent: 14, fixed: 20, label: 'R$150 a R$299,99' },
+  { minPrice: 300, maxPrice: null, percent: 14, fixed: 26, label: 'Acima de R$300' },
+];
+
+export function getShopeeFeeForPrice(salePrice: number): ShopeeFeeRange {
+  for (const range of SHOPEE_FEE_RANGES) {
+    if (range.maxPrice === null || salePrice <= range.maxPrice) {
+      return range;
+    }
+  }
+  return SHOPEE_FEE_RANGES[SHOPEE_FEE_RANGES.length - 1];
+}
+
 export interface StoreConfig {
-  shopeeFeePercent: number; // percentage (e.g., 20 for 20%)
-  shopeeFeeFixed: number; // fixed fee per sale (e.g., 4.00)
+  // Legacy fields kept for compatibility but no longer used directly
+  shopeeFeePercent: number;
+  shopeeFeeFixed: number;
+  useAutoShopeeFees: boolean; // true = use tiered fees based on price
+  isCpfSeller: boolean; // CPF seller toggle
+  hasOver450Orders: boolean; // CPF seller with >450 orders in 90 days
   taxes: number; // percentage
   desiredMargin: number; // percentage
   currency: string;
   enablePackaging: boolean;
   enableAds: boolean;
-  enableAffiliateCommission: boolean; // toggle for affiliate commission
-  enableShopeeCampaigns: boolean; // toggle for campaigns
-  affiliateCommission: number; // percentage for affiliates
-  shopeeCampaigns: number; // percentage for campaigns
+  enableAffiliateCommission: boolean;
+  enableShopeeCampaigns: boolean;
+  affiliateCommission: number;
+  shopeeCampaigns: number;
 }
 
 export interface Store {
