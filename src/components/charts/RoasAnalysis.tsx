@@ -517,13 +517,13 @@ function AdsImport() {
       return;
     }
 
-    const { error } = await supabase.from('ads_reports').insert({
+    const { error } = await supabase.from('ads_reports').insert([{
       user_id: user.id,
       store_id: currentStore.id,
       report_period: parsedReport.period,
       shop_name: parsedReport.shopName,
-      ads_data: parsedReport.ads as unknown as Record<string, unknown>[],
-    });
+      ads_data: JSON.parse(JSON.stringify(parsedReport.ads)),
+    }]);
 
     if (error) {
       toast.error('Erro ao salvar relatório');
