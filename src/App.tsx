@@ -15,6 +15,7 @@ import Education from "./pages/Education";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Stock from "./pages/Stock";
+import Roas from "./pages/Roas";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
