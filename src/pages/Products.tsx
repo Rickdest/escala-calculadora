@@ -221,7 +221,7 @@ export default function Products() {
 
             {/* Products List */}
             {products.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-3 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 md:space-y-0">
                 {products.map(({ product, calc }, index) => (
                   <div 
                     key={product.id} 
@@ -267,7 +267,7 @@ export default function Products() {
             {stats && analysisProducts.length > 0 ? (
               <>
                 {/* Main Stats */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="glass-card p-5 animate-fade-up">
                     <div className="flex items-center gap-2 mb-3">
                       <div className={cn(
@@ -339,7 +339,7 @@ export default function Products() {
                 )}
 
                 {/* Charts */}
-                <div className="space-y-4">
+                <div className="space-y-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 md:space-y-0">
                   <MarginDistributionChart />
                   <TopProductsChart />
                   <ProfitSummaryChart />

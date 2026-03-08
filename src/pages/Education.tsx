@@ -125,7 +125,7 @@ export default function Education() {
             Tutoriais em Vídeo
           </h2>
 
-          <div className="space-y-3">
+          <div className="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
             {videos.map((video) => (
               <div key={video.id} className="glass-card overflow-hidden">
                 {editingId === video.id ? (
@@ -203,7 +203,7 @@ export default function Education() {
             Conteúdos Educativos
           </h2>
 
-          <div className="space-y-3">
+          <div className="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
             {guides.map((guide) => (
               <div key={guide.id} className="glass-card p-4">
                 {editingId === guide.id ? (

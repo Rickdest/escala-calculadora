@@ -73,14 +73,14 @@ export default function Home() {
         {/* Main CTA */}
         <Button 
           onClick={() => setShowProductForm(true)}
-          className="w-full h-16 text-lg font-bold gradient-primary hover:opacity-90 shadow-lg"
+          className="w-full md:w-auto h-16 text-lg font-bold gradient-primary hover:opacity-90 shadow-lg md:h-12 md:px-8"
         >
-          <Plus className="w-6 h-6 mr-3" />
+          <Plus className="w-6 h-6 mr-3 md:w-5 md:h-5" />
           Adicionar Produto
         </Button>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="glass-card p-5 animate-fade-up">
             <div className="flex items-center gap-2 mb-3">
               <div className={cn(
@@ -145,7 +145,7 @@ export default function Home() {
 
         {/* Quick Performance */}
         {stats.totalProducts > 0 && (
-          <div className="grid grid-cols-2 gap-3 animate-fade-up stagger-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-fade-up stagger-3">
             <div className="bg-success-muted rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-2">
                 <TrendingUp className="w-4 h-4 text-success" />
