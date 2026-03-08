@@ -62,6 +62,7 @@ export interface Product {
   salePrice: number;
   packagingCost: number;
   adsCost: number;
+  adsRevenue: number;
   imageUrl?: string;
   stockQuantity: number;
   hasVariations: boolean;
