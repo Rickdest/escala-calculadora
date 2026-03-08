@@ -4,11 +4,16 @@ export interface ShopeeAdRow {
   status: string;
   adType: string;
   productId: string;
+  positioning: string;
+  keyword: string;
+  matchType: string;
+  bidMethod: string;
   impressions: number;
   clicks: number;
   ctr: number;
   conversions: number;
   directConversions: number;
+  conversionRate: number;
   itemsSold: number;
   directItemsSold: number;
   gmv: number;
@@ -16,6 +21,9 @@ export interface ShopeeAdRow {
   spend: number;
   roas: number;
   directRoas: number;
+  productImpressions: number;
+  productClicks: number;
+  productCtr: number;
 }
 
 export interface ShopeeAdsReport {
@@ -90,11 +98,16 @@ export function parseShopeeCSV(csvContent: string): ShopeeAdsReport | null {
         status: cols[2] || '',
         adType: cols[3] || '',
         productId: cols[4] || '-',
+        bidMethod: cols[6] || '',
+        positioning: cols[7] || '',
+        keyword: cols[8] || '',
+        matchType: cols[9] || '',
         impressions: parseNumber(cols[12]),
         clicks: parseNumber(cols[13]),
         ctr: parseNumber(cols[14]),
         conversions: parseNumber(cols[15]),
         directConversions: parseNumber(cols[16]),
+        conversionRate: parseNumber(cols[17]),
         itemsSold: parseNumber(cols[21]),
         directItemsSold: parseNumber(cols[22]),
         gmv: parseNumber(cols[23]),
@@ -102,6 +115,9 @@ export function parseShopeeCSV(csvContent: string): ShopeeAdsReport | null {
         spend: parseNumber(cols[25]),
         roas: parseNumber(cols[26]),
         directRoas: parseNumber(cols[27]),
+        productImpressions: parseNumber(cols[29]),
+        productClicks: parseNumber(cols[30]),
+        productCtr: parseNumber(cols[31]),
       });
     }
 

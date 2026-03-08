@@ -1,11 +1,11 @@
-import { Home, Package, GraduationCap, Settings, Boxes } from 'lucide-react';
+import { Home, Package, GraduationCap, Settings, BarChart3 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { icon: Home, label: 'Início', path: '/' },
   { icon: Package, label: 'Produtos', path: '/products' },
-  { icon: Boxes, label: 'Estoque', path: '/stock' },
+  { icon: BarChart3, label: 'ROAS', path: '/roas' },
   { icon: GraduationCap, label: 'Educação', path: '/education' },
   { icon: Settings, label: 'Config', path: '/settings' },
 ];

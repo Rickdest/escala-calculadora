@@ -634,8 +634,29 @@ function AdsImport() {
               const roasVal = ad.roas;
               const adStatus = ad.spend === 0 ? null : roasVal >= 5 ? 'success' : roasVal >= 2 ? 'warning' : 'danger';
               return (
-                <div key={i} className="p-3 rounded-lg bg-secondary/30 space-y-1.5">
-                  <p className="text-sm font-bold truncate">{ad.adName}</p>
+                <div key={i} className="p-3 rounded-lg bg-secondary/30 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="text-sm font-bold truncate flex-1">{ad.adName}</p>
+                    <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0',
+                      ad.status === 'Pausado' ? 'bg-warning/20 text-warning' : ad.status === 'Encerrado' ? 'bg-muted text-muted-foreground' : 'bg-success/20 text-success'
+                    )}>{ad.status}</span>
+                  </div>
+
+                  {/* Positioning / Keyword Info */}
+                  {(ad.keyword || ad.positioning) && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {ad.keyword && ad.keyword !== '-' && (
+                        <span className="text-[10px] bg-primary/10 text-primary font-semibold px-2 py-0.5 rounded-full">🔍 {ad.keyword}</span>
+                      )}
+                      {ad.positioning && ad.positioning !== '-' && (
+                        <span className="text-[10px] bg-secondary text-muted-foreground font-medium px-2 py-0.5 rounded-full">📍 {ad.positioning}</span>
+                      )}
+                      {ad.matchType && ad.matchType !== '-' && (
+                        <span className="text-[10px] bg-secondary text-muted-foreground font-medium px-2 py-0.5 rounded-full">{ad.matchType}</span>
+                      )}
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-4 gap-2 text-[10px]">
                     <div>
                       <p className="text-muted-foreground">Gasto</p>
@@ -654,12 +675,22 @@ function AdsImport() {
                       <p className="font-bold">{ad.itemsSold}</p>
                     </div>
                   </div>
-                  <div className="flex gap-3 text-[10px] text-muted-foreground">
+
+                  <div className="flex flex-wrap gap-3 text-[10px] text-muted-foreground">
                     <span>{ad.impressions.toLocaleString()} imp.</span>
-                    <span>{ad.clicks} cliques</span>
+                    <span>{ad.clicks.toLocaleString()} cliques</span>
                     <span>CTR: {ad.ctr.toFixed(2)}%</span>
-                    <span className="ml-auto font-medium">{ad.status}</span>
+                    <span>Conv: {ad.conversionRate.toFixed(2)}%</span>
                   </div>
+
+                  {/* Product-level metrics for store ads */}
+                  {ad.productImpressions > 0 && (
+                    <div className="pt-1.5 border-t border-border/30 flex gap-3 text-[10px] text-muted-foreground">
+                      <span>📦 Prod: {ad.productImpressions.toLocaleString()} imp.</span>
+                      <span>{ad.productClicks.toLocaleString()} cliques</span>
+                      <span>CTR: {ad.productCtr.toFixed(2)}%</span>
+                    </div>
+                  )}
                 </div>
               );
             })}

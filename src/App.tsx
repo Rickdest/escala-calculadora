@@ -15,6 +15,7 @@ import Education from "./pages/Education";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
 import Stock from "./pages/Stock";
+import Roas from "./pages/Roas";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -70,6 +71,7 @@ const App = () => (
                 <Route path="/education" element={<ProtectedRoute><Education /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/stock" element={<ProtectedRoute><Stock /></ProtectedRoute>} />
+                <Route path="/roas" element={<ProtectedRoute><Roas /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
