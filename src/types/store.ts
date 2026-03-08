@@ -94,6 +94,9 @@ export type SortOption = 'name' | 'margin-high' | 'margin-low' | 'profit-high' |
 export const DEFAULT_STORE_CONFIG: StoreConfig = {
   shopeeFeePercent: 20,
   shopeeFeeFixed: 4,
+  useAutoShopeeFees: true,
+  isCpfSeller: false,
+  hasOver450Orders: false,
   taxes: 0,
   desiredMargin: 17,
   currency: 'BRL',
