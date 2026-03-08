@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Store, Product, StoreConfig, DEFAULT_STORE_CONFIG, ProductCalculation } from '@/types/store';
+import { Store, Product, StoreConfig, DEFAULT_STORE_CONFIG, ProductCalculation, getShopeeFeeForPrice } from '@/types/store';
 
 interface StoreContextType {
   stores: Store[];
