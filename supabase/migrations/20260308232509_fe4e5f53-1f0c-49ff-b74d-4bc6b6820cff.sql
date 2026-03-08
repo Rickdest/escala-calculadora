@@ -1,0 +1,1 @@
+ALTER TABLE public.ads_reports ADD COLUMN product_id uuid REFERENCES public.products(id) ON DELETE CASCADE;
