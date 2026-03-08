@@ -208,9 +208,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const calculateProduct = useCallback((product: Product, config: StoreConfig): ProductCalculation => {
     const grossRevenue = product.salePrice;
-    const shopeeFeePercentValue = grossRevenue * (config.shopeeFeePercent / 100);
-    const shopeeFeeFixedValue = config.shopeeFeeFixed || 0;
-    const totalShopeeFee = shopeeFeePercentValue + shopeeFeeFixedValue;
+    
+    // Determine Shopee fees: auto (tiered) or manual
+    let feePercent: number;
+    let feeFixed: number;
+    
+    if (config.useAutoShopeeFees !== false) {
+      const range = getShopeeFeeForPrice(grossRevenue);
+      feePercent = range.percent;
+      feeFixed = range.fixed;
+    } else {
+      feePercent = config.shopeeFeePercent;
+      feeFixed = config.shopeeFeeFixed || 0;
+    }
+    
+    const shopeeFeePercentValue = grossRevenue * (feePercent / 100);
+    const shopeeFeeFixedValue = feeFixed;
+    
+    // CPF seller additional R$3 per item (only if >450 orders)
+    const cpfAdditional = (config.isCpfSeller && config.hasOver450Orders) ? 3 : 0;
+    
+    const totalShopeeFee = shopeeFeePercentValue + shopeeFeeFixedValue + cpfAdditional;
     const taxesValue = grossRevenue * (config.taxes / 100);
     const packagingCost = config.enablePackaging ? product.packagingCost : 0;
     const adsCost = config.enableAds ? product.adsCost : 0;
@@ -225,7 +243,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return {
       grossRevenue,
       shopeeFeePercent: shopeeFeePercentValue,
-      shopeeFeeFixed: shopeeFeeFixedValue,
+      shopeeFeeFixed: shopeeFeeFixedValue + cpfAdditional,
       totalShopeeFee,
       taxes: taxesValue,
       affiliateCommission: affiliateCommissionValue,
