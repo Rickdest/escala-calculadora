@@ -239,7 +239,7 @@ export default function Home() {
             <div className="flex-1">
               <p className="font-bold text-foreground">Taxas da Loja</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Shopee: {currentStore.config.shopeeFeePercent}% + R${(currentStore.config.shopeeFeeFixed || 0).toFixed(2)} · Meta: {currentStore.config.desiredMargin}%
+                Taxas automáticas por faixa · Meta: {currentStore.config.desiredMargin}%
               </p>
             </div>
             <ArrowRight className="w-5 h-5 text-muted-foreground" />

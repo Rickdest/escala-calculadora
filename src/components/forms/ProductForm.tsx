@@ -434,7 +434,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                 calculation.isAboveTarget ? 'border-success/20' : 'border-danger/20'
               )}>
                 <div className="flex justify-between opacity-70">
-                  <span>Taxa Shopee ({config?.shopeeFeePercent}% + R${config?.shopeeFeeFixed?.toFixed(2)})</span>
+                  <span>Taxa Shopee ({calculation.totalShopeeFee > 0 ? 'automática' : '0'})</span>
                   <span>{formatCurrency(calculation.totalShopeeFee)}</span>
                 </div>
                 <div className="flex justify-between opacity-70">
