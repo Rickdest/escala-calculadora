@@ -1,5 +1,6 @@
 import { ChevronDown, Store } from 'lucide-react';
 import { useStore } from '@/contexts/StoreContext';
+import logoIcon from '@/assets/logo-icon.png';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,11 +22,14 @@ export function PageHeader({ title, subtitle, showStoreSelector = true, action }
   return (
     <header className="sticky top-0 z-40 bg-background/70 backdrop-blur-xl border-b border-border/30 px-4 py-4 safe-top">
       <div className="flex items-center justify-between max-w-lg mx-auto">
-        <div className="flex-1">
-          <h1 className="text-xl font-bold text-foreground">{title}</h1>
-          {subtitle && (
-            <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>
-          )}
+        <div className="flex items-center gap-2.5 flex-1">
+          <img src={logoIcon} alt="Escala" className="w-8 h-8 object-contain" />
+          <div>
+            <h1 className="text-xl font-bold text-foreground">{title}</h1>
+            {subtitle && (
+              <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
