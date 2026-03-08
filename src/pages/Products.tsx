@@ -267,7 +267,7 @@ export default function Products() {
             {stats && analysisProducts.length > 0 ? (
               <>
                 {/* Main Stats */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="glass-card p-5 animate-fade-up">
                     <div className="flex items-center gap-2 mb-3">
                       <div className={cn(
