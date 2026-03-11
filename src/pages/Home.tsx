@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 export default function Home() {
   const navigate = useNavigate();
   const { currentStore, stores, addStore, addProduct, getStoreStats, calculateProduct } = useStore();
+  const { gate, showPaywall, setShowPaywall, isActive } = useSubscriptionGate();
   const [showProductForm, setShowProductForm] = useState(false);
   const [showConfigForm, setShowConfigForm] = useState(false);
 
