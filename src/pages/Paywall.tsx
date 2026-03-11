@@ -44,15 +44,14 @@ export default function Paywall() {
   const trialExpired = status === 'canceled' || status === 'past_due';
   const isFree = status === 'free';
 
-  const handleCheckout = (planType: string) => {
-    if (HOTMART_CHECKOUT_URL) {
-      const url = new URL(HOTMART_CHECKOUT_URL);
+  const handleCheckout = (planKey: string) => {
+    const url = CHECKOUT_URLS[planKey];
+    if (url) {
+      const checkoutUrl = new URL(url);
       if (user?.email) {
-        url.searchParams.set('email', user.email);
+        checkoutUrl.searchParams.set('email', user.email);
       }
-      window.open(url.toString(), '_blank');
-    } else {
-      alert('Link de checkout ainda não configurado. Configure a URL do checkout da Hotmart.');
+      window.open(checkoutUrl.toString(), '_blank');
     }
   };
 
