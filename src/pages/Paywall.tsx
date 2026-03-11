@@ -5,19 +5,24 @@ import { Button } from '@/components/ui/button';
 import { Crown, Zap, Shield, TrendingUp, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const HOTMART_CHECKOUT_URL = ''; // Will be set by user
+const CHECKOUT_URLS: Record<string, string> = {
+  mensal: 'https://pay.hotmart.com/B104846948H?off=kc5jdg0u&checkoutMode=6',
+  anual: 'https://pay.hotmart.com/B104846948H?off=au88x8b1&checkoutMode=6',
+};
 
 const plans = [
   {
     name: 'Mensal',
-    price: 'R$ XX,XX',
+    key: 'mensal',
+    price: 'R$ 29,90',
     period: '/mês',
     description: 'Acesso completo ao Escala',
     popular: false,
   },
   {
     name: 'Anual',
-    price: 'R$ XX,XX',
+    key: 'anual',
+    price: 'R$ 249,90',
     period: '/ano',
     description: 'Economize com o plano anual',
     popular: true,
