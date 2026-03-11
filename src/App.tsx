@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { StoreProvider } from "@/contexts/StoreContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
+import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionContext";
 import Home from "./pages/Home";
 import Products from "./pages/Products";
 import Analysis from "./pages/Analysis";
@@ -31,6 +31,25 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
       </div>
     );
+  }
+
+  return <>{children}</>;
+}
+
+function SubscriptionRoute({ children }: { children: React.ReactNode }) {
+  const { loading } = useAuth();
+  const { isActive, loading: subLoading } = useSubscription();
+
+  if (loading || subLoading) {
+    return (
+      <div className="min-h-screen bg-background gradient-mesh flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!isActive) {
+    return <Navigate to="/paywall" replace />;
   }
 
   return <>{children}</>;
@@ -66,16 +85,16 @@ const App = () => (
             <BrowserRouter>
               <Routes>
                 <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
-                <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-                <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
-                <Route path="/analysis" element={<ProtectedRoute><Analysis /></ProtectedRoute>} />
-                <Route path="/stores" element={<ProtectedRoute><Stores /></ProtectedRoute>} />
-                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                <Route path="/education" element={<ProtectedRoute><Education /></ProtectedRoute>} />
-                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                <Route path="/stock" element={<ProtectedRoute><Stock /></ProtectedRoute>} />
-                <Route path="/roas" element={<ProtectedRoute><Roas /></ProtectedRoute>} />
                 <Route path="/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="/" element={<SubscriptionRoute><Home /></SubscriptionRoute>} />
+                <Route path="/products" element={<SubscriptionRoute><Products /></SubscriptionRoute>} />
+                <Route path="/analysis" element={<SubscriptionRoute><Analysis /></SubscriptionRoute>} />
+                <Route path="/stores" element={<SubscriptionRoute><Stores /></SubscriptionRoute>} />
+                <Route path="/education" element={<SubscriptionRoute><Education /></SubscriptionRoute>} />
+                <Route path="/stock" element={<SubscriptionRoute><Stock /></SubscriptionRoute>} />
+                <Route path="/roas" element={<SubscriptionRoute><Roas /></SubscriptionRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
