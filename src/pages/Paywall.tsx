@@ -5,19 +5,24 @@ import { Button } from '@/components/ui/button';
 import { Crown, Zap, Shield, TrendingUp, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const HOTMART_CHECKOUT_URL = ''; // Will be set by user
+const CHECKOUT_URLS: Record<string, string> = {
+  mensal: 'https://pay.hotmart.com/B104846948H?off=kc5jdg0u&checkoutMode=6',
+  anual: 'https://pay.hotmart.com/B104846948H?off=au88x8b1&checkoutMode=6',
+};
 
 const plans = [
   {
     name: 'Mensal',
-    price: 'R$ XX,XX',
+    key: 'mensal',
+    price: 'R$ 29,90',
     period: '/mês',
     description: 'Acesso completo ao Escala',
     popular: false,
   },
   {
     name: 'Anual',
-    price: 'R$ XX,XX',
+    key: 'anual',
+    price: 'R$ 249,90',
     period: '/ano',
     description: 'Economize com o plano anual',
     popular: true,
@@ -39,15 +44,14 @@ export default function Paywall() {
   const trialExpired = status === 'canceled' || status === 'past_due';
   const isFree = status === 'free';
 
-  const handleCheckout = (planType: string) => {
-    if (HOTMART_CHECKOUT_URL) {
-      const url = new URL(HOTMART_CHECKOUT_URL);
+  const handleCheckout = (planKey: string) => {
+    const url = CHECKOUT_URLS[planKey];
+    if (url) {
+      const checkoutUrl = new URL(url);
       if (user?.email) {
-        url.searchParams.set('email', user.email);
+        checkoutUrl.searchParams.set('email', user.email);
       }
-      window.open(url.toString(), '_blank');
-    } else {
-      alert('Link de checkout ainda não configurado. Configure a URL do checkout da Hotmart.');
+      window.open(checkoutUrl.toString(), '_blank');
     }
   };
 
@@ -97,7 +101,7 @@ export default function Paywall() {
           {plans.map((plan) => (
             <button
               key={plan.name}
-              onClick={() => handleCheckout(plan.name.toLowerCase())}
+              onClick={() => handleCheckout(plan.key)}
               className={cn(
                 'w-full glass-card p-5 text-left relative transition-all',
                 plan.popular && 'ring-2 ring-primary'
