@@ -101,7 +101,7 @@ export default function Paywall() {
           {plans.map((plan) => (
             <button
               key={plan.name}
-              onClick={() => handleCheckout(plan.name.toLowerCase())}
+              onClick={() => handleCheckout(plan.key)}
               className={cn(
                 'w-full glass-card p-5 text-left relative transition-all',
                 plan.popular && 'ring-2 ring-primary'
