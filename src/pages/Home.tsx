@@ -253,7 +253,7 @@ export default function Home() {
 
         {/* Store Config Card */}
         <div 
-          onClick={() => setShowConfigForm(true)}
+          onClick={() => gate(() => setShowConfigForm(true))}
           className="glass-card-hover p-4 animate-fade-up stagger-5"
         >
           <div className="flex items-center gap-4">
