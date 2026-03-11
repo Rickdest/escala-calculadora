@@ -282,6 +282,8 @@ export default function Home() {
       {showConfigForm && (
         <StoreConfigForm onClose={() => setShowConfigForm(false)} />
       )}
+
+      <SubscriptionModal open={showPaywall} onClose={() => setShowPaywall(false)} />
     </AppLayout>
   );
 }
