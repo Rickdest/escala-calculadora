@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Settings2, Package, TrendingUp, TrendingDown, ArrowRight, Store, Zap, Target } from 'lucide-react';
+import { Plus, Settings2, Package, TrendingUp, TrendingDown, ArrowRight, Store, Zap, Target, Crown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -7,12 +7,15 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { StoreConfigForm } from '@/components/forms/StoreConfigForm';
 import { EducationBanner } from '@/components/home/EducationBanner';
+import { SubscriptionModal } from '@/components/SubscriptionModal';
 import { Button } from '@/components/ui/button';
+import { useSubscriptionGate } from '@/hooks/useSubscriptionGate';
 import { cn } from '@/lib/utils';
 
 export default function Home() {
   const navigate = useNavigate();
   const { currentStore, stores, addStore, addProduct, getStoreStats, calculateProduct } = useStore();
+  const { gate, showPaywall, setShowPaywall, isActive } = useSubscriptionGate();
   const [showProductForm, setShowProductForm] = useState(false);
   const [showConfigForm, setShowConfigForm] = useState(false);
 
@@ -70,9 +73,30 @@ export default function Home() {
         {/* Education Banner - Prominent at top */}
         <EducationBanner />
 
+        {/* Subscription CTA */}
+        {!isActive && (
+          <div 
+            onClick={() => setShowPaywall(true)}
+            className="glass-card p-5 cursor-pointer hover:shadow-lg transition-all active:scale-[0.98] animate-fade-up"
+          >
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl gradient-primary shadow-md">
+                <Crown className="w-6 h-6 text-primary-foreground" />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold text-foreground">Assine o Escala Pro</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  A partir de R$ 8,08/mês · Acesse todas as ferramentas
+                </p>
+              </div>
+              <ArrowRight className="w-5 h-5 text-primary" />
+            </div>
+          </div>
+        )}
+
         {/* Main CTA */}
         <Button 
-          onClick={() => setShowProductForm(true)}
+          onClick={() => gate(() => setShowProductForm(true))}
           className="w-full md:w-auto h-16 text-lg font-bold gradient-primary hover:opacity-90 shadow-lg md:h-12 md:px-8"
         >
           <Plus className="w-6 h-6 mr-3 md:w-5 md:h-5" />
@@ -229,7 +253,7 @@ export default function Home() {
 
         {/* Store Config Card */}
         <div 
-          onClick={() => setShowConfigForm(true)}
+          onClick={() => gate(() => setShowConfigForm(true))}
           className="glass-card-hover p-4 animate-fade-up stagger-5"
         >
           <div className="flex items-center gap-4">
@@ -258,6 +282,8 @@ export default function Home() {
       {showConfigForm && (
         <StoreConfigForm onClose={() => setShowConfigForm(false)} />
       )}
+
+      <SubscriptionModal open={showPaywall} onClose={() => setShowPaywall(false)} />
     </AppLayout>
   );
 }
