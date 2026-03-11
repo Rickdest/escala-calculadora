@@ -1,8 +1,7 @@
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Crown, Zap, Shield, TrendingUp, Clock } from 'lucide-react';
+import { Crown, Zap, Shield, TrendingUp, Clock, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const CHECKOUT_URLS: Record<string, string> = {
@@ -12,21 +11,23 @@ const CHECKOUT_URLS: Record<string, string> = {
 
 const plans = [
   {
-    name: 'Mensal',
-    key: 'mensal',
-    price: 'R$ 29,90',
-    period: '/mês',
-    description: 'Acesso completo ao Escala',
-    popular: false,
+    key: 'anual',
+    name: 'Anual',
+    price: 'R$ 97,00',
+    priceMonthly: 'R$ 8,08/mês',
+    period: '/ano',
+    description: 'Melhor custo-benefício',
+    popular: true,
+    badge: 'Economia de 58%',
   },
   {
-    name: 'Anual',
-    key: 'anual',
-    price: 'R$ 249,90',
-    period: '/ano',
-    description: 'Economize com o plano anual',
-    popular: true,
-    badge: 'Mais Popular',
+    key: 'mensal',
+    name: 'Mensal',
+    price: 'R$ 19,90',
+    priceMonthly: '',
+    period: '/mês',
+    description: 'Flexibilidade total',
+    popular: false,
   },
 ];
 
@@ -38,11 +39,10 @@ const features = [
 ];
 
 export default function Paywall() {
-  const { status, trialEnd } = useSubscription();
+  const { status } = useSubscription();
   const { user } = useAuth();
 
   const trialExpired = status === 'canceled' || status === 'past_due';
-  const isFree = status === 'free';
 
   const handleCheckout = (planKey: string) => {
     const url = CHECKOUT_URLS[planKey];
@@ -60,7 +60,7 @@ export default function Paywall() {
       <div className="px-4 py-8 space-y-8 max-w-md mx-auto">
         {/* Header */}
         <div className="text-center space-y-3">
-          <div className="w-16 h-16 rounded-2xl gradient-primary mx-auto flex items-center justify-center">
+          <div className="w-16 h-16 rounded-2xl gradient-primary mx-auto flex items-center justify-center shadow-lg">
             <Crown className="w-8 h-8 text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-bold text-foreground">
@@ -69,20 +69,9 @@ export default function Paywall() {
           <p className="text-muted-foreground text-sm leading-relaxed">
             {trialExpired
               ? 'Assine para continuar usando todas as funcionalidades.'
-              : 'Teste grátis por 7 dias. Cancele quando quiser.'}
+              : 'Acesse todas as ferramentas para maximizar seus lucros na Shopee.'}
           </p>
         </div>
-
-        {/* Trial badge */}
-        {isFree && (
-          <div className="bg-success-muted rounded-2xl p-4 flex items-center gap-3">
-            <Clock className="w-5 h-5 text-success" />
-            <div>
-              <p className="font-bold text-success text-sm">7 dias grátis</p>
-              <p className="text-xs text-success/80">Comece agora sem pagar nada</p>
-            </div>
-          </div>
-        )}
 
         {/* Features */}
         <div className="space-y-3">
@@ -100,26 +89,46 @@ export default function Paywall() {
         <div className="space-y-3">
           {plans.map((plan) => (
             <button
-              key={plan.name}
+              key={plan.key}
               onClick={() => handleCheckout(plan.key)}
               className={cn(
-                'w-full glass-card p-5 text-left relative transition-all',
-                plan.popular && 'ring-2 ring-primary'
+                'w-full rounded-2xl p-5 text-left relative transition-all active:scale-[0.98]',
+                plan.popular
+                  ? 'gradient-primary text-primary-foreground shadow-lg'
+                  : 'bg-secondary hover:bg-secondary/80 text-foreground'
               )}
             >
               {plan.badge && (
-                <span className="absolute -top-2.5 right-4 px-3 py-0.5 text-xs font-bold gradient-primary text-primary-foreground rounded-full">
+                <span className="absolute -top-2.5 right-4 px-3 py-0.5 text-[10px] font-bold bg-card text-primary rounded-full shadow-sm">
                   {plan.badge}
                 </span>
               )}
-              <div className="flex items-baseline justify-between">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-bold text-foreground">{plan.name}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{plan.description}</p>
+                  <p className="font-bold text-base">{plan.name}</p>
+                  <p className={cn(
+                    'text-xs mt-0.5',
+                    plan.popular ? 'text-primary-foreground/80' : 'text-muted-foreground'
+                  )}>
+                    {plan.description}
+                  </p>
                 </div>
                 <div className="text-right">
-                  <span className="text-xl font-extrabold text-foreground">{plan.price}</span>
-                  <span className="text-xs text-muted-foreground">{plan.period}</span>
+                  <span className="text-2xl font-extrabold">{plan.price}</span>
+                  <span className={cn(
+                    'text-xs ml-0.5',
+                    plan.popular ? 'text-primary-foreground/80' : 'text-muted-foreground'
+                  )}>
+                    {plan.period}
+                  </span>
+                  {plan.priceMonthly && (
+                    <p className={cn(
+                      'text-[10px] mt-0.5',
+                      plan.popular ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                    )}>
+                      equivale a {plan.priceMonthly}
+                    </p>
+                  )}
                 </div>
               </div>
             </button>
@@ -127,7 +136,7 @@ export default function Paywall() {
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
-          Pagamento seguro via Hotmart. Cancele a qualquer momento.
+          Pagamento seguro via Hotmart · Cancele quando quiser
         </p>
       </div>
     </AppLayout>
