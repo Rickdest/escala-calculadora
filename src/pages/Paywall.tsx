@@ -88,50 +88,25 @@ export default function Paywall() {
         {/* Plans */}
         <div className="space-y-3">
           {plans.map((plan) => (
-            <button
-              key={plan.key}
-              onClick={() => handleCheckout(plan.key)}
-              className={cn(
-                'w-full rounded-2xl p-5 text-left relative transition-all active:scale-[0.98]',
-                plan.popular
-                  ? 'gradient-primary text-primary-foreground shadow-lg'
-                  : 'bg-secondary hover:bg-secondary/80 text-foreground'
-              )}
-            >
+            <div key={plan.key} className="relative">
               {plan.badge && (
-                <span className="absolute -top-2.5 right-4 px-3 py-0.5 text-[10px] font-bold bg-card text-primary rounded-full shadow-sm">
+                <span className="absolute -top-2.5 right-4 px-3 py-0.5 text-[10px] font-bold bg-card text-primary rounded-full shadow-sm z-10">
                   {plan.badge}
                 </span>
               )}
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-bold text-base">{plan.name}</p>
-                  <p className={cn(
-                    'text-xs mt-0.5',
-                    plan.popular ? 'text-primary-foreground/80' : 'text-muted-foreground'
-                  )}>
-                    {plan.description}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <span className="text-2xl font-extrabold">{plan.price}</span>
-                  <span className={cn(
-                    'text-xs ml-0.5',
-                    plan.popular ? 'text-primary-foreground/80' : 'text-muted-foreground'
-                  )}>
-                    {plan.period}
-                  </span>
-                  {plan.priceMonthly && (
-                    <p className={cn(
-                      'text-[10px] mt-0.5',
-                      plan.popular ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                    )}>
-                      equivale a {plan.priceMonthly}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </button>
+              <button
+                onClick={() => handleCheckout(plan.key)}
+                className="w-full h-14 rounded-xl font-bold text-lg text-white active:scale-[0.98] transition-transform"
+                style={{ background: 'linear-gradient(135deg, #F97316, #EA580C)' }}
+              >
+                {plan.name} — {plan.price}{plan.period}
+              </button>
+              {plan.priceMonthly && (
+                <p className="text-center text-xs text-muted-foreground mt-1">
+                  equivale a {plan.priceMonthly}
+                </p>
+              )}
+            </div>
           ))}
         </div>
 

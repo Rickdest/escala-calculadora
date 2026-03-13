@@ -93,27 +93,15 @@ export function SubscriptionModal({ open, onClose }: SubscriptionModalProps) {
             <button
               key={plan.key}
               onClick={() => handleCheckout(plan.key)}
-              className={cn(
-                'w-full rounded-2xl p-4 text-left relative transition-all active:scale-[0.98]',
-                plan.popular
-                  ? 'gradient-primary text-primary-foreground shadow-lg'
-                  : 'bg-secondary hover:bg-secondary/80 text-foreground'
-              )}
+              className="w-full h-14 rounded-xl font-bold text-lg text-white active:scale-[0.98] transition-transform relative"
+              style={{ background: 'linear-gradient(135deg, #F97316, #EA580C)' }}
             >
               {plan.badge && (
                 <span className="absolute -top-2.5 right-4 px-3 py-0.5 text-[10px] font-bold bg-card text-primary rounded-full shadow-sm">
                   {plan.badge}
                 </span>
               )}
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-bold">{plan.name}</p>
-                </div>
-                <div className="text-right">
-                  <span className="text-xl font-extrabold">{plan.price}</span>
-                  <span className="text-xs opacity-80">{plan.period}</span>
-                </div>
-              </div>
+              {plan.name} — {plan.price}{plan.period}
             </button>
           ))}
         </div>

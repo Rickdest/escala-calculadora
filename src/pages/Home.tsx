@@ -139,35 +139,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Profit Summary */}
-        {stats.totalProducts > 0 && (
-          <div className="glass-card p-5 animate-fade-up stagger-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-1">Lucro Total (todos produtos)</p>
-                <p className={cn(
-                  'number-lg',
-                  stats.totalProfit >= 0 ? 'text-success' : 'text-destructive'
-                )}>
-                  {formatCurrency(stats.totalProfit)}
-                </p>
-              </div>
-              <div className="text-right">
-                <div className={cn(
-                  'inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-bold',
-                  stats.productsAboveTarget > stats.productsBelowTarget ? 'bg-success-muted text-success' : 'bg-danger-muted text-danger'
-                )}>
-                  {stats.productsAboveTarget > stats.productsBelowTarget ? (
-                    <TrendingUp className="w-4 h-4" />
-                  ) : (
-                    <TrendingDown className="w-4 h-4" />
-                  )}
-                  {stats.productsAboveTarget}/{stats.totalProducts} na meta
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Quick Performance */}
         {stats.totalProducts > 0 && (
