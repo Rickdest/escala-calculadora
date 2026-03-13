@@ -8,6 +8,7 @@ import { ProductForm } from '@/components/forms/ProductForm';
 import { StoreConfigForm } from '@/components/forms/StoreConfigForm';
 import { EducationBanner } from '@/components/home/EducationBanner';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
+import { TrialBanner } from '@/components/TrialBanner';
 import { Button } from '@/components/ui/button';
 import { useSubscriptionGate } from '@/hooks/useSubscriptionGate';
 import { cn } from '@/lib/utils';
