@@ -104,7 +104,7 @@ export default function Auth() {
               {isLogin ? 'Entrar na conta' : 'Criar conta'}
             </h2>
             <p className="text-xs text-muted-foreground mt-1">
-              {isLogin ? 'Sincronize seus dados entre dispositivos' : 'Salve seus produtos na nuvem'}
+              {isLogin ? 'Sincronize seus dados entre dispositivos' : '3 dias grátis · Sem cartão de crédito'}
             </p>
           </div>
 
