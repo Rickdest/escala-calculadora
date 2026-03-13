@@ -42,16 +42,19 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         console.error('Error fetching subscription:', error);
         setStatus('free');
       } else if (data) {
-        // Check if trial has expired
-        if (data.status === 'trialing' && data.trial_end) {
+        if (data.status === 'active') {
+          setStatus('active');
+        } else if (data.status === 'trialing' && data.trial_end) {
           const trialEndDate = new Date(data.trial_end);
           if (trialEndDate < new Date()) {
+            // Trial expired → treat as canceled, block access
             setStatus('canceled');
           } else {
             setStatus('trialing');
           }
-        } else if (data.status === 'active') {
-          setStatus('active');
+        } else if (data.status === 'canceled' || data.status === 'past_due') {
+          // Always block canceled/past_due, no exceptions
+          setStatus(data.status as SubscriptionStatus);
         } else {
           setStatus(data.status as SubscriptionStatus);
         }
