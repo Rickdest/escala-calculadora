@@ -21,8 +21,8 @@ export function SideNavigation() {
     <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 flex-col bg-card/80 backdrop-blur-xl border-r border-border/50 z-50">
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-6 border-b border-border/30">
-        <img src={logoIcon} alt="Escala" className="w-9 h-9 object-contain" />
-        <span className="text-xl font-extrabold text-foreground tracking-tight">Escala</span>
+         <img src={logoIcon} alt="Precify" className="w-9 h-9 object-contain" />
+         <span className="text-xl font-extrabold text-foreground tracking-tight">Precify</span>
       </div>
 
       {/* Navigation */}
