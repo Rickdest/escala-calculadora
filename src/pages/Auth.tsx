@@ -69,33 +69,8 @@ export default function Auth() {
           </p>
         </div>
 
-        {/* Continue Without Account - Primary CTA */}
-        <div className="space-y-3">
-          <Button
-            onClick={() => navigate('/')}
-            size="lg"
-            className="w-full h-14 text-base font-bold gradient-primary hover:opacity-90 transition-all"
-          >
-            <Sparkles className="w-5 h-5 mr-2" />
-            Começar Agora
-            <ArrowRight className="w-5 h-5 ml-2" />
-          </Button>
-          <p className="text-xs text-center text-muted-foreground">
-            Use gratuitamente sem criar conta
-          </p>
-        </div>
-
         {/* Divider */}
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-border" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-3 text-muted-foreground font-medium">
-              ou entre para sincronizar
-            </span>
-          </div>
-        </div>
+        <div className="h-2" />
 
         {/* Form */}
         <div className="glass-card p-6 space-y-5">
