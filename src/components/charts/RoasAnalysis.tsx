@@ -1008,7 +1008,8 @@ function RoasRanking() {
                   </div>
                   <div className="flex gap-3 text-[10px] text-muted-foreground mt-0.5">
                     <span>Emp: <span className="text-warning font-bold">{r.roasEmpate?.toFixed(1)}</span></span>
-                    <span>Ideal: <span className="text-success font-bold">{r.roasIdeal?.toFixed(1)}</span></span>
+                    <span>Saud: <span className="text-success font-bold">{r.roasSaudavel?.toFixed(1)}</span></span>
+                    <span>Ideal: <span className="text-primary font-bold">{r.roasIdeal?.toFixed(1)}</span></span>
                   </div>
                 </div>
               </div>
