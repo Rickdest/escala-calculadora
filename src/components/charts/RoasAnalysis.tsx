@@ -799,7 +799,7 @@ function RoasSimulator() {
     const results = [];
     for (let roas = Math.max(1, Math.floor(empate - 1)); roas <= Math.ceil(ideal + 2); roas += 0.5) {
       const receita = simGasto * roas;
-      results.push({ roas: `${roas.toFixed(1)}x`, receita, lucroAds: receita - simGasto, status: roas < empate ? 'danger' : roas < ideal ? 'warning' : 'success', roasNum: roas });
+      results.push({ roas: `${roas.toFixed(1)}x`, receita, lucroAds: receita - simGasto, status: roas < empate ? 'danger' : roas < saudavel ? 'warning' : 'success', roasNum: roas });
     }
     return results;
   }, [simPrice, simCost, simGasto, selectedProduct]);
