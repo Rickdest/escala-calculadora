@@ -161,7 +161,7 @@ export default function Auth() {
                   {isLogin ? 'Entrando...' : 'Criando conta...'}
                 </>
               ) : (
-                isLogin ? 'Entrar' : 'Criar conta'
+                isLogin ? 'Entrar' : 'Criar conta e começar grátis'
               )}
             </Button>
           </form>
