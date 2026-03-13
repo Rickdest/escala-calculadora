@@ -143,7 +143,7 @@ export function generatePDFContent(data: ExportData[], store: Store): string {
       </table>
       
       <div class="footer">
-        Gerado em ${new Date().toLocaleString('pt-BR')} | Escala Calculadora
+        Gerado em ${new Date().toLocaleString('pt-BR')} | Precify
       </div>
     </body>
     </html>

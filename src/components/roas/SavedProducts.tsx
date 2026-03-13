@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 
-const STORAGE_KEY = 'escala_saved_roas_products';
+const STORAGE_KEY = 'precify_saved_roas_products';
 const MAX_PRODUCTS = 10;
 
 export interface SavedRoasProduct {

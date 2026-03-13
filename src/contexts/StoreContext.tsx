@@ -19,8 +19,8 @@ interface StoreContextType {
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'escala-calculadora-stores';
-const CURRENT_STORE_KEY = 'escala-calculadora-current-store';
+const STORAGE_KEY = 'precify-stores';
+const CURRENT_STORE_KEY = 'precify-current-store';
 
 function generateId(): string {
   return Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
