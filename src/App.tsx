@@ -39,7 +39,12 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/auth" replace />;
   }
 
-  // Block app completely when trial expired and no active subscription
+  // Block app completely when trial expired or canceled - no exceptions
+  if (status === 'canceled' || status === 'past_due') {
+    return <TrialExpiredBlock />;
+  }
+
+  // Also block if not active and not in trial and not free
   if (!isActive && status !== 'loading' && status !== 'free') {
     return <TrialExpiredBlock />;
   }

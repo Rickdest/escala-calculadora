@@ -37,13 +37,13 @@ export function TrialExpiredBlock() {
         </div>
 
         <div className="space-y-3">
-          <Button
+          <button
             onClick={handleCheckout}
-            size="lg"
-            className="w-full h-14 text-base font-bold gradient-primary hover:opacity-90"
+            className="w-full h-14 rounded-xl font-bold text-lg text-white active:scale-[0.98] transition-transform"
+            style={{ background: 'linear-gradient(135deg, #F97316, #EA580C)' }}
           >
             Assinar agora
-          </Button>
+          </button>
 
           <Button
             onClick={refreshSubscription}
