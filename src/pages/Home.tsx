@@ -30,7 +30,7 @@ export default function Home() {
     return (
       <AppLayout>
         <div className="flex flex-col items-center justify-center min-h-[85vh] px-6 text-center">
-          <h1 className="text-5xl font-bold text-primary tracking-tight mb-2">Escala</h1>
+          <h1 className="text-5xl font-bold text-primary tracking-tight mb-2">Precify</h1>
           <p className="text-muted-foreground mb-8 max-w-xs leading-relaxed">
             Precifique seus produtos da Shopee com inteligência e maximize seus lucros.
           </p>
