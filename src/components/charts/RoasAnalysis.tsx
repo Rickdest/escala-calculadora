@@ -726,6 +726,7 @@ function ProductAnalysis() {
                   costPrice: selectedProduct.costPrice,
                   lucroBruto: roasData.lucroBruto,
                   roasEmpate: roasData.roasEmpate,
+                  roasSaudavel: roasData.roasSaudavel,
                   roasIdeal: roasData.roasIdeal,
                   marginPercent,
                 }}
