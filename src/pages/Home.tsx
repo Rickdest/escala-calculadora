@@ -68,7 +68,7 @@ export default function Home() {
 
   return (
     <AppLayout>
-      <PageHeader title="Escala" />
+      <PageHeader title="Precify" />
 
       <div className="px-4 py-6 space-y-6">
         {/* Education Banner - Prominent at top */}
