@@ -794,7 +794,8 @@ function RoasSimulator() {
     const lucro = simPrice - taxa - simCost;
     if (lucro <= 0) return [];
     const empate = simPrice / lucro;
-    const ideal = empate * 1.4;
+    const saudavel = empate * 1.4;
+    const ideal = saudavel * 1.3;
     const results = [];
     for (let roas = Math.max(1, Math.floor(empate - 1)); roas <= Math.ceil(ideal + 2); roas += 0.5) {
       const receita = simGasto * roas;
