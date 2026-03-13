@@ -57,7 +57,7 @@ export function SideNavigation() {
           >
             <Crown className="w-5 h-5 text-primary" />
             <div className="text-left">
-              <p className="text-xs font-bold text-primary">Assinar Pro</p>
+               <p className="text-xs font-bold text-primary">Assinar Pro</p>
               <p className="text-[10px] text-muted-foreground">Desbloqueie tudo</p>
             </div>
           </button>
