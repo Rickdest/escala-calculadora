@@ -64,35 +64,13 @@ export default function Auth() {
           <p className="text-base text-muted-foreground mt-2">
             Precificação Inteligente para Shopee
           </p>
-        </div>
-
-        {/* Continue Without Account - Primary CTA */}
-        <div className="space-y-3">
-          <Button
-            onClick={() => navigate('/')}
-            size="lg"
-            className="w-full h-14 text-base font-bold gradient-primary hover:opacity-90 transition-all"
-          >
-            <Sparkles className="w-5 h-5 mr-2" />
-            Começar Agora
-            <ArrowRight className="w-5 h-5 ml-2" />
-          </Button>
-          <p className="text-xs text-center text-muted-foreground">
-            Use gratuitamente sem criar conta
+          <p className="text-sm font-semibold text-primary mt-1">
+            3 dias grátis. Sem cartão de crédito.
           </p>
         </div>
 
         {/* Divider */}
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t border-border" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-3 text-muted-foreground font-medium">
-              ou entre para sincronizar
-            </span>
-          </div>
-        </div>
+        <div className="h-2" />
 
         {/* Form */}
         <div className="glass-card p-6 space-y-5">
@@ -101,7 +79,7 @@ export default function Auth() {
               {isLogin ? 'Entrar na conta' : 'Criar conta'}
             </h2>
             <p className="text-xs text-muted-foreground mt-1">
-              {isLogin ? 'Sincronize seus dados entre dispositivos' : 'Salve seus produtos na nuvem'}
+              {isLogin ? 'Sincronize seus dados entre dispositivos' : '3 dias grátis · Sem cartão de crédito'}
             </p>
           </div>
 
@@ -158,7 +136,7 @@ export default function Auth() {
                   {isLogin ? 'Entrando...' : 'Criando conta...'}
                 </>
               ) : (
-                isLogin ? 'Entrar' : 'Criar conta'
+                isLogin ? 'Entrar' : 'Criar conta e começar grátis'
               )}
             </Button>
           </form>

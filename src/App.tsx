@@ -6,7 +6,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { StoreProvider } from "@/contexts/StoreContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
+import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionContext";
+import { TrialExpiredBlock } from "@/components/TrialExpiredBlock";
 import Home from "./pages/Home";
 import Products from "./pages/Products";
 import Analysis from "./pages/Analysis";
@@ -23,14 +24,24 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { loading } = useAuth();
+  const { user, loading } = useAuth();
+  const { status, loading: subLoading, isActive } = useSubscription();
 
-  if (loading) {
+  if (loading || subLoading) {
     return (
       <div className="min-h-screen bg-background gradient-mesh flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
       </div>
     );
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Block app completely when trial expired and no active subscription
+  if (!isActive && status !== 'loading' && status !== 'free') {
+    return <TrialExpiredBlock />;
   }
 
   return <>{children}</>;
@@ -75,7 +86,7 @@ const App = () => (
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/stock" element={<ProtectedRoute><Stock /></ProtectedRoute>} />
                 <Route path="/roas" element={<ProtectedRoute><Roas /></ProtectedRoute>} />
-                <Route path="/paywall" element={<ProtectedRoute><Paywall /></ProtectedRoute>} />
+                <Route path="/paywall" element={<Paywall />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

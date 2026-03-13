@@ -8,6 +8,7 @@ import { ProductForm } from '@/components/forms/ProductForm';
 import { StoreConfigForm } from '@/components/forms/StoreConfigForm';
 import { EducationBanner } from '@/components/home/EducationBanner';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
+import { TrialBanner } from '@/components/TrialBanner';
 import { Button } from '@/components/ui/button';
 import { useSubscriptionGate } from '@/hooks/useSubscriptionGate';
 import { cn } from '@/lib/utils';
@@ -71,6 +72,7 @@ export default function Home() {
 
       <div className="px-4 py-6 space-y-6">
         {/* Education Banner - Prominent at top */}
+        <TrialBanner />
         <EducationBanner />
 
         {/* Subscription CTA */}
