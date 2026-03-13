@@ -588,8 +588,8 @@ function ProductAnalysis() {
                 </div>
               </div>
 
-              {/* KPI Cards — ROAS Ideal highlighted */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {/* KPI Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 <KpiCard
                   icon={Target}
                   label="ROAS Empate"
@@ -600,9 +600,17 @@ function ProductAnalysis() {
                 />
                 <KpiCard
                   icon={TrendingUp}
+                  label="ROAS Saudável"
+                  value={roasData.roasSaudavel!.toFixed(2) + 'x'}
+                  subValue="Equilíbrio positivo"
+                  variant="success"
+                  tooltipKey="roas_ideal"
+                />
+                <KpiCard
+                  icon={Zap}
                   label="ROAS Ideal"
                   value={roasData.roasIdeal!.toFixed(2) + 'x'}
-                  subValue="Meta saudável"
+                  subValue="Meta para escalar"
                   variant="success"
                   highlight
                   tooltipKey="roas_ideal"
