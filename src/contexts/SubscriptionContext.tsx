@@ -48,8 +48,10 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           if (trialEndDate < new Date()) {
             setStatus('canceled');
           } else {
-            setStatus(data.status as SubscriptionStatus);
+            setStatus('trialing');
           }
+        } else if (data.status === 'active') {
+          setStatus('active');
         } else {
           setStatus(data.status as SubscriptionStatus);
         }
