@@ -640,6 +640,7 @@ function ProductAnalysis() {
                   salePrice={selectedProduct.salePrice}
                   lucroBruto={roasData.lucroBruto}
                   roasEmpate={roasData.roasEmpate}
+                  roasSaudavel={roasData.roasSaudavel}
                   roasIdeal={roasData.roasIdeal}
                   status={status as 'danger' | 'warning' | 'success' | null}
                 />
