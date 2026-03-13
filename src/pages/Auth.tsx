@@ -64,6 +64,9 @@ export default function Auth() {
           <p className="text-base text-muted-foreground mt-2">
             Precificação Inteligente para Shopee
           </p>
+          <p className="text-sm font-semibold text-primary mt-1">
+            3 dias grátis. Sem cartão de crédito.
+          </p>
         </div>
 
         {/* Continue Without Account - Primary CTA */}
