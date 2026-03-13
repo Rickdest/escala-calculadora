@@ -678,17 +678,6 @@ function ProductAnalysis() {
                 </div>
               )}
 
-              {/* Monthly Sales Simulation */}
-              {roasData.roasEmpate && (
-                <MonthlySalesSimulation
-                  salePrice={selectedProduct.salePrice}
-                  costPrice={selectedProduct.costPrice}
-                  taxaShopee={roasData.taxaShopee}
-                  lucroBruto={roasData.lucroBruto}
-                  roasEmpate={roasData.roasEmpate}
-                />
-              )}
-
               {/* Detalhamento */}
               <div className="glass-card p-4 space-y-2.5">
                 <p className="text-xs font-bold text-foreground flex items-center gap-2">
