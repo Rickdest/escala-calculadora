@@ -851,7 +851,8 @@ function RoasSimulator() {
           {simData && !simData.margemInsuficiente && (
             <div className="grid grid-cols-2 gap-3">
               <KpiCard icon={Target} label="ROAS Empate" value={simData.roasEmpate!.toFixed(2) + 'x'} variant="warning" tooltipKey="roas_empate" />
-              <KpiCard icon={TrendingUp} label="ROAS Ideal" value={simData.roasIdeal!.toFixed(2) + 'x'} variant="success" highlight tooltipKey="roas_ideal" />
+              <KpiCard icon={TrendingUp} label="ROAS Saudável" value={simData.roasSaudavel!.toFixed(2) + 'x'} variant="success" tooltipKey="roas_ideal" />
+              <KpiCard icon={Zap} label="ROAS Ideal" value={simData.roasIdeal!.toFixed(2) + 'x'} variant="success" highlight tooltipKey="roas_ideal" />
             </div>
           )}
 
