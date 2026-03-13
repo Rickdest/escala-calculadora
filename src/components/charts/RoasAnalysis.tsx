@@ -507,8 +507,8 @@ function ProductAnalysis() {
     return (roasData.lucroBruto / selectedProduct.salePrice) * 100;
   }, [roasData, selectedProduct]);
 
-  const status = roasData && !roasData.margemInsuficiente && roasData.roasAtual !== null && roasData.roasEmpate && roasData.roasIdeal
-    ? getRoasStatus(roasData.roasAtual, roasData.roasEmpate, roasData.roasIdeal) : null;
+  const status = roasData && !roasData.margemInsuficiente && roasData.roasAtual !== null && roasData.roasEmpate && roasData.roasSaudavel
+    ? getRoasStatus(roasData.roasAtual, roasData.roasEmpate, roasData.roasSaudavel) : null;
 
   if (!currentStore || currentStore.products.length === 0) {
     return (
