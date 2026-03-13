@@ -31,9 +31,9 @@ export default function Stores() {
   const [editingName, setEditingName] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  const handleAddStore = () => {
+  const handleAddStore = async () => {
     if (newStoreName.trim()) {
-      const store = addStore(newStoreName.trim());
+      const store = await addStore(newStoreName.trim());
       setCurrentStore(store);
       setNewStoreName('');
       setIsAdding(false);
