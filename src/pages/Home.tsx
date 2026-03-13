@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Settings2, Package, TrendingUp, TrendingDown, ArrowRight, Store, Zap, Target, Crown } from 'lucide-react';
+import { Plus, Settings2, Package, TrendingUp, TrendingDown, ArrowRight, Crown, Target } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -9,22 +9,34 @@ import { StoreConfigForm } from '@/components/forms/StoreConfigForm';
 import { EducationBanner } from '@/components/home/EducationBanner';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
 import { TrialBanner } from '@/components/TrialBanner';
+import { DailyOfferModal } from '@/components/DailyOfferModal';
 import { Button } from '@/components/ui/button';
-import { useSubscriptionGate } from '@/hooks/useSubscriptionGate';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { cn } from '@/lib/utils';
 
 export default function Home() {
   const navigate = useNavigate();
-  const { currentStore, stores, addStore, addProduct, getStoreStats, calculateProduct } = useStore();
-  const { gate, showPaywall, setShowPaywall, isActive } = useSubscriptionGate();
+  const { currentStore, stores, addStore, addProduct, getStoreStats, calculateProduct, isLoading } = useStore();
+  const { isActive } = useSubscription();
   const [showProductForm, setShowProductForm] = useState(false);
   const [showConfigForm, setShowConfigForm] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
 
-  // Create first store if none exists
-  const handleCreateFirstStore = () => {
-    const store = addStore('Minha Loja');
+  const handleCreateFirstStore = async () => {
+    await addStore('Minha Loja');
     navigate('/settings');
   };
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center min-h-[85vh]">
+          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mb-4" />
+          <p className="text-muted-foreground font-medium">Carregando seus dados...</p>
+        </div>
+      </AppLayout>
+    );
+  }
 
   if (!currentStore) {
     return (
@@ -34,11 +46,7 @@ export default function Home() {
           <p className="text-muted-foreground mb-8 max-w-xs leading-relaxed">
             Precifique seus produtos da Shopee com inteligência e maximize seus lucros.
           </p>
-          <Button 
-            onClick={handleCreateFirstStore}
-            size="lg"
-            className="h-14 px-10 text-base font-bold gradient-primary hover:opacity-90"
-          >
+          <Button onClick={handleCreateFirstStore} size="lg" className="h-14 px-10 text-base font-bold gradient-primary hover:opacity-90">
             <Plus className="w-5 h-5 mr-2" />
             Começar Agora
           </Button>
@@ -48,19 +56,13 @@ export default function Home() {
   }
 
   const stats = getStoreStats(currentStore);
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
-  };
+  const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
-  const handleSaveProduct = (productData: any) => {
-    addProduct(productData);
+  const handleSaveProduct = async (productData: any) => {
+    await addProduct(productData);
     setShowProductForm(false);
   };
 
-  // Get top performing products
   const topProducts = currentStore.products
     .map(p => ({ product: p, calc: calculateProduct(p, currentStore.config) }))
     .sort((a, b) => b.calc.realMargin - a.calc.realMargin)
@@ -69,36 +71,27 @@ export default function Home() {
   return (
     <AppLayout>
       <PageHeader title="Precify" />
-
       <div className="px-4 py-6 space-y-6">
-        {/* Education Banner - Prominent at top */}
         <TrialBanner />
         <EducationBanner />
 
-        {/* Subscription CTA */}
+        {/* Subscription CTA - only for non-active */}
         {!isActive && (
-          <div 
-            onClick={() => setShowPaywall(true)}
-            className="glass-card p-5 cursor-pointer hover:shadow-lg transition-all active:scale-[0.98] animate-fade-up"
-          >
+          <div onClick={() => setShowPaywall(true)} className="glass-card p-5 cursor-pointer hover:shadow-lg transition-all active:scale-[0.98] animate-fade-up">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl gradient-primary shadow-md">
-                <Crown className="w-6 h-6 text-primary-foreground" />
-              </div>
+              <div className="p-3 rounded-2xl gradient-primary shadow-md"><Crown className="w-6 h-6 text-primary-foreground" /></div>
               <div className="flex-1">
                 <p className="font-bold text-foreground">Assine o Precify Pro</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  A partir de R$ 8,08/mês · Acesse todas as ferramentas
-                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">A partir de R$ 8,08/mês · Acesse todas as ferramentas</p>
               </div>
               <ArrowRight className="w-5 h-5 text-primary" />
             </div>
           </div>
         )}
 
-        {/* Main CTA */}
-        <Button 
-          onClick={() => gate(() => setShowProductForm(true))}
+        {/* Main CTA - NO gate blocking for trial users */}
+        <Button
+          onClick={() => setShowProductForm(true)}
           className="w-full md:w-auto h-16 text-lg font-bold gradient-primary hover:opacity-90 shadow-lg md:h-12 md:px-8"
         >
           <Plus className="w-6 h-6 mr-3 md:w-5 md:h-5" />
@@ -109,36 +102,23 @@ export default function Home() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="glass-card p-5 animate-fade-up">
             <div className="flex items-center gap-2 mb-3">
-              <div className={cn(
-                'p-2 rounded-xl',
-                stats.avgMargin >= currentStore.config.desiredMargin ? 'bg-success-muted' : 'bg-warning-muted'
-              )}>
-                <Target className={cn(
-                  'w-5 h-5',
-                  stats.avgMargin >= currentStore.config.desiredMargin ? 'text-success' : 'text-warning'
-                )} />
+              <div className={cn('p-2 rounded-xl', stats.avgMargin >= currentStore.config.desiredMargin ? 'bg-success-muted' : 'bg-warning-muted')}>
+                <Target className={cn('w-5 h-5', stats.avgMargin >= currentStore.config.desiredMargin ? 'text-success' : 'text-warning')} />
               </div>
             </div>
             <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-1">Margem Média</p>
-            <p className={cn(
-              'number-xl',
-              stats.avgMargin >= currentStore.config.desiredMargin ? 'text-success' : 'text-warning'
-            )}>
+            <p className={cn('number-xl', stats.avgMargin >= currentStore.config.desiredMargin ? 'text-success' : 'text-warning')}>
               {stats.avgMargin.toFixed(1)}%
             </p>
           </div>
-          
           <div className="glass-card p-5 animate-fade-up stagger-1">
             <div className="flex items-center gap-2 mb-3">
-              <div className="p-2 rounded-xl bg-primary/10">
-                <Package className="w-5 h-5 text-primary" />
-              </div>
+              <div className="p-2 rounded-xl bg-primary/10"><Package className="w-5 h-5 text-primary" /></div>
             </div>
             <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-1">Produtos</p>
             <p className="number-xl text-primary">{stats.totalProducts}</p>
           </div>
         </div>
-
 
         {/* Quick Performance */}
         {stats.totalProducts > 0 && (
@@ -165,45 +145,22 @@ export default function Home() {
           <div className="space-y-3 animate-fade-up stagger-4">
             <div className="flex items-center justify-between">
               <h2 className="font-bold text-foreground">Melhores Margens</h2>
-              <button 
-                onClick={() => navigate('/products')}
-                className="text-sm text-primary font-semibold flex items-center gap-1"
-              >
-                Ver Todos
-                <ArrowRight className="w-4 h-4" />
+              <button onClick={() => navigate('/products')} className="text-sm text-primary font-semibold flex items-center gap-1">
+                Ver Todos<ArrowRight className="w-4 h-4" />
               </button>
             </div>
-            
             <div className="space-y-2">
               {topProducts.map(({ product, calc }, index) => (
-                <div 
-                  key={product.id}
-                  className="glass-card-hover p-4 flex items-center justify-between"
-                  onClick={() => navigate('/products')}
-                >
+                <div key={product.id} className="glass-card-hover p-4 flex items-center justify-between" onClick={() => navigate('/products')}>
                   <div className="flex items-center gap-3">
-                    <div className={cn(
-                      'w-10 h-10 rounded-xl flex items-center justify-center text-sm font-extrabold',
-                      index === 0 ? 'gradient-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'
-                    )}>
+                    <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center text-sm font-extrabold', index === 0 ? 'gradient-primary text-primary-foreground' : 'bg-secondary text-muted-foreground')}>
                       {index + 1}
                     </div>
-                    <span className="font-semibold text-foreground truncate max-w-[140px]">
-                      {product.name}
-                    </span>
+                    <span className="font-semibold text-foreground truncate max-w-[140px]">{product.name}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={cn(
-                      'font-extrabold text-lg',
-                      calc.isAboveTarget ? 'text-success' : 'text-danger'
-                    )}>
-                      {calc.realMargin.toFixed(1)}%
-                    </span>
-                    {calc.isAboveTarget ? (
-                      <TrendingUp className="w-4 h-4 text-success" />
-                    ) : (
-                      <TrendingDown className="w-4 h-4 text-danger" />
-                    )}
+                    <span className={cn('font-extrabold text-lg', calc.isAboveTarget ? 'text-success' : 'text-danger')}>{calc.realMargin.toFixed(1)}%</span>
+                    {calc.isAboveTarget ? <TrendingUp className="w-4 h-4 text-success" /> : <TrendingDown className="w-4 h-4 text-danger" />}
                   </div>
                 </div>
               ))}
@@ -211,52 +168,33 @@ export default function Home() {
           </div>
         )}
 
-        {/* Empty State */}
         {stats.totalProducts === 0 && (
           <div className="text-center py-12 animate-fade-up">
             <div className="w-20 h-20 rounded-2xl bg-secondary mx-auto flex items-center justify-center mb-4">
               <Package className="w-10 h-10 text-muted-foreground" />
             </div>
             <h3 className="font-bold text-foreground mb-2 text-lg">Nenhum produto ainda</h3>
-            <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">
-              Adicione seu primeiro produto para começar a precificar com inteligência
-            </p>
+            <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">Adicione seu primeiro produto para começar a precificar com inteligência</p>
           </div>
         )}
 
         {/* Store Config Card */}
-        <div 
-          onClick={() => gate(() => setShowConfigForm(true))}
-          className="glass-card-hover p-4 animate-fade-up stagger-5"
-        >
+        <div onClick={() => setShowConfigForm(true)} className="glass-card-hover p-4 animate-fade-up stagger-5">
           <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl gradient-primary">
-              <Settings2 className="w-5 h-5 text-primary-foreground" />
-            </div>
+            <div className="p-3 rounded-xl gradient-primary"><Settings2 className="w-5 h-5 text-primary-foreground" /></div>
             <div className="flex-1">
               <p className="font-bold text-foreground">Taxas da Loja</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Taxas automáticas por faixa · Meta: {currentStore.config.desiredMargin}%
-              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">Taxas automáticas por faixa · Meta: {currentStore.config.desiredMargin}%</p>
             </div>
             <ArrowRight className="w-5 h-5 text-muted-foreground" />
           </div>
         </div>
-
       </div>
 
-      {showProductForm && (
-        <ProductForm 
-          onClose={() => setShowProductForm(false)}
-          onSave={handleSaveProduct}
-        />
-      )}
-
-      {showConfigForm && (
-        <StoreConfigForm onClose={() => setShowConfigForm(false)} />
-      )}
-
+      {showProductForm && <ProductForm onClose={() => setShowProductForm(false)} onSave={handleSaveProduct} />}
+      {showConfigForm && <StoreConfigForm onClose={() => setShowConfigForm(false)} />}
       <SubscriptionModal open={showPaywall} onClose={() => setShowPaywall(false)} />
+      <DailyOfferModal />
     </AppLayout>
   );
 }

@@ -145,6 +145,7 @@ export type Database = {
           name: string
           packaging_cost: number | null
           sale_price: number
+          shopee_acelera: string | null
           stock_quantity: number | null
           store_id: string
           updated_at: string
@@ -162,6 +163,7 @@ export type Database = {
           name: string
           packaging_cost?: number | null
           sale_price: number
+          shopee_acelera?: string | null
           stock_quantity?: number | null
           store_id: string
           updated_at?: string
@@ -179,6 +181,7 @@ export type Database = {
           name?: string
           packaging_cost?: number | null
           sale_price?: number
+          shopee_acelera?: string | null
           stock_quantity?: number | null
           store_id?: string
           updated_at?: string
@@ -231,8 +234,12 @@ export type Database = {
           created_at: string
           desired_margin: number | null
           enable_ads: boolean | null
+          enable_affiliate_commission: boolean | null
           enable_packaging: boolean | null
+          enable_shopee_campaigns: boolean | null
+          has_over_450_orders: boolean | null
           id: string
+          is_cpf_seller: boolean | null
           name: string
           shopee_campaigns: number | null
           shopee_fee_fixed: number | null
@@ -246,8 +253,12 @@ export type Database = {
           created_at?: string
           desired_margin?: number | null
           enable_ads?: boolean | null
+          enable_affiliate_commission?: boolean | null
           enable_packaging?: boolean | null
+          enable_shopee_campaigns?: boolean | null
+          has_over_450_orders?: boolean | null
           id?: string
+          is_cpf_seller?: boolean | null
           name: string
           shopee_campaigns?: number | null
           shopee_fee_fixed?: number | null
@@ -261,8 +272,12 @@ export type Database = {
           created_at?: string
           desired_margin?: number | null
           enable_ads?: boolean | null
+          enable_affiliate_commission?: boolean | null
           enable_packaging?: boolean | null
+          enable_shopee_campaigns?: boolean | null
+          has_over_450_orders?: boolean | null
           id?: string
+          is_cpf_seller?: boolean | null
           name?: string
           shopee_campaigns?: number | null
           shopee_fee_fixed?: number | null
