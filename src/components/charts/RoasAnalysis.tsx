@@ -31,6 +31,7 @@ import { SavedProducts, SavedRoasProduct } from '@/components/roas/SavedProducts
 interface RoasResult {
   roasAtual: number | null;
   roasEmpate: number | null;
+  roasSaudavel: number | null;
   roasIdeal: number | null;
   lucroBruto: number;
   taxaShopee: number;
@@ -44,17 +45,18 @@ function calcRoasFromValues(precoVenda: number, custoP: number, gastoAds: number
   const valorRecebido = precoVenda - taxaShopee;
   const lucroBruto = valorRecebido - custoP;
   if (lucroBruto <= 0) {
-    return { roasAtual: null, roasEmpate: null, roasIdeal: null, lucroBruto, taxaShopee, valorRecebido, margemInsuficiente: true };
+    return { roasAtual: null, roasEmpate: null, roasSaudavel: null, roasIdeal: null, lucroBruto, taxaShopee, valorRecebido, margemInsuficiente: true };
   }
   const roasEmpate = parseFloat((precoVenda / lucroBruto).toFixed(2));
-  const roasIdeal = parseFloat((roasEmpate * 1.4).toFixed(2));
+  const roasSaudavel = parseFloat((roasEmpate * 1.4).toFixed(2));
+  const roasIdeal = parseFloat((roasSaudavel * 1.3).toFixed(2));
   const roasAtual = gastoAds > 0 ? parseFloat((receitaAds / gastoAds).toFixed(2)) : null;
-  return { roasAtual, roasEmpate, roasIdeal, lucroBruto, taxaShopee, valorRecebido, margemInsuficiente: false };
+  return { roasAtual, roasEmpate, roasSaudavel, roasIdeal, lucroBruto, taxaShopee, valorRecebido, margemInsuficiente: false };
 }
 
-function getRoasStatus(roasAtual: number, roasEmpate: number, roasIdeal: number) {
+function getRoasStatus(roasAtual: number, roasEmpate: number, roasSaudavel: number) {
   if (roasAtual < roasEmpate) return 'danger';
-  if (roasAtual < roasIdeal) return 'warning';
+  if (roasAtual < roasSaudavel) return 'warning';
   return 'success';
 }
 
