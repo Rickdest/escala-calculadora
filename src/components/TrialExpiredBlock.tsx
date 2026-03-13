@@ -56,9 +56,9 @@ export function TrialExpiredBlock() {
           </Button>
         </div>
 
-        <p className="text-xs text-muted-foreground">
-          R$ 19,90/mês ou R$ 97,00/ano · Pagamento via Hotmart
-        </p>
+         <p className="text-xs text-muted-foreground">
+           R$ 19,90/mês ou R$ 97,00/ano · Pagamento via Hotmart
+         </p>
       </div>
     </div>
   );

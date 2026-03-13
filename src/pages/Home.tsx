@@ -30,7 +30,7 @@ export default function Home() {
     return (
       <AppLayout>
         <div className="flex flex-col items-center justify-center min-h-[85vh] px-6 text-center">
-          <h1 className="text-5xl font-bold text-primary tracking-tight mb-2">Escala</h1>
+          <h1 className="text-5xl font-bold text-primary tracking-tight mb-2">Precify</h1>
           <p className="text-muted-foreground mb-8 max-w-xs leading-relaxed">
             Precifique seus produtos da Shopee com inteligência e maximize seus lucros.
           </p>
@@ -68,7 +68,7 @@ export default function Home() {
 
   return (
     <AppLayout>
-      <PageHeader title="Escala" />
+      <PageHeader title="Precify" />
 
       <div className="px-4 py-6 space-y-6">
         {/* Education Banner - Prominent at top */}
@@ -86,7 +86,7 @@ export default function Home() {
                 <Crown className="w-6 h-6 text-primary-foreground" />
               </div>
               <div className="flex-1">
-                <p className="font-bold text-foreground">Assine o Escala Pro</p>
+                <p className="font-bold text-foreground">Assine o Precify Pro</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   A partir de R$ 8,08/mês · Acesse todas as ferramentas
                 </p>

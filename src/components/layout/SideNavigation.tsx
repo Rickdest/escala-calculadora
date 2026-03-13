@@ -21,8 +21,8 @@ export function SideNavigation() {
     <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 flex-col bg-card/80 backdrop-blur-xl border-r border-border/50 z-50">
       {/* Logo */}
       <div className="flex items-center gap-3 px-6 py-6 border-b border-border/30">
-        <img src={logoIcon} alt="Escala" className="w-9 h-9 object-contain" />
-        <span className="text-xl font-extrabold text-foreground tracking-tight">Escala</span>
+         <img src={logoIcon} alt="Precify" className="w-9 h-9 object-contain" />
+         <span className="text-xl font-extrabold text-foreground tracking-tight">Precify</span>
       </div>
 
       {/* Navigation */}
@@ -57,7 +57,7 @@ export function SideNavigation() {
           >
             <Crown className="w-5 h-5 text-primary" />
             <div className="text-left">
-              <p className="text-xs font-bold text-primary">Assinar Pro</p>
+               <p className="text-xs font-bold text-primary">Assinar Pro</p>
               <p className="text-[10px] text-muted-foreground">Desbloqueie tudo</p>
             </div>
           </button>
@@ -76,7 +76,7 @@ export function SideNavigation() {
       {/* Footer */}
       <div className="px-4 py-4 border-t border-border/30">
         <p className="text-[10px] text-muted-foreground text-center">
-          © {new Date().getFullYear()} Escala
+          © {new Date().getFullYear()} Precify
         </p>
       </div>
     </aside>

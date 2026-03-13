@@ -64,7 +64,7 @@ export default function Paywall() {
             <Crown className="w-8 h-8 text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-bold text-foreground">
-            {trialExpired ? 'Seu período de teste expirou' : 'Desbloqueie o Escala Pro'}
+            {trialExpired ? 'Seu período de teste expirou' : 'Desbloqueie o Precify Pro'}
           </h1>
           <p className="text-muted-foreground text-sm leading-relaxed">
             {trialExpired
