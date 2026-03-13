@@ -684,7 +684,8 @@ function ProductAnalysis() {
                   <div className="flex justify-between text-[10px] text-muted-foreground font-bold">
                     <span>0</span>
                     <span className="text-warning">⚡ Empate {roasData.roasEmpate.toFixed(1)}</span>
-                    <span className="text-success">🎯 Ideal {roasData.roasIdeal.toFixed(1)}</span>
+                    <span className="text-success">✅ Saudável {roasData.roasSaudavel?.toFixed(1)}</span>
+                    <span className="text-primary">🎯 Ideal {roasData.roasIdeal.toFixed(1)}</span>
                   </div>
                 </div>
               )}
