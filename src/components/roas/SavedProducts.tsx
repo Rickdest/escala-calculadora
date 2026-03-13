@@ -16,6 +16,7 @@ export interface SavedRoasProduct {
   costPrice: number;
   lucroBruto: number;
   roasEmpate: number | null;
+  roasSaudavel: number | null;
   roasIdeal: number | null;
   marginPercent: number;
   savedAt: string;
@@ -25,9 +26,7 @@ const formatCurrency = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
 function getSaved(): SavedRoasProduct[] {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-  } catch { return []; }
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
 }
 
 function setSaved(products: SavedRoasProduct[]) {
@@ -40,6 +39,7 @@ interface SavedProductsProps {
     costPrice: number;
     lucroBruto: number;
     roasEmpate: number | null;
+    roasSaudavel: number | null;
     roasIdeal: number | null;
     marginPercent: number;
   } | null;
@@ -51,19 +51,11 @@ export function SavedProducts({ currentProduct, onLoad }: SavedProductsProps) {
   const [products, setProducts] = useState<SavedRoasProduct[]>([]);
   const [saveName, setSaveName] = useState('');
 
-  useEffect(() => {
-    setProducts(getSaved());
-  }, []);
+  useEffect(() => { setProducts(getSaved()); }, []);
 
   const handleSave = () => {
-    if (!currentProduct || !saveName.trim()) {
-      toast.error('Preencha o nome do produto');
-      return;
-    }
-    if (products.length >= MAX_PRODUCTS) {
-      toast.error(`Limite de ${MAX_PRODUCTS} produtos atingido. Exclua um para salvar.`);
-      return;
-    }
+    if (!currentProduct || !saveName.trim()) { toast.error('Preencha o nome do produto'); return; }
+    if (products.length >= MAX_PRODUCTS) { toast.error(`Limite de ${MAX_PRODUCTS} produtos atingido.`); return; }
     const newProduct: SavedRoasProduct = {
       id: Date.now().toString(),
       name: saveName.trim(),
@@ -84,8 +76,7 @@ export function SavedProducts({ currentProduct, onLoad }: SavedProductsProps) {
     toast.success('Produto removido');
   };
 
-  const getStatusEmoji = (margin: number) =>
-    margin < 0 ? '🔴' : margin <= 15 ? '🟡' : '🟢';
+  const getStatusEmoji = (margin: number) => margin < 0 ? '🔴' : margin <= 15 ? '🟡' : '🟢';
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
@@ -96,9 +87,7 @@ export function SavedProducts({ currentProduct, onLoad }: SavedProductsProps) {
               <Bookmark className="w-4 h-4 text-primary" />
               <span className="text-sm font-bold">Meus Produtos Salvos</span>
               {products.length > 0 && (
-                <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full">
-                  {products.length}/{MAX_PRODUCTS}
-                </span>
+                <span className="text-[10px] bg-primary/10 text-primary font-bold px-2 py-0.5 rounded-full">{products.length}/{MAX_PRODUCTS}</span>
               )}
             </div>
             <ChevronDown className={cn('w-4 h-4 transition-transform text-muted-foreground', open && 'rotate-180')} />
@@ -106,48 +95,25 @@ export function SavedProducts({ currentProduct, onLoad }: SavedProductsProps) {
         </CollapsibleTrigger>
         <CollapsibleContent>
           <div className="p-4 pt-0 space-y-3 animate-fade-in">
-            {/* Save form */}
             {currentProduct && (
               <div className="flex gap-2">
-                <Input
-                  value={saveName}
-                  onChange={(e) => setSaveName(e.target.value)}
-                  placeholder="Nome do produto (ex: Tênis Nike)"
-                  className="input-modern h-9 text-sm flex-1"
-                  maxLength={40}
-                />
-                <Button
-                  onClick={handleSave}
-                  size="sm"
-                  className="h-9 text-xs gap-1 gradient-primary active:scale-95 transition-transform"
-                  disabled={!saveName.trim() || products.length >= MAX_PRODUCTS}
-                >
-                  <Bookmark className="w-3.5 h-3.5" />
-                  Salvar
+                <Input value={saveName} onChange={(e) => setSaveName(e.target.value)} placeholder="Nome do produto" className="input-modern h-9 text-sm flex-1" maxLength={40} />
+                <Button onClick={handleSave} size="sm" className="h-9 text-xs gap-1 gradient-primary active:scale-95 transition-transform" disabled={!saveName.trim() || products.length >= MAX_PRODUCTS}>
+                  <Bookmark className="w-3.5 h-3.5" />Salvar
                 </Button>
               </div>
             )}
-
             {products.length >= MAX_PRODUCTS && (
               <div className="flex items-center gap-2 text-xs text-warning bg-warning/10 rounded-lg p-2">
-                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                Limite de {MAX_PRODUCTS} produtos atingido
+                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />Limite de {MAX_PRODUCTS} produtos atingido
               </div>
             )}
-
-            {/* Saved list */}
             {products.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-3 italic">
-                Nenhum produto salvo ainda
-              </p>
+              <p className="text-xs text-muted-foreground text-center py-3 italic">Nenhum produto salvo ainda</p>
             ) : (
               <div className="space-y-2 max-h-[300px] overflow-y-auto scrollbar-thin">
                 {products.map(p => (
-                  <div
-                    key={p.id}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-secondary/30 border border-border/20 hover:bg-secondary/50 transition-colors group cursor-pointer"
-                    onClick={() => onLoad?.(p)}
-                  >
+                  <div key={p.id} className="flex items-center gap-3 p-3 rounded-xl bg-secondary/30 border border-border/20 hover:bg-secondary/50 transition-colors group cursor-pointer" onClick={() => onLoad?.(p)}>
                     <span className="text-base">{getStatusEmoji(p.marginPercent)}</span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold truncate">{p.name}</p>
@@ -156,12 +122,7 @@ export function SavedProducts({ currentProduct, onLoad }: SavedProductsProps) {
                         {p.roasEmpate && <span>• Emp: {p.roasEmpate.toFixed(1)}x</span>}
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive transition-opacity flex-shrink-0"
-                      onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }}
-                    >
+                    <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 text-destructive hover:text-destructive transition-opacity flex-shrink-0" onClick={(e) => { e.stopPropagation(); handleDelete(p.id); }}>
                       <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </div>

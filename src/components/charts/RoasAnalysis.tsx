@@ -31,6 +31,7 @@ import { SavedProducts, SavedRoasProduct } from '@/components/roas/SavedProducts
 interface RoasResult {
   roasAtual: number | null;
   roasEmpate: number | null;
+  roasSaudavel: number | null;
   roasIdeal: number | null;
   lucroBruto: number;
   taxaShopee: number;
@@ -44,17 +45,18 @@ function calcRoasFromValues(precoVenda: number, custoP: number, gastoAds: number
   const valorRecebido = precoVenda - taxaShopee;
   const lucroBruto = valorRecebido - custoP;
   if (lucroBruto <= 0) {
-    return { roasAtual: null, roasEmpate: null, roasIdeal: null, lucroBruto, taxaShopee, valorRecebido, margemInsuficiente: true };
+    return { roasAtual: null, roasEmpate: null, roasSaudavel: null, roasIdeal: null, lucroBruto, taxaShopee, valorRecebido, margemInsuficiente: true };
   }
   const roasEmpate = parseFloat((precoVenda / lucroBruto).toFixed(2));
-  const roasIdeal = parseFloat((roasEmpate * 1.4).toFixed(2));
+  const roasSaudavel = parseFloat((roasEmpate * 1.4).toFixed(2));
+  const roasIdeal = parseFloat((roasSaudavel * 1.3).toFixed(2));
   const roasAtual = gastoAds > 0 ? parseFloat((receitaAds / gastoAds).toFixed(2)) : null;
-  return { roasAtual, roasEmpate, roasIdeal, lucroBruto, taxaShopee, valorRecebido, margemInsuficiente: false };
+  return { roasAtual, roasEmpate, roasSaudavel, roasIdeal, lucroBruto, taxaShopee, valorRecebido, margemInsuficiente: false };
 }
 
-function getRoasStatus(roasAtual: number, roasEmpate: number, roasIdeal: number) {
+function getRoasStatus(roasAtual: number, roasEmpate: number, roasSaudavel: number) {
   if (roasAtual < roasEmpate) return 'danger';
-  if (roasAtual < roasIdeal) return 'warning';
+  if (roasAtual < roasSaudavel) return 'warning';
   return 'success';
 }
 
@@ -505,8 +507,8 @@ function ProductAnalysis() {
     return (roasData.lucroBruto / selectedProduct.salePrice) * 100;
   }, [roasData, selectedProduct]);
 
-  const status = roasData && !roasData.margemInsuficiente && roasData.roasAtual !== null && roasData.roasEmpate && roasData.roasIdeal
-    ? getRoasStatus(roasData.roasAtual, roasData.roasEmpate, roasData.roasIdeal) : null;
+  const status = roasData && !roasData.margemInsuficiente && roasData.roasAtual !== null && roasData.roasEmpate && roasData.roasSaudavel
+    ? getRoasStatus(roasData.roasAtual, roasData.roasEmpate, roasData.roasSaudavel) : null;
 
   if (!currentStore || currentStore.products.length === 0) {
     return (
@@ -586,8 +588,8 @@ function ProductAnalysis() {
                 </div>
               </div>
 
-              {/* KPI Cards — ROAS Ideal highlighted */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {/* KPI Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 <KpiCard
                   icon={Target}
                   label="ROAS Empate"
@@ -598,9 +600,17 @@ function ProductAnalysis() {
                 />
                 <KpiCard
                   icon={TrendingUp}
+                  label="ROAS Saudável"
+                  value={roasData.roasSaudavel!.toFixed(2) + 'x'}
+                  subValue="Equilíbrio positivo"
+                  variant="success"
+                  tooltipKey="roas_ideal"
+                />
+                <KpiCard
+                  icon={Zap}
                   label="ROAS Ideal"
                   value={roasData.roasIdeal!.toFixed(2) + 'x'}
-                  subValue="Meta saudável"
+                  subValue="Meta para escalar"
                   variant="success"
                   highlight
                   tooltipKey="roas_ideal"
@@ -630,6 +640,7 @@ function ProductAnalysis() {
                   salePrice={selectedProduct.salePrice}
                   lucroBruto={roasData.lucroBruto}
                   roasEmpate={roasData.roasEmpate}
+                  roasSaudavel={roasData.roasSaudavel}
                   roasIdeal={roasData.roasIdeal}
                   status={status as 'danger' | 'warning' | 'success' | null}
                 />
@@ -673,7 +684,8 @@ function ProductAnalysis() {
                   <div className="flex justify-between text-[10px] text-muted-foreground font-bold">
                     <span>0</span>
                     <span className="text-warning">⚡ Empate {roasData.roasEmpate.toFixed(1)}</span>
-                    <span className="text-success">🎯 Ideal {roasData.roasIdeal.toFixed(1)}</span>
+                    <span className="text-success">✅ Saudável {roasData.roasSaudavel?.toFixed(1)}</span>
+                    <span className="text-primary">🎯 Ideal {roasData.roasIdeal.toFixed(1)}</span>
                   </div>
                 </div>
               )}
@@ -714,6 +726,7 @@ function ProductAnalysis() {
                   costPrice: selectedProduct.costPrice,
                   lucroBruto: roasData.lucroBruto,
                   roasEmpate: roasData.roasEmpate,
+                  roasSaudavel: roasData.roasSaudavel,
                   roasIdeal: roasData.roasIdeal,
                   marginPercent,
                 }}
@@ -781,11 +794,12 @@ function RoasSimulator() {
     const lucro = simPrice - taxa - simCost;
     if (lucro <= 0) return [];
     const empate = simPrice / lucro;
-    const ideal = empate * 1.4;
+    const saudavel = empate * 1.4;
+    const ideal = saudavel * 1.3;
     const results = [];
     for (let roas = Math.max(1, Math.floor(empate - 1)); roas <= Math.ceil(ideal + 2); roas += 0.5) {
       const receita = simGasto * roas;
-      results.push({ roas: `${roas.toFixed(1)}x`, receita, lucroAds: receita - simGasto, status: roas < empate ? 'danger' : roas < ideal ? 'warning' : 'success', roasNum: roas });
+      results.push({ roas: `${roas.toFixed(1)}x`, receita, lucroAds: receita - simGasto, status: roas < empate ? 'danger' : roas < saudavel ? 'warning' : 'success', roasNum: roas });
     }
     return results;
   }, [simPrice, simCost, simGasto, selectedProduct]);
@@ -837,7 +851,8 @@ function RoasSimulator() {
           {simData && !simData.margemInsuficiente && (
             <div className="grid grid-cols-2 gap-3">
               <KpiCard icon={Target} label="ROAS Empate" value={simData.roasEmpate!.toFixed(2) + 'x'} variant="warning" tooltipKey="roas_empate" />
-              <KpiCard icon={TrendingUp} label="ROAS Ideal" value={simData.roasIdeal!.toFixed(2) + 'x'} variant="success" highlight tooltipKey="roas_ideal" />
+              <KpiCard icon={TrendingUp} label="ROAS Saudável" value={simData.roasSaudavel!.toFixed(2) + 'x'} variant="success" tooltipKey="roas_ideal" />
+              <KpiCard icon={Zap} label="ROAS Ideal" value={simData.roasIdeal!.toFixed(2) + 'x'} variant="success" highlight tooltipKey="roas_ideal" />
             </div>
           )}
 
@@ -902,8 +917,8 @@ function RoasRanking() {
     return currentStore.products
       .map(p => {
         const data = calcRoasFromValues(p.salePrice, p.costPrice, p.adsCost, p.adsRevenue);
-        const status = data.roasAtual !== null && data.roasEmpate && data.roasIdeal && !data.margemInsuficiente
-          ? getRoasStatus(data.roasAtual, data.roasEmpate, data.roasIdeal) : null;
+        const status = data.roasAtual !== null && data.roasEmpate && data.roasSaudavel && !data.margemInsuficiente
+          ? getRoasStatus(data.roasAtual, data.roasEmpate, data.roasSaudavel) : null;
         return { product: p, ...data, status };
       })
       .sort((a, b) => {
@@ -993,7 +1008,8 @@ function RoasRanking() {
                   </div>
                   <div className="flex gap-3 text-[10px] text-muted-foreground mt-0.5">
                     <span>Emp: <span className="text-warning font-bold">{r.roasEmpate?.toFixed(1)}</span></span>
-                    <span>Ideal: <span className="text-success font-bold">{r.roasIdeal?.toFixed(1)}</span></span>
+                    <span>Saud: <span className="text-success font-bold">{r.roasSaudavel?.toFixed(1)}</span></span>
+                    <span>Ideal: <span className="text-primary font-bold">{r.roasIdeal?.toFixed(1)}</span></span>
                   </div>
                 </div>
               </div>
@@ -1019,7 +1035,8 @@ function RoasRanking() {
                   ) : (
                     <div className="text-[10px] text-muted-foreground">
                       <p>Emp: <span className="text-warning font-bold">{r.roasEmpate?.toFixed(2)}</span></p>
-                      <p>Ideal: <span className="text-success font-bold">{r.roasIdeal?.toFixed(2)}</span></p>
+                      <p>Saud: <span className="text-success font-bold">{r.roasSaudavel?.toFixed(2)}</span></p>
+                      <p>Ideal: <span className="text-primary font-bold">{r.roasIdeal?.toFixed(2)}</span></p>
                     </div>
                   )}
                 </div>

@@ -2,19 +2,22 @@ import { useState, useCallback } from 'react';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 
 export function useSubscriptionGate() {
-  const { isActive } = useSubscription();
+  const { isActive, status } = useSubscription();
   const [showPaywall, setShowPaywall] = useState(false);
+
+  // Allow access for: active, trialing, free (new users before subscription created), loading
+  const canAccess = isActive || status === 'free' || status === 'loading';
 
   const gate = useCallback(
     (action: () => void) => {
-      if (isActive) {
+      if (canAccess) {
         action();
       } else {
         setShowPaywall(true);
       }
     },
-    [isActive]
+    [canAccess]
   );
 
-  return { gate, showPaywall, setShowPaywall, isActive };
+  return { gate, showPaywall, setShowPaywall, isActive: canAccess };
 }

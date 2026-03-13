@@ -1,6 +1,6 @@
 export interface ShopeeFeeRange {
   minPrice: number;
-  maxPrice: number | null; // null = no upper limit
+  maxPrice: number | null;
   percent: number;
   fixed: number;
   label: string;
@@ -21,6 +21,8 @@ export function getShopeeFeeForPrice(salePrice: number): ShopeeFeeRange {
   }
   return SHOPEE_FEE_RANGES[SHOPEE_FEE_RANGES.length - 1];
 }
+
+export type ShopeeAceleraOption = 'none' | 'indicado' | 'nao_indicado';
 
 export interface StoreConfig {
   isCpfSeller: boolean;
@@ -67,6 +69,7 @@ export interface Product {
   stockQuantity: number;
   hasVariations: boolean;
   variations: ProductVariation[];
+  shopeeAcelera: ShopeeAceleraOption;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -79,6 +82,7 @@ export interface ProductCalculation {
   taxes: number;
   affiliateCommission: number;
   shopeeCampaigns: number;
+  shopeeAcelera: number;
   totalCosts: number;
   netProfit: number;
   realMargin: number;
