@@ -69,7 +69,7 @@ export function SubscriptionModal({ open, onClose }: SubscriptionModalProps) {
           <div className="w-14 h-14 rounded-2xl gradient-primary mx-auto flex items-center justify-center">
             <Crown className="w-7 h-7 text-primary-foreground" />
           </div>
-          <h2 className="text-xl font-bold text-foreground">Assine o Escala Pro</h2>
+          <h2 className="text-xl font-bold text-foreground">Assine o Precify Pro</h2>
           <p className="text-sm text-muted-foreground">
             Para usar esta funcionalidade, ative sua assinatura.
           </p>

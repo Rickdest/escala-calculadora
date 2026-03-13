@@ -86,7 +86,7 @@ export default function Home() {
                 <Crown className="w-6 h-6 text-primary-foreground" />
               </div>
               <div className="flex-1">
-                <p className="font-bold text-foreground">Assine o Escala Pro</p>
+                <p className="font-bold text-foreground">Assine o Precify Pro</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   A partir de R$ 8,08/mês · Acesse todas as ferramentas
                 </p>

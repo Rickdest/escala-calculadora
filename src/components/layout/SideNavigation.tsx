@@ -76,7 +76,7 @@ export function SideNavigation() {
       {/* Footer */}
       <div className="px-4 py-4 border-t border-border/30">
         <p className="text-[10px] text-muted-foreground text-center">
-          © {new Date().getFullYear()} Escala
+          © {new Date().getFullYear()} Precify
         </p>
       </div>
     </aside>

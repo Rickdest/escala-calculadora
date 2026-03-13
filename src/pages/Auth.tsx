@@ -60,7 +60,7 @@ export default function Auth() {
       <div className="w-full max-w-sm space-y-6">
         {/* Header */}
         <div className="flex flex-col items-center text-center">
-          <h1 className="text-5xl font-bold text-primary tracking-tight">Escala</h1>
+          <h1 className="text-5xl font-bold text-primary tracking-tight">Precify</h1>
           <p className="text-base text-muted-foreground mt-2">
             Precificação Inteligente para Shopee
           </p>

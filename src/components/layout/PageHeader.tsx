@@ -24,7 +24,7 @@ export function PageHeader({ title, subtitle, showStoreSelector = true, action }
       <div className="flex items-center justify-between max-w-lg mx-auto md:max-w-none">
         <div className="flex items-center gap-2.5 flex-1">
           {/* Logo icon only on mobile */}
-          <img src={logoIcon} alt="Escala" className="w-8 h-8 object-contain md:hidden" />
+          <img src={logoIcon} alt="Precify" className="w-8 h-8 object-contain md:hidden" />
           <div>
             <h1 className="text-xl font-bold text-foreground md:text-2xl">{title}</h1>
             {subtitle && (
