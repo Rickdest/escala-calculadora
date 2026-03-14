@@ -26,6 +26,7 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
   const [enableAds, setEnableAds] = useState(currentStore?.config.enableAds ?? true);
   const [enableAffiliateCommission, setEnableAffiliateCommission] = useState(currentStore?.config.enableAffiliateCommission ?? false);
   const [enableShopeeCampaigns, setEnableShopeeCampaigns] = useState(currentStore?.config.enableShopeeCampaigns ?? false);
+  const [shopeeAcelera, setShopeeAcelera] = useState<ShopeeAceleraOption>((currentStore as any)?.shopee_acelera || 'none');
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
