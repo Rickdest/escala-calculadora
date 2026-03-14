@@ -173,40 +173,46 @@ export default function Auth() {
     </form>
   );
 
+  const Divider = ({ text }: { text: string }) => (
+    <div className="flex items-center gap-3 my-5">
+      <div className="flex-1 h-px bg-border" />
+      <span className="text-xs text-muted-foreground">{text}</span>
+      <div className="flex-1 h-px bg-border" />
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-background gradient-mesh flex flex-col items-center justify-center px-4">
-      <div className="w-full max-w-sm space-y-6">
+      <div className="w-full max-w-sm space-y-8">
         {/* Header */}
-        <div className="flex flex-col items-center text-center">
-          <h1 className="text-5xl font-bold text-primary tracking-tight">Precify</h1>
-          <p className="text-base text-muted-foreground mt-2">
+        <div className="flex flex-col items-center text-center space-y-2">
+          <h1 className="text-5xl font-extrabold text-gradient tracking-tight">Precify</h1>
+          <p className="text-base text-muted-foreground">
             Precificação Inteligente para Shopee
           </p>
-          <p className="text-sm font-semibold text-primary mt-1">
-            3 dias grátis. Sem cartão de crédito.
-          </p>
+          <span className="inline-block text-xs font-semibold text-primary bg-primary/10 px-3 py-1 rounded-full">
+            3 dias grátis · Sem cartão
+          </span>
         </div>
 
-        <div className="h-2" />
-
         {/* Card with Tabs */}
-        <div className="glass-card p-6">
+        <div className="glass-card p-6 space-y-0">
           <Tabs defaultValue="signup" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-5">
-              <TabsTrigger value="signup">Criar conta</TabsTrigger>
-              <TabsTrigger value="login">Já tenho conta</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 mb-6 h-11 rounded-xl">
+              <TabsTrigger value="signup" className="rounded-lg text-sm font-semibold">Criar conta</TabsTrigger>
+              <TabsTrigger value="login" className="rounded-lg text-sm font-semibold">Já tenho conta</TabsTrigger>
             </TabsList>
 
             <TabsContent value="signup" className="space-y-0">
-              <GoogleButton />
-              <Divider />
               <EmailPasswordFields isLogin={false} />
+              <Divider text="ou" />
+              <GoogleButton />
             </TabsContent>
 
             <TabsContent value="login" className="space-y-0">
-              <GoogleButton />
-              <Divider />
               <EmailPasswordFields isLogin={true} />
+              <Divider text="ou" />
+              <GoogleButton />
             </TabsContent>
           </Tabs>
         </div>
