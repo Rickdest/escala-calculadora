@@ -105,13 +105,6 @@ export default function Auth() {
     </button>
   );
 
-  const Divider = () => (
-    <div className="flex items-center gap-3 my-4">
-      <div className="flex-1 h-px bg-border" />
-      <span className="text-xs text-muted-foreground">ou continue com e-mail</span>
-      <div className="flex-1 h-px bg-border" />
-    </div>
-  );
 
   const EmailPasswordFields = ({ isLogin }: { isLogin: boolean }) => (
     <form onSubmit={(e) => handleSubmit(e, isLogin)} className="space-y-4">
