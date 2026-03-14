@@ -36,7 +36,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
   const config = currentStore?.config;
 
   // Use store-level shopeeAcelera setting
-  const shopeeAcelera: ShopeeAceleraOption = product?.shopeeAcelera || 'none';
+  const shopeeAcelera: ShopeeAceleraOption = (currentStore as any)?.shopee_acelera || product?.shopeeAcelera || 'none';
 
   const calculation = useMemo<ProductCalculation | null>(() => {
     if (!config || !costPrice || !salePrice) return null;
