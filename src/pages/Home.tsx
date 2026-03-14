@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Settings2, Package, TrendingUp, TrendingDown, ArrowRight, Crown, Target } from 'lucide-react';
+import { Plus, Settings2, Package, TrendingUp, TrendingDown, ArrowRight, Crown, Target, BarChart3, GraduationCap, Store, Warehouse, UserCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -13,6 +13,17 @@ import { DailyOfferModal } from '@/components/DailyOfferModal';
 import { Button } from '@/components/ui/button';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { cn } from '@/lib/utils';
+
+const toolItems = [
+  { icon: Plus, label: 'Novo Produto', color: 'bg-primary text-primary-foreground', action: 'addProduct' as const },
+  { icon: Package, label: 'Produtos', color: 'bg-[hsl(220,70%,55%)]/15 text-[hsl(220,70%,55%)]', route: '/products' },
+  { icon: BarChart3, label: 'ROAS', color: 'bg-[hsl(var(--success))]/15 text-success', route: '/roas' },
+  { icon: GraduationCap, label: 'Educação', color: 'bg-[hsl(280,70%,55%)]/15 text-[hsl(280,70%,55%)]', route: '/education' },
+  { icon: Warehouse, label: 'Estoque', color: 'bg-[hsl(var(--warning))]/15 text-warning', route: '/stock' },
+  { icon: Settings2, label: 'Taxas da Loja', color: 'bg-accent text-accent-foreground', action: 'config' as const },
+  { icon: Store, label: 'Lojas', color: 'bg-[hsl(220,70%,55%)]/15 text-[hsl(220,70%,55%)]', route: '/stores' },
+  { icon: UserCircle, label: 'Perfil', color: 'bg-muted text-muted-foreground', route: '/profile' },
+];
 
 export default function Home() {
   const navigate = useNavigate();
@@ -56,11 +67,20 @@ export default function Home() {
   }
 
   const stats = getStoreStats(currentStore);
-  const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
   const handleSaveProduct = async (productData: any) => {
     await addProduct(productData);
     setShowProductForm(false);
+  };
+
+  const handleToolClick = (item: typeof toolItems[0]) => {
+    if (item.action === 'addProduct') {
+      setShowProductForm(true);
+    } else if (item.action === 'config') {
+      setShowConfigForm(true);
+    } else if ('route' in item && item.route) {
+      navigate(item.route);
+    }
   };
 
   const topProducts = currentStore.products
@@ -73,7 +93,6 @@ export default function Home() {
       <PageHeader title="Precify" />
       <div className="px-4 py-6 space-y-6">
         <TrialBanner />
-        <EducationBanner />
 
         {/* Subscription CTA - only for non-active */}
         {!isActive && (
@@ -89,14 +108,28 @@ export default function Home() {
           </div>
         )}
 
-        {/* Main CTA - NO gate blocking for trial users */}
-        <Button
-          onClick={() => setShowProductForm(true)}
-          className="w-full md:w-auto h-16 text-lg font-bold gradient-primary hover:opacity-90 shadow-lg md:h-12 md:px-8"
-        >
-          <Plus className="w-6 h-6 mr-3 md:w-5 md:h-5" />
-          Adicionar Produto
-        </Button>
+        {/* Tools Grid - App style */}
+        <div className="animate-fade-up">
+          <h2 className="font-bold text-foreground mb-4">Ferramentas</h2>
+          <div className="grid grid-cols-4 gap-y-4 gap-x-2">
+            {toolItems.map((item) => (
+              <button
+                key={item.label}
+                onClick={() => handleToolClick(item)}
+                className="flex flex-col items-center gap-2 py-2 rounded-2xl hover:bg-secondary/60 transition-all active:scale-95"
+              >
+                <div className={cn('w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm', item.color)}>
+                  <item.icon className="w-6 h-6" />
+                </div>
+                <span className="text-[11px] font-semibold text-foreground leading-tight text-center px-1 line-clamp-2">
+                  {item.label}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <EducationBanner />
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -177,18 +210,6 @@ export default function Home() {
             <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">Adicione seu primeiro produto para começar a precificar com inteligência</p>
           </div>
         )}
-
-        {/* Store Config Card */}
-        <div onClick={() => setShowConfigForm(true)} className="glass-card-hover p-4 animate-fade-up stagger-5">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl gradient-primary"><Settings2 className="w-5 h-5 text-primary-foreground" /></div>
-            <div className="flex-1">
-              <p className="font-bold text-foreground">Taxas da Loja</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Taxas automáticas por faixa · Meta: {currentStore.config.desiredMargin}%</p>
-            </div>
-            <ArrowRight className="w-5 h-5 text-muted-foreground" />
-          </div>
-        </div>
       </div>
 
       {showProductForm && <ProductForm onClose={() => setShowProductForm(false)} onSave={handleSaveProduct} />}
