@@ -73,13 +73,13 @@ export default function Home() {
     setShowProductForm(false);
   };
 
-  const handleToolClick = (item: typeof toolItems[0]) => {
-    if (item.action === 'addProduct') {
+  const handleToolClick = (item: (typeof toolItems)[number]) => {
+    if ('action' in item && item.action === 'addProduct') {
       setShowProductForm(true);
-    } else if (item.action === 'config') {
+    } else if ('action' in item && item.action === 'config') {
       setShowConfigForm(true);
     } else if ('route' in item && item.route) {
-      navigate(item.route);
+      navigate(item.route as string);
     }
   };
 
