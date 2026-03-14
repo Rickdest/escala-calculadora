@@ -231,7 +231,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Camiseta Básica" className="input-modern h-12" required />
           </div>
 
-          {/* Custo + Embalagem + Venda */}
+          {/* Custo + Venda */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="costPrice" className="text-sm font-semibold">Preço de Custo <span className="text-destructive">*</span></Label>
@@ -241,19 +241,19 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="packagingCost" className="text-sm font-semibold">Embalagem e Insumos</Label>
+              <Label htmlFor="salePrice" className="text-sm font-semibold">Preço de Venda <span className="text-destructive">*</span></Label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
-                <Input id="packagingCost" type="number" step="0.01" min="0" value={packagingCost} onChange={(e) => setPackagingCost(e.target.value)} placeholder="0,00" className="pl-12 input-modern h-12" />
+                <Input id="salePrice" type="number" step="0.01" min="0" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} placeholder="0,00" className="pl-12 input-modern h-12" required />
               </div>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="salePrice" className="text-sm font-semibold">Preço de Venda <span className="text-destructive">*</span></Label>
+            <Label htmlFor="packagingCost" className="text-sm font-semibold">Embalagem e Insumos</Label>
             <div className="relative">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
-              <Input id="salePrice" type="number" step="0.01" min="0" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} placeholder="0,00" className="pl-12 input-modern h-12" required />
+              <Input id="packagingCost" type="number" step="0.01" min="0" value={packagingCost} onChange={(e) => setPackagingCost(e.target.value)} placeholder="0,00" className="pl-12 input-modern h-12" />
             </div>
           </div>
 
