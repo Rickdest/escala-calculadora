@@ -41,6 +41,7 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
       setEnableAds(currentStore.config.enableAds);
       setEnableAffiliateCommission(currentStore.config.enableAffiliateCommission ?? false);
       setEnableShopeeCampaigns(currentStore.config.enableShopeeCampaigns ?? false);
+      setShopeeAcelera((currentStore as any).shopee_acelera || 'none');
     }
   }, [currentStore]);
 
