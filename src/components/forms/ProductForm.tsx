@@ -220,10 +220,13 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             )}
           </div>
 
-          {/* Shopee Acelera */}
-          <div className="glass-card p-4 space-y-3">
-            <Label className="text-sm font-semibold">Shopee Acelera</Label>
+          {/* Optional campaigns block: Shopee Acelera + affiliates + campaigns */}
+          <div className="glass-card p-4 space-y-4">
+            <Label className="text-sm font-semibold">Opções Adicionais</Label>
+
+            {/* Shopee Acelera */}
             <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Shopee Acelera</p>
               {aceleraOptions.map(opt => (
                 <button
                   key={opt.value}
