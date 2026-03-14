@@ -220,10 +220,13 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             )}
           </div>
 
-          {/* Shopee Acelera */}
-          <div className="glass-card p-4 space-y-3">
-            <Label className="text-sm font-semibold">Shopee Acelera</Label>
+          {/* Optional campaigns block: Shopee Acelera + affiliates + campaigns */}
+          <div className="glass-card p-4 space-y-4">
+            <Label className="text-sm font-semibold">Opções Adicionais</Label>
+
+            {/* Shopee Acelera */}
             <div className="space-y-2">
+              <p className="text-xs font-medium text-muted-foreground">Shopee Acelera</p>
               {aceleraOptions.map(opt => (
                 <button
                   key={opt.value}
@@ -361,6 +364,36 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                 </div>
               )}
             </div>
+          )}
+
+          {/* ROAS Section */}
+          {calculation && costPrice && salePrice && (
+            (() => {
+              const sp = parseFloat(salePrice) || 0;
+              const totalCostsPerUnit = calculation.totalCosts;
+              const breakEvenRoas = sp > 0 && totalCostsPerUnit > 0 ? totalCostsPerUnit / (sp - totalCostsPerUnit + calculation.netProfit) : 0;
+              const roasSaudavel = breakEvenRoas > 0 ? breakEvenRoas * 1.4 : 0;
+              const roasIdeal = roasSaudavel > 0 ? roasSaudavel * 1.3 : 0;
+              return (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="glass-card p-4 space-y-1">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">ROAS Saudável</p>
+                    <p className="text-2xl font-extrabold tabular-nums text-foreground">
+                      {roasSaudavel > 0 ? roasSaudavel.toFixed(2) : '--'}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Mínimo para não ter prejuízo</p>
+                  </div>
+                  <div className="glass-card p-4 space-y-1 border-2 border-orange-400/50 relative">
+                    <div className="absolute -top-2 right-3 bg-orange-400 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">IDEAL</div>
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">ROAS Ideal</p>
+                    <p className="text-2xl font-extrabold tabular-nums text-orange-500">
+                      {roasIdeal > 0 ? roasIdeal.toFixed(2) : '--'}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">Meta recomendada para escalar</p>
+                  </div>
+                </div>
+              );
+            })()
           )}
 
           {/* Monthly Sales Simulation */}

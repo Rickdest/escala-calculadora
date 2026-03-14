@@ -164,6 +164,17 @@ export default function Products() {
           </TabsList>
 
           <TabsContent value="products" className="space-y-4 mt-4">
+            {stats && stats.totalProducts > 0 && (
+              <div className="glass-card p-3 flex items-center gap-2 animate-fade-up">
+                <div className={cn('p-1.5 rounded-lg', stats.avgMargin >= currentStore.config.desiredMargin ? 'bg-success/10' : 'bg-warning/10')}>
+                  <Percent className={cn('w-3.5 h-3.5', stats.avgMargin >= currentStore.config.desiredMargin ? 'text-success' : 'text-warning')} />
+                </div>
+                <span className="text-xs text-muted-foreground font-medium">Margem média:</span>
+                <span className={cn('text-sm font-extrabold tabular-nums', stats.avgMargin >= currentStore.config.desiredMargin ? 'text-success' : 'text-warning')}>
+                  {stats.avgMargin.toFixed(1)}%
+                </span>
+              </div>
+            )}
             <div className="flex gap-3">
               <div className="flex-1 relative">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
