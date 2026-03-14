@@ -149,8 +149,7 @@ export default function Auth() {
 
       <Button
         type="submit"
-        variant="outline"
-        className="w-full h-12 text-base font-semibold"
+        className="w-full h-12 text-base font-semibold gradient-primary text-primary-foreground hover:opacity-90 transition-opacity rounded-xl shadow-lg shadow-primary/25"
         disabled={loading}
       >
         {loading ? (
