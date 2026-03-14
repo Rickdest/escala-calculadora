@@ -64,6 +64,9 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
       enableShopeeCampaigns,
     });
     
+    // Save shopee_acelera directly to store
+    await supabase.from('stores').update({ shopee_acelera: shopeeAcelera }).eq('id', currentStore.id);
+    
     setIsSaving(false);
     onClose();
   };
