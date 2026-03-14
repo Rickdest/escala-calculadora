@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X, Percent, DollarSign, Settings2, Save, Loader2, Info } from 'lucide-react';
+import { ShopeeAceleraOption } from '@/types/store';
+import { cn } from '@/lib/utils';
 import { useStore } from '@/contexts/StoreContext';
 import { SHOPEE_FEE_RANGES } from '@/types/store';
 import { Input } from '@/components/ui/input';
