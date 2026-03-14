@@ -15,6 +15,8 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [duplicateEmailError, setDuplicateEmailError] = useState(false);
+  const [activeTab, setActiveTab] = useState('signup');
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -46,6 +48,7 @@ export default function Auth() {
   const handleSubmit = async (e: React.FormEvent, isLogin: boolean) => {
     e.preventDefault();
     setLoading(true);
+    setDuplicateEmailError(false);
 
     try {
       if (isLogin) {
@@ -64,11 +67,18 @@ export default function Auth() {
       } else {
         const { error } = await signUp(email, password);
         if (error) {
-          toast({
-            title: 'Erro ao criar conta',
-            description: error.message,
-            variant: 'destructive',
-          });
+          if (
+            error.message.includes('already registered') ||
+            error.message.includes('User already registered')
+          ) {
+            setDuplicateEmailError(true);
+          } else {
+            toast({
+              title: 'Erro ao criar conta',
+              description: error.message,
+              variant: 'destructive',
+            });
+          }
         } else {
           toast({
             title: 'Conta criada!',
@@ -81,7 +91,7 @@ export default function Auth() {
     }
   };
 
-  const GoogleButton = () => (
+  const googleButton = (
     <button
       type="button"
       onClick={handleGoogleLogin}
@@ -104,71 +114,73 @@ export default function Auth() {
     </button>
   );
 
-
-  const EmailPasswordFields = ({ isLogin }: { isLogin: boolean }) => (
-    <form onSubmit={(e) => handleSubmit(e, isLogin)} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor={`email-${isLogin}`} className="text-sm font-semibold">Email</Label>
-        <div className="relative">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <Input
-            id={`email-${isLogin}`}
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="seu@email.com"
-            className="pl-11 h-12 input-modern"
-            required
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor={`password-${isLogin}`} className="text-sm font-semibold">Senha</Label>
-        <div className="relative">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <Input
-            id={`password-${isLogin}`}
-            type={showPassword ? 'text' : 'password'}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            className="pl-11 pr-11 h-12 input-modern"
-            required
-            minLength={6}
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-          >
-            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-          </button>
-        </div>
-      </div>
-
-      <Button
-        type="submit"
-        className="w-full h-12 text-base font-semibold gradient-primary text-primary-foreground hover:opacity-90 transition-opacity rounded-xl shadow-lg shadow-primary/25"
-        disabled={loading}
-      >
-        {loading ? (
-          <>
-            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-            {isLogin ? 'Entrando...' : 'Criando conta...'}
-          </>
-        ) : (
-          isLogin ? 'Entrar' : 'Criar conta e começar grátis'
-        )}
-      </Button>
-    </form>
-  );
-
-  const Divider = ({ text }: { text: string }) => (
+  const divider = (text: string) => (
     <div className="flex items-center gap-3 my-5">
       <div className="flex-1 h-px bg-border" />
       <span className="text-xs text-muted-foreground">{text}</span>
       <div className="flex-1 h-px bg-border" />
+    </div>
+  );
+
+  const emailField = (id: string) => (
+    <div className="space-y-2">
+      <Label htmlFor={id} className="text-sm font-semibold">Email</Label>
+      <div className="relative">
+        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+        <Input
+          id={id}
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            setDuplicateEmailError(false);
+          }}
+          placeholder="seu@email.com"
+          className="pl-11 h-12 input-modern"
+          required
+        />
+      </div>
+      {duplicateEmailError && activeTab === 'signup' && (
+        <p className="text-sm text-destructive">
+          Este e-mail já está cadastrado.{' '}
+          <button
+            type="button"
+            onClick={() => setActiveTab('login')}
+            className="underline font-semibold hover:opacity-80"
+          >
+            Fazer login agora →
+          </button>
+        </p>
+      )}
+    </div>
+  );
+
+  const passwordField = (id: string) => (
+    <div className="space-y-2">
+      <Label htmlFor={id} className="text-sm font-semibold">Senha</Label>
+      <div className="relative">
+        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+        <Input
+          id={id}
+          type={showPassword ? 'text' : 'password'}
+          autoComplete={id.includes('login') ? 'current-password' : 'new-password'}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
+          className="pl-11 pr-11 h-12 input-modern"
+          required
+          minLength={6}
+        />
+        <button
+          type="button"
+          onClick={() => setShowPassword(!showPassword)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+        >
+          {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+        </button>
+      </div>
     </div>
   );
 
@@ -188,22 +200,56 @@ export default function Auth() {
 
         {/* Card with Tabs */}
         <div className="glass-card p-6 space-y-0">
-          <Tabs defaultValue="signup" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-6 h-11 rounded-xl">
               <TabsTrigger value="signup" className="rounded-lg text-sm font-semibold">Criar conta</TabsTrigger>
               <TabsTrigger value="login" className="rounded-lg text-sm font-semibold">Já tenho conta</TabsTrigger>
             </TabsList>
 
             <TabsContent value="signup" className="space-y-0">
-              <EmailPasswordFields isLogin={false} />
-              <Divider text="ou" />
-              <GoogleButton />
+              <form onSubmit={(e) => handleSubmit(e, false)} className="space-y-4">
+                {emailField('email-signup')}
+                {passwordField('password-signup')}
+                <Button
+                  type="submit"
+                  className="w-full h-12 text-base font-semibold gradient-primary text-primary-foreground hover:opacity-90 transition-opacity rounded-xl shadow-lg shadow-primary/25"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Criando conta...
+                    </>
+                  ) : (
+                    'Criar conta e começar grátis'
+                  )}
+                </Button>
+              </form>
+              {divider('ou')}
+              {googleButton}
             </TabsContent>
 
             <TabsContent value="login" className="space-y-0">
-              <EmailPasswordFields isLogin={true} />
-              <Divider text="ou" />
-              <GoogleButton />
+              <form onSubmit={(e) => handleSubmit(e, true)} className="space-y-4">
+                {emailField('email-login')}
+                {passwordField('password-login')}
+                <Button
+                  type="submit"
+                  className="w-full h-12 text-base font-semibold gradient-primary text-primary-foreground hover:opacity-90 transition-opacity rounded-xl shadow-lg shadow-primary/25"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Entrando...
+                    </>
+                  ) : (
+                    'Entrar'
+                  )}
+                </Button>
+              </form>
+              {divider('ou')}
+              {googleButton}
             </TabsContent>
           </Tabs>
         </div>
