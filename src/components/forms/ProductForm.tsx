@@ -1,12 +1,13 @@
 import { useState, useMemo } from 'react';
-import { X, Camera, Calculator, TrendingUp, TrendingDown, AlertTriangle, Save, Loader2, Plus, Trash2, ChevronDown, CalendarDays, Settings2 } from 'lucide-react';
-import { Product, ProductCalculation, StoreConfig, ProductVariation, ShopeeAceleraOption } from '@/types/store';
+import { X, Camera, Calculator, TrendingUp, TrendingDown, AlertTriangle, Save, Loader2, Plus, Trash2, ChevronDown, CalendarDays, Settings2, Target, ExternalLink } from 'lucide-react';
+import { Product, ProductCalculation, StoreConfig, ProductVariation, ShopeeAceleraOption, getShopeeFeeForPrice } from '@/types/store';
 import { useStore } from '@/contexts/StoreContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 
@@ -18,69 +19,140 @@ interface ProductFormProps {
 
 export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
   const { currentStore, calculateProduct } = useStore();
+  const config = currentStore?.config;
 
+  // Main fields
   const [name, setName] = useState(product?.name || '');
   const [costPrice, setCostPrice] = useState(product?.costPrice?.toString() || '');
   const [salePrice, setSalePrice] = useState(product?.salePrice?.toString() || '');
   const [packagingCost, setPackagingCost] = useState(product?.packagingCost?.toString() || '0');
-  const [adsCost, setAdsCost] = useState(product?.adsCost?.toString() || '0');
   const [imageUrl, setImageUrl] = useState(product?.imageUrl || '');
   const [stockQuantity, setStockQuantity] = useState(product?.stockQuantity?.toString() || '0');
   const [hasVariations, setHasVariations] = useState(product?.hasVariations || false);
   const [variations, setVariations] = useState<ProductVariation[]>(product?.variations || []);
   const [variationsOpen, setVariationsOpen] = useState(product?.hasVariations || false);
-  const [monthlySales, setMonthlySales] = useState(50);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Optional costs toggles (local to form)
+  const [sellerType, setSellerType] = useState<'cpf' | 'cnpj'>(config?.isCpfSeller ? 'cpf' : 'cnpj');
+  const [cpfAdditional, setCpfAdditional] = useState(config?.isCpfSeller && config?.hasOver450Orders ? true : false);
+
+  const [enableAds, setEnableAds] = useState(config?.enableAds && (product?.adsCost || 0) > 0 ? true : false);
+  const [adsPercent, setAdsPercent] = useState(product?.adsCost ? ((product.adsCost / (product.salePrice || 1)) * 100).toFixed(1) : '5');
+
+  const [enableCampaigns, setEnableCampaigns] = useState(config?.enableShopeeCampaigns || false);
+  const [campaignsPercent, setCampaignsPercent] = useState((config?.shopeeCampaigns || 0).toString());
+
+  const [enableAffiliate, setEnableAffiliate] = useState(config?.enableAffiliateCommission || false);
+  const [affiliatePercent, setAffiliatePercent] = useState((config?.affiliateCommission || 0).toString());
+
+  const [enableAcelera, setEnableAcelera] = useState(
+    ((currentStore as any)?.shopee_acelera || product?.shopeeAcelera || 'none') !== 'none'
+  );
+  const [aceleraType, setAceleraType] = useState<ShopeeAceleraOption>(
+    (currentStore as any)?.shopee_acelera || product?.shopeeAcelera || 'indicado'
+  );
+
+  const [enableTaxes, setEnableTaxes] = useState((config?.taxes || 0) > 0);
+
   const [optionalCostsOpen, setOptionalCostsOpen] = useState(false);
+  const [monthlySales, setMonthlySales] = useState(50);
 
-  const config = currentStore?.config;
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
-  // Use store-level shopeeAcelera setting
-  const shopeeAcelera: ShopeeAceleraOption = (currentStore as any)?.shopee_acelera || product?.shopeeAcelera || 'none';
+  // Local cost calculation for ROAS/projection
+  const localCalc = useMemo(() => {
+    const sp = parseFloat(salePrice) || 0;
+    const cp = parseFloat(costPrice) || 0;
+    const pkg = parseFloat(packagingCost) || 0;
+    if (sp <= 0 || cp <= 0) return null;
 
-  const calculation = useMemo<ProductCalculation | null>(() => {
-    if (!config || !costPrice || !salePrice) return null;
-    const tempProduct: Product = {
-      id: 'temp',
-      storeId: currentStore?.id || '',
-      name,
-      costPrice: parseFloat(costPrice) || 0,
-      salePrice: parseFloat(salePrice) || 0,
-      packagingCost: parseFloat(packagingCost) || 0,
-      adsCost: parseFloat(adsCost) || 0,
-      adsRevenue: 0,
-      stockQuantity: parseInt(stockQuantity) || 0,
-      hasVariations,
-      variations,
-      shopeeAcelera,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+    const range = getShopeeFeeForPrice(sp);
+    const shopeeFeePercent = sp * (range.percent / 100);
+    const shopeeFeeFixed = range.fixed;
+    const cpfExtra = sellerType === 'cpf' && cpfAdditional ? 3 : 0;
+    const totalShopeeFee = shopeeFeePercent + shopeeFeeFixed + cpfExtra;
+
+    const adsCostVal = enableAds ? sp * ((parseFloat(adsPercent) || 0) / 100) : 0;
+    const campaignsCostVal = enableCampaigns ? sp * ((parseFloat(campaignsPercent) || 0) / 100) : 0;
+    const affiliateCostVal = enableAffiliate ? sp * ((parseFloat(affiliatePercent) || 0) / 100) : 0;
+    const aceleraCostVal = enableAcelera
+      ? aceleraType === 'indicado' ? sp * 0.025 : sp * 0.035
+      : 0;
+    const taxesCostVal = enableTaxes ? sp * ((config?.taxes || 0) / 100) : 0;
+
+    const totalCosts = cp + pkg + totalShopeeFee + adsCostVal + campaignsCostVal + affiliateCostVal + aceleraCostVal + taxesCostVal;
+    const netProfit = sp - totalCosts;
+    const realMargin = sp > 0 ? (netProfit / sp) * 100 : 0;
+
+    return {
+      grossRevenue: sp,
+      totalShopeeFee,
+      shopeeFeePercent,
+      shopeeFeeFixed: shopeeFeeFixed + cpfExtra,
+      adsCost: adsCostVal,
+      campaignsCost: campaignsCostVal,
+      affiliateCost: affiliateCostVal,
+      aceleraCost: aceleraCostVal,
+      taxesCost: taxesCostVal,
+      totalCosts,
+      netProfit,
+      realMargin,
+      isAboveTarget: realMargin >= (config?.desiredMargin || 17),
+      marginDifference: realMargin - (config?.desiredMargin || 17),
     };
-    return calculateProduct(tempProduct, config);
-  }, [config, costPrice, salePrice, packagingCost, adsCost, calculateProduct, currentStore?.id, name, stockQuantity, hasVariations, variations, shopeeAcelera]);
+  }, [salePrice, costPrice, packagingCost, sellerType, cpfAdditional, enableAds, adsPercent, enableCampaigns, campaignsPercent, enableAffiliate, affiliatePercent, enableAcelera, aceleraType, enableTaxes, config?.taxes, config?.desiredMargin]);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-  };
+  // ROAS
+  const roasValues = useMemo(() => {
+    if (!localCalc || localCalc.grossRevenue <= 0) return null;
+    const sp = localCalc.grossRevenue;
+    const costs = localCalc.totalCosts;
+    if (costs >= sp) {
+      // Break-even impossible or at loss
+      const roasEmpate = sp / (sp - costs);
+      if (!isFinite(roasEmpate) || roasEmpate <= 0) return null;
+      return { roasEmpate, roasSaudavel: roasEmpate * 1.2, roasIdeal: roasEmpate * 1.5 };
+    }
+    const roasEmpate = sp / (sp - costs);
+    if (!isFinite(roasEmpate) || roasEmpate <= 0) return null;
+    return { roasEmpate, roasSaudavel: roasEmpate * 1.2, roasIdeal: roasEmpate * 1.5 };
+  }, [localCalc]);
+
+  // Monthly
+  const monthlyRevenue = localCalc ? localCalc.grossRevenue * monthlySales : 0;
+  const monthlyCosts = localCalc ? localCalc.totalCosts * monthlySales : 0;
+  const monthlyProfit = localCalc ? localCalc.netProfit * monthlySales : 0;
+  const monthlyMargin = localCalc ? localCalc.realMargin : 0;
+  const monthlyStatus = monthlyProfit <= 0 ? 'danger' : monthlyMargin < 15 ? 'warning' : 'success';
+  const monthlyStatusConfig = {
+    danger: { emoji: '🔴', label: 'Prejuízo', bg: 'bg-destructive/10 border-destructive/30', text: 'text-destructive' },
+    warning: { emoji: '🟡', label: 'Atenção', bg: 'bg-warning/10 border-warning/30', text: 'text-warning' },
+    success: { emoji: '🟢', label: 'Lucrativo', bg: 'bg-success/10 border-success/30', text: 'text-success' },
+  }[monthlyStatus];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentStore || !name || !costPrice || !salePrice) return;
     setIsSaving(true);
     try {
+      const sp = parseFloat(salePrice) || 0;
+      const adsCostValue = enableAds ? sp * ((parseFloat(adsPercent) || 0) / 100) : 0;
+
       const productData = {
         ...(product?.id && { id: product.id }),
         storeId: currentStore.id,
         name,
         costPrice: parseFloat(costPrice) || 0,
-        salePrice: parseFloat(salePrice) || 0,
+        salePrice: sp,
         packagingCost: parseFloat(packagingCost) || 0,
-        adsCost: parseFloat(adsCost) || 0,
+        adsCost: adsCostValue,
         imageUrl: imageUrl || undefined,
         stockQuantity: parseInt(stockQuantity) || 0,
         hasVariations,
         variations: hasVariations ? variations : [],
-        shopeeAcelera,
+        shopeeAcelera: enableAcelera ? aceleraType : 'none' as ShopeeAceleraOption,
       };
       await Promise.resolve(onSave(productData));
     } catch {
@@ -119,32 +191,6 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
   };
 
   const isValid = name && costPrice && salePrice;
-  const TrendIcon = calculation?.isAboveTarget ? TrendingUp : TrendingDown;
-
-  // Check if there are any optional costs enabled
-  const hasOptionalCosts = config?.enablePackaging || config?.enableAds;
-
-  // Monthly simulation
-  const monthlyRevenue = calculation ? calculation.grossRevenue * monthlySales : 0;
-  const monthlyCosts = calculation ? calculation.totalCosts * monthlySales : 0;
-  const monthlyProfit = calculation ? calculation.netProfit * monthlySales : 0;
-  const monthlyStatus = monthlyProfit <= 0 ? 'danger' : monthlyProfit < monthlyRevenue * 0.05 ? 'warning' : 'success';
-  const monthlyStatusConfig = {
-    danger: { emoji: '🔴', label: 'Prejuízo', bg: 'bg-destructive/10 border-destructive/30', text: 'text-destructive' },
-    warning: { emoji: '🟡', label: 'Atenção', bg: 'bg-warning/10 border-warning/30', text: 'text-warning' },
-    success: { emoji: '🟢', label: 'Lucrativo', bg: 'bg-success/10 border-success/30', text: 'text-success' },
-  }[monthlyStatus];
-
-  // ROAS calculation
-  const roasValues = useMemo(() => {
-    if (!calculation || !costPrice || !salePrice) return null;
-    const sp = parseFloat(salePrice) || 0;
-    if (sp <= 0 || calculation.totalCosts <= 0) return null;
-    const breakEvenRoas = sp / calculation.netProfit > 0 ? calculation.totalCosts / calculation.netProfit : 0;
-    const roasSaudavel = breakEvenRoas > 0 ? breakEvenRoas * 1.4 : 0;
-    const roasIdeal = roasSaudavel > 0 ? roasSaudavel * 1.3 : 0;
-    return { roasSaudavel, roasIdeal };
-  }, [calculation, costPrice, salePrice]);
 
   return (
     <div className="fixed inset-0 z-50 bg-foreground/20 backdrop-blur-sm animate-fade-up">
@@ -179,27 +225,35 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             </label>
           </div>
 
-          {/* Name */}
+          {/* Nome */}
           <div className="space-y-2">
-            <Label htmlFor="name" className="text-sm font-semibold">Nome do Produto *</Label>
+            <Label htmlFor="name" className="text-sm font-semibold">Nome do Produto <span className="text-destructive">*</span></Label>
             <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Camiseta Básica" className="input-modern h-12" required />
           </div>
 
-          {/* Prices */}
+          {/* Custo + Embalagem + Venda */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="costPrice" className="text-sm font-semibold">Custo *</Label>
+              <Label htmlFor="costPrice" className="text-sm font-semibold">Preço de Custo <span className="text-destructive">*</span></Label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
                 <Input id="costPrice" type="number" step="0.01" min="0" value={costPrice} onChange={(e) => setCostPrice(e.target.value)} placeholder="0,00" className="pl-12 input-modern h-12" required />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="salePrice" className="text-sm font-semibold">Venda *</Label>
+              <Label htmlFor="packagingCost" className="text-sm font-semibold">Embalagem e Insumos</Label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
-                <Input id="salePrice" type="number" step="0.01" min="0" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} placeholder="0,00" className="pl-12 input-modern h-12" required />
+                <Input id="packagingCost" type="number" step="0.01" min="0" value={packagingCost} onChange={(e) => setPackagingCost(e.target.value)} placeholder="0,00" className="pl-12 input-modern h-12" />
               </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="salePrice" className="text-sm font-semibold">Preço de Venda <span className="text-destructive">*</span></Label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
+              <Input id="salePrice" type="number" step="0.01" min="0" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} placeholder="0,00" className="pl-12 input-modern h-12" required />
             </div>
           </div>
 
@@ -209,42 +263,223 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             <Input id="stockQuantity" type="number" min="0" value={stockQuantity} onChange={(e) => setStockQuantity(e.target.value)} placeholder="0" className="input-modern h-12" />
           </div>
 
-          {/* Custos Opcionais - Collapsible */}
-          {hasOptionalCosts && (
-            <Collapsible open={optionalCostsOpen} onOpenChange={setOptionalCostsOpen}>
-              <CollapsibleTrigger asChild>
-                <button type="button" className="w-full glass-card p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Settings2 className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-semibold">Custos Opcionais</span>
-                  </div>
-                  <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform", optionalCostsOpen && "rotate-180")} />
-                </button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="pt-3 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  {config?.enablePackaging && (
-                    <div className="space-y-2">
-                      <Label htmlFor="packagingCost" className="text-sm font-semibold">Embalagem</Label>
-                      <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
-                        <Input id="packagingCost" type="number" step="0.01" min="0" value={packagingCost} onChange={(e) => setPackagingCost(e.target.value)} placeholder="0,00" className="pl-12 input-modern h-12" />
-                      </div>
-                    </div>
-                  )}
-                  {config?.enableAds && (
-                    <div className="space-y-2">
-                      <Label htmlFor="adsCost" className="text-sm font-semibold">Shopee Ads</Label>
-                      <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
-                        <Input id="adsCost" type="number" step="0.01" min="0" value={adsCost} onChange={(e) => setAdsCost(e.target.value)} placeholder="0,00" className="pl-12 input-modern h-12" />
-                      </div>
-                    </div>
-                  )}
+          {/* ══════════ CUSTOS OPCIONAIS ══════════ */}
+          <Collapsible open={optionalCostsOpen} onOpenChange={setOptionalCostsOpen}>
+            <CollapsibleTrigger asChild>
+              <button type="button" className="w-full glass-card p-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Settings2 className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-semibold">Custos Opcionais</span>
                 </div>
-              </CollapsibleContent>
-            </Collapsible>
-          )}
+                <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform", optionalCostsOpen && "rotate-180")} />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-3 space-y-3">
+
+              {/* ITEM 1 — Tipo de Vendedor */}
+              <div className="glass-card p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold">Tipo de Vendedor</Label>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setSellerType('cpf'); setCpfAdditional(false); }}
+                    className={cn(
+                      'flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all border',
+                      sellerType === 'cpf'
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-secondary/50 text-muted-foreground border-transparent hover:bg-secondary'
+                    )}
+                  >
+                    CPF (Pessoa Física)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setSellerType('cnpj'); setCpfAdditional(false); }}
+                    className={cn(
+                      'flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all border',
+                      sellerType === 'cnpj'
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'bg-secondary/50 text-muted-foreground border-transparent hover:bg-secondary'
+                    )}
+                  >
+                    CNPJ (Pessoa Jurídica)
+                  </button>
+                </div>
+                {sellerType === 'cpf' && (
+                  <div className="flex items-center justify-between bg-secondary/30 rounded-xl p-3">
+                    <div>
+                      <p className="text-xs font-semibold">Aplicar adicional CPF (+R$3,00)</p>
+                      <p className="text-[10px] text-muted-foreground">Marque se você teve mais de 450 pedidos nos últimos 90 dias.</p>
+                    </div>
+                    <Switch checked={cpfAdditional} onCheckedChange={setCpfAdditional} />
+                  </div>
+                )}
+              </div>
+
+              {/* ITEM 2 — Shopee Ads */}
+              <div className="glass-card p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold">Shopee Ads</Label>
+                  <Switch checked={enableAds} onCheckedChange={setEnableAds} />
+                </div>
+                {enableAds && (
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">% investido em Ads</Label>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                        value={adsPercent}
+                        onChange={(e) => setAdsPercent(e.target.value)}
+                        placeholder="5"
+                        className="pr-8 input-modern h-10"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                    </div>
+                    {localCalc && (
+                      <p className="text-[10px] text-muted-foreground">= {formatCurrency(localCalc.adsCost)} por venda</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* ITEM 3 — Campanhas de Destaque */}
+              <div className="glass-card p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold">Campanhas de Destaque</Label>
+                  <Switch checked={enableCampaigns} onCheckedChange={setEnableCampaigns} />
+                </div>
+                {enableCampaigns && (
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">% da campanha</Label>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                        value={campaignsPercent}
+                        onChange={(e) => setCampaignsPercent(e.target.value)}
+                        placeholder="0"
+                        className="pr-8 input-modern h-10"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                    </div>
+                    {localCalc && (
+                      <p className="text-[10px] text-muted-foreground">= {formatCurrency(localCalc.campaignsCost)} por venda</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* ITEM 4 — Comissão de Afiliados */}
+              <div className="glass-card p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold">Comissão de Afiliados</Label>
+                  <Switch checked={enableAffiliate} onCheckedChange={setEnableAffiliate} />
+                </div>
+                {enableAffiliate && (
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">% de comissão</Label>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                        value={affiliatePercent}
+                        onChange={(e) => setAffiliatePercent(e.target.value)}
+                        placeholder="0"
+                        className="pr-8 input-modern h-10"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                    </div>
+                    {localCalc && (
+                      <p className="text-[10px] text-muted-foreground">= {formatCurrency(localCalc.affiliateCost)} por venda</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* ITEM 5 — Shopee Acelera */}
+              <div className="glass-card p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold">Shopee Acelera</Label>
+                  <Switch checked={enableAcelera} onCheckedChange={setEnableAcelera} />
+                </div>
+                {enableAcelera && (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setAceleraType('indicado')}
+                        className={cn(
+                          'flex-1 py-2 rounded-xl text-xs font-semibold transition-all border',
+                          aceleraType === 'indicado'
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-secondary/50 text-muted-foreground border-transparent hover:bg-secondary'
+                        )}
+                      >
+                        Indicado (2,5%)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAceleraType('nao_indicado')}
+                        className={cn(
+                          'flex-1 py-2 rounded-xl text-xs font-semibold transition-all border',
+                          aceleraType === 'nao_indicado'
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-secondary/50 text-muted-foreground border-transparent hover:bg-secondary'
+                        )}
+                      >
+                        Não Indicado (3,5%)
+                      </button>
+                    </div>
+                    {localCalc && (
+                      <p className="text-[10px] text-muted-foreground">= {formatCurrency(localCalc.aceleraCost)} por venda</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* ITEM 6 — Impostos */}
+              <div className="glass-card p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm font-semibold">Impostos</Label>
+                  <Switch checked={enableTaxes} onCheckedChange={setEnableTaxes} />
+                </div>
+                {enableTaxes && (
+                  <div className="space-y-2">
+                    {(config?.taxes || 0) > 0 ? (
+                      <>
+                        <p className="text-xs text-muted-foreground">
+                          Usando configuração salva: <span className="font-bold text-foreground">{config?.taxes}%</span>
+                        </p>
+                        {localCalc && (
+                          <p className="text-[10px] text-muted-foreground">= {formatCurrency(localCalc.taxesCost)} por venda</p>
+                        )}
+                        <a href="/settings" className="text-[10px] text-primary hover:underline inline-flex items-center gap-1">
+                          Alterar nas configurações <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </>
+                    ) : (
+                      <div className="bg-secondary/30 rounded-xl p-3">
+                        <p className="text-xs text-muted-foreground">Configure seus impostos em Configurações antes de usar esta opção.</p>
+                        <a href="/settings" className="text-xs text-primary hover:underline inline-flex items-center gap-1 mt-1 font-semibold">
+                          Ir para Configurações <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+            </CollapsibleContent>
+          </Collapsible>
 
           {/* Variations Section */}
           <div className="glass-card p-4 space-y-3">
@@ -296,127 +531,161 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             )}
           </div>
 
-          {/* Live Calculation */}
-          {calculation && (
-            <div className={cn('rounded-2xl p-5 space-y-4 animate-scale-up', calculation.isAboveTarget ? 'bg-success-muted' : 'bg-danger-muted')}>
+          {/* Live Calculation Preview */}
+          {localCalc && (
+            <div className={cn('rounded-2xl p-5 space-y-4 animate-scale-up', localCalc.isAboveTarget ? 'bg-success-muted' : 'bg-danger-muted')}>
               <div className="flex items-center gap-2">
-                <Calculator className={cn('w-5 h-5', calculation.isAboveTarget ? 'text-success' : 'text-danger')} />
-                <span className={cn('font-bold text-sm', calculation.isAboveTarget ? 'text-success' : 'text-danger')}>Prévia do Cálculo</span>
+                <Calculator className={cn('w-5 h-5', localCalc.isAboveTarget ? 'text-success' : 'text-danger')} />
+                <span className={cn('font-bold text-sm', localCalc.isAboveTarget ? 'text-success' : 'text-danger')}>Prévia do Cálculo</span>
               </div>
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <p className={cn('text-xs font-medium opacity-70', calculation.isAboveTarget ? 'text-success' : 'text-danger')}>Lucro Líquido</p>
-                  <p className={cn('number-lg', calculation.isAboveTarget ? 'text-success' : 'text-danger')}>{formatCurrency(calculation.netProfit)}</p>
+                  <p className={cn('text-xs font-medium opacity-70', localCalc.isAboveTarget ? 'text-success' : 'text-danger')}>Lucro Líquido</p>
+                  <p className={cn('number-lg', localCalc.isAboveTarget ? 'text-success' : 'text-danger')}>{formatCurrency(localCalc.netProfit)}</p>
                 </div>
                 <div className="text-right">
-                  <p className={cn('text-xs font-medium opacity-70', calculation.isAboveTarget ? 'text-success' : 'text-danger')}>Margem Real</p>
+                  <p className={cn('text-xs font-medium opacity-70', localCalc.isAboveTarget ? 'text-success' : 'text-danger')}>Margem Real</p>
                   <div className="flex items-center justify-end gap-1.5">
-                    <TrendIcon className={cn('w-5 h-5', calculation.isAboveTarget ? 'text-success' : 'text-danger')} />
-                    <span className={cn('number-lg', calculation.isAboveTarget ? 'text-success' : 'text-danger')}>{calculation.realMargin.toFixed(1)}%</span>
+                    {localCalc.isAboveTarget ? (
+                      <TrendingUp className="w-5 h-5 text-success" />
+                    ) : (
+                      <TrendingDown className="w-5 h-5 text-danger" />
+                    )}
+                    <span className={cn('number-lg', localCalc.isAboveTarget ? 'text-success' : 'text-danger')}>{localCalc.realMargin.toFixed(1)}%</span>
                   </div>
                 </div>
               </div>
 
               {/* Cost breakdown */}
-              <div className={cn('pt-3 border-t text-xs space-y-1', calculation.isAboveTarget ? 'border-success/20' : 'border-danger/20')}>
+              <div className={cn('pt-3 border-t text-xs space-y-1', localCalc.isAboveTarget ? 'border-success/20' : 'border-danger/20')}>
                 <div className="flex justify-between opacity-70">
                   <span>Taxa Shopee (automática)</span>
-                  <span>{formatCurrency(calculation.totalShopeeFee)}</span>
+                  <span>{formatCurrency(localCalc.totalShopeeFee)}</span>
                 </div>
-                <div className="flex justify-between opacity-70">
-                  <span>Impostos ({config?.taxes}%)</span>
-                  <span>{formatCurrency(calculation.taxes)}</span>
-                </div>
-                {calculation.shopeeAcelera > 0 && (
+                {localCalc.taxesCost > 0 && (
+                  <div className="flex justify-between opacity-70">
+                    <span>Impostos ({config?.taxes}%)</span>
+                    <span>{formatCurrency(localCalc.taxesCost)}</span>
+                  </div>
+                )}
+                {localCalc.adsCost > 0 && (
+                  <div className="flex justify-between opacity-70">
+                    <span>Shopee Ads ({adsPercent}%)</span>
+                    <span>{formatCurrency(localCalc.adsCost)}</span>
+                  </div>
+                )}
+                {localCalc.campaignsCost > 0 && (
+                  <div className="flex justify-between opacity-70">
+                    <span>Campanhas ({campaignsPercent}%)</span>
+                    <span>{formatCurrency(localCalc.campaignsCost)}</span>
+                  </div>
+                )}
+                {localCalc.affiliateCost > 0 && (
+                  <div className="flex justify-between opacity-70">
+                    <span>Afiliados ({affiliatePercent}%)</span>
+                    <span>{formatCurrency(localCalc.affiliateCost)}</span>
+                  </div>
+                )}
+                {localCalc.aceleraCost > 0 && (
                   <div className="flex justify-between opacity-70">
                     <span>Shopee Acelera</span>
-                    <span>{formatCurrency(calculation.shopeeAcelera)}</span>
-                  </div>
-                )}
-                {(config?.affiliateCommission || 0) > 0 && (
-                  <div className="flex justify-between opacity-70">
-                    <span>Comissão Afiliados ({config?.affiliateCommission}%)</span>
-                    <span>{formatCurrency(calculation.affiliateCommission)}</span>
-                  </div>
-                )}
-                {(config?.shopeeCampaigns || 0) > 0 && (
-                  <div className="flex justify-between opacity-70">
-                    <span>Campanhas ({config?.shopeeCampaigns}%)</span>
-                    <span>{formatCurrency(calculation.shopeeCampaigns)}</span>
+                    <span>{formatCurrency(localCalc.aceleraCost)}</span>
                   </div>
                 )}
               </div>
 
-              {!calculation.isAboveTarget && (
+              {!localCalc.isAboveTarget && (
                 <div className="flex items-center gap-2 pt-3 border-t border-danger/20">
                   <AlertTriangle className="w-4 h-4 text-danger" />
                   <span className="text-xs font-medium text-danger">
-                    {Math.abs(calculation.marginDifference).toFixed(1)}% abaixo da meta de {config?.desiredMargin}%
+                    {Math.abs(localCalc.marginDifference).toFixed(1)}% abaixo da meta de {config?.desiredMargin}%
                   </span>
                 </div>
               )}
             </div>
           )}
 
-          {/* ROAS Section */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="glass-card p-4 space-y-1">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">ROAS Saudável</p>
-              <p className="text-2xl font-extrabold tabular-nums text-foreground">
-                {roasValues ? roasValues.roasSaudavel.toFixed(2) : '--'}
+          {/* ══════════ ROAS EM TEMPO REAL ══════════ */}
+          <div className="grid grid-cols-3 gap-2">
+            {/* ROAS Empate */}
+            <div className="glass-card p-3 space-y-1 border border-destructive/20">
+              <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">ROAS de Empate</p>
+              <p className="text-lg font-extrabold tabular-nums text-destructive">
+                {roasValues && isFinite(roasValues.roasEmpate) && roasValues.roasEmpate > 0 ? roasValues.roasEmpate.toFixed(2) : '--'}
               </p>
-              <p className="text-[10px] text-muted-foreground">Mínimo para não ter prejuízo</p>
+              <p className="text-[9px] text-muted-foreground leading-tight">Abaixo disso você tem prejuízo</p>
             </div>
-            <div className="glass-card p-4 space-y-1 border-2 border-orange-400/50 relative">
-              <div className="absolute -top-2 right-3 bg-orange-400 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">IDEAL</div>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">ROAS Ideal</p>
-              <p className="text-2xl font-extrabold tabular-nums text-orange-500">
-                {roasValues ? roasValues.roasIdeal.toFixed(2) : '--'}
+            {/* ROAS Saudável */}
+            <div className="glass-card p-3 space-y-1 border border-warning/30">
+              <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">ROAS Saudável</p>
+              <p className="text-lg font-extrabold tabular-nums text-warning">
+                {roasValues && isFinite(roasValues.roasSaudavel) && roasValues.roasSaudavel > 0 ? roasValues.roasSaudavel.toFixed(2) : '--'}
               </p>
-              <p className="text-[10px] text-muted-foreground">Meta recomendada para escalar</p>
+              <p className="text-[9px] text-muted-foreground leading-tight">Mínimo para lucrar com anúncios</p>
+            </div>
+            {/* ROAS Ideal */}
+            <div className="glass-card p-3 space-y-1 border-2 border-success/50 relative">
+              <div className="absolute -top-2 right-2 bg-success text-success-foreground text-[8px] font-bold px-1.5 py-0.5 rounded-full">META</div>
+              <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">ROAS Ideal</p>
+              <p className="text-lg font-extrabold tabular-nums text-success">
+                {roasValues && isFinite(roasValues.roasIdeal) && roasValues.roasIdeal > 0 ? roasValues.roasIdeal.toFixed(2) : '--'}
+              </p>
+              <p className="text-[9px] text-muted-foreground leading-tight">Meta para escalar com segurança</p>
             </div>
           </div>
 
-          {/* Monthly Sales Simulation */}
-          {calculation && (
-            <div className="glass-card p-4 space-y-4">
-              <div className="flex items-center gap-2">
-                <CalendarDays className="w-4 h-4 text-primary" />
-                <span className="text-sm font-bold">Análise de Vendas Mensais</span>
+          {/* ══════════ PROJEÇÃO MENSAL ══════════ */}
+          <div className="glass-card p-4 space-y-4">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="w-4 h-4 text-primary" />
+              <span className="text-sm font-bold">Projeção Mensal</span>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs text-muted-foreground">Quantas vendas você espera por mês?</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={1000}
+                  value={monthlySales}
+                  onChange={(e) => setMonthlySales(Math.min(1000, Math.max(1, parseInt(e.target.value) || 1)))}
+                  className="w-20 h-8 text-sm text-center font-bold input-modern"
+                />
               </div>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs text-muted-foreground">Quantas vendas você espera por mês?</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={1000}
-                    value={monthlySales}
-                    onChange={(e) => setMonthlySales(Math.min(1000, Math.max(1, parseInt(e.target.value) || 1)))}
-                    className="w-20 h-8 text-sm text-center font-bold input-modern"
-                  />
-                </div>
-                <Slider value={[monthlySales]} onValueChange={([v]) => setMonthlySales(v)} min={1} max={1000} step={1} />
-                <div className="flex justify-between text-[10px] text-muted-foreground">
-                  <span>1</span><span>500</span><span>1000</span>
-                </div>
+              <Slider value={[monthlySales]} onValueChange={([v]) => setMonthlySales(v)} min={1} max={1000} step={1} />
+              <div className="flex justify-between text-[10px] text-muted-foreground">
+                <span>1</span><span>500</span><span>1000</span>
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-secondary/30 rounded-xl p-3">
-                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Receita mensal</p>
-                  <p className="text-sm font-extrabold tabular-nums mt-1">{formatCurrency(monthlyRevenue)}</p>
-                </div>
-                <div className="bg-secondary/30 rounded-xl p-3">
-                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Custos no mês</p>
-                  <p className="text-sm font-extrabold tabular-nums text-destructive mt-1">{formatCurrency(monthlyCosts)}</p>
-                </div>
-                <div className="bg-secondary/30 rounded-xl p-3">
-                  <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Lucro mensal</p>
-                  <p className={cn('text-sm font-extrabold tabular-nums mt-1', monthlyProfit >= 0 ? 'text-success' : 'text-destructive')}>
-                    {formatCurrency(monthlyProfit)}
-                  </p>
-                </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-secondary/30 rounded-xl p-3">
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Receita Bruta</p>
+                <p className="text-sm font-extrabold tabular-nums mt-1">
+                  {localCalc ? formatCurrency(monthlyRevenue) : '--'}
+                </p>
               </div>
+              <div className="bg-secondary/30 rounded-xl p-3">
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Custos Totais</p>
+                <p className="text-sm font-extrabold tabular-nums text-destructive mt-1">
+                  {localCalc ? formatCurrency(monthlyCosts) : '--'}
+                </p>
+              </div>
+              <div className="bg-secondary/30 rounded-xl p-3">
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Lucro Mensal</p>
+                <p className={cn('text-sm font-extrabold tabular-nums mt-1', localCalc ? (monthlyProfit >= 0 ? 'text-success' : 'text-destructive') : '')}>
+                  {localCalc ? formatCurrency(monthlyProfit) : '--'}
+                </p>
+              </div>
+              <div className="bg-secondary/30 rounded-xl p-3">
+                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Margem de Lucro</p>
+                <p className={cn('text-sm font-extrabold tabular-nums mt-1', localCalc ? (monthlyMargin >= 15 ? 'text-success' : monthlyMargin >= 0 ? 'text-warning' : 'text-destructive') : '')}>
+                  {localCalc ? `${monthlyMargin.toFixed(1)}%` : '--'}
+                </p>
+              </div>
+            </div>
+
+            {localCalc && (
               <div className={cn('rounded-xl border p-3 flex items-center gap-2', monthlyStatusConfig.bg)}>
                 <span className="text-lg">{monthlyStatusConfig.emoji}</span>
                 <div>
@@ -424,8 +693,8 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                   <p className="text-[10px] text-muted-foreground">{monthlySales} vendas/mês × {formatCurrency(parseFloat(salePrice) || 0)}/un</p>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </form>
 
         {/* Footer with Save Button */}
