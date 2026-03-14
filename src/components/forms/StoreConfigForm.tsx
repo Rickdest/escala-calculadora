@@ -257,6 +257,45 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
                   </div>
                 )}
               </div>
+
+              <div className="pt-3 border-t border-border/50 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="text-sm font-medium">Shopee Acelera</Label>
+                    <p className="text-xs text-muted-foreground">Taxa do programa Acelera</p>
+                  </div>
+                </div>
+                <div className="space-y-2 pl-4">
+                  {[
+                    { value: 'none' as const, label: 'Não usar', desc: 'Sem Shopee Acelera' },
+                    { value: 'indicado' as const, label: 'Vendedor Indicado', desc: '2,5% do preço de venda' },
+                    { value: 'nao_indicado' as const, label: 'Não Indicado', desc: '3,5% do preço de venda' },
+                  ].map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setShopeeAcelera(opt.value)}
+                      className={cn(
+                        'w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all border',
+                        shopeeAcelera === opt.value
+                          ? 'bg-primary/10 border-primary/40'
+                          : 'bg-card/50 border-border/30 hover:bg-primary/5'
+                      )}
+                    >
+                      <div className={cn(
+                        'w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0',
+                        shopeeAcelera === opt.value ? 'border-primary' : 'border-muted-foreground/40'
+                      )}>
+                        {shopeeAcelera === opt.value && <div className="w-2 h-2 rounded-full bg-primary" />}
+                      </div>
+                      <div>
+                        <p className={cn('text-sm font-semibold', shopeeAcelera === opt.value ? 'text-primary' : 'text-foreground')}>{opt.label}</p>
+                        <p className="text-[10px] text-muted-foreground">{opt.desc}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>

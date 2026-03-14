@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { X, Camera, Calculator, TrendingUp, TrendingDown, AlertTriangle, Save, Loader2, Plus, Trash2, ChevronDown, CalendarDays } from 'lucide-react';
+import { X, Camera, Calculator, TrendingUp, TrendingDown, AlertTriangle, Save, Loader2, Plus, Trash2, ChevronDown, CalendarDays, Settings2 } from 'lucide-react';
 import { Product, ProductCalculation, StoreConfig, ProductVariation, ShopeeAceleraOption } from '@/types/store';
 import { useStore } from '@/contexts/StoreContext';
 import { Input } from '@/components/ui/input';
@@ -29,11 +29,14 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
   const [hasVariations, setHasVariations] = useState(product?.hasVariations || false);
   const [variations, setVariations] = useState<ProductVariation[]>(product?.variations || []);
   const [variationsOpen, setVariationsOpen] = useState(product?.hasVariations || false);
-  const [shopeeAcelera, setShopeeAcelera] = useState<ShopeeAceleraOption>(product?.shopeeAcelera || 'none');
   const [monthlySales, setMonthlySales] = useState(50);
   const [isSaving, setIsSaving] = useState(false);
+  const [optionalCostsOpen, setOptionalCostsOpen] = useState(false);
 
   const config = currentStore?.config;
+
+  // Use store-level shopeeAcelera setting
+  const shopeeAcelera: ShopeeAceleraOption = product?.shopeeAcelera || 'none';
 
   const calculation = useMemo<ProductCalculation | null>(() => {
     if (!config || !costPrice || !salePrice) return null;
@@ -118,6 +121,9 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
   const isValid = name && costPrice && salePrice;
   const TrendIcon = calculation?.isAboveTarget ? TrendingUp : TrendingDown;
 
+  // Check if there are any optional costs enabled
+  const hasOptionalCosts = config?.enablePackaging || config?.enableAds;
+
   // Monthly simulation
   const monthlyRevenue = calculation ? calculation.grossRevenue * monthlySales : 0;
   const monthlyCosts = calculation ? calculation.totalCosts * monthlySales : 0;
@@ -129,11 +135,16 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
     success: { emoji: '🟢', label: 'Lucrativo', bg: 'bg-success/10 border-success/30', text: 'text-success' },
   }[monthlyStatus];
 
-  const aceleraOptions: { value: ShopeeAceleraOption; label: string; desc: string }[] = [
-    { value: 'none', label: 'Não usar', desc: 'Sem Shopee Acelera' },
-    { value: 'indicado', label: 'Vendedor Indicado', desc: '2,5% do preço de venda' },
-    { value: 'nao_indicado', label: 'Não Indicado', desc: '3,5% do preço de venda' },
-  ];
+  // ROAS calculation
+  const roasValues = useMemo(() => {
+    if (!calculation || !costPrice || !salePrice) return null;
+    const sp = parseFloat(salePrice) || 0;
+    if (sp <= 0 || calculation.totalCosts <= 0) return null;
+    const breakEvenRoas = sp / calculation.netProfit > 0 ? calculation.totalCosts / calculation.netProfit : 0;
+    const roasSaudavel = breakEvenRoas > 0 ? breakEvenRoas * 1.4 : 0;
+    const roasIdeal = roasSaudavel > 0 ? roasSaudavel * 1.3 : 0;
+    return { roasSaudavel, roasIdeal };
+  }, [calculation, costPrice, salePrice]);
 
   return (
     <div className="fixed inset-0 z-50 bg-foreground/20 backdrop-blur-sm animate-fade-up">
@@ -198,61 +209,42 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             <Input id="stockQuantity" type="number" min="0" value={stockQuantity} onChange={(e) => setStockQuantity(e.target.value)} placeholder="0" className="input-modern h-12" />
           </div>
 
-          {/* Optional Costs */}
-          <div className="grid grid-cols-2 gap-4">
-            {config?.enablePackaging && (
-              <div className="space-y-2">
-                <Label htmlFor="packagingCost" className="text-sm font-semibold">Embalagem</Label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
-                  <Input id="packagingCost" type="number" step="0.01" min="0" value={packagingCost} onChange={(e) => setPackagingCost(e.target.value)} placeholder="0,00" className="pl-12 input-modern h-12" />
-                </div>
-              </div>
-            )}
-            {config?.enableAds && (
-              <div className="space-y-2">
-                <Label htmlFor="adsCost" className="text-sm font-semibold">Shopee Ads</Label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
-                  <Input id="adsCost" type="number" step="0.01" min="0" value={adsCost} onChange={(e) => setAdsCost(e.target.value)} placeholder="0,00" className="pl-12 input-modern h-12" />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Optional campaigns block: Shopee Acelera + affiliates + campaigns */}
-          <div className="glass-card p-4 space-y-4">
-            <Label className="text-sm font-semibold">Opções Adicionais</Label>
-
-            {/* Shopee Acelera */}
-            <div className="space-y-2">
-              <p className="text-xs font-medium text-muted-foreground">Shopee Acelera</p>
-              {aceleraOptions.map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setShopeeAcelera(opt.value)}
-                  className={cn(
-                    'w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all border',
-                    shopeeAcelera === opt.value
-                      ? 'bg-primary/10 border-primary/40'
-                      : 'bg-card/50 border-border/30 hover:bg-primary/5'
-                  )}
-                >
-                  <div className={cn(
-                    'w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0',
-                    shopeeAcelera === opt.value ? 'border-primary' : 'border-muted-foreground/40'
-                  )}>
-                    {shopeeAcelera === opt.value && <div className="w-2 h-2 rounded-full bg-primary" />}
+          {/* Custos Opcionais - Collapsible */}
+          {hasOptionalCosts && (
+            <Collapsible open={optionalCostsOpen} onOpenChange={setOptionalCostsOpen}>
+              <CollapsibleTrigger asChild>
+                <button type="button" className="w-full glass-card p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Settings2 className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-semibold">Custos Opcionais</span>
                   </div>
-                  <div>
-                    <p className={cn('text-sm font-semibold', shopeeAcelera === opt.value ? 'text-primary' : 'text-foreground')}>{opt.label}</p>
-                    <p className="text-[10px] text-muted-foreground">{opt.desc}</p>
-                  </div>
+                  <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform", optionalCostsOpen && "rotate-180")} />
                 </button>
-              ))}
-            </div>
-          </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-3 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  {config?.enablePackaging && (
+                    <div className="space-y-2">
+                      <Label htmlFor="packagingCost" className="text-sm font-semibold">Embalagem</Label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
+                        <Input id="packagingCost" type="number" step="0.01" min="0" value={packagingCost} onChange={(e) => setPackagingCost(e.target.value)} placeholder="0,00" className="pl-12 input-modern h-12" />
+                      </div>
+                    </div>
+                  )}
+                  {config?.enableAds && (
+                    <div className="space-y-2">
+                      <Label htmlFor="adsCost" className="text-sm font-semibold">Shopee Ads</Label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
+                        <Input id="adsCost" type="number" step="0.01" min="0" value={adsCost} onChange={(e) => setAdsCost(e.target.value)} placeholder="0,00" className="pl-12 input-modern h-12" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
 
           {/* Variations Section */}
           <div className="glass-card p-4 space-y-3">
@@ -337,7 +329,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                 </div>
                 {calculation.shopeeAcelera > 0 && (
                   <div className="flex justify-between opacity-70">
-                    <span>Shopee Acelera ({shopeeAcelera === 'indicado' ? '2,5%' : '3,5%'})</span>
+                    <span>Shopee Acelera</span>
                     <span>{formatCurrency(calculation.shopeeAcelera)}</span>
                   </div>
                 )}
@@ -367,34 +359,23 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
           )}
 
           {/* ROAS Section */}
-          {calculation && costPrice && salePrice && (
-            (() => {
-              const sp = parseFloat(salePrice) || 0;
-              const totalCostsPerUnit = calculation.totalCosts;
-              const breakEvenRoas = sp > 0 && totalCostsPerUnit > 0 ? totalCostsPerUnit / (sp - totalCostsPerUnit + calculation.netProfit) : 0;
-              const roasSaudavel = breakEvenRoas > 0 ? breakEvenRoas * 1.4 : 0;
-              const roasIdeal = roasSaudavel > 0 ? roasSaudavel * 1.3 : 0;
-              return (
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="glass-card p-4 space-y-1">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">ROAS Saudável</p>
-                    <p className="text-2xl font-extrabold tabular-nums text-foreground">
-                      {roasSaudavel > 0 ? roasSaudavel.toFixed(2) : '--'}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">Mínimo para não ter prejuízo</p>
-                  </div>
-                  <div className="glass-card p-4 space-y-1 border-2 border-orange-400/50 relative">
-                    <div className="absolute -top-2 right-3 bg-orange-400 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">IDEAL</div>
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">ROAS Ideal</p>
-                    <p className="text-2xl font-extrabold tabular-nums text-orange-500">
-                      {roasIdeal > 0 ? roasIdeal.toFixed(2) : '--'}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">Meta recomendada para escalar</p>
-                  </div>
-                </div>
-              );
-            })()
-          )}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="glass-card p-4 space-y-1">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">ROAS Saudável</p>
+              <p className="text-2xl font-extrabold tabular-nums text-foreground">
+                {roasValues ? roasValues.roasSaudavel.toFixed(2) : '--'}
+              </p>
+              <p className="text-[10px] text-muted-foreground">Mínimo para não ter prejuízo</p>
+            </div>
+            <div className="glass-card p-4 space-y-1 border-2 border-orange-400/50 relative">
+              <div className="absolute -top-2 right-3 bg-orange-400 text-white text-[9px] font-bold px-2 py-0.5 rounded-full">IDEAL</div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">ROAS Ideal</p>
+              <p className="text-2xl font-extrabold tabular-nums text-orange-500">
+                {roasValues ? roasValues.roasIdeal.toFixed(2) : '--'}
+              </p>
+              <p className="text-[10px] text-muted-foreground">Meta recomendada para escalar</p>
+            </div>
+          </div>
 
           {/* Monthly Sales Simulation */}
           {calculation && (
