@@ -241,6 +241,7 @@ export type Database = {
           id: string
           is_cpf_seller: boolean | null
           name: string
+          shopee_acelera: string | null
           shopee_campaigns: number | null
           shopee_fee_fixed: number | null
           shopee_fee_percent: number | null
@@ -260,6 +261,7 @@ export type Database = {
           id?: string
           is_cpf_seller?: boolean | null
           name: string
+          shopee_acelera?: string | null
           shopee_campaigns?: number | null
           shopee_fee_fixed?: number | null
           shopee_fee_percent?: number | null
@@ -279,6 +281,7 @@ export type Database = {
           id?: string
           is_cpf_seller?: boolean | null
           name?: string
+          shopee_acelera?: string | null
           shopee_campaigns?: number | null
           shopee_fee_fixed?: number | null
           shopee_fee_percent?: number | null
