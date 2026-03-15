@@ -15,7 +15,7 @@ import { useSubscription } from '@/contexts/SubscriptionContext';
 import { cn } from '@/lib/utils';
 
 const toolItems = [
-  { icon: Plus, label: 'Novo Produto', color: 'bg-primary text-primary-foreground', action: 'addProduct' as const },
+  { icon: Plus, label: 'Precificar', color: 'bg-primary text-primary-foreground', action: 'addProduct' as const },
   { icon: Package, label: 'Produtos', color: 'bg-[hsl(220,70%,55%)]/15 text-[hsl(220,70%,55%)]', route: '/products' },
   { icon: BarChart3, label: 'ROAS', color: 'bg-[hsl(var(--success))]/15 text-success', route: '/roas' },
   { icon: GraduationCap, label: 'Educação', color: 'bg-[hsl(280,70%,55%)]/15 text-[hsl(280,70%,55%)]', route: '/education' },
