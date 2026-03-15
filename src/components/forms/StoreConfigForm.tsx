@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Percent, DollarSign, Settings2, Save, Loader2, Info } from 'lucide-react';
+import { X, Percent, DollarSign, Settings2, Save, Loader2, Info, Users, Megaphone, UserCheck } from 'lucide-react';
 import { ShopeeAceleraOption } from '@/types/store';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/contexts/StoreContext';
@@ -9,40 +9,44 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Switch } from '@/components/ui/switch';
+import { toast } from '@/hooks/use-toast';
 
 interface StoreConfigFormProps {
   onClose: () => void;
 }
 
 export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
-  const { currentStore, updateStoreConfig } = useStore();
+  const { currentStore, updateStoreConfig, stores } = useStore();
   
+  const [desiredMargin, setDesiredMargin] = useState(currentStore?.config.desiredMargin?.toString() || '17');
   const [isCpfSeller, setIsCpfSeller] = useState(currentStore?.config.isCpfSeller ?? false);
   const [hasOver450Orders, setHasOver450Orders] = useState(currentStore?.config.hasOver450Orders ?? false);
   const [taxes, setTaxes] = useState(currentStore?.config.taxes?.toString() || '0');
-  const [desiredMargin, setDesiredMargin] = useState(currentStore?.config.desiredMargin?.toString() || '17');
-  const [affiliateCommission, setAffiliateCommission] = useState((currentStore?.config.affiliateCommission || 0).toString());
-  const [shopeeCampaigns, setShopeeCampaigns] = useState((currentStore?.config.shopeeCampaigns || 0).toString());
-  const [enablePackaging, setEnablePackaging] = useState(currentStore?.config.enablePackaging ?? true);
-  const [enableAds, setEnableAds] = useState(currentStore?.config.enableAds ?? true);
+  const [enableTaxes, setEnableTaxes] = useState((currentStore?.config.taxes || 0) > 0);
   const [enableAffiliateCommission, setEnableAffiliateCommission] = useState(currentStore?.config.enableAffiliateCommission ?? false);
+  const [affiliateCommission, setAffiliateCommission] = useState((currentStore?.config.affiliateCommission || 0).toString());
   const [enableShopeeCampaigns, setEnableShopeeCampaigns] = useState(currentStore?.config.enableShopeeCampaigns ?? false);
-  const [shopeeAcelera, setShopeeAcelera] = useState<ShopeeAceleraOption>((currentStore as any)?.shopee_acelera || 'none');
+  const [shopeeCampaigns, setShopeeCampaigns] = useState((currentStore?.config.shopeeCampaigns || 0).toString());
+  const [enableAcelera, setEnableAcelera] = useState(((currentStore as any)?.shopee_acelera || 'none') !== 'none');
+  const [shopeeAcelera, setShopeeAcelera] = useState<ShopeeAceleraOption>((currentStore as any)?.shopee_acelera || 'indicado');
   const [isSaving, setIsSaving] = useState(false);
+  const [productCount, setProductCount] = useState(0);
 
   useEffect(() => {
     if (currentStore) {
+      setDesiredMargin(currentStore.config.desiredMargin.toString());
       setIsCpfSeller(currentStore.config.isCpfSeller ?? false);
       setHasOver450Orders(currentStore.config.hasOver450Orders ?? false);
       setTaxes(currentStore.config.taxes.toString());
-      setDesiredMargin(currentStore.config.desiredMargin.toString());
+      setEnableTaxes((currentStore.config.taxes || 0) > 0);
       setAffiliateCommission((currentStore.config.affiliateCommission || 0).toString());
-      setShopeeCampaigns((currentStore.config.shopeeCampaigns || 0).toString());
-      setEnablePackaging(currentStore.config.enablePackaging);
-      setEnableAds(currentStore.config.enableAds);
       setEnableAffiliateCommission(currentStore.config.enableAffiliateCommission ?? false);
+      setShopeeCampaigns((currentStore.config.shopeeCampaigns || 0).toString());
       setEnableShopeeCampaigns(currentStore.config.enableShopeeCampaigns ?? false);
-      setShopeeAcelera((currentStore as any).shopee_acelera || 'none');
+      const aceleraVal = (currentStore as any).shopee_acelera || 'none';
+      setEnableAcelera(aceleraVal !== 'none');
+      setShopeeAcelera(aceleraVal === 'none' ? 'indicado' : aceleraVal);
+      setProductCount(currentStore.products?.length || 0);
     }
   }, [currentStore]);
 
@@ -52,23 +56,31 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
     setIsSaving(true);
     await new Promise(resolve => setTimeout(resolve, 300));
     
+    const taxValue = enableTaxes ? (parseFloat(taxes) || 0) : 0;
+    
     updateStoreConfig(currentStore.id, {
       isCpfSeller,
-      hasOver450Orders,
-      taxes: parseFloat(taxes) || 0,
+      hasOver450Orders: isCpfSeller ? hasOver450Orders : false,
+      taxes: taxValue,
       desiredMargin: parseFloat(desiredMargin) || 0,
-      affiliateCommission: parseFloat(affiliateCommission) || 0,
-      shopeeCampaigns: parseFloat(shopeeCampaigns) || 0,
-      enablePackaging,
-      enableAds,
+      affiliateCommission: enableAffiliateCommission ? (parseFloat(affiliateCommission) || 0) : 0,
+      shopeeCampaigns: enableShopeeCampaigns ? (parseFloat(shopeeCampaigns) || 0) : 0,
+      enablePackaging: true,
+      enableAds: true,
       enableAffiliateCommission,
       enableShopeeCampaigns,
     });
     
-    // Save shopee_acelera directly to store
-    await supabase.from('stores').update({ shopee_acelera: shopeeAcelera }).eq('id', currentStore.id);
+    const aceleraValue = enableAcelera ? shopeeAcelera : 'none';
+    await supabase.from('stores').update({ shopee_acelera: aceleraValue }).eq('id', currentStore.id);
     
     setIsSaving(false);
+    
+    toast({
+      title: "✓ Configurações salvas",
+      description: `${productCount} produto${productCount !== 1 ? 's' : ''} ${productCount !== 1 ? 'foram recalculados' : 'foi recalculado'}.`,
+    });
+    
     onClose();
   };
 
@@ -98,96 +110,8 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
 
         {/* Form */}
         <div className="flex-1 overflow-y-auto p-5 space-y-6">
-          {/* Shopee Fees - Fixed/Automatic */}
-          <div className="space-y-4">
-            <h3 className="font-bold text-sm flex items-center gap-2">
-              <Percent className="w-4 h-4 text-primary" />
-              Taxas da Shopee
-            </h3>
-            
-            <div className="glass-card p-4 space-y-4">
-              {/* Fee ranges table */}
-              <div className="rounded-xl border border-border/50 overflow-hidden">
-                <div className="grid grid-cols-3 gap-0 text-[10px] uppercase tracking-wide font-semibold text-muted-foreground bg-secondary/50 px-3 py-2">
-                  <span>Faixa de Preço</span>
-                  <span className="text-center">Comissão</span>
-                  <span className="text-right">Taxa Fixa</span>
-                </div>
-                {SHOPEE_FEE_RANGES.map((range, i) => (
-                  <div key={i} className="grid grid-cols-3 gap-0 px-3 py-2.5 border-t border-border/30 text-sm">
-                    <span className="font-medium text-foreground">{range.label}</span>
-                    <span className="text-center text-muted-foreground">{range.percent}%</span>
-                    <span className="text-right text-muted-foreground">R${range.fixed.toFixed(2)}</span>
-                  </div>
-                ))}
-              </div>
-              
-              {/* CPF Seller Options */}
-              <div className="pt-3 border-t border-border/50 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-sm font-medium">Vendedor CPF</Label>
-                    <p className="text-xs text-muted-foreground">Ativar taxa adicional para CPF</p>
-                  </div>
-                  <Switch
-                    checked={isCpfSeller}
-                    onCheckedChange={(v) => {
-                      setIsCpfSeller(v);
-                      if (!v) setHasOver450Orders(false);
-                    }}
-                  />
-                </div>
-                
-                {isCpfSeller && (
-                  <div className="flex items-center justify-between pl-4">
-                    <div>
-                      <Label className="text-sm font-medium">+450 pedidos em 90 dias</Label>
-                      <p className="text-xs text-muted-foreground">Adicional de R$3,00 por item</p>
-                    </div>
-                    <Switch
-                      checked={hasOver450Orders}
-                      onCheckedChange={setHasOver450Orders}
-                    />
-                  </div>
-                )}
-              </div>
 
-              <div className="flex items-start gap-2 p-3 rounded-xl bg-primary/5 border border-primary/10">
-                <Info className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-muted-foreground">
-                  Tabela vigente desde março de 2026. A comissão já contempla a taxa de transação.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Taxes */}
-          <div className="space-y-4">
-            <h3 className="font-bold text-sm flex items-center gap-2">
-              <DollarSign className="w-4 h-4 text-primary" />
-              Impostos
-            </h3>
-            <div className="space-y-2">
-              <Label htmlFor="taxes" className="text-sm font-medium">Alíquota</Label>
-              <div className="relative">
-                <Input
-                  id="taxes"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="100"
-                  value={taxes}
-                  onChange={(e) => setTaxes(e.target.value)}
-                  placeholder="0"
-                  className="pr-10 input-modern h-12"
-                />
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">%</span>
-              </div>
-              <p className="text-xs text-muted-foreground">MEI, Simples Nacional, etc.</p>
-            </div>
-          </div>
-
-          {/* Desired Margin */}
+          {/* 1. Margem Desejada */}
           <div className="space-y-4">
             <h3 className="font-bold text-sm flex items-center gap-2">
               <Percent className="w-4 h-4 text-success" />
@@ -209,100 +133,233 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">%</span>
               </div>
-              <p className="text-xs text-muted-foreground">Produtos abaixo serão destacados em vermelho</p>
+              <p className="text-xs text-muted-foreground">Produtos abaixo dessa margem serão destacados em vermelho</p>
             </div>
           </div>
 
-          {/* Optional Costs Toggles */}
-          <div className="space-y-4 pt-4 border-t border-border/50">
-            <h3 className="font-bold text-sm">Custos Opcionais</h3>
-            
-            <div className="glass-card p-4 space-y-4">
+          {/* 2. Tipo de Vendedor */}
+          <div className="space-y-4">
+            <h3 className="font-bold text-sm flex items-center gap-2">
+              <UserCheck className="w-4 h-4 text-primary" />
+              Tipo de Vendedor
+            </h3>
+            <div className="glass-card p-4 space-y-3">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setIsCpfSeller(true); setHasOver450Orders(false); }}
+                  className={cn(
+                    'flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all border',
+                    isCpfSeller
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-secondary/50 text-muted-foreground border-transparent hover:bg-secondary'
+                  )}
+                >
+                  CPF (Pessoa Física)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setIsCpfSeller(false); setHasOver450Orders(false); }}
+                  className={cn(
+                    'flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all border',
+                    !isCpfSeller
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-secondary/50 text-muted-foreground border-transparent hover:bg-secondary'
+                  )}
+                >
+                  CNPJ (Pessoa Jurídica)
+                </button>
+              </div>
+              {isCpfSeller && (
+                <div className="flex items-center justify-between bg-secondary/30 rounded-xl p-3">
+                  <div>
+                    <p className="text-xs font-semibold">Aplicar adicional de R$3,00</p>
+                    <p className="text-[10px] text-muted-foreground">Marque se você teve mais de 450 pedidos nos últimos 90 dias.</p>
+                  </div>
+                  <Switch checked={hasOver450Orders} onCheckedChange={setHasOver450Orders} />
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 3. Impostos */}
+          <div className="space-y-4">
+            <h3 className="font-bold text-sm flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-primary" />
+              Impostos
+            </h3>
+            <div className="glass-card p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="enablePackaging" className="text-sm font-medium">Custo de Embalagem</Label>
-                  <p className="text-xs text-muted-foreground">Incluir no cálculo</p>
+                  <Label className="text-sm font-medium">Ativar Impostos</Label>
+                  <p className="text-xs text-muted-foreground">Aplicado em todos os produtos</p>
                 </div>
-                <Switch id="enablePackaging" checked={enablePackaging} onCheckedChange={setEnablePackaging} />
+                <Switch checked={enableTaxes} onCheckedChange={setEnableTaxes} />
               </div>
-              
-              <div className="flex items-center justify-between pt-3 border-t border-border/50">
+              {enableTaxes && (
+                <div className="space-y-2">
+                  <Label htmlFor="taxes" className="text-sm font-medium">Alíquota</Label>
+                  <div className="relative">
+                    <Input
+                      id="taxes"
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="100"
+                      value={taxes}
+                      onChange={(e) => setTaxes(e.target.value)}
+                      placeholder="0"
+                      className="pr-10 input-modern h-12"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">%</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">MEI, Simples Nacional, etc.</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 4. Comissão de Afiliados */}
+          <div className="space-y-4">
+            <h3 className="font-bold text-sm flex items-center gap-2">
+              <Users className="w-4 h-4 text-primary" />
+              Comissão de Afiliados
+            </h3>
+            <div className="glass-card p-4 space-y-3">
+              <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="enableAds" className="text-sm font-medium">Shopee Ads</Label>
-                  <p className="text-xs text-muted-foreground">Incluir no cálculo</p>
+                  <Label className="text-sm font-medium">Ativar Comissão</Label>
+                  <p className="text-xs text-muted-foreground">Aplicado em todos os produtos</p>
                 </div>
-                <Switch id="enableAds" checked={enableAds} onCheckedChange={setEnableAds} />
+                <Switch checked={enableAffiliateCommission} onCheckedChange={setEnableAffiliateCommission} />
               </div>
-
-              <div className="pt-3 border-t border-border/50 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-sm font-medium">Comissão de Afiliados</Label>
-                    <p className="text-xs text-muted-foreground">Percentual sobre a venda</p>
+              {enableAffiliateCommission && (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="100"
+                      value={affiliateCommission}
+                      onChange={(e) => setAffiliateCommission(e.target.value)}
+                      placeholder="0"
+                      className="pr-10 input-modern h-12"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">%</span>
                   </div>
-                  <Switch checked={enableAffiliateCommission} onCheckedChange={setEnableAffiliateCommission} />
                 </div>
-                {enableAffiliateCommission && (
-                  <div className="flex items-center gap-2 pl-4">
-                    <Input type="number" step="0.1" min="0" max="100" value={affiliateCommission} onChange={(e) => setAffiliateCommission(e.target.value)} placeholder="0" className="w-24 h-10 text-center input-modern" />
-                    <span className="text-muted-foreground font-medium">%</span>
-                  </div>
-                )}
+              )}
+            </div>
+          </div>
+
+          {/* 5. Campanhas de Destaque */}
+          <div className="space-y-4">
+            <h3 className="font-bold text-sm flex items-center gap-2">
+              <Megaphone className="w-4 h-4 text-primary" />
+              Campanhas de Destaque
+            </h3>
+            <div className="glass-card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm font-medium">Ativar Campanhas</Label>
+                  <p className="text-xs text-muted-foreground">Aplicado em todos os produtos</p>
+                </div>
+                <Switch checked={enableShopeeCampaigns} onCheckedChange={setEnableShopeeCampaigns} />
               </div>
-
-              <div className="pt-3 border-t border-border/50 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-sm font-medium">Campanhas da Shopee</Label>
-                    <p className="text-xs text-muted-foreground">Desconto em campanhas</p>
+              {enableShopeeCampaigns && (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="100"
+                      value={shopeeCampaigns}
+                      onChange={(e) => setShopeeCampaigns(e.target.value)}
+                      placeholder="0"
+                      className="pr-10 input-modern h-12"
+                    />
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">%</span>
                   </div>
-                  <Switch checked={enableShopeeCampaigns} onCheckedChange={setEnableShopeeCampaigns} />
                 </div>
-                {enableShopeeCampaigns && (
-                  <div className="flex items-center gap-2 pl-4">
-                    <Input type="number" step="0.1" min="0" max="100" value={shopeeCampaigns} onChange={(e) => setShopeeCampaigns(e.target.value)} placeholder="0" className="w-24 h-10 text-center input-modern" />
-                    <span className="text-muted-foreground font-medium">%</span>
-                  </div>
-                )}
+              )}
+            </div>
+          </div>
+
+          {/* 6. Shopee Acelera */}
+          <div className="space-y-4">
+            <h3 className="font-bold text-sm flex items-center gap-2">
+              <Percent className="w-4 h-4 text-primary" />
+              Shopee Acelera
+            </h3>
+            <div className="glass-card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-sm font-medium">Ativar Shopee Acelera</Label>
+                  <p className="text-xs text-muted-foreground">Aplicado em todos os produtos</p>
+                </div>
+                <Switch checked={enableAcelera} onCheckedChange={setEnableAcelera} />
               </div>
-
-              <div className="pt-3 border-t border-border/50 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-sm font-medium">Shopee Acelera</Label>
-                    <p className="text-xs text-muted-foreground">Taxa do programa Acelera</p>
-                  </div>
-                </div>
-                <div className="space-y-2 pl-4">
-                  {[
-                    { value: 'none' as const, label: 'Não usar', desc: 'Sem Shopee Acelera' },
-                    { value: 'indicado' as const, label: 'Vendedor Indicado', desc: '2,5% do preço de venda' },
-                    { value: 'nao_indicado' as const, label: 'Não Indicado', desc: '3,5% do preço de venda' },
-                  ].map(opt => (
+              {enableAcelera && (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
                     <button
-                      key={opt.value}
                       type="button"
-                      onClick={() => setShopeeAcelera(opt.value)}
+                      onClick={() => setShopeeAcelera('indicado')}
                       className={cn(
-                        'w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all border',
-                        shopeeAcelera === opt.value
-                          ? 'bg-primary/10 border-primary/40'
-                          : 'bg-card/50 border-border/30 hover:bg-primary/5'
+                        'flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all border',
+                        shopeeAcelera === 'indicado'
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-secondary/50 text-muted-foreground border-transparent hover:bg-secondary'
                       )}
                     >
-                      <div className={cn(
-                        'w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0',
-                        shopeeAcelera === opt.value ? 'border-primary' : 'border-muted-foreground/40'
-                      )}>
-                        {shopeeAcelera === opt.value && <div className="w-2 h-2 rounded-full bg-primary" />}
-                      </div>
-                      <div>
-                        <p className={cn('text-sm font-semibold', shopeeAcelera === opt.value ? 'text-primary' : 'text-foreground')}>{opt.label}</p>
-                        <p className="text-[10px] text-muted-foreground">{opt.desc}</p>
-                      </div>
+                      Vendedor Indicado (2,5%)
                     </button>
-                  ))}
+                    <button
+                      type="button"
+                      onClick={() => setShopeeAcelera('nao_indicado')}
+                      className={cn(
+                        'flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all border',
+                        shopeeAcelera === 'nao_indicado'
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-secondary/50 text-muted-foreground border-transparent hover:bg-secondary'
+                      )}
+                    >
+                      Não Indicado (3,5%)
+                    </button>
+                  </div>
                 </div>
+              )}
+            </div>
+          </div>
+
+          {/* Tabela de Taxas da Shopee (informativa) */}
+          <div className="space-y-4">
+            <h3 className="font-bold text-sm flex items-center gap-2">
+              <Percent className="w-4 h-4 text-primary" />
+              Taxas da Shopee
+            </h3>
+            <div className="glass-card p-4 space-y-4">
+              <div className="rounded-xl border border-border/50 overflow-hidden">
+                <div className="grid grid-cols-3 gap-0 text-[10px] uppercase tracking-wide font-semibold text-muted-foreground bg-secondary/50 px-3 py-2">
+                  <span>Faixa de Preço</span>
+                  <span className="text-center">Comissão</span>
+                  <span className="text-right">Taxa Fixa</span>
+                </div>
+                {SHOPEE_FEE_RANGES.map((range, i) => (
+                  <div key={i} className="grid grid-cols-3 gap-0 px-3 py-2.5 border-t border-border/30 text-sm">
+                    <span className="font-medium text-foreground">{range.label}</span>
+                    <span className="text-center text-muted-foreground">{range.percent}%</span>
+                    <span className="text-right text-muted-foreground">R${range.fixed.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-primary/5 border border-primary/10">
+                <Info className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+                <p className="text-xs text-muted-foreground">
+                  Tabela vigente desde março de 2026. A comissão já contempla a taxa de transação.
+                </p>
               </div>
             </div>
           </div>
