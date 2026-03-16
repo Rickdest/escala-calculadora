@@ -79,6 +79,7 @@ function mapDbStore(s: any, products: Product[]): Store {
       enableShopeeCampaigns: s.enable_shopee_campaigns ?? false,
       affiliateCommission: Number(s.affiliate_commission ?? 0),
       shopeeCampaigns: Number(s.shopee_campaigns ?? 0),
+      shopeeAcelera: (s.shopee_acelera as ShopeeAceleraOption) || 'none',
     },
     products: products.filter(p => p.storeId === s.id),
     createdAt: new Date(s.created_at),
