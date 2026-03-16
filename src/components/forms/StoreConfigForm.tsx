@@ -27,8 +27,8 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
   const [affiliateCommission, setAffiliateCommission] = useState((currentStore?.config.affiliateCommission || 0).toString());
   const [enableShopeeCampaigns, setEnableShopeeCampaigns] = useState(currentStore?.config.enableShopeeCampaigns ?? false);
   const [shopeeCampaigns, setShopeeCampaigns] = useState((currentStore?.config.shopeeCampaigns || 0).toString());
-  const [enableAcelera, setEnableAcelera] = useState(((currentStore as any)?.shopee_acelera || 'none') !== 'none');
-  const [shopeeAcelera, setShopeeAcelera] = useState<ShopeeAceleraOption>((currentStore as any)?.shopee_acelera || 'indicado');
+  const [enableAcelera, setEnableAcelera] = useState((currentStore?.config.shopeeAcelera || 'none') !== 'none');
+  const [shopeeAcelera, setShopeeAcelera] = useState<ShopeeAceleraOption>(currentStore?.config.shopeeAcelera === 'none' ? 'indicado' : (currentStore?.config.shopeeAcelera || 'indicado'));
   const [isSaving, setIsSaving] = useState(false);
   const [productCount, setProductCount] = useState(0);
 
