@@ -1,11 +1,10 @@
-import { useState } from 'react';
-import { Plus, Settings2, Package, TrendingUp, TrendingDown, ArrowRight, Crown, Target, BarChart3, GraduationCap, Store, Warehouse, UserCircle } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Plus, Package, TrendingUp, TrendingDown, ArrowRight, Crown, Target, BarChart3, GraduationCap, Store, Warehouse, UserCircle, Settings2, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ProductForm } from '@/components/forms/ProductForm';
-import { StoreConfigForm } from '@/components/forms/StoreConfigForm';
 import { EducationBanner } from '@/components/home/EducationBanner';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
 import { TrialBanner } from '@/components/TrialBanner';
@@ -20,7 +19,7 @@ const toolItems = [
   { icon: BarChart3, label: 'ROAS', color: 'bg-[hsl(var(--success))]/15 text-success', route: '/roas' },
   { icon: GraduationCap, label: 'Educação', color: 'bg-[hsl(280,70%,55%)]/15 text-[hsl(280,70%,55%)]', route: '/education' },
   { icon: Warehouse, label: 'Estoque', color: 'bg-[hsl(var(--warning))]/15 text-warning', route: '/stock' },
-  { icon: Settings2, label: 'Taxas da Loja', color: 'bg-accent text-accent-foreground', action: 'config' as const },
+  { icon: Settings2, label: 'Taxas da Loja', color: 'bg-accent text-accent-foreground', route: '/settings' },
   { icon: Store, label: 'Lojas', color: 'bg-[hsl(220,70%,55%)]/15 text-[hsl(220,70%,55%)]', route: '/stores' },
   { icon: UserCircle, label: 'Perfil', color: 'bg-muted text-muted-foreground', route: '/profile' },
 ];
@@ -30,8 +29,21 @@ export default function Home() {
   const { currentStore, stores, addStore, addProduct, getStoreStats, calculateProduct, isLoading } = useStore();
   const { isActive } = useSubscription();
   const [showProductForm, setShowProductForm] = useState(false);
-  const [showConfigForm, setShowConfigForm] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
+
+  // Build active global config summary
+  const activeGlobalConfigs = useMemo(() => {
+    if (!currentStore) return [];
+    const config = currentStore.config;
+    const items: string[] = [];
+    if (config.isCpfSeller && config.hasOver450Orders) items.push('Adicional CPF R$3,00');
+    if ((config.taxes || 0) > 0) items.push(`Impostos ${config.taxes}%`);
+    if (config.enableAffiliateCommission && (config.affiliateCommission || 0) > 0) items.push(`Afiliados ${config.affiliateCommission}%`);
+    if (config.enableShopeeCampaigns && (config.shopeeCampaigns || 0) > 0) items.push(`Campanhas ${config.shopeeCampaigns}%`);
+    if (config.shopeeAcelera === 'indicado') items.push('Shopee Acelera 2,5%');
+    if (config.shopeeAcelera === 'nao_indicado') items.push('Shopee Acelera 3,5%');
+    return items;
+  }, [currentStore]);
 
   const handleCreateFirstStore = async () => {
     await addStore('Minha Loja');
@@ -76,8 +88,6 @@ export default function Home() {
   const handleToolClick = (item: (typeof toolItems)[number]) => {
     if ('action' in item && item.action === 'addProduct') {
       setShowProductForm(true);
-    } else if ('action' in item && item.action === 'config') {
-      setShowConfigForm(true);
     } else if ('route' in item && item.route) {
       navigate(item.route as string);
     }
@@ -127,6 +137,41 @@ export default function Home() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Global Config Summary (read-only) */}
+        <div className="glass-card p-4 animate-fade-up">
+          {activeGlobalConfigs.length > 0 ? (
+            <div className="flex items-start gap-2">
+              <span className="text-success mt-0.5 flex-shrink-0 text-sm">✓</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium text-foreground">
+                  {activeGlobalConfigs.join(' · ')}
+                </p>
+                <button
+                  onClick={() => navigate('/settings')}
+                  className="text-[10px] text-primary hover:underline inline-flex items-center gap-1 mt-1 font-semibold"
+                >
+                  Editar em Configurações <ExternalLink className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-start gap-2">
+              <span className="text-muted-foreground mt-0.5 flex-shrink-0 text-sm">ℹ️</span>
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  Nenhuma taxa global configurada.
+                </p>
+                <button
+                  onClick={() => navigate('/settings')}
+                  className="text-xs text-primary hover:underline inline-flex items-center gap-1 mt-1 font-semibold"
+                >
+                  Configurar taxas <ExternalLink className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <EducationBanner />
@@ -213,7 +258,6 @@ export default function Home() {
       </div>
 
       {showProductForm && <ProductForm onClose={() => setShowProductForm(false)} onSave={handleSaveProduct} />}
-      {showConfigForm && <StoreConfigForm onClose={() => setShowConfigForm(false)} />}
       <SubscriptionModal open={showPaywall} onClose={() => setShowPaywall(false)} />
       <DailyOfferModal />
     </AppLayout>

@@ -79,6 +79,7 @@ function mapDbStore(s: any, products: Product[]): Store {
       enableShopeeCampaigns: s.enable_shopee_campaigns ?? false,
       affiliateCommission: Number(s.affiliate_commission ?? 0),
       shopeeCampaigns: Number(s.shopee_campaigns ?? 0),
+      shopeeAcelera: (s.shopee_acelera as ShopeeAceleraOption) || 'none',
     },
     products: products.filter(p => p.storeId === s.id),
     createdAt: new Date(s.created_at),
@@ -191,6 +192,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (config.hasOver450Orders !== undefined) dbConfig.has_over_450_orders = config.hasOver450Orders;
     if (config.enableAffiliateCommission !== undefined) dbConfig.enable_affiliate_commission = config.enableAffiliateCommission;
     if (config.enableShopeeCampaigns !== undefined) dbConfig.enable_shopee_campaigns = config.enableShopeeCampaigns;
+    if (config.shopeeAcelera !== undefined) dbConfig.shopee_acelera = config.shopeeAcelera;
 
     const { error } = await supabase.from('stores').update(dbConfig).eq('id', storeId);
     if (error) { toast.error('Erro ao atualizar configuração'); return; }
@@ -356,9 +358,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const affiliateCommissionValue = config.enableAffiliateCommission ? grossRevenue * ((config.affiliateCommission || 0) / 100) : 0;
     const shopeeCampaignsValue = config.enableShopeeCampaigns ? grossRevenue * ((config.shopeeCampaigns || 0) / 100) : 0;
 
-    const aceleraCost = product.shopeeAcelera === 'indicado'
+    const aceleraCost = config.shopeeAcelera === 'indicado'
       ? grossRevenue * 0.025
-      : product.shopeeAcelera === 'nao_indicado'
+      : config.shopeeAcelera === 'nao_indicado'
       ? grossRevenue * 0.035
       : 0;
 
