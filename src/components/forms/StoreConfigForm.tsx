@@ -69,10 +69,9 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
       enableAds: true,
       enableAffiliateCommission,
       enableShopeeCampaigns,
+      shopeeAcelera: enableAcelera ? shopeeAcelera : 'none',
     });
     
-    const aceleraValue = enableAcelera ? shopeeAcelera : 'none';
-    await supabase.from('stores').update({ shopee_acelera: aceleraValue }).eq('id', currentStore.id);
     
     setIsSaving(false);
     
