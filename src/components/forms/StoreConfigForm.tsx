@@ -43,7 +43,7 @@ export function StoreConfigForm({ onClose }: StoreConfigFormProps) {
       setEnableAffiliateCommission(currentStore.config.enableAffiliateCommission ?? false);
       setShopeeCampaigns((currentStore.config.shopeeCampaigns || 0).toString());
       setEnableShopeeCampaigns(currentStore.config.enableShopeeCampaigns ?? false);
-      const aceleraVal = (currentStore as any).shopee_acelera || 'none';
+      const aceleraVal = currentStore.config.shopeeAcelera || 'none';
       setEnableAcelera(aceleraVal !== 'none');
       setShopeeAcelera(aceleraVal === 'none' ? 'indicado' : aceleraVal);
       setProductCount(currentStore.products?.length || 0);
