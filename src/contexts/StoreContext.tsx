@@ -358,9 +358,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const affiliateCommissionValue = config.enableAffiliateCommission ? grossRevenue * ((config.affiliateCommission || 0) / 100) : 0;
     const shopeeCampaignsValue = config.enableShopeeCampaigns ? grossRevenue * ((config.shopeeCampaigns || 0) / 100) : 0;
 
-    const aceleraCost = product.shopeeAcelera === 'indicado'
+    const aceleraCost = config.shopeeAcelera === 'indicado'
       ? grossRevenue * 0.025
-      : product.shopeeAcelera === 'nao_indicado'
+      : config.shopeeAcelera === 'nao_indicado'
       ? grossRevenue * 0.035
       : 0;
 
