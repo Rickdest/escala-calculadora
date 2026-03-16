@@ -192,6 +192,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (config.hasOver450Orders !== undefined) dbConfig.has_over_450_orders = config.hasOver450Orders;
     if (config.enableAffiliateCommission !== undefined) dbConfig.enable_affiliate_commission = config.enableAffiliateCommission;
     if (config.enableShopeeCampaigns !== undefined) dbConfig.enable_shopee_campaigns = config.enableShopeeCampaigns;
+    if (config.shopeeAcelera !== undefined) dbConfig.shopee_acelera = config.shopeeAcelera;
 
     const { error } = await supabase.from('stores').update(dbConfig).eq('id', storeId);
     if (error) { toast.error('Erro ao atualizar configuração'); return; }
