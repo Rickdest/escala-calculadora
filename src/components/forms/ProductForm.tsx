@@ -50,11 +50,10 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
     if ((config.taxes || 0) > 0) items.push(`Impostos ${config.taxes}%`);
     if (config.enableAffiliateCommission && (config.affiliateCommission || 0) > 0) items.push(`Afiliados ${config.affiliateCommission}%`);
     if (config.enableShopeeCampaigns && (config.shopeeCampaigns || 0) > 0) items.push(`Campanhas ${config.shopeeCampaigns}%`);
-    const shopeeAcelera = (currentStore as any)?.shopee_acelera || 'none';
-    if (shopeeAcelera === 'indicado') items.push('Shopee Acelera 2,5%');
-    if (shopeeAcelera === 'nao_indicado') items.push('Shopee Acelera 3,5%');
+    if (config.shopeeAcelera === 'indicado') items.push('Shopee Acelera 2,5%');
+    if (config.shopeeAcelera === 'nao_indicado') items.push('Shopee Acelera 3,5%');
     return items;
-  }, [config, currentStore]);
+  }, [config]);
 
   // Local cost calculation using global configs
   const localCalc = useMemo(() => {
