@@ -36,6 +36,7 @@ export interface StoreConfig {
   enableShopeeCampaigns: boolean;
   affiliateCommission: number;
   shopeeCampaigns: number;
+  shopeeAcelera: ShopeeAceleraOption;
 }
 
 export interface Store {
