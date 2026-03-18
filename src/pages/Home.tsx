@@ -104,6 +104,7 @@ export default function Home() {
       <PageHeader title="Precify" />
       <div className="px-4 py-6 space-y-6">
         <TrialBanner />
+        <StockAlertBanner />
 
         {/* Subscription CTA - only for non-active */}
         {!isActive && (
