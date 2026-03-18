@@ -6,6 +6,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { EducationBanner } from '@/components/home/EducationBanner';
+import { StockAlertBanner } from '@/components/stock/StockAlertBanner';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
 import { TrialBanner } from '@/components/TrialBanner';
 import { DailyOfferModal } from '@/components/DailyOfferModal';
