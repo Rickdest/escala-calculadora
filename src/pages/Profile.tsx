@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { User, Camera, Mail, Lock, Save, Loader2, Check, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -281,6 +282,9 @@ export default function Profile() {
           </Button>
         </div>
 
+        {/* Subscription Status */}
+        <SubscriptionSection />
+
         {/* Change Password */}
         <div className="glass-card p-5 space-y-4 animate-fade-up stagger-2">
           <h3 className="font-bold text-foreground flex items-center gap-2">
@@ -350,5 +354,62 @@ export default function Profile() {
         </div>
       </div>
     </AppLayout>
+  );
+}
+
+const CHECKOUT_URL = import.meta.env.VITE_HOTMART_URL || 'https://pay.hotmart.com/B104846948H?off=au88x8b1&checkoutMode=6';
+
+function SubscriptionSection() {
+  const { status, trialEnd, isActive } = useSubscription();
+  const { user } = useAuth();
+
+  const handleCheckout = () => {
+    const url = new URL(CHECKOUT_URL);
+    if (user?.email) url.searchParams.set('email', user.email);
+    window.open(url.toString(), '_blank', 'noopener,noreferrer');
+  };
+
+  let statusText = '';
+  let statusEmoji = '';
+  let showButton = false;
+  let buttonText = '';
+
+  if (status === 'trialing' && trialEnd) {
+    const daysLeft = Math.max(0, Math.ceil((new Date(trialEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+    statusEmoji = '⏳';
+    statusText = `Teste gratuito — ${daysLeft} ${daysLeft === 1 ? 'dia restante' : 'dias restantes'}`;
+    showButton = true;
+    buttonText = 'Garantir plano anual · R$49,90';
+  } else if (status === 'active') {
+    statusEmoji = '✅';
+    statusText = 'Plano ativo';
+  } else if (status === 'canceled' || status === 'past_due') {
+    statusEmoji = '❌';
+    statusText = 'Acesso expirado';
+    showButton = true;
+    buttonText = 'Renovar acesso · R$49,90/ano';
+  }
+
+  if (!statusText) return null;
+
+  return (
+    <div className="glass-card p-5 space-y-3 animate-fade-up stagger-1">
+      <h3 className="font-bold text-foreground text-sm">Assinatura</h3>
+      <div className="flex items-center gap-2">
+        <span className="text-sm">{statusEmoji}</span>
+        <span className="text-sm text-foreground">{statusText}</span>
+      </div>
+      {status === 'active' && (
+        <p className="text-xs text-muted-foreground">Acesso completo ao Precify</p>
+      )}
+      {showButton && (
+        <button
+          onClick={handleCheckout}
+          className="w-full h-12 rounded-xl bg-[#F97316] hover:bg-[#ea6c10] text-white font-bold text-sm transition-colors active:scale-[0.98]"
+        >
+          {buttonText}
+        </button>
+      )}
+    </div>
   );
 }

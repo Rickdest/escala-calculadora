@@ -1,4 +1,4 @@
-import { Home, Package, BarChart3, Warehouse, Settings, Crown } from 'lucide-react';
+import { Home, Package, BarChart3, GraduationCap, Settings } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -8,7 +8,7 @@ const navItems = [
   { icon: Home, label: 'Início', path: '/' },
   { icon: Package, label: 'Produtos', path: '/products' },
   { icon: BarChart3, label: 'ROAS', path: '/roas' },
-  { icon: Warehouse, label: 'Estoque', path: '/stock' },
+  { icon: GraduationCap, label: 'Educação', path: '/education' },
   { icon: Settings, label: 'Configurações', path: '/settings' },
 ];
 
@@ -55,10 +55,10 @@ export function SideNavigation() {
             onClick={() => navigate('/paywall')}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors"
           >
-            <Crown className="w-5 h-5 text-primary" />
+            <span className="text-sm">⚡</span>
             <div className="text-left">
-               <p className="text-xs font-bold text-primary">Assinar Pro</p>
-              <p className="text-[10px] text-muted-foreground">Desbloqueie tudo</p>
+               <p className="text-xs font-bold text-primary">Garantir acesso</p>
+              <p className="text-[10px] text-muted-foreground">R$49,90/ano</p>
             </div>
           </button>
         </div>
@@ -67,8 +67,8 @@ export function SideNavigation() {
       {isActive && (
         <div className="px-3 py-3">
           <div className="flex items-center gap-2 px-4 py-2">
-            <Crown className="w-4 h-4 text-primary" />
-            <span className="text-xs font-semibold text-primary">Pro {status === 'trialing' ? '(Trial)' : ''}</span>
+            <span className="text-xs">✅</span>
+            <span className="text-xs font-semibold text-primary">Plano ativo{status === 'trialing' ? ' (teste)' : ''}</span>
           </div>
         </div>
       )}
