@@ -231,6 +231,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const addProduct = useCallback(async (productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> => {
     if (!user) throw new Error('Não autenticado');
 
+    // Calculate stock from variations if applicable
+    const hasVars = productData.hasVariations || false;
+    const variations = productData.variations || [];
+    const stockQty = hasVars && variations.length > 0
+      ? variations.reduce((sum, v) => sum + (v.stockQuantity || 0), 0)
+      : productData.stockQuantity || 0;
+
     const { data, error } = await supabase.from('products').insert({
       store_id: productData.storeId,
       user_id: user.id,
@@ -240,9 +247,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       packaging_cost: productData.packagingCost || 0,
       ads_cost: productData.adsCost || 0,
       ads_revenue: productData.adsRevenue || 0,
-      stock_quantity: productData.stockQuantity || 0,
-      has_variations: productData.hasVariations || false,
-      variations: productData.variations || [],
+      stock_quantity: stockQty,
+      has_variations: hasVars,
+      attributes: productData.attributes || [],
+      variations: variations,
       shopee_acelera: productData.shopeeAcelera || 'none',
     } as any).select().single();
 
