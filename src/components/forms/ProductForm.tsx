@@ -35,49 +35,6 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
-  // Auto-generate combinations when attributes change
-  useEffect(() => {
-    if (!hasVariations) return;
-    const combos = generateVariationCombinations(attributes);
-    if (combos.length === 0) {
-      setVariations([]);
-      return;
-    }
-
-    // Preserve existing variation data for matching combos
-    const existingMap = new Map<string, ProductVariation>();
-    for (const v of variations) {
-      existingMap.set(getVariationLabel(v.attributes), v);
-    }
-
-    const defaultCost = parseFloat(costPrice) || 0;
-    const defaultSale = parseFloat(salePrice) || 0;
-
-    const newVariations: ProductVariation[] = combos.map(combo => {
-      const label = getVariationLabel(combo);
-      const existing = existingMap.get(label);
-      if (existing) {
-        return { ...existing, attributes: combo };
-      }
-      return {
-        id: Math.random().toString(36).substring(2, 15),
-        attributes: combo,
-        sku: '',
-        costPrice: defaultCost,
-        salePrice: defaultSale,
-        stockQuantity: 0,
-      };
-    });
-
-    setVariations(newVariations);
-  }, [attributes, hasVariations]);
-
-  // Update stockQuantity display when variations change
-  const totalVariationStock = useMemo(() => {
-    if (!hasVariations) return parseInt(stockQuantity) || 0;
-    return variations.reduce((sum, v) => sum + v.stockQuantity, 0);
-  }, [hasVariations, variations, stockQuantity]);
-
   const activeGlobalConfigs = useMemo(() => {
     if (!config) return [];
     const items: string[] = [];
@@ -246,9 +203,6 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             </div>
           </div>
 
-
-
-
           {/* ══════════ CUSTOS OPCIONAIS ══════════ */}
           <Collapsible open={optionalCostsOpen} onOpenChange={setOptionalCostsOpen}>
             <CollapsibleTrigger asChild>
@@ -301,48 +255,6 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                   </a>
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* ══════════ VARIAÇÕES POR ATRIBUTOS (ERP) ══════════ */}
-          <div className="glass-card p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-semibold">Variações por Atributos</Label>
-                <p className="text-xs text-muted-foreground">Tamanho, Cor, etc. — combinações automáticas</p>
-              </div>
-              <Switch
-                checked={hasVariations}
-                onCheckedChange={(checked) => {
-                  setHasVariations(checked);
-                  setVariationsOpen(checked);
-                }}
-              />
-            </div>
-
-            {hasVariations && (
-              <Collapsible open={variationsOpen} onOpenChange={setVariationsOpen}>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="sm" className="w-full justify-between">
-                    <span>{variations.length} combinações · Estoque total: {totalVariationStock}</span>
-                    <ChevronDown className={cn("w-4 h-4 transition-transform", variationsOpen && "rotate-180")} />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-4 pt-3">
-                  {/* Attribute Builder */}
-                  <AttributeBuilder attributes={attributes} onChange={setAttributes} />
-
-                  {/* Generated Variations Table */}
-                  {variations.length > 0 && (
-                    <VariationsTable
-                      variations={variations}
-                      onChange={setVariations}
-                      defaultCost={parseFloat(costPrice) || 0}
-                      defaultSale={parseFloat(salePrice) || 0}
-                    />
-                  )}
-                </CollapsibleContent>
-              </Collapsible>
             )}
           </div>
 
