@@ -289,6 +289,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (updates.attributes !== undefined) dbUpdates.attributes = updates.attributes;
     if (updates.variations !== undefined) dbUpdates.variations = updates.variations;
     if (updates.shopeeAcelera !== undefined) dbUpdates.shopee_acelera = updates.shopeeAcelera;
+    if (updates.category !== undefined) dbUpdates.category = updates.category;
+    if (updates.description !== undefined) dbUpdates.description = updates.description;
+    if (updates.minStockQuantity !== undefined) dbUpdates.min_stock_quantity = updates.minStockQuantity;
     // Recalculate stock from variations if applicable
     if (updates.variations !== undefined && updates.hasVariations !== false) {
       const vars = updates.variations || [];
