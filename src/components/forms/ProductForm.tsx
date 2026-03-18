@@ -246,13 +246,8 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             </div>
           </div>
 
-          {/* Stock - only show manual field when no variations */}
-          {!hasVariations && (
-            <div className="space-y-2">
-              <Label htmlFor="stockQuantity" className="text-sm font-semibold">Quantidade em Estoque</Label>
-              <Input id="stockQuantity" type="number" min="0" value={stockQuantity} onChange={(e) => setStockQuantity(e.target.value)} placeholder="0" className="input-modern h-12" />
-            </div>
-          )}
+
+
 
           {/* ══════════ CUSTOS OPCIONAIS ══════════ */}
           <Collapsible open={optionalCostsOpen} onOpenChange={setOptionalCostsOpen}>
