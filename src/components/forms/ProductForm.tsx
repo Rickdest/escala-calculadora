@@ -25,11 +25,6 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
   const [salePrice, setSalePrice] = useState(product?.salePrice?.toString() || '');
   const [packagingCost, setPackagingCost] = useState(product?.packagingCost?.toString() || '0');
   const [imageUrl, setImageUrl] = useState(product?.imageUrl || '');
-  const [stockQuantity, setStockQuantity] = useState(product?.stockQuantity?.toString() || '0');
-  const [hasVariations, setHasVariations] = useState(product?.hasVariations || false);
-  const [attributes, setAttributes] = useState<ProductAttribute[]>(product?.attributes || []);
-  const [variations, setVariations] = useState<ProductVariation[]>(product?.variations || []);
-  const [variationsOpen, setVariationsOpen] = useState(product?.hasVariations || false);
   const [isSaving, setIsSaving] = useState(false);
 
   const [enableAds, setEnableAds] = useState((product?.adsCost || 0) > 0);
