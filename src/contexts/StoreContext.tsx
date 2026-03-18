@@ -255,6 +255,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       attributes: productData.attributes || [],
       variations: variations,
       shopee_acelera: productData.shopeeAcelera || 'none',
+      category: productData.category || null,
+      description: productData.description || null,
+      min_stock_quantity: productData.minStockQuantity ?? 5,
     } as any).select().single();
 
     if (error) { toast.error('Erro ao salvar produto'); throw error; }
