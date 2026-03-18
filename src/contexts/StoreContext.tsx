@@ -350,6 +350,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       ads_revenue: original.adsRevenue,
       stock_quantity: original.stockQuantity,
       has_variations: original.hasVariations,
+      attributes: original.attributes || [],
       variations: original.variations,
       shopee_acelera: original.shopeeAcelera || 'none',
     } as any).select().single();
