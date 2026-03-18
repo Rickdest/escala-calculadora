@@ -44,6 +44,14 @@ function removeLocalImage(productId: string) {
 
 function mapDbProduct(p: any): Product {
   const localImages = getLocalImages();
+  const variations = p.variations ?? [];
+  const attributes = p.attributes ?? [];
+  const hasVariations = p.has_variations ?? false;
+  // If product has variations, stockQuantity = sum of variation stocks
+  const stockQuantity = hasVariations && variations.length > 0
+    ? variations.reduce((sum: number, v: any) => sum + (Number(v.stockQuantity) || 0), 0)
+    : Number(p.stock_quantity ?? 0);
+
   return {
     id: p.id,
     storeId: p.store_id,
@@ -54,9 +62,10 @@ function mapDbProduct(p: any): Product {
     adsCost: Number(p.ads_cost ?? 0),
     adsRevenue: Number(p.ads_revenue ?? 0),
     imageUrl: localImages[p.id] || undefined,
-    stockQuantity: Number(p.stock_quantity ?? 0),
-    hasVariations: p.has_variations ?? false,
-    variations: p.variations ?? [],
+    stockQuantity,
+    hasVariations,
+    attributes,
+    variations,
     shopeeAcelera: (p.shopee_acelera as ShopeeAceleraOption) ?? 'none',
     createdAt: new Date(p.created_at),
     updatedAt: new Date(p.updated_at),
