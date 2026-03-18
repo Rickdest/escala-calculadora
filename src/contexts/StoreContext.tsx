@@ -44,6 +44,14 @@ function removeLocalImage(productId: string) {
 
 function mapDbProduct(p: any): Product {
   const localImages = getLocalImages();
+  const variations = p.variations ?? [];
+  const attributes = p.attributes ?? [];
+  const hasVariations = p.has_variations ?? false;
+  // If product has variations, stockQuantity = sum of variation stocks
+  const stockQuantity = hasVariations && variations.length > 0
+    ? variations.reduce((sum: number, v: any) => sum + (Number(v.stockQuantity) || 0), 0)
+    : Number(p.stock_quantity ?? 0);
+
   return {
     id: p.id,
     storeId: p.store_id,
@@ -54,9 +62,10 @@ function mapDbProduct(p: any): Product {
     adsCost: Number(p.ads_cost ?? 0),
     adsRevenue: Number(p.ads_revenue ?? 0),
     imageUrl: localImages[p.id] || undefined,
-    stockQuantity: Number(p.stock_quantity ?? 0),
-    hasVariations: p.has_variations ?? false,
-    variations: p.variations ?? [],
+    stockQuantity,
+    hasVariations,
+    attributes,
+    variations,
     shopeeAcelera: (p.shopee_acelera as ShopeeAceleraOption) ?? 'none',
     createdAt: new Date(p.created_at),
     updatedAt: new Date(p.updated_at),
@@ -222,6 +231,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const addProduct = useCallback(async (productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> => {
     if (!user) throw new Error('Não autenticado');
 
+    // Calculate stock from variations if applicable
+    const hasVars = productData.hasVariations || false;
+    const variations = productData.variations || [];
+    const stockQty = hasVars && variations.length > 0
+      ? variations.reduce((sum, v) => sum + (v.stockQuantity || 0), 0)
+      : productData.stockQuantity || 0;
+
     const { data, error } = await supabase.from('products').insert({
       store_id: productData.storeId,
       user_id: user.id,
@@ -231,9 +247,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       packaging_cost: productData.packagingCost || 0,
       ads_cost: productData.adsCost || 0,
       ads_revenue: productData.adsRevenue || 0,
-      stock_quantity: productData.stockQuantity || 0,
-      has_variations: productData.hasVariations || false,
-      variations: productData.variations || [],
+      stock_quantity: stockQty,
+      has_variations: hasVars,
+      attributes: productData.attributes || [],
+      variations: variations,
       shopee_acelera: productData.shopeeAcelera || 'none',
     } as any).select().single();
 
@@ -266,8 +283,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (updates.adsRevenue !== undefined) dbUpdates.ads_revenue = updates.adsRevenue;
     if (updates.stockQuantity !== undefined) dbUpdates.stock_quantity = updates.stockQuantity;
     if (updates.hasVariations !== undefined) dbUpdates.has_variations = updates.hasVariations;
+    if (updates.attributes !== undefined) dbUpdates.attributes = updates.attributes;
     if (updates.variations !== undefined) dbUpdates.variations = updates.variations;
     if (updates.shopeeAcelera !== undefined) dbUpdates.shopee_acelera = updates.shopeeAcelera;
+    // Recalculate stock from variations if applicable
+    if (updates.variations !== undefined && updates.hasVariations !== false) {
+      const vars = updates.variations || [];
+      if (vars.length > 0) {
+        dbUpdates.stock_quantity = vars.reduce((sum: number, v: any) => sum + (v.stockQuantity || 0), 0);
+        if (updates.stockQuantity === undefined) {
+          updates.stockQuantity = dbUpdates.stock_quantity;
+        }
+      }
+    }
 
     if (Object.keys(dbUpdates).length > 0) {
       const { error } = await supabase.from('products').update(dbUpdates).eq('id', productId);
@@ -322,6 +350,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       ads_revenue: original.adsRevenue,
       stock_quantity: original.stockQuantity,
       has_variations: original.hasVariations,
+      attributes: original.attributes || [],
       variations: original.variations,
       shopee_acelera: original.shopeeAcelera || 'none',
     } as any).select().single();

@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
-import { Package, Search, AlertTriangle, TrendingDown, Filter } from 'lucide-react';
+import { Package, Search, AlertTriangle, TrendingDown, ChevronDown, ChevronUp } from 'lucide-react';
 import { useStore } from '@/contexts/StoreContext';
+import { getVariationLabel } from '@/types/store';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Input } from '@/components/ui/input';
@@ -13,48 +14,81 @@ export default function Stock() {
   const { currentStore, updateProduct } = useStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<StockFilter>('all');
+  const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
+
+  const toggleExpand = (id: string) => {
+    setExpandedProducts(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   const products = useMemo(() => {
     if (!currentStore) return [];
-
     let filtered = currentStore.products.filter(p =>
-      p.name.toLowerCase().includes(searchQuery.toLowerCase())
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.hasVariations && p.variations.some(v =>
+        getVariationLabel(v.attributes).toLowerCase().includes(searchQuery.toLowerCase())
+      ))
     );
 
     switch (filter) {
       case 'low':
-        filtered = filtered.filter(p => p.stockQuantity > 0 && p.stockQuantity <= 5);
+        filtered = filtered.filter(p => {
+          if (p.hasVariations && p.variations.length > 0) {
+            return p.variations.some(v => v.stockQuantity > 0 && v.stockQuantity <= 5);
+          }
+          return p.stockQuantity > 0 && p.stockQuantity <= 5;
+        });
         break;
       case 'out':
-        filtered = filtered.filter(p => p.stockQuantity === 0);
+        filtered = filtered.filter(p => {
+          if (p.hasVariations && p.variations.length > 0) {
+            return p.variations.some(v => v.stockQuantity === 0);
+          }
+          return p.stockQuantity === 0;
+        });
         break;
     }
 
-    // Sort by stock quantity (lowest first)
     return filtered.sort((a, b) => a.stockQuantity - b.stockQuantity);
   }, [currentStore, searchQuery, filter]);
 
   const stats = useMemo(() => {
     if (!currentStore) return { total: 0, low: 0, out: 0, totalValue: 0 };
 
-    const low = currentStore.products.filter(p => p.stockQuantity > 0 && p.stockQuantity <= 5).length;
-    const out = currentStore.products.filter(p => p.stockQuantity === 0).length;
-    
-    // Calculate total stock value (cost price × quantity for each product)
-    const totalValue = currentStore.products.reduce((sum, p) => {
-      return sum + (p.costPrice * p.stockQuantity);
-    }, 0);
+    let low = 0, out = 0, totalValue = 0;
 
-    return {
-      total: currentStore.products.length,
-      low,
-      out,
-      totalValue,
-    };
+    for (const p of currentStore.products) {
+      if (p.hasVariations && p.variations.length > 0) {
+        for (const v of p.variations) {
+          if (v.stockQuantity === 0) out++;
+          else if (v.stockQuantity <= 5) low++;
+          totalValue += v.costPrice * v.stockQuantity;
+        }
+      } else {
+        if (p.stockQuantity === 0) out++;
+        else if (p.stockQuantity <= 5) low++;
+        totalValue += p.costPrice * p.stockQuantity;
+      }
+    }
+
+    return { total: currentStore.products.length, low, out, totalValue };
   }, [currentStore]);
 
   const handleStockChange = (productId: string, newStock: number) => {
     updateProduct(productId, { stockQuantity: Math.max(0, newStock) });
+  };
+
+  const handleVariationStockChange = (productId: string, variationId: string, newStock: number) => {
+    const product = currentStore?.products.find(p => p.id === productId);
+    if (!product) return;
+    const updatedVariations = product.variations.map(v =>
+      v.id === variationId ? { ...v, stockQuantity: Math.max(0, newStock) } : v
+    );
+    const totalStock = updatedVariations.reduce((sum, v) => sum + v.stockQuantity, 0);
+    updateProduct(productId, { variations: updatedVariations, stockQuantity: totalStock });
   };
 
   if (!currentStore) {
@@ -70,10 +104,7 @@ export default function Stock() {
 
   return (
     <AppLayout>
-      <PageHeader
-        title="Estoque"
-        subtitle={`${stats.total} produtos`}
-      />
+      <PageHeader title="Estoque" subtitle={`${stats.total} produtos`} />
 
       <div className="px-4 py-5 space-y-4">
         {/* Total Stock Value */}
@@ -93,33 +124,15 @@ export default function Stock() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-3 gap-3 animate-fade-up stagger-1">
-          <button
-            onClick={() => setFilter('all')}
-            className={cn(
-              'glass-card p-4 text-center transition-all',
-              filter === 'all' && 'ring-2 ring-primary'
-            )}
-          >
+          <button onClick={() => setFilter('all')} className={cn('glass-card p-4 text-center transition-all', filter === 'all' && 'ring-2 ring-primary')}>
             <p className="number-lg text-primary">{stats.total}</p>
             <p className="text-xs text-muted-foreground font-medium">Total</p>
           </button>
-          <button
-            onClick={() => setFilter('low')}
-            className={cn(
-              'glass-card p-4 text-center transition-all',
-              filter === 'low' && 'ring-2 ring-warning'
-            )}
-          >
+          <button onClick={() => setFilter('low')} className={cn('glass-card p-4 text-center transition-all', filter === 'low' && 'ring-2 ring-warning')}>
             <p className="number-lg text-warning">{stats.low}</p>
             <p className="text-xs text-muted-foreground font-medium">Baixo</p>
           </button>
-          <button
-            onClick={() => setFilter('out')}
-            className={cn(
-              'glass-card p-4 text-center transition-all',
-              filter === 'out' && 'ring-2 ring-destructive'
-            )}
-          >
+          <button onClick={() => setFilter('out')} className={cn('glass-card p-4 text-center transition-all', filter === 'out' && 'ring-2 ring-destructive')}>
             <p className="number-lg text-destructive">{stats.out}</p>
             <p className="text-xs text-muted-foreground font-medium">Zerado</p>
           </button>
@@ -128,20 +141,17 @@ export default function Stock() {
         {/* Search */}
         <div className="relative animate-fade-up stagger-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar produto..."
-            className="pl-11 input-modern h-12"
-          />
+          <Input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Buscar produto ou variação..." className="pl-11 input-modern h-12" />
         </div>
 
         {/* Products List */}
         {products.length > 0 ? (
           <div className="space-y-3">
             {products.map((product, index) => {
-              const isLow = product.stockQuantity > 0 && product.stockQuantity <= 5;
-              const isOut = product.stockQuantity === 0;
+              const hasVars = product.hasVariations && product.variations.length > 0;
+              const isLow = !hasVars && product.stockQuantity > 0 && product.stockQuantity <= 5;
+              const isOut = !hasVars && product.stockQuantity === 0;
+              const isExpanded = expandedProducts.has(product.id);
 
               return (
                 <div
@@ -160,16 +170,9 @@ export default function Stock() {
                       isOut ? 'bg-destructive/10' : isLow ? 'bg-warning/10' : 'bg-secondary'
                     )}>
                       {product.imageUrl ? (
-                        <img
-                          src={product.imageUrl}
-                          alt={product.name}
-                          className="w-full h-full object-cover rounded-xl"
-                        />
+                        <img src={product.imageUrl} alt={product.name} className="w-full h-full object-cover rounded-xl" />
                       ) : (
-                        <Package className={cn(
-                          'w-6 h-6',
-                          isOut ? 'text-destructive' : isLow ? 'text-warning' : 'text-muted-foreground'
-                        )} />
+                        <Package className={cn('w-6 h-6', isOut ? 'text-destructive' : isLow ? 'text-warning' : 'text-muted-foreground')} />
                       )}
                     </div>
 
@@ -180,55 +183,54 @@ export default function Stock() {
                         {isOut && <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0" />}
                         {isLow && !isOut && <TrendingDown className="w-4 h-4 text-warning flex-shrink-0" />}
                       </div>
-                      {product.hasVariations && product.variations.length > 0 && (
+                      {hasVars && (
                         <p className="text-xs text-muted-foreground">
-                          {product.variations.length} variações
+                          {product.variations.length} variações · {product.attributes.map(a => a.name).join(', ')}
                         </p>
                       )}
                     </div>
 
-                    {/* Stock Control */}
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleStockChange(product.id, product.stockQuantity - 1)}
-                        className="w-9 h-9 p-0"
-                      >
-                        -
-                      </Button>
-                      <span className={cn(
-                        'w-12 text-center font-bold text-lg',
-                        isOut ? 'text-destructive' : isLow ? 'text-warning' : 'text-foreground'
-                      )}>
-                        {product.stockQuantity}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleStockChange(product.id, product.stockQuantity + 1)}
-                        className="w-9 h-9 p-0"
-                      >
-                        +
-                      </Button>
-                    </div>
+                    {/* Stock Control / Expand */}
+                    {hasVars ? (
+                      <button onClick={() => toggleExpand(product.id)} className="flex items-center gap-2">
+                        <span className="text-lg font-bold text-foreground">{product.stockQuantity}</span>
+                        {isExpanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handleStockChange(product.id, product.stockQuantity - 1)} className="w-9 h-9 p-0">-</Button>
+                        <span className={cn('w-12 text-center font-bold text-lg', isOut ? 'text-destructive' : isLow ? 'text-warning' : 'text-foreground')}>{product.stockQuantity}</span>
+                        <Button variant="outline" size="sm" onClick={() => handleStockChange(product.id, product.stockQuantity + 1)} className="w-9 h-9 p-0">+</Button>
+                      </div>
+                    )}
                   </div>
 
-                  {/* Variations Stock */}
-                  {product.hasVariations && product.variations.length > 0 && (
+                  {/* Expanded Variations */}
+                  {hasVars && isExpanded && (
                     <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
-                      {product.variations.map((variation) => (
-                        <div key={variation.id} className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">{variation.name}</span>
-                          <span className={cn(
-                            'font-medium',
-                            variation.stockQuantity === 0 ? 'text-destructive' :
-                            variation.stockQuantity <= 5 ? 'text-warning' : 'text-foreground'
+                      {product.variations.map((variation) => {
+                        const label = getVariationLabel(variation.attributes);
+                        const vIsOut = variation.stockQuantity === 0;
+                        const vIsLow = variation.stockQuantity > 0 && variation.stockQuantity <= 5;
+
+                        return (
+                          <div key={variation.id} className={cn(
+                            'flex items-center justify-between py-2 px-3 rounded-lg',
+                            vIsOut && 'bg-destructive/5',
+                            vIsLow && !vIsOut && 'bg-warning/5'
                           )}>
-                            {variation.stockQuantity} un
-                          </span>
-                        </div>
-                      ))}
+                            <div className="flex-1 min-w-0">
+                              <span className="text-sm font-medium text-foreground">{label}</span>
+                              {variation.sku && <span className="text-xs text-muted-foreground ml-2">SKU: {variation.sku}</span>}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button variant="outline" size="sm" onClick={() => handleVariationStockChange(product.id, variation.id, variation.stockQuantity - 1)} className="w-8 h-8 p-0 text-xs">-</Button>
+                              <span className={cn('w-10 text-center font-bold text-sm', vIsOut ? 'text-destructive' : vIsLow ? 'text-warning' : 'text-foreground')}>{variation.stockQuantity}</span>
+                              <Button variant="outline" size="sm" onClick={() => handleVariationStockChange(product.id, variation.id, variation.stockQuantity + 1)} className="w-8 h-8 p-0 text-xs">+</Button>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -244,9 +246,7 @@ export default function Stock() {
               {searchQuery || filter !== 'all' ? 'Nenhum produto encontrado' : 'Sem produtos cadastrados'}
             </h3>
             <p className="text-sm text-muted-foreground">
-              {searchQuery || filter !== 'all'
-                ? 'Tente buscar com outros termos ou filtros'
-                : 'Adicione produtos para controlar o estoque'}
+              {searchQuery || filter !== 'all' ? 'Tente buscar com outros termos ou filtros' : 'Adicione produtos para controlar o estoque'}
             </p>
           </div>
         )}

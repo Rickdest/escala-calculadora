@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
-import { X, Camera, Calculator, TrendingUp, TrendingDown, AlertTriangle, Save, Loader2, Plus, Trash2, ChevronDown, CalendarDays, Settings2, Info, ExternalLink } from 'lucide-react';
-import { Product, ProductVariation, ShopeeAceleraOption, getShopeeFeeForPrice } from '@/types/store';
+import { useState, useMemo, useEffect } from 'react';
+import { X, Camera, Calculator, TrendingUp, TrendingDown, AlertTriangle, Save, Loader2, ChevronDown, CalendarDays, Settings2, Info, ExternalLink } from 'lucide-react';
+import { Product, ProductAttribute, ProductVariation, ShopeeAceleraOption, getShopeeFeeForPrice, generateVariationCombinations, getVariationLabel } from '@/types/store';
 import { useStore } from '@/contexts/StoreContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { AttributeBuilder } from '@/components/forms/AttributeBuilder';
+import { VariationsTable } from '@/components/forms/VariationsTable';
 import { cn } from '@/lib/utils';
 
 interface ProductFormProps {
@@ -17,10 +19,9 @@ interface ProductFormProps {
 }
 
 export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
-  const { currentStore, calculateProduct } = useStore();
+  const { currentStore } = useStore();
   const config = currentStore?.config;
 
-  // Main fields
   const [name, setName] = useState(product?.name || '');
   const [costPrice, setCostPrice] = useState(product?.costPrice?.toString() || '');
   const [salePrice, setSalePrice] = useState(product?.salePrice?.toString() || '');
@@ -28,21 +29,62 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
   const [imageUrl, setImageUrl] = useState(product?.imageUrl || '');
   const [stockQuantity, setStockQuantity] = useState(product?.stockQuantity?.toString() || '0');
   const [hasVariations, setHasVariations] = useState(product?.hasVariations || false);
+  const [attributes, setAttributes] = useState<ProductAttribute[]>(product?.attributes || []);
   const [variations, setVariations] = useState<ProductVariation[]>(product?.variations || []);
   const [variationsOpen, setVariationsOpen] = useState(product?.hasVariations || false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Only product-level optional: Shopee Ads (R$ fixed value)
   const [enableAds, setEnableAds] = useState((product?.adsCost || 0) > 0);
   const [adsCostValue, setAdsCostValue] = useState(product?.adsCost?.toString() || '0');
-
   const [optionalCostsOpen, setOptionalCostsOpen] = useState(false);
   const [monthlySales, setMonthlySales] = useState(50);
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
-  // Build list of active global configs for info card
+  // Auto-generate combinations when attributes change
+  useEffect(() => {
+    if (!hasVariations) return;
+    const combos = generateVariationCombinations(attributes);
+    if (combos.length === 0) {
+      setVariations([]);
+      return;
+    }
+
+    // Preserve existing variation data for matching combos
+    const existingMap = new Map<string, ProductVariation>();
+    for (const v of variations) {
+      existingMap.set(getVariationLabel(v.attributes), v);
+    }
+
+    const defaultCost = parseFloat(costPrice) || 0;
+    const defaultSale = parseFloat(salePrice) || 0;
+
+    const newVariations: ProductVariation[] = combos.map(combo => {
+      const label = getVariationLabel(combo);
+      const existing = existingMap.get(label);
+      if (existing) {
+        return { ...existing, attributes: combo };
+      }
+      return {
+        id: Math.random().toString(36).substring(2, 15),
+        attributes: combo,
+        sku: '',
+        costPrice: defaultCost,
+        salePrice: defaultSale,
+        stockQuantity: 0,
+      };
+    });
+
+    setVariations(newVariations);
+  }, [attributes, hasVariations]);
+
+  // Update stockQuantity display when variations change
+  const totalVariationStock = useMemo(() => {
+    if (!hasVariations) return parseInt(stockQuantity) || 0;
+    return variations.reduce((sum, v) => sum + v.stockQuantity, 0);
+  }, [hasVariations, variations, stockQuantity]);
+
   const activeGlobalConfigs = useMemo(() => {
     if (!config) return [];
     const items: string[] = [];
@@ -55,7 +97,6 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
     return items;
   }, [config]);
 
-  // Local cost calculation using global configs
   const localCalc = useMemo(() => {
     const sp = parseFloat(salePrice) || 0;
     const cp = parseFloat(costPrice) || 0;
@@ -67,10 +108,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
     const shopeeFeeFixed = range.fixed;
     const cpfExtra = config?.isCpfSeller && config?.hasOver450Orders ? 3 : 0;
     const totalShopeeFee = shopeeFeePercent + shopeeFeeFixed + cpfExtra;
-
     const adsCost = enableAds ? (parseFloat(adsCostValue) || 0) : 0;
-    
-    // Global configs
     const taxesCost = (config?.taxes || 0) > 0 ? sp * ((config?.taxes || 0) / 100) : 0;
     const affiliateCost = config?.enableAffiliateCommission ? sp * ((config?.affiliateCommission || 0) / 100) : 0;
     const campaignsCost = config?.enableShopeeCampaigns ? sp * ((config?.shopeeCampaigns || 0) / 100) : 0;
@@ -82,24 +120,14 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
     const realMargin = sp > 0 ? (netProfit / sp) * 100 : 0;
 
     return {
-      grossRevenue: sp,
-      totalShopeeFee,
-      shopeeFeePercent,
-      shopeeFeeFixed: shopeeFeeFixed + cpfExtra,
-      adsCost,
-      taxesCost,
-      affiliateCost,
-      campaignsCost,
-      aceleraCost,
-      totalCosts,
-      netProfit,
-      realMargin,
+      grossRevenue: sp, totalShopeeFee, shopeeFeePercent,
+      shopeeFeeFixed: shopeeFeeFixed + cpfExtra, adsCost, taxesCost,
+      affiliateCost, campaignsCost, aceleraCost, totalCosts, netProfit, realMargin,
       isAboveTarget: realMargin >= (config?.desiredMargin || 17),
       marginDifference: realMargin - (config?.desiredMargin || 17),
     };
-  }, [salePrice, costPrice, packagingCost, enableAds, adsCostValue, config, currentStore]);
+  }, [salePrice, costPrice, packagingCost, enableAds, adsCostValue, config]);
 
-  // ROAS
   const roasValues = useMemo(() => {
     if (!localCalc || localCalc.grossRevenue <= 0) return null;
     const sp = localCalc.grossRevenue;
@@ -109,7 +137,6 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
     return { roasEmpate, roasSaudavel: roasEmpate * 1.2, roasIdeal: roasEmpate * 1.5 };
   }, [localCalc]);
 
-  // Monthly
   const monthlyRevenue = localCalc ? localCalc.grossRevenue * monthlySales : 0;
   const monthlyCosts = localCalc ? localCalc.totalCosts * monthlySales : 0;
   const monthlyProfit = localCalc ? localCalc.netProfit * monthlySales : 0;
@@ -135,8 +162,9 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
         packagingCost: parseFloat(packagingCost) || 0,
         adsCost: enableAds ? (parseFloat(adsCostValue) || 0) : 0,
         imageUrl: imageUrl || undefined,
-        stockQuantity: parseInt(stockQuantity) || 0,
+        stockQuantity: hasVariations ? totalVariationStock : (parseInt(stockQuantity) || 0),
         hasVariations,
+        attributes: hasVariations ? attributes : [],
         variations: hasVariations ? variations : [],
         shopeeAcelera: 'none' as ShopeeAceleraOption,
       };
@@ -155,25 +183,6 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
       reader.onloadend = () => { setImageUrl(reader.result as string); };
       reader.readAsDataURL(file);
     }
-  };
-
-  const addVariation = () => {
-    const newVariation: ProductVariation = {
-      id: Math.random().toString(36).substring(2, 15),
-      name: '',
-      costPrice: parseFloat(costPrice) || 0,
-      salePrice: parseFloat(salePrice) || 0,
-      stockQuantity: 0,
-    };
-    setVariations([...variations, newVariation]);
-  };
-
-  const updateVariation = (id: string, updates: Partial<ProductVariation>) => {
-    setVariations(variations.map(v => v.id === id ? { ...v, ...updates } : v));
-  };
-
-  const removeVariation = (id: string) => {
-    setVariations(variations.filter(v => v.id !== id));
   };
 
   const isValid = name && costPrice && salePrice;
@@ -244,13 +253,15 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             </div>
           </div>
 
-          {/* Stock */}
-          <div className="space-y-2">
-            <Label htmlFor="stockQuantity" className="text-sm font-semibold">Quantidade em Estoque</Label>
-            <Input id="stockQuantity" type="number" min="0" value={stockQuantity} onChange={(e) => setStockQuantity(e.target.value)} placeholder="0" className="input-modern h-12" />
-          </div>
+          {/* Stock - only show manual field when no variations */}
+          {!hasVariations && (
+            <div className="space-y-2">
+              <Label htmlFor="stockQuantity" className="text-sm font-semibold">Quantidade em Estoque</Label>
+              <Input id="stockQuantity" type="number" min="0" value={stockQuantity} onChange={(e) => setStockQuantity(e.target.value)} placeholder="0" className="input-modern h-12" />
+            </div>
+          )}
 
-          {/* ══════════ CUSTOS OPCIONAIS (apenas Shopee Ads) ══════════ */}
+          {/* ══════════ CUSTOS OPCIONAIS ══════════ */}
           <Collapsible open={optionalCostsOpen} onOpenChange={setOptionalCostsOpen}>
             <CollapsibleTrigger asChild>
               <button type="button" className="w-full glass-card p-4 flex items-center justify-between">
@@ -262,7 +273,6 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent className="pt-3 space-y-3">
-              {/* Shopee Ads - R$ fixo por produto */}
               <div className="glass-card p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <Label className="text-sm font-semibold">Shopee Ads</Label>
@@ -273,15 +283,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                     <Label className="text-xs text-muted-foreground">Valor investido em Ads (R$)</Label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={adsCostValue}
-                        onChange={(e) => setAdsCostValue(e.target.value)}
-                        placeholder="0,00"
-                        className="pl-10 input-modern h-10"
-                      />
+                      <Input type="number" step="0.01" min="0" value={adsCostValue} onChange={(e) => setAdsCostValue(e.target.value)} placeholder="0,00" className="pl-10 input-modern h-10" />
                     </div>
                   </div>
                 )}
@@ -289,15 +291,13 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             </CollapsibleContent>
           </Collapsible>
 
-          {/* ══════════ CONFIGURAÇÕES GLOBAIS APLICADAS ══════════ */}
+          {/* ══════════ GLOBAL CONFIGS ══════════ */}
           <div className="glass-card p-4">
             {activeGlobalConfigs.length > 0 ? (
               <div className="flex items-start gap-2">
                 <span className="text-success mt-0.5 flex-shrink-0">✓</span>
                 <div>
-                  <p className="text-xs font-medium text-foreground">
-                    Aplicando: {activeGlobalConfigs.join(' · ')}
-                  </p>
+                  <p className="text-xs font-medium text-foreground">Aplicando: {activeGlobalConfigs.join(' · ')}</p>
                   <a href="/settings" className="text-[10px] text-primary hover:underline inline-flex items-center gap-1 mt-1">
                     Alterar nas configurações <ExternalLink className="w-3 h-3" />
                   </a>
@@ -307,9 +307,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
               <div className="flex items-start gap-2">
                 <Info className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-xs text-muted-foreground">
-                    Configure taxas globais em Configurações para aplicar automaticamente.
-                  </p>
+                  <p className="text-xs text-muted-foreground">Configure taxas globais em Configurações para aplicar automaticamente.</p>
                   <a href="/settings" className="text-xs text-primary hover:underline inline-flex items-center gap-1 mt-1 font-semibold">
                     Ir para Configurações <ExternalLink className="w-3 h-3" />
                   </a>
@@ -318,51 +316,43 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             )}
           </div>
 
-          {/* Variations Section */}
-          <div className="glass-card p-4 space-y-3">
+          {/* ══════════ VARIAÇÕES POR ATRIBUTOS (ERP) ══════════ */}
+          <div className="glass-card p-4 space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <Label className="text-sm font-semibold">Variações</Label>
-                <p className="text-xs text-muted-foreground">Tamanhos, cores, etc.</p>
+                <Label className="text-sm font-semibold">Variações por Atributos</Label>
+                <p className="text-xs text-muted-foreground">Tamanho, Cor, etc. — combinações automáticas</p>
               </div>
               <Switch
                 checked={hasVariations}
                 onCheckedChange={(checked) => {
                   setHasVariations(checked);
                   setVariationsOpen(checked);
-                  if (checked && variations.length === 0) addVariation();
                 }}
               />
             </div>
+
             {hasVariations && (
               <Collapsible open={variationsOpen} onOpenChange={setVariationsOpen}>
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" size="sm" className="w-full justify-between">
-                    <span>{variations.length} variações</span>
+                    <span>{variations.length} combinações · Estoque total: {totalVariationStock}</span>
                     <ChevronDown className={cn("w-4 h-4 transition-transform", variationsOpen && "rotate-180")} />
                   </Button>
                 </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-3 pt-3">
-                  {variations.map((variation, index) => (
-                    <div key={variation.id} className="bg-secondary/50 rounded-xl p-3 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-muted-foreground">Variação {index + 1}</span>
-                        <Button type="button" variant="ghost" size="sm" onClick={() => removeVariation(variation.id)} className="h-8 w-8 p-0 text-destructive">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      <Input value={variation.name} onChange={(e) => updateVariation(variation.id, { name: e.target.value })} placeholder="Ex: P, M, G ou Azul, Vermelho" className="input-modern h-10 text-sm" />
-                      <div className="grid grid-cols-3 gap-2">
-                        <div><Label className="text-xs">Custo</Label><Input type="number" step="0.01" min="0" value={variation.costPrice} onChange={(e) => updateVariation(variation.id, { costPrice: parseFloat(e.target.value) || 0 })} className="input-modern h-9 text-sm" /></div>
-                        <div><Label className="text-xs">Venda</Label><Input type="number" step="0.01" min="0" value={variation.salePrice} onChange={(e) => updateVariation(variation.id, { salePrice: parseFloat(e.target.value) || 0 })} className="input-modern h-9 text-sm" /></div>
-                        <div><Label className="text-xs">Estoque</Label><Input type="number" min="0" value={variation.stockQuantity} onChange={(e) => updateVariation(variation.id, { stockQuantity: parseInt(e.target.value) || 0 })} className="input-modern h-9 text-sm" /></div>
-                      </div>
-                    </div>
-                  ))}
-                  <Button type="button" variant="outline" size="sm" onClick={addVariation} className="w-full">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Adicionar Variação
-                  </Button>
+                <CollapsibleContent className="space-y-4 pt-3">
+                  {/* Attribute Builder */}
+                  <AttributeBuilder attributes={attributes} onChange={setAttributes} />
+
+                  {/* Generated Variations Table */}
+                  {variations.length > 0 && (
+                    <VariationsTable
+                      variations={variations}
+                      onChange={setVariations}
+                      defaultCost={parseFloat(costPrice) || 0}
+                      defaultSale={parseFloat(salePrice) || 0}
+                    />
+                  )}
                 </CollapsibleContent>
               </Collapsible>
             )}
@@ -383,92 +373,51 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                 <div className="text-right">
                   <p className={cn('text-xs font-medium opacity-70', localCalc.isAboveTarget ? 'text-success' : 'text-danger')}>Margem Real</p>
                   <div className="flex items-center justify-end gap-1.5">
-                    {localCalc.isAboveTarget ? (
-                      <TrendingUp className="w-5 h-5 text-success" />
-                    ) : (
-                      <TrendingDown className="w-5 h-5 text-danger" />
-                    )}
+                    {localCalc.isAboveTarget ? <TrendingUp className="w-5 h-5 text-success" /> : <TrendingDown className="w-5 h-5 text-danger" />}
                     <span className={cn('number-lg', localCalc.isAboveTarget ? 'text-success' : 'text-danger')}>{localCalc.realMargin.toFixed(1)}%</span>
                   </div>
                 </div>
               </div>
 
-              {/* Cost breakdown */}
               <div className={cn('pt-3 border-t text-xs space-y-1', localCalc.isAboveTarget ? 'border-success/20' : 'border-danger/20')}>
-                <div className="flex justify-between opacity-70">
-                  <span>Taxa Shopee (automática)</span>
-                  <span>{formatCurrency(localCalc.totalShopeeFee)}</span>
-                </div>
-                {localCalc.taxesCost > 0 && (
-                  <div className="flex justify-between opacity-70">
-                    <span>Impostos ({config?.taxes}%)</span>
-                    <span>{formatCurrency(localCalc.taxesCost)}</span>
-                  </div>
-                )}
-                {localCalc.adsCost > 0 && (
-                  <div className="flex justify-between opacity-70">
-                    <span>Shopee Ads</span>
-                    <span>{formatCurrency(localCalc.adsCost)}</span>
-                  </div>
-                )}
-                {localCalc.campaignsCost > 0 && (
-                  <div className="flex justify-between opacity-70">
-                    <span>Campanhas ({config?.shopeeCampaigns}%)</span>
-                    <span>{formatCurrency(localCalc.campaignsCost)}</span>
-                  </div>
-                )}
-                {localCalc.affiliateCost > 0 && (
-                  <div className="flex justify-between opacity-70">
-                    <span>Afiliados ({config?.affiliateCommission}%)</span>
-                    <span>{formatCurrency(localCalc.affiliateCost)}</span>
-                  </div>
-                )}
-                {localCalc.aceleraCost > 0 && (
-                  <div className="flex justify-between opacity-70">
-                    <span>Shopee Acelera</span>
-                    <span>{formatCurrency(localCalc.aceleraCost)}</span>
-                  </div>
-                )}
+                <div className="flex justify-between opacity-70"><span>Taxa Shopee (automática)</span><span>{formatCurrency(localCalc.totalShopeeFee)}</span></div>
+                {localCalc.taxesCost > 0 && <div className="flex justify-between opacity-70"><span>Impostos ({config?.taxes}%)</span><span>{formatCurrency(localCalc.taxesCost)}</span></div>}
+                {localCalc.adsCost > 0 && <div className="flex justify-between opacity-70"><span>Shopee Ads</span><span>{formatCurrency(localCalc.adsCost)}</span></div>}
+                {localCalc.campaignsCost > 0 && <div className="flex justify-between opacity-70"><span>Campanhas ({config?.shopeeCampaigns}%)</span><span>{formatCurrency(localCalc.campaignsCost)}</span></div>}
+                {localCalc.affiliateCost > 0 && <div className="flex justify-between opacity-70"><span>Afiliados ({config?.affiliateCommission}%)</span><span>{formatCurrency(localCalc.affiliateCost)}</span></div>}
+                {localCalc.aceleraCost > 0 && <div className="flex justify-between opacity-70"><span>Shopee Acelera</span><span>{formatCurrency(localCalc.aceleraCost)}</span></div>}
               </div>
 
               {!localCalc.isAboveTarget && (
                 <div className="flex items-center gap-2 pt-3 border-t border-danger/20">
                   <AlertTriangle className="w-4 h-4 text-danger" />
-                  <span className="text-xs font-medium text-danger">
-                    {Math.abs(localCalc.marginDifference).toFixed(1)}% abaixo da meta de {config?.desiredMargin}%
-                  </span>
+                  <span className="text-xs font-medium text-danger">{Math.abs(localCalc.marginDifference).toFixed(1)}% abaixo da meta de {config?.desiredMargin}%</span>
                 </div>
               )}
             </div>
           )}
 
-          {/* ══════════ ROAS EM TEMPO REAL ══════════ */}
+          {/* ROAS */}
           <div className="grid grid-cols-3 gap-2">
             <div className="glass-card p-3 space-y-1 border border-destructive/20">
               <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">ROAS de Empate</p>
-              <p className="text-lg font-extrabold tabular-nums text-destructive">
-                {roasValues && isFinite(roasValues.roasEmpate) && roasValues.roasEmpate > 0 ? roasValues.roasEmpate.toFixed(2) : '--'}
-              </p>
+              <p className="text-lg font-extrabold tabular-nums text-destructive">{roasValues && isFinite(roasValues.roasEmpate) && roasValues.roasEmpate > 0 ? roasValues.roasEmpate.toFixed(2) : '--'}</p>
               <p className="text-[9px] text-muted-foreground leading-tight">Abaixo disso você tem prejuízo</p>
             </div>
             <div className="glass-card p-3 space-y-1 border border-warning/30">
               <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">ROAS Saudável</p>
-              <p className="text-lg font-extrabold tabular-nums text-warning">
-                {roasValues && isFinite(roasValues.roasSaudavel) && roasValues.roasSaudavel > 0 ? roasValues.roasSaudavel.toFixed(2) : '--'}
-              </p>
+              <p className="text-lg font-extrabold tabular-nums text-warning">{roasValues && isFinite(roasValues.roasSaudavel) && roasValues.roasSaudavel > 0 ? roasValues.roasSaudavel.toFixed(2) : '--'}</p>
               <p className="text-[9px] text-muted-foreground leading-tight">Mínimo para lucrar com anúncios</p>
             </div>
             <div className="glass-card p-3 space-y-1 border-2 border-success/50 relative">
               <div className="absolute -top-2 right-2 bg-success text-success-foreground text-[8px] font-bold px-1.5 py-0.5 rounded-full">META</div>
               <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">ROAS Ideal</p>
-              <p className="text-lg font-extrabold tabular-nums text-success">
-                {roasValues && isFinite(roasValues.roasIdeal) && roasValues.roasIdeal > 0 ? roasValues.roasIdeal.toFixed(2) : '--'}
-              </p>
+              <p className="text-lg font-extrabold tabular-nums text-success">{roasValues && isFinite(roasValues.roasIdeal) && roasValues.roasIdeal > 0 ? roasValues.roasIdeal.toFixed(2) : '--'}</p>
               <p className="text-[9px] text-muted-foreground leading-tight">Meta para escalar com segurança</p>
             </div>
           </div>
 
-          {/* ══════════ PROJEÇÃO MENSAL ══════════ */}
+          {/* Monthly Projection */}
           <div className="glass-card p-4 space-y-4">
             <div className="flex items-center gap-2">
               <CalendarDays className="w-4 h-4 text-primary" />
@@ -477,48 +426,29 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="text-xs text-muted-foreground">Quantas vendas você espera por mês?</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={1000}
-                  value={monthlySales}
-                  onChange={(e) => setMonthlySales(Math.min(1000, Math.max(1, parseInt(e.target.value) || 1)))}
-                  className="w-20 h-8 text-sm text-center font-bold input-modern"
-                />
+                <Input type="number" min={1} max={1000} value={monthlySales} onChange={(e) => setMonthlySales(Math.min(1000, Math.max(1, parseInt(e.target.value) || 1)))} className="w-20 h-8 text-sm text-center font-bold input-modern" />
               </div>
               <Slider value={[monthlySales]} onValueChange={([v]) => setMonthlySales(v)} min={1} max={1000} step={1} />
-              <div className="flex justify-between text-[10px] text-muted-foreground">
-                <span>1</span><span>500</span><span>1000</span>
-              </div>
+              <div className="flex justify-between text-[10px] text-muted-foreground"><span>1</span><span>500</span><span>1000</span></div>
             </div>
-
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-secondary/30 rounded-xl p-3">
                 <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Receita Bruta</p>
-                <p className="text-sm font-extrabold tabular-nums mt-1">
-                  {localCalc ? formatCurrency(monthlyRevenue) : '--'}
-                </p>
+                <p className="text-sm font-extrabold tabular-nums mt-1">{localCalc ? formatCurrency(monthlyRevenue) : '--'}</p>
               </div>
               <div className="bg-secondary/30 rounded-xl p-3">
                 <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Custos Totais</p>
-                <p className="text-sm font-extrabold tabular-nums text-destructive mt-1">
-                  {localCalc ? formatCurrency(monthlyCosts) : '--'}
-                </p>
+                <p className="text-sm font-extrabold tabular-nums text-destructive mt-1">{localCalc ? formatCurrency(monthlyCosts) : '--'}</p>
               </div>
               <div className="bg-secondary/30 rounded-xl p-3">
                 <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Lucro Mensal</p>
-                <p className={cn('text-sm font-extrabold tabular-nums mt-1', localCalc ? (monthlyProfit >= 0 ? 'text-success' : 'text-destructive') : '')}>
-                  {localCalc ? formatCurrency(monthlyProfit) : '--'}
-                </p>
+                <p className={cn('text-sm font-extrabold tabular-nums mt-1', localCalc ? (monthlyProfit >= 0 ? 'text-success' : 'text-destructive') : '')}>{localCalc ? formatCurrency(monthlyProfit) : '--'}</p>
               </div>
               <div className="bg-secondary/30 rounded-xl p-3">
                 <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Margem de Lucro</p>
-                <p className={cn('text-sm font-extrabold tabular-nums mt-1', localCalc ? (monthlyMargin >= 15 ? 'text-success' : monthlyMargin >= 0 ? 'text-warning' : 'text-destructive') : '')}>
-                  {localCalc ? `${monthlyMargin.toFixed(1)}%` : '--'}
-                </p>
+                <p className={cn('text-sm font-extrabold tabular-nums mt-1', localCalc ? (monthlyMargin >= 15 ? 'text-success' : monthlyMargin >= 0 ? 'text-warning' : 'text-destructive') : '')}>{localCalc ? `${monthlyMargin.toFixed(1)}%` : '--'}</p>
               </div>
             </div>
-
             {localCalc && (
               <div className={cn('rounded-xl border p-3 flex items-center gap-2', monthlyStatusConfig.bg)}>
                 <span className="text-lg">{monthlyStatusConfig.emoji}</span>
@@ -531,19 +461,10 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
           </div>
         </form>
 
-        {/* Footer with Save Button */}
+        {/* Footer */}
         <div className="p-5 border-t border-border/50 safe-bottom bg-card">
-          <Button
-            type="submit"
-            onClick={handleSubmit}
-            className="w-full h-14 text-base font-bold gradient-primary hover:opacity-90 transition-opacity"
-            disabled={!isValid || isSaving}
-          >
-            {isSaving ? (
-              <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Salvando...</>
-            ) : (
-              <><Save className="w-5 h-5 mr-2" />{product ? 'Salvar Alterações' : 'Salvar Produto'}</>
-            )}
+          <Button type="submit" onClick={handleSubmit} className="w-full h-14 text-base font-bold gradient-primary hover:opacity-90 transition-opacity" disabled={!isValid || isSaving}>
+            {isSaving ? (<><Loader2 className="w-5 h-5 mr-2 animate-spin" />Salvando...</>) : (<><Save className="w-5 h-5 mr-2" />{product ? 'Salvar Alterações' : 'Salvar Produto'}</>)}
           </Button>
         </div>
       </div>

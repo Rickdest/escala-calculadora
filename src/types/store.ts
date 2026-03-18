@@ -48,14 +48,60 @@ export interface Store {
   updatedAt: Date;
 }
 
+// ══════════ ERP-STYLE VARIATIONS ══════════
+
+export interface ProductAttribute {
+  id: string;
+  name: string;        // e.g. "Tamanho", "Cor"
+  values: string[];    // e.g. ["P", "M", "G", "GG"]
+}
+
 export interface ProductVariation {
   id: string;
-  name: string;
+  attributes: Record<string, string>; // e.g. { "Tamanho": "P", "Cor": "Preto" }
   sku?: string;
   costPrice: number;
   salePrice: number;
   stockQuantity: number;
 }
+
+// Quick-add presets for common attributes
+export const ATTRIBUTE_PRESETS: Record<string, string[]> = {
+  'Tamanho': ['PP', 'P', 'M', 'G', 'GG', 'XG'],
+  'Cor': ['Preto', 'Branco', 'Azul', 'Vermelho', 'Rosa', 'Verde'],
+  'Material': ['Algodão', 'Poliéster', 'Couro', 'Sintético'],
+};
+
+/**
+ * Generate all combinations from a list of attributes.
+ * E.g. [{ name: "Tamanho", values: ["P","M"] }, { name: "Cor", values: ["Preto","Branco"] }]
+ * → [{ "Tamanho":"P","Cor":"Preto" }, { "Tamanho":"P","Cor":"Branco" }, ...]
+ */
+export function generateVariationCombinations(
+  attributes: ProductAttribute[]
+): Record<string, string>[] {
+  const validAttrs = attributes.filter(a => a.values.length > 0);
+  if (validAttrs.length === 0) return [];
+
+  let combos: Record<string, string>[] = [{}];
+  for (const attr of validAttrs) {
+    const next: Record<string, string>[] = [];
+    for (const combo of combos) {
+      for (const val of attr.values) {
+        next.push({ ...combo, [attr.name]: val });
+      }
+    }
+    combos = next;
+  }
+  return combos;
+}
+
+/** Get a label for a variation combination, e.g. "P / Preto" */
+export function getVariationLabel(attrs: Record<string, string>): string {
+  return Object.values(attrs).join(' / ');
+}
+
+// ══════════ PRODUCT ══════════
 
 export interface Product {
   id: string;
@@ -69,6 +115,7 @@ export interface Product {
   imageUrl?: string;
   stockQuantity: number;
   hasVariations: boolean;
+  attributes: ProductAttribute[];
   variations: ProductVariation[];
   shopeeAcelera: ShopeeAceleraOption;
   createdAt: Date;
