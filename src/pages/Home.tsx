@@ -106,16 +106,33 @@ export default function Home() {
         <TrialBanner />
         <StockAlertBanner />
 
-        {/* Subscription CTA - only for non-active */}
-        {!isActive && (
-          <div onClick={() => setShowPaywall(true)} className="glass-card p-5 cursor-pointer hover:shadow-lg transition-all active:scale-[0.98] animate-fade-up">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl gradient-primary shadow-md"><Crown className="w-6 h-6 text-primary-foreground" /></div>
-              <div className="flex-1">
-                <p className="font-bold text-foreground">Assine o Precify Pro</p>
-                <p className="text-xs text-muted-foreground mt-0.5">A partir de R$ 8,08/mês · Acesse todas as ferramentas</p>
+        {/* Subscription CTA - trial users */}
+        {status === 'trialing' && trialEnd && (() => {
+          const dLeft = Math.max(0, Math.ceil((new Date(trialEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+          return dLeft > 0 ? (
+            <div onClick={() => setShowPaywall(true)} className="rounded-xl border border-border/40 bg-card/50 p-4 cursor-pointer hover:bg-card/70 transition-all active:scale-[0.98] animate-fade-up">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <span className="text-sm">⏳</span>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{dLeft} {dLeft === 1 ? 'dia' : 'dias'} de teste restantes</p>
+                    <p className="text-xs text-muted-foreground">Garanta seu acesso por R$49,90/ano →</p>
+                  </div>
+                </div>
               </div>
-              <ArrowRight className="w-5 h-5 text-primary" />
+            </div>
+          ) : null;
+        })()}
+        {!isActive && status !== 'trialing' && (
+          <div onClick={() => setShowPaywall(true)} className="rounded-xl border border-border/40 bg-card/50 p-4 cursor-pointer hover:bg-card/70 transition-all active:scale-[0.98] animate-fade-up">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className="text-sm">⚡</span>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Desbloqueie o Precify</p>
+                  <p className="text-xs text-muted-foreground">R$49,90/ano →</p>
+                </div>
+              </div>
             </div>
           </div>
         )}
