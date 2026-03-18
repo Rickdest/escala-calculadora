@@ -48,7 +48,7 @@ export default function Settings() {
       setIsCpfSeller(currentStore.config.isCpfSeller ?? false);
       setHasOver450Orders(currentStore.config.hasOver450Orders ?? false);
       setTaxes(currentStore.config.taxes.toString());
-      setEnableTaxes((currentStore.config.taxes || 0) > 0);
+      setEnableTaxes(true);
       setAffiliateCommission((currentStore.config.affiliateCommission || 0).toString());
       setEnableAffiliateCommission(currentStore.config.enableAffiliateCommission ?? false);
       setShopeeCampaigns((currentStore.config.shopeeCampaigns || 0).toString());
