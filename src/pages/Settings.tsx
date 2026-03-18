@@ -26,7 +26,7 @@ export default function Settings() {
   const [hasOver450Orders, setHasOver450Orders] = useState(currentStore?.config.hasOver450Orders ?? false);
 
   // Section 2: Custos Opcionais Globais
-  const [enableTaxes, setEnableTaxes] = useState((currentStore?.config.taxes || 0) > 0);
+  const [enableTaxes, setEnableTaxes] = useState(true);
   const [taxes, setTaxes] = useState(currentStore?.config.taxes?.toString() || '0');
   const [enableAffiliateCommission, setEnableAffiliateCommission] = useState(currentStore?.config.enableAffiliateCommission ?? false);
   const [affiliateCommission, setAffiliateCommission] = useState((currentStore?.config.affiliateCommission || 0).toString());
