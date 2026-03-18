@@ -138,11 +138,14 @@ export type Database = {
           ads_cost: number | null
           ads_revenue: number | null
           attributes: Json | null
+          category: string | null
           cost_price: number
           created_at: string
+          description: string | null
           has_variations: boolean | null
           id: string
           image_url: string | null
+          min_stock_quantity: number | null
           name: string
           packaging_cost: number | null
           sale_price: number
@@ -157,11 +160,14 @@ export type Database = {
           ads_cost?: number | null
           ads_revenue?: number | null
           attributes?: Json | null
+          category?: string | null
           cost_price: number
           created_at?: string
+          description?: string | null
           has_variations?: boolean | null
           id?: string
           image_url?: string | null
+          min_stock_quantity?: number | null
           name: string
           packaging_cost?: number | null
           sale_price: number
@@ -176,11 +182,14 @@ export type Database = {
           ads_cost?: number | null
           ads_revenue?: number | null
           attributes?: Json | null
+          category?: string | null
           cost_price?: number
           created_at?: string
+          description?: string | null
           has_variations?: boolean | null
           id?: string
           image_url?: string | null
+          min_stock_quantity?: number | null
           name?: string
           packaging_cost?: number | null
           sale_price?: number

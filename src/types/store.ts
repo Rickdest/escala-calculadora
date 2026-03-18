@@ -107,6 +107,8 @@ export interface Product {
   id: string;
   storeId: string;
   name: string;
+  category?: string;
+  description?: string;
   costPrice: number;
   salePrice: number;
   packagingCost: number;
@@ -114,6 +116,7 @@ export interface Product {
   adsRevenue: number;
   imageUrl?: string;
   stockQuantity: number;
+  minStockQuantity: number;
   hasVariations: boolean;
   attributes: ProductAttribute[];
   variations: ProductVariation[];

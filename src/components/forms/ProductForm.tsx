@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { X, Camera, Calculator, TrendingUp, TrendingDown, AlertTriangle, Save, Loader2, ChevronDown, CalendarDays, Settings2, Info, ExternalLink } from 'lucide-react';
-import { Product, ProductAttribute, ProductVariation, ShopeeAceleraOption, getShopeeFeeForPrice, generateVariationCombinations, getVariationLabel } from '@/types/store';
+import { Product, ShopeeAceleraOption, getShopeeFeeForPrice } from '@/types/store';
 import { useStore } from '@/contexts/StoreContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,8 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { AttributeBuilder } from '@/components/forms/AttributeBuilder';
-import { VariationsTable } from '@/components/forms/VariationsTable';
 import { cn } from '@/lib/utils';
 
 interface ProductFormProps {
@@ -27,11 +25,6 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
   const [salePrice, setSalePrice] = useState(product?.salePrice?.toString() || '');
   const [packagingCost, setPackagingCost] = useState(product?.packagingCost?.toString() || '0');
   const [imageUrl, setImageUrl] = useState(product?.imageUrl || '');
-  const [stockQuantity, setStockQuantity] = useState(product?.stockQuantity?.toString() || '0');
-  const [hasVariations, setHasVariations] = useState(product?.hasVariations || false);
-  const [attributes, setAttributes] = useState<ProductAttribute[]>(product?.attributes || []);
-  const [variations, setVariations] = useState<ProductVariation[]>(product?.variations || []);
-  const [variationsOpen, setVariationsOpen] = useState(product?.hasVariations || false);
   const [isSaving, setIsSaving] = useState(false);
 
   const [enableAds, setEnableAds] = useState((product?.adsCost || 0) > 0);
@@ -41,49 +34,6 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-
-  // Auto-generate combinations when attributes change
-  useEffect(() => {
-    if (!hasVariations) return;
-    const combos = generateVariationCombinations(attributes);
-    if (combos.length === 0) {
-      setVariations([]);
-      return;
-    }
-
-    // Preserve existing variation data for matching combos
-    const existingMap = new Map<string, ProductVariation>();
-    for (const v of variations) {
-      existingMap.set(getVariationLabel(v.attributes), v);
-    }
-
-    const defaultCost = parseFloat(costPrice) || 0;
-    const defaultSale = parseFloat(salePrice) || 0;
-
-    const newVariations: ProductVariation[] = combos.map(combo => {
-      const label = getVariationLabel(combo);
-      const existing = existingMap.get(label);
-      if (existing) {
-        return { ...existing, attributes: combo };
-      }
-      return {
-        id: Math.random().toString(36).substring(2, 15),
-        attributes: combo,
-        sku: '',
-        costPrice: defaultCost,
-        salePrice: defaultSale,
-        stockQuantity: 0,
-      };
-    });
-
-    setVariations(newVariations);
-  }, [attributes, hasVariations]);
-
-  // Update stockQuantity display when variations change
-  const totalVariationStock = useMemo(() => {
-    if (!hasVariations) return parseInt(stockQuantity) || 0;
-    return variations.reduce((sum, v) => sum + v.stockQuantity, 0);
-  }, [hasVariations, variations, stockQuantity]);
 
   const activeGlobalConfigs = useMemo(() => {
     if (!config) return [];
@@ -162,10 +112,10 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
         packagingCost: parseFloat(packagingCost) || 0,
         adsCost: enableAds ? (parseFloat(adsCostValue) || 0) : 0,
         imageUrl: imageUrl || undefined,
-        stockQuantity: hasVariations ? totalVariationStock : (parseInt(stockQuantity) || 0),
-        hasVariations,
-        attributes: hasVariations ? attributes : [],
-        variations: hasVariations ? variations : [],
+        stockQuantity: product?.stockQuantity || 0,
+        hasVariations: product?.hasVariations || false,
+        attributes: product?.attributes || [],
+        variations: product?.variations || [],
         shopeeAcelera: 'none' as ShopeeAceleraOption,
       };
       await Promise.resolve(onSave(productData));
@@ -253,14 +203,6 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             </div>
           </div>
 
-          {/* Stock - only show manual field when no variations */}
-          {!hasVariations && (
-            <div className="space-y-2">
-              <Label htmlFor="stockQuantity" className="text-sm font-semibold">Quantidade em Estoque</Label>
-              <Input id="stockQuantity" type="number" min="0" value={stockQuantity} onChange={(e) => setStockQuantity(e.target.value)} placeholder="0" className="input-modern h-12" />
-            </div>
-          )}
-
           {/* ══════════ CUSTOS OPCIONAIS ══════════ */}
           <Collapsible open={optionalCostsOpen} onOpenChange={setOptionalCostsOpen}>
             <CollapsibleTrigger asChild>
@@ -313,48 +255,6 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                   </a>
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* ══════════ VARIAÇÕES POR ATRIBUTOS (ERP) ══════════ */}
-          <div className="glass-card p-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <Label className="text-sm font-semibold">Variações por Atributos</Label>
-                <p className="text-xs text-muted-foreground">Tamanho, Cor, etc. — combinações automáticas</p>
-              </div>
-              <Switch
-                checked={hasVariations}
-                onCheckedChange={(checked) => {
-                  setHasVariations(checked);
-                  setVariationsOpen(checked);
-                }}
-              />
-            </div>
-
-            {hasVariations && (
-              <Collapsible open={variationsOpen} onOpenChange={setVariationsOpen}>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="sm" className="w-full justify-between">
-                    <span>{variations.length} combinações · Estoque total: {totalVariationStock}</span>
-                    <ChevronDown className={cn("w-4 h-4 transition-transform", variationsOpen && "rotate-180")} />
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="space-y-4 pt-3">
-                  {/* Attribute Builder */}
-                  <AttributeBuilder attributes={attributes} onChange={setAttributes} />
-
-                  {/* Generated Variations Table */}
-                  {variations.length > 0 && (
-                    <VariationsTable
-                      variations={variations}
-                      onChange={setVariations}
-                      defaultCost={parseFloat(costPrice) || 0}
-                      defaultSale={parseFloat(salePrice) || 0}
-                    />
-                  )}
-                </CollapsibleContent>
-              </Collapsible>
             )}
           </div>
 

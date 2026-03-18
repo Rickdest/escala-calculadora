@@ -56,6 +56,8 @@ function mapDbProduct(p: any): Product {
     id: p.id,
     storeId: p.store_id,
     name: p.name,
+    category: p.category || undefined,
+    description: p.description || undefined,
     costPrice: Number(p.cost_price),
     salePrice: Number(p.sale_price),
     packagingCost: Number(p.packaging_cost ?? 0),
@@ -63,6 +65,7 @@ function mapDbProduct(p: any): Product {
     adsRevenue: Number(p.ads_revenue ?? 0),
     imageUrl: localImages[p.id] || undefined,
     stockQuantity,
+    minStockQuantity: Number(p.min_stock_quantity ?? 5),
     hasVariations,
     attributes,
     variations,
@@ -252,6 +255,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       attributes: productData.attributes || [],
       variations: variations,
       shopee_acelera: productData.shopeeAcelera || 'none',
+      category: productData.category || null,
+      description: productData.description || null,
+      min_stock_quantity: productData.minStockQuantity ?? 5,
     } as any).select().single();
 
     if (error) { toast.error('Erro ao salvar produto'); throw error; }
@@ -286,6 +292,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (updates.attributes !== undefined) dbUpdates.attributes = updates.attributes;
     if (updates.variations !== undefined) dbUpdates.variations = updates.variations;
     if (updates.shopeeAcelera !== undefined) dbUpdates.shopee_acelera = updates.shopeeAcelera;
+    if (updates.category !== undefined) dbUpdates.category = updates.category;
+    if (updates.description !== undefined) dbUpdates.description = updates.description;
+    if (updates.minStockQuantity !== undefined) dbUpdates.min_stock_quantity = updates.minStockQuantity;
     // Recalculate stock from variations if applicable
     if (updates.variations !== undefined && updates.hasVariations !== false) {
       const vars = updates.variations || [];
