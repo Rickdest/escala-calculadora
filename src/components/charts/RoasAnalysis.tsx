@@ -103,10 +103,10 @@ function RoasGauge({ roasAtual, roasEmpate, roasIdeal, status }: {
 
   return (
     <div className="relative w-full flex flex-col items-center">
-      <ResponsiveContainer width="100%" height={180}>
+      <ResponsiveContainer width="100%" height={160}>
         <RadialBarChart
           cx="50%" cy="85%" innerRadius="70%" outerRadius="100%"
-          startAngle={180} endAngle={0} barSize={14} data={data}
+          startAngle={180} endAngle={0} barSize={12} data={data}
         >
           <RadialBar
             dataKey="value"
@@ -115,11 +115,11 @@ function RoasGauge({ roasAtual, roasEmpate, roasIdeal, status }: {
           />
         </RadialBarChart>
       </ResponsiveContainer>
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-center">
-        <p className={cn('text-4xl font-extrabold tabular-nums', statusColors[status as keyof typeof statusColors])}>
+      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-center">
+        <p className={cn('text-3xl font-extrabold tabular-nums', statusColors[status as keyof typeof statusColors])}>
           {roasAtual.toFixed(2)}
         </p>
-        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-1">ROAS ATUAL</p>
+        <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">ROAS ATUAL</p>
       </div>
     </div>
   );
@@ -135,21 +135,21 @@ function CostBreakdownChart({ product, roasData }: { product: Product; roasData:
   ], [product, roasData]);
 
   return (
-    <div className="flex items-center gap-4">
-      <ResponsiveContainer width={120} height={120}>
+    <div className="flex items-center gap-3">
+      <ResponsiveContainer width={100} height={100}>
         <RechartsPie data={data}>
-          <Pie data={data} cx="50%" cy="50%" innerRadius={32} outerRadius={52} paddingAngle={3} dataKey="value" strokeWidth={0}>
+          <Pie data={data} cx="50%" cy="50%" innerRadius={28} outerRadius={45} paddingAngle={3} dataKey="value" strokeWidth={0}>
             {data.map((entry, i) => <Cell key={i} fill={entry.color} />)}
           </Pie>
           <Tooltip formatter={(v: number) => formatCurrency(v)} />
         </RechartsPie>
       </ResponsiveContainer>
-      <div className="flex-1 space-y-2">
+      <div className="flex-1 space-y-1.5">
         {data.map((item, i) => (
           <div key={i} className="flex items-center gap-2 text-xs">
-            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
-            <span className="text-muted-foreground flex-1">{item.name}</span>
-            <span className="font-bold tabular-nums">{formatCurrency(item.value)}</span>
+            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
+            <span className="text-muted-foreground flex-1 text-[11px]">{item.name}</span>
+            <span className="font-bold tabular-nums text-[11px]">{formatCurrency(item.value)}</span>
           </div>
         ))}
       </div>
@@ -166,7 +166,7 @@ function KpiCard({ icon: Icon, label, value, subValue, variant = 'default', high
   tooltipKey?: string;
 }) {
   const variants = {
-    default: 'bg-card border-border/50',
+    default: 'bg-card/40 border-border/30',
     success: 'bg-success/5 border-success/20',
     warning: 'bg-warning/5 border-warning/20',
     danger: 'bg-destructive/5 border-destructive/20',
@@ -180,17 +180,16 @@ function KpiCard({ icon: Icon, label, value, subValue, variant = 'default', high
 
   return (
     <div className={cn(
-      'rounded-2xl border p-4 transition-all duration-300 hover:shadow-md',
+      'rounded-xl border p-3 transition-all',
       variants[variant],
-      highlight && 'ring-2 ring-primary/30 shadow-lg shadow-primary/10 scale-[1.02]'
+      highlight && 'border-accent-foreground/30 bg-accent/40'
     )}>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
         <div className={cn(
-          'rounded-xl flex items-center justify-center flex-shrink-0',
+          'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
           iconVariants[variant],
-          highlight ? 'w-11 h-11' : 'w-9 h-9'
         )}>
-          <Icon className={highlight ? 'w-5 h-5' : 'w-4.5 h-4.5'} />
+          <Icon className="w-4 h-4" />
         </div>
         <div className="min-w-0">
           {tooltipKey ? (
@@ -198,8 +197,8 @@ function KpiCard({ icon: Icon, label, value, subValue, variant = 'default', high
           ) : (
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">{label}</p>
           )}
-          <p className={cn('font-extrabold tabular-nums leading-tight', highlight ? 'text-2xl' : 'text-lg')}>{value}</p>
-          {subValue && <p className="text-[10px] text-muted-foreground mt-0.5">{subValue}</p>}
+          <p className={cn('font-extrabold tabular-nums leading-tight text-base')}>{value}</p>
+          {subValue && <p className="text-[10px] text-muted-foreground">{subValue}</p>}
         </div>
       </div>
     </div>
@@ -218,14 +217,14 @@ function ProductSelector({ products, selectedId, onSelect }: { products: Product
   }, [products, search]);
 
   return (
-    <div className="space-y-2.5">
+    <div className="space-y-2">
       {products.length > 3 && (
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input placeholder="Buscar produto..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 input-modern h-9 text-sm" />
         </div>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[220px] overflow-y-auto pr-0.5 scrollbar-thin">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 max-h-[200px] overflow-y-auto pr-0.5 scrollbar-thin">
         {filtered.map(p => {
           const isActive = p.id === selectedId;
           const roasData = calcRoasFromValues(p.salePrice, p.costPrice, p.adsCost, p.adsRevenue);
@@ -236,26 +235,26 @@ function ProductSelector({ products, selectedId, onSelect }: { products: Product
               key={p.id}
               onClick={() => onSelect(p.id)}
               className={cn(
-                'w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 border group active:scale-[0.98]',
+                'w-full flex items-center gap-2.5 p-2.5 rounded-xl text-left transition-all border group active:scale-[0.98]',
                 isActive
-                  ? 'bg-primary/10 border-primary/40 shadow-sm shadow-primary/10'
-                  : 'bg-card/50 border-border/30 hover:bg-primary/5 hover:border-primary/20'
+                  ? 'bg-accent/60 border-accent-foreground/30'
+                  : 'bg-card/30 border-border/20 hover:bg-accent/30 hover:border-accent-foreground/20'
               )}
             >
               <div className={cn(
-                'w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors',
+                'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors',
                 isActive ? 'bg-primary/20' : 'bg-secondary group-hover:bg-primary/10'
               )}>
                 {p.imageUrl ? (
-                  <img src={p.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover" />
+                  <img src={p.imageUrl} alt="" className="w-9 h-9 rounded-lg object-cover" />
                 ) : (
-                  <Package className={cn('w-5 h-5 transition-colors', isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-primary/70')} />
+                  <Package className={cn('w-4 h-4 transition-colors', isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-primary/70')} />
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className={cn('text-sm font-semibold truncate transition-colors', isActive ? 'text-primary' : 'text-foreground')}>{p.name}</p>
+                <p className={cn('text-xs font-semibold truncate transition-colors', isActive ? 'text-accent-foreground' : 'text-foreground')}>{p.name}</p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-xs text-muted-foreground tabular-nums">{formatCurrency(p.salePrice)}</span>
+                  <span className="text-[11px] text-muted-foreground tabular-nums">{formatCurrency(p.salePrice)}</span>
                   {hasAds && roasData.roasAtual !== null && !roasData.margemInsuficiente && (
                     <span className={cn('text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums',
                       roasData.roasAtual >= (roasData.roasIdeal || 0) ? 'bg-success/15 text-success' :
@@ -365,8 +364,8 @@ function ProductAdsImport({ product, storeId }: { product: Product; storeId: str
       </div>
 
       {showImport && (
-        <div className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-4 text-center space-y-2 transition-all animate-fade-in">
-          <Upload className="w-8 h-8 text-primary/60 mx-auto" />
+        <div className="rounded-xl border border-dashed border-primary/30 bg-accent/30 p-4 text-center space-y-2 transition-all animate-fade-in">
+          <Upload className="w-7 h-7 text-primary/60 mx-auto" />
           <p className="text-xs text-muted-foreground">Exporte o relatório de Ads da Shopee (CSV)</p>
           <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileSelect} className="hidden" />
           <Button onClick={() => fileInputRef.current?.click()} disabled={importing} variant="outline" size="sm" className="h-8 text-xs active:scale-95 transition-transform">
@@ -376,7 +375,7 @@ function ProductAdsImport({ product, storeId }: { product: Product; storeId: str
       )}
 
       {parsedReport && !viewingReport && (
-        <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-3 animate-scale-in">
+        <div className="rounded-xl border border-primary/30 bg-accent/30 p-3 space-y-3 animate-scale-in">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-bold">{parsedReport.shopName}</p>
@@ -391,7 +390,7 @@ function ProductAdsImport({ product, storeId }: { product: Product; storeId: str
               { label: 'ROAS', value: parsedReport.totals.avgRoas.toFixed(2), color: 'text-primary' },
               { label: 'Vendidos', value: String(parsedReport.totals.totalItemsSold), color: 'text-foreground' },
             ].map(item => (
-              <div key={item.label} className="p-2 rounded-lg bg-card/80 text-center">
+              <div key={item.label} className="p-2 rounded-lg bg-card/60 text-center">
                 <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">{item.label}</p>
                 <p className={cn('text-sm font-extrabold tabular-nums', item.color)}>{item.value}</p>
               </div>
@@ -403,8 +402,8 @@ function ProductAdsImport({ product, storeId }: { product: Product; storeId: str
       {savedReports.length > 0 && (
         <div className="space-y-1.5">
           {savedReports.map(report => (
-            <div key={report.id} className={cn('rounded-xl border p-2.5 flex items-center gap-2.5 transition-all', viewingReport?.id === report.id ? 'border-primary/40 bg-primary/5' : 'border-border/30 bg-card/50')}>
-              <FileSpreadsheet className="w-5 h-5 text-primary flex-shrink-0" />
+            <div key={report.id} className={cn('rounded-xl border p-2.5 flex items-center gap-2.5 transition-all', viewingReport?.id === report.id ? 'border-accent-foreground/30 bg-accent/40' : 'border-border/20 bg-card/30')}>
+              <FileSpreadsheet className="w-4 h-4 text-primary flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold truncate">{report.shop_name || 'Relatório'}</p>
                 <p className="text-[10px] text-muted-foreground">{report.report_period} • {report.ads_data.length} anúncios</p>
@@ -425,14 +424,14 @@ function ProductAdsImport({ product, storeId }: { product: Product; storeId: str
       {loading && <p className="text-center text-xs text-muted-foreground py-2">Carregando...</p>}
 
       {displayAds && displayAds.length > 0 && (
-        <div className="rounded-xl border border-border/30 bg-card/50 p-3 space-y-2 animate-fade-in">
+        <div className="rounded-xl border border-border/20 bg-card/30 p-3 space-y-2 animate-fade-in">
           {displayTitle && <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{displayTitle}</p>}
           <div className="space-y-1.5 max-h-[280px] overflow-y-auto scrollbar-thin">
             {displayAds.map((ad, i) => {
               const roasVal = ad.roas;
               const adStatus = ad.spend === 0 ? null : roasVal >= 5 ? 'success' : roasVal >= 2 ? 'warning' : 'danger';
               return (
-                <div key={i} className="p-2.5 rounded-lg bg-secondary/30 space-y-1.5">
+                <div key={i} className="p-2.5 rounded-lg bg-secondary/20 space-y-1.5">
                   <div className="flex items-start justify-between gap-2">
                     <p className="text-xs font-bold truncate flex-1">{ad.adName}</p>
                     <span className={cn('text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0',
@@ -441,7 +440,7 @@ function ProductAdsImport({ product, storeId }: { product: Product; storeId: str
                   </div>
                   {(ad.keyword || ad.positioning) && (
                     <div className="flex flex-wrap gap-1">
-                      {ad.keyword && ad.keyword !== '-' && <span className="text-[9px] bg-primary/10 text-primary font-semibold px-1.5 py-0.5 rounded-full">🔍 {ad.keyword}</span>}
+                      {ad.keyword && ad.keyword !== '-' && <span className="text-[9px] bg-accent/50 text-accent-foreground font-semibold px-1.5 py-0.5 rounded-full">🔍 {ad.keyword}</span>}
                       {ad.positioning && ad.positioning !== '-' && <span className="text-[9px] bg-secondary text-muted-foreground font-medium px-1.5 py-0.5 rounded-full">📍 {ad.positioning}</span>}
                     </div>
                   )}
@@ -512,43 +511,43 @@ function ProductAnalysis() {
 
   if (!currentStore || currentStore.products.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-          <Target className="w-8 h-8 text-primary" />
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-accent/60 flex items-center justify-center mb-3">
+          <Target className="w-7 h-7 text-accent-foreground" />
         </div>
-        <p className="text-base font-bold text-foreground mb-1">Nenhum produto cadastrado</p>
-        <p className="text-sm text-muted-foreground max-w-xs">Adicione seus produtos na página Produtos para começar a analisar o ROAS.</p>
+        <p className="text-sm font-bold text-foreground mb-1">Nenhum produto cadastrado</p>
+        <p className="text-xs text-muted-foreground max-w-xs">Adicione seus produtos na página Produtos para começar a analisar o ROAS.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/* Product Selector */}
-      <div className="glass-card p-4 space-y-3">
+      <div className="rounded-xl border border-border/30 bg-card/40 p-3.5 space-y-2.5">
         <div className="flex items-center gap-2">
           <Package className="w-4 h-4 text-primary" />
-          <Label className="text-sm font-bold">Selecione o Produto</Label>
+          <Label className="text-xs font-bold">Selecione o Produto</Label>
         </div>
         <ProductSelector products={currentStore.products} selectedId={selectedProductId} onSelect={setSelectedProductId} />
       </div>
 
       {selectedProduct && (
-        <div className="space-y-5 animate-fade-in">
+        <div className="space-y-4 animate-fade-in">
           {/* Ads Input Card */}
-          <div className="glass-card p-4 space-y-3">
+          <div className="rounded-xl border border-border/30 bg-card/40 p-3.5 space-y-3">
             <div className="flex items-center gap-2">
               <DollarSign className="w-4 h-4 text-primary" />
-              <p className="text-sm font-bold">Dados de Ads</p>
+              <p className="text-xs font-bold">Dados de Ads</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <TooltipLabel label="Gasto em Ads (R$)" tooltip={getTooltipText('gasto_ads')} />
-                <Input type="number" inputMode="decimal" min="0" step="0.01" value={gastoAds} onChange={e => setGastoAds(e.target.value)} placeholder="0,00" className="input-modern h-11 text-base font-semibold" />
+                <Input type="number" inputMode="decimal" min="0" step="0.01" value={gastoAds} onChange={e => setGastoAds(e.target.value)} placeholder="0,00" className="input-modern h-10 text-sm font-semibold" />
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <TooltipLabel label="Receita Ads (R$)" tooltip={getTooltipText('receita_ads')} />
-                <Input type="number" inputMode="decimal" min="0" step="0.01" value={receitaAds} onChange={e => setReceitaAds(e.target.value)} placeholder="0,00" className="input-modern h-11 text-base font-semibold" />
+                <Input type="number" inputMode="decimal" min="0" step="0.01" value={receitaAds} onChange={e => setReceitaAds(e.target.value)} placeholder="0,00" className="input-modern h-10 text-sm font-semibold" />
               </div>
             </div>
             <p className="text-[10px] text-muted-foreground flex items-center gap-1">
@@ -564,24 +563,22 @@ function ProductAnalysis() {
           {/* ROAS Dashboard */}
           {roasData && !roasData.margemInsuficiente && (
             <>
-              {/* Gauge + KPIs */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Gauge */}
-                <div className="glass-card p-4">
+              {/* Gauge + Cost Breakdown */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="rounded-xl border border-border/30 bg-card/40 p-3.5">
                   {roasData.roasAtual !== null && roasData.roasEmpate && roasData.roasIdeal && status ? (
                     <RoasGauge roasAtual={roasData.roasAtual} roasEmpate={roasData.roasEmpate} roasIdeal={roasData.roasIdeal} status={status} />
                   ) : (
-                    <div className="flex flex-col items-center justify-center h-[180px] text-center">
-                      <BarChart3 className="w-10 h-10 text-muted-foreground/30 mb-2" />
+                    <div className="flex flex-col items-center justify-center h-[160px] text-center">
+                      <BarChart3 className="w-8 h-8 text-muted-foreground/30 mb-2" />
                       <p className="text-xs text-muted-foreground">Preencha o gasto e a receita de Ads</p>
                     </div>
                   )}
                 </div>
 
-                {/* Cost Breakdown */}
-                <div className="glass-card p-4 space-y-3">
+                <div className="rounded-xl border border-border/30 bg-card/40 p-3.5 space-y-2.5">
                   <div className="flex items-center gap-2">
-                    <PieChart className="w-4 h-4 text-primary" />
+                    <PieChart className="w-3.5 h-3.5 text-primary" />
                     <p className="text-xs font-bold text-foreground">Composição do Preço</p>
                   </div>
                   <CostBreakdownChart product={selectedProduct} roasData={roasData} />
@@ -589,48 +586,14 @@ function ProductAnalysis() {
               </div>
 
               {/* KPI Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                <KpiCard
-                  icon={Target}
-                  label="ROAS Empate"
-                  value={roasData.roasEmpate!.toFixed(2) + 'x'}
-                  subValue="Mínimo para não perder"
-                  variant="warning"
-                  tooltipKey="roas_empate"
-                />
-                <KpiCard
-                  icon={TrendingUp}
-                  label="ROAS Saudável"
-                  value={roasData.roasSaudavel!.toFixed(2) + 'x'}
-                  subValue="Equilíbrio positivo"
-                  variant="success"
-                  tooltipKey="roas_ideal"
-                />
-                <KpiCard
-                  icon={Zap}
-                  label="ROAS Ideal"
-                  value={roasData.roasIdeal!.toFixed(2) + 'x'}
-                  subValue="Meta para escalar"
-                  variant="success"
-                  highlight
-                  tooltipKey="roas_ideal"
-                />
-                <KpiCard
-                  icon={DollarSign}
-                  label="Lucro Bruto"
-                  value={formatCurrency(roasData.lucroBruto)}
-                  subValue="Antes de Ads"
-                  variant={roasData.lucroBruto > 0 ? 'success' : 'danger'}
-                  tooltipKey="lucro_bruto"
-                />
-                <KpiCard
-                  icon={Percent}
-                  label="Taxa Shopee"
-                  value={formatCurrency(roasData.taxaShopee)}
-                  subValue={`${((roasData.taxaShopee / selectedProduct.salePrice) * 100).toFixed(1)}% do preço`}
-                  variant="default"
-                  tooltipKey="taxa_shopee"
-                />
+              <div className="grid grid-cols-3 gap-2">
+                <KpiCard icon={Target} label="ROAS Empate" value={roasData.roasEmpate!.toFixed(2) + 'x'} variant="warning" tooltipKey="roas_empate" />
+                <KpiCard icon={TrendingUp} label="ROAS Saudável" value={roasData.roasSaudavel!.toFixed(2) + 'x'} variant="success" tooltipKey="roas_ideal" />
+                <KpiCard icon={Zap} label="ROAS Ideal" value={roasData.roasIdeal!.toFixed(2) + 'x'} variant="success" highlight tooltipKey="roas_ideal" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <KpiCard icon={DollarSign} label="Lucro Bruto" value={formatCurrency(roasData.lucroBruto)} subValue="Antes de Ads" variant={roasData.lucroBruto > 0 ? 'success' : 'danger'} tooltipKey="lucro_bruto" />
+                <KpiCard icon={Percent} label="Taxa Shopee" value={formatCurrency(roasData.taxaShopee)} subValue={`${((roasData.taxaShopee / selectedProduct.salePrice) * 100).toFixed(1)}% do preço`} variant="default" tooltipKey="taxa_shopee" />
               </div>
 
               {/* Share + Status */}
@@ -648,26 +611,26 @@ function ProductAnalysis() {
 
               {/* Status Banner */}
               {status && (
-                <div className={cn('rounded-2xl border p-4 flex items-start gap-3 transition-all animate-fade-in', statusBg[status as keyof typeof statusBg])}>
-                  <span className="text-xl">{getRoasEmoji(status)}</span>
+                <div className={cn('rounded-xl border p-3 flex items-start gap-2.5 animate-fade-in', statusBg[status as keyof typeof statusBg])}>
+                  <span className="text-lg">{getRoasEmoji(status)}</span>
                   <div>
                     <p className={cn('font-bold text-sm', statusColors[status as keyof typeof statusColors])}>
                       {status === 'danger' ? 'Atenção' : status === 'warning' ? 'Quase lá' : 'Excelente!'}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{getRoasMessage(status)}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{getRoasMessage(status)}</p>
                   </div>
                 </div>
               )}
 
               {/* ROAS Progress Bar */}
               {roasData.roasAtual !== null && roasData.roasEmpate && roasData.roasIdeal && status && (
-                <div className="glass-card p-4 space-y-3">
+                <div className="rounded-xl border border-border/30 bg-card/40 p-3.5 space-y-2.5">
                   <div className="flex items-center gap-2">
-                    <BarChart3 className="w-4 h-4 text-primary" />
+                    <BarChart3 className="w-3.5 h-3.5 text-primary" />
                     <TooltipLabel label="Posição do ROAS" tooltip={getTooltipText('roas')} />
                   </div>
                   <div className="relative pt-1">
-                    <div className="w-full h-4 rounded-full bg-secondary overflow-hidden">
+                    <div className="w-full h-3 rounded-full bg-secondary overflow-hidden">
                       <div
                         className={cn('h-full rounded-full transition-all duration-700 ease-out',
                           status === 'danger' && 'bg-gradient-to-r from-destructive/80 to-destructive',
@@ -677,42 +640,38 @@ function ProductAnalysis() {
                         style={{ width: `${Math.min((roasData.roasAtual / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100, 100)}%` }}
                       />
                     </div>
-                    {/* Markers */}
-                    <div className="absolute top-1 h-4 w-0.5 bg-warning/80 rounded-full" style={{ left: `${(roasData.roasEmpate / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%` }} />
-                    <div className="absolute top-1 h-4 w-0.5 bg-success/80 rounded-full" style={{ left: `${(roasData.roasIdeal / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%` }} />
+                    <div className="absolute top-1 h-3 w-0.5 bg-warning/60 rounded-full" style={{ left: `${(roasData.roasEmpate / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%` }} />
+                    <div className="absolute top-1 h-3 w-0.5 bg-success/60 rounded-full" style={{ left: `${(roasData.roasIdeal / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%` }} />
                   </div>
-                  <div className="flex justify-between text-[10px] text-muted-foreground font-bold">
+                  <div className="flex justify-between text-[9px] text-muted-foreground font-bold">
                     <span>0</span>
-                    <span className="text-warning">⚡ Empate {roasData.roasEmpate.toFixed(1)}</span>
-                    <span className="text-success">✅ Saudável {roasData.roasSaudavel?.toFixed(1)}</span>
-                    <span className="text-primary">🎯 Ideal {roasData.roasIdeal.toFixed(1)}</span>
+                    <span className="text-warning">Empate {roasData.roasEmpate.toFixed(1)}</span>
+                    <span className="text-success">Saudável {roasData.roasSaudavel?.toFixed(1)}</span>
+                    <span className="text-accent-foreground">Ideal {roasData.roasIdeal.toFixed(1)}</span>
                   </div>
                 </div>
               )}
 
               {/* Detalhamento */}
-              <div className="glass-card p-4 space-y-2.5">
+              <div className="rounded-xl border border-border/30 bg-card/40 p-3.5 space-y-2">
                 <p className="text-xs font-bold text-foreground flex items-center gap-2">
-                  <ShoppingCart className="w-4 h-4 text-primary" /> Detalhamento Financeiro
+                  <ShoppingCart className="w-3.5 h-3.5 text-primary" /> Detalhamento Financeiro
                 </p>
-                <div className="divide-y divide-border/30">
+                <div className="divide-y divide-border/20">
                   {[
-                    { label: 'Preço de Venda', value: formatCurrency(selectedProduct.salePrice), icon: ArrowUpRight, color: 'text-foreground' },
-                    { label: 'Taxa Shopee', value: `-${formatCurrency(roasData.taxaShopee)}`, icon: ArrowDownRight, color: 'text-destructive' },
-                    { label: 'Valor Recebido', value: formatCurrency(roasData.valorRecebido), icon: DollarSign, color: 'text-foreground' },
-                    { label: 'Custo do Produto', value: `-${formatCurrency(selectedProduct.costPrice)}`, icon: ArrowDownRight, color: 'text-destructive' },
+                    { label: 'Preço de Venda', value: formatCurrency(selectedProduct.salePrice), color: 'text-foreground' },
+                    { label: 'Taxa Shopee', value: `-${formatCurrency(roasData.taxaShopee)}`, color: 'text-destructive' },
+                    { label: 'Valor Recebido', value: formatCurrency(roasData.valorRecebido), color: 'text-foreground' },
+                    { label: 'Custo do Produto', value: `-${formatCurrency(selectedProduct.costPrice)}`, color: 'text-destructive' },
                   ].map(item => (
-                    <div key={item.label} className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
-                      <div className="flex items-center gap-2">
-                        <item.icon className={cn('w-3.5 h-3.5', item.color)} />
-                        <span className="text-sm text-muted-foreground">{item.label}</span>
-                      </div>
-                      <span className={cn('text-sm font-bold tabular-nums', item.color)}>{item.value}</span>
+                    <div key={item.label} className="flex items-center justify-between py-2 first:pt-0 last:pb-0">
+                      <span className="text-xs text-muted-foreground">{item.label}</span>
+                      <span className={cn('text-xs font-bold tabular-nums', item.color)}>{item.value}</span>
                     </div>
                   ))}
-                  <div className="flex items-center justify-between pt-3">
-                    <span className="text-sm font-extrabold">Lucro antes de Ads</span>
-                    <span className={cn('text-base font-extrabold tabular-nums', roasData.lucroBruto >= 0 ? 'text-success' : 'text-destructive')}>
+                  <div className="flex items-center justify-between pt-2.5">
+                    <span className="text-xs font-extrabold">Lucro antes de Ads</span>
+                    <span className={cn('text-sm font-extrabold tabular-nums', roasData.lucroBruto >= 0 ? 'text-success' : 'text-destructive')}>
                       {formatCurrency(roasData.lucroBruto)}
                     </span>
                   </div>
@@ -735,15 +694,15 @@ function ProductAnalysis() {
           )}
 
           {roasData?.margemInsuficiente && (
-            <div className="space-y-5">
+            <div className="space-y-4">
               <ProductHealthBanner marginPercent={marginPercent} />
-              <div className="glass-card p-5 border border-destructive/30 bg-destructive/5">
+              <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
                 <div className="flex items-start gap-3">
-                  <AlertTriangle className="w-6 h-6 text-destructive flex-shrink-0 mt-0.5" />
+                  <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-bold text-destructive">Margem insuficiente para anunciar</p>
-                    <p className="text-sm text-muted-foreground mt-1">Lucro antes de Ads: {formatCurrency(roasData.lucroBruto)}</p>
-                    <p className="text-xs text-muted-foreground mt-2">Aumente o preço de venda ou reduza o custo do produto.</p>
+                    <p className="font-bold text-destructive text-sm">Margem insuficiente para anunciar</p>
+                    <p className="text-xs text-muted-foreground mt-1">Lucro antes de Ads: {formatCurrency(roasData.lucroBruto)}</p>
+                    <p className="text-[11px] text-muted-foreground mt-1">Aumente o preço de venda ou reduza o custo do produto.</p>
                   </div>
                 </div>
               </div>
@@ -751,7 +710,7 @@ function ProductAnalysis() {
           )}
 
           {/* Import Section */}
-          <div className="glass-card p-4">
+          <div className="rounded-xl border border-border/30 bg-card/40 p-3.5">
             <ProductAdsImport product={selectedProduct} storeId={currentStore.id} />
           </div>
         </div>
@@ -806,42 +765,42 @@ function RoasSimulator() {
 
   if (!currentStore || currentStore.products.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-          <Sliders className="w-8 h-8 text-primary" />
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-accent/60 flex items-center justify-center mb-3">
+          <Sliders className="w-7 h-7 text-accent-foreground" />
         </div>
-        <p className="text-base font-bold text-foreground mb-1">Adicione produtos primeiro</p>
-        <p className="text-sm text-muted-foreground">Use a página Produtos para cadastrar.</p>
+        <p className="text-sm font-bold text-foreground mb-1">Adicione produtos primeiro</p>
+        <p className="text-xs text-muted-foreground">Use a página Produtos para cadastrar.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-5">
-      <div className="glass-card p-4 space-y-3">
+    <div className="space-y-4">
+      <div className="rounded-xl border border-border/30 bg-card/40 p-3.5 space-y-2.5">
         <div className="flex items-center gap-2">
           <Package className="w-4 h-4 text-primary" />
-          <Label className="text-sm font-bold">Selecione o Produto</Label>
+          <Label className="text-xs font-bold">Selecione o Produto</Label>
         </div>
         <ProductSelector products={currentStore.products} selectedId={selectedProductId} onSelect={setSelectedProductId} />
       </div>
 
       {selectedProduct && (
-        <div className="space-y-5 animate-fade-in">
-          <div className="glass-card p-5 space-y-6">
+        <div className="space-y-4 animate-fade-in">
+          <div className="rounded-xl border border-border/30 bg-card/40 p-4 space-y-5">
             <div className="flex items-center gap-2">
               <Sliders className="w-4 h-4 text-primary" />
-              <p className="text-sm font-bold">Ajuste os Valores</p>
+              <p className="text-xs font-bold">Ajuste os Valores</p>
             </div>
             {[
               { label: 'Preço de Venda', tooltipKey: 'preco_venda', value: simPrice, setValue: setSimPrice, min: Math.max(1, selectedProduct.salePrice * 0.5), max: selectedProduct.salePrice * 2, step: 1 },
               { label: 'Custo do Produto', tooltipKey: 'custo_produto', value: simCost, setValue: setSimCost, min: Math.max(0.5, selectedProduct.costPrice * 0.3), max: selectedProduct.costPrice * 2, step: 0.5 },
               { label: 'Gasto em Ads', tooltipKey: 'gasto_ads', value: simGasto, setValue: setSimGasto, min: 5, max: 500, step: 5 },
             ].map(s => (
-              <div key={s.label} className="space-y-2">
+              <div key={s.label} className="space-y-1.5">
                 <div className="flex justify-between items-center">
                   <TooltipLabel label={s.label} tooltip={getTooltipText(s.tooltipKey)} />
-                  <span className="text-sm font-extrabold tabular-nums text-primary">{formatCurrency(s.value)}</span>
+                  <span className="text-xs font-extrabold tabular-nums text-primary">{formatCurrency(s.value)}</span>
                 </div>
                 <Slider value={[s.value]} onValueChange={([v]) => s.setValue(v)} min={s.min} max={s.max} step={s.step} />
               </div>
@@ -849,37 +808,37 @@ function RoasSimulator() {
           </div>
 
           {simData && !simData.margemInsuficiente && (
-            <div className="grid grid-cols-2 gap-3">
-              <KpiCard icon={Target} label="ROAS Empate" value={simData.roasEmpate!.toFixed(2) + 'x'} variant="warning" tooltipKey="roas_empate" />
-              <KpiCard icon={TrendingUp} label="ROAS Saudável" value={simData.roasSaudavel!.toFixed(2) + 'x'} variant="success" tooltipKey="roas_ideal" />
-              <KpiCard icon={Zap} label="ROAS Ideal" value={simData.roasIdeal!.toFixed(2) + 'x'} variant="success" highlight tooltipKey="roas_ideal" />
+            <div className="grid grid-cols-3 gap-2">
+              <KpiCard icon={Target} label="Empate" value={simData.roasEmpate!.toFixed(2) + 'x'} variant="warning" tooltipKey="roas_empate" />
+              <KpiCard icon={TrendingUp} label="Saudável" value={simData.roasSaudavel!.toFixed(2) + 'x'} variant="success" tooltipKey="roas_ideal" />
+              <KpiCard icon={Zap} label="Ideal" value={simData.roasIdeal!.toFixed(2) + 'x'} variant="success" highlight tooltipKey="roas_ideal" />
             </div>
           )}
 
           {simData?.margemInsuficiente && (
-            <div className="glass-card p-4 border border-destructive/30 bg-destructive/5 flex items-center gap-3">
-              <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0" />
-              <p className="font-bold text-destructive text-sm">Margem insuficiente neste cenário</p>
+            <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 flex items-center gap-2.5">
+              <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0" />
+              <p className="font-bold text-destructive text-xs">Margem insuficiente neste cenário</p>
             </div>
           )}
 
           {/* Scenarios Chart */}
           {scenarios.length > 0 && (
-            <div className="glass-card p-4 space-y-3">
+            <div className="rounded-xl border border-border/30 bg-card/40 p-3.5 space-y-3">
               <div className="flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-primary" />
-                <p className="text-sm font-bold">Cenários de ROAS</p>
+                <BarChart3 className="w-3.5 h-3.5 text-primary" />
+                <p className="text-xs font-bold">Cenários de ROAS</p>
               </div>
-              <ResponsiveContainer width="100%" height={200}>
+              <ResponsiveContainer width="100%" height={180}>
                 <BarChart data={scenarios} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="roas" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
-                  <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v) => `R$${v}`} />
+                  <XAxis dataKey="roas" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} />
+                  <YAxis tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v) => `R$${v}`} />
                   <Tooltip
                     formatter={(v: number, name: string) => [formatCurrency(v), name === 'lucroAds' ? 'Lucro' : 'Receita']}
-                    contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '12px', fontSize: '12px' }}
+                    contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '10px', fontSize: '11px' }}
                   />
-                  <Bar dataKey="lucroAds" radius={[6, 6, 0, 0]}>
+                  <Bar dataKey="lucroAds" radius={[4, 4, 0, 0]}>
                     {scenarios.map((entry, i) => (
                       <Cell key={i} fill={entry.status === 'danger' ? 'hsl(0, 85%, 60%)' : entry.status === 'warning' ? 'hsl(40, 95%, 50%)' : 'hsl(152, 70%, 42%)'} />
                     ))}
@@ -888,12 +847,12 @@ function RoasSimulator() {
               </ResponsiveContainer>
 
               {/* Table */}
-              <div className="space-y-1">
-                <div className="grid grid-cols-3 text-[10px] uppercase font-bold text-muted-foreground pb-1 border-b border-border/50 px-1">
+              <div className="space-y-0.5">
+                <div className="grid grid-cols-3 text-[9px] uppercase font-bold text-muted-foreground pb-1 border-b border-border/30 px-1">
                   <span>ROAS</span><span className="text-right">Receita</span><span className="text-right">Lucro Ads</span>
                 </div>
                 {scenarios.map((s, i) => (
-                  <div key={i} className={cn('grid grid-cols-3 text-sm py-2 rounded-lg px-1', i % 2 === 0 && 'bg-secondary/20')}>
+                  <div key={i} className={cn('grid grid-cols-3 text-xs py-1.5 rounded-lg px-1', i % 2 === 0 && 'bg-secondary/15')}>
                     <span className={cn('font-bold tabular-nums', statusColors[s.status as keyof typeof statusColors])}>{s.roas}</span>
                     <span className="text-right tabular-nums font-medium">{formatCurrency(s.receita)}</span>
                     <span className={cn('text-right tabular-nums font-bold', s.lucroAds >= 0 ? 'text-success' : 'text-destructive')}>{formatCurrency(s.lucroAds)}</span>
@@ -944,12 +903,12 @@ function RoasRanking() {
 
   if (!currentStore || ranking.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-          <Target className="w-8 h-8 text-primary" />
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="w-14 h-14 rounded-2xl bg-accent/60 flex items-center justify-center mb-3">
+          <Target className="w-7 h-7 text-accent-foreground" />
         </div>
-        <p className="text-base font-bold text-foreground mb-1">Nenhum produto para rankear</p>
-        <p className="text-sm text-muted-foreground">Adicione produtos e dados de Ads.</p>
+        <p className="text-sm font-bold text-foreground mb-1">Nenhum produto para rankear</p>
+        <p className="text-xs text-muted-foreground">Adicione produtos e dados de Ads.</p>
       </div>
     );
   }
@@ -958,20 +917,20 @@ function RoasRanking() {
   const withoutAds = ranking.filter(r => r.roasAtual === null);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {chartData.length > 0 && (
-        <div className="glass-card p-4 space-y-3">
+        <div className="rounded-xl border border-border/30 bg-card/40 p-3.5 space-y-2.5">
           <div className="flex items-center gap-2">
-            <BarChart3 className="w-4 h-4 text-primary" />
-            <p className="text-sm font-bold">Comparativo de ROAS</p>
+            <BarChart3 className="w-3.5 h-3.5 text-primary" />
+            <p className="text-xs font-bold">Comparativo de ROAS</p>
           </div>
-          <ResponsiveContainer width="100%" height={220}>
+          <ResponsiveContainer width="100%" height={200}>
             <BarChart data={chartData} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="name" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} />
-              <YAxis tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
-              <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '12px', fontSize: '12px' }} />
-              <Bar dataKey="roas" name="ROAS Atual" radius={[6, 6, 0, 0]}>
+              <XAxis dataKey="name" tick={{ fontSize: 8, fill: 'hsl(var(--muted-foreground))' }} />
+              <YAxis tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} />
+              <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '10px', fontSize: '11px' }} />
+              <Bar dataKey="roas" name="ROAS Atual" radius={[4, 4, 0, 0]}>
                 {chartData.map((entry, i) => (
                   <Cell key={i} fill={entry.status === 'danger' ? 'hsl(0, 85%, 60%)' : entry.status === 'warning' ? 'hsl(40, 95%, 50%)' : 'hsl(152, 70%, 42%)'} />
                 ))}
@@ -982,34 +941,33 @@ function RoasRanking() {
       )}
 
       {withAds.length > 0 && (
-        <div className="space-y-3">
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-            <TrendingUp className="w-3.5 h-3.5" /> Com dados de Ads ({withAds.length})
+        <div className="space-y-2">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 px-1">
+            <TrendingUp className="w-3 h-3" /> Com dados de Ads ({withAds.length})
           </p>
           {withAds.map((r, i) => (
-            <div key={r.product.id} className="glass-card p-4 animate-fade-in" style={{ animationDelay: `${i * 60}ms` }}>
-              <div className="flex items-center gap-3">
-                <div className={cn('w-11 h-11 rounded-xl flex items-center justify-center text-sm font-extrabold flex-shrink-0',
+            <div key={r.product.id} className="rounded-xl border border-border/30 bg-card/40 p-3 animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
+              <div className="flex items-center gap-2.5">
+                <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center text-xs font-extrabold flex-shrink-0',
                   r.status === 'success' ? 'bg-success/15 text-success' : r.status === 'warning' ? 'bg-warning/15 text-warning' : 'bg-destructive/15 text-destructive')}>
                   #{i + 1}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-foreground truncate text-sm">{r.product.name}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] text-muted-foreground">Gasto: {formatCurrency(r.product.adsCost)}</span>
+                  <p className="font-bold text-foreground truncate text-xs">{r.product.name}</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="text-[10px] text-muted-foreground tabular-nums">{formatCurrency(r.product.adsCost)}</span>
                     <span className="text-[10px] text-muted-foreground">→</span>
-                    <span className="text-[10px] text-success font-semibold">{formatCurrency(r.product.adsRevenue)}</span>
+                    <span className="text-[10px] text-success font-semibold tabular-nums">{formatCurrency(r.product.adsRevenue)}</span>
                   </div>
                 </div>
                 <div className="text-right flex-shrink-0">
                   <div className="flex items-center gap-1 justify-end">
-                    {r.status === 'success' ? <TrendingUp className="w-4 h-4 text-success" /> : r.status === 'danger' ? <TrendingDown className="w-4 h-4 text-destructive" /> : <Target className="w-4 h-4 text-warning" />}
-                    <span className={cn('font-extrabold text-xl tabular-nums', statusColors[r.status as keyof typeof statusColors])}>{r.roasAtual!.toFixed(2)}</span>
+                    {r.status === 'success' ? <TrendingUp className="w-3.5 h-3.5 text-success" /> : r.status === 'danger' ? <TrendingDown className="w-3.5 h-3.5 text-destructive" /> : <Target className="w-3.5 h-3.5 text-warning" />}
+                    <span className={cn('font-extrabold text-lg tabular-nums', statusColors[r.status as keyof typeof statusColors])}>{r.roasAtual!.toFixed(2)}</span>
                   </div>
-                  <div className="flex gap-3 text-[10px] text-muted-foreground mt-0.5">
+                  <div className="flex gap-2 text-[9px] text-muted-foreground mt-0.5">
                     <span>Emp: <span className="text-warning font-bold">{r.roasEmpate?.toFixed(1)}</span></span>
-                    <span>Saud: <span className="text-success font-bold">{r.roasSaudavel?.toFixed(1)}</span></span>
-                    <span>Ideal: <span className="text-primary font-bold">{r.roasIdeal?.toFixed(1)}</span></span>
+                    <span>Ideal: <span className="text-accent-foreground font-bold">{r.roasIdeal?.toFixed(1)}</span></span>
                   </div>
                 </div>
               </div>
@@ -1019,24 +977,23 @@ function RoasRanking() {
       )}
 
       {withoutAds.length > 0 && (
-        <div className="space-y-3">
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Sem dados de Ads ({withoutAds.length})</p>
+        <div className="space-y-2">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-1">Sem dados de Ads ({withoutAds.length})</p>
           {withoutAds.map(r => (
-            <div key={r.product.id} className="glass-card p-3.5 opacity-60">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-extrabold flex-shrink-0 bg-secondary text-muted-foreground">—</div>
+            <div key={r.product.id} className="rounded-xl border border-border/20 bg-card/20 p-2.5 opacity-60">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-extrabold flex-shrink-0 bg-secondary text-muted-foreground">—</div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-foreground truncate text-sm">{r.product.name}</p>
-                  <p className="text-[10px] text-muted-foreground">{formatCurrency(r.product.salePrice)}</p>
+                  <p className="font-bold text-foreground truncate text-xs">{r.product.name}</p>
+                  <p className="text-[10px] text-muted-foreground tabular-nums">{formatCurrency(r.product.salePrice)}</p>
                 </div>
                 <div className="text-right flex-shrink-0">
                   {r.margemInsuficiente ? (
                     <span className="text-[10px] font-bold text-destructive">Margem insuficiente</span>
                   ) : (
-                    <div className="text-[10px] text-muted-foreground">
+                    <div className="text-[9px] text-muted-foreground space-y-0.5">
                       <p>Emp: <span className="text-warning font-bold">{r.roasEmpate?.toFixed(2)}</span></p>
-                      <p>Saud: <span className="text-success font-bold">{r.roasSaudavel?.toFixed(2)}</span></p>
-                      <p>Ideal: <span className="text-primary font-bold">{r.roasIdeal?.toFixed(2)}</span></p>
+                      <p>Ideal: <span className="text-accent-foreground font-bold">{r.roasIdeal?.toFixed(2)}</span></p>
                     </div>
                   )}
                 </div>
@@ -1055,23 +1012,23 @@ export function RoasAnalysis() {
   return (
     <div className="space-y-4 pb-20 md:pb-4">
       <Tabs defaultValue="product" className="w-full">
-        <TabsList className="w-full grid grid-cols-3 h-11 rounded-xl bg-secondary/60 p-1">
-          <TabsTrigger value="product" className="text-xs font-bold rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm">
-            <Target className="w-3.5 h-3.5 mr-1.5" />
+        <TabsList className="w-full grid grid-cols-3 h-12 rounded-xl bg-secondary/50 p-1 border border-border/30">
+          <TabsTrigger value="product" className="text-xs font-bold rounded-lg gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-accent-foreground">
+            <Target className="w-4 h-4" />
             Produto
           </TabsTrigger>
-          <TabsTrigger value="simulator" className="text-xs font-bold rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm">
-            <Sliders className="w-3.5 h-3.5 mr-1.5" />
+          <TabsTrigger value="simulator" className="text-xs font-bold rounded-lg gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-accent-foreground">
+            <Sliders className="w-4 h-4" />
             Simulador
           </TabsTrigger>
-          <TabsTrigger value="ranking" className="text-xs font-bold rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm">
-            <BarChart3 className="w-3.5 h-3.5 mr-1.5" />
+          <TabsTrigger value="ranking" className="text-xs font-bold rounded-lg gap-1.5 data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=active]:text-accent-foreground">
+            <BarChart3 className="w-4 h-4" />
             Ranking
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="product" className="mt-5"><ProductAnalysis /></TabsContent>
-        <TabsContent value="simulator" className="mt-5"><RoasSimulator /></TabsContent>
-        <TabsContent value="ranking" className="mt-5"><RoasRanking /></TabsContent>
+        <TabsContent value="product" className="mt-4"><ProductAnalysis /></TabsContent>
+        <TabsContent value="simulator" className="mt-4"><RoasSimulator /></TabsContent>
+        <TabsContent value="ranking" className="mt-4"><RoasRanking /></TabsContent>
       </Tabs>
     </div>
   );
