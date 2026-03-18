@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Package, TrendingUp, TrendingDown, ArrowRight, Crown, Target, BarChart3, GraduationCap, Store, Warehouse, UserCircle, Settings2, ExternalLink } from 'lucide-react';
+import { Plus, Package, TrendingUp, TrendingDown, ArrowRight, Target, BarChart3, GraduationCap, Store, Warehouse, UserCircle, Settings2, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { AppLayout } from '@/components/layout/AppLayout';
