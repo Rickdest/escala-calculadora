@@ -1,12 +1,11 @@
 import { useState, useMemo } from 'react';
-import { Plus, Package, TrendingUp, TrendingDown, ArrowRight, Target, BarChart3, GraduationCap, Store, Warehouse, UserCircle, Settings2, ExternalLink } from 'lucide-react';
+import { Plus, Package, TrendingUp, TrendingDown, ArrowRight, Target, BarChart3, GraduationCap, Store, Warehouse, UserCircle, Settings2, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { EducationBanner } from '@/components/home/EducationBanner';
-import { StockAlertBanner } from '@/components/stock/StockAlertBanner';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
 import { TrialBanner } from '@/components/TrialBanner';
 import { DailyOfferModal } from '@/components/DailyOfferModal';
@@ -32,7 +31,6 @@ export default function Home() {
   const [showProductForm, setShowProductForm] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
 
-  // Build active global config summary
   const activeGlobalConfigs = useMemo(() => {
     if (!currentStore) return [];
     const config = currentStore.config;
@@ -102,15 +100,14 @@ export default function Home() {
   return (
     <AppLayout>
       <PageHeader title="Precify" />
-      <div className="px-4 py-6 space-y-6">
+      <div className="px-4 py-5 space-y-5">
         <TrialBanner />
-        <StockAlertBanner />
 
         {/* Subscription CTA - trial users */}
         {status === 'trialing' && trialEnd && (() => {
           const dLeft = Math.max(0, Math.ceil((new Date(trialEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
           return dLeft > 0 ? (
-            <div onClick={() => setShowPaywall(true)} className="rounded-xl border border-border/40 bg-card/50 p-4 cursor-pointer hover:bg-card/70 transition-all active:scale-[0.98] animate-fade-up">
+            <div onClick={() => setShowPaywall(true)} className="rounded-xl border border-border/40 bg-card/50 p-3.5 cursor-pointer hover:bg-card/70 transition-all active:scale-[0.98] animate-fade-up">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <span className="text-sm">⏳</span>
@@ -124,7 +121,7 @@ export default function Home() {
           ) : null;
         })()}
         {!isActive && status !== 'trialing' && (
-          <div onClick={() => setShowPaywall(true)} className="rounded-xl border border-border/40 bg-card/50 p-4 cursor-pointer hover:bg-card/70 transition-all active:scale-[0.98] animate-fade-up">
+          <div onClick={() => setShowPaywall(true)} className="rounded-xl border border-border/40 bg-card/50 p-3.5 cursor-pointer hover:bg-card/70 transition-all active:scale-[0.98] animate-fade-up">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <span className="text-sm">⚡</span>
@@ -137,18 +134,18 @@ export default function Home() {
           </div>
         )}
 
-        {/* Tools Grid - App style */}
+        {/* Tools Grid */}
         <div className="animate-fade-up">
-          <h2 className="font-bold text-foreground mb-4">Ferramentas</h2>
-          <div className="grid grid-cols-4 gap-y-4 gap-x-2">
+          <h2 className="font-bold text-foreground mb-3">Ferramentas</h2>
+          <div className="grid grid-cols-4 gap-y-3 gap-x-2">
             {toolItems.map((item) => (
               <button
                 key={item.label}
                 onClick={() => handleToolClick(item)}
-                className="flex flex-col items-center gap-2 py-2 rounded-2xl hover:bg-secondary/60 transition-all active:scale-95"
+                className="flex flex-col items-center gap-1.5 py-2 rounded-2xl hover:bg-secondary/60 transition-all active:scale-95"
               >
-                <div className={cn('w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm', item.color)}>
-                  <item.icon className="w-6 h-6" />
+                <div className={cn('w-13 h-13 rounded-2xl flex items-center justify-center shadow-sm', item.color)}>
+                  <item.icon className="w-5.5 h-5.5" />
                 </div>
                 <span className="text-[11px] font-semibold text-foreground leading-tight text-center px-1 line-clamp-2">
                   {item.label}
@@ -158,120 +155,115 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Global Config Summary (read-only) */}
-        <div className="glass-card p-4 animate-fade-up">
-          {activeGlobalConfigs.length > 0 ? (
-            <div className="flex items-start gap-2">
-              <span className="text-success mt-0.5 flex-shrink-0 text-sm">✓</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-foreground">
+        {/* Global Config Summary */}
+        <button
+          onClick={() => navigate('/settings')}
+          className="w-full rounded-xl border border-border/30 bg-card/40 p-3.5 flex items-center gap-3 text-left hover:bg-card/60 transition-colors animate-fade-up"
+        >
+          <div className="w-9 h-9 rounded-lg bg-accent/80 flex items-center justify-center flex-shrink-0">
+            <Settings2 className="w-4.5 h-4.5 text-accent-foreground" />
+          </div>
+          <div className="flex-1 min-w-0">
+            {activeGlobalConfigs.length > 0 ? (
+              <>
+                <p className="text-xs font-semibold text-foreground leading-snug">Taxas ativas</p>
+                <p className="text-[11px] text-muted-foreground leading-snug mt-0.5 truncate">
                   {activeGlobalConfigs.join(' · ')}
                 </p>
-                <button
-                  onClick={() => navigate('/settings')}
-                  className="text-[10px] text-primary hover:underline inline-flex items-center gap-1 mt-1 font-semibold"
-                >
-                  Editar em Configurações <ExternalLink className="w-3 h-3" />
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-start gap-2">
-              <span className="text-muted-foreground mt-0.5 flex-shrink-0 text-sm">ℹ️</span>
-              <div>
-                <p className="text-xs text-muted-foreground">
-                  Nenhuma taxa global configurada.
+              </>
+            ) : (
+              <>
+                <p className="text-xs font-semibold text-foreground leading-snug">Configurar taxas da loja</p>
+                <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
+                  Impostos, afiliados, campanhas e mais
                 </p>
-                <button
-                  onClick={() => navigate('/settings')}
-                  className="text-xs text-primary hover:underline inline-flex items-center gap-1 mt-1 font-semibold"
-                >
-                  Configurar taxas <ExternalLink className="w-3 h-3" />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+              </>
+            )}
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+        </button>
 
         <EducationBanner />
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="glass-card p-5 animate-fade-up">
-            <div className="flex items-center gap-2 mb-3">
-              <div className={cn('p-2 rounded-xl', stats.avgMargin >= currentStore.config.desiredMargin ? 'bg-success-muted' : 'bg-warning-muted')}>
-                <Target className={cn('w-5 h-5', stats.avgMargin >= currentStore.config.desiredMargin ? 'text-success' : 'text-warning')} />
+        {/* Stats */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl border border-border/30 bg-card/40 p-4 animate-fade-up">
+            <div className="flex items-center gap-2 mb-2">
+              <div className={cn('p-1.5 rounded-lg', stats.avgMargin >= currentStore.config.desiredMargin ? 'bg-[hsl(var(--success))]/15' : 'bg-[hsl(var(--warning))]/15')}>
+                <Target className={cn('w-4 h-4', stats.avgMargin >= currentStore.config.desiredMargin ? 'text-success' : 'text-warning')} />
               </div>
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Margem Média</p>
             </div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-1">Margem Média</p>
-            <p className={cn('number-xl', stats.avgMargin >= currentStore.config.desiredMargin ? 'text-success' : 'text-warning')}>
+            <p className={cn('text-2xl font-extrabold', stats.avgMargin >= currentStore.config.desiredMargin ? 'text-success' : 'text-warning')}>
               {stats.avgMargin.toFixed(1)}%
             </p>
           </div>
-          <div className="glass-card p-5 animate-fade-up stagger-1">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="p-2 rounded-xl bg-primary/10"><Package className="w-5 h-5 text-primary" /></div>
+          <div className="rounded-xl border border-border/30 bg-card/40 p-4 animate-fade-up stagger-1">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-1.5 rounded-lg bg-primary/10">
+                <Package className="w-4 h-4 text-primary" />
+              </div>
+              <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Produtos</p>
             </div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-1">Produtos</p>
-            <p className="number-xl text-primary">{stats.totalProducts}</p>
+            <p className="text-2xl font-extrabold text-primary">{stats.totalProducts}</p>
           </div>
         </div>
 
-        {/* Quick Performance */}
+        {/* Performance */}
         {stats.totalProducts > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 animate-fade-up stagger-3">
-            <div className="bg-success-muted rounded-2xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-4 h-4 text-success" />
-                <span className="text-xs font-bold text-success">Acima da Meta</span>
+          <div className="grid grid-cols-2 gap-3 animate-fade-up stagger-3">
+            <div className="rounded-xl bg-[hsl(var(--success))]/8 border border-[hsl(var(--success))]/15 p-3.5">
+              <div className="flex items-center gap-2 mb-1.5">
+                <TrendingUp className="w-3.5 h-3.5 text-success" />
+                <span className="text-[11px] font-bold text-success">Acima da Meta</span>
               </div>
-              <p className="number-md text-success">{stats.productsAboveTarget}</p>
+              <p className="text-xl font-extrabold text-success">{stats.productsAboveTarget}</p>
             </div>
-            <div className="bg-danger-muted rounded-2xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingDown className="w-4 h-4 text-danger" />
-                <span className="text-xs font-bold text-danger">Abaixo da Meta</span>
+            <div className="rounded-xl bg-[hsl(var(--danger))]/8 border border-[hsl(var(--danger))]/15 p-3.5">
+              <div className="flex items-center gap-2 mb-1.5">
+                <TrendingDown className="w-3.5 h-3.5 text-danger" />
+                <span className="text-[11px] font-bold text-danger">Abaixo da Meta</span>
               </div>
-              <p className="number-md text-danger">{stats.productsBelowTarget}</p>
+              <p className="text-xl font-extrabold text-danger">{stats.productsBelowTarget}</p>
             </div>
           </div>
         )}
 
         {/* Top Products */}
         {topProducts.length > 0 && (
-          <div className="space-y-3 animate-fade-up stagger-4">
+          <div className="space-y-2.5 animate-fade-up stagger-4">
             <div className="flex items-center justify-between">
               <h2 className="font-bold text-foreground">Melhores Margens</h2>
-              <button onClick={() => navigate('/products')} className="text-sm text-primary font-semibold flex items-center gap-1">
-                Ver Todos<ArrowRight className="w-4 h-4" />
+              <button onClick={() => navigate('/products')} className="text-xs text-primary font-semibold flex items-center gap-0.5">
+                Ver Todos <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {topProducts.map(({ product, calc }, index) => (
-                <div key={product.id} className="glass-card-hover p-4 flex items-center justify-between" onClick={() => navigate('/products')}>
+                <button key={product.id} className="w-full rounded-xl border border-border/30 bg-card/40 p-3.5 flex items-center justify-between hover:bg-card/60 transition-colors" onClick={() => navigate('/products')}>
                   <div className="flex items-center gap-3">
-                    <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center text-sm font-extrabold', index === 0 ? 'gradient-primary text-primary-foreground' : 'bg-secondary text-muted-foreground')}>
+                    <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center text-xs font-extrabold', index === 0 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground')}>
                       {index + 1}
                     </div>
-                    <span className="font-semibold text-foreground truncate max-w-[140px]">{product.name}</span>
+                    <span className="font-semibold text-foreground truncate max-w-[140px] text-sm">{product.name}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className={cn('font-extrabold text-lg', calc.isAboveTarget ? 'text-success' : 'text-danger')}>{calc.realMargin.toFixed(1)}%</span>
-                    {calc.isAboveTarget ? <TrendingUp className="w-4 h-4 text-success" /> : <TrendingDown className="w-4 h-4 text-danger" />}
+                  <div className="flex items-center gap-1.5">
+                    <span className={cn('font-extrabold text-base', calc.isAboveTarget ? 'text-success' : 'text-danger')}>{calc.realMargin.toFixed(1)}%</span>
+                    {calc.isAboveTarget ? <TrendingUp className="w-3.5 h-3.5 text-success" /> : <TrendingDown className="w-3.5 h-3.5 text-danger" />}
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
         )}
 
         {stats.totalProducts === 0 && (
-          <div className="text-center py-12 animate-fade-up">
-            <div className="w-20 h-20 rounded-2xl bg-secondary mx-auto flex items-center justify-center mb-4">
-              <Package className="w-10 h-10 text-muted-foreground" />
+          <div className="text-center py-10 animate-fade-up">
+            <div className="w-16 h-16 rounded-2xl bg-secondary mx-auto flex items-center justify-center mb-3">
+              <Package className="w-8 h-8 text-muted-foreground" />
             </div>
-            <h3 className="font-bold text-foreground mb-2 text-lg">Nenhum produto ainda</h3>
-            <p className="text-sm text-muted-foreground mb-6 max-w-xs mx-auto">Adicione seu primeiro produto para começar a precificar com inteligência</p>
+            <h3 className="font-bold text-foreground mb-1.5">Nenhum produto ainda</h3>
+            <p className="text-sm text-muted-foreground mb-5 max-w-xs mx-auto">Adicione seu primeiro produto para começar a precificar</p>
           </div>
         )}
       </div>
