@@ -28,7 +28,7 @@ const toolItems = [
 export default function Home() {
   const navigate = useNavigate();
   const { currentStore, stores, addStore, addProduct, getStoreStats, calculateProduct, isLoading } = useStore();
-  const { isActive } = useSubscription();
+  const { isActive, status, trialEnd } = useSubscription();
   const [showProductForm, setShowProductForm] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
 

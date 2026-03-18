@@ -1,13 +1,13 @@
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
-const CHECKOUT_URLS: Record<string, string> = {
-  anual: 'https://pay.hotmart.com/B104846948H?off=au88x8b1&checkoutMode=6',
-};
+const CHECKOUT_URL = import.meta.env.VITE_HOTMART_URL || 'https://pay.hotmart.com/B104846948H?off=au88x8b1&checkoutMode=6';
 
 export function TrialBanner() {
   const { status, trialEnd } = useSubscription();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   if (status !== 'trialing' || !trialEnd) return null;
 
@@ -19,31 +19,35 @@ export function TrialBanner() {
   if (daysLeft <= 0) return null;
 
   const handleClick = () => {
-    const url = new URL(CHECKOUT_URLS.anual);
+    const url = new URL(CHECKOUT_URL);
     if (user?.email) url.searchParams.set('email', user.email);
-    window.open(url.toString(), '_blank');
+    window.open(url.toString(), '_blank', 'noopener,noreferrer');
   };
 
   const isLastDay = daysLeft === 1;
+  const isSecondDay = daysLeft === 2;
+
+  let bg = 'bg-[#1e3a5f]';
+  let emoji = '🚀';
+  let text = `${daysLeft} dias grátis · Garantir plano →`;
+
+  if (isSecondDay) {
+    bg = 'bg-[#7c3206]';
+    emoji = '⏳';
+    text = 'Falta 1 dia · Garantir plano →';
+  } else if (isLastDay) {
+    bg = 'bg-[#7c1d1d]';
+    emoji = '🚨';
+    text = 'Último dia de teste · Assinar →';
+  }
 
   return (
-    <div className={`${isLastDay ? 'bg-[#dc2626]' : 'bg-[#1e3a5f]'} rounded-2xl p-4 text-white`}>
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <span className="text-lg shrink-0">{isLastDay ? '🚨' : '🎉'}</span>
-          <p className="font-bold text-sm truncate">
-            {isLastDay
-              ? 'Último dia de teste grátis!'
-              : `Você tem ${daysLeft} dias de teste grátis restantes`}
-          </p>
-        </div>
-        <button
-          onClick={handleClick}
-          className="shrink-0 px-4 py-2 rounded-lg text-xs font-bold bg-white/20 hover:bg-white/30 transition-colors"
-        >
-          {isLastDay ? 'Garantir acesso agora →' : 'Ver planos →'}
-        </button>
-      </div>
-    </div>
+    <button
+      onClick={handleClick}
+      className={`${bg} w-full h-9 flex items-center justify-center gap-2 text-white/90 transition-colors`}
+    >
+      <span className={`text-sm ${isLastDay ? 'animate-pulse' : ''}`}>{emoji}</span>
+      <span className="text-[13px] font-medium">{text}</span>
+    </button>
   );
 }
