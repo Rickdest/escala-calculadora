@@ -283,8 +283,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (updates.adsRevenue !== undefined) dbUpdates.ads_revenue = updates.adsRevenue;
     if (updates.stockQuantity !== undefined) dbUpdates.stock_quantity = updates.stockQuantity;
     if (updates.hasVariations !== undefined) dbUpdates.has_variations = updates.hasVariations;
+    if (updates.attributes !== undefined) dbUpdates.attributes = updates.attributes;
     if (updates.variations !== undefined) dbUpdates.variations = updates.variations;
     if (updates.shopeeAcelera !== undefined) dbUpdates.shopee_acelera = updates.shopeeAcelera;
+    // Recalculate stock from variations if applicable
+    if (updates.variations !== undefined && updates.hasVariations !== false) {
+      const vars = updates.variations || [];
+      if (vars.length > 0) {
+        dbUpdates.stock_quantity = vars.reduce((sum: number, v: any) => sum + (v.stockQuantity || 0), 0);
+        if (updates.stockQuantity === undefined) {
+          updates.stockQuantity = dbUpdates.stock_quantity;
+        }
+      }
+    }
 
     if (Object.keys(dbUpdates).length > 0) {
       const { error } = await supabase.from('products').update(dbUpdates).eq('id', productId);
