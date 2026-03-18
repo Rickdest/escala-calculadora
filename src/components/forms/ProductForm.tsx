@@ -155,10 +155,10 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
         packagingCost: parseFloat(packagingCost) || 0,
         adsCost: enableAds ? (parseFloat(adsCostValue) || 0) : 0,
         imageUrl: imageUrl || undefined,
-        stockQuantity: hasVariations ? totalVariationStock : (parseInt(stockQuantity) || 0),
-        hasVariations,
-        attributes: hasVariations ? attributes : [],
-        variations: hasVariations ? variations : [],
+        stockQuantity: product?.stockQuantity || 0,
+        hasVariations: product?.hasVariations || false,
+        attributes: product?.attributes || [],
+        variations: product?.variations || [],
         shopeeAcelera: 'none' as ShopeeAceleraOption,
       };
       await Promise.resolve(onSave(productData));
