@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { X, Camera, Calculator, TrendingUp, TrendingDown, AlertTriangle, Save, Loader2, ChevronDown, CalendarDays, Settings2, Info, ExternalLink } from 'lucide-react';
-import { Product, ProductAttribute, ProductVariation, ShopeeAceleraOption, getShopeeFeeForPrice, generateVariationCombinations, getVariationLabel } from '@/types/store';
+import { Product, ShopeeAceleraOption, getShopeeFeeForPrice } from '@/types/store';
 import { useStore } from '@/contexts/StoreContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,8 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { AttributeBuilder } from '@/components/forms/AttributeBuilder';
-import { VariationsTable } from '@/components/forms/VariationsTable';
 import { cn } from '@/lib/utils';
 
 interface ProductFormProps {
