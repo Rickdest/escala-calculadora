@@ -6,6 +6,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { EducationBanner } from '@/components/home/EducationBanner';
+import { StockAlertBanner } from '@/components/stock/StockAlertBanner';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
 import { TrialBanner } from '@/components/TrialBanner';
 import { DailyOfferModal } from '@/components/DailyOfferModal';
@@ -103,6 +104,7 @@ export default function Home() {
       <PageHeader title="Precify" />
       <div className="px-4 py-6 space-y-6">
         <TrialBanner />
+        <StockAlertBanner />
 
         {/* Subscription CTA - only for non-active */}
         {!isActive && (

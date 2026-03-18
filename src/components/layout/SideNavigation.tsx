@@ -1,4 +1,4 @@
-import { Home, Package, BarChart3, GraduationCap, Settings, Crown } from 'lucide-react';
+import { Home, Package, BarChart3, Warehouse, Settings, Crown } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -8,7 +8,7 @@ const navItems = [
   { icon: Home, label: 'Início', path: '/' },
   { icon: Package, label: 'Produtos', path: '/products' },
   { icon: BarChart3, label: 'ROAS', path: '/roas' },
-  { icon: GraduationCap, label: 'Educação', path: '/education' },
+  { icon: Warehouse, label: 'Estoque', path: '/stock' },
   { icon: Settings, label: 'Configurações', path: '/settings' },
 ];
 

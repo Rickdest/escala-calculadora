@@ -98,6 +98,130 @@ export type Database = {
         }
         Relationships: []
       }
+      estoque_movimentacoes: {
+        Row: {
+          created_at: string
+          id: string
+          motivo: string | null
+          quantidade: number
+          tipo: string
+          user_id: string
+          variacao_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          quantidade: number
+          tipo: string
+          user_id: string
+          variacao_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          motivo?: string | null
+          quantidade?: number
+          tipo?: string
+          user_id?: string
+          variacao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estoque_movimentacoes_variacao_id_fkey"
+            columns: ["variacao_id"]
+            isOneToOne: false
+            referencedRelation: "estoque_variacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      estoque_produtos: {
+        Row: {
+          categoria: string | null
+          created_at: string
+          descricao: string | null
+          id: string
+          image_url: string | null
+          nome: string
+          sku_base: string | null
+          tem_variacoes: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          categoria?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          image_url?: string | null
+          nome: string
+          sku_base?: string | null
+          tem_variacoes?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          categoria?: string | null
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          image_url?: string | null
+          nome?: string
+          sku_base?: string | null
+          tem_variacoes?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      estoque_variacoes: {
+        Row: {
+          atributos: Json
+          created_at: string
+          id: string
+          preco_custo: number
+          produto_id: string
+          quantidade: number
+          quantidade_minima: number
+          sku: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          atributos?: Json
+          created_at?: string
+          id?: string
+          preco_custo?: number
+          produto_id: string
+          quantidade?: number
+          quantidade_minima?: number
+          sku?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          atributos?: Json
+          created_at?: string
+          id?: string
+          preco_custo?: number
+          produto_id?: string
+          quantidade?: number
+          quantidade_minima?: number
+          sku?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estoque_variacoes_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "estoque_produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       price_history: {
         Row: {
           cost_price: number
