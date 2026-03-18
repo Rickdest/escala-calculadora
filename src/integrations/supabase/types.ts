@@ -137,6 +137,7 @@ export type Database = {
         Row: {
           ads_cost: number | null
           ads_revenue: number | null
+          attributes: Json | null
           cost_price: number
           created_at: string
           has_variations: boolean | null
@@ -155,6 +156,7 @@ export type Database = {
         Insert: {
           ads_cost?: number | null
           ads_revenue?: number | null
+          attributes?: Json | null
           cost_price: number
           created_at?: string
           has_variations?: boolean | null
@@ -173,6 +175,7 @@ export type Database = {
         Update: {
           ads_cost?: number | null
           ads_revenue?: number | null
+          attributes?: Json | null
           cost_price?: number
           created_at?: string
           has_variations?: boolean | null
