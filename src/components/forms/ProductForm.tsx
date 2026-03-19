@@ -93,9 +93,9 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
   const monthlyMargin = localCalc ? localCalc.realMargin : 0;
   const monthlyStatus = monthlyProfit <= 0 ? 'danger' : monthlyMargin < 15 ? 'warning' : 'success';
   const monthlyStatusConfig = {
-    danger: { emoji: '🔴', label: 'Prejuízo', bg: 'bg-destructive/10 border-destructive/30', text: 'text-destructive' },
-    warning: { emoji: '🟡', label: 'Atenção', bg: 'bg-warning/10 border-warning/30', text: 'text-warning' },
-    success: { emoji: '🟢', label: 'Lucrativo', bg: 'bg-success/10 border-success/30', text: 'text-success' },
+    danger: { emoji: '🔴', label: 'Prejuízo', bg: 'bg-danger-muted border-danger/30', text: 'text-danger' },
+    warning: { emoji: '🟡', label: 'Atenção', bg: 'bg-warning-muted border-warning/30', text: 'text-warning' },
+    success: { emoji: '🟢', label: 'Lucrativo', bg: 'bg-success-muted border-success/30', text: 'text-success' },
   }[monthlyStatus];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -138,94 +138,94 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
   const isValid = name && costPrice && salePrice;
 
   return (
-    <div className="fixed inset-0 z-50 bg-foreground/20 backdrop-blur-sm animate-fade-up">
-      <div className="fixed inset-x-0 bottom-0 z-50 bg-card rounded-t-3xl shadow-2xl animate-slide-up max-h-[92vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm animate-fade-up">
+      <div className="fixed inset-x-0 bottom-0 z-50 bg-surface rounded-t-2xl animate-slide-up max-h-[92vh] overflow-hidden flex flex-col border-t border-border">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-border/50">
-          <h2 className="text-lg font-bold">{product ? 'Editar Produto' : 'Novo Produto'}</h2>
-          <button onClick={onClose} className="p-2.5 hover:bg-secondary rounded-xl transition-colors">
-            <X className="w-5 h-5" />
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <h2 className="text-base font-bold text-foreground">{product ? 'Editar Produto' : 'Novo Produto'}</h2>
+          <button onClick={onClose} className="p-2 hover:bg-surface-2 rounded-lg transition-colors">
+            <X className="w-5 h-5 text-text-2" />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-5">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* Image Upload */}
           <div className="flex justify-center">
             <label className="cursor-pointer group">
               <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
               {imageUrl ? (
                 <div className="relative">
-                  <img src={imageUrl} alt="Preview" className="w-28 h-28 rounded-2xl object-cover ring-2 ring-border group-hover:ring-primary transition-all" />
-                  <div className="absolute inset-0 bg-foreground/30 rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Camera className="w-7 h-7 text-background" />
+                  <img src={imageUrl} alt="Preview" className="w-24 h-24 rounded-xl object-cover ring-1 ring-border group-hover:ring-primary transition-all" />
+                  <div className="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Camera className="w-6 h-6 text-white" />
                   </div>
                 </div>
               ) : (
-                <div className="w-28 h-28 rounded-2xl bg-secondary flex flex-col items-center justify-center gap-2 group-hover:bg-secondary/80 transition-colors ring-2 ring-transparent group-hover:ring-primary/30">
-                  <Camera className="w-7 h-7 text-muted-foreground" />
-                  <span className="text-xs font-medium text-muted-foreground">Adicionar</span>
+                <div className="w-24 h-24 rounded-xl bg-surface-2 border border-border flex flex-col items-center justify-center gap-1.5 group-hover:border-primary/30 transition-colors">
+                  <Camera className="w-6 h-6 text-text-3" />
+                  <span className="text-[10px] text-text-3">Adicionar</span>
                 </div>
               )}
             </label>
           </div>
 
           {/* Nome */}
-          <div className="space-y-2">
-            <Label htmlFor="name" className="text-sm font-semibold">Nome do Produto <span className="text-destructive">*</span></Label>
-            <Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Camiseta Básica" className="input-modern h-12" required />
+          <div className="space-y-1.5">
+            <label className="section-label">Nome do Produto *</label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Camiseta Básica" className="h-12 bg-surface-2 border-border rounded-lg focus:border-primary" required />
           </div>
 
           {/* Custo + Venda */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="costPrice" className="text-sm font-semibold">Preço de Custo <span className="text-destructive">*</span></Label>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="section-label">Preço de Custo *</label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
-                <Input id="costPrice" type="number" step="0.01" min="0" value={costPrice} onChange={(e) => setCostPrice(e.target.value)} placeholder="0,00" className="pl-12 input-modern h-12" required />
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-2">R$</span>
+                <Input type="number" inputMode="decimal" step="0.01" min="0" value={costPrice} onChange={(e) => setCostPrice(e.target.value)} placeholder="0,00" className="pl-12 h-12 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num" required />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="salePrice" className="text-sm font-semibold">Preço de Venda <span className="text-destructive">*</span></Label>
+            <div className="space-y-1.5">
+              <label className="section-label">Preço de Venda *</label>
               <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
-                <Input id="salePrice" type="number" step="0.01" min="0" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} placeholder="0,00" className="pl-12 input-modern h-12" required />
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-2">R$</span>
+                <Input type="number" inputMode="decimal" step="0.01" min="0" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} placeholder="0,00" className="pl-12 h-12 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num" required />
               </div>
             </div>
           </div>
 
           {/* Embalagem */}
-          <div className="space-y-2">
-            <Label htmlFor="packagingCost" className="text-sm font-semibold">Embalagem e Insumos</Label>
+          <div className="space-y-1.5">
+            <label className="section-label">Embalagem e Insumos</label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
-              <Input id="packagingCost" type="number" step="0.01" min="0" value={packagingCost} onChange={(e) => setPackagingCost(e.target.value)} placeholder="0,00" className="pl-12 input-modern h-12" />
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-2">R$</span>
+              <Input type="number" inputMode="decimal" step="0.01" min="0" value={packagingCost} onChange={(e) => setPackagingCost(e.target.value)} placeholder="0,00" className="pl-12 h-12 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num" />
             </div>
           </div>
 
-          {/* ══════════ CUSTOS OPCIONAIS ══════════ */}
+          {/* Optional Costs */}
           <Collapsible open={optionalCostsOpen} onOpenChange={setOptionalCostsOpen}>
             <CollapsibleTrigger asChild>
-              <button type="button" className="w-full glass-card p-4 flex items-center justify-between">
+              <button type="button" className="w-full surface-card p-3.5 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Settings2 className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-semibold">Custos Opcionais</span>
+                  <Settings2 className="w-4 h-4 text-text-2" />
+                  <span className="text-sm font-medium text-foreground">Custos Opcionais</span>
                 </div>
-                <ChevronDown className={cn("w-4 h-4 text-muted-foreground transition-transform", optionalCostsOpen && "rotate-180")} />
+                <ChevronDown className={cn("w-4 h-4 text-text-3 transition-transform duration-150", optionalCostsOpen && "rotate-180")} />
               </button>
             </CollapsibleTrigger>
-            <CollapsibleContent className="pt-3 space-y-3">
-              <div className="glass-card p-4 space-y-3">
+            <CollapsibleContent className="pt-2 space-y-2">
+              <div className="surface-card p-3.5 space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm font-semibold">Shopee Ads</Label>
+                  <span className="text-sm font-medium text-foreground">Shopee Ads</span>
                   <Switch checked={enableAds} onCheckedChange={setEnableAds} />
                 </div>
                 {enableAds && (
-                  <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">Valor investido em Ads (R$)</Label>
+                  <div className="space-y-1.5">
+                    <label className="section-label">Valor investido em Ads (R$)</label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">R$</span>
-                      <Input type="number" step="0.01" min="0" value={adsCostValue} onChange={(e) => setAdsCostValue(e.target.value)} placeholder="0,00" className="pl-10 input-modern h-10" />
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-2">R$</span>
+                      <Input type="number" inputMode="decimal" step="0.01" min="0" value={adsCostValue} onChange={(e) => setAdsCostValue(e.target.value)} placeholder="0,00" className="pl-12 h-10 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num" />
                     </div>
                   </div>
                 )}
@@ -233,11 +233,11 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             </CollapsibleContent>
           </Collapsible>
 
-          {/* ══════════ GLOBAL CONFIGS ══════════ */}
-          <div className="glass-card p-4">
+          {/* Global Configs */}
+          <div className="surface-card p-3.5">
             {activeGlobalConfigs.length > 0 ? (
               <div className="flex items-start gap-2">
-                <span className="text-success mt-0.5 flex-shrink-0">✓</span>
+                <span className="text-success mt-0.5 flex-shrink-0 text-sm">✓</span>
                 <div>
                   <p className="text-xs font-medium text-foreground">Aplicando: {activeGlobalConfigs.join(' · ')}</p>
                   <a href="/settings" className="text-[10px] text-primary hover:underline inline-flex items-center gap-1 mt-1">
@@ -247,10 +247,10 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
               </div>
             ) : (
               <div className="flex items-start gap-2">
-                <Info className="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                <Info className="w-4 h-4 text-text-3 mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Configure taxas globais em Configurações para aplicar automaticamente.</p>
-                  <a href="/settings" className="text-xs text-primary hover:underline inline-flex items-center gap-1 mt-1 font-semibold">
+                  <p className="text-xs text-text-2">Configure taxas globais em Configurações para aplicar automaticamente.</p>
+                  <a href="/settings" className="text-xs text-primary hover:underline inline-flex items-center gap-1 mt-1 font-medium">
                     Ir para Configurações <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
@@ -260,32 +260,32 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
 
           {/* Live Calculation Preview */}
           {localCalc && (
-            <div className={cn('rounded-2xl p-5 space-y-4 animate-scale-up', localCalc.isAboveTarget ? 'bg-success-muted' : 'bg-danger-muted')}>
+            <div className={cn('rounded-[14px] p-4 space-y-3 animate-fade-up border', localCalc.isAboveTarget ? 'bg-success-muted border-success/20' : 'bg-danger-muted border-danger/20')}>
               <div className="flex items-center gap-2">
-                <Calculator className={cn('w-5 h-5', localCalc.isAboveTarget ? 'text-success' : 'text-danger')} />
-                <span className={cn('font-bold text-sm', localCalc.isAboveTarget ? 'text-success' : 'text-danger')}>Prévia do Cálculo</span>
+                <Calculator className={cn('w-4 h-4', localCalc.isAboveTarget ? 'text-success' : 'text-danger')} />
+                <span className={cn('font-semibold text-sm', localCalc.isAboveTarget ? 'text-success' : 'text-danger')}>Prévia do Cálculo</span>
               </div>
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className={cn('text-xs font-medium opacity-70', localCalc.isAboveTarget ? 'text-success' : 'text-danger')}>Lucro Líquido</p>
-                  <p className={cn('number-lg', localCalc.isAboveTarget ? 'text-success' : 'text-danger')}>{formatCurrency(localCalc.netProfit)}</p>
+                  <p className="section-label mb-0.5">Lucro Líquido</p>
+                  <p className={cn('font-mono text-2xl font-bold font-mono-num', localCalc.isAboveTarget ? 'text-success' : 'text-danger')}>{formatCurrency(localCalc.netProfit)}</p>
                 </div>
                 <div className="text-right">
-                  <p className={cn('text-xs font-medium opacity-70', localCalc.isAboveTarget ? 'text-success' : 'text-danger')}>Margem Real</p>
+                  <p className="section-label mb-0.5">Margem Real</p>
                   <div className="flex items-center justify-end gap-1.5">
-                    {localCalc.isAboveTarget ? <TrendingUp className="w-5 h-5 text-success" /> : <TrendingDown className="w-5 h-5 text-danger" />}
-                    <span className={cn('number-lg', localCalc.isAboveTarget ? 'text-success' : 'text-danger')}>{localCalc.realMargin.toFixed(1)}%</span>
+                    {localCalc.isAboveTarget ? <TrendingUp className="w-4 h-4 text-success" /> : <TrendingDown className="w-4 h-4 text-danger" />}
+                    <span className={cn('font-mono text-2xl font-bold font-mono-num', localCalc.isAboveTarget ? 'text-success' : 'text-danger')}>{localCalc.realMargin.toFixed(1)}%</span>
                   </div>
                 </div>
               </div>
 
               <div className={cn('pt-3 border-t text-xs space-y-1', localCalc.isAboveTarget ? 'border-success/20' : 'border-danger/20')}>
-                <div className="flex justify-between opacity-70"><span>Taxa Shopee (automática)</span><span>{formatCurrency(localCalc.totalShopeeFee)}</span></div>
-                {localCalc.taxesCost > 0 && <div className="flex justify-between opacity-70"><span>Impostos ({config?.taxes}%)</span><span>{formatCurrency(localCalc.taxesCost)}</span></div>}
-                {localCalc.adsCost > 0 && <div className="flex justify-between opacity-70"><span>Shopee Ads</span><span>{formatCurrency(localCalc.adsCost)}</span></div>}
-                {localCalc.campaignsCost > 0 && <div className="flex justify-between opacity-70"><span>Campanhas ({config?.shopeeCampaigns}%)</span><span>{formatCurrency(localCalc.campaignsCost)}</span></div>}
-                {localCalc.affiliateCost > 0 && <div className="flex justify-between opacity-70"><span>Afiliados ({config?.affiliateCommission}%)</span><span>{formatCurrency(localCalc.affiliateCost)}</span></div>}
-                {localCalc.aceleraCost > 0 && <div className="flex justify-between opacity-70"><span>Shopee Acelera</span><span>{formatCurrency(localCalc.aceleraCost)}</span></div>}
+                <div className="flex justify-between text-text-2"><span>Taxa Shopee (automática)</span><span className="font-mono font-mono-num">{formatCurrency(localCalc.totalShopeeFee)}</span></div>
+                {localCalc.taxesCost > 0 && <div className="flex justify-between text-text-2"><span>Impostos ({config?.taxes}%)</span><span className="font-mono font-mono-num">{formatCurrency(localCalc.taxesCost)}</span></div>}
+                {localCalc.adsCost > 0 && <div className="flex justify-between text-text-2"><span>Shopee Ads</span><span className="font-mono font-mono-num">{formatCurrency(localCalc.adsCost)}</span></div>}
+                {localCalc.campaignsCost > 0 && <div className="flex justify-between text-text-2"><span>Campanhas ({config?.shopeeCampaigns}%)</span><span className="font-mono font-mono-num">{formatCurrency(localCalc.campaignsCost)}</span></div>}
+                {localCalc.affiliateCost > 0 && <div className="flex justify-between text-text-2"><span>Afiliados ({config?.affiliateCommission}%)</span><span className="font-mono font-mono-num">{formatCurrency(localCalc.affiliateCost)}</span></div>}
+                {localCalc.aceleraCost > 0 && <div className="flex justify-between text-text-2"><span>Shopee Acelera</span><span className="font-mono font-mono-num">{formatCurrency(localCalc.aceleraCost)}</span></div>}
               </div>
 
               {!localCalc.isAboveTarget && (
@@ -299,62 +299,62 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
 
           {/* ROAS */}
           <div className="grid grid-cols-3 gap-2">
-            <div className="glass-card p-3 space-y-1 border border-destructive/20">
-              <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">ROAS de Empate</p>
-              <p className="text-lg font-extrabold tabular-nums text-destructive">{roasValues && isFinite(roasValues.roasEmpate) && roasValues.roasEmpate > 0 ? roasValues.roasEmpate.toFixed(2) : '--'}</p>
-              <p className="text-[9px] text-muted-foreground leading-tight">Abaixo disso você tem prejuízo</p>
+            <div className="surface-card p-3 space-y-1 border-danger/20">
+              <p className="section-label">ROAS Empate</p>
+              <p className="font-mono text-lg font-bold font-mono-num text-danger">{roasValues && isFinite(roasValues.roasEmpate) && roasValues.roasEmpate > 0 ? roasValues.roasEmpate.toFixed(2) : '--'}</p>
+              <p className="text-[9px] text-text-3 leading-tight">Abaixo disso é prejuízo</p>
             </div>
-            <div className="glass-card p-3 space-y-1 border border-warning/30">
-              <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">ROAS Saudável</p>
-              <p className="text-lg font-extrabold tabular-nums text-warning">{roasValues && isFinite(roasValues.roasSaudavel) && roasValues.roasSaudavel > 0 ? roasValues.roasSaudavel.toFixed(2) : '--'}</p>
-              <p className="text-[9px] text-muted-foreground leading-tight">Mínimo para lucrar com anúncios</p>
+            <div className="surface-card p-3 space-y-1 border-warning/20">
+              <p className="section-label">ROAS Saudável</p>
+              <p className="font-mono text-lg font-bold font-mono-num text-warning">{roasValues && isFinite(roasValues.roasSaudavel) && roasValues.roasSaudavel > 0 ? roasValues.roasSaudavel.toFixed(2) : '--'}</p>
+              <p className="text-[9px] text-text-3 leading-tight">Mínimo para lucrar</p>
             </div>
-            <div className="glass-card p-3 space-y-1 border-2 border-success/50 relative">
-              <div className="absolute -top-2 right-2 bg-success text-success-foreground text-[8px] font-bold px-1.5 py-0.5 rounded-full">META</div>
-              <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">ROAS Ideal</p>
-              <p className="text-lg font-extrabold tabular-nums text-success">{roasValues && isFinite(roasValues.roasIdeal) && roasValues.roasIdeal > 0 ? roasValues.roasIdeal.toFixed(2) : '--'}</p>
-              <p className="text-[9px] text-muted-foreground leading-tight">Meta para escalar com segurança</p>
+            <div className="surface-card p-3 space-y-1 border-success/30 relative">
+              <div className="absolute -top-2 right-2 bg-success text-success-foreground text-[8px] font-bold px-1.5 py-0.5 rounded-[6px]">META</div>
+              <p className="section-label">ROAS Ideal</p>
+              <p className="font-mono text-lg font-bold font-mono-num text-success">{roasValues && isFinite(roasValues.roasIdeal) && roasValues.roasIdeal > 0 ? roasValues.roasIdeal.toFixed(2) : '--'}</p>
+              <p className="text-[9px] text-text-3 leading-tight">Meta para escalar</p>
             </div>
           </div>
 
           {/* Monthly Projection */}
-          <div className="glass-card p-4 space-y-4">
+          <div className="surface-card p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <CalendarDays className="w-4 h-4 text-primary" />
-              <span className="text-sm font-bold">Projeção Mensal</span>
+              <CalendarDays className="w-4 h-4 text-text-2" />
+              <span className="text-sm font-semibold text-foreground">Projeção Mensal</span>
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label className="text-xs text-muted-foreground">Quantas vendas você espera por mês?</Label>
-                <Input type="number" min={1} max={1000} value={monthlySales} onChange={(e) => setMonthlySales(Math.min(1000, Math.max(1, parseInt(e.target.value) || 1)))} className="w-20 h-8 text-sm text-center font-bold input-modern" />
+                <span className="text-xs text-text-2">Quantas vendas por mês?</span>
+                <Input type="number" min={1} max={1000} value={monthlySales} onChange={(e) => setMonthlySales(Math.min(1000, Math.max(1, parseInt(e.target.value) || 1)))} className="w-20 h-8 text-sm text-center font-bold font-mono font-mono-num bg-surface-2 border-border rounded-lg" />
               </div>
               <Slider value={[monthlySales]} onValueChange={([v]) => setMonthlySales(v)} min={1} max={1000} step={1} />
-              <div className="flex justify-between text-[10px] text-muted-foreground"><span>1</span><span>500</span><span>1000</span></div>
+              <div className="flex justify-between text-[10px] text-text-3"><span>1</span><span>500</span><span>1000</span></div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-secondary/30 rounded-xl p-3">
-                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Receita Bruta</p>
-                <p className="text-sm font-extrabold tabular-nums mt-1">{localCalc ? formatCurrency(monthlyRevenue) : '--'}</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-surface-2 rounded-lg p-3">
+                <p className="section-label">Receita Bruta</p>
+                <p className="text-sm font-bold font-mono font-mono-num mt-1 text-foreground">{localCalc ? formatCurrency(monthlyRevenue) : '--'}</p>
               </div>
-              <div className="bg-secondary/30 rounded-xl p-3">
-                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Custos Totais</p>
-                <p className="text-sm font-extrabold tabular-nums text-destructive mt-1">{localCalc ? formatCurrency(monthlyCosts) : '--'}</p>
+              <div className="bg-surface-2 rounded-lg p-3">
+                <p className="section-label">Custos Totais</p>
+                <p className="text-sm font-bold font-mono font-mono-num text-destructive mt-1">{localCalc ? formatCurrency(monthlyCosts) : '--'}</p>
               </div>
-              <div className="bg-secondary/30 rounded-xl p-3">
-                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Lucro Mensal</p>
-                <p className={cn('text-sm font-extrabold tabular-nums mt-1', localCalc ? (monthlyProfit >= 0 ? 'text-success' : 'text-destructive') : '')}>{localCalc ? formatCurrency(monthlyProfit) : '--'}</p>
+              <div className="bg-surface-2 rounded-lg p-3">
+                <p className="section-label">Lucro Mensal</p>
+                <p className={cn('text-sm font-bold font-mono font-mono-num mt-1', localCalc ? (monthlyProfit >= 0 ? 'text-success' : 'text-destructive') : 'text-foreground')}>{localCalc ? formatCurrency(monthlyProfit) : '--'}</p>
               </div>
-              <div className="bg-secondary/30 rounded-xl p-3">
-                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Margem de Lucro</p>
-                <p className={cn('text-sm font-extrabold tabular-nums mt-1', localCalc ? (monthlyMargin >= 15 ? 'text-success' : monthlyMargin >= 0 ? 'text-warning' : 'text-destructive') : '')}>{localCalc ? `${monthlyMargin.toFixed(1)}%` : '--'}</p>
+              <div className="bg-surface-2 rounded-lg p-3">
+                <p className="section-label">Margem de Lucro</p>
+                <p className={cn('text-sm font-bold font-mono font-mono-num mt-1', localCalc ? (monthlyMargin >= 15 ? 'text-success' : monthlyMargin >= 0 ? 'text-warning' : 'text-destructive') : 'text-foreground')}>{localCalc ? `${monthlyMargin.toFixed(1)}%` : '--'}</p>
               </div>
             </div>
             {localCalc && (
-              <div className={cn('rounded-xl border p-3 flex items-center gap-2', monthlyStatusConfig.bg)}>
+              <div className={cn('rounded-lg border p-3 flex items-center gap-2', monthlyStatusConfig.bg)}>
                 <span className="text-lg">{monthlyStatusConfig.emoji}</span>
                 <div>
-                  <p className={cn('text-sm font-bold', monthlyStatusConfig.text)}>{monthlyStatusConfig.label}</p>
-                  <p className="text-[10px] text-muted-foreground">{monthlySales} vendas/mês × {formatCurrency(parseFloat(salePrice) || 0)}/un</p>
+                  <p className={cn('text-sm font-semibold', monthlyStatusConfig.text)}>{monthlyStatusConfig.label}</p>
+                  <p className="text-[10px] text-text-2">{monthlySales} vendas/mês × {formatCurrency(parseFloat(salePrice) || 0)}/un</p>
                 </div>
               </div>
             )}
@@ -362,9 +362,9 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
         </form>
 
         {/* Footer */}
-        <div className="p-5 border-t border-border/50 safe-bottom bg-card">
-          <Button type="submit" onClick={handleSubmit} className="w-full h-14 text-base font-bold gradient-primary hover:opacity-90 transition-opacity" disabled={!isValid || isSaving}>
-            {isSaving ? (<><Loader2 className="w-5 h-5 mr-2 animate-spin" />Salvando...</>) : (<><Save className="w-5 h-5 mr-2" />{product ? 'Salvar Alterações' : 'Salvar Produto'}</>)}
+        <div className="p-4 border-t border-border safe-bottom bg-surface">
+          <Button type="submit" onClick={handleSubmit} className="w-full h-12 text-[15px] font-semibold bg-primary hover:bg-primary/90 rounded-[10px] transition-colors active:scale-[0.98]" disabled={!isValid || isSaving}>
+            {isSaving ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Salvando...</>) : (<><Save className="w-4 h-4 mr-2" />{product ? 'Salvar Alterações' : 'Salvar Produto'}</>)}
           </Button>
         </div>
       </div>

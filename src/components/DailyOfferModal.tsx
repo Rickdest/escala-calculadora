@@ -37,37 +37,32 @@ export function DailyOfferModal() {
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center">
       <div className="absolute inset-0 bg-black/70" onClick={() => setShow(false)} />
-      <div
-        className="relative bg-card w-full max-w-sm mx-4 rounded-2xl p-6 space-y-5 max-h-[90vh] overflow-y-auto animate-fade-up"
-      >
+      <div className="relative bg-surface w-full max-w-sm mx-4 rounded-2xl p-6 space-y-5 max-h-[90vh] overflow-y-auto animate-fade-up border border-border">
         <button
           onClick={() => setShow(false)}
-          className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-secondary/60 transition-colors"
+          className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-surface-2 transition-colors"
         >
-          <X className="w-4 h-4 text-muted-foreground" />
+          <X className="w-4 h-4 text-text-2" />
         </button>
 
-        {/* Icon */}
         <div className="text-center pt-2">
           <span className="text-3xl">🔥</span>
         </div>
 
-        {/* Copy */}
         <div className="text-center space-y-2">
           <h2 className="text-lg font-bold text-foreground">Você ainda está no teste</h2>
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-sm text-text-2 leading-relaxed">
             Garanta seu acesso antes de expirar. São menos de R$4,16 por mês para precificar com inteligência na Shopee.
           </p>
         </div>
 
-        {/* CTA */}
         <div className="space-y-2">
           <div className="text-center">
-            <p className="text-xl font-bold text-foreground">R$49,90<span className="text-sm font-normal text-muted-foreground">/ano</span></p>
+            <p className="text-xl font-bold font-mono font-mono-num text-foreground">R$49,90<span className="text-sm font-normal font-sans text-text-2">/ano</span></p>
           </div>
           <button
             onClick={handleCheckout}
-            className="w-full h-14 rounded-xl bg-[#F97316] hover:bg-[#ea6c10] text-white font-bold text-base transition-colors active:scale-[0.98]"
+            className="w-full h-12 rounded-[10px] bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-[15px] transition-colors active:scale-[0.98]"
           >
             ⚡ Garantir agora
           </button>
@@ -75,7 +70,7 @@ export function DailyOfferModal() {
 
         <button
           onClick={() => setShow(false)}
-          className="w-full text-center text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="w-full text-center text-xs text-text-3 hover:text-foreground transition-colors"
         >
           Fechar e continuar testando
         </button>
