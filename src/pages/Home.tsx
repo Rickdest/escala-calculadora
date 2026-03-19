@@ -32,11 +32,6 @@ export default function Home() {
   const [showProductForm, setShowProductForm] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
 
-  const handleCreateFirstStore = async () => {
-    await addStore('Minha Loja');
-    navigate('/settings');
-  };
-
   if (isLoading) {
     return (
       <AppLayout>
