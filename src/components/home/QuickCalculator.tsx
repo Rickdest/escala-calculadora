@@ -226,19 +226,18 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
             )}
 
             {/* Ações */}
-            <div className="flex items-center justify-center gap-1.5 text-[13px]">
+            <div className="flex items-center gap-2 mt-3">
               <button
                 onClick={() => setShowAnalysis(!showAnalysis)}
-                className="text-text-2 font-medium underline underline-offset-2 hover:text-foreground transition-colors"
+                className="flex-1 h-11 border border-border rounded-lg text-[13px] font-medium text-text-2 hover:bg-surface-2 active:scale-[0.98] transition-all"
               >
-                Ver análise completa {showAnalysis ? '↑' : '↓'}
+                {showAnalysis ? '↑ Fechar' : '↓ Ver análise'}
               </button>
-              <span className="text-text-3">·</span>
               <button
                 onClick={() => onSaveProduct({ costPrice, salePrice, packaging })}
-                className="text-accent font-medium underline underline-offset-2 hover:text-accent/80 transition-colors"
+                className="flex-1 h-11 bg-accent rounded-lg text-[13px] font-semibold text-white hover:bg-[#EA6C0A] active:scale-[0.98] transition-all"
               >
-                Salvar produto →
+                Salvar produto
               </button>
             </div>
           </div>
