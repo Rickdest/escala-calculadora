@@ -33,7 +33,8 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
     const aceleraVal = config?.shopeeAcelera || 'none';
     const aceleraCost = aceleraVal === 'indicado' ? sp * 0.025 : aceleraVal === 'nao_indicado' ? sp * 0.035 : 0;
 
-    const totalCosts = cp + totalShopeeFee + taxesCost + affiliateCost + campaignsCost + aceleraCost;
+    const packagingCost = parseFloat(packaging) || 0;
+    const totalCosts = cp + packagingCost + totalShopeeFee + taxesCost + affiliateCost + campaignsCost + aceleraCost;
     const netProfit = sp - totalCosts;
     const realMargin = sp > 0 ? (netProfit / sp) * 100 : 0;
 
