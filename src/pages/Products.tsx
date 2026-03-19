@@ -174,7 +174,7 @@ export default function Products() {
                 </span>
                 <div className="flex-1 h-1 bg-surface-2 rounded-full overflow-hidden">
                   <div
-                    className={cn('h-full rounded-full transition-all', stats.avgMargin >= currentStore.config.desiredMargin ? 'bg-success' : 'bg-warning')}
+                    className={cn('h-full rounded-full transition-all', getMarginStatus(stats.avgMargin).color.replace('text-', 'bg-'))}
                     style={{ width: `${Math.min(100, (stats.avgMargin / Math.max(currentStore.config.desiredMargin, 1)) * 100)}%` }}
                   />
                 </div>
