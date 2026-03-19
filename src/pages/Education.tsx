@@ -374,7 +374,7 @@ export default function Education() {
                       <Button 
                         className="w-full h-11 font-bold"
                         variant="outline"
-                        onClick={() => window.open(offer.content_data?.button_link || '#', '_blank')}
+                        onClick={() => window.open(offer.content_data?.button_link || '#', '_blank', 'noopener,noreferrer')}
                       >
                         <ExternalLink className="w-4 h-4 mr-2" />
                         {offer.content_data?.button_text || 'Conhecer o Curso'}
