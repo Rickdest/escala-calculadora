@@ -217,8 +217,8 @@ export default function Products() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0 ml-3">
-                      <span className={cn('w-2 h-2 rounded-full', calc.isAboveTarget ? 'bg-success' : 'bg-danger')} />
-                      <span className={cn('font-mono text-[14px] font-bold font-mono-num', calc.isAboveTarget ? 'text-success' : 'text-danger')}>
+                      <span className={cn('w-2 h-2 rounded-full', getMarginStatus(calc.realMargin).color.replace('text-', 'bg-'))} />
+                      <span className={cn('font-mono text-[14px] font-bold font-mono-num', getMarginStatus(calc.realMargin).color)}>
                         {calc.realMargin.toFixed(1)}%
                       </span>
                       <ChevronRight className="w-4 h-4 text-text-3" />
