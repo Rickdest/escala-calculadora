@@ -10,7 +10,7 @@ import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionCo
 import { TrialExpiredBlock } from "@/components/TrialExpiredBlock";
 import Home from "./pages/Home";
 import Products from "./pages/Products";
-import Analysis from "./pages/Analysis";
+
 import Stores from "./pages/Stores";
 import Settings from "./pages/Settings";
 import Education from "./pages/Education";
