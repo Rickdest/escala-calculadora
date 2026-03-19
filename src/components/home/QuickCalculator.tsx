@@ -95,6 +95,25 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
         </div>
       </div>
 
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div>
+          <label className="section-label mb-1.5 block">Embalagem</label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-2">R$</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              step="0.01"
+              min="0"
+              value={packaging}
+              onChange={(e) => { setPackaging(e.target.value); setShowResult(false); }}
+              placeholder="0,00"
+              className="w-full h-12 pl-12 pr-3 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num focus:border-primary focus:outline-none transition-colors"
+            />
+          </div>
+        </div>
+      </div>
+
       <button
         onClick={handleCalculate}
         disabled={!result || isCalculating}
