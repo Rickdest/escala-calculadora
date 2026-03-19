@@ -3,7 +3,7 @@ import { Zap, Loader2, ChevronDown, ChevronUp, Info, AlertTriangle } from 'lucid
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { getShopeeFeeForPrice } from '@/types/store';
-import { cn } from '@/lib/utils';
+import { cn, getMarginStatus } from '@/lib/utils';
 
 interface QuickCalculatorProps {
   onSaveProduct: (prefill: { costPrice: string; salePrice: string; packaging: string }) => void;
