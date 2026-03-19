@@ -266,7 +266,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="section-label mb-0.5">Lucro Líquido</p>
-                  <p className={cn('font-mono text-2xl font-bold font-mono-num', localCalc.isAboveTarget ? 'text-success' : 'text-danger')}>{formatCurrency(localCalc.netProfit)}</p>
+                  <p className={cn('font-mono text-2xl font-bold font-mono-num', getMarginStatus(localCalc.realMargin).color)}>{formatCurrency(localCalc.netProfit)}</p>
                 </div>
                 <div className="text-right">
                   <p className="section-label mb-0.5">Margem Real</p>
