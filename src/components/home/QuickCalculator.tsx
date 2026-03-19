@@ -36,7 +36,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
     const packagingCost = parseFloat(packaging) || 0;
     const totalCosts = cp + packagingCost + totalShopeeFee + taxesCost + affiliateCost + campaignsCost + aceleraCost;
     const netProfit = sp - totalCosts;
-    const realMargin = sp > 0 ? (netProfit / sp) * 100 : 0;
+    const realMargin = sp > 0 ? netProfit / sp * 100 : 0;
 
     const roasEmpate = sp / (sp - totalCosts);
     const roasIdeal = isFinite(roasEmpate) && roasEmpate > 0 ? roasEmpate * 1.5 : 0;
@@ -54,7 +54,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
   };
 
   const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
   return (
     <div className="surface-card p-4 animate-fade-up">
@@ -62,7 +62,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
 
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div>
-          <label className="section-label mb-1.5 block">Custo</label>
+          <label className="section-label mb-1.5 block">Preço de Custo</label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-2">R$</span>
             <input
@@ -71,14 +71,14 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               step="0.01"
               min="0"
               value={costPrice}
-              onChange={(e) => { setCostPrice(e.target.value); setShowResult(false); }}
+              onChange={(e) => {setCostPrice(e.target.value);setShowResult(false);}}
               placeholder="0,00"
-              className="w-full h-12 pl-12 pr-3 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num focus:border-primary focus:outline-none transition-colors"
-            />
+              className="w-full h-12 pl-12 pr-3 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num focus:border-primary focus:outline-none transition-colors" />
+            
           </div>
         </div>
         <div>
-          <label className="section-label mb-1.5 block">Venda</label>
+          <label className="section-label mb-1.5 block">PREÇO DE VENDA</label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-2">R$</span>
             <input
@@ -87,29 +87,29 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               step="0.01"
               min="0"
               value={salePrice}
-              onChange={(e) => { setSalePrice(e.target.value); setShowResult(false); }}
+              onChange={(e) => {setSalePrice(e.target.value);setShowResult(false);}}
               placeholder="0,00"
-              className="w-full h-12 pl-12 pr-3 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num focus:border-primary focus:outline-none transition-colors"
-            />
+              className="w-full h-12 pl-12 pr-3 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num focus:border-primary focus:outline-none transition-colors" />
+            
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div>
-          <label className="section-label mb-1.5 block">Embalagem</label>
+          <label className="section-label mb-1.5 block">EMBALAGEM E INSUMOS
+
+          </label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-2">R$</span>
-            <input
-              type="number"
-              inputMode="decimal"
-              step="0.01"
-              min="0"
-              value={packaging}
-              onChange={(e) => { setPackaging(e.target.value); setShowResult(false); }}
-              placeholder="0,00"
-              className="w-full h-12 pl-12 pr-3 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num focus:border-primary focus:outline-none transition-colors"
-            />
+            <input type="number" inputMode="decimal"
+            step="0.01"
+            min="0"
+            value={packaging}
+            onChange={(e) => {setPackaging(e.target.value);setShowResult(false);}}
+            placeholder="0,00"
+            className="w-full h-12 pl-12 pr-3 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num focus:border-primary focus:outline-none transition-colors" />
+            
           </div>
         </div>
       </div>
@@ -117,36 +117,36 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
       <button
         onClick={handleCalculate}
         disabled={!result || isCalculating}
-        className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-[15px] rounded-[10px] flex items-center justify-center gap-2 transition-colors active:scale-[0.98] disabled:opacity-40"
-      >
-        {isCalculating ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : (
-          <>
+        className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-[15px] rounded-[10px] flex items-center justify-center gap-2 transition-colors active:scale-[0.98] disabled:opacity-40">
+        
+        {isCalculating ?
+        <Loader2 className="w-4 h-4 animate-spin" /> :
+
+        <>
             <Zap className="w-4 h-4" />
             Calcular
           </>
-        )}
+        }
       </button>
 
-      {showResult && result && (
-        <div className="mt-4 pt-4 border-t border-border animate-fade-up">
+      {showResult && result &&
+      <div className="mt-4 pt-4 border-t border-border animate-fade-up">
           <div className="grid grid-cols-3 gap-2">
             <div className="text-center">
               <p className="section-label mb-1">Lucro</p>
               <p className={cn(
-                'font-mono text-[22px] font-bold font-mono-num leading-none',
-                result.netProfit >= 0 ? 'text-success' : 'text-danger'
-              )}>
+              'font-mono text-[22px] font-bold font-mono-num leading-none',
+              result.netProfit >= 0 ? 'text-success' : 'text-danger'
+            )}>
                 {formatCurrency(result.netProfit)}
               </p>
             </div>
             <div className="text-center">
               <p className="section-label mb-1">Margem</p>
               <p className={cn(
-                'font-mono text-[22px] font-bold font-mono-num leading-none',
-                result.realMargin >= (config?.desiredMargin || 17) ? 'text-success' : result.realMargin >= 0 ? 'text-warning' : 'text-danger'
-              )}>
+              'font-mono text-[22px] font-bold font-mono-num leading-none',
+              result.realMargin >= (config?.desiredMargin || 17) ? 'text-success' : result.realMargin >= 0 ? 'text-warning' : 'text-danger'
+            )}>
                 {result.realMargin.toFixed(1)}%
               </p>
             </div>
@@ -158,13 +158,13 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
             </div>
           </div>
           <button
-            onClick={onSaveProduct}
-            className="mt-3 text-[13px] text-primary font-medium hover:underline"
-          >
+          onClick={onSaveProduct}
+          className="mt-3 text-[13px] text-primary font-medium hover:underline">
+          
             Salvar este produto →
           </button>
         </div>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }
