@@ -202,7 +202,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                 <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-1.5">Margem</p>
                 <p className={cn(
                   'font-mono text-[20px] font-bold font-mono-num leading-none truncate',
-                  result.realMargin >= (config?.desiredMargin || 17) ? 'text-success' : result.realMargin >= 0 ? 'text-warning' : 'text-danger'
+                  getMarginStatus(result.realMargin).color
                 )}>
                   {result.realMargin.toFixed(1)}%
                 </p>
