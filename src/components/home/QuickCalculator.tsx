@@ -229,7 +229,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
             <div className="flex items-center gap-2 mt-3">
               <button
                 onClick={() => setShowAnalysis(!showAnalysis)}
-                className="flex-1 h-11 border border-border rounded-lg text-[13px] font-medium text-text-2 hover:bg-surface-2 active:scale-[0.98] transition-all"
+                className="flex-1 h-11 bg-[#1A1D27] border border-[#1F2433] rounded-lg text-[13px] font-medium text-[#8B92A5] hover:bg-surface-2 active:scale-[0.98] transition-all"
               >
                 {showAnalysis ? '↑ Fechar' : '↓ Ver análise'}
               </button>
