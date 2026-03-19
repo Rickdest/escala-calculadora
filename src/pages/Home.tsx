@@ -107,29 +107,31 @@ export default function Home() {
         {status === 'trialing' && trialEnd && (() => {
           const dLeft = Math.max(0, Math.ceil((new Date(trialEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
           return dLeft > 0 ? (
-            <div onClick={() => setShowPaywall(true)} className="rounded-xl border border-border/40 bg-card/50 p-3.5 cursor-pointer hover:bg-card/70 transition-all active:scale-[0.98] animate-fade-up">
+            <div onClick={() => setShowPaywall(true)} className="rounded-xl border border-[#1e3a5f]/40 bg-[#1e3a5f]/60 p-3.5 cursor-pointer hover:bg-[#1e3a5f]/70 transition-all active:scale-[0.98] animate-fade-up">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <span className="text-sm">⏳</span>
                   <div>
-                    <p className="text-sm font-semibold text-foreground">{dLeft} {dLeft === 1 ? 'dia' : 'dias'} de teste restantes</p>
-                    <p className="text-xs text-muted-foreground">Garanta seu acesso por R$49,90/ano →</p>
+                    <p className="text-sm font-semibold text-white">{dLeft} {dLeft === 1 ? 'dia' : 'dias'} de teste restantes</p>
+                    <p className="text-xs font-semibold text-primary">Garanta seu acesso por R$49,90/ano</p>
                   </div>
                 </div>
+                <ChevronRight className="w-4.5 h-4.5 text-white/70 flex-shrink-0" />
               </div>
             </div>
           ) : null;
         })()}
         {!isActive && status !== 'trialing' && (
-          <div onClick={() => setShowPaywall(true)} className="rounded-xl border border-border/40 bg-card/50 p-3.5 cursor-pointer hover:bg-card/70 transition-all active:scale-[0.98] animate-fade-up">
+          <div onClick={() => setShowPaywall(true)} className="rounded-xl border border-[#F97316]/20 bg-[#F97316]/8 p-3.5 cursor-pointer hover:bg-[#F97316]/12 transition-all active:scale-[0.98] animate-fade-up">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <span className="text-sm">⚡</span>
+                <span className="text-base">⚡</span>
                 <div>
-                  <p className="text-sm font-semibold text-foreground">Desbloqueie o Precify</p>
-                  <p className="text-xs text-muted-foreground">R$49,90/ano →</p>
+                  <p className="text-sm font-bold text-foreground">Seu acesso expirou</p>
+                  <p className="text-xs text-muted-foreground">R$49,90/ano — menos de R$4,16/mês</p>
                 </div>
               </div>
+              <span className="text-xs font-bold text-[#F97316] flex-shrink-0">Assinar →</span>
             </div>
           </div>
         )}
