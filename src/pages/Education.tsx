@@ -66,7 +66,29 @@ export default function Education() {
     setSaving(true);
     
     const { title, description, ...contentData } = editForm;
-    
+
+    // Validate inputs
+    if (title && title.length > 200) {
+      toast({ title: 'Erro', description: 'Título deve ter no máximo 200 caracteres.', variant: 'destructive' });
+      setSaving(false);
+      return;
+    }
+    if (description && description.length > 1000) {
+      toast({ title: 'Erro', description: 'Descrição deve ter no máximo 1000 caracteres.', variant: 'destructive' });
+      setSaving(false);
+      return;
+    }
+    if (contentData.youtube_id && !/^[a-zA-Z0-9_-]{11}$/.test(contentData.youtube_id)) {
+      toast({ title: 'Erro', description: 'ID do YouTube inválido (deve ter 11 caracteres alfanuméricos).', variant: 'destructive' });
+      setSaving(false);
+      return;
+    }
+    if (contentData.button_link && !contentData.button_link.startsWith('https://')) {
+      toast({ title: 'Erro', description: 'Link deve começar com https://', variant: 'destructive' });
+      setSaving(false);
+      return;
+    }
+
     const { error } = await supabase
       .from('education_content')
       .update({

@@ -17,7 +17,6 @@ export function useAdmin() {
 
       // Check admin role via database function (server-side validated)
       const { data, error } = await supabase.rpc('has_role', {
-        _user_id: user.id,
         _role: 'admin',
       });
 
