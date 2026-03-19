@@ -24,22 +24,19 @@ export function BottomNavigation() {
             <button
               key={path}
               onClick={() => navigate(path)}
-              className={cn(
-                'bottom-nav-item flex-1 max-w-[72px]',
-                isActive && 'bottom-nav-item-active'
-              )}
+              className="bottom-nav-item flex-1 max-w-[72px]"
             >
               <Icon 
                 className={cn(
-                  'w-5 h-5 transition-colors',
-                  isActive ? 'text-primary' : 'text-muted-foreground'
+                  'w-5 h-5 transition-colors duration-150',
+                  isActive ? 'text-primary' : 'text-text-3'
                 )} 
                 strokeWidth={isActive ? 2.5 : 2}
               />
               <span 
                 className={cn(
-                  'text-[10px] font-semibold transition-colors',
-                  isActive ? 'text-primary' : 'text-muted-foreground'
+                  'text-[10px] font-medium transition-colors duration-150',
+                  isActive ? 'text-primary' : 'text-text-3'
                 )}
               >
                 {label}
