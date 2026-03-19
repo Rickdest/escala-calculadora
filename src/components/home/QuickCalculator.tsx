@@ -208,9 +208,9 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                 </p>
               </div>
               <div>
-                <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-1.5">ROAS ideal</p>
-                <p className="font-mono text-[20px] font-bold font-mono-num leading-none text-foreground">
-                  {result.roasIdeal > 0 ? result.roasIdeal.toFixed(2) : '--'}
+                <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-1.5">ROAS empate</p>
+                <p className="font-mono text-[20px] font-bold font-mono-num leading-none text-warning">
+                  {result.roasEmpate > 0 ? result.roasEmpate.toFixed(2) : '--'}
                 </p>
               </div>
             </div>
