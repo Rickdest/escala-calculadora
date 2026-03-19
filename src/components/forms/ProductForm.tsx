@@ -258,10 +258,10 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
 
           {/* Live Calculation Preview */}
           {localCalc && (
-            <div className={cn('rounded-[14px] p-4 space-y-3 animate-fade-up border', localCalc.isAboveTarget ? 'bg-success-muted border-success/20' : 'bg-danger-muted border-danger/20')}>
+            <div className={cn('rounded-[14px] p-4 space-y-3 animate-fade-up border', getMarginStatus(localCalc.realMargin).bg, getMarginStatus(localCalc.realMargin).border)}>
               <div className="flex items-center gap-2">
-                <Calculator className={cn('w-4 h-4', localCalc.isAboveTarget ? 'text-success' : 'text-danger')} />
-                <span className={cn('font-semibold text-sm', localCalc.isAboveTarget ? 'text-success' : 'text-danger')}>Prévia do Cálculo</span>
+                <Calculator className={cn('w-4 h-4', getMarginStatus(localCalc.realMargin).color)} />
+                <span className={cn('font-semibold text-sm', getMarginStatus(localCalc.realMargin).color)}>Prévia do Cálculo</span>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
