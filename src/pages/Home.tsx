@@ -158,9 +158,9 @@ export default function Home() {
               </p>
               <p className={cn(
                 'text-[11px] mt-1',
-                stats.avgMargin >= currentStore.config.desiredMargin ? 'text-success' : 'text-warning'
+                getMarginStatus(stats.avgMargin).color
               )}>
-                {stats.avgMargin >= currentStore.config.desiredMargin ? '↑ acima da meta' : '↓ abaixo da meta'}
+                {getMarginStatus(stats.avgMargin).emoji} {getMarginStatus(stats.avgMargin).label}
               </p>
             </div>
             <div className="surface-card p-4">
