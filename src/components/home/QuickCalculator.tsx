@@ -42,7 +42,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
     const roasIdeal = isFinite(roasEmpate) && roasEmpate > 0 ? roasEmpate * 1.5 : 0;
 
     return { netProfit, realMargin, roasIdeal };
-  }, [salePrice, costPrice, config]);
+  }, [salePrice, costPrice, packaging, config]);
 
   const handleCalculate = () => {
     if (!result) return;
