@@ -13,6 +13,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
   const config = currentStore?.config;
   const [costPrice, setCostPrice] = useState('');
   const [salePrice, setSalePrice] = useState('');
+  const [packaging, setPackaging] = useState('');
   const [showResult, setShowResult] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
 
@@ -32,7 +33,8 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
     const aceleraVal = config?.shopeeAcelera || 'none';
     const aceleraCost = aceleraVal === 'indicado' ? sp * 0.025 : aceleraVal === 'nao_indicado' ? sp * 0.035 : 0;
 
-    const totalCosts = cp + totalShopeeFee + taxesCost + affiliateCost + campaignsCost + aceleraCost;
+    const packagingCost = parseFloat(packaging) || 0;
+    const totalCosts = cp + packagingCost + totalShopeeFee + taxesCost + affiliateCost + campaignsCost + aceleraCost;
     const netProfit = sp - totalCosts;
     const realMargin = sp > 0 ? (netProfit / sp) * 100 : 0;
 
@@ -40,7 +42,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
     const roasIdeal = isFinite(roasEmpate) && roasEmpate > 0 ? roasEmpate * 1.5 : 0;
 
     return { netProfit, realMargin, roasIdeal };
-  }, [salePrice, costPrice, config]);
+  }, [salePrice, costPrice, packaging, config]);
 
   const handleCalculate = () => {
     if (!result) return;
@@ -86,6 +88,25 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               min="0"
               value={salePrice}
               onChange={(e) => { setSalePrice(e.target.value); setShowResult(false); }}
+              placeholder="0,00"
+              className="w-full h-12 pl-12 pr-3 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num focus:border-primary focus:outline-none transition-colors"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 mb-3">
+        <div>
+          <label className="section-label mb-1.5 block">Embalagem</label>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-2">R$</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              step="0.01"
+              min="0"
+              value={packaging}
+              onChange={(e) => { setPackaging(e.target.value); setShowResult(false); }}
               placeholder="0,00"
               className="w-full h-12 pl-12 pr-3 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num focus:border-primary focus:outline-none transition-colors"
             />
