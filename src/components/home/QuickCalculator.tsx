@@ -186,62 +186,59 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
       {showResult && result && projection && (
         <div className="mt-4 animate-fade-up">
           {/* Result Card */}
-          <div className="bg-surface border border-border rounded-[12px] p-5">
-            {/* Hero — Lucro */}
+          <div className="bg-surface border border-border rounded-[12px] overflow-hidden">
+            {/* BLOCO 1 — Lucro */}
             <div className="py-4 text-center">
-              <p className="uppercase text-[11px] font-medium text-text-3 tracking-wider mb-2">Lucro por venda</p>
+              <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-2">Lucro por venda</p>
               <p className={cn(
-                'font-mono text-[36px] font-bold font-mono-num leading-none',
+                'font-mono text-[40px] font-bold font-mono-num leading-none',
                 result.netProfit >= 0 ? 'text-success' : 'text-danger'
               )}>
                 {formatCurrency(result.netProfit)}
               </p>
             </div>
 
-            {/* Pills — Margem + ROAS */}
-            <div className="flex gap-2 mb-4">
-              <div className="flex-1 bg-surface-2 rounded-[10px] px-4 py-2.5 text-center">
-                <p className={cn(
-                  'font-mono text-[20px] font-bold font-mono-num leading-none',
-                  result.realMargin >= (config?.desiredMargin || 17) ? 'text-success' : result.realMargin >= 0 ? 'text-warning' : 'text-danger'
-                )}>
-                  {result.realMargin.toFixed(1)}%
-                </p>
-                <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mt-1">margem</p>
-              </div>
-              <div className="flex-1 bg-surface-2 rounded-[10px] px-4 py-2.5 text-center">
-                <p className="font-mono text-[20px] font-bold font-mono-num leading-none text-warning">
-                  {result.roasEmpate > 0 ? result.roasEmpate.toFixed(2) : '--'}
-                </p>
-                <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mt-1">roas empate</p>
-              </div>
+            {/* BLOCO 2 — Margem + ROAS inline */}
+            <div className="border-t border-border py-3.5 text-center flex items-baseline justify-center gap-1">
+              <span className={cn(
+                'font-mono text-[18px] font-bold font-mono-num',
+                result.realMargin >= (config?.desiredMargin || 17) ? 'text-success' : result.realMargin >= 0 ? 'text-warning' : 'text-danger'
+              )}>
+                {result.realMargin.toFixed(1)}% Margem
+              </span>
+              <span className="text-text-3 text-[14px] mx-1">·</span>
+              <span className="font-mono text-[18px] font-bold font-mono-num text-warning">
+                {result.roasEmpate > 0 ? result.roasEmpate.toFixed(2) : '--'} ROAS Empate
+              </span>
             </div>
 
-            {/* Aviso de taxas */}
+            {/* BLOCO 3 — Aviso taxas */}
             {!hasGlobalTaxes && (
-              <button
-                onClick={() => navigate('/settings')}
-                className="w-full flex items-center justify-between mb-3 hover:opacity-80 transition-opacity"
-              >
-                <span className="text-[12px] text-text-2">⚠️ Taxas não configuradas</span>
-                <span className="text-[12px] text-accent font-medium">Configurar →</span>
-              </button>
+              <div className="border-t border-border py-3">
+                <button
+                  onClick={() => navigate('/settings')}
+                  className="w-full text-center hover:opacity-80 transition-opacity"
+                >
+                  <span className="text-[12px] text-text-2">⚠️ Taxas não configuradas</span>
+                  <span className="text-text-3 text-[12px] mx-1">·</span>
+                  <span className="text-[12px] text-accent font-medium">Configurar →</span>
+                </button>
+              </div>
             )}
 
-            {/* Ações */}
-            <div className="flex items-center pt-3 border-t border-border">
+            {/* BLOCO 4 — Ações */}
+            <div className="border-t border-border py-3.5 px-4 flex items-center justify-between">
               <button
                 onClick={() => setShowAnalysis(!showAnalysis)}
-                className="text-[13px] text-text-2 font-medium hover:text-foreground transition-colors"
+                className="text-[13px] text-text-2 font-medium hover:text-foreground transition-colors whitespace-nowrap"
               >
                 {showAnalysis ? '↑ Fechar análise' : '↓ Ver análise completa'}
               </button>
-              <span className="text-text-3 text-[13px] mx-2">·</span>
               <button
                 onClick={() => onSaveProduct({ costPrice, salePrice, packaging })}
-                className="text-[13px] text-accent font-bold hover:underline"
+                className="text-[13px] text-accent font-bold hover:underline whitespace-nowrap"
               >
-                💾 Salvar produto →
+                Salvar produto →
               </button>
             </div>
           </div>
