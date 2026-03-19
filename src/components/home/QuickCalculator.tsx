@@ -189,41 +189,35 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
           <div className="mt-2 space-y-5">
             {/* Métricas — 3 colunas inline */}
             <div className="grid grid-cols-3 text-center gap-1">
-              <div>
+              <div className="min-w-0 overflow-hidden">
                 <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-1.5">Lucro</p>
                 <p className={cn(
-                  'font-mono text-[20px] font-bold font-mono-num leading-none',
+                  'font-mono text-[20px] font-bold font-mono-num leading-none truncate',
                   result.netProfit >= 0 ? 'text-success' : 'text-danger'
                 )}>
                   {formatCurrency(result.netProfit)}
                 </p>
               </div>
-              <div>
+              <div className="min-w-0 overflow-hidden">
                 <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-1.5">Margem</p>
                 <p className={cn(
-                  'font-mono text-[20px] font-bold font-mono-num leading-none',
+                  'font-mono text-[20px] font-bold font-mono-num leading-none truncate',
                   result.realMargin >= (config?.desiredMargin || 17) ? 'text-success' : result.realMargin >= 0 ? 'text-warning' : 'text-danger'
                 )}>
                   {result.realMargin.toFixed(1)}%
                 </p>
               </div>
-              <div>
+              <div className="min-w-0 overflow-hidden">
                 <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-1.5">ROAS empate</p>
-                <p className="font-mono text-[20px] font-bold font-mono-num leading-none text-warning">
-                  {result.roasEmpate > 0 ? result.roasEmpate.toFixed(2) : '--'}
-                </p>
+                {result.roasEmpate > 0 ? (
+                  <p className="font-mono text-[20px] font-bold font-mono-num leading-none text-warning truncate">
+                    {result.roasEmpate.toFixed(2)}
+                  </p>
+                ) : (
+                  <p className="text-[12px] font-medium text-danger">Prejuízo</p>
+                )}
               </div>
             </div>
-
-            {/* Aviso taxas */}
-            {!hasGlobalTaxes && (
-              <button
-                onClick={() => navigate('/settings')}
-                className="w-full text-center hover:opacity-80 transition-opacity"
-              >
-                <span className="text-[12px] text-warning">⚠ Configure suas taxas para resultado preciso</span>
-              </button>
-            )}
 
             {/* Ações */}
             <div className="flex items-center gap-2 mt-3">
