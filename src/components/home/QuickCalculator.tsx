@@ -185,64 +185,71 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
 
       {showResult && result && projection && (
         <div className="mt-4 animate-fade-up">
-          <div className="border-t border-border pt-4">
-            <div className="grid grid-cols-3 gap-2">
-              <div className="text-center">
-                <p className="section-label mb-1">Lucro</p>
+          {/* Result Card */}
+          <div className="bg-surface border border-border rounded-[12px] overflow-hidden">
+            {/* BLOCO 1 — LUCRO */}
+            <div className="py-5 px-5 text-center">
+              <p className="uppercase text-[11px] font-medium text-text-3 tracking-wider mb-2">Lucro por venda</p>
+              <p className={cn(
+                'font-mono text-[42px] font-bold font-mono-num leading-none',
+                result.netProfit >= 0 ? 'text-success' : 'text-danger'
+              )}>
+                {formatCurrency(result.netProfit)}
+              </p>
+            </div>
+
+            {/* BLOCO 2 — MARGEM + ROAS EMPATE */}
+            <div className="border-t border-border grid grid-cols-2">
+              <div className="py-4 px-4 text-center">
+                <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-1.5">Margem</p>
                 <p className={cn(
-                  'font-mono text-[22px] font-bold font-mono-num leading-none',
-                  result.netProfit >= 0 ? 'text-success' : 'text-danger'
-                )}>
-                  {formatCurrency(result.netProfit)}
-                </p>
-              </div>
-              <div className="text-center">
-                <p className="section-label mb-1">Margem</p>
-                <p className={cn(
-                  'font-mono text-[22px] font-bold font-mono-num leading-none',
+                  'font-mono text-[26px] font-bold font-mono-num leading-none',
                   result.realMargin >= (config?.desiredMargin || 17) ? 'text-success' : result.realMargin >= 0 ? 'text-warning' : 'text-danger'
                 )}>
                   {result.realMargin.toFixed(1)}%
                 </p>
               </div>
-              <div className="text-center">
-                <p className="section-label mb-1">ROAS Ideal</p>
-                <p className="font-mono text-[22px] font-bold font-mono-num leading-none text-primary">
-                  {result.roasIdeal > 0 ? result.roasIdeal.toFixed(2) : '--'}
+              <div className="py-4 px-4 text-center border-l border-border">
+                <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-1.5">ROAS Empate</p>
+                <p className="font-mono text-[26px] font-bold font-mono-num leading-none text-warning">
+                  {result.roasEmpate > 0 ? result.roasEmpate.toFixed(2) : '--'}
                 </p>
+                <p className="text-[11px] text-text-3 mt-1.5">mínimo para não ter prejuízo</p>
               </div>
             </div>
 
-            {/* Context line */}
-            {hasGlobalTaxes ? (
-              <p className="text-[11px] text-text-3 text-center mt-2">Baseado nas taxas da sua loja</p>
-            ) : (
-              <button
-                onClick={() => navigate('/settings')}
-                className="w-full text-[11px] text-warning text-center mt-2 hover:underline"
-              >
-                ⚠️ Configure suas taxas para resultado preciso
-              </button>
+            {/* BLOCO 3 — AVISO DE TAXAS */}
+            {!hasGlobalTaxes && (
+              <div className="border-t border-border px-4 py-3.5">
+                <button
+                  onClick={() => navigate('/settings')}
+                  className="w-full flex items-center justify-between hover:opacity-80 transition-opacity"
+                >
+                  <span className="text-[12px] text-text-2">⚠️ Taxas não configuradas</span>
+                  <span className="text-[12px] text-primary font-medium">Configurar →</span>
+                </button>
+              </div>
             )}
 
-            <div className="flex items-center justify-center gap-2 mt-3">
+            {/* BLOCO 4 — AÇÕES */}
+            <div className="border-t border-border flex items-center px-4 py-3.5">
               <button
                 onClick={() => setShowAnalysis(!showAnalysis)}
-                className="text-[13px] text-text-2 font-medium hover:text-foreground transition-colors flex items-center gap-1"
+                className="text-[13px] text-text-2 font-medium hover:text-foreground transition-colors"
               >
-                {showAnalysis ? 'Fechar análise' : 'Ver análise completa'}
-                {showAnalysis ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                {showAnalysis ? '↑ Fechar análise' : '↓ Ver análise completa'}
               </button>
-              <span className="text-text-3 text-[13px]">·</span>
+              <span className="text-text-3 text-[13px] mx-2">·</span>
               <button
                 onClick={() => onSaveProduct({ costPrice, salePrice, packaging })}
-                className="text-[13px] text-primary font-medium hover:underline"
+                className="text-[13px] text-primary font-bold hover:underline"
               >
-                Salvar produto →
+                💾 Salvar produto →
               </button>
             </div>
           </div>
 
+          {/* ANÁLISE COMPLETA */}
           {showAnalysis && (
             <div className="mt-3 bg-surface-2 rounded-[10px] p-3 animate-fade-up space-y-0">
               {/* Custos */}
@@ -270,8 +277,6 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                   )}
                   <div className="border-t border-border pt-1.5 mt-1.5">
                     <CostRow label="Total de custos" value={result.totalCosts} format={formatCurrency} bold />
-                    <div className="mt-1.5" />
-                    <CostRow label="Preço de custo" value={result.cp} format={formatCurrency} />
                     <div className="mt-1.5" />
                     <CostRow label="Preço de venda" value={result.sp} format={formatCurrency} />
                   </div>
@@ -318,7 +323,6 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                     <span className="font-mono text-[14px] font-bold font-mono-num text-primary">{result.roasIdeal > 0 ? result.roasIdeal.toFixed(2) : '--'}</span>
                   </div>
 
-                  {/* ROAS Progress Bar */}
                   {result.roasEmpate > 0 && result.roasIdeal > 0 && (
                     <div className="pt-2">
                       <div className="flex justify-between text-[10px] text-text-3 mb-1">
@@ -327,14 +331,8 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                         <span>Ideal</span>
                       </div>
                       <div className="relative h-1.5 bg-background rounded-full overflow-hidden">
-                        <div
-                          className="absolute left-0 top-0 h-full bg-primary/30 rounded-full"
-                          style={{ width: '100%' }}
-                        />
-                        <div
-                          className="absolute left-0 top-0 h-full bg-primary rounded-full transition-all"
-                          style={{ width: `${roasProgress}%` }}
-                        />
+                        <div className="absolute left-0 top-0 h-full bg-primary/30 rounded-full" style={{ width: '100%' }} />
+                        <div className="absolute left-0 top-0 h-full bg-primary rounded-full transition-all" style={{ width: `${roasProgress}%` }} />
                       </div>
                       <div className="relative h-2 mt-0.5">
                         <div
