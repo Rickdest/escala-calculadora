@@ -44,8 +44,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <TrialExpiredBlock />;
   }
 
-  // Also block if not active and not in trial and not free
-  if (!isActive && status !== 'loading' && status !== 'free') {
+  if (!isActive && status !== 'loading') {
     return <TrialExpiredBlock />;
   }
 
