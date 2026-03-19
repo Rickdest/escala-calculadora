@@ -32,36 +32,56 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const { data, error } = await supabase
+      // 1. Check profile for trial fields
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('trial_inicio, trial_fim, status')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      // 2. Check subscriptions table for paid status
+      const { data: sub, error: subErr } = await supabase
         .from('subscriptions')
         .select('*')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching subscription:', error);
-        setStatus('free');
-      } else if (data) {
-        if (data.status === 'active') {
+      if (subErr) {
+        console.error('Error fetching subscription:', subErr);
+      }
+
+      // Paid subscription takes priority
+      if (sub) {
+        if (sub.status === 'active') {
           setStatus('active');
-        } else if (data.status === 'trialing' && data.trial_end) {
-          const trialEndDate = new Date(data.trial_end);
+          setPlan(sub.plan || 'pro');
+          setTrialEnd(sub.trial_end || null);
+          setLoading(false);
+          return;
+        }
+        if (sub.status === 'trialing' && sub.trial_end) {
+          const trialEndDate = new Date(sub.trial_end);
           if (trialEndDate < new Date()) {
-            // Trial expired → treat as canceled, block access
             setStatus('canceled');
           } else {
             setStatus('trialing');
           }
-        } else if (data.status === 'canceled' || data.status === 'past_due') {
-          // Always block canceled/past_due, no exceptions
-          setStatus(data.status as SubscriptionStatus);
-        } else {
-          setStatus(data.status as SubscriptionStatus);
+          setPlan(sub.plan || 'pro');
+          setTrialEnd(sub.trial_end);
+          setLoading(false);
+          return;
         }
-        setPlan(data.plan || 'free');
-        setTrialEnd(data.trial_end || null);
-      } else {
-        // No subscription found - also check by email
+        if (sub.status === 'canceled' || sub.status === 'past_due') {
+          setStatus(sub.status as SubscriptionStatus);
+          setPlan(sub.plan || 'free');
+          setTrialEnd(sub.trial_end || null);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // No paid sub found — also check by email
+      if (!sub) {
         const { data: emailSub } = await supabase
           .from('subscriptions')
           .select('*')
@@ -69,18 +89,55 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
           .maybeSingle();
 
         if (emailSub) {
-          // Link subscription to user
-          if (emailSub.user_id === '00000000-0000-0000-0000-000000000000') {
-            // This was a pre-registered subscription, update user_id
-            // We can't update due to RLS, but we can still read status
-          }
           setStatus(emailSub.status as SubscriptionStatus);
           setPlan(emailSub.plan || 'free');
           setTrialEnd(emailSub.trial_end || null);
-        } else {
-          setStatus('free');
+          setLoading(false);
+          return;
         }
       }
+
+      // Fall back to profile trial fields
+      if (profile) {
+        const profileStatus = (profile as any).status as string | null;
+        const trialFim = (profile as any).trial_fim as string | null;
+
+        if (profileStatus === 'ativo') {
+          setStatus('active');
+          setPlan('pro');
+          setTrialEnd(null);
+          setLoading(false);
+          return;
+        }
+
+        if (profileStatus === 'expirado' || profileStatus === 'cancelado') {
+          setStatus('canceled');
+          setPlan('free');
+          setTrialEnd(trialFim || null);
+          setLoading(false);
+          return;
+        }
+
+        if (profileStatus === 'trial' && trialFim) {
+          const end = new Date(trialFim);
+          if (end > new Date()) {
+            setStatus('trialing');
+            setPlan('pro');
+            setTrialEnd(trialFim);
+          } else {
+            setStatus('canceled');
+            setPlan('free');
+            setTrialEnd(trialFim);
+          }
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Nothing found at all
+      setStatus('free');
+      setPlan('free');
+      setTrialEnd(null);
     } catch (err) {
       console.error('Subscription check failed:', err);
       setStatus('free');
