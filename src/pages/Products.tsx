@@ -324,8 +324,8 @@ export default function Products() {
                         </div>
                         <div className="text-right flex-shrink-0">
                           <div className="flex items-center gap-1.5 justify-end">
-                            {calc.isAboveTarget ? <TrendingUp className="w-3.5 h-3.5 text-success" /> : <TrendingDown className="w-3.5 h-3.5 text-destructive" />}
-                            <span className={cn('font-mono font-bold text-base font-mono-num', calc.isAboveTarget ? 'text-success' : 'text-destructive')}>
+                            {calc.realMargin >= 0 ? <TrendingUp className={cn('w-3.5 h-3.5', getMarginStatus(calc.realMargin).color)} /> : <TrendingDown className={cn('w-3.5 h-3.5', getMarginStatus(calc.realMargin).color)} />}
+                            <span className={cn('font-mono font-bold text-base font-mono-num', getMarginStatus(calc.realMargin).color)}>
                               {calc.realMargin.toFixed(1)}%
                             </span>
                           </div>

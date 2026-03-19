@@ -344,7 +344,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
               </div>
               <div className="bg-surface-2 rounded-lg p-3">
                 <p className="section-label">Margem de Lucro</p>
-                <p className={cn('text-sm font-bold font-mono font-mono-num mt-1', localCalc ? (monthlyMargin >= 15 ? 'text-success' : monthlyMargin >= 0 ? 'text-warning' : 'text-destructive') : 'text-foreground')}>{localCalc ? `${monthlyMargin.toFixed(1)}%` : '--'}</p>
+                <p className={cn('text-sm font-bold font-mono font-mono-num mt-1', localCalc ? getMarginStatus(monthlyMargin).color : 'text-foreground')}>{localCalc ? `${monthlyMargin.toFixed(1)}%` : '--'}</p>
               </div>
             </div>
             {localCalc && (

@@ -218,10 +218,10 @@ export default function Home() {
                     <span className="font-medium text-foreground truncate max-w-[140px] text-[15px]">{product.name}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={cn('font-mono text-[15px] font-semibold font-mono-num', calc.isAboveTarget ? 'text-success' : 'text-danger')}>
+                    <span className={cn('font-mono text-[15px] font-semibold font-mono-num', getMarginStatus(calc.realMargin).color)}>
                       {calc.realMargin.toFixed(1)}%
                     </span>
-                    <span className={cn('w-1.5 h-1.5 rounded-full', calc.isAboveTarget ? 'bg-success' : 'bg-danger')} />
+                    <span className={cn('w-1.5 h-1.5 rounded-full', getMarginStatus(calc.realMargin).color.replace('text-', 'bg-'))} />
                   </div>
                 </button>
               ))}

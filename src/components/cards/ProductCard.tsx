@@ -148,7 +148,7 @@ export function ProductCard({ product, calculation, onEdit, onDuplicate, onDelet
           </div>
           <div className={cn(
             'px-3 py-2 rounded-xl text-xs font-bold',
-            marginStatus === 'success' ? 'bg-success-muted text-success' : 'bg-danger-muted text-danger'
+            status.bg, status.color
           )}>
             {calculation.marginDifference >= 0 ? '+' : ''}{calculation.marginDifference.toFixed(1)}%
           </div>

@@ -383,12 +383,8 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-[13px] text-text-2">Status</span>
-                    <span className="text-[13px] font-medium">
-                      {projection.profit > 0 && result.realMargin >= (config?.desiredMargin || 17)
-                        ? '🟢 Lucrativo'
-                        : projection.profit >= 0
-                          ? '🟡 Atenção'
-                          : '🔴 Prejuízo'}
+                    <span className={cn('text-[13px] font-medium', getMarginStatus(result.realMargin).color)}>
+                      {getMarginStatus(result.realMargin).emoji} {getMarginStatus(result.realMargin).label}
                     </span>
                   </div>
                 </div>

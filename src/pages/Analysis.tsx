@@ -255,14 +255,14 @@ export default function Analysis() {
                     
                     <div className="text-right flex-shrink-0">
                       <div className="flex items-center gap-1.5 justify-end">
-                        {calc.isAboveTarget ? (
-                          <TrendingUp className="w-4 h-4 text-success" />
+                        {calc.realMargin >= 0 ? (
+                          <TrendingUp className={cn('w-4 h-4', getMarginStatus(calc.realMargin).color)} />
                         ) : (
-                          <TrendingDown className="w-4 h-4 text-danger" />
+                          <TrendingDown className={cn('w-4 h-4', getMarginStatus(calc.realMargin).color)} />
                         )}
                         <span className={cn(
                           'font-extrabold text-lg',
-                          calc.isAboveTarget ? 'text-success' : 'text-danger'
+                          getMarginStatus(calc.realMargin).color
                         )}>
                           {calc.realMargin.toFixed(1)}%
                         </span>
