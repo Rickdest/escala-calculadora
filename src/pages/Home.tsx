@@ -31,6 +31,7 @@ export default function Home() {
   const { isActive, status, trialEnd } = useSubscription();
   const [showProductForm, setShowProductForm] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [prefillProduct, setPrefillProduct] = useState<Partial<import('@/types/store').Product> | null>(null);
 
   if (isLoading) {
     return (
