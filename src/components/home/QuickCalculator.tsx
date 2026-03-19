@@ -186,61 +186,57 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
       {showResult && result && projection && (
         <div className="mt-4 animate-fade-up">
           {/* Result Card */}
-          <div className="bg-surface border border-border rounded-[12px] overflow-hidden">
-            {/* Hero — Lucro */}
-            <div className="pt-5 pb-4 px-5 text-center">
-              <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-1">Lucro por venda</p>
-              <p className={cn(
-                'font-mono text-[38px] font-bold font-mono-num leading-none',
-                result.netProfit >= 0 ? 'text-success' : 'text-danger'
-              )}>
-                {formatCurrency(result.netProfit)}
-              </p>
-            </div>
-
-            {/* Métricas — Grid compacto */}
-            <div className="px-4 pb-4 grid grid-cols-2 gap-2">
-              <div className="bg-surface-2 rounded-lg px-3 py-2.5">
-                <p className="uppercase text-[9px] font-medium text-text-3 tracking-wider mb-0.5">Margem líquida</p>
+          <div className="mt-2 space-y-5">
+            {/* Métricas — 3 colunas inline */}
+            <div className="grid grid-cols-3 text-center gap-1">
+              <div>
+                <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-1.5">Lucro</p>
                 <p className={cn(
-                  'font-mono text-[22px] font-bold font-mono-num leading-tight',
+                  'font-mono text-[20px] font-bold font-mono-num leading-none',
+                  result.netProfit >= 0 ? 'text-success' : 'text-danger'
+                )}>
+                  {formatCurrency(result.netProfit)}
+                </p>
+              </div>
+              <div>
+                <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-1.5">Margem</p>
+                <p className={cn(
+                  'font-mono text-[20px] font-bold font-mono-num leading-none',
                   result.realMargin >= (config?.desiredMargin || 17) ? 'text-success' : result.realMargin >= 0 ? 'text-warning' : 'text-danger'
                 )}>
                   {result.realMargin.toFixed(1)}%
                 </p>
               </div>
-              <div className="bg-surface-2 rounded-lg px-3 py-2.5">
-                <p className="uppercase text-[9px] font-medium text-text-3 tracking-wider mb-0.5">ROAS empate</p>
-                <p className="font-mono text-[22px] font-bold font-mono-num leading-tight text-warning">
-                  {result.roasEmpate > 0 ? result.roasEmpate.toFixed(2) : '--'}
+              <div>
+                <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-1.5">ROAS ideal</p>
+                <p className="font-mono text-[20px] font-bold font-mono-num leading-none text-foreground">
+                  {result.roasIdeal > 0 ? result.roasIdeal.toFixed(2) : '--'}
                 </p>
               </div>
             </div>
 
             {/* Aviso taxas */}
             {!hasGlobalTaxes && (
-              <div className="border-t border-border">
-                <button
-                  onClick={() => navigate('/settings')}
-                  className="w-full px-4 py-2.5 flex items-center justify-between hover:bg-surface-2/50 transition-colors"
-                >
-                  <span className="text-[12px] text-text-3">⚠️ Taxas não configuradas</span>
-                  <span className="text-[12px] text-accent font-medium">Configurar →</span>
-                </button>
-              </div>
+              <button
+                onClick={() => navigate('/settings')}
+                className="w-full text-center hover:opacity-80 transition-opacity"
+              >
+                <span className="text-[12px] text-warning">⚠ Configure suas taxas para resultado preciso</span>
+              </button>
             )}
 
             {/* Ações */}
-            <div className="border-t border-border px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center justify-center gap-1.5 text-[13px]">
               <button
                 onClick={() => setShowAnalysis(!showAnalysis)}
-                className="text-[13px] text-text-2 font-medium hover:text-foreground transition-colors whitespace-nowrap"
+                className="text-text-2 font-medium hover:text-foreground transition-colors"
               >
-                {showAnalysis ? '↑ Fechar análise' : '↓ Ver análise completa'}
+                Ver análise completa {showAnalysis ? '↑' : '↓'}
               </button>
+              <span className="text-text-3">·</span>
               <button
                 onClick={() => onSaveProduct({ costPrice, salePrice, packaging })}
-                className="text-[13px] text-accent font-bold hover:underline whitespace-nowrap"
+                className="text-accent font-bold hover:underline"
               >
                 Salvar produto →
               </button>
