@@ -270,15 +270,14 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                 </div>
 
                 {!hasGlobalTaxes && (
-                  <div className="mt-3 flex items-start gap-1.5 bg-background/50 rounded-lg p-2">
-                    <Info className="w-3.5 h-3.5 text-text-3 mt-0.5 shrink-0" />
-                    <div>
-                      <p className="text-[11px] text-text-3">Configure impostos e taxas em Configurações para cálculo mais preciso.</p>
-                      <button onClick={() => navigate('/settings')} className="text-[11px] text-primary font-medium hover:underline mt-0.5">
-                        Ir para Configurações →
-                      </button>
-                    </div>
-                  </div>
+                  <button
+                    onClick={() => navigate('/settings')}
+                    className="mt-3 w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg border border-border/40 bg-background/30 hover:bg-background/60 transition-colors group"
+                  >
+                    <Info className="w-3.5 h-3.5 text-text-3 shrink-0" />
+                    <span className="text-[11px] text-text-3 flex-1 text-left">Configure impostos e taxas para cálculo mais preciso.</span>
+                    <span className="text-[11px] text-primary font-medium group-hover:underline shrink-0">Configurar →</span>
+                  </button>
                 )}
               </div>
 
