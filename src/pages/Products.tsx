@@ -169,7 +169,7 @@ export default function Products() {
             {stats && stats.totalProducts > 0 && (
               <div className="flex items-center gap-3 animate-fade-up">
                 <span className="text-xs text-text-2">Margem média:</span>
-                <span className={cn('text-sm font-bold font-mono font-mono-num', stats.avgMargin >= currentStore.config.desiredMargin ? 'text-success' : 'text-warning')}>
+                <span className={cn('text-sm font-bold font-mono font-mono-num', getMarginStatus(stats.avgMargin).color)}>
                   {stats.avgMargin.toFixed(1)}%
                 </span>
                 <div className="flex-1 h-1 bg-surface-2 rounded-full overflow-hidden">
