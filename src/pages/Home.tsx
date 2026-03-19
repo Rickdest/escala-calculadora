@@ -240,7 +240,7 @@ export default function Home() {
         )}
       </div>
 
-      {showProductForm && <ProductForm product={prefillProduct} onClose={() => { setShowProductForm(false); setPrefillProduct(null); }} onSave={handleSaveProduct} />}
+      {showProductForm && <ProductForm product={prefillProduct as any} onClose={() => { setShowProductForm(false); setPrefillProduct(null); }} onSave={handleSaveProduct} />}
       <SubscriptionModal open={showPaywall} onClose={() => setShowPaywall(false)} />
       <DailyOfferModal />
     </AppLayout>
