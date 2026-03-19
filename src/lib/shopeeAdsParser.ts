@@ -135,7 +135,6 @@ export function parseShopeeCSV(csvContent: string): ShopeeAdsReport | null {
       totals: { totalSpend, totalGmv, totalItemsSold, avgRoas },
     };
   } catch (e) {
-    console.error('Error parsing Shopee CSV:', e);
     return null;
   }
 }

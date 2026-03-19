@@ -155,7 +155,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         }
       }
     } catch (err) {
-      console.error('Error loading data:', err);
       toast.error('Erro ao carregar dados da nuvem');
     } finally {
       setIsLoading(false);

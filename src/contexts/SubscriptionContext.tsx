@@ -136,7 +136,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       setPlan('free');
       setTrialEnd(null);
     } catch (err) {
-      console.error('Subscription check failed:', err);
       setStatus('free');
     } finally {
       setLoading(false);
