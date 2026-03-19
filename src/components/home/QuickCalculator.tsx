@@ -310,21 +310,31 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                   </div>
 
                   {result.roasEmpate > 0 && result.roasIdeal > 0 && (
-                    <div className="pt-2">
-                      <div className="flex justify-between text-[10px] text-text-3 mb-1">
+                    <div className="pt-3 px-0">
+                      {/* Labels topo */}
+                      <div className="flex justify-between text-[10px] text-text-3 mb-1.5">
                         <span>Empate</span>
                         <span>Saudável</span>
                         <span>Ideal</span>
                       </div>
-                      <div className="relative h-1.5 bg-background rounded-full overflow-hidden">
-                        <div className="absolute left-0 top-0 h-full bg-primary/30 rounded-full" style={{ width: '100%' }} />
-                        <div className="absolute left-0 top-0 h-full bg-primary rounded-full transition-all" style={{ width: `${roasProgress}%` }} />
-                      </div>
-                      <div className="relative h-2 mt-0.5">
+                      {/* Barra */}
+                      <div className="relative h-1 rounded-[4px] overflow-hidden" style={{ backgroundColor: '#1F2433' }}>
                         <div
-                          className="absolute top-0 w-1.5 h-1.5 rounded-full bg-primary border border-background"
-                          style={{ left: `${roasProgress}%`, transform: 'translateX(-50%)' }}
+                          className="absolute inset-0 rounded-[4px]"
+                          style={{ background: 'linear-gradient(to right, #EF4444, #EAB308, #22C55E)' }}
                         />
+                      </div>
+                      {/* Marcadores */}
+                      <div className="relative h-3 mt-[-6px]">
+                        <div className="absolute top-0 left-0 w-2 h-2 rounded-full" style={{ backgroundColor: '#EF4444', transform: 'translateX(-50%)' }} />
+                        <div className="absolute top-0 left-1/2 w-2 h-2 rounded-full" style={{ backgroundColor: '#EAB308', transform: 'translateX(-50%)' }} />
+                        <div className="absolute top-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white" style={{ backgroundColor: '#F97316', transform: 'translateX(50%)' }} />
+                      </div>
+                      {/* Valores abaixo */}
+                      <div className="flex justify-between mt-0.5">
+                        <span className="font-mono text-[10px] font-mono-num" style={{ color: '#EF4444' }}>{result.roasEmpate.toFixed(2)}</span>
+                        <span className="font-mono text-[10px] font-mono-num" style={{ color: '#EAB308' }}>{result.roasSaudavel.toFixed(2)}</span>
+                        <span className="font-mono text-[12px] font-bold font-mono-num" style={{ color: '#F97316' }}>{result.roasIdeal.toFixed(2)}</span>
                       </div>
                     </div>
                   )}
