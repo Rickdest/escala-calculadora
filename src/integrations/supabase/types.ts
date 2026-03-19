@@ -519,10 +519,30 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_own_profile_protected: {
+        Args: never
+        Returns: {
+          hotmart_email: string
+          hotmart_status: string
+          status: string
+          trial_fim: string
+          trial_inicio: string
+        }[]
+      }
       has_active_subscription: { Args: never; Returns: boolean }
       has_role: {
         Args: { _role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean
+      }
+      update_subscription_status: {
+        Args: {
+          p_hotmart_email?: string
+          p_hotmart_status?: string
+          p_status: string
+          p_trial_fim?: string
+          p_user_id: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
