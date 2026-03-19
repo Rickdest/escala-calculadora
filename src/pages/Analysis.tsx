@@ -129,7 +129,7 @@ export default function Analysis() {
             <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-1">Margem Média</p>
             <p className={cn(
               'number-xl',
-              stats.avgMargin >= currentStore.config.desiredMargin ? 'text-success' : 'text-warning'
+              getMarginStatus(stats.avgMargin).color
             )}>
               {stats.avgMargin.toFixed(1)}%
             </p>
