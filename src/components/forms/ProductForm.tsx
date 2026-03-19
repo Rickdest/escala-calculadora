@@ -271,8 +271,8 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                 <div className="text-right">
                   <p className="section-label mb-0.5">Margem Real</p>
                   <div className="flex items-center justify-end gap-1.5">
-                    {localCalc.isAboveTarget ? <TrendingUp className="w-4 h-4 text-success" /> : <TrendingDown className="w-4 h-4 text-danger" />}
-                    <span className={cn('font-mono text-2xl font-bold font-mono-num', localCalc.isAboveTarget ? 'text-success' : 'text-danger')}>{localCalc.realMargin.toFixed(1)}%</span>
+                    {localCalc.realMargin >= 0 ? <TrendingUp className={cn('w-4 h-4', getMarginStatus(localCalc.realMargin).color)} /> : <TrendingDown className={cn('w-4 h-4', getMarginStatus(localCalc.realMargin).color)} />}
+                    <span className={cn('font-mono text-2xl font-bold font-mono-num', getMarginStatus(localCalc.realMargin).color)}>{localCalc.realMargin.toFixed(1)}%</span>
                   </div>
                 </div>
               </div>
