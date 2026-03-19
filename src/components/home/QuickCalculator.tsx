@@ -13,6 +13,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
   const config = currentStore?.config;
   const [costPrice, setCostPrice] = useState('');
   const [salePrice, setSalePrice] = useState('');
+  const [packaging, setPackaging] = useState('');
   const [showResult, setShowResult] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
 
