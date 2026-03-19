@@ -268,7 +268,6 @@ export type Database = {
           description: string | null
           has_variations: boolean | null
           id: string
-          image_url: string | null
           min_stock_quantity: number | null
           name: string
           packaging_cost: number | null
@@ -290,7 +289,6 @@ export type Database = {
           description?: string | null
           has_variations?: boolean | null
           id?: string
-          image_url?: string | null
           min_stock_quantity?: number | null
           name: string
           packaging_cost?: number | null
@@ -312,7 +310,6 @@ export type Database = {
           description?: string | null
           has_variations?: boolean | null
           id?: string
-          image_url?: string | null
           min_stock_quantity?: number | null
           name?: string
           packaging_cost?: number | null
@@ -340,7 +337,14 @@ export type Database = {
           created_at: string
           display_name: string | null
           email: string | null
+          hotmart_email: string | null
+          hotmart_status: string | null
           id: string
+          push_subscription: Json | null
+          status: string | null
+          termos_aceitos_em: string | null
+          trial_fim: string | null
+          trial_inicio: string | null
           updated_at: string
           user_id: string
         }
@@ -349,7 +353,14 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           email?: string | null
+          hotmart_email?: string | null
+          hotmart_status?: string | null
           id?: string
+          push_subscription?: Json | null
+          status?: string | null
+          termos_aceitos_em?: string | null
+          trial_fim?: string | null
+          trial_inicio?: string | null
           updated_at?: string
           user_id: string
         }
@@ -358,7 +369,14 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           email?: string | null
+          hotmart_email?: string | null
+          hotmart_status?: string | null
           id?: string
+          push_subscription?: Json | null
+          status?: string | null
+          termos_aceitos_em?: string | null
+          trial_fim?: string | null
+          trial_inicio?: string | null
           updated_at?: string
           user_id?: string
         }
