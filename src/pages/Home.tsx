@@ -152,7 +152,7 @@ export default function Home() {
               <p className="section-label mb-2">Margem Média</p>
               <p className={cn(
                 'font-mono text-[28px] font-bold font-mono-num leading-none',
-                stats.avgMargin >= currentStore.config.desiredMargin ? 'text-success' : 'text-warning'
+                getMarginStatus(stats.avgMargin).color
               )}>
                 {stats.avgMargin.toFixed(1)}%
               </p>
