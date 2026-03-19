@@ -248,7 +248,7 @@ export default function Products() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="surface-card p-4 animate-fade-up">
                     <p className="section-label mb-1">Margem Média</p>
-                    <p className={cn('font-mono text-2xl font-bold font-mono-num', stats.avgMargin >= currentStore.config.desiredMargin ? 'text-success' : 'text-warning')}>
+                    <p className={cn('font-mono text-2xl font-bold font-mono-num', getMarginStatus(stats.avgMargin).color)}>
                       {stats.avgMargin.toFixed(1)}%
                     </p>
                   </div>
