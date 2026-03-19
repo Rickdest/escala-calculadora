@@ -197,6 +197,18 @@
     @apply p-4 relative overflow-hidden;
   }
 
+  .stat-card-primary {
+    background: hsl(var(--primary));
+    border-radius: 14px;
+    @apply p-4 relative overflow-hidden;
+  }
+
+  .stat-card-success {
+    background: hsl(var(--success));
+    border-radius: 14px;
+    @apply p-4 relative overflow-hidden;
+  }
+
   .number-lg {
     @apply text-2xl font-bold;
     font-family: 'DM Mono', monospace;
