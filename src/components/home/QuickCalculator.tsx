@@ -310,21 +310,31 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                   </div>
 
                   {result.roasEmpate > 0 && result.roasIdeal > 0 && (
-                    <div className="pt-2">
-                      <div className="flex justify-between text-[10px] text-text-3 mb-1">
+                    <div className="pt-3 px-0">
+                      {/* Labels topo */}
+                      <div className="flex justify-between text-[10px] text-text-3 mb-1.5">
                         <span>Empate</span>
                         <span>Saudável</span>
                         <span>Ideal</span>
                       </div>
-                      <div className="relative h-1.5 bg-background rounded-full overflow-hidden">
-                        <div className="absolute left-0 top-0 h-full bg-primary/30 rounded-full" style={{ width: '100%' }} />
-                        <div className="absolute left-0 top-0 h-full bg-primary rounded-full transition-all" style={{ width: `${roasProgress}%` }} />
-                      </div>
-                      <div className="relative h-2 mt-0.5">
+                      {/* Barra */}
+                      <div className="relative h-1 rounded-[4px] overflow-hidden" style={{ backgroundColor: '#1F2433' }}>
                         <div
-                          className="absolute top-0 w-1.5 h-1.5 rounded-full bg-primary border border-background"
-                          style={{ left: `${roasProgress}%`, transform: 'translateX(-50%)' }}
+                          className="absolute inset-0 rounded-[4px]"
+                          style={{ background: 'linear-gradient(to right, #EF4444, #EAB308, #22C55E)' }}
                         />
+                      </div>
+                      {/* Marcadores */}
+                      <div className="relative h-3 mt-[-6px]">
+                        <div className="absolute top-0 left-0 w-2 h-2 rounded-full" style={{ backgroundColor: '#EF4444', transform: 'translateX(-50%)' }} />
+                        <div className="absolute top-0 left-1/2 w-2 h-2 rounded-full" style={{ backgroundColor: '#EAB308', transform: 'translateX(-50%)' }} />
+                        <div className="absolute top-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white" style={{ backgroundColor: '#F97316', transform: 'translateX(50%)' }} />
+                      </div>
+                      {/* Valores abaixo */}
+                      <div className="flex justify-between mt-0.5">
+                        <span className="font-mono text-[10px] font-mono-num" style={{ color: '#EF4444' }}>{result.roasEmpate.toFixed(2)}</span>
+                        <span className="font-mono text-[10px] font-mono-num" style={{ color: '#EAB308' }}>{result.roasSaudavel.toFixed(2)}</span>
+                        <span className="font-mono text-[12px] font-bold font-mono-num" style={{ color: '#F97316' }}>{result.roasIdeal.toFixed(2)}</span>
                       </div>
                     </div>
                   )}
@@ -339,23 +349,23 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                   <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider">Projeção</p>
                   <div className="flex items-center gap-1.5">
                     <button
-                      onClick={() => setMonthlySales(prev => Math.max(prev - 50, 1))}
+                      onClick={() => setMonthlySales(prev => Math.max(prev - 10, 10))}
                       className="w-[44px] h-[44px] rounded-lg bg-surface-2 border border-border flex items-center justify-center text-[20px] font-bold text-text-1 active:scale-95 transition-transform"
                     >−</button>
                     <input
                       type="number"
                       inputMode="numeric"
-                      min="1"
+                      min="10"
                       max="10000"
                       value={monthlySales}
                       onChange={(e) => {
-                        const v = parseInt(e.target.value) || 1;
-                        setMonthlySales(Math.min(Math.max(v, 1), 10000));
+                        const v = parseInt(e.target.value) || 10;
+                        setMonthlySales(Math.min(Math.max(v, 10), 10000));
                       }}
-                      className="w-[100px] h-[44px] text-[18px] font-mono font-bold font-mono-num text-center bg-surface-2 border border-border rounded-lg text-foreground focus:border-accent focus:outline-none transition-colors"
+                      className="w-[100px] h-[44px] text-[15px] font-mono font-bold font-mono-num text-center bg-surface-2 border border-border rounded-lg text-foreground focus:border-accent focus:outline-none transition-colors"
                     />
                     <button
-                      onClick={() => setMonthlySales(prev => Math.min(prev + 50, 10000))}
+                      onClick={() => setMonthlySales(prev => Math.min(prev + 10, 10000))}
                       className="w-[44px] h-[44px] rounded-lg bg-surface-2 border border-border flex items-center justify-center text-[20px] font-bold text-text-1 active:scale-95 transition-transform"
                     >+</button>
                     <span className="text-[10px] text-text-3">vendas/mês</span>
