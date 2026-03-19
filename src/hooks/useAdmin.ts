@@ -22,7 +22,6 @@ export function useAdmin() {
       });
 
       if (error) {
-        console.error('Error checking admin role:', error);
         setIsAdmin(false);
       } else {
         setIsAdmin(!!data);

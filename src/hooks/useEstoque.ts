@@ -89,7 +89,6 @@ export function useEstoque() {
       }));
       setProdutos(mapped);
     } catch (err) {
-      console.error(err);
       toast.error('Erro ao carregar estoque');
     } finally {
       setLoading(false);

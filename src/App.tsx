@@ -10,7 +10,7 @@ import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionCo
 import { TrialExpiredBlock } from "@/components/TrialExpiredBlock";
 import Home from "./pages/Home";
 import Products from "./pages/Products";
-import Analysis from "./pages/Analysis";
+
 import Stores from "./pages/Stores";
 import Settings from "./pages/Settings";
 import Education from "./pages/Education";
@@ -44,8 +44,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <TrialExpiredBlock />;
   }
 
-  // Also block if not active and not in trial and not free
-  if (!isActive && status !== 'loading' && status !== 'free') {
+  if (!isActive && status !== 'loading') {
     return <TrialExpiredBlock />;
   }
 
@@ -84,7 +83,7 @@ const App = () => (
                 <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
                 <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                 <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
-                <Route path="/analysis" element={<ProtectedRoute><Analysis /></ProtectedRoute>} />
+                
                 <Route path="/stores" element={<ProtectedRoute><Stores /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="/education" element={<ProtectedRoute><Education /></ProtectedRoute>} />

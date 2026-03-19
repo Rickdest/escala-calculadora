@@ -338,7 +338,7 @@ function ProductAdsImport({ product, storeId }: { product: Product; storeId: str
       report_period: parsedReport.period, shop_name: parsedReport.shopName,
       ads_data: JSON.parse(JSON.stringify(parsedReport.ads)),
     }]);
-    if (error) { toast.error('Erro ao salvar relatório'); console.error(error); }
+    if (error) { toast.error('Erro ao salvar relatório'); }
     else { toast.success('Relatório salvo!'); setParsedReport(null); loadReports(); }
   };
 
