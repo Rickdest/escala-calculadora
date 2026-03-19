@@ -31,6 +31,7 @@ export default function Home() {
   const { isActive, status, trialEnd } = useSubscription();
   const [showProductForm, setShowProductForm] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [prefillProduct, setPrefillProduct] = useState<Partial<import('@/types/store').Product> | null>(null);
 
   if (isLoading) {
     return (
@@ -109,7 +110,15 @@ export default function Home() {
         )}
 
         {/* Quick Calculator */}
-        <QuickCalculator onSaveProduct={() => setShowProductForm(true)} />
+        <QuickCalculator onSaveProduct={(prefill) => {
+          setPrefillProduct({
+            costPrice: parseFloat(prefill.costPrice) || 0,
+            salePrice: parseFloat(prefill.salePrice) || 0,
+            packagingCost: parseFloat(prefill.packaging) || 0,
+            name: '',
+          });
+          setShowProductForm(true);
+        }} />
 
         {/* Tools Grid */}
         <div className="animate-fade-up">
@@ -231,7 +240,7 @@ export default function Home() {
         )}
       </div>
 
-      {showProductForm && <ProductForm onClose={() => setShowProductForm(false)} onSave={handleSaveProduct} />}
+      {showProductForm && <ProductForm product={prefillProduct as any} onClose={() => { setShowProductForm(false); setPrefillProduct(null); }} onSave={handleSaveProduct} />}
       <SubscriptionModal open={showPaywall} onClose={() => setShowPaywall(false)} />
       <DailyOfferModal />
     </AppLayout>
