@@ -187,47 +187,51 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
         <div className="mt-4 animate-fade-up">
           {/* Result Card */}
           <div className="bg-surface border border-border rounded-[12px] overflow-hidden">
-            {/* BLOCO 1 — Lucro */}
-            <div className="py-4 text-center">
-              <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-2">Lucro por venda</p>
+            {/* Hero — Lucro */}
+            <div className="pt-5 pb-4 px-5 text-center">
+              <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-1">Lucro por venda</p>
               <p className={cn(
-                'font-mono text-[40px] font-bold font-mono-num leading-none',
+                'font-mono text-[38px] font-bold font-mono-num leading-none',
                 result.netProfit >= 0 ? 'text-success' : 'text-danger'
               )}>
                 {formatCurrency(result.netProfit)}
               </p>
             </div>
 
-            {/* BLOCO 2 — Margem + ROAS inline */}
-            <div className="border-t border-border py-3.5 text-center flex items-baseline justify-center gap-1">
-              <span className={cn(
-                'font-mono text-[18px] font-bold font-mono-num',
-                result.realMargin >= (config?.desiredMargin || 17) ? 'text-success' : result.realMargin >= 0 ? 'text-warning' : 'text-danger'
-              )}>
-                {result.realMargin.toFixed(1)}% Margem
-              </span>
-              <span className="text-text-3 text-[14px] mx-1">·</span>
-              <span className="font-mono text-[18px] font-bold font-mono-num text-warning">
-                {result.roasEmpate > 0 ? result.roasEmpate.toFixed(2) : '--'} ROAS Empate
-              </span>
+            {/* Métricas — Grid compacto */}
+            <div className="px-4 pb-4 grid grid-cols-2 gap-2">
+              <div className="bg-surface-2 rounded-lg px-3 py-2.5">
+                <p className="uppercase text-[9px] font-medium text-text-3 tracking-wider mb-0.5">Margem líquida</p>
+                <p className={cn(
+                  'font-mono text-[22px] font-bold font-mono-num leading-tight',
+                  result.realMargin >= (config?.desiredMargin || 17) ? 'text-success' : result.realMargin >= 0 ? 'text-warning' : 'text-danger'
+                )}>
+                  {result.realMargin.toFixed(1)}%
+                </p>
+              </div>
+              <div className="bg-surface-2 rounded-lg px-3 py-2.5">
+                <p className="uppercase text-[9px] font-medium text-text-3 tracking-wider mb-0.5">ROAS empate</p>
+                <p className="font-mono text-[22px] font-bold font-mono-num leading-tight text-warning">
+                  {result.roasEmpate > 0 ? result.roasEmpate.toFixed(2) : '--'}
+                </p>
+              </div>
             </div>
 
-            {/* BLOCO 3 — Aviso taxas */}
+            {/* Aviso taxas */}
             {!hasGlobalTaxes && (
-              <div className="border-t border-border py-3">
+              <div className="border-t border-border">
                 <button
                   onClick={() => navigate('/settings')}
-                  className="w-full text-center hover:opacity-80 transition-opacity"
+                  className="w-full px-4 py-2.5 flex items-center justify-between hover:bg-surface-2/50 transition-colors"
                 >
-                  <span className="text-[12px] text-text-2">⚠️ Taxas não configuradas</span>
-                  <span className="text-text-3 text-[12px] mx-1">·</span>
+                  <span className="text-[12px] text-text-3">⚠️ Taxas não configuradas</span>
                   <span className="text-[12px] text-accent font-medium">Configurar →</span>
                 </button>
               </div>
             )}
 
-            {/* BLOCO 4 — Ações */}
-            <div className="border-t border-border py-3.5 px-4 flex items-center justify-between">
+            {/* Ações */}
+            <div className="border-t border-border px-4 py-3 flex items-center justify-between">
               <button
                 onClick={() => setShowAnalysis(!showAnalysis)}
                 className="text-[13px] text-text-2 font-medium hover:text-foreground transition-colors whitespace-nowrap"
