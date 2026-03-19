@@ -91,12 +91,10 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
   const monthlyCosts = localCalc ? localCalc.totalCosts * monthlySales : 0;
   const monthlyProfit = localCalc ? localCalc.netProfit * monthlySales : 0;
   const monthlyMargin = localCalc ? localCalc.realMargin : 0;
-  const monthlyStatus = monthlyProfit <= 0 ? 'danger' : monthlyMargin < 15 ? 'warning' : 'success';
-  const monthlyStatusConfig = {
-    danger: { emoji: '🔴', label: 'Prejuízo', bg: 'bg-danger-muted border-danger/30', text: 'text-danger' },
-    warning: { emoji: '🟡', label: 'Atenção', bg: 'bg-warning-muted border-warning/30', text: 'text-warning' },
-    success: { emoji: '🟢', label: 'Lucrativo', bg: 'bg-success-muted border-success/30', text: 'text-success' },
-  }[monthlyStatus];
+  const monthlyStatusConfig = (() => {
+    const s = getMarginStatus(monthlyMargin);
+    return { emoji: s.emoji, label: s.label, bg: `${s.bg} ${s.border}`, text: s.color, message: s.message };
+  })();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
