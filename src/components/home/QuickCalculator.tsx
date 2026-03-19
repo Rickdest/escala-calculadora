@@ -226,17 +226,16 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
             )}
 
             {/* Ações */}
-            <div className="flex items-center justify-center gap-1.5 text-[13px]">
+            <div className="flex items-center justify-center gap-4 text-[13px]">
               <button
                 onClick={() => setShowAnalysis(!showAnalysis)}
                 className="text-text-2 font-medium hover:text-foreground transition-colors"
               >
                 Ver análise completa {showAnalysis ? '↑' : '↓'}
               </button>
-              <span className="text-text-3">·</span>
               <button
                 onClick={() => onSaveProduct({ costPrice, salePrice, packaging })}
-                className="text-accent font-bold hover:underline"
+                className="bg-accent/15 text-accent font-bold px-4 py-1.5 rounded-lg hover:bg-accent/25 transition-colors"
               >
                 Salvar produto →
               </button>
