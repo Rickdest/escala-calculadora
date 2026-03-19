@@ -132,7 +132,7 @@ export function ProductCard({ product, calculation, onEdit, onDuplicate, onDelet
       <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between">
         <div>
           <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Lucro</p>
-          <p className={cn('text-xl font-extrabold', calculation.netProfit >= 0 ? 'text-success' : 'text-destructive')}>
+          <p className={cn('text-xl font-extrabold', status.color)}>
             {formatCurrency(calculation.netProfit)}
           </p>
         </div>
