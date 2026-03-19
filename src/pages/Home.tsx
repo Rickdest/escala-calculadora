@@ -110,7 +110,15 @@ export default function Home() {
         )}
 
         {/* Quick Calculator */}
-        <QuickCalculator onSaveProduct={() => setShowProductForm(true)} />
+        <QuickCalculator onSaveProduct={(prefill) => {
+          setPrefillProduct({
+            costPrice: parseFloat(prefill.costPrice) || 0,
+            salePrice: parseFloat(prefill.salePrice) || 0,
+            packagingCost: parseFloat(prefill.packaging) || 0,
+            name: '',
+          });
+          setShowProductForm(true);
+        }} />
 
         {/* Tools Grid */}
         <div className="animate-fade-up">
