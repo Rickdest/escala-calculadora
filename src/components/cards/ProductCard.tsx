@@ -25,8 +25,8 @@ export function ProductCard({ product, calculation, onEdit, onDuplicate, onDelet
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   };
 
-  const marginStatus = calculation.isAboveTarget ? 'success' : 'danger';
-  const TrendIcon = calculation.isAboveTarget ? TrendingUp : TrendingDown;
+  const status = getMarginStatus(calculation.realMargin);
+  const TrendIcon = calculation.realMargin >= 0 ? TrendingUp : TrendingDown;
 
   const handleTouchStart = useCallback(() => {
     isLongPress.current = false;
