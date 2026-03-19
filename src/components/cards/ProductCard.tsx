@@ -140,8 +140,8 @@ export function ProductCard({ product, calculation, onEdit, onDuplicate, onDelet
           <div className="text-right">
             <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Margem</p>
             <div className="flex items-center gap-1.5 justify-end">
-              <TrendIcon className={cn('w-4 h-4', marginStatus === 'success' ? 'text-success' : 'text-destructive')} />
-              <span className={cn('text-xl font-extrabold', marginStatus === 'success' ? 'text-success' : 'text-destructive')}>
+              <TrendIcon className={cn('w-4 h-4', status.color)} />
+              <span className={cn('text-xl font-extrabold', status.color)}>
                 {calculation.realMargin.toFixed(1)}%
               </span>
             </div>
