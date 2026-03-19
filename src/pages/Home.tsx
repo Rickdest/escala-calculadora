@@ -32,11 +32,6 @@ export default function Home() {
   const [showProductForm, setShowProductForm] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
 
-  const handleCreateFirstStore = async () => {
-    await addStore('Minha Loja');
-    navigate('/settings');
-  };
-
   if (isLoading) {
     return (
       <AppLayout>
@@ -51,15 +46,9 @@ export default function Home() {
   if (!currentStore) {
     return (
       <AppLayout>
-        <div className="flex flex-col items-center justify-center min-h-[85vh] px-6 text-center">
-          <h1 className="text-3xl font-bold text-foreground tracking-tight mb-2">Precify</h1>
-          <p className="text-text-2 mb-8 max-w-xs text-sm leading-relaxed">
-            Precifique seus produtos da Shopee com inteligência e maximize seus lucros.
-          </p>
-          <Button onClick={handleCreateFirstStore} className="h-12 px-8 text-[15px] font-semibold bg-primary hover:bg-primary/90 rounded-[10px]">
-            <Plus className="w-4 h-4 mr-2" />
-            Começar Agora
-          </Button>
+        <div className="flex flex-col items-center justify-center min-h-[85vh]">
+          <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mb-4" />
+          <p className="text-text-2 text-sm">Preparando sua loja...</p>
         </div>
       </AppLayout>
     );
