@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { Package, TrendingUp, TrendingDown, MoreVertical, Copy, Trash2, Edit, Boxes } from 'lucide-react';
 import { Product, ProductCalculation } from '@/types/store';
-import { cn } from '@/lib/utils';
+import { cn, getMarginStatus } from '@/lib/utils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,8 +25,8 @@ export function ProductCard({ product, calculation, onEdit, onDuplicate, onDelet
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   };
 
-  const marginStatus = calculation.isAboveTarget ? 'success' : 'danger';
-  const TrendIcon = calculation.isAboveTarget ? TrendingUp : TrendingDown;
+  const status = getMarginStatus(calculation.realMargin);
+  const TrendIcon = calculation.realMargin >= 0 ? TrendingUp : TrendingDown;
 
   const handleTouchStart = useCallback(() => {
     isLongPress.current = false;
@@ -132,7 +132,7 @@ export function ProductCard({ product, calculation, onEdit, onDuplicate, onDelet
       <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between">
         <div>
           <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Lucro</p>
-          <p className={cn('text-xl font-extrabold', calculation.netProfit >= 0 ? 'text-success' : 'text-destructive')}>
+          <p className={cn('text-xl font-extrabold', status.color)}>
             {formatCurrency(calculation.netProfit)}
           </p>
         </div>
@@ -140,15 +140,15 @@ export function ProductCard({ product, calculation, onEdit, onDuplicate, onDelet
           <div className="text-right">
             <p className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">Margem</p>
             <div className="flex items-center gap-1.5 justify-end">
-              <TrendIcon className={cn('w-4 h-4', marginStatus === 'success' ? 'text-success' : 'text-destructive')} />
-              <span className={cn('text-xl font-extrabold', marginStatus === 'success' ? 'text-success' : 'text-destructive')}>
+              <TrendIcon className={cn('w-4 h-4', status.color)} />
+              <span className={cn('text-xl font-extrabold', status.color)}>
                 {calculation.realMargin.toFixed(1)}%
               </span>
             </div>
           </div>
           <div className={cn(
             'px-3 py-2 rounded-xl text-xs font-bold',
-            marginStatus === 'success' ? 'bg-success-muted text-success' : 'bg-danger-muted text-danger'
+            status.bg, status.color
           )}>
             {calculation.marginDifference >= 0 ? '+' : ''}{calculation.marginDifference.toFixed(1)}%
           </div>

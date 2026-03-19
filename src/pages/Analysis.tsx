@@ -7,7 +7,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { MarginDistributionChart, TopProductsChart, ProfitSummaryChart } from '@/components/charts/AnalyticsCharts';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { cn } from '@/lib/utils';
+import { cn, getMarginStatus } from '@/lib/utils';
 import { exportToCSV, exportToPDF } from '@/lib/exportUtils';
 
 const sortOptions: { value: SortOption; label: string }[] = [
@@ -122,20 +122,14 @@ export default function Analysis() {
         <div className="grid grid-cols-2 gap-4">
           <div className="glass-card p-5 animate-fade-up">
             <div className="flex items-center gap-2 mb-3">
-              <div className={cn(
-                'p-2 rounded-xl',
-                stats.avgMargin >= currentStore.config.desiredMargin ? 'bg-success-muted' : 'bg-warning-muted'
-              )}>
-                <Percent className={cn(
-                  'w-5 h-5',
-                  stats.avgMargin >= currentStore.config.desiredMargin ? 'text-success' : 'text-warning'
-                )} />
+              <div className={cn('p-2 rounded-xl', getMarginStatus(stats.avgMargin).bg)}>
+                <Percent className={cn('w-5 h-5', getMarginStatus(stats.avgMargin).color)} />
               </div>
             </div>
             <p className="text-xs uppercase tracking-wide text-muted-foreground font-semibold mb-1">Margem Média</p>
             <p className={cn(
               'number-xl',
-              stats.avgMargin >= currentStore.config.desiredMargin ? 'text-success' : 'text-warning'
+              getMarginStatus(stats.avgMargin).color
             )}>
               {stats.avgMargin.toFixed(1)}%
             </p>
@@ -261,14 +255,14 @@ export default function Analysis() {
                     
                     <div className="text-right flex-shrink-0">
                       <div className="flex items-center gap-1.5 justify-end">
-                        {calc.isAboveTarget ? (
-                          <TrendingUp className="w-4 h-4 text-success" />
+                        {calc.realMargin >= 0 ? (
+                          <TrendingUp className={cn('w-4 h-4', getMarginStatus(calc.realMargin).color)} />
                         ) : (
-                          <TrendingDown className="w-4 h-4 text-danger" />
+                          <TrendingDown className={cn('w-4 h-4', getMarginStatus(calc.realMargin).color)} />
                         )}
                         <span className={cn(
                           'font-extrabold text-lg',
-                          calc.isAboveTarget ? 'text-success' : 'text-danger'
+                          getMarginStatus(calc.realMargin).color
                         )}>
                           {calc.realMargin.toFixed(1)}%
                         </span>

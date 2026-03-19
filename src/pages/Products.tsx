@@ -17,7 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { cn } from '@/lib/utils';
+import { cn, getMarginStatus } from '@/lib/utils';
 import { exportToCSV, exportToPDF } from '@/lib/exportUtils';
 
 const productSortOptions: { value: SortOption; label: string }[] = [
@@ -169,12 +169,12 @@ export default function Products() {
             {stats && stats.totalProducts > 0 && (
               <div className="flex items-center gap-3 animate-fade-up">
                 <span className="text-xs text-text-2">Margem média:</span>
-                <span className={cn('text-sm font-bold font-mono font-mono-num', stats.avgMargin >= currentStore.config.desiredMargin ? 'text-success' : 'text-warning')}>
+                <span className={cn('text-sm font-bold font-mono font-mono-num', getMarginStatus(stats.avgMargin).color)}>
                   {stats.avgMargin.toFixed(1)}%
                 </span>
                 <div className="flex-1 h-1 bg-surface-2 rounded-full overflow-hidden">
                   <div
-                    className={cn('h-full rounded-full transition-all', stats.avgMargin >= currentStore.config.desiredMargin ? 'bg-success' : 'bg-warning')}
+                    className={cn('h-full rounded-full transition-all', getMarginStatus(stats.avgMargin).color.replace('text-', 'bg-'))}
                     style={{ width: `${Math.min(100, (stats.avgMargin / Math.max(currentStore.config.desiredMargin, 1)) * 100)}%` }}
                   />
                 </div>
@@ -217,8 +217,8 @@ export default function Products() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0 ml-3">
-                      <span className={cn('w-2 h-2 rounded-full', calc.isAboveTarget ? 'bg-success' : 'bg-danger')} />
-                      <span className={cn('font-mono text-[14px] font-bold font-mono-num', calc.isAboveTarget ? 'text-success' : 'text-danger')}>
+                      <span className={cn('w-2 h-2 rounded-full', getMarginStatus(calc.realMargin).color.replace('text-', 'bg-'))} />
+                      <span className={cn('font-mono text-[14px] font-bold font-mono-num', getMarginStatus(calc.realMargin).color)}>
                         {calc.realMargin.toFixed(1)}%
                       </span>
                       <ChevronRight className="w-4 h-4 text-text-3" />
@@ -248,7 +248,7 @@ export default function Products() {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="surface-card p-4 animate-fade-up">
                     <p className="section-label mb-1">Margem Média</p>
-                    <p className={cn('font-mono text-2xl font-bold font-mono-num', stats.avgMargin >= currentStore.config.desiredMargin ? 'text-success' : 'text-warning')}>
+                    <p className={cn('font-mono text-2xl font-bold font-mono-num', getMarginStatus(stats.avgMargin).color)}>
                       {stats.avgMargin.toFixed(1)}%
                     </p>
                   </div>
@@ -324,8 +324,8 @@ export default function Products() {
                         </div>
                         <div className="text-right flex-shrink-0">
                           <div className="flex items-center gap-1.5 justify-end">
-                            {calc.isAboveTarget ? <TrendingUp className="w-3.5 h-3.5 text-success" /> : <TrendingDown className="w-3.5 h-3.5 text-destructive" />}
-                            <span className={cn('font-mono font-bold text-base font-mono-num', calc.isAboveTarget ? 'text-success' : 'text-destructive')}>
+                            {calc.realMargin >= 0 ? <TrendingUp className={cn('w-3.5 h-3.5', getMarginStatus(calc.realMargin).color)} /> : <TrendingDown className={cn('w-3.5 h-3.5', getMarginStatus(calc.realMargin).color)} />}
+                            <span className={cn('font-mono font-bold text-base font-mono-num', getMarginStatus(calc.realMargin).color)}>
                               {calc.realMargin.toFixed(1)}%
                             </span>
                           </div>

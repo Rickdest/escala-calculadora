@@ -10,7 +10,7 @@ import { TrialBanner } from '@/components/TrialBanner';
 import { DailyOfferModal } from '@/components/DailyOfferModal';
 import { Button } from '@/components/ui/button';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { cn } from '@/lib/utils';
+import { cn, getMarginStatus } from '@/lib/utils';
 import { QuickCalculator } from '@/components/home/QuickCalculator';
 import { HomeEducationCard } from '@/components/home/HomeEducationCard';
 
@@ -152,15 +152,15 @@ export default function Home() {
               <p className="section-label mb-2">Margem Média</p>
               <p className={cn(
                 'font-mono text-[28px] font-bold font-mono-num leading-none',
-                stats.avgMargin >= currentStore.config.desiredMargin ? 'text-success' : 'text-warning'
+                getMarginStatus(stats.avgMargin).color
               )}>
                 {stats.avgMargin.toFixed(1)}%
               </p>
               <p className={cn(
                 'text-[11px] mt-1',
-                stats.avgMargin >= currentStore.config.desiredMargin ? 'text-success' : 'text-warning'
+                getMarginStatus(stats.avgMargin).color
               )}>
-                {stats.avgMargin >= currentStore.config.desiredMargin ? '↑ acima da meta' : '↓ abaixo da meta'}
+                {getMarginStatus(stats.avgMargin).emoji} {getMarginStatus(stats.avgMargin).label}
               </p>
             </div>
             <div className="surface-card p-4">
@@ -218,10 +218,10 @@ export default function Home() {
                     <span className="font-medium text-foreground truncate max-w-[140px] text-[15px]">{product.name}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={cn('font-mono text-[15px] font-semibold font-mono-num', calc.isAboveTarget ? 'text-success' : 'text-danger')}>
+                    <span className={cn('font-mono text-[15px] font-semibold font-mono-num', getMarginStatus(calc.realMargin).color)}>
                       {calc.realMargin.toFixed(1)}%
                     </span>
-                    <span className={cn('w-1.5 h-1.5 rounded-full', calc.isAboveTarget ? 'bg-success' : 'bg-danger')} />
+                    <span className={cn('w-1.5 h-1.5 rounded-full', getMarginStatus(calc.realMargin).color.replace('text-', 'bg-'))} />
                   </div>
                 </button>
               ))}

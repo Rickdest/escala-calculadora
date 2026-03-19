@@ -3,7 +3,7 @@ import { Zap, Loader2, ChevronDown, ChevronUp, Info, AlertTriangle } from 'lucid
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { getShopeeFeeForPrice } from '@/types/store';
-import { cn } from '@/lib/utils';
+import { cn, getMarginStatus } from '@/lib/utils';
 
 interface QuickCalculatorProps {
   onSaveProduct: (prefill: { costPrice: string; salePrice: string; packaging: string }) => void;
@@ -202,7 +202,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                 <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-1.5">Margem</p>
                 <p className={cn(
                   'font-mono text-[20px] font-bold font-mono-num leading-none truncate',
-                  result.realMargin >= (config?.desiredMargin || 17) ? 'text-success' : result.realMargin >= 0 ? 'text-warning' : 'text-danger'
+                  getMarginStatus(result.realMargin).color
                 )}>
                   {result.realMargin.toFixed(1)}%
                 </p>
@@ -383,12 +383,8 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-[13px] text-text-2">Status</span>
-                    <span className="text-[13px] font-medium">
-                      {projection.profit > 0 && result.realMargin >= (config?.desiredMargin || 17)
-                        ? '🟢 Lucrativo'
-                        : projection.profit >= 0
-                          ? '🟡 Atenção'
-                          : '🔴 Prejuízo'}
+                    <span className={cn('text-[13px] font-medium', getMarginStatus(result.realMargin).color)}>
+                      {getMarginStatus(result.realMargin).emoji} {getMarginStatus(result.realMargin).label}
                     </span>
                   </div>
                 </div>

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { cn } from '@/lib/utils';
+import { cn, getMarginStatus } from '@/lib/utils';
 
 interface ProductFormProps {
   product?: Product | null;
@@ -91,12 +91,10 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
   const monthlyCosts = localCalc ? localCalc.totalCosts * monthlySales : 0;
   const monthlyProfit = localCalc ? localCalc.netProfit * monthlySales : 0;
   const monthlyMargin = localCalc ? localCalc.realMargin : 0;
-  const monthlyStatus = monthlyProfit <= 0 ? 'danger' : monthlyMargin < 15 ? 'warning' : 'success';
-  const monthlyStatusConfig = {
-    danger: { emoji: '🔴', label: 'Prejuízo', bg: 'bg-danger-muted border-danger/30', text: 'text-danger' },
-    warning: { emoji: '🟡', label: 'Atenção', bg: 'bg-warning-muted border-warning/30', text: 'text-warning' },
-    success: { emoji: '🟢', label: 'Lucrativo', bg: 'bg-success-muted border-success/30', text: 'text-success' },
-  }[monthlyStatus];
+  const monthlyStatusConfig = (() => {
+    const s = getMarginStatus(monthlyMargin);
+    return { emoji: s.emoji, label: s.label, bg: `${s.bg} ${s.border}`, text: s.color, message: s.message };
+  })();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -260,21 +258,21 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
 
           {/* Live Calculation Preview */}
           {localCalc && (
-            <div className={cn('rounded-[14px] p-4 space-y-3 animate-fade-up border', localCalc.isAboveTarget ? 'bg-success-muted border-success/20' : 'bg-danger-muted border-danger/20')}>
+            <div className={cn('rounded-[14px] p-4 space-y-3 animate-fade-up border', getMarginStatus(localCalc.realMargin).bg, getMarginStatus(localCalc.realMargin).border)}>
               <div className="flex items-center gap-2">
-                <Calculator className={cn('w-4 h-4', localCalc.isAboveTarget ? 'text-success' : 'text-danger')} />
-                <span className={cn('font-semibold text-sm', localCalc.isAboveTarget ? 'text-success' : 'text-danger')}>Prévia do Cálculo</span>
+                <Calculator className={cn('w-4 h-4', getMarginStatus(localCalc.realMargin).color)} />
+                <span className={cn('font-semibold text-sm', getMarginStatus(localCalc.realMargin).color)}>Prévia do Cálculo</span>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="section-label mb-0.5">Lucro Líquido</p>
-                  <p className={cn('font-mono text-2xl font-bold font-mono-num', localCalc.isAboveTarget ? 'text-success' : 'text-danger')}>{formatCurrency(localCalc.netProfit)}</p>
+                  <p className={cn('font-mono text-2xl font-bold font-mono-num', getMarginStatus(localCalc.realMargin).color)}>{formatCurrency(localCalc.netProfit)}</p>
                 </div>
                 <div className="text-right">
                   <p className="section-label mb-0.5">Margem Real</p>
                   <div className="flex items-center justify-end gap-1.5">
-                    {localCalc.isAboveTarget ? <TrendingUp className="w-4 h-4 text-success" /> : <TrendingDown className="w-4 h-4 text-danger" />}
-                    <span className={cn('font-mono text-2xl font-bold font-mono-num', localCalc.isAboveTarget ? 'text-success' : 'text-danger')}>{localCalc.realMargin.toFixed(1)}%</span>
+                    {localCalc.realMargin >= 0 ? <TrendingUp className={cn('w-4 h-4', getMarginStatus(localCalc.realMargin).color)} /> : <TrendingDown className={cn('w-4 h-4', getMarginStatus(localCalc.realMargin).color)} />}
+                    <span className={cn('font-mono text-2xl font-bold font-mono-num', getMarginStatus(localCalc.realMargin).color)}>{localCalc.realMargin.toFixed(1)}%</span>
                   </div>
                 </div>
               </div>
@@ -346,7 +344,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
               </div>
               <div className="bg-surface-2 rounded-lg p-3">
                 <p className="section-label">Margem de Lucro</p>
-                <p className={cn('text-sm font-bold font-mono font-mono-num mt-1', localCalc ? (monthlyMargin >= 15 ? 'text-success' : monthlyMargin >= 0 ? 'text-warning' : 'text-destructive') : 'text-foreground')}>{localCalc ? `${monthlyMargin.toFixed(1)}%` : '--'}</p>
+                <p className={cn('text-sm font-bold font-mono font-mono-num mt-1', localCalc ? getMarginStatus(monthlyMargin).color : 'text-foreground')}>{localCalc ? `${monthlyMargin.toFixed(1)}%` : '--'}</p>
               </div>
             </div>
             {localCalc && (
