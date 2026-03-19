@@ -335,9 +335,13 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
 
               {/* Projeção */}
               <div className="pt-3">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-3">
                   <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider">Projeção</p>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setMonthlySales(prev => Math.max(prev - 50, 1))}
+                      className="w-[44px] h-[44px] rounded-lg bg-surface-2 border border-border flex items-center justify-center text-[20px] font-bold text-text-1 active:scale-95 transition-transform"
+                    >−</button>
                     <input
                       type="number"
                       inputMode="numeric"
@@ -348,8 +352,12 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                         const v = parseInt(e.target.value) || 1;
                         setMonthlySales(Math.min(Math.max(v, 1), 10000));
                       }}
-                      className="w-16 h-6 text-[12px] font-mono font-mono-num text-center bg-background border border-border rounded px-1 text-foreground focus:border-primary focus:outline-none"
+                      className="w-[100px] h-[44px] text-[18px] font-mono font-bold font-mono-num text-center bg-surface-2 border border-border rounded-lg text-foreground focus:border-accent focus:outline-none transition-colors"
                     />
+                    <button
+                      onClick={() => setMonthlySales(prev => Math.min(prev + 50, 10000))}
+                      className="w-[44px] h-[44px] rounded-lg bg-surface-2 border border-border flex items-center justify-center text-[20px] font-bold text-text-1 active:scale-95 transition-transform"
+                    >+</button>
                     <span className="text-[10px] text-text-3">vendas/mês</span>
                   </div>
                 </div>
