@@ -2,7 +2,6 @@ import { Home, Package, BarChart3, GraduationCap, Settings } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import logoIcon from '@/assets/logo-icon.png';
 
 const navItems = [
   { icon: Home, label: 'Início', path: '/' },
@@ -18,47 +17,42 @@ export function SideNavigation() {
   const { isActive, status } = useSubscription();
 
   return (
-    <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 flex-col bg-card/80 backdrop-blur-xl border-r border-border/50 z-50">
-      {/* Logo */}
-      <div className="flex items-center gap-3 px-6 py-6 border-b border-border/30">
-         <img src={logoIcon} alt="Precify" className="w-9 h-9 object-contain" />
-         <span className="text-xl font-extrabold text-foreground tracking-tight">Precify</span>
+    <aside className="hidden md:flex fixed left-0 top-0 bottom-0 w-64 flex-col bg-surface border-r border-border z-50">
+      <div className="flex items-center gap-3 px-6 py-5 border-b border-border">
+        <span className="text-xl font-bold text-foreground tracking-tight">Precify</span>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-3 py-4 space-y-0.5">
         {navItems.map(({ icon: Icon, label, path }) => {
           const isActivePath = location.pathname === path;
-
           return (
             <button
               key={path}
               onClick={() => navigate(path)}
               className={cn(
-                'w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200',
+                'w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150',
                 isActivePath
-                  ? 'bg-primary/10 text-primary font-semibold'
-                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                  ? 'text-primary'
+                  : 'text-text-2 hover:text-foreground hover:bg-surface-2'
               )}
             >
-              <Icon className={cn('w-5 h-5', isActivePath && 'text-primary')} strokeWidth={isActivePath ? 2.5 : 2} />
+              <Icon className="w-5 h-5" strokeWidth={isActivePath ? 2.5 : 2} />
               {label}
             </button>
           );
         })}
       </nav>
 
-      {/* Subscription CTA */}
       {!isActive && (
         <div className="px-3 py-3">
           <button
             onClick={() => navigate('/paywall')}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/10 hover:bg-primary/20 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg bg-surface-2 hover:bg-surface-2/80 transition-colors"
           >
             <span className="text-sm">⚡</span>
             <div className="text-left">
-               <p className="text-xs font-bold text-primary">Garantir acesso</p>
-              <p className="text-[10px] text-muted-foreground">R$49,90/ano</p>
+              <p className="text-xs font-semibold text-primary">Garantir acesso</p>
+              <p className="text-[10px] text-text-3">R$49,90/ano</p>
             </div>
           </button>
         </div>
@@ -68,16 +62,13 @@ export function SideNavigation() {
         <div className="px-3 py-3">
           <div className="flex items-center gap-2 px-4 py-2">
             <span className="text-xs">✅</span>
-            <span className="text-xs font-semibold text-primary">Plano ativo{status === 'trialing' ? ' (teste)' : ''}</span>
+            <span className="text-xs font-medium text-primary">Plano ativo{status === 'trialing' ? ' (teste)' : ''}</span>
           </div>
         </div>
       )}
 
-      {/* Footer */}
-      <div className="px-4 py-4 border-t border-border/30">
-        <p className="text-[10px] text-muted-foreground text-center">
-          © {new Date().getFullYear()} Precify
-        </p>
+      <div className="px-4 py-4 border-t border-border">
+        <p className="text-[10px] text-text-3 text-center">© {new Date().getFullYear()} Precify</p>
       </div>
     </aside>
   );
