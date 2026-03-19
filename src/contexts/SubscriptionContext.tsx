@@ -46,9 +46,6 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (subErr) {
-        console.error('Error fetching subscription:', subErr);
-      }
 
       // Paid subscription takes priority
       if (sub) {
