@@ -186,53 +186,50 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
       {showResult && result && projection && (
         <div className="mt-4 animate-fade-up">
           {/* Result Card */}
-          <div className="bg-surface border border-border rounded-[12px] overflow-hidden">
-            {/* BLOCO 1 — LUCRO */}
-            <div className="py-5 px-5 text-center">
+          <div className="bg-surface border border-border rounded-[12px] p-5">
+            {/* Hero — Lucro */}
+            <div className="py-4 text-center">
               <p className="uppercase text-[11px] font-medium text-text-3 tracking-wider mb-2">Lucro por venda</p>
               <p className={cn(
-                'font-mono text-[42px] font-bold font-mono-num leading-none',
+                'font-mono text-[36px] font-bold font-mono-num leading-none',
                 result.netProfit >= 0 ? 'text-success' : 'text-danger'
               )}>
                 {formatCurrency(result.netProfit)}
               </p>
             </div>
 
-            {/* BLOCO 2 — MARGEM + ROAS EMPATE */}
-            <div className="border-t border-border grid grid-cols-2">
-              <div className="py-4 px-4 text-center">
-                <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-1.5">Margem</p>
+            {/* Pills — Margem + ROAS */}
+            <div className="flex gap-2 mb-4">
+              <div className="flex-1 bg-surface-2 rounded-[10px] px-4 py-2.5 text-center">
                 <p className={cn(
-                  'font-mono text-[26px] font-bold font-mono-num leading-none',
+                  'font-mono text-[20px] font-bold font-mono-num leading-none',
                   result.realMargin >= (config?.desiredMargin || 17) ? 'text-success' : result.realMargin >= 0 ? 'text-warning' : 'text-danger'
                 )}>
                   {result.realMargin.toFixed(1)}%
                 </p>
+                <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mt-1">margem</p>
               </div>
-              <div className="py-4 px-4 text-center border-l border-border">
-                <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-1.5">ROAS Empate</p>
-                <p className="font-mono text-[26px] font-bold font-mono-num leading-none text-warning">
+              <div className="flex-1 bg-surface-2 rounded-[10px] px-4 py-2.5 text-center">
+                <p className="font-mono text-[20px] font-bold font-mono-num leading-none text-warning">
                   {result.roasEmpate > 0 ? result.roasEmpate.toFixed(2) : '--'}
                 </p>
-                <p className="text-[11px] text-text-3 mt-1.5">mínimo para não ter prejuízo</p>
+                <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mt-1">roas empate</p>
               </div>
             </div>
 
-            {/* BLOCO 3 — AVISO DE TAXAS */}
+            {/* Aviso de taxas */}
             {!hasGlobalTaxes && (
-              <div className="border-t border-border px-4 py-3.5">
-                <button
-                  onClick={() => navigate('/settings')}
-                  className="w-full flex items-center justify-between hover:opacity-80 transition-opacity"
-                >
-                  <span className="text-[12px] text-text-2">⚠️ Taxas não configuradas</span>
-                  <span className="text-[12px] text-primary font-medium">Configurar →</span>
-                </button>
-              </div>
+              <button
+                onClick={() => navigate('/settings')}
+                className="w-full flex items-center justify-between mb-3 hover:opacity-80 transition-opacity"
+              >
+                <span className="text-[12px] text-text-2">⚠️ Taxas não configuradas</span>
+                <span className="text-[12px] text-accent font-medium">Configurar →</span>
+              </button>
             )}
 
-            {/* BLOCO 4 — AÇÕES */}
-            <div className="border-t border-border flex items-center px-4 py-3.5">
+            {/* Ações */}
+            <div className="flex items-center pt-3 border-t border-border">
               <button
                 onClick={() => setShowAnalysis(!showAnalysis)}
                 className="text-[13px] text-text-2 font-medium hover:text-foreground transition-colors"
@@ -242,7 +239,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               <span className="text-text-3 text-[13px] mx-2">·</span>
               <button
                 onClick={() => onSaveProduct({ costPrice, salePrice, packaging })}
-                className="text-[13px] text-primary font-bold hover:underline"
+                className="text-[13px] text-accent font-bold hover:underline"
               >
                 💾 Salvar produto →
               </button>
