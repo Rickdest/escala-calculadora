@@ -131,13 +131,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const products = (productsData || []).map((p: any) => mapDbProduct(p));
       const loaded = (storesData || []).map((s: any) => mapDbStore(s, products));
 
-      setStores(loaded);
-      const savedStoreId = localStorage.getItem(CURRENT_STORE_KEY);
       if (loaded.length > 0) {
+        setStores(loaded);
+        const savedStoreId = localStorage.getItem(CURRENT_STORE_KEY);
         const found = savedStoreId ? loaded.find(s => s.id === savedStoreId) : null;
         setCurrentStoreState(found || loaded[0]);
       } else {
-        setCurrentStoreState(null);
+        // Auto-create first store for new users
+        const { data, error: createErr } = await supabase.from('stores').insert({
+          name: 'Minha Loja',
+          user_id: user.id,
+          taxes: DEFAULT_STORE_CONFIG.taxes,
+          desired_margin: DEFAULT_STORE_CONFIG.desiredMargin,
+          enable_packaging: DEFAULT_STORE_CONFIG.enablePackaging,
+          enable_ads: DEFAULT_STORE_CONFIG.enableAds,
+          affiliate_commission: DEFAULT_STORE_CONFIG.affiliateCommission,
+          shopee_campaigns: DEFAULT_STORE_CONFIG.shopeeCampaigns,
+        } as any).select().single();
+        if (!createErr && data) {
+          const newStore = mapDbStore(data, []);
+          setStores([newStore]);
+          setCurrentStoreState(newStore);
+        }
       }
     } catch (err) {
       console.error('Error loading data:', err);
