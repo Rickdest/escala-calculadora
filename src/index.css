@@ -67,9 +67,9 @@
     /* Surface com contraste claro entre card e fundo */
     --surface: 0 0% 100%;
     --surface-2: 25 14% 91%;
-    --text-1: 20 15% 8%;
-    --text-2: 20 10% 38%;
-    --text-3: 20 8% 58%;
+    --text-1: 20 20% 5%;
+    --text-2: 20 15% 25%;
+    --text-3: 20 10% 48%;
   }
 
   /* Garante inputs visíveis no tema claro */
@@ -78,6 +78,10 @@
     background-color: hsl(0 0% 100%) !important;
     border-color: hsl(20 12% 72%) !important;
     color: hsl(20 15% 8%) !important;
+  }
+
+  :root input::placeholder {
+    color: hsl(20 10% 48%) !important;
   }
 
   /* Garante botão primário vibrante no tema claro */
