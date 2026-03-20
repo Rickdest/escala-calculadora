@@ -208,7 +208,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                 </p>
               </div>
               <div className="bg-surface-2 rounded-xl p-3 flex flex-col items-center justify-center border border-border/40">
-                <p className="text-[10px] font-medium text-text-3 tracking-wider mb-1">ROAS</p>
+                <p className="text-[10px] font-medium text-text-3 tracking-wider mb-1">ROAS Empate</p>
                 {result.roasEmpate > 0 ? (
                   <p className="font-mono text-[18px] font-extrabold font-mono-num leading-tight text-warning">
                     {result.roasEmpate.toFixed(2)}
