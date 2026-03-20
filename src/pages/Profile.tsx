@@ -64,11 +64,14 @@ export default function Profile() {
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
+      const { data: signedData, error: signError } = await supabase.storage
         .from('avatars')
-        .getPublicUrl(fileName);
+        .createSignedUrl(fileName, 3600);
 
-      setAvatarUrl(publicUrl);
+      if (signError || !signedData?.signedUrl) throw signError || new Error('Failed to get signed URL');
+
+      const newAvatarUrl = signedData.signedUrl;
+      setAvatarUrl(newAvatarUrl);
 
       // Update profile with new avatar URL
       await supabase
