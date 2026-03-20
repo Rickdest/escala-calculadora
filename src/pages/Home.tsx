@@ -117,7 +117,7 @@ export default function Home() {
         )}
 
         {/* Quick Calculator */}
-        <div className="md:col-span-8">
+        <div>
           <QuickCalculator onSaveProduct={(prefill) => {
             setPrefillProduct({
               costPrice: parseFloat(prefill.costPrice) || 0,
