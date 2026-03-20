@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { ProductCard } from '@/components/cards/ProductCard';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { MarginDistributionChart, TopProductsChart, ProfitSummaryChart } from '@/components/charts/AnalyticsCharts';
+import { ProductThumbnail } from '@/components/ProductThumbnail';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

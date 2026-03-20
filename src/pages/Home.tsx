@@ -13,6 +13,7 @@ import { useSubscription } from '@/contexts/SubscriptionContext';
 import { cn, getMarginStatus } from '@/lib/utils';
 import { QuickCalculator } from '@/components/home/QuickCalculator';
 import { HomeEducationCard } from '@/components/home/HomeEducationCard';
+import { ProductThumbnail } from '@/components/ProductThumbnail';
 
 const toolItems = [
   { icon: Plus, label: 'Precificar', isAccent: true, action: 'addProduct' as const },
