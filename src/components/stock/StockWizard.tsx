@@ -675,23 +675,25 @@ export function StockWizard({ onClose, editProduct }: Props) {
               </div>
             </>
           )}
-        </div>
+        </div>}
 
         {/* ═══ FOOTER ═══ */}
-        <div className="shrink-0 p-4 border-t border-border bg-surface">
-          <button
-            onClick={handleSave}
-            disabled={!nome.trim() || saving}
-            className={cn(
-              'w-full h-[52px] rounded-[10px] text-base font-semibold transition-all',
-              nome.trim() && !saving
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground cursor-not-allowed'
-            )}
-          >
-            {saving ? 'Salvando...' : 'Salvar Produto'}
-          </button>
-        </div>
+        {step === 'form' && (
+          <div className="shrink-0 p-4 border-t border-border bg-surface">
+            <button
+              onClick={handleSave}
+              disabled={!nome.trim() || saving}
+              className={cn(
+                'w-full h-[52px] rounded-[10px] text-base font-semibold transition-all',
+                nome.trim() && !saving
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground cursor-not-allowed'
+              )}
+            >
+              {saving ? 'Salvando...' : 'Salvar Produto'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
