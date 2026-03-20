@@ -137,7 +137,7 @@ export function generatePDFContent(data: ExportData[], store: Store): string {
     const marginClass = calc.isAboveTarget ? 'positive' : 'negative';
     html += `
       <tr>
-        <td>${product.name}</td>
+        <td>${escapeHtml(product.name)}</td>
         <td>${formatCurrency(product.costPrice)}</td>
         <td>${formatCurrency(product.salePrice)}</td>
         <td class="${calc.netProfit >= 0 ? 'positive' : 'negative'}">${formatCurrency(calc.netProfit)}</td>
