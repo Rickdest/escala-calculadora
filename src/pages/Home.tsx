@@ -80,7 +80,7 @@ export default function Home() {
     <AppLayout>
       <PageHeader title="Precify" />
       <div className="px-4 py-4 space-y-4 md:px-0 md:py-6 md:grid md:grid-cols-[3fr_2fr] md:gap-6 md:space-y-0">
-        <div className="md:col-span-12">
+        <div className="md:col-span-full">
           <TrialBanner />
         </div>
 
