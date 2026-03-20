@@ -120,11 +120,6 @@ Deno.serve(async (req) => {
       .eq("user_id", userId)
       .maybeSingle();
 
-    // Debug logs temporários
-    console.log("Profile encontrado:", JSON.stringify(profile));
-    console.log("Trial fim:", profile?.trial_fim);
-    console.log("Trial inicio:", profile?.trial_inicio);
-    console.log("Status:", profile?.status);
 
     if (profile) {
       const agora = new Date();

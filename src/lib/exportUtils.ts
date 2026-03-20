@@ -9,6 +9,16 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#039;');
 }
 
+function sanitizeCsvField(value: string | number): string {
+  const str = String(value ?? '');
+  let sanitized = str;
+  if (/^[=+\-@\t\r]/.test(sanitized)) {
+    sanitized = "'" + sanitized;
+  }
+  const escaped = sanitized.replace(/"/g, '""');
+  return `"${escaped}"`;
+}
+
 interface ExportData {
   product: Product;
   calc: ProductCalculation;
@@ -31,18 +41,18 @@ export function exportToCSV(data: ExportData[], storeName: string): void {
   ];
 
   const rows = data.map(({ product, calc }) => [
-    product.name,
-    product.costPrice.toFixed(2),
-    product.salePrice.toFixed(2),
-    product.packagingCost.toFixed(2),
-    product.adsCost.toFixed(2),
-    product.stockQuantity,
-    calc.totalShopeeFee.toFixed(2),
-    calc.taxes.toFixed(2),
-    calc.affiliateCommission.toFixed(2),
-    calc.shopeeCampaigns.toFixed(2),
-    calc.netProfit.toFixed(2),
-    calc.realMargin.toFixed(1),
+    sanitizeCsvField(product.name),
+    sanitizeCsvField(product.costPrice.toFixed(2)),
+    sanitizeCsvField(product.salePrice.toFixed(2)),
+    sanitizeCsvField(product.packagingCost.toFixed(2)),
+    sanitizeCsvField(product.adsCost.toFixed(2)),
+    sanitizeCsvField(product.stockQuantity),
+    sanitizeCsvField(calc.totalShopeeFee.toFixed(2)),
+    sanitizeCsvField(calc.taxes.toFixed(2)),
+    sanitizeCsvField(calc.affiliateCommission.toFixed(2)),
+    sanitizeCsvField(calc.shopeeCampaigns.toFixed(2)),
+    sanitizeCsvField(calc.netProfit.toFixed(2)),
+    sanitizeCsvField(calc.realMargin.toFixed(1)),
   ]);
 
   const csvContent = [
