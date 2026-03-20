@@ -1,8 +1,8 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
-type SubscriptionStatus = 'free' | 'trialing' | 'active' | 'canceled' | 'past_due' | 'loading';
+type SubscriptionStatus = 'free' | 'trialing' | 'active' | 'canceled' | 'past_due' | 'expired' | 'loading';
 
 interface SubscriptionContextType {
   status: SubscriptionStatus;
@@ -16,14 +16,14 @@ interface SubscriptionContextType {
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [status, setStatus] = useState<SubscriptionStatus>('loading');
   const [plan, setPlan] = useState('free');
   const [trialEnd, setTrialEnd] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchSubscription = async () => {
-    if (!user) {
+  const fetchSubscription = useCallback(async () => {
+    if (!user || !session?.access_token) {
       setStatus('free');
       setPlan('free');
       setTrialEnd(null);
@@ -32,119 +32,136 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      // 1. Check profile for trial fields
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('trial_inicio, trial_fim, status')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      // Server-side validation via edge function
+      const { data, error } = await supabase.functions.invoke('check-subscription', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
 
-      // 2. Check subscriptions table for paid status
-      const { data: sub, error: subErr } = await supabase
+      if (error) {
+        console.error('Subscription check failed, falling back to client query');
+        await fallbackClientCheck();
+        return;
+      }
+
+      const serverStatus = data?.status || 'free';
+      const serverPlan = data?.plan || 'free';
+      const serverTrialEnd = data?.trialEnd || null;
+
+      // Map server statuses
+      if (serverStatus === 'active') {
+        setStatus('active');
+        setPlan(serverPlan);
+      } else if (serverStatus === 'trialing') {
+        setStatus('trialing');
+        setPlan(serverPlan);
+      } else if (serverStatus === 'canceled' || serverStatus === 'past_due') {
+        setStatus(serverStatus as SubscriptionStatus);
+        setPlan('free');
+      } else {
+        // expired or unknown
+        setStatus('canceled');
+        setPlan('free');
+      }
+
+      setTrialEnd(serverTrialEnd);
+    } catch (err) {
+      console.error('Subscription check error, using fallback');
+      await fallbackClientCheck();
+    } finally {
+      setLoading(false);
+    }
+  }, [user, session?.access_token]);
+
+  // Fallback: direct DB query (still protected by RLS)
+  const fallbackClientCheck = async () => {
+    if (!user) return;
+
+    try {
+      const { data: sub } = await supabase
         .from('subscriptions')
-        .select('*')
+        .select('status, plan, trial_end')
         .eq('user_id', user.id)
         .maybeSingle();
 
-
-      // Paid subscription takes priority
       if (sub) {
         if (sub.status === 'active') {
           setStatus('active');
           setPlan(sub.plan || 'pro');
           setTrialEnd(sub.trial_end || null);
-          setLoading(false);
           return;
         }
         if (sub.status === 'trialing' && sub.trial_end) {
           const trialEndDate = new Date(sub.trial_end);
-          if (trialEndDate < new Date()) {
-            setStatus('canceled');
-          } else {
+          if (trialEndDate > new Date()) {
             setStatus('trialing');
+            setPlan(sub.plan || 'pro');
+          } else {
+            setStatus('canceled');
+            setPlan('free');
           }
-          setPlan(sub.plan || 'pro');
           setTrialEnd(sub.trial_end);
-          setLoading(false);
           return;
         }
         if (sub.status === 'canceled' || sub.status === 'past_due') {
           setStatus(sub.status as SubscriptionStatus);
-          setPlan(sub.plan || 'free');
+          setPlan('free');
           setTrialEnd(sub.trial_end || null);
-          setLoading(false);
           return;
         }
       }
 
-      // No paid sub found — also check by email
-      if (!sub) {
+      // Check by email
+      if (!sub && user.email) {
         const { data: emailSub } = await supabase
           .from('subscriptions')
-          .select('*')
-          .eq('email', user.email?.toLowerCase() || '')
+          .select('status, plan, trial_end')
+          .eq('email', user.email.toLowerCase())
           .maybeSingle();
 
         if (emailSub) {
           setStatus(emailSub.status as SubscriptionStatus);
           setPlan(emailSub.plan || 'free');
           setTrialEnd(emailSub.trial_end || null);
-          setLoading(false);
           return;
         }
       }
 
-      // Fall back to profile trial fields
-      if (profile) {
-        const profileStatus = (profile as any).status as string | null;
-        const trialFim = (profile as any).trial_fim as string | null;
+      // Profile fallback
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('trial_fim, status')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-        if (profileStatus === 'ativo') {
+      if (profile) {
+        const pStatus = profile.status as string | null;
+        const trialFim = profile.trial_fim as string | null;
+
+        if (pStatus === 'ativo') {
           setStatus('active');
           setPlan('pro');
-          setTrialEnd(null);
-          setLoading(false);
           return;
         }
-
-        if (profileStatus === 'expirado' || profileStatus === 'cancelado') {
-          setStatus('canceled');
-          setPlan('free');
-          setTrialEnd(trialFim || null);
-          setLoading(false);
-          return;
-        }
-
-        if (profileStatus === 'trial' && trialFim) {
-          const end = new Date(trialFim);
-          if (end > new Date()) {
-            setStatus('trialing');
-            setPlan('pro');
-            setTrialEnd(trialFim);
-          } else {
-            setStatus('canceled');
-            setPlan('free');
-            setTrialEnd(trialFim);
-          }
-          setLoading(false);
+        if (pStatus === 'trial' && trialFim && new Date(trialFim) > new Date()) {
+          setStatus('trialing');
+          setPlan('pro');
+          setTrialEnd(trialFim);
           return;
         }
       }
 
-      // Nothing found at all
-      setStatus('free');
+      setStatus('canceled');
       setPlan('free');
-      setTrialEnd(null);
-    } catch (err) {
+    } catch {
       setStatus('free');
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchSubscription();
-  }, [user]);
+  }, [fetchSubscription]);
 
   const isActive = status === 'active' || status === 'trialing';
 
