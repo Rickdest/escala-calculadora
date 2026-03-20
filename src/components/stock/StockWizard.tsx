@@ -126,13 +126,26 @@ export function StockWizard({ onClose, editProduct }: Props) {
     }
     const combos = generateVariationCombinations(attributes);
     if (combos.length === 0) { setVarRows([]); return; }
+
+    // Build lookup from current varRows by label
     const existingMap = new Map<string, VarRow>();
     for (const v of varRows) existingMap.set(getVariationLabel(v.atributos), v);
+
+    // Also build lookup from editProduct variacoes to recover real DB IDs
+    const dbMap = new Map<string, string>();
+    if (editProduct?.variacoes) {
+      for (const v of editProduct.variacoes) {
+        dbMap.set(getVariationLabel(v.atributos as Record<string, string>), v.id);
+      }
+    }
+
     const rows: VarRow[] = combos.map(combo => {
       const label = getVariationLabel(combo);
       const existing = existingMap.get(label);
       if (existing) return { ...existing, atributos: combo };
-      return { tempId: Math.random().toString(36).substring(2, 15), atributos: combo, sku: '', preco_custo: 0, quantidade: 0, quantidade_minima: 5 };
+      // Try to recover DB ID for this combo
+      const dbId = dbMap.get(label);
+      return { tempId: dbId || Math.random().toString(36).substring(2, 15), atributos: combo, sku: '', preco_custo: 0, quantidade: 0, quantidade_minima: 5 };
     });
     setVarRows(rows);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -239,7 +252,13 @@ export function StockWizard({ onClose, editProduct }: Props) {
         // Update each existing variation
         if (temVariacoes) {
           for (const row of varRows) {
-            const existing = editProduct.variacoes.find(v => v.id === row.tempId);
+            let existing = editProduct.variacoes.find(v => v.id === row.tempId);
+            if (!existing) {
+              // Fallback: match by atributos content
+              existing = editProduct.variacoes.find(v =>
+                getVariationLabel(v.atributos as Record<string, string>) === getVariationLabel(row.atributos)
+              );
+            }
             if (existing) {
               await updateVariacao(existing.id, {
                 preco_custo: row.preco_custo,
@@ -524,8 +543,8 @@ export function StockWizard({ onClose, editProduct }: Props) {
                   </div>
 
                   {/* Rows */}
-                  {varRows.map(row => (
-                    <div key={row.tempId} className="grid items-center gap-2 px-3 py-2.5 hover:bg-surface-2/30 transition-colors" style={{ gridTemplateColumns: hasVar2 ? '1fr 1fr 80px 60px 60px' : '1fr 80px 60px 60px' }}>
+                  {varRows.map((row, idx) => (
+                    <div key={row.tempId + '-' + idx} className="grid items-center gap-2 px-3 py-2.5 hover:bg-surface-2/30 transition-colors" style={{ gridTemplateColumns: hasVar2 ? '1fr 1fr 80px 60px 60px' : '1fr 80px 60px 60px' }}>
                       {/* Var1 value */}
                       <p className="text-sm font-medium text-foreground truncate">
                         {hasVar2 ? row.atributos[var1Name] : getVariationLabel(row.atributos)}
