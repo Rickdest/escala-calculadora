@@ -200,23 +200,15 @@ export default function Home() {
               </button>
             </div>
             <div className="surface-card divide-y divide-border">
-              {topProducts.map(({ product, calc }, index) => (
-                <button key={product.id} className="w-full px-4 py-3 flex items-center justify-between hover:bg-surface-2/50 transition-colors" onClick={() => navigate('/products')}>
-                  <div className="flex items-center gap-3">
-                    <div className={cn(
-                      'w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold font-mono-num',
-                      index === 0 ? 'bg-primary text-primary-foreground' : 'bg-surface-2 text-text-2'
-                    )}>
-                      {index + 1}
-                    </div>
-                    <span className="font-medium text-foreground truncate max-w-[140px] text-[15px]">{product.name}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={cn('font-mono text-[13px] font-semibold font-mono-num', calc.netProfit >= 0 ? 'text-success' : 'text-danger')}>
-                      R$ {calc.netProfit.toFixed(2).replace('.', ',')}
+              {topProducts.map(({ product, calc }) => (
+                <button key={product.id} className="w-full px-4 py-3 text-left hover:bg-surface-2/50 transition-colors" onClick={() => navigate('/products')}>
+                  <p className="text-[15px] font-medium text-foreground truncate">{product.name}</p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className={cn('font-mono text-[13px] font-mono-num', calc.netProfit >= 0 ? 'text-success' : 'text-danger')}>
+                      R$ {calc.netProfit.toFixed(2).replace('.', ',')} lucro
                     </span>
                     <span className="text-text-3 text-[13px]">·</span>
-                    <span className={cn('font-mono text-[13px] font-semibold font-mono-num', getMarginStatus(calc.realMargin).color)}>
+                    <span className={cn('font-mono text-[13px] font-bold font-mono-num', getMarginStatus(calc.realMargin).color)}>
                       {calc.realMargin.toFixed(1)}%
                     </span>
                     <span className={cn('w-1.5 h-1.5 rounded-full', getMarginStatus(calc.realMargin).color.replace('text-', 'bg-'))} />
