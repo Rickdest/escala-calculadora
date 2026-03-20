@@ -132,7 +132,7 @@ function RoasGauge({ roasAtual, roasEmpate, roasIdeal, status }: {
 
   return (
     <div className="relative w-full flex flex-col items-center">
-      <ResponsiveContainer width="100%" height={160}>
+      <ResponsiveContainer width="100%" height={140}>
         <RadialBarChart
           cx="50%" cy="85%" innerRadius="70%" outerRadius="100%"
           startAngle={180} endAngle={0} barSize={12} data={data}

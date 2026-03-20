@@ -203,7 +203,7 @@ export default function Home() {
 
         {/* Top Products */}
         {topProducts.length > 0 && (
-          <div className="space-y-2 animate-fade-up stagger-4 md:col-span-full">
+          <div className="space-y-2 animate-fade-up stagger-4 md:col-span-full order-4 md:order-none">
             <div className="flex items-center justify-between">
               <p className="section-label">Seus Produtos</p>
               <button onClick={() => navigate('/products')} className="text-xs text-primary font-medium flex items-center gap-0.5">

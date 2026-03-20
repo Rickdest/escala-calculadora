@@ -253,7 +253,7 @@ function RankingSection({ ads }: { ads: ShopeeAdRow[] }) {
               {isOpen && (
                 <div className="px-2.5 pb-2.5 md:px-3.5 md:pb-3.5 space-y-3 animate-fade-in">
                   <div className="h-px bg-border" />
-                  <div className="grid grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div>
                       <p className="text-[9px] text-muted-foreground uppercase">ACOS</p>
                       <p className={cn('text-[13px] font-bold font-mono tabular-nums', getAcosColor(ad.acos))}>{ad.acos.toFixed(1)}%</p>
