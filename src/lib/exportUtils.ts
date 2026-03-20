@@ -96,7 +96,7 @@ export function generatePDFContent(data: ExportData[], store: Store): string {
       </style>
     </head>
     <body>
-      <h1>Relatório de Produtos - ${store.name}</h1>
+      <h1>Relatório de Produtos - ${escapeHtml(store.name)}</h1>
       
       <div class="summary">
         <div class="summary-grid">
