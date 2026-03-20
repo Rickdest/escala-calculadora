@@ -101,8 +101,8 @@ function getRoasEmoji(status: string) {
   }
 }
 
-const statusColors = { danger: 'text-destructive', warning: 'text-warning', success: 'text-success' };
-const statusBg = { danger: 'bg-destructive/10 border-destructive/30', warning: 'bg-warning/10 border-warning/30', success: 'bg-success/10 border-success/30' };
+const statusColors: Record<string, string> = { danger: 'text-destructive', empate: 'text-orange-400', warning: 'text-yellow-400', medium: 'text-primary', success: 'text-success' };
+const statusBg: Record<string, string> = { danger: 'bg-destructive/10 border-destructive/30', empate: 'bg-orange-400/10 border-orange-400/30', warning: 'bg-warning/10 border-warning/30', medium: 'bg-primary/10 border-primary/30', success: 'bg-success/10 border-success/30' };
 const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
 const CHART_COLORS = [
