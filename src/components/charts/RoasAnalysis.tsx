@@ -5,8 +5,14 @@ import { cn } from '@/lib/utils';
 import {
   Target, AlertTriangle, TrendingUp, TrendingDown, Sliders, Upload,
   FileSpreadsheet, Trash2, Eye, Package, Search, DollarSign,
-  BarChart3, PieChart, Zap, ArrowUpRight, ArrowDownRight, Percent, ShoppingCart
+  BarChart3, PieChart, Zap, ArrowUpRight, ArrowDownRight, Percent, ShoppingCart, Info
 } from 'lucide-react';
+import {
+  Tooltip as ShadTooltip,
+  TooltipContent as ShadTooltipContent,
+  TooltipProvider as ShadTooltipProvider,
+  TooltipTrigger as ShadTooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
@@ -578,19 +584,68 @@ function ProductAnalysis() {
               {/* Health Banner */}
               <ProductHealthBanner marginPercent={marginPercent} />
 
-              {/* Hero Results - 3-column KPIs */}
+              {/* Hero Results - 3-column KPIs with tooltips */}
               <div className="grid grid-cols-3 gap-2 animate-fade-in">
                 {[
-                  { label: 'Empate', value: roasData.roasEmpate!.toFixed(2) + 'x', color: 'text-warning' },
-                  { label: 'Saudável', value: roasData.roasSaudavel!.toFixed(2) + 'x', color: 'text-success' },
-                  { label: 'Ideal', value: roasData.roasIdeal!.toFixed(2) + 'x', color: 'text-success' },
-                ].map(({ label, value, color }) => (
+                  { label: 'Empate', value: roasData.roasEmpate!.toFixed(2) + 'x', color: 'text-warning', tip: 'O ROAS mínimo para não ter prejuízo. Abaixo disso você perde dinheiro em cada venda com anúncio.' },
+                  { label: 'Saudável', value: roasData.roasSaudavel!.toFixed(2) + 'x', color: 'text-success', tip: 'Garante lucro mesmo com variações de performance dos anúncios. Bom para escalar com segurança.' },
+                  { label: 'Ideal', value: roasData.roasIdeal!.toFixed(2) + 'x', color: 'text-success', tip: 'Margem confortável. Nesse nível vale aumentar o investimento em ads com confiança.' },
+                ].map(({ label, value, color, tip }) => (
                   <div key={label} className="rounded-xl border border-border bg-card p-3 text-center">
-                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">{label}</p>
+                    <div className="flex items-center justify-center gap-1">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">{label}</p>
+                      <ShadTooltipProvider delayDuration={200}>
+                        <ShadTooltip>
+                          <ShadTooltipTrigger asChild>
+                            <button type="button" className="text-text-3 hover:text-primary transition-colors focus:outline-none">
+                              <Info className="w-3 h-3" />
+                            </button>
+                          </ShadTooltipTrigger>
+                          <ShadTooltipContent side="top" className="max-w-[220px] text-xs leading-relaxed">
+                            {tip}
+                          </ShadTooltipContent>
+                        </ShadTooltip>
+                      </ShadTooltipProvider>
+                    </div>
                     <p className={cn('font-extrabold tabular-nums font-mono text-lg mt-1', color)}>{value}</p>
                   </div>
                 ))}
               </div>
+
+              {/* Diagnostic Banner */}
+              {roasData.roasAtual !== null && roasData.roasEmpate && roasData.roasSaudavel && roasData.roasIdeal && (() => {
+                const ra = roasData.roasAtual!;
+                const re = roasData.roasEmpate!;
+                const rs = roasData.roasSaudavel!;
+                const ri = roasData.roasIdeal!;
+                let icon: React.ElementType;
+                let text: string;
+                let colors: string;
+                if (ra < re) {
+                  icon = AlertTriangle;
+                  text = 'Seus anúncios estão no prejuízo. Cada venda com ads está custando mais do que traz. Reduza o CPC ou aumente o preço de venda.';
+                  colors = 'bg-danger/10 text-danger border border-danger/20';
+                } else if (ra < rs) {
+                  icon = Info;
+                  text = 'Seus anúncios cobrem os custos, mas a margem ainda é apertada. Tente melhorar o CTR ou reduzir o custo por clique.';
+                  colors = 'bg-warning/10 text-warning border border-warning/20';
+                } else if (ra < ri) {
+                  icon = TrendingUp;
+                  text = 'Boa performance. Seus anúncios são lucrativos. Considere aumentar o orçamento gradualmente.';
+                  colors = 'bg-primary/10 text-primary border border-primary/20';
+                } else {
+                  icon = Zap;
+                  text = 'Excelente! Seus anúncios estão performando muito acima do necessário. Escale o investimento com segurança.';
+                  colors = 'bg-success/10 text-success border border-success/20';
+                }
+                const Icon = icon;
+                return (
+                  <div className={cn('rounded-xl px-4 py-3 flex items-center gap-3 text-sm font-medium animate-fade-up', colors)}>
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    <p>{text}</p>
+                  </div>
+                );
+              })()}
 
               {/* Insight Banner */}
               {status && (() => {
