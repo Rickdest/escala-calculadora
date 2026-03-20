@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useStore } from '@/contexts/StoreContext';
 import { getShopeeFeeForPrice, Product } from '@/types/store';
 import { cn } from '@/lib/utils';
