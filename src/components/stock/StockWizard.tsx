@@ -68,6 +68,7 @@ export function StockWizard({ onClose, editProduct }: Props) {
   // Bulk apply
   const [bulkCost, setBulkCost] = useState('');
   const [bulkQty, setBulkQty] = useState('');
+  const [bulkMin, setBulkMin] = useState('');
   const [bulkSku, setBulkSku] = useState('');
 
   // Dropdown state for type name inputs
