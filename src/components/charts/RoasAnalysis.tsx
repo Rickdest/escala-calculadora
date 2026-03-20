@@ -700,24 +700,32 @@ function ProductAnalysis() {
                 <div className="rounded-xl border border-border bg-card p-4 space-y-3">
                   <SectionLabel icon={BarChart3}>Posição do ROAS</SectionLabel>
                   <div className="relative pt-1">
-                    <div className="w-full h-3 rounded-full bg-secondary overflow-hidden">
+                    <div className="w-full h-3 rounded-full bg-secondary overflow-hidden relative">
+                      {/* 5-zone gradient background */}
+                      <div className="absolute inset-0 rounded-full" style={{
+                        background: `linear-gradient(to right, hsl(0 85% 60%) 0%, hsl(25 95% 55%) ${(roasData.roasEmpate / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%, hsl(45 95% 50%) ${(roasData.roasSaudavel! / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%, hsl(100 60% 45%) ${(roasData.roasIdeal / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%, hsl(152 70% 42%) 100%)`,
+                        opacity: 0.25,
+                      }} />
                       <div
-                        className={cn('h-full rounded-full transition-all duration-700 ease-out',
+                        className={cn('h-full rounded-full transition-all duration-700 ease-out relative z-10',
                           status === 'danger' && 'bg-destructive',
-                          status === 'warning' && 'bg-warning',
+                          status === 'empate' && 'bg-orange-400',
+                          status === 'warning' && 'bg-yellow-400',
+                          status === 'medium' && 'bg-primary',
                           status === 'success' && 'bg-success',
                         )}
                         style={{ width: `${Math.min((roasData.roasAtual / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100, 100)}%` }}
                       />
                     </div>
-                    <div className="absolute top-1 h-3 w-0.5 bg-warning/60 rounded-full" style={{ left: `${(roasData.roasEmpate / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%` }} />
-                    <div className="absolute top-1 h-3 w-0.5 bg-success/60 rounded-full" style={{ left: `${(roasData.roasIdeal / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%` }} />
+                    <div className="absolute top-1 h-3 w-0.5 bg-orange-400/60 rounded-full z-20" style={{ left: `${(roasData.roasEmpate / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%` }} />
+                    <div className="absolute top-1 h-3 w-0.5 bg-yellow-400/60 rounded-full z-20" style={{ left: `${(roasData.roasSaudavel! / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%` }} />
+                    <div className="absolute top-1 h-3 w-0.5 bg-success/60 rounded-full z-20" style={{ left: `${(roasData.roasIdeal / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%` }} />
                   </div>
                   <div className="flex justify-between text-[10px] text-muted-foreground font-bold">
                     <span>0</span>
-                    <span className="text-warning">Empate {roasData.roasEmpate.toFixed(1)}</span>
-                    <span className="text-success">Saudável {roasData.roasSaudavel?.toFixed(1)}</span>
-                    <span className="text-primary">Ideal {roasData.roasIdeal.toFixed(1)}</span>
+                    <span className="text-orange-400">Empate {roasData.roasEmpate.toFixed(1)}</span>
+                    <span className="text-yellow-400">L.Médio {roasData.roasSaudavel?.toFixed(1)}</span>
+                    <span className="text-success">Lucrativo {roasData.roasIdeal.toFixed(1)}</span>
                   </div>
                 </div>
               )}
