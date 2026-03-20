@@ -542,6 +542,15 @@ export function StockWizard({ onClose, editProduct }: Props) {
                             </td>
                             <td className="px-2 py-1.5">
                               <Input
+                                type="number"
+                                min="0"
+                                value={row.quantidade_minima || ''}
+                                onChange={e => updateVarRow(row.tempId, 'quantidade_minima', e.target.value)}
+                                className="h-8 text-xs w-14 bg-surface-2 border-border focus:border-primary"
+                              />
+                            </td>
+                            <td className="px-2 py-1.5">
+                              <Input
                                 value={row.sku}
                                 onChange={e => updateVarRow(row.tempId, 'sku', e.target.value)}
                                 className="h-8 text-xs w-24 bg-surface-2 border-border focus:border-primary"
