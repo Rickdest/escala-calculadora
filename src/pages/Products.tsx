@@ -7,6 +7,7 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { ProductCard } from '@/components/cards/ProductCard';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { MarginDistributionChart, TopProductsChart, ProfitSummaryChart } from '@/components/charts/AnalyticsCharts';
+import { ProductThumbnail } from '@/components/ProductThumbnail';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -207,9 +208,10 @@ export default function Products() {
                 {products.map(({ product, calc }) => (
                   <button
                     key={product.id}
-                    className="w-full h-16 px-4 flex items-center justify-between hover:bg-surface-2/50 transition-colors"
+                    className="w-full px-4 py-3 flex items-center gap-3 hover:bg-surface-2/50 transition-colors"
                     onClick={() => handleEdit(product)}
                   >
+                    <ProductThumbnail productId={product.id} productName={product.name} />
                     <div className="flex-1 min-w-0 text-left">
                       <p className="text-[15px] font-medium text-foreground truncate">{product.name}</p>
                       <p className="text-[13px] text-text-2 font-mono font-mono-num">
