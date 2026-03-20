@@ -311,6 +311,11 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             </div>
           )}
 
+          {/* Ads Section */}
+          {product?.id && (
+            <ProductAdsSection productId={product.id} />
+          )}
+
           {/* ROAS */}
           <div className="grid grid-cols-3 gap-2">
             <div className="surface-card p-3 space-y-1 border-danger/20">
