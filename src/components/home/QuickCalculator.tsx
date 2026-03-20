@@ -322,8 +322,8 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                       {/* Labels topo */}
                       <div className="flex justify-between text-[10px] text-text-3 mb-1.5">
                         <span>Empate</span>
-                        <span>Saudável</span>
-                        <span>Ideal</span>
+                        <span>Lucro Médio</span>
+                        <span>Lucrativo</span>
                       </div>
                       {/* Barra */}
                       <div className="relative h-1 rounded-[4px] overflow-hidden" style={{ backgroundColor: '#1F2433' }}>
