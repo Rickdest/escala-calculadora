@@ -304,15 +304,15 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                   </div>
                   <div className="flex justify-between items-center">
                     <div>
-                      <span className="text-[13px] text-text-2">Saudável</span>
-                      <span className="text-[10px] text-text-3 ml-1.5">mínimo para lucrar</span>
+                      <span className="text-[13px] text-text-2">Lucro Médio</span>
+                      <span className="text-[10px] text-text-3 ml-1.5">lucro consistente</span>
                     </div>
                     <span className="font-mono text-[14px] font-bold font-mono-num text-foreground">{result.roasSaudavel > 0 ? result.roasSaudavel.toFixed(2) : '--'}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <div>
-                      <span className="text-[13px] text-text-2">Ideal</span>
-                      <span className="text-[10px] text-text-3 ml-1.5">meta para escalar</span>
+                      <span className="text-[13px] text-text-2">Lucrativo</span>
+                      <span className="text-[10px] text-text-3 ml-1.5">escalar com segurança</span>
                     </div>
                     <span className="font-mono text-[14px] font-bold font-mono-num text-primary">{result.roasIdeal > 0 ? result.roasIdeal.toFixed(2) : '--'}</span>
                   </div>
