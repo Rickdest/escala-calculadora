@@ -97,6 +97,13 @@ export default function Auth() {
           </span>
         </div>
 
+        {/* Inline error banner */}
+        {errorMessage && (
+          <div className="bg-[#EF4444] text-white text-[13px] px-4 py-2.5 rounded-lg max-h-12 flex items-center justify-center">
+            {errorMessage}
+          </div>
+        )}
+
         {/* Card */}
         <div className="bg-[#13161F] border border-[#1F2433] rounded-[14px] p-5">
           {/* Tabs */}
