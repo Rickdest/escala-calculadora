@@ -1,4 +1,4 @@
-import { Home, Package, BarChart3, GraduationCap, Settings } from 'lucide-react';
+import { Home, Package, BarChart3, Warehouse, Settings } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
