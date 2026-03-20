@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { X, Camera, Trash2, GripVertical } from 'lucide-react';
+import { X, Camera, Trash2, GripVertical, Plus } from 'lucide-react';
 import { useEstoque, EstoqueProduto } from '@/hooks/useEstoque';
 import { generateVariationCombinations, getVariationLabel, ProductAttribute } from '@/types/store';
 import { Input } from '@/components/ui/input';
