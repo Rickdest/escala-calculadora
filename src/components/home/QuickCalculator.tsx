@@ -237,7 +237,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               </button>
               <button
               onClick={() => onSaveProduct({ costPrice, salePrice, packaging })}
-              className="flex-1 h-11 bg-accent rounded-lg text-[13px] font-semibold text-white hover:bg-[#EA6C0A] active:scale-[0.98] transition-all">
+              className="flex-1 h-11 bg-surface-2 text-text-2 hover:bg-primary hover:text-primary-foreground rounded-lg text-[13px] font-semibold transition-all active:scale-[0.98]">
               
                 Salvar produto
               </button>
