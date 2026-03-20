@@ -3,6 +3,7 @@ import { Store, Product, StoreConfig, DEFAULT_STORE_CONFIG, ProductCalculation, 
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { compressImage } from '@/lib/imageUtils';
 
 interface StoreContextType {
   stores: Store[];
