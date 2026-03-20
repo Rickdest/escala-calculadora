@@ -451,6 +451,10 @@ export function StockWizard({ onClose, editProduct }: Props) {
                     <Input type="number" value={bulkQty} onChange={e => setBulkQty(e.target.value)} placeholder="0" className="h-8 text-xs bg-surface-2 border-border focus:border-primary" />
                   </div>
                   <div className="flex-1">
+                    <Label className="section-label">Mín.</Label>
+                    <Input type="number" value={bulkMin} onChange={e => setBulkMin(e.target.value)} placeholder="5" className="h-8 text-xs bg-surface-2 border-border focus:border-primary" />
+                  </div>
+                  <div className="flex-1">
                     <Label className="section-label">SKU</Label>
                     <Input value={bulkSku} onChange={e => setBulkSku(e.target.value)} placeholder="SKU" className="h-8 text-xs bg-surface-2 border-border focus:border-primary" />
                   </div>
