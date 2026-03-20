@@ -6,7 +6,7 @@ import { getShopeeFeeForPrice } from '@/types/store';
 import { cn, getMarginStatus } from '@/lib/utils';
 
 interface QuickCalculatorProps {
-  onSaveProduct: (prefill: { costPrice: string; salePrice: string; packaging: string }) => void;
+  onSaveProduct: (prefill: {costPrice: string;salePrice: string;packaging: string;}) => void;
 }
 
 export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
@@ -22,12 +22,12 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
   const [monthlySales, setMonthlySales] = useState(1000);
 
   const hasGlobalTaxes = !!(
-    (config?.taxes && config.taxes > 0) ||
-    config?.enableAffiliateCommission ||
-    config?.enableShopeeCampaigns ||
-    (config?.shopeeAcelera && config.shopeeAcelera !== 'none') ||
-    (config?.isCpfSeller && config?.hasOver450Orders)
-  );
+  config?.taxes && config.taxes > 0 ||
+  config?.enableAffiliateCommission ||
+  config?.enableShopeeCampaigns ||
+  config?.shopeeAcelera && config.shopeeAcelera !== 'none' ||
+  config?.isCpfSeller && config?.hasOver450Orders);
+
 
   const result = useMemo(() => {
     const sp = parseFloat(salePrice) || 0;
@@ -76,7 +76,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
       aceleraCost,
       aceleraPercent,
       totalCosts,
-      sp,
+      sp
     };
   }, [salePrice, costPrice, packaging, config]);
 
@@ -85,7 +85,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
     return {
       revenue: result.sp * monthlySales,
       costs: result.totalCosts * monthlySales,
-      profit: result.netProfit * monthlySales,
+      profit: result.netProfit * monthlySales
     };
   }, [result, monthlySales]);
 
@@ -100,7 +100,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
   };
 
   const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
   const roasProgress = useMemo(() => {
     if (!result || result.roasEmpate <= 0 || result.roasIdeal <= 0) return 0;
@@ -125,10 +125,10 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               step="0.01"
               min="0"
               value={costPrice}
-              onChange={(e) => { setCostPrice(e.target.value); setShowResult(false); }}
+              onChange={(e) => {setCostPrice(e.target.value);setShowResult(false);}}
               placeholder="0,00"
-              className="w-full h-12 pl-12 pr-3 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num focus:border-primary focus:outline-none transition-colors"
-            />
+              className="w-full h-12 pl-12 pr-3 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num focus:border-primary focus:outline-none transition-colors" />
+            
           </div>
         </div>
         <div>
@@ -141,10 +141,10 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               step="0.01"
               min="0"
               value={salePrice}
-              onChange={(e) => { setSalePrice(e.target.value); setShowResult(false); }}
+              onChange={(e) => {setSalePrice(e.target.value);setShowResult(false);}}
               placeholder="0,00"
-              className="w-full h-12 pl-12 pr-3 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num focus:border-primary focus:outline-none transition-colors"
-            />
+              className="w-full h-12 pl-12 pr-3 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num focus:border-primary focus:outline-none transition-colors" />
+            
           </div>
         </div>
       </div>
@@ -160,10 +160,10 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               step="0.01"
               min="0"
               value={packaging}
-              onChange={(e) => { setPackaging(e.target.value); setShowResult(false); }}
+              onChange={(e) => {setPackaging(e.target.value);setShowResult(false);}}
               placeholder="0,00"
-              className="w-full h-12 pl-12 pr-3 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num focus:border-primary focus:outline-none transition-colors"
-            />
+              className="w-full h-12 pl-12 pr-3 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num focus:border-primary focus:outline-none transition-colors" />
+            
           </div>
         </div>
       </div>
@@ -171,20 +171,20 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
       <button
         onClick={handleCalculate}
         disabled={!result || isCalculating}
-        className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-[15px] rounded-[10px] flex items-center justify-center gap-2 transition-colors active:scale-[0.98] disabled:opacity-40"
-      >
-        {isCalculating ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : (
-          <>
+        className="w-full h-12 text-primary-foreground font-semibold text-[15px] rounded-[10px] flex items-center justify-center gap-2 transition-colors active:scale-[0.98] disabled:opacity-40 bg-orange-600 hover:bg-orange-500">
+        
+        {isCalculating ?
+        <Loader2 className="w-4 h-4 animate-spin" /> :
+
+        <>
             <Zap className="w-4 h-4" />
             Calcular
           </>
-        )}
+        }
       </button>
 
-      {showResult && result && projection && (
-        <div className="mt-4 animate-fade-up">
+      {showResult && result && projection &&
+      <div className="mt-4 animate-fade-up">
           {/* Result Card */}
           <div className="mt-2 space-y-4">
             {/* Métricas — 3 cards */}
@@ -192,85 +192,85 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               <div className="bg-surface-2 rounded-xl p-3 text-center border border-border/40">
                 <p className="text-[10px] font-medium text-text-3 tracking-wider mb-1">Lucro</p>
                 <p className={cn(
-                  'font-mono font-extrabold font-mono-num leading-tight',
-                  result.netProfit >= 0 ? 'text-[18px] text-success' : 'text-[15px] text-danger'
-                )}>
+                'font-mono font-extrabold font-mono-num leading-tight',
+                result.netProfit >= 0 ? 'text-[18px] text-success' : 'text-[15px] text-danger'
+              )}>
                   {formatCurrency(result.netProfit)}
                 </p>
               </div>
               <div className="bg-surface-2 rounded-xl p-3 text-center border border-border/40">
                 <p className="text-[10px] font-medium text-text-3 tracking-wider mb-1">Margem</p>
                 <p className={cn(
-                  'font-mono font-extrabold font-mono-num leading-tight',
-                  result.realMargin >= 0 ? 'text-[18px]' : 'text-[15px]',
-                  getMarginStatus(result.realMargin).color
-                )}>
+                'font-mono font-extrabold font-mono-num leading-tight',
+                result.realMargin >= 0 ? 'text-[18px]' : 'text-[15px]',
+                getMarginStatus(result.realMargin).color
+              )}>
                   {result.realMargin.toFixed(1)}%
                 </p>
               </div>
               <div className="bg-surface-2 rounded-xl p-3 text-center border border-border/40">
                 <p className="text-[10px] font-medium text-text-3 tracking-wider mb-1">ROAS</p>
-                {result.roasEmpate > 0 ? (
-                  <p className="font-mono text-[18px] font-extrabold font-mono-num leading-tight text-warning">
+                {result.roasEmpate > 0 ?
+              <p className="font-mono text-[18px] font-extrabold font-mono-num leading-tight text-warning">
                     {result.roasEmpate.toFixed(2)}
-                  </p>
-                ) : (
-                  <p className="text-[12px] font-semibold text-danger mt-1">Prejuízo</p>
-                )}
+                  </p> :
+
+              <p className="text-[12px] font-semibold text-danger mt-1">Prejuízo</p>
+              }
               </div>
             </div>
 
             {/* Alerta de prejuízo */}
-            {result.netProfit < 0 && (
-              <div className="flex items-center gap-2.5 p-3 rounded-xl bg-danger/10 border border-danger/30 animate-fade-up">
+            {result.netProfit < 0 &&
+          <div className="flex items-center gap-2.5 p-3 rounded-xl bg-danger/10 border border-danger/30 animate-fade-up">
                 <AlertTriangle className="w-4 h-4 text-danger flex-shrink-0" />
                 <p className="text-[12px] font-semibold text-danger">Preço de venda abaixo do custo total. Você está vendendo no prejuízo.</p>
               </div>
-            )}
+          }
 
             {/* Ações */}
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setShowAnalysis(!showAnalysis)}
-                className={`flex-1 h-11 rounded-lg text-[13px] font-semibold transition-all active:scale-[0.97] ${showAnalysis ? 'bg-primary text-primary-foreground' : 'bg-surface-2 text-text-2 hover:bg-primary hover:text-primary-foreground'}`}
-              >
+              onClick={() => setShowAnalysis(!showAnalysis)}
+              className="flex-1 h-11 bg-accent rounded-lg text-[13px] font-semibold text-white hover:bg-[#EA6C0A] active:scale-[0.98] transition-all">
+              
                 {showAnalysis ? '↑ Fechar' : '↓ Ver análise'}
               </button>
               <button
-                onClick={() => onSaveProduct({ costPrice, salePrice, packaging })}
-                className="flex-1 h-11 rounded-lg text-[13px] font-semibold transition-all active:scale-[0.97] bg-surface-2 text-text-2 hover:bg-primary hover:text-primary-foreground"
-              >
+              onClick={() => onSaveProduct({ costPrice, salePrice, packaging })}
+              className="flex-1 h-11 bg-accent rounded-lg text-[13px] font-semibold text-white hover:bg-[#EA6C0A] active:scale-[0.98] transition-all">
+              
                 Salvar produto
               </button>
             </div>
           </div>
 
           {/* ANÁLISE COMPLETA */}
-          {showAnalysis && (
-            <div className="mt-3 bg-surface-2 rounded-[10px] p-3 animate-fade-up space-y-0">
+          {showAnalysis &&
+        <div className="mt-3 bg-surface-2 rounded-[10px] p-3 animate-fade-up space-y-0">
               {/* Custos */}
               <div className="pb-3">
                 <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-2">Custos</p>
                 <div className="space-y-1.5">
                   <CostRow label="Taxa Shopee" value={result.totalShopeeFee} format={formatCurrency} />
-                  {result.packagingCost > 0 && (
-                    <CostRow label="Embalagem e Insumos" value={result.packagingCost} format={formatCurrency} />
-                  )}
-                  {result.taxesCost > 0 && (
-                    <CostRow label={`Impostos (${result.taxesPercent}%)`} value={result.taxesCost} format={formatCurrency} />
-                  )}
-                  {result.affiliateCost > 0 && (
-                    <CostRow label={`Comissão Afiliados (${result.affiliatePercent}%)`} value={result.affiliateCost} format={formatCurrency} />
-                  )}
-                  {result.campaignsCost > 0 && (
-                    <CostRow label={`Campanhas Destaque (${result.campaignsPercent}%)`} value={result.campaignsCost} format={formatCurrency} />
-                  )}
-                  {result.aceleraCost > 0 && (
-                    <CostRow label={`Shopee Acelera (${result.aceleraPercent}%)`} value={result.aceleraCost} format={formatCurrency} />
-                  )}
-                  {result.cpfExtra > 0 && (
-                    <CostRow label="Adicional CPF" value={result.cpfExtra} format={formatCurrency} />
-                  )}
+                  {result.packagingCost > 0 &&
+              <CostRow label="Embalagem e Insumos" value={result.packagingCost} format={formatCurrency} />
+              }
+                  {result.taxesCost > 0 &&
+              <CostRow label={`Impostos (${result.taxesPercent}%)`} value={result.taxesCost} format={formatCurrency} />
+              }
+                  {result.affiliateCost > 0 &&
+              <CostRow label={`Comissão Afiliados (${result.affiliatePercent}%)`} value={result.affiliateCost} format={formatCurrency} />
+              }
+                  {result.campaignsCost > 0 &&
+              <CostRow label={`Campanhas Destaque (${result.campaignsPercent}%)`} value={result.campaignsCost} format={formatCurrency} />
+              }
+                  {result.aceleraCost > 0 &&
+              <CostRow label={`Shopee Acelera (${result.aceleraPercent}%)`} value={result.aceleraCost} format={formatCurrency} />
+              }
+                  {result.cpfExtra > 0 &&
+              <CostRow label="Adicional CPF" value={result.cpfExtra} format={formatCurrency} />
+              }
                   <div className="border-t border-border pt-1.5 mt-1.5">
                     <CostRow label="Total de custos" value={result.totalCosts} format={formatCurrency} bold />
                     <div className="mt-1.5" />
@@ -278,16 +278,16 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                   </div>
                 </div>
 
-                {!hasGlobalTaxes && (
-                  <button
-                    onClick={() => navigate('/settings')}
-                    className="mt-3 w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg border border-border/40 bg-background/30 hover:bg-background/60 transition-colors group"
-                  >
+                {!hasGlobalTaxes &&
+            <button
+              onClick={() => navigate('/settings')}
+              className="mt-3 w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg border border-border/40 bg-background/30 hover:bg-background/60 transition-colors group">
+              
                     <Info className="w-3.5 h-3.5 text-text-3 shrink-0" />
                     <span className="text-[11px] text-text-3 flex-1 text-left">Configure impostos e taxas para cálculo mais preciso.</span>
                     <span className="text-[11px] text-primary font-medium group-hover:underline shrink-0">Configurar →</span>
                   </button>
-                )}
+            }
               </div>
 
               <div className="border-t border-border" />
@@ -318,8 +318,8 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                     <span className="font-mono text-[14px] font-bold font-mono-num text-primary">{result.roasIdeal > 0 ? result.roasIdeal.toFixed(2) : '--'}</span>
                   </div>
 
-                  {result.roasEmpate > 0 && result.roasIdeal > 0 && (
-                    <div className="pt-3 px-0">
+                  {result.roasEmpate > 0 && result.roasIdeal > 0 &&
+              <div className="pt-3 px-0">
                       {/* Labels topo */}
                       <div className="flex justify-between text-[10px] text-text-3 mb-1.5">
                         <span>Empate</span>
@@ -329,9 +329,9 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                       {/* Barra */}
                       <div className="relative h-1 rounded-[4px] overflow-hidden" style={{ backgroundColor: '#1F2433' }}>
                         <div
-                          className="absolute inset-0 rounded-[4px]"
-                          style={{ background: 'linear-gradient(to right, #EF4444, #EAB308, #22C55E)' }}
-                        />
+                    className="absolute inset-0 rounded-[4px]"
+                    style={{ background: 'linear-gradient(to right, #EF4444, #EAB308, #22C55E)' }} />
+                  
                       </div>
                       {/* Marcadores */}
                       <div className="relative h-3 mt-[-6px]">
@@ -346,7 +346,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                         <span className="font-mono text-[12px] font-bold font-mono-num" style={{ color: '#F97316' }}>{result.roasIdeal.toFixed(2)}</span>
                       </div>
                     </div>
-                  )}
+              }
                 </div>
               </div>
 
@@ -360,25 +360,25 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                 </div>
                 <div className="flex items-center justify-center gap-3 mb-4">
                   <button
-                    onClick={() => setMonthlySales(prev => Math.max(prev - 10, 10))}
-                    className="w-11 h-11 rounded-xl bg-background border border-border flex items-center justify-center text-[18px] font-bold text-foreground active:scale-95 transition-transform"
-                  >−</button>
+                onClick={() => setMonthlySales((prev) => Math.max(prev - 10, 10))}
+                className="w-11 h-11 rounded-xl bg-background border border-border flex items-center justify-center text-[18px] font-bold text-foreground active:scale-95 transition-transform">
+                −</button>
                   <input
-                    type="number"
-                    inputMode="numeric"
-                    min="10"
-                    max="10000"
-                    value={monthlySales}
-                    onChange={(e) => {
-                      const v = parseInt(e.target.value) || 10;
-                      setMonthlySales(Math.min(Math.max(v, 10), 10000));
-                    }}
-                    className="w-24 h-11 text-[16px] font-mono font-bold font-mono-num text-center bg-background border border-border rounded-xl text-foreground focus:border-accent focus:outline-none transition-colors"
-                  />
+                type="number"
+                inputMode="numeric"
+                min="10"
+                max="10000"
+                value={monthlySales}
+                onChange={(e) => {
+                  const v = parseInt(e.target.value) || 10;
+                  setMonthlySales(Math.min(Math.max(v, 10), 10000));
+                }}
+                className="w-24 h-11 text-[16px] font-mono font-bold font-mono-num text-center bg-background border border-border rounded-xl text-foreground focus:border-accent focus:outline-none transition-colors" />
+              
                   <button
-                    onClick={() => setMonthlySales(prev => Math.min(prev + 10, 10000))}
-                    className="w-11 h-11 rounded-xl bg-background border border-border flex items-center justify-center text-[18px] font-bold text-foreground active:scale-95 transition-transform"
-                  >+</button>
+                onClick={() => setMonthlySales((prev) => Math.min(prev + 10, 10000))}
+                className="w-11 h-11 rounded-xl bg-background border border-border flex items-center justify-center text-[18px] font-bold text-foreground active:scale-95 transition-transform">
+                +</button>
                 </div>
                 <div className="space-y-2 bg-background/50 rounded-xl p-3 border border-border/30">
                   <CostRow label="Receita bruta" value={projection.revenue} format={formatCurrency} />
@@ -387,9 +387,9 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                     <div className="flex justify-between">
                       <span className="text-[13px] font-semibold text-foreground">Lucro mensal</span>
                       <span className={cn(
-                        'font-mono text-[15px] font-extrabold font-mono-num',
-                        projection.profit >= 0 ? 'text-success' : 'text-danger'
-                      )}>{formatCurrency(projection.profit)}</span>
+                    'font-mono text-[15px] font-extrabold font-mono-num',
+                    projection.profit >= 0 ? 'text-success' : 'text-danger'
+                  )}>{formatCurrency(projection.profit)}</span>
                     </div>
                   </div>
                   <div className="flex justify-between items-center pt-1">
@@ -401,18 +401,18 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                 </div>
               </div>
             </div>
-          )}
+        }
         </div>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }
 
-function CostRow({ label, value, format, bold }: { label: string; value: number; format: (v: number) => string; bold?: boolean }) {
+function CostRow({ label, value, format, bold }: {label: string;value: number;format: (v: number) => string;bold?: boolean;}) {
   return (
     <div className="flex justify-between">
       <span className={cn('text-[13px] text-text-2', bold && 'font-semibold')}>{label}</span>
       <span className={cn('font-mono text-[14px] font-mono-num text-foreground', bold ? 'font-bold' : 'font-bold')}>{format(value)}</span>
-    </div>
-  );
+    </div>);
+
 }
