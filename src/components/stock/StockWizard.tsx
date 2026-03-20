@@ -199,6 +199,10 @@ export function StockWizard({ onClose, editProduct }: Props) {
     }));
   };
 
+  const removeVarRow = (id: string) => {
+    setVarRows(prev => prev.filter(v => v.tempId !== id));
+  };
+
   const applyBulk = () => {
     setVarRows(prev => prev.map(v => ({
       ...v,
