@@ -519,11 +519,11 @@ export function AdsTab() {
       adsCost: 0,
       adsRevenue: 0,
       stockQuantity: 0,
+      minStockQuantity: 5,
       hasVariations: false,
       attributes: [],
       variations: [],
       shopeeAcelera: 'none' as const,
-      shopeeProductId: metric.shopeeProductId,
     };
     await addProduct(newProduct);
     // Get the newly created product

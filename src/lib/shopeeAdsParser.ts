@@ -543,7 +543,6 @@ export function parseShopeeCSV(csvContent: string): ShopeeAdsReport | null {
         conversionRate: parseBRNumber(getCol(cols, map.conversionRate)),
         acos: parseBRNumber(getCol(cols, map.acos)),
         directAcos: parseBRNumber(getCol(cols, map.directAcos)),
-        costPerConversion: parseBRNumber(getCol(cols, map.costPerConversion)),
         costPerConv: parseBRNumber(getCol(cols, map.costPerConversion)),
         itemsSold,
         directItemsSold: parseBRNumber(getCol(cols, map.directItemsSold)),
