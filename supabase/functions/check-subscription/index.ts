@@ -98,7 +98,36 @@ Deno.serve(async (req) => {
       return respond(resolveStatus(sub));
     }
 
-    // No subscription record found
+    // Fallback: verificar trial em profiles
+    const { data: profile } = await adminClient
+      .from("profiles")
+      .select("status, trial_fim, trial_inicio")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (profile) {
+      const agora = new Date();
+      const trialFim = profile.trial_fim ? new Date(profile.trial_fim) : null;
+      const trialInicio = profile.trial_inicio ? new Date(profile.trial_inicio) : null;
+
+      const trialLegitimo = trialInicio &&
+        (agora.getTime() - trialInicio.getTime()) < (8 * 24 * 60 * 60 * 1000);
+
+      if (
+        profile.status === "trial" &&
+        trialFim &&
+        trialFim > agora &&
+        trialLegitimo
+      ) {
+        return respond({ status: "trialing", plan: "pro", trialEnd: profile.trial_fim });
+      }
+
+      if (profile.status === "ativo") {
+        return respond({ status: "active", plan: "pro", trialEnd: null });
+      }
+    }
+
+    // Nada encontrado — expirado
     return respond({ status: "expired", plan: "free", trialEnd: null });
   } catch (error) {
     console.error("check-subscription error:", error instanceof Error ? error.message : "Unknown");
