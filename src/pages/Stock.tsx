@@ -24,7 +24,7 @@ function getProductStatus(p: EstoqueProduto) {
 }
 
 export default function Stock() {
-  const { produtos, loading, stats } = useEstoque();
+  const { produtos, loading, stats, reload } = useEstoque();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<StockFilter>('all');
   const [showWizard, setShowWizard] = useState(false);
@@ -212,7 +212,7 @@ export default function Stock() {
 
       {showWizard && (
         <StockWizard
-          onClose={() => { setShowWizard(false); setEditProduct(null); }}
+          onClose={() => { setShowWizard(false); setEditProduct(null); reload(); }}
           editProduct={editProduct}
         />
       )}
@@ -220,7 +220,7 @@ export default function Stock() {
       {activeDetail && (
         <StockDetail
           product={activeDetail}
-          onClose={() => setDetailProduct(null)}
+          onClose={() => { setDetailProduct(null); reload(); }}
           onEdit={() => {
             setEditProduct(activeDetail);
             setDetailProduct(null);
