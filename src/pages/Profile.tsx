@@ -43,7 +43,20 @@ export default function Profile() {
 
     if (data) {
       setDisplayName(data.display_name || '');
-      setAvatarUrl(data.avatar_url || '');
+      // If avatar_url is a path (not a full URL), generate a signed URL
+      if (data.avatar_url) {
+        if (data.avatar_url.startsWith('http')) {
+          // Legacy full URL — try to extract path and get signed URL
+          setAvatarUrl(data.avatar_url);
+        } else {
+          const { data: signedData } = await supabase.storage
+            .from('avatars')
+            .createSignedUrl(data.avatar_url, 3600);
+          if (signedData?.signedUrl) {
+            setAvatarUrl(signedData.signedUrl);
+          }
+        }
+      }
     }
     setLoading(false);
   };
