@@ -438,45 +438,107 @@ export function StockWizard({ onClose, editProduct }: Props) {
             <>
               <div className="h-2 bg-surface-2" />
               <div className="p-4 space-y-3 animate-fade-up">
-                <h3 className="text-sm font-bold text-foreground">Lista de Variações</h3>
+                <p className="section-label mb-3">LISTA DE VARIAÇÕES</p>
 
-                {/* Bulk apply row */}
-                <div className="flex items-end gap-2">
-                  <div className="flex-1">
-                    <Label className="section-label">R$ Preço</Label>
-                    <Input type="number" step="0.01" value={bulkCost} onChange={e => setBulkCost(e.target.value)} placeholder="0,00" className="h-8 text-xs bg-surface-2 border-border focus:border-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <Label className="section-label">Estoque</Label>
-                    <Input type="number" value={bulkQty} onChange={e => setBulkQty(e.target.value)} placeholder="0" className="h-8 text-xs bg-surface-2 border-border focus:border-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <Label className="section-label">Mín.</Label>
-                    <Input type="number" value={bulkMin} onChange={e => setBulkMin(e.target.value)} placeholder="5" className="h-8 text-xs bg-surface-2 border-border focus:border-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <Label className="section-label">SKU</Label>
-                    <Input value={bulkSku} onChange={e => setBulkSku(e.target.value)} placeholder="SKU" className="h-8 text-xs bg-surface-2 border-border focus:border-primary" />
+                {/* Bulk apply */}
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                    <div>
+                      <Label className="section-label">Custo (R$)</Label>
+                      <Input type="number" step="0.01" value={bulkCost} onChange={e => setBulkCost(e.target.value)} placeholder="0,00" className="h-8 text-xs bg-surface-2 border-border focus:border-primary" />
+                    </div>
+                    <div>
+                      <Label className="section-label">Qtd</Label>
+                      <Input type="number" value={bulkQty} onChange={e => setBulkQty(e.target.value)} placeholder="0" className="h-8 text-xs bg-surface-2 border-border focus:border-primary" />
+                    </div>
+                    <div>
+                      <Label className="section-label">Mín.</Label>
+                      <Input type="number" value={bulkMin} onChange={e => setBulkMin(e.target.value)} placeholder="5" className="h-8 text-xs bg-surface-2 border-border focus:border-primary" />
+                    </div>
+                    <div>
+                      <Label className="section-label">SKU</Label>
+                      <Input value={bulkSku} onChange={e => setBulkSku(e.target.value)} placeholder="SKU" className="h-8 text-xs bg-surface-2 border-border focus:border-primary" />
+                    </div>
                   </div>
                   <button
                     onClick={applyBulk}
-                    className="shrink-0 px-3 h-8 border border-primary text-primary rounded-[10px] text-xs font-semibold hover:bg-primary/5"
+                    className="w-full md:w-auto px-4 h-8 border border-primary text-primary rounded-[10px] text-xs font-semibold hover:bg-primary/5"
                   >
                     Aplicar a todos
                   </button>
                 </div>
 
-                {/* Table */}
-                <div className="surface-card overflow-x-auto">
-                  <table className="w-full text-xs min-w-[500px]">
+                {/* ── Mobile: card list ── */}
+                <div className="md:hidden space-y-3">
+                  {varRows.map(row => (
+                    <div key={row.tempId} className="surface-card p-3 rounded-xl space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold text-foreground">{getVariationLabel(row.atributos)}</span>
+                        <button
+                          onClick={() => setVarRows(prev => prev.filter(v => v.tempId !== row.tempId))}
+                          className="p-1 hover:bg-surface-2/80 rounded"
+                        >
+                          <X className="w-4 h-4 text-text-2" />
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="section-label">Preço de Custo (R$)</label>
+                          <div className="flex items-center bg-surface-2 border border-border rounded-lg overflow-hidden">
+                            <span className="pl-2 text-xs text-text-3 shrink-0">R$</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={row.preco_custo || ''}
+                              onChange={e => updateVarRow(row.tempId, 'preco_custo', e.target.value)}
+                              className="h-10 bg-transparent text-sm px-2 w-full outline-none"
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <label className="section-label">Quantidade</label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={row.quantidade || ''}
+                            onChange={e => updateVarRow(row.tempId, 'quantidade', e.target.value)}
+                            className="h-10 bg-surface-2 border-border rounded-lg text-sm px-3 w-full"
+                          />
+                        </div>
+                        <div>
+                          <label className="section-label">Mín. Alerta</label>
+                          <Input
+                            type="number"
+                            min="0"
+                            value={row.quantidade_minima || ''}
+                            onChange={e => updateVarRow(row.tempId, 'quantidade_minima', e.target.value)}
+                            className="h-10 bg-surface-2 border-border rounded-lg text-sm px-3 w-full"
+                          />
+                        </div>
+                        <div>
+                          <label className="section-label">SKU</label>
+                          <Input
+                            value={row.sku}
+                            onChange={e => updateVarRow(row.tempId, 'sku', e.target.value)}
+                            className="h-10 bg-surface-2 border-border rounded-lg text-sm px-3 w-full"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* ── Desktop: table ── */}
+                <div className="hidden md:block surface-card overflow-x-auto">
+                  <table className="w-full text-xs">
                     <thead>
                       <tr className="bg-surface-2 text-text-2">
-                        <th className="text-left px-2 py-2 font-semibold">{var1Name}</th>
-                        {hasVar2 && <th className="text-left px-2 py-2 font-semibold">{var2Name}</th>}
-                        <th className="text-left px-2 py-2 font-semibold"><span className="text-primary">●</span> Preço</th>
-                        <th className="text-left px-2 py-2 font-semibold"><span className="text-primary">●</span> Estoque</th>
-                        <th className="text-left px-2 py-2 font-semibold">Mín. Alerta</th>
-                        <th className="text-left px-2 py-2 font-semibold">SKU da Variação</th>
+                        <th className="text-left px-3 py-2 section-label">{var1Name}</th>
+                        {hasVar2 && <th className="text-left px-3 py-2 section-label">{var2Name}</th>}
+                        <th className="text-left px-3 py-2 section-label"><span className="text-primary">●</span> Preço</th>
+                        <th className="text-left px-3 py-2 section-label"><span className="text-primary">●</span> Estoque</th>
+                        <th className="text-left px-3 py-2 section-label">Mín. Alerta</th>
+                        <th className="text-left px-3 py-2 section-label">SKU da Variação</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -490,11 +552,10 @@ export function StockWizard({ onClose, editProduct }: Props) {
                             )}
                           >
                             {ri === 0 && (
-                              <td className="px-2 py-2 align-top font-medium" rowSpan={group.rows.length}>
+                              <td className="px-3 py-2 align-top font-medium" rowSpan={group.rows.length}>
                                 <div className="space-y-1">
                                   <span>{group.key}</span>
-                                  {/* Group image upload — hidden on mobile */}
-                                  <div className="hidden md:block">
+                                  <div>
                                     <button
                                       onClick={() => groupFileRefs.current[group.key]?.click()}
                                       className="block w-10 h-10 rounded border border-dashed border-border hover:border-primary/50 overflow-hidden"
@@ -517,43 +578,43 @@ export function StockWizard({ onClose, editProduct }: Props) {
                               </td>
                             )}
                             {hasVar2 && (
-                              <td className="px-2 py-2">{row.atributos[var2Name]}</td>
+                              <td className="px-3 py-2">{row.atributos[var2Name]}</td>
                             )}
-                            <td className="px-2 py-1.5">
+                            <td className="px-3 py-1.5">
                               <div className="relative">
-                                <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-text-3">R$</span>
+                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-text-3">R$</span>
                                 <Input
                                   type="number"
                                   step="0.01"
                                   value={row.preco_custo || ''}
                                   onChange={e => updateVarRow(row.tempId, 'preco_custo', e.target.value)}
-                                  className="h-8 text-xs pl-7 w-20 bg-surface-2 border-border focus:border-primary"
+                                  className="h-9 text-xs pl-8 w-[100px] bg-surface-2 border-border focus:border-primary"
                                 />
                               </div>
                             </td>
-                            <td className="px-2 py-1.5">
+                            <td className="px-3 py-1.5">
                               <Input
                                 type="number"
                                 min="0"
                                 value={row.quantidade || ''}
                                 onChange={e => updateVarRow(row.tempId, 'quantidade', e.target.value)}
-                                className="h-8 text-xs w-16 bg-surface-2 border-border focus:border-primary"
+                                className="h-9 text-xs w-[80px] bg-surface-2 border-border focus:border-primary"
                               />
                             </td>
-                            <td className="px-2 py-1.5">
+                            <td className="px-3 py-1.5">
                               <Input
                                 type="number"
                                 min="0"
                                 value={row.quantidade_minima || ''}
                                 onChange={e => updateVarRow(row.tempId, 'quantidade_minima', e.target.value)}
-                                className="h-8 text-xs w-14 bg-surface-2 border-border focus:border-primary"
+                                className="h-9 text-xs w-[80px] bg-surface-2 border-border focus:border-primary"
                               />
                             </td>
-                            <td className="px-2 py-1.5">
+                            <td className="px-3 py-1.5">
                               <Input
                                 value={row.sku}
                                 onChange={e => updateVarRow(row.tempId, 'sku', e.target.value)}
-                                className="h-8 text-xs w-24 bg-surface-2 border-border focus:border-primary"
+                                className="h-9 text-xs w-[90px] bg-surface-2 border-border focus:border-primary"
                               />
                             </td>
                           </tr>
