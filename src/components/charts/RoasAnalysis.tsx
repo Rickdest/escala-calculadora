@@ -1039,25 +1039,25 @@ function RoasRanking() {
 
 export function RoasAnalysis() {
   return (
-    <div className="space-y-6 pb-20 md:pb-4">
+    <div className="space-y-4 pb-20 md:pb-4">
       <Tabs defaultValue="product" className="w-full">
-        <TabsList className="w-full grid grid-cols-3 h-12 rounded-xl bg-card p-1 border border-border">
-          <TabsTrigger value="product" className="text-xs font-bold rounded-lg gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+        <TabsList className="w-full grid grid-cols-3 h-11 rounded-full bg-card p-1 border border-border sticky top-0 z-10">
+          <TabsTrigger value="product" className="text-[13px] font-bold rounded-full gap-1.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">
             <Target className="w-4 h-4" />
-            <span className="hidden sm:inline">Produto</span>
+            Produto
           </TabsTrigger>
-          <TabsTrigger value="simulator" className="text-xs font-bold rounded-lg gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+          <TabsTrigger value="simulator" className="text-[13px] font-bold rounded-full gap-1.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">
             <Sliders className="w-4 h-4" />
-            <span className="hidden sm:inline">Simulador</span>
+            Simulador
           </TabsTrigger>
-          <TabsTrigger value="ranking" className="text-xs font-bold rounded-lg gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none">
+          <TabsTrigger value="ranking" className="text-[13px] font-bold rounded-full gap-1.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">
             <BarChart3 className="w-4 h-4" />
-            <span className="hidden sm:inline">Ranking</span>
+            Ranking
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="product" className="mt-6"><ProductAnalysis /></TabsContent>
-        <TabsContent value="simulator" className="mt-6"><RoasSimulator /></TabsContent>
-        <TabsContent value="ranking" className="mt-6"><RoasRanking /></TabsContent>
+        <TabsContent value="product" className="mt-4 animate-fade-in"><ProductAnalysis /></TabsContent>
+        <TabsContent value="simulator" className="mt-4 animate-fade-in"><RoasSimulator /></TabsContent>
+        <TabsContent value="ranking" className="mt-4 animate-fade-in"><RoasRanking /></TabsContent>
       </Tabs>
     </div>
   );
