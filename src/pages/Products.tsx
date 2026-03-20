@@ -352,7 +352,7 @@ export default function Products() {
       <button
         onClick={() => setShowProductForm(true)}
         className="fixed z-50 bg-[hsl(var(--accent))] hover:brightness-110 active:scale-95 transition-all duration-150 shadow-lg
-          bottom-[calc(80px+env(safe-area-inset-bottom))] right-5 w-14 h-14 rounded-full flex items-center justify-center
+          bottom-[calc(96px+env(safe-area-inset-bottom))] right-5 w-14 h-14 rounded-full flex items-center justify-center
           md:right-8 md:rounded-xl md:w-auto md:h-auto md:px-5 md:py-3"
         style={{ backgroundColor: '#F97316' }}
       >
