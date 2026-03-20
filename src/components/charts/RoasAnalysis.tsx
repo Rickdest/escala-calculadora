@@ -253,7 +253,7 @@ function ProductSelector({ products, selectedId, onSelect }: { products: Product
           <Input placeholder="Buscar produto..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 input-modern h-10 text-sm" />
         </div>
       )}
-      <div className="grid grid-cols-1 gap-1.5 max-h-[260px] overflow-y-auto pr-0.5 scrollbar-thin">
+      <div className="grid grid-cols-1 gap-1.5 max-h-[260px] overflow-y-auto pr-0.5 scrollbar-thin" style={{ overscrollBehavior: 'contain' }}>
         {filtered.map(p => {
           const isActive = p.id === selectedId;
           const roasData = calcRoasFromValues(p.salePrice, p.costPrice, p.adsCost, p.adsRevenue);
@@ -455,7 +455,7 @@ function ProductAdsImport({ product, storeId }: { product: Product; storeId: str
       {displayAds && displayAds.length > 0 && (
         <div className="rounded-xl border border-border bg-card p-4 space-y-3 animate-fade-in">
           {displayTitle && <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{displayTitle}</p>}
-          <div className="space-y-1.5 max-h-[280px] overflow-y-auto scrollbar-thin">
+          <div className="space-y-1.5 max-h-[280px] overflow-y-auto scrollbar-thin" style={{ overscrollBehavior: 'contain' }}>
             {displayAds.map((ad, i) => {
               const roasVal = ad.roas;
               const adStatus = ad.spend === 0 ? null : roasVal >= 5 ? 'success' : roasVal >= 2 ? 'warning' : 'danger';
@@ -658,7 +658,7 @@ function ProductAnalysis() {
                   {roasData.roasAtual !== null && roasData.roasEmpate && roasData.roasIdeal && status ? (
                     <RoasGauge roasAtual={roasData.roasAtual} roasEmpate={roasData.roasEmpate} roasIdeal={roasData.roasIdeal} status={status} />
                   ) : (
-                    <div className="flex flex-col items-center justify-center h-[160px] text-center">
+                    <div className="flex flex-col items-center justify-center h-[140px] md:h-[160px] text-center">
                       <BarChart3 className="w-8 h-8 text-muted-foreground/30 mb-2" />
                       <p className="text-xs text-muted-foreground">Preencha o gasto e a receita de Ads</p>
                     </div>
