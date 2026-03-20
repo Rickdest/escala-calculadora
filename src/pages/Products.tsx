@@ -247,7 +247,7 @@ export default function Products() {
           <TabsContent value="analysis" className="space-y-4 mt-3">
             {stats && analysisProducts.length > 0 ? (
               <>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <div className="surface-card p-4 animate-fade-up">
                     <p className="section-label mb-1">Margem Média</p>
                     <p className={cn('font-mono text-2xl font-bold font-mono-num', getMarginStatus(stats.avgMargin).color)}>
