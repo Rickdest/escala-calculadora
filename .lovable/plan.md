@@ -1,73 +1,92 @@
 
 
-# Rewrite StockWizard.tsx — Shopee Seller Center Layout
+# Fix: Variation edit save not persisting
 
-## Overview
-Complete rewrite of `StockWizard.tsx` from a multi-step wizard to a single scrollable form mimicking Shopee's Seller Center product creation page. Same Props (`onClose`, `editProduct`) and same hooks (`useEstoque`, `compressImage`, `generateVariationCombinations`, etc.).
+## Root Cause
 
-## Architecture
+When editing a product with variations, two bugs prevent saving:
 
-```text
-┌─────────────────────────────┐  ← Fixed header: X | "Novo Produto" | Salvar (orange, disabled if no name)
-│                             │
-│  ┌── Informações Básicas ──┐│
-│  │ [80x80 photo]           ││
-│  │ Nome *                  ││
-│  │ Categoria (select)      ││
-│  │ SKU Base (optional)     ││
-│  │ + Adicionar descrição   ││
-│  └─────────────────────────┘│
-│                             │
-│  ┌── Info de Vendas ───────┐│
-│  │ Variações ● [+ Habilitar]│
-│  │                         ││
-│  │ IF no variations:       ││
-│  │   Preço Custo R$ *      ││
-│  │   Estoque *             ││
-│  │   Estoque mínimo        ││
-│  │   SKU                   ││
-│  │                         ││
-│  │ IF variations enabled:  ││
-│  │   Variação1 block       ││
-│  │     - type input+dropdown│
-│  │     - option grid 2-col ││
-│  │     - auto-add row      ││
-│  │   + Adicionar Variação2 ││
-│  │   Variação2 block       ││
-│  └─────────────────────────┘│
-│                             │
-│  ┌── Lista de Variações ───┐│  ← Only when combinations exist
-│  │ Bulk: R$ | Qtd | SKU    ││
-│  │ [Aplicar a todos]       ││
-│  │                         ││
-│  │ Table with rowspan      ││
-│  │ grouped by Var1 value   ││
-│  │ + image per group       ││
-│  │ alternating rows        ││
-│  └─────────────────────────┘│
-│                             │
-├─────────────────────────────┤  ← Fixed footer
-│  [████ Salvar Produto ████] │  ← Orange, full width, h-[52px]
-└─────────────────────────────┘
+1. **Lost DB IDs on regeneration**: The `editInitRef` skips combination regeneration only once. If the user touches anything in the variation blocks (or even if the `attributes` memo recalculates), the `useEffect` fires, regenerates `varRows` with **new random `tempId`s**, and loses the real database UUIDs. When `handleSave` then does `editProduct.variacoes.find(v => v.id === row.tempId)`, it finds nothing because `tempId` is now a random string like `"a3f8b2c1d9e"` instead of the actual UUID.
+
+2. **Duplicate keys**: The combination generator can produce rows with colliding `tempId`s, causing React warnings.
+
+## Fix (single file: `StockWizard.tsx`)
+
+### Change 1: Preserve real IDs during regeneration
+
+In the `useEffect` that regenerates combinations (lines 121-139), when matching existing rows, also try to match by atributos content against the **original** `editProduct.variacoes` to recover real DB IDs:
+
+```typescript
+useEffect(() => {
+  if (!temVariacoes) return;
+  if (editInitRef.current) {
+    editInitRef.current = false;
+    return;
+  }
+  const combos = generateVariationCombinations(attributes);
+  if (combos.length === 0) { setVarRows([]); return; }
+  
+  // Build lookup from current varRows by label
+  const existingMap = new Map<string, VarRow>();
+  for (const v of varRows) existingMap.set(getVariationLabel(v.atributos), v);
+  
+  // Also build lookup from editProduct variacoes to recover real DB IDs
+  const dbMap = new Map<string, string>();
+  if (editProduct?.variacoes) {
+    for (const v of editProduct.variacoes) {
+      dbMap.set(getVariationLabel(v.atributos as Record<string,string>), v.id);
+    }
+  }
+  
+  const rows: VarRow[] = combos.map(combo => {
+    const label = getVariationLabel(combo);
+    const existing = existingMap.get(label);
+    if (existing) return { ...existing, atributos: combo };
+    // Try to recover DB ID for this combo
+    const dbId = dbMap.get(label);
+    return {
+      tempId: dbId || Math.random().toString(36).substring(2, 15),
+      atributos: combo, sku: '', preco_custo: 0, quantidade: 0, quantidade_minima: 5
+    };
+  });
+  setVarRows(rows);
+}, [temVariacoes, attributes]);
 ```
 
-## Key Changes
+### Change 2: Fix handleSave to match by atributos as fallback
 
-1. **Remove step system** — single scrollable view, no `step` state, no progress dots
-2. **Fixed header** — X button left, title center, "Salvar" button right (orange, disabled when `nome` empty)
-3. **Variation blocks** — type name input with dropdown suggestions (Cor, Tamanho, Modelo, Material, Volume, Sabor), free text accepted. Options as 2-col grid with drag icon ⠿, trash icon, optional "explanation" field. Auto-add empty row at bottom.
-4. **Combination table** — grouped by Variação1 with rowspan, image upload per group, bulk apply row at top, alternating row backgrounds, horizontal scroll on mobile
-5. **Auto-regenerate combinations** when options change (useEffect on attributes)
-6. **Fixed footer** — "Salvar Produto" orange button, 52px height, full width
-7. **Same save logic** — `addProduto`/`updateProduto` unchanged
+In `handleSave` (line 241-252), if `find(v => v.id === row.tempId)` fails, fall back to matching by atributos:
 
-## Technical Details
+```typescript
+if (temVariacoes) {
+  for (const row of varRows) {
+    let existing = editProduct.variacoes.find(v => v.id === row.tempId);
+    if (!existing) {
+      // Fallback: match by atributos content
+      existing = editProduct.variacoes.find(v =>
+        getVariationLabel(v.atributos as Record<string,string>) === getVariationLabel(row.atributos)
+      );
+    }
+    if (existing) {
+      await updateVariacao(existing.id, {
+        preco_custo: row.preco_custo,
+        quantidade: row.quantidade,
+        quantidade_minima: row.quantidade_minima,
+        sku: row.sku || null,
+        atributos: row.atributos,
+      });
+    }
+  }
+}
+```
 
-- **Single file change**: only `src/components/stock/StockWizard.tsx`
-- **Same imports**: `useEstoque`, `compressImage`, `generateVariationCombinations`, `getVariationLabel`, `ProductAttribute`, all UI components
-- **New state for variation options**: each option has `value` and optional `explanation` string
-- **Dropdown suggestions**: filtered list shown below type input on focus/typing, hidden on blur/selection
-- **Combination regeneration**: `useEffect` watching `attributes` array to rebuild `varRows`, preserving existing data by matching attribute combos
-- **Table rowspan**: implemented via conditional rendering — first row of each Var1 group renders the Var1 cell with `rowSpan`, subsequent rows skip it
-- **Group images**: stored in a `Record<string, string>` state mapping Var1 value to compressed dataUrl
+### Change 3: Fix duplicate keys in render
+
+Ensure each `varRow` key uses a unique combination of `tempId + label` to avoid React duplicate key warnings. In the render loop, use `key={row.tempId + '-' + getVariationLabel(row.atributos)}`.
+
+## Summary
+
+- File changed: `src/components/stock/StockWizard.tsx`
+- No database changes needed
+- No new dependencies
 
