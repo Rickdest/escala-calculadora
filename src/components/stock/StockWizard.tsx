@@ -401,8 +401,20 @@ export function StockWizard({ onClose, editProduct }: Props) {
                       <FileDown className="w-4 h-4 text-primary" />
                       <p className="text-xs font-bold text-foreground">Importar de Produtos</p>
                     </div>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-3" />
+                      <input
+                        type="text"
+                        value={importSearch}
+                        onChange={e => setImportSearch(e.target.value)}
+                        placeholder="Buscar produto..."
+                        className="w-full h-10 pl-10 pr-3 bg-surface-2 border border-border rounded-lg text-sm text-foreground outline-none focus:border-primary transition-colors"
+                      />
+                    </div>
                     <div className="space-y-1.5 max-h-[400px] overflow-y-auto">
-                      {currentStore.products.map(product => (
+                      {currentStore.products
+                        .filter(p => p.name.toLowerCase().includes(importSearch.toLowerCase()))
+                        .map(product => (
                         <button
                           key={product.id}
                           onClick={() => handleImportProduct(product)}
@@ -425,6 +437,9 @@ export function StockWizard({ onClose, editProduct }: Props) {
                           </div>
                         </button>
                       ))}
+                      {currentStore.products.filter(p => p.name.toLowerCase().includes(importSearch.toLowerCase())).length === 0 && (
+                        <p className="text-center text-sm text-text-3 py-6">Nenhum produto encontrado</p>
+                      )}
                     </div>
                   </div>
                 </>
