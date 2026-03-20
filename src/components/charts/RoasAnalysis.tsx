@@ -387,8 +387,8 @@ function ProductAnalysis() {
                   <div className="flex justify-between text-[10px] text-muted-foreground font-bold">
                     <span>0</span>
                     <span className="text-orange-400">Empate {roasData.roasEmpate.toFixed(1)}</span>
-                    <span className="text-yellow-400">L.Médio {roasData.roasSaudavel?.toFixed(1)}</span>
-                    <span className="text-success">Lucrativo {roasData.roasIdeal.toFixed(1)}</span>
+                    <span className="text-yellow-400">Saudável {roasData.roasSaudavel?.toFixed(1)}</span>
+                    <span className="text-success">Ideal {roasData.roasIdeal.toFixed(1)}</span>
                   </div>
                 </div>
               )}
