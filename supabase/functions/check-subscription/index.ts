@@ -1,12 +1,25 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "https://escala-calculadora.lovable.app";
+// --- CORS: allow preview + published origins ---
+const ALLOWED_ORIGINS = [
+  Deno.env.get("ALLOWED_ORIGIN") || "https://escala-calculadora.lovable.app",
+  "https://id-preview--663ad348-e18a-4674-a7c5-186feeae7832.lovable.app",
+];
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, cache-control, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("Origin") || req.headers.get("Referer") || "";
+  const allowed = ALLOWED_ORIGINS.find((o) => origin.startsWith(o)) ||
+    // Allow any *.lovableproject.com or *.lovable.app preview
+    (/\.lovableproject\.com$|\.lovable\.app$/.test(new URL(origin || "https://x.com").hostname)
+      ? origin
+      : ALLOWED_ORIGINS[0]);
+
+  return {
+    "Access-Control-Allow-Origin": allowed,
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type, cache-control, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  };
+}
 
 // --- Helper: resolve subscription status from DB row ---
 function resolveStatus(sub: {
@@ -35,7 +48,7 @@ function resolveStatus(sub: {
 }
 
 // --- Helper: JSON response with short cache ---
-function respond(data: { status: string; plan: string; trialEnd: string | null }) {
+function respond(data: { status: string; plan: string; trialEnd: string | null }, corsHeaders: Record<string, string>) {
   return new Response(JSON.stringify(data), {
     status: 200,
     headers: {
@@ -46,7 +59,7 @@ function respond(data: { status: string; plan: string; trialEnd: string | null }
   });
 }
 
-function errorResponse(message: string, status: number) {
+function errorResponse(message: string, status: number, corsHeaders: Record<string, string>) {
   return new Response(
     JSON.stringify({ error: message }),
     { status, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -55,6 +68,8 @@ function errorResponse(message: string, status: number) {
 
 // --- Main handler ---
 Deno.serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -62,7 +77,7 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return errorResponse("Unauthorized", 401);
+      return errorResponse("Unauthorized", 401, corsHeaders);
     }
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -78,7 +93,7 @@ Deno.serve(async (req) => {
     const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
 
     if (claimsError || !claimsData?.claims) {
-      return errorResponse("Invalid token", 401);
+      return errorResponse("Invalid token", 401, corsHeaders);
     }
 
     const userId = claimsData.claims.sub as string;
@@ -95,7 +110,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (sub) {
-      return respond(resolveStatus(sub));
+      return respond(resolveStatus(sub), corsHeaders);
     }
 
     // Fallback: verificar trial em profiles
@@ -104,6 +119,12 @@ Deno.serve(async (req) => {
       .select("status, trial_fim, trial_inicio")
       .eq("user_id", userId)
       .maybeSingle();
+
+    // Debug logs temporários
+    console.log("Profile encontrado:", JSON.stringify(profile));
+    console.log("Trial fim:", profile?.trial_fim);
+    console.log("Trial inicio:", profile?.trial_inicio);
+    console.log("Status:", profile?.status);
 
     if (profile) {
       const agora = new Date();
@@ -119,18 +140,18 @@ Deno.serve(async (req) => {
         trialFim > agora &&
         trialLegitimo
       ) {
-        return respond({ status: "trialing", plan: "pro", trialEnd: profile.trial_fim });
+        return respond({ status: "trialing", plan: "pro", trialEnd: profile.trial_fim }, corsHeaders);
       }
 
       if (profile.status === "ativo") {
-        return respond({ status: "active", plan: "pro", trialEnd: null });
+        return respond({ status: "active", plan: "pro", trialEnd: null }, corsHeaders);
       }
     }
 
     // Nada encontrado — expirado
-    return respond({ status: "expired", plan: "free", trialEnd: null });
+    return respond({ status: "expired", plan: "free", trialEnd: null }, corsHeaders);
   } catch (error) {
     console.error("check-subscription error:", error instanceof Error ? error.message : "Unknown");
-    return errorResponse("Internal server error", 500);
+    return errorResponse("Internal server error", 500, corsHeaders);
   }
 });
