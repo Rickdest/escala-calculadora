@@ -161,15 +161,14 @@
 
   html {
     font-family: 'DM Sans', system-ui, sans-serif;
-    overflow-x: hidden;
-    overscroll-behavior: none;
+    scroll-behavior: smooth;
     -webkit-overflow-scrolling: touch;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
     overflow-x: hidden;
-    overscroll-behavior: none;
+    overscroll-behavior-x: none;
   }
 
   input, select, textarea {

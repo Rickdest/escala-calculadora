@@ -658,7 +658,7 @@ function ProductAnalysis() {
                   {roasData.roasAtual !== null && roasData.roasEmpate && roasData.roasIdeal && status ? (
                     <RoasGauge roasAtual={roasData.roasAtual} roasEmpate={roasData.roasEmpate} roasIdeal={roasData.roasIdeal} status={status} />
                   ) : (
-                    <div className="flex flex-col items-center justify-center h-[160px] text-center">
+                    <div className="flex flex-col items-center justify-center h-[140px] md:h-[160px] text-center">
                       <BarChart3 className="w-8 h-8 text-muted-foreground/30 mb-2" />
                       <p className="text-xs text-muted-foreground">Preencha o gasto e a receita de Ads</p>
                     </div>

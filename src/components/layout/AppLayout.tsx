@@ -19,14 +19,14 @@ export function AppLayout({ children }: AppLayoutProps) {
 
       {/* Main content */}
       <div className={cn(
-        'transition-all duration-200 ease-in-out',
+        'transition-all duration-200 ease-in-out min-h-screen flex flex-col',
         collapsed ? 'md:pl-[60px]' : 'md:pl-[200px]'
       )}>
         {/* Desktop header */}
         <DesktopHeader />
 
-        <div className="pb-20 md:pb-0">
-          <main className="max-w-lg mx-auto md:max-w-[1200px] md:mx-auto md:px-8">
+        <div className="flex-1 overflow-y-auto pb-20 md:pb-0">
+          <main className="w-full max-w-lg mx-auto md:max-w-[1200px] md:mx-auto px-4 md:px-8 lg:px-12">
             {children}
           </main>
         </div>
