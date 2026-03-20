@@ -199,13 +199,13 @@ export default function Home() {
                 Ver Todos <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
-            <div className="surface-card divide-y divide-border">
+            <div className="divide-y divide-border">
               {topProducts.map(({ product, calc }) => (
-                <button key={product.id} className="w-full px-4 py-3 text-left hover:bg-surface-2/50 transition-colors" onClick={() => navigate('/products')}>
+                <button key={product.id} className="w-full py-3 text-left" onClick={() => navigate('/products')}>
                   <p className="text-[15px] font-medium text-foreground truncate">{product.name}</p>
                   <div className="flex items-center gap-1.5 mt-1">
                     <span className={cn('font-mono text-[13px] font-mono-num', calc.netProfit >= 0 ? 'text-success' : 'text-danger')}>
-                      R$ {calc.netProfit.toFixed(2).replace('.', ',')} lucro
+                      Lucro R$ {calc.netProfit.toFixed(2).replace('.', ',')}
                     </span>
                     <span className="text-text-3 text-[13px]">·</span>
                     <span className={cn('font-mono text-[13px] font-bold font-mono-num', getMarginStatus(calc.realMargin).color)}>
