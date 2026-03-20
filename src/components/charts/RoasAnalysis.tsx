@@ -589,14 +589,14 @@ function ProductAnalysis() {
               <ProductHealthBanner marginPercent={marginPercent} />
 
               {/* Hero Results - 3-column KPIs with tooltips */}
-              <div className="grid grid-cols-3 gap-2 animate-fade-in">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 animate-fade-in">
                 {[
                   { label: 'ROAS Empate', value: roasData.roasEmpate!.toFixed(2) + 'x', color: 'text-orange-400', tip: 'ROAS mínimo para não ter prejuízo. Abaixo disso cada venda com anúncio gera perda.' },
                   { label: 'Lucro Médio', value: roasData.roasSaudavel!.toFixed(2) + 'x', color: 'text-primary', tip: 'A partir daqui o lucro já é consistente e seguro para escalar.' },
                   { label: 'Lucrativo', value: roasData.roasIdeal!.toFixed(2) + 'x', color: 'text-success', tip: 'Margem excelente. Nesse nível vale aumentar o investimento em Ads com confiança.' },
                 ].map(({ label, value, color, tip }) => (
-                  <div key={label} className="rounded-xl border border-border bg-card p-3 text-center">
-                    <div className="flex items-center justify-center gap-1">
+                  <div key={label} className="rounded-xl border border-border bg-card p-3 flex items-center justify-between md:flex-col md:text-center">
+                    <div className="flex items-center gap-1 md:justify-center">
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">{label}</p>
                       <ShadTooltipProvider delayDuration={200}>
                         <ShadTooltip>
@@ -611,7 +611,7 @@ function ProductAnalysis() {
                         </ShadTooltip>
                       </ShadTooltipProvider>
                     </div>
-                    <p className={cn('font-extrabold tabular-nums font-mono text-lg mt-1', color)}>{value}</p>
+                    <p className={cn('font-extrabold tabular-nums font-mono text-lg md:mt-1', color)}>{value}</p>
                   </div>
                 ))}
               </div>
