@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn, getMarginStatus } from '@/lib/utils';
+import { compressImage } from '@/lib/imageUtils';
 
 interface ProductFormProps {
   product?: Product | null;
