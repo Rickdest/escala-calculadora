@@ -379,7 +379,7 @@ export function StockWizard({ onClose, editProduct }: Props) {
                     <Input type="number" min="0" value={simpleQty} onChange={e => setSimpleQty(e.target.value)} className="h-10 text-sm bg-surface-2 border-border focus:border-primary" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Estoque mínimo alerta</Label>
+                    <Label className="text-xs font-semibold">Estoque mínimo para alerta</Label>
                     <Input type="number" min="0" value={simpleMin} onChange={e => setSimpleMin(e.target.value)} className="h-10 text-sm bg-surface-2 border-border focus:border-primary" />
                   </div>
                   <div className="space-y-1.5">
