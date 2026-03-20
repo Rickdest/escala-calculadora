@@ -134,14 +134,9 @@ export default function Products() {
     <AppLayout>
       <PageHeader
         title="Produtos"
-        action={
-          <Button size="sm" onClick={() => setShowProductForm(true)} className="h-8 bg-primary hover:bg-primary/90 rounded-lg text-[13px] font-semibold px-3">
-            <Plus className="w-3.5 h-3.5 mr-1" />Novo
-          </Button>
-        }
       />
 
-      <div className="px-4 pt-3 pb-4 space-y-3 md:px-0 md:py-6 md:max-w-[800px]">
+      <div className="px-4 pt-3 pb-24 md:pb-6 space-y-3 md:px-0 md:py-6 md:max-w-[800px]">
         <Tabs defaultValue="products" className="w-full">
           <div className="flex items-center gap-2">
             <TabsList className="flex-1 grid grid-cols-2 h-9 rounded-lg bg-surface-2 p-0.5">
@@ -352,6 +347,18 @@ export default function Products() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* FAB */}
+      <button
+        onClick={() => setShowProductForm(true)}
+        className="fixed z-50 bg-[hsl(var(--accent))] hover:brightness-110 active:scale-95 transition-all duration-150 shadow-lg
+          bottom-[calc(80px+env(safe-area-inset-bottom))] right-5 w-14 h-14 rounded-full flex items-center justify-center
+          md:right-8 md:rounded-xl md:w-auto md:h-auto md:px-5 md:py-3"
+        style={{ backgroundColor: '#F97316' }}
+      >
+        <Plus className="w-6 h-6 text-white md:w-5 md:h-5" />
+        <span className="hidden md:inline ml-2 text-white text-sm font-bold">Novo Produto</span>
+      </button>
 
       {showProductForm && (
         <ProductForm product={editingProduct} onClose={handleCloseForm} onSave={handleSaveProduct} />
