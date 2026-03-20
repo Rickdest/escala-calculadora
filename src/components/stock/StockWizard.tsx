@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { X, Camera, Trash2, GripVertical } from 'lucide-react';
+import { X, Camera, Trash2, GripVertical, Plus } from 'lucide-react';
 import { useEstoque, EstoqueProduto } from '@/hooks/useEstoque';
 import { generateVariationCombinations, getVariationLabel, ProductAttribute } from '@/types/store';
 import { Input } from '@/components/ui/input';
@@ -442,67 +442,95 @@ export function StockWizard({ onClose, editProduct }: Props) {
             <>
               <div className="h-2 bg-surface-2" />
               <div className="p-4 space-y-3 animate-fade-up">
-                <div className="space-y-2">
-                  {/* Bulk fill */}
-                  <div className="surface-card p-3 space-y-3">
-                    <p className="section-label">PREENCHER TODOS IGUAL</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <p className="section-label mb-1">CUSTO (R$)</p>
-                        <Input type="number" step="0.01" value={bulkCost} onChange={e => setBulkCost(e.target.value)} placeholder="0,00" className="h-10 bg-surface-2 border-border text-sm" />
-                      </div>
-                      <div>
-                        <p className="section-label mb-1">QUANTIDADE</p>
-                        <Input type="number" value={bulkQty} onChange={e => setBulkQty(e.target.value)} placeholder="0" className="h-10 bg-surface-2 border-border text-sm" />
-                      </div>
-                      <div>
-                        <p className="section-label mb-1">MÍN. ALERTA</p>
-                        <Input type="number" value={bulkMin} onChange={e => setBulkMin(e.target.value)} placeholder="5" className="h-10 bg-surface-2 border-border text-sm" />
-                      </div>
-                      <div>
-                        <p className="section-label mb-1">SKU</p>
-                        <Input value={bulkSku || ''} onChange={e => setBulkSku(e.target.value)} placeholder="SKU" className="h-10 bg-surface-2 border-border text-sm" />
-                      </div>
+
+                {/* Bulk fill card */}
+                <div className="surface-card p-3 space-y-3">
+                  <p className="section-label">PREENCHER TODOS IGUAL</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="section-label mb-1">CUSTO (R$)</p>
+                      <Input type="number" step="0.01" value={bulkCost} onChange={e => setBulkCost(e.target.value)} placeholder="0,00" className="h-10 bg-surface-2 border-border text-sm" />
                     </div>
-                    <Button onClick={applyBulk} className="w-full bg-primary text-primary-foreground rounded-[10px] h-10 font-semibold text-sm">
-                      Aplicar a todos
-                    </Button>
+                    <div>
+                      <p className="section-label mb-1">QUANTIDADE</p>
+                      <Input type="number" value={bulkQty} onChange={e => setBulkQty(e.target.value)} placeholder="0" className="h-10 bg-surface-2 border-border text-sm" />
+                    </div>
+                    <div>
+                      <p className="section-label mb-1">MÍN. ALERTA</p>
+                      <Input type="number" value={bulkMin} onChange={e => setBulkMin(e.target.value)} placeholder="5" className="h-10 bg-surface-2 border-border text-sm" />
+                    </div>
+                    <div>
+                      <p className="section-label mb-1">SKU</p>
+                      <Input value={bulkSku || ''} onChange={e => setBulkSku(e.target.value)} placeholder="SKU" className="h-10 bg-surface-2 border-border text-sm" />
+                    </div>
+                  </div>
+                  <Button onClick={applyBulk} className="w-full bg-primary text-primary-foreground rounded-[10px] h-10 font-semibold text-sm">
+                    Aplicar a todos
+                  </Button>
+                </div>
+
+                {/* Variation list — compact rows */}
+                <div className="surface-card divide-y divide-border">
+                  {/* Header */}
+                  <div className="grid items-center gap-2 px-3 py-2 bg-surface-2 text-text-2" style={{ gridTemplateColumns: '32px 1fr 1fr 80px 60px 60px' }}>
+                    <span />
+                    <span className="section-label">{var1Name || 'Var 1'}</span>
+                    {hasVar2 ? <span className="section-label">{var2Name}</span> : <span />}
+                    <span className="section-label">SKU</span>
+                    <span className="section-label">Custo</span>
+                    <span className="section-label">Qtd</span>
                   </div>
 
-                  {/* Each variation as a row */}
-                  <p className="section-label pt-2">VARIAÇÕES ({varRows.length})</p>
+                  {/* Rows */}
                   {varRows.map(row => (
-                    <div key={row.tempId} className="surface-card p-3 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold text-foreground">{getVariationLabel(row.atributos)}</p>
-                        <button onClick={() => removeVarRow(row.tempId)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-surface-2 text-text-3 hover:text-destructive transition-colors">
-                          <X className="w-4 h-4" />
-                        </button>
+                    <div key={row.tempId} className="grid items-center gap-2 px-3 py-2.5 hover:bg-surface-2/30 transition-colors" style={{ gridTemplateColumns: '32px 1fr 1fr 80px 60px 60px' }}>
+                      {/* Image placeholder */}
+                      <div className="w-8 h-8 rounded border border-dashed border-border flex items-center justify-center bg-surface-2">
+                        <Plus className="w-3.5 h-3.5 text-text-3" />
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <p className="section-label mb-1">CUSTO (R$)</p>
-                          <div className="flex items-center h-10 bg-surface-2 border border-border rounded-lg px-3 gap-2">
-                            <span className="text-text-3 text-sm">R$</span>
-                            <input type="number" step="0.01" value={row.preco_custo || ''} onChange={e => updateVarRow(row.tempId, 'preco_custo', e.target.value)} className="flex-1 bg-transparent text-sm text-foreground outline-none font-mono font-mono-num" placeholder="0,00" />
-                          </div>
-                        </div>
-                        <div>
-                          <p className="section-label mb-1">QUANTIDADE</p>
-                          <input type="number" min="0" value={row.quantidade || ''} onChange={e => updateVarRow(row.tempId, 'quantidade', e.target.value)} className="w-full h-10 bg-surface-2 border border-border rounded-lg px-3 text-sm text-foreground outline-none font-mono font-mono-num" placeholder="0" />
-                        </div>
-                        <div>
-                          <p className="section-label mb-1">MÍN. ALERTA</p>
-                          <input type="number" min="0" value={row.quantidade_minima || ''} onChange={e => updateVarRow(row.tempId, 'quantidade_minima', e.target.value)} className="w-full h-10 bg-surface-2 border border-border rounded-lg px-3 text-sm text-foreground outline-none font-mono font-mono-num" placeholder="5" />
-                        </div>
-                        <div>
-                          <p className="section-label mb-1">SKU</p>
-                          <input value={row.sku} onChange={e => updateVarRow(row.tempId, 'sku', e.target.value)} className="w-full h-10 bg-surface-2 border border-border rounded-lg px-3 text-sm text-foreground outline-none" placeholder="SKU" />
-                        </div>
-                      </div>
+
+                      {/* Var1 value */}
+                      <p className="text-sm font-medium text-foreground truncate">
+                        {hasVar2 ? row.atributos[var1Name] : getVariationLabel(row.atributos)}
+                      </p>
+
+                      {/* Var2 value */}
+                      {hasVar2 ? (
+                        <p className="text-sm font-medium text-foreground truncate">{row.atributos[var2Name]}</p>
+                      ) : <span />}
+
+                      {/* SKU */}
+                      <input
+                        value={row.sku}
+                        onChange={e => updateVarRow(row.tempId, 'sku', e.target.value)}
+                        className="h-8 bg-surface-2 border border-border rounded-md px-2 text-xs text-foreground outline-none w-full"
+                        placeholder="SKU"
+                      />
+
+                      {/* Cost */}
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={row.preco_custo || ''}
+                        onChange={e => updateVarRow(row.tempId, 'preco_custo', e.target.value)}
+                        className="h-8 bg-surface-2 border border-border rounded-md px-2 text-xs text-foreground outline-none font-mono font-mono-num w-full"
+                        placeholder="0,00"
+                      />
+
+                      {/* Qty */}
+                      <input
+                        type="number"
+                        min="0"
+                        value={row.quantidade || ''}
+                        onChange={e => updateVarRow(row.tempId, 'quantidade', e.target.value)}
+                        className="h-8 bg-surface-2 border border-border rounded-md px-2 text-xs text-foreground outline-none font-mono font-mono-num w-full"
+                        placeholder="0"
+                      />
                     </div>
                   ))}
                 </div>
+
+                <p className="text-xs text-text-3 text-center">{varRows.length} combinações geradas</p>
               </div>
             </>
           )}
