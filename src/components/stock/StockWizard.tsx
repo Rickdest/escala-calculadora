@@ -50,6 +50,7 @@ export function StockWizard({ onClose, editProduct }: Props) {
   const editInitRef = useRef(false);
   const [saving, setSaving] = useState(false);
   const [step, setStep] = useState<'choose' | 'form'>(editProduct ? 'form' : 'choose');
+  const [importSearch, setImportSearch] = useState('');
 
   // Basic info
   const [nome, setNome] = useState(editProduct?.nome || '');
