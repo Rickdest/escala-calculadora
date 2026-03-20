@@ -227,7 +227,7 @@ function RankingSection({ ads }: { ads: ShopeeAdRow[] }) {
             <div key={i}>
               <button
                 onClick={() => setExpandedIndex(isOpen ? null : i)}
-                className="w-full p-3.5 flex items-center gap-2 text-left hover:bg-card/50 transition-colors"
+                className="w-full p-2.5 md:p-3.5 flex items-center gap-2 text-left hover:bg-card/50 transition-colors"
               >
                 <span className={cn(
                   'w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-extrabold font-mono flex-shrink-0 bg-surface-2 border border-border',
