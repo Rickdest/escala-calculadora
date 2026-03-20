@@ -382,6 +382,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       attributes: original.attributes || [],
       variations: original.variations,
       shopee_acelera: original.shopeeAcelera || 'none',
+      category: original.category || null,
+      description: original.description || null,
+      min_stock_quantity: original.minStockQuantity ?? 5,
     } as any).select().single();
 
     if (error) { toast.error('Erro ao duplicar produto'); return null; }

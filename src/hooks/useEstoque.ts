@@ -119,7 +119,8 @@ export function useEstoque() {
     if (error) { toast.error('Erro ao criar produto'); throw error; }
 
     if (data.imageDataUrl) {
-      saveLocalStockImage(prod.id, data.imageDataUrl);
+      const compressed = await compressImage(data.imageDataUrl);
+      saveLocalStockImage(prod.id, compressed);
     }
 
     // Insert variations

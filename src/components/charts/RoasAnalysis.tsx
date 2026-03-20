@@ -824,10 +824,17 @@ function RoasSimulator() {
       <div className="md:col-span-7 space-y-4">
         {selectedProduct && simData && !simData.margemInsuficiente && (
           <>
-            <div className="grid grid-cols-3 gap-3 animate-fade-in">
-              <KpiCard icon={Target} label="Empate" value={simData.roasEmpate!.toFixed(2) + 'x'} variant="warning" tooltipKey="roas_empate" large />
-              <KpiCard icon={TrendingUp} label="Saudável" value={simData.roasSaudavel!.toFixed(2) + 'x'} variant="success" tooltipKey="roas_ideal" large />
-              <KpiCard icon={Zap} label="Ideal" value={simData.roasIdeal!.toFixed(2) + 'x'} variant="success" highlight tooltipKey="roas_ideal" large />
+            <div className="grid grid-cols-3 gap-2 animate-fade-in">
+              {[
+                { label: 'Empate', value: simData.roasEmpate!.toFixed(2) + 'x', color: 'text-warning' },
+                { label: 'Saudável', value: simData.roasSaudavel!.toFixed(2) + 'x', color: 'text-success' },
+                { label: 'Ideal', value: simData.roasIdeal!.toFixed(2) + 'x', color: 'text-success' },
+              ].map(({ label, value, color }) => (
+                <div key={label} className="rounded-xl border border-border bg-card p-3 text-center">
+                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">{label}</p>
+                  <p className={cn('font-extrabold tabular-nums font-mono text-lg mt-1', color)}>{value}</p>
+                </div>
+              ))}
             </div>
 
             {/* Scenarios Chart */}

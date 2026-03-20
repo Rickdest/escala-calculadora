@@ -220,6 +220,14 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               </div>
             </div>
 
+            {/* Alerta de prejuízo */}
+            {result.netProfit < 0 && (
+              <div className="flex items-center gap-2.5 p-3 rounded-xl bg-danger/10 border border-danger/30 animate-fade-up">
+                <AlertTriangle className="w-4 h-4 text-danger flex-shrink-0" />
+                <p className="text-[12px] font-semibold text-danger">Preço de venda abaixo do custo total. Você está vendendo no prejuízo.</p>
+              </div>
+            )}
+
             {/* Ações */}
             <div className="flex items-center gap-2">
               <button

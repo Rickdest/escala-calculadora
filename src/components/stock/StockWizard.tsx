@@ -101,7 +101,10 @@ export function StockWizard({ onClose, editProduct }: Props) {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => setImagePreview(reader.result as string);
+    reader.onload = async () => {
+      const compressed = await compressImage(reader.result as string);
+      setImagePreview(compressed);
+    };
     reader.readAsDataURL(file);
   };
 
