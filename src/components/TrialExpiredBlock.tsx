@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Lock, ArrowRight, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useBilling } from '@/hooks/useBilling';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import logoIcon from '@/assets/logo-icon.png';
 
