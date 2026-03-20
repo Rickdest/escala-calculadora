@@ -175,6 +175,14 @@ export default function Stock() {
                     {product.tem_variacoes && (
                       <p className="text-xs text-text-2">Estoque total: {totalQty} unidades</p>
                     )}
+                    {(() => {
+                      const valor = product.variacoes.reduce((s, v) => s + v.preco_custo * v.quantidade, 0);
+                      return valor > 0 ? (
+                        <p className="text-xs text-text-3 font-mono font-mono-num">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)} investido
+                        </p>
+                      ) : null;
+                    })()}
                   </div>
 
                   <ChevronRight className="w-4 h-4 text-text-3 flex-shrink-0" />
