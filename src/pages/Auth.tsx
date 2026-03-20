@@ -6,13 +6,30 @@ import { lovable } from '@/integrations/lovable/index';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 
+function traduzirErro(mensagem: string): string {
+  if (mensagem.includes('already registered') || mensagem.includes('User already registered'))
+    return 'Este email já está cadastrado. Faça login.';
+  if (mensagem.includes('Invalid login credentials') || mensagem.includes('invalid_credentials'))
+    return 'Email ou senha incorretos.';
+  if (mensagem.includes('Email not confirmed'))
+    return 'Confirme seu email antes de entrar.';
+  if (mensagem.includes('Password should be'))
+    return 'Senha deve ter no mínimo 8 caracteres.';
+  if (mensagem.includes('after') && mensagem.includes('seconds'))
+    return 'Aguarde alguns segundos antes de tentar novamente.';
+  if (mensagem.includes('rate limit') || mensagem.includes('too many requests'))
+    return 'Muitas tentativas. Aguarde um momento.';
+  if (mensagem.includes('network') || mensagem.includes('fetch'))
+    return 'Erro de conexão. Verifique sua internet.';
+  return 'Erro ao processar. Tente novamente.';
+}
+
 export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [duplicateEmailError, setDuplicateEmailError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [activeTab, setActiveTab] = useState<'signup' | 'login'>('signup');
   const { signIn, signUp } = useAuth();
@@ -23,7 +40,7 @@ export default function Auth() {
     if (errorMessage) {
       const timer = setTimeout(() => {
         setErrorMessage('');
-      }, 6000);
+      }, 4000);
       return () => clearTimeout(timer);
     }
   }, [errorMessage]);
@@ -35,10 +52,10 @@ export default function Auth() {
         redirect_uri: window.location.origin,
       });
       if (error) {
-        toast({ title: 'Erro ao entrar com Google', description: String(error), variant: 'destructive' });
+        setErrorMessage(traduzirErro(String(error)));
       }
     } catch (err: any) {
-      toast({ title: 'Erro ao entrar com Google', description: err?.message || 'Erro desconhecido', variant: 'destructive' });
+      setErrorMessage(traduzirErro(err?.message || 'network'));
     } finally {
       setGoogleLoading(false);
     }
@@ -47,16 +64,12 @@ export default function Auth() {
   const handleSubmit = async (e: React.FormEvent, isLogin: boolean) => {
     e.preventDefault();
     setLoading(true);
-    setDuplicateEmailError(false);
+    setErrorMessage('');
     try {
       if (isLogin) {
         const { error } = await signIn(email, password);
         if (error) {
-          toast({
-            title: 'Erro ao entrar',
-            description: error.message === 'Invalid login credentials' ? 'Email ou senha incorretos' : error.message,
-            variant: 'destructive',
-          });
+          setErrorMessage(traduzirErro(error.message));
         } else {
           navigate('/');
         }
@@ -64,13 +77,13 @@ export default function Auth() {
         const { error, data } = await signUp(email, password);
         if (error) {
           if (error.message.includes('already registered') || error.message.includes('User already registered')) {
-            setErrorMessage('Email já cadastrado — Faça login ou use outro email.');
+            setErrorMessage(traduzirErro(error.message));
             setActiveTab('login');
           } else {
-            toast({ title: 'Erro ao criar conta', description: error.message, variant: 'destructive' });
+            setErrorMessage(traduzirErro(error.message));
           }
         } else if (data?.user?.identities?.length === 0) {
-          setErrorMessage('Email já cadastrado — Faça login ou use outro email.');
+          setErrorMessage('Este email já está cadastrado. Faça login.');
           setActiveTab('login');
         } else {
           toast({ title: 'Conta criada!', description: 'Verifique seu email para confirmar o cadastro.' });
@@ -99,7 +112,7 @@ export default function Auth() {
 
         {/* Inline error banner */}
         {errorMessage && (
-          <div className="bg-[#EF4444] text-white text-[13px] px-4 py-2.5 rounded-lg max-h-12 flex items-center justify-center">
+          <div className="bg-[#EF4444] text-white text-[13px] px-4 py-2.5 rounded-lg h-11 flex items-center justify-center text-center">
             {errorMessage}
           </div>
         )}
@@ -144,19 +157,11 @@ export default function Auth() {
                 inputMode="email"
                 autoComplete="email"
                 value={email}
-                onChange={(e) => { setEmail(e.target.value); setDuplicateEmailError(false); }}
+                onChange={(e) => { setEmail(e.target.value); setErrorMessage(''); }}
                 placeholder="seu@email.com"
                 className="w-full h-12 bg-[#1A1D27] border border-[#1F2433] rounded-[8px] px-3 text-[15px] text-[#F0F2F7] placeholder:text-[#4A5068] focus:outline-none focus:border-[#F97316] transition-colors"
                 required
               />
-              {duplicateEmailError && activeTab === 'signup' && (
-                <p className="text-[12px] text-[#EF4444] mt-1.5">
-                  Este e-mail já está cadastrado.{' '}
-                  <button type="button" onClick={() => setActiveTab('login')} className="underline font-semibold hover:opacity-80">
-                    Fazer login agora →
-                  </button>
-                </p>
-              )}
             </div>
 
             {/* Password */}
