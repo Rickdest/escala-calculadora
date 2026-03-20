@@ -60,9 +60,11 @@ function calcRoasFromValues(precoVenda: number, custoP: number, gastoAds: number
   return { roasAtual, roasEmpate, roasSaudavel, roasIdeal, lucroBruto, taxaShopee, valorRecebido, margemInsuficiente: false };
 }
 
-function getRoasStatus(roasAtual: number, roasEmpate: number, roasSaudavel: number) {
+function getRoasStatus(roasAtual: number, roasEmpate: number, roasSaudavel: number, roasIdeal: number) {
   if (roasAtual < roasEmpate) return 'danger';
+  if (roasAtual === roasEmpate) return 'empate';
   if (roasAtual < roasSaudavel) return 'warning';
+  if (roasAtual < roasIdeal) return 'medium';
   return 'success';
 }
 
