@@ -595,9 +595,9 @@ function ProductAnalysis() {
               {/* Hero Results - 3-column KPIs with tooltips */}
               <div className="grid grid-cols-3 gap-2 animate-fade-in">
                 {[
-                  { label: 'Empate', value: roasData.roasEmpate!.toFixed(2) + 'x', color: 'text-warning', tip: 'O ROAS mínimo para não ter prejuízo. Abaixo disso você perde dinheiro em cada venda com anúncio.' },
-                  { label: 'Saudável', value: roasData.roasSaudavel!.toFixed(2) + 'x', color: 'text-success', tip: 'Garante lucro mesmo com variações de performance dos anúncios. Bom para escalar com segurança.' },
-                  { label: 'Ideal', value: roasData.roasIdeal!.toFixed(2) + 'x', color: 'text-success', tip: 'Margem confortável. Nesse nível vale aumentar o investimento em ads com confiança.' },
+                  { label: 'ROAS Empate', value: roasData.roasEmpate!.toFixed(2) + 'x', color: 'text-orange-400', tip: 'ROAS mínimo para não ter prejuízo. Abaixo disso cada venda com anúncio gera perda.' },
+                  { label: 'Lucro Médio', value: roasData.roasSaudavel!.toFixed(2) + 'x', color: 'text-primary', tip: 'A partir daqui o lucro já é consistente e seguro para escalar.' },
+                  { label: 'Lucrativo', value: roasData.roasIdeal!.toFixed(2) + 'x', color: 'text-success', tip: 'Margem excelente. Nesse nível vale aumentar o investimento em Ads com confiança.' },
                 ].map(({ label, value, color, tip }) => (
                   <div key={label} className="rounded-xl border border-border bg-card p-3 text-center">
                     <div className="flex items-center justify-center gap-1">
