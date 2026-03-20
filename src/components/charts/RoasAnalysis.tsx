@@ -579,10 +579,17 @@ function ProductAnalysis() {
               <ProductHealthBanner marginPercent={marginPercent} />
 
               {/* Hero Results - 3-column KPIs */}
-              <div className="grid grid-cols-3 gap-3 animate-fade-in">
-                <KpiCard icon={Target} label="ROAS Empate" value={roasData.roasEmpate!.toFixed(2) + 'x'} variant="warning" tooltipKey="roas_empate" large />
-                <KpiCard icon={TrendingUp} label="ROAS Saudável" value={roasData.roasSaudavel!.toFixed(2) + 'x'} variant="success" tooltipKey="roas_ideal" large />
-                <KpiCard icon={Zap} label="ROAS Ideal" value={roasData.roasIdeal!.toFixed(2) + 'x'} variant="success" highlight tooltipKey="roas_ideal" large />
+              <div className="grid grid-cols-3 gap-2 animate-fade-in">
+                {[
+                  { label: 'Empate', value: roasData.roasEmpate!.toFixed(2) + 'x', color: 'text-warning' },
+                  { label: 'Saudável', value: roasData.roasSaudavel!.toFixed(2) + 'x', color: 'text-success' },
+                  { label: 'Ideal', value: roasData.roasIdeal!.toFixed(2) + 'x', color: 'text-success' },
+                ].map(({ label, value, color }) => (
+                  <div key={label} className="rounded-xl border border-border bg-card p-3 text-center">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">{label}</p>
+                    <p className={cn('font-extrabold tabular-nums font-mono text-lg mt-1', color)}>{value}</p>
+                  </div>
+                ))}
               </div>
 
               {/* Insight Banner */}
