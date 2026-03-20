@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { X, ChevronRight, ChevronLeft, Package, Layers, Plus, Camera } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { X, Camera, Trash2, GripVertical } from 'lucide-react';
 import { useEstoque, EstoqueProduto } from '@/hooks/useEstoque';
 import { generateVariationCombinations, getVariationLabel, ProductAttribute } from '@/types/store';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { saveLocalStockImage, getLocalStockImage } from '@/hooks/useEstoque';
@@ -15,13 +14,18 @@ import { compressImage } from '@/lib/imageUtils';
 
 const CATEGORIES = ['Moda', 'Calçados', 'Acessórios', 'Eletrônicos', 'Beleza', 'Casa e Decoração', 'Esporte', 'Alimentos', 'Outro'];
 
-const VARIATION_TYPES: { key: string; label: string; presets: string[]; colors?: Record<string, string> }[] = [
-  { key: 'Tamanho', label: 'Tamanho', presets: ['PP', 'P', 'M', 'G', 'GG', 'XG'] },
-  { key: 'Cor', label: 'Cor', presets: ['Preto', 'Branco', 'Azul', 'Vermelho', 'Rosa', 'Verde'], colors: { 'Preto': '⚫', 'Branco': '⚪', 'Azul': '🔵', 'Vermelho': '🔴', 'Rosa': '🟣', 'Verde': '🟢' } },
-  { key: 'Modelo', label: 'Modelo', presets: [] },
-  { key: 'Material', label: 'Material', presets: ['Algodão', 'Poliéster', 'Couro', 'Sintético'] },
-  { key: 'Sabor', label: 'Sabor', presets: [] },
-];
+const VARIATION_SUGGESTIONS = ['Cor', 'Tamanho', 'Modelo', 'Material', 'Volume', 'Sabor'];
+
+interface VariationOption {
+  value: string;
+  explanation: string;
+}
+
+interface VariationBlock {
+  id: string;
+  typeName: string;
+  options: VariationOption[];
+}
 
 interface VarRow {
   tempId: string;
@@ -40,10 +44,9 @@ interface Props {
 export function StockWizard({ onClose, editProduct }: Props) {
   const { addProduto, updateProduto, updateVariacao } = useEstoque();
   const fileRef = useRef<HTMLInputElement>(null);
-  const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
 
-  // Step 1
+  // Basic info
   const [nome, setNome] = useState(editProduct?.nome || '');
   const [categoria, setCategoria] = useState(editProduct?.categoria || '');
   const [skuBase, setSkuBase] = useState(editProduct?.sku_base || '');
@@ -51,35 +54,39 @@ export function StockWizard({ onClose, editProduct }: Props) {
   const [imagePreview, setImagePreview] = useState<string | null>(editProduct ? getLocalStockImage(editProduct.id) : null);
   const [showDesc, setShowDesc] = useState(!!editProduct?.descricao);
 
-  // Step 2
+  // Variations
   const [temVariacoes, setTemVariacoes] = useState(editProduct?.tem_variacoes || false);
-
-  // Step 3
-  const [attributes, setAttributes] = useState<ProductAttribute[]>([]);
-  const [customName, setCustomName] = useState('');
-
-  // Step 4
+  const [variationBlocks, setVariationBlocks] = useState<VariationBlock[]>([]);
   const [varRows, setVarRows] = useState<VarRow[]>([]);
+
+  // Simple product fields
   const [simpleCost, setSimpleCost] = useState('');
   const [simpleQty, setSimpleQty] = useState('0');
   const [simpleMin, setSimpleMin] = useState('5');
   const [simpleSku, setSimpleSku] = useState('');
+
+  // Bulk apply
   const [bulkCost, setBulkCost] = useState('');
   const [bulkQty, setBulkQty] = useState('');
-  const [bulkMin, setBulkMin] = useState('5');
-  const [showBulk, setShowBulk] = useState(false);
+  const [bulkSku, setBulkSku] = useState('');
+
+  // Dropdown state for type name inputs
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+
+  // Group images for variation1 values
+  const [groupImages, setGroupImages] = useState<Record<string, string>>({});
+  const groupFileRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   // Init edit mode
   useEffect(() => {
     if (editProduct && editProduct.tem_variacoes && editProduct.variacoes.length > 0) {
-      // Reconstruct attributes from variations
       const attrKeys = [...new Set(editProduct.variacoes.flatMap(v => Object.keys(v.atributos)))];
-      const attrs: ProductAttribute[] = attrKeys.map(key => ({
+      const blocks: VariationBlock[] = attrKeys.map(key => ({
         id: Math.random().toString(36).substring(2, 10),
-        name: key,
-        values: [...new Set(editProduct.variacoes.map(v => v.atributos[key]).filter(Boolean))],
+        typeName: key,
+        options: [...new Set(editProduct.variacoes.map(v => v.atributos[key]).filter(Boolean))].map(val => ({ value: val, explanation: '' })),
       }));
-      setAttributes(attrs);
+      setVariationBlocks(blocks);
       setVarRows(editProduct.variacoes.map(v => ({
         tempId: v.id,
         atributos: v.atributos,
@@ -97,6 +104,33 @@ export function StockWizard({ onClose, editProduct }: Props) {
     }
   }, [editProduct]);
 
+  // Convert blocks to ProductAttribute[] for combination generation
+  const attributes: ProductAttribute[] = useMemo(() =>
+    variationBlocks.filter(b => b.typeName && b.options.some(o => o.value)).map(b => ({
+      id: b.id,
+      name: b.typeName,
+      values: b.options.filter(o => o.value).map(o => o.value),
+    })),
+    [variationBlocks]
+  );
+
+  // Auto-regenerate combinations
+  useEffect(() => {
+    if (!temVariacoes) return;
+    const combos = generateVariationCombinations(attributes);
+    if (combos.length === 0) { setVarRows([]); return; }
+    const existingMap = new Map<string, VarRow>();
+    for (const v of varRows) existingMap.set(getVariationLabel(v.atributos), v);
+    const rows: VarRow[] = combos.map(combo => {
+      const label = getVariationLabel(combo);
+      const existing = existingMap.get(label);
+      if (existing) return { ...existing, atributos: combo };
+      return { tempId: Math.random().toString(36).substring(2, 15), atributos: combo, sku: '', preco_custo: 0, quantidade: 0, quantidade_minima: 5 };
+    });
+    setVarRows(rows);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [temVariacoes, attributes]);
+
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -108,68 +142,49 @@ export function StockWizard({ onClose, editProduct }: Props) {
     reader.readAsDataURL(file);
   };
 
-  const toggleAttrType = (key: string) => {
-    const exists = attributes.find(a => a.name === key);
-    if (exists) {
-      setAttributes(prev => prev.filter(a => a.name !== key));
-    } else {
-      if (attributes.length >= 2) { toast.error('Máximo 2 tipos de variação'); return; }
-      const preset = VARIATION_TYPES.find(v => v.key === key);
-      setAttributes(prev => [...prev, { id: Math.random().toString(36).substring(2, 10), name: key, values: [] }]);
-    }
+  const handleGroupImageSelect = async (groupValue: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const compressed = await compressImage(reader.result as string);
+      setGroupImages(prev => ({ ...prev, [groupValue]: compressed }));
+    };
+    reader.readAsDataURL(file);
   };
 
-  const toggleAttrValue = (attrName: string, value: string) => {
-    setAttributes(prev => prev.map(a => {
-      if (a.name !== attrName) return a;
-      return { ...a, values: a.values.includes(value) ? a.values.filter(v => v !== value) : [...a.values, value] };
-    }));
+  // Variation block helpers
+  const updateBlock = (blockId: string, updates: Partial<VariationBlock>) => {
+    setVariationBlocks(prev => prev.map(b => b.id === blockId ? { ...b, ...updates } : b));
   };
 
-  const addCustomValue = (attrName: string, value: string) => {
+  const removeBlock = (blockId: string) => {
+    setVariationBlocks(prev => prev.filter(b => b.id !== blockId));
+  };
+
+  const addOptionToBlock = (blockId: string, value: string) => {
     if (!value.trim()) return;
-    setAttributes(prev => prev.map(a => {
-      if (a.name !== attrName || a.values.includes(value.trim())) return a;
-      return { ...a, values: [...a.values, value.trim()] };
+    setVariationBlocks(prev => prev.map(b => {
+      if (b.id !== blockId) return b;
+      if (b.options.some(o => o.value === value.trim())) return b;
+      return { ...b, options: [...b.options, { value: value.trim(), explanation: '' }] };
     }));
   };
 
-  const addCustomAttr = () => {
-    if (!customName.trim()) return;
-    if (attributes.length >= 2) { toast.error('Máximo 2 tipos de variação'); return; }
-    setAttributes(prev => [...prev, { id: Math.random().toString(36).substring(2, 10), name: customName.trim(), values: [] }]);
-    setCustomName('');
+  const removeOptionFromBlock = (blockId: string, index: number) => {
+    setVariationBlocks(prev => prev.map(b => {
+      if (b.id !== blockId) return b;
+      return { ...b, options: b.options.filter((_, i) => i !== index) };
+    }));
   };
 
-  // Generate combinations when entering step 4
-  useEffect(() => {
-    if (step === 4 && temVariacoes) {
-      const combos = generateVariationCombinations(attributes);
-      const existingMap = new Map<string, VarRow>();
-      for (const v of varRows) existingMap.set(getVariationLabel(v.atributos), v);
-      const rows: VarRow[] = combos.map(combo => {
-        const label = getVariationLabel(combo);
-        const existing = existingMap.get(label);
-        if (existing) return { ...existing, atributos: combo };
-        return { tempId: Math.random().toString(36).substring(2, 15), atributos: combo, sku: '', preco_custo: 0, quantidade: 0, quantidade_minima: 5 };
-      });
-      setVarRows(rows);
-    }
-  }, [step]);
-
-  const applyBulk = () => {
-    setVarRows(prev => prev.map(v => ({
-      ...v,
-      preco_custo: bulkCost ? parseFloat(bulkCost) : v.preco_custo,
-      quantidade: bulkQty ? parseInt(bulkQty) : v.quantidade,
-      quantidade_minima: bulkMin ? parseInt(bulkMin) : v.quantidade_minima,
-    })));
-    setShowBulk(false);
-    toast.success('Valores aplicados');
-  };
-
-  const removeVarRow = (id: string) => {
-    setVarRows(prev => prev.filter(v => v.tempId !== id));
+  const updateOptionInBlock = (blockId: string, index: number, updates: Partial<VariationOption>) => {
+    setVariationBlocks(prev => prev.map(b => {
+      if (b.id !== blockId) return b;
+      const opts = [...b.options];
+      opts[index] = { ...opts[index], ...updates };
+      return { ...b, options: opts };
+    }));
   };
 
   const updateVarRow = (id: string, field: keyof VarRow, value: string) => {
@@ -183,6 +198,16 @@ export function StockWizard({ onClose, editProduct }: Props) {
     }));
   };
 
+  const applyBulk = () => {
+    setVarRows(prev => prev.map(v => ({
+      ...v,
+      preco_custo: bulkCost ? parseFloat(bulkCost) : v.preco_custo,
+      quantidade: bulkQty ? parseInt(bulkQty) : v.quantidade,
+      sku: bulkSku ? bulkSku : v.sku,
+    })));
+    toast.success('Valores aplicados');
+  };
+
   const handleSave = async () => {
     if (!nome.trim()) return;
     setSaving(true);
@@ -190,14 +215,12 @@ export function StockWizard({ onClose, editProduct }: Props) {
       if (editProduct) {
         await updateProduto(editProduct.id, { nome, categoria: categoria || null, sku_base: skuBase || null, descricao: descricao || null, tem_variacoes: temVariacoes });
         if (imagePreview) saveLocalStockImage(editProduct.id, imagePreview);
-        // TODO: update variations in edit mode would require delete+reinsert
         toast.success('Produto atualizado!');
       } else {
         const variacoes = temVariacoes
           ? varRows.map(v => ({ atributos: v.atributos, sku: v.sku || null, preco_custo: v.preco_custo, quantidade: v.quantidade, quantidade_minima: v.quantidade_minima }))
           : [{ atributos: {}, sku: simpleSku || null, preco_custo: parseFloat(simpleCost) || 0, quantidade: parseInt(simpleQty) || 0, quantidade_minima: parseInt(simpleMin) || 5 }];
-
-        const prod = await addProduto({ nome, categoria, sku_base: skuBase, descricao, tem_variacoes: temVariacoes, imageDataUrl: imagePreview || undefined, variacoes });
+        await addProduto({ nome, categoria, sku_base: skuBase, descricao, tem_variacoes: temVariacoes, imageDataUrl: imagePreview || undefined, variacoes });
       }
       onClose();
     } catch {
@@ -207,278 +230,471 @@ export function StockWizard({ onClose, editProduct }: Props) {
     }
   };
 
-  const canAdvance = () => {
-    if (step === 1) return !!nome.trim();
-    if (step === 3) return attributes.some(a => a.values.length > 0);
-    return true;
-  };
+  // Grouped rows for table
+  const groupedRows = useMemo(() => {
+    if (attributes.length === 0) return [];
+    const var1Name = attributes[0]?.name;
+    if (!var1Name) return [];
+    const groups: { key: string; rows: VarRow[] }[] = [];
+    const map = new Map<string, VarRow[]>();
+    for (const row of varRows) {
+      const key = row.atributos[var1Name] || '';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push(row);
+    }
+    for (const [key, rows] of map) groups.push({ key, rows });
+    return groups;
+  }, [varRows, attributes]);
 
-  const goNext = () => {
-    if (step === 2 && !temVariacoes) setStep(4);
-    else setStep(s => s + 1);
-  };
-  const goBack = () => {
-    if (step === 4 && !temVariacoes) setStep(2);
-    else setStep(s => s - 1);
-  };
+  const hasVar2 = attributes.length >= 2;
+  const var1Name = attributes[0]?.name || '';
+  const var2Name = attributes[1]?.name || '';
 
-  const totalSteps = temVariacoes ? 4 : 3;
+  const filteredSuggestions = (blockId: string, query: string) => {
+    const usedNames = variationBlocks.filter(b => b.id !== blockId).map(b => b.typeName);
+    return VARIATION_SUGGESTIONS.filter(s =>
+      !usedNames.includes(s) && s.toLowerCase().includes(query.toLowerCase())
+    );
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-foreground/30 backdrop-blur-sm">
       <div className="fixed inset-0 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:max-w-lg md:my-4 bg-card md:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
-          <div className="flex items-center gap-3">
-            {step > 1 && (
-              <button onClick={goBack} className="p-1.5 hover:bg-secondary rounded-lg"><ChevronLeft className="w-5 h-5" /></button>
+        {/* ═══ HEADER ═══ */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+          <button onClick={onClose} className="p-1.5 hover:bg-secondary rounded-lg">
+            <X className="w-5 h-5" />
+          </button>
+          <h2 className="text-base font-bold">{editProduct ? 'Editar Produto' : 'Novo Produto'}</h2>
+          <button
+            onClick={handleSave}
+            disabled={!nome.trim() || saving}
+            className={cn(
+              'px-4 py-1.5 rounded-lg text-sm font-bold transition-all',
+              nome.trim() && !saving
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground cursor-not-allowed'
             )}
-            <div>
-              <h2 className="text-base font-bold">{editProduct ? 'Editar Produto' : 'Novo Produto'}</h2>
-              <div className="flex gap-1 mt-1">
-                {Array.from({ length: totalSteps }).map((_, i) => (
-                  <div key={i} className={cn('h-1 rounded-full transition-all', i < step ? 'bg-primary' : 'bg-border', i === step - 1 ? 'w-6' : 'w-3')} />
-                ))}
-              </div>
-            </div>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-secondary rounded-lg"><X className="w-5 h-5" /></button>
+          >
+            {saving ? '...' : 'Salvar'}
+          </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4">
-          {/* STEP 1 */}
-          {step === 1 && (
-            <div className="space-y-4">
-              {/* Image upload */}
-              <div className="flex justify-center">
-                <button onClick={() => fileRef.current?.click()} className="w-24 h-24 rounded-xl border-2 border-dashed border-border hover:border-primary/50 flex flex-col items-center justify-center gap-1 overflow-hidden transition-colors">
-                  {imagePreview ? (
-                    <img src={imagePreview} alt="" className="w-full h-full object-cover" />
-                  ) : (
-                    <>
-                      <Camera className="w-6 h-6 text-muted-foreground" />
-                      <span className="text-[10px] text-muted-foreground">Adicionar foto</span>
-                    </>
-                  )}
-                </button>
-                <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
-              </div>
+        {/* ═══ SCROLLABLE CONTENT ═══ */}
+        <div className="flex-1 overflow-y-auto pb-20">
 
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">Nome do produto <span className="text-destructive">*</span></Label>
+          {/* ─── SEÇÃO: Informações Básicas ─── */}
+          <div className="p-4 space-y-4">
+            <h3 className="text-sm font-bold text-foreground">Informações Básicas</h3>
+
+            {/* Photo */}
+            <div className="flex items-start gap-4">
+              <button
+                onClick={() => fileRef.current?.click()}
+                className="w-20 h-20 shrink-0 rounded-lg border-2 border-dashed border-border hover:border-primary/50 flex flex-col items-center justify-center gap-1 overflow-hidden transition-colors bg-secondary/30"
+              >
+                {imagePreview ? (
+                  <img src={imagePreview} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <>
+                    <Camera className="w-5 h-5 text-muted-foreground" />
+                    <span className="text-[9px] text-muted-foreground">Foto</span>
+                  </>
+                )}
+              </button>
+              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+
+              <div className="flex-1 space-y-1.5">
+                <Label className="text-xs font-semibold">Nome do Produto <span className="text-destructive">*</span></Label>
                 <Input value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Camiseta Oversized" className="h-10 text-sm" />
               </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">Categoria <span className="text-destructive">*</span></Label>
-                <Select value={categoria} onValueChange={setCategoria}>
-                  <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="Selecione" /></SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">SKU <span className="text-muted-foreground font-normal">(opcional)</span></Label>
-                <Input value={skuBase} onChange={e => setSkuBase(e.target.value)} placeholder="Ex: CAM-001" className="h-10 text-sm" />
-              </div>
-
-              <div>
-                <button onClick={() => setShowDesc(!showDesc)} className="text-xs text-primary font-semibold">
-                  {showDesc ? '− Ocultar descrição' : '+ Adicionar descrição'}
-                </button>
-                {showDesc && (
-                  <Textarea value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Detalhes do produto..." className="mt-2 text-sm min-h-[60px]" />
-                )}
-              </div>
             </div>
-          )}
 
-          {/* STEP 2 */}
-          {step === 2 && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-base font-bold">Este produto possui variações?</h3>
-                <p className="text-sm text-muted-foreground mt-1">Ex: Tamanho e Cor</p>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => setTemVariacoes(true)} className={cn(
-                  'rounded-xl border-2 p-5 flex flex-col items-center gap-2 transition-all',
-                  temVariacoes ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'
-                )}>
-                  <Layers className={cn('w-8 h-8', temVariacoes ? 'text-primary' : 'text-muted-foreground')} />
-                  <p className="font-bold text-sm">✅ Sim</p>
-                  <p className="text-[10px] text-muted-foreground">Tamanho, Cor...</p>
-                </button>
-                <button onClick={() => setTemVariacoes(false)} className={cn(
-                  'rounded-xl border-2 p-5 flex flex-col items-center gap-2 transition-all',
-                  !temVariacoes ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/30'
-                )}>
-                  <Package className={cn('w-8 h-8', !temVariacoes ? 'text-primary' : 'text-muted-foreground')} />
-                  <p className="font-bold text-sm">➡️ Não</p>
-                  <p className="text-[10px] text-muted-foreground">Produto simples</p>
-                </button>
-              </div>
+            {/* Categoria */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Categoria</Label>
+              <Select value={categoria} onValueChange={setCategoria}>
+                <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
-          )}
 
-          {/* STEP 3 — Variation config */}
-          {step === 3 && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-base font-bold">Selecione os tipos de variação</h3>
-                <p className="text-xs text-muted-foreground mt-1">Máximo 2 tipos (ex: Tamanho + Cor)</p>
-              </div>
+            {/* SKU Base */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">SKU Base <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+              <Input value={skuBase} onChange={e => setSkuBase(e.target.value)} placeholder="Ex: CAM-001" className="h-10 text-sm" />
+            </div>
 
-              <div className="flex flex-wrap gap-2">
-                {VARIATION_TYPES.map(vt => {
-                  const isActive = attributes.some(a => a.name === vt.key);
-                  return (
-                    <button key={vt.key} onClick={() => toggleAttrType(vt.key)} className={cn(
-                      'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border',
-                      isActive ? 'bg-primary text-primary-foreground border-primary' : 'bg-card text-muted-foreground border-border hover:border-primary/30'
-                    )}>
-                      {vt.label}
-                    </button>
-                  );
-                })}
-                {/* Custom */}
-                <div className="flex gap-1">
-                  <Input value={customName} onChange={e => setCustomName(e.target.value)} placeholder="+ Personalizado" className="h-8 w-28 text-xs" />
-                  {customName && <button onClick={addCustomAttr} className="px-2 h-8 bg-primary text-primary-foreground rounded-lg text-xs font-bold">+</button>}
-                </div>
-              </div>
-
-              {/* Value chips per attribute */}
-              {attributes.map(attr => {
-                const vt = VARIATION_TYPES.find(v => v.key === attr.name);
-                const presets = vt?.presets || [];
-                const colors = vt?.colors || {};
-                return (
-                  <div key={attr.id} className="border border-border/50 rounded-xl p-3 space-y-2">
-                    <p className="text-sm font-bold">{attr.name}</p>
-                    {presets.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {presets.map(val => {
-                          const sel = attr.values.includes(val);
-                          return (
-                            <button key={val} onClick={() => toggleAttrValue(attr.name, val)} className={cn(
-                              'px-2.5 py-1 rounded-lg text-xs font-medium transition-all border',
-                              sel ? 'bg-primary/10 text-primary border-primary/30' : 'bg-card text-muted-foreground border-border/50'
-                            )}>
-                              {colors[val] ? `${colors[val]} ` : ''}{val}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                    <Input placeholder={`+ Outro ${attr.name.toLowerCase()}`} className="h-8 text-xs" onKeyDown={e => {
-                      if (e.key === 'Enter') { e.preventDefault(); addCustomValue(attr.name, (e.target as HTMLInputElement).value); (e.target as HTMLInputElement).value = ''; }
-                    }} />
-                    {/* Show custom values */}
-                    {attr.values.filter(v => !presets.includes(v)).length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {attr.values.filter(v => !presets.includes(v)).map(val => (
-                          <button key={val} onClick={() => toggleAttrValue(attr.name, val)} className="px-2.5 py-1 rounded-lg text-xs font-medium bg-primary/10 text-primary border border-primary/30">
-                            ✓ {val}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {attributes.some(a => a.values.length > 0) && (
-                <p className="text-xs text-muted-foreground">
-                  {generateVariationCombinations(attributes).length} combinações serão geradas
-                </p>
+            {/* Descrição colapsável */}
+            <div>
+              <button onClick={() => setShowDesc(!showDesc)} className="text-xs text-primary font-semibold">
+                {showDesc ? '− Ocultar descrição' : '+ Adicionar descrição'}
+              </button>
+              {showDesc && (
+                <Textarea value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Detalhes do produto..." className="mt-2 text-sm min-h-[60px]" />
               )}
             </div>
-          )}
+          </div>
 
-          {/* STEP 4 — Stock */}
-          {step === (temVariacoes ? 4 : 3) && (
-            <div className="space-y-4">
-              <h3 className="text-base font-bold">Defina o estoque inicial</h3>
+          <div className="h-2 bg-secondary/30" />
 
-              {!temVariacoes ? (
-                /* Simple product */
+          {/* ─── SEÇÃO: Informações de Vendas ─── */}
+          <div className="p-4 space-y-4">
+            <h3 className="text-sm font-bold text-foreground">Informações de vendas</h3>
+
+            {/* Variações header */}
+            <div className="flex items-center gap-2">
+              <span className="text-primary text-lg leading-none">●</span>
+              <span className="text-sm font-semibold">Variações</span>
+            </div>
+
+            {!temVariacoes ? (
+              <>
+                {/* Enable variations button */}
+                <button
+                  onClick={() => {
+                    setTemVariacoes(true);
+                    if (variationBlocks.length === 0) {
+                      setVariationBlocks([{ id: Math.random().toString(36).substring(2, 10), typeName: '', options: [] }]);
+                    }
+                  }}
+                  className="w-full border-2 border-dashed border-primary/50 text-primary rounded-lg py-2.5 text-sm font-semibold hover:bg-primary/5 transition-colors"
+                >
+                  + Habilitar Variações
+                </button>
+
+                {/* Simple product fields */}
                 <div className="space-y-3">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Preço de Custo (R$)</Label>
-                    <Input type="number" step="0.01" value={simpleCost} onChange={e => setSimpleCost(e.target.value)} placeholder="0,00" className="h-9 text-sm" />
+                    <Label className="text-xs font-semibold">Preço de Custo <span className="text-destructive">*</span></Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
+                      <Input type="number" step="0.01" value={simpleCost} onChange={e => setSimpleCost(e.target.value)} placeholder="0,00" className="h-10 text-sm pl-9" />
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold">Quantidade</Label>
-                      <Input type="number" min="0" value={simpleQty} onChange={e => setSimpleQty(e.target.value)} className="h-9 text-sm" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold">Mínimo alerta</Label>
-                      <Input type="number" min="0" value={simpleMin} onChange={e => setSimpleMin(e.target.value)} className="h-9 text-sm" />
-                    </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Estoque <span className="text-destructive">*</span></Label>
+                    <Input type="number" min="0" value={simpleQty} onChange={e => setSimpleQty(e.target.value)} className="h-10 text-sm" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Estoque mínimo alerta</Label>
+                    <Input type="number" min="0" value={simpleMin} onChange={e => setSimpleMin(e.target.value)} className="h-10 text-sm" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">SKU <span className="text-muted-foreground font-normal">(opcional)</span></Label>
-                    <Input value={simpleSku} onChange={e => setSimpleSku(e.target.value)} className="h-9 text-sm" />
+                    <Input value={simpleSku} onChange={e => setSimpleSku(e.target.value)} className="h-10 text-sm" />
                   </div>
                 </div>
-              ) : (
-                /* Variations table */
-                <div className="space-y-3">
-                  <button onClick={() => setShowBulk(!showBulk)} className="text-xs text-primary font-semibold">
-                    {showBulk ? '− Ocultar' : 'Preencher todos igual →'}
+              </>
+            ) : (
+              /* ─── Variation blocks ─── */
+              <div className="space-y-4">
+                {variationBlocks.map((block, blockIdx) => (
+                  <VariationBlockUI
+                    key={block.id}
+                    block={block}
+                    blockIdx={blockIdx}
+                    activeDropdown={activeDropdown}
+                    setActiveDropdown={setActiveDropdown}
+                    filteredSuggestions={filteredSuggestions}
+                    updateBlock={updateBlock}
+                    removeBlock={removeBlock}
+                    addOptionToBlock={addOptionToBlock}
+                    removeOptionFromBlock={removeOptionFromBlock}
+                    updateOptionInBlock={updateOptionInBlock}
+                  />
+                ))}
+
+                {/* Add Variation2 button */}
+                {variationBlocks.length === 1 && variationBlocks[0].options.some(o => o.value) && (
+                  <button
+                    onClick={() => {
+                      if (variationBlocks.length >= 2) { toast.error('Máximo 2 variações'); return; }
+                      setVariationBlocks(prev => [...prev, { id: Math.random().toString(36).substring(2, 10), typeName: '', options: [] }]);
+                    }}
+                    className="w-full border border-dashed border-primary/50 text-primary rounded-lg py-2 text-sm font-semibold hover:bg-primary/5 transition-colors"
+                  >
+                    + Adicionar Variação {variationBlocks.length + 1}
                   </button>
+                )}
 
-                  {showBulk && (
-                    <div className="border border-border/50 rounded-lg p-3 space-y-2">
-                      <div className="grid grid-cols-3 gap-2">
-                        <div><Label className="text-[10px]">Custo</Label><Input type="number" step="0.01" value={bulkCost} onChange={e => setBulkCost(e.target.value)} className="h-8 text-xs" /></div>
-                        <div><Label className="text-[10px]">Qtd</Label><Input type="number" value={bulkQty} onChange={e => setBulkQty(e.target.value)} className="h-8 text-xs" /></div>
-                        <div><Label className="text-[10px]">Mín</Label><Input type="number" value={bulkMin} onChange={e => setBulkMin(e.target.value)} className="h-8 text-xs" /></div>
-                      </div>
-                      <Button onClick={applyBulk} size="sm" className="w-full gradient-primary text-xs h-8">Aplicar para todas</Button>
-                    </div>
-                  )}
+                {/* Disable variations link */}
+                <button
+                  onClick={() => { setTemVariacoes(false); setVariationBlocks([]); setVarRows([]); }}
+                  className="text-xs text-muted-foreground hover:text-destructive"
+                >
+                  Desabilitar variações
+                </button>
+              </div>
+            )}
+          </div>
 
-                  {/* Table */}
-                  <div className="border border-border/50 rounded-lg overflow-hidden">
-                    <div className="grid grid-cols-[1fr_70px_50px_50px_60px_28px] gap-0 bg-secondary/50 px-2 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
-                      <span>Variação</span><span>Custo</span><span>Qtd</span><span>Mín</span><span>SKU</span><span></span>
-                    </div>
-                    <div className="divide-y divide-border/30 max-h-[40vh] overflow-y-auto">
-                      {varRows.map(row => (
-                        <div key={row.tempId} className="grid grid-cols-[1fr_70px_50px_50px_60px_28px] gap-0 px-2 py-1.5 items-center">
-                          <span className="text-xs font-medium truncate pr-1">{getVariationLabel(row.atributos)}</span>
-                          <Input type="number" step="0.01" value={row.preco_custo || ''} onChange={e => updateVarRow(row.tempId, 'preco_custo', e.target.value)} className="h-[36px] text-xs px-1 border-border/50" />
-                          <Input type="number" min="0" value={row.quantidade || ''} onChange={e => updateVarRow(row.tempId, 'quantidade', e.target.value)} className="h-[36px] text-xs px-1 border-border/50" />
-                          <Input type="number" min="0" value={row.quantidade_minima || ''} onChange={e => updateVarRow(row.tempId, 'quantidade_minima', e.target.value)} className="h-[36px] text-xs px-1 border-border/50" />
-                          <Input value={row.sku} onChange={e => updateVarRow(row.tempId, 'sku', e.target.value)} className="h-[36px] text-xs px-1 border-border/50" />
-                          <button onClick={() => removeVarRow(row.tempId)} className="text-muted-foreground hover:text-destructive"><X className="w-3.5 h-3.5" /></button>
-                        </div>
-                      ))}
-                    </div>
+          {/* ─── SEÇÃO: Lista de Variações (table) ─── */}
+          {temVariacoes && varRows.length > 0 && (
+            <>
+              <div className="h-2 bg-secondary/30" />
+              <div className="p-4 space-y-3">
+                <h3 className="text-sm font-bold text-foreground">Lista de Variações</h3>
+
+                {/* Bulk apply row */}
+                <div className="flex items-end gap-2">
+                  <div className="flex-1">
+                    <Label className="text-[10px] text-muted-foreground">R$ Preço</Label>
+                    <Input type="number" step="0.01" value={bulkCost} onChange={e => setBulkCost(e.target.value)} placeholder="0,00" className="h-8 text-xs" />
                   </div>
+                  <div className="flex-1">
+                    <Label className="text-[10px] text-muted-foreground">Estoque</Label>
+                    <Input type="number" value={bulkQty} onChange={e => setBulkQty(e.target.value)} placeholder="0" className="h-8 text-xs" />
+                  </div>
+                  <div className="flex-1">
+                    <Label className="text-[10px] text-muted-foreground">SKU</Label>
+                    <Input value={bulkSku} onChange={e => setBulkSku(e.target.value)} placeholder="SKU" className="h-8 text-xs" />
+                  </div>
+                  <button
+                    onClick={applyBulk}
+                    className="shrink-0 px-3 h-8 border border-primary text-primary rounded-lg text-xs font-semibold hover:bg-primary/5"
+                  >
+                    Aplicar a todos
+                  </button>
                 </div>
-              )}
-            </div>
+
+                {/* Table */}
+                <div className="border border-border rounded-lg overflow-x-auto">
+                  <table className="w-full text-xs min-w-[500px]">
+                    <thead>
+                      <tr className="bg-secondary/50 text-muted-foreground">
+                        <th className="text-left px-2 py-2 font-semibold">{var1Name}</th>
+                        {hasVar2 && <th className="text-left px-2 py-2 font-semibold">{var2Name}</th>}
+                        <th className="text-left px-2 py-2 font-semibold"><span className="text-primary">●</span> Preço</th>
+                        <th className="text-left px-2 py-2 font-semibold"><span className="text-primary">●</span> Estoque</th>
+                        <th className="text-left px-2 py-2 font-semibold">SKU da Variação</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {groupedRows.map((group, gi) => (
+                        group.rows.map((row, ri) => (
+                          <tr
+                            key={row.tempId}
+                            className={cn(
+                              ri === 0 && gi > 0 && 'border-t-2 border-border',
+                              gi % 2 === 0 ? 'bg-card' : 'bg-secondary/20'
+                            )}
+                          >
+                            {ri === 0 && (
+                              <td className="px-2 py-2 align-top font-medium" rowSpan={group.rows.length}>
+                                <div className="space-y-1">
+                                  <span>{group.key}</span>
+                                  {/* Group image upload */}
+                                  <button
+                                    onClick={() => groupFileRefs.current[group.key]?.click()}
+                                    className="block w-10 h-10 rounded border border-dashed border-border hover:border-primary/50 overflow-hidden"
+                                  >
+                                    {groupImages[group.key] ? (
+                                      <img src={groupImages[group.key]} alt="" className="w-full h-full object-cover" />
+                                    ) : (
+                                      <Camera className="w-3.5 h-3.5 text-muted-foreground m-auto mt-2.5" />
+                                    )}
+                                  </button>
+                                  <input
+                                    ref={el => { groupFileRefs.current[group.key] = el; }}
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={e => handleGroupImageSelect(group.key, e)}
+                                  />
+                                </div>
+                              </td>
+                            )}
+                            {hasVar2 && (
+                              <td className="px-2 py-2">{row.atributos[var2Name]}</td>
+                            )}
+                            <td className="px-2 py-1.5">
+                              <div className="relative">
+                                <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">R$</span>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={row.preco_custo || ''}
+                                  onChange={e => updateVarRow(row.tempId, 'preco_custo', e.target.value)}
+                                  className="h-8 text-xs pl-7 w-20"
+                                />
+                              </div>
+                            </td>
+                            <td className="px-2 py-1.5">
+                              <Input
+                                type="number"
+                                min="0"
+                                value={row.quantidade || ''}
+                                onChange={e => updateVarRow(row.tempId, 'quantidade', e.target.value)}
+                                className="h-8 text-xs w-16"
+                              />
+                            </td>
+                            <td className="px-2 py-1.5">
+                              <Input
+                                value={row.sku}
+                                onChange={e => updateVarRow(row.tempId, 'sku', e.target.value)}
+                                className="h-8 text-xs w-24"
+                              />
+                            </td>
+                          </tr>
+                        ))
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="p-4 border-t border-border/50">
-          {step < (temVariacoes ? 4 : 3) ? (
-            <Button onClick={goNext} disabled={!canAdvance()} className="w-full gradient-primary font-bold h-11">
-              Próximo <ChevronRight className="w-4 h-4 ml-1" />
-            </Button>
-          ) : (
-            <Button onClick={handleSave} disabled={saving || !nome.trim()} className="w-full gradient-primary font-bold h-11">
-              {saving ? 'Salvando...' : '✓ Salvar Produto'}
-            </Button>
-          )}
+        {/* ═══ FOOTER ═══ */}
+        <div className="shrink-0 p-4 border-t border-border bg-card">
+          <button
+            onClick={handleSave}
+            disabled={!nome.trim() || saving}
+            className={cn(
+              'w-full h-[52px] rounded-lg text-base font-bold transition-all',
+              nome.trim() && !saving
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground cursor-not-allowed'
+            )}
+          >
+            {saving ? 'Salvando...' : 'Salvar Produto'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   Sub-component: Variation Block
+   ═══════════════════════════════════════════════ */
+
+function VariationBlockUI({
+  block,
+  blockIdx,
+  activeDropdown,
+  setActiveDropdown,
+  filteredSuggestions,
+  updateBlock,
+  removeBlock,
+  addOptionToBlock,
+  removeOptionFromBlock,
+  updateOptionInBlock,
+}: {
+  block: VariationBlock;
+  blockIdx: number;
+  activeDropdown: string | null;
+  setActiveDropdown: (id: string | null) => void;
+  filteredSuggestions: (blockId: string, query: string) => string[];
+  updateBlock: (id: string, updates: Partial<VariationBlock>) => void;
+  removeBlock: (id: string) => void;
+  addOptionToBlock: (id: string, value: string) => void;
+  removeOptionFromBlock: (id: string, index: number) => void;
+  updateOptionInBlock: (id: string, index: number, updates: Partial<VariationOption>) => void;
+}) {
+  const [newOptionValue, setNewOptionValue] = useState('');
+  const suggestions = filteredSuggestions(block.id, block.typeName);
+  const showDropdown = activeDropdown === block.id && suggestions.length > 0;
+
+  return (
+    <div className="border border-border rounded-lg p-3 space-y-3">
+      {/* Title + remove */}
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-bold">Variação {blockIdx + 1}</span>
+        <button onClick={() => removeBlock(block.id)} className="p-1 hover:bg-secondary rounded">
+          <X className="w-4 h-4 text-muted-foreground" />
+        </button>
+      </div>
+
+      {/* Type name input with dropdown */}
+      <div className="relative">
+        <Input
+          value={block.typeName}
+          onChange={e => {
+            updateBlock(block.id, { typeName: e.target.value });
+            setActiveDropdown(block.id);
+          }}
+          onFocus={() => setActiveDropdown(block.id)}
+          onBlur={() => setTimeout(() => setActiveDropdown(null), 150)}
+          placeholder="Digite ou Selecione (ex: Cor, Tamanho)"
+          className="h-10 text-sm"
+        />
+        {showDropdown && (
+          <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden">
+            {suggestions.map(s => (
+              <button
+                key={s}
+                className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors"
+                onMouseDown={e => {
+                  e.preventDefault();
+                  updateBlock(block.id, { typeName: s });
+                  setActiveDropdown(null);
+                }}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Options label */}
+      <div className="flex items-center gap-1.5">
+        <span className="text-primary text-sm leading-none">●</span>
+        <span className="text-xs font-semibold">Opções</span>
+      </div>
+
+      {/* Options grid */}
+      <div className="space-y-2">
+        {block.options.map((opt, i) => (
+          <div key={i} className="grid grid-cols-[auto_1fr_1fr_auto] gap-2 items-center">
+            <GripVertical className="w-4 h-4 text-muted-foreground/50 cursor-grab" />
+            <Input
+              value={opt.value}
+              onChange={e => updateOptionInBlock(block.id, i, { value: e.target.value })}
+              className="h-8 text-xs"
+              placeholder="Opção"
+            />
+            <Input
+              value={opt.explanation}
+              onChange={e => updateOptionInBlock(block.id, i, { explanation: e.target.value })}
+              className="h-8 text-xs"
+              placeholder="Adicionar uma explicação"
+            />
+            <button onClick={() => removeOptionFromBlock(block.id, i)} className="p-1 hover:bg-secondary rounded">
+              <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+            </button>
+          </div>
+        ))}
+
+        {/* Empty row to add new option */}
+        <div className="grid grid-cols-[auto_1fr_1fr_auto] gap-2 items-center">
+          <GripVertical className="w-4 h-4 text-muted-foreground/20" />
+          <Input
+            value={newOptionValue}
+            onChange={e => setNewOptionValue(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && newOptionValue.trim()) {
+                e.preventDefault();
+                addOptionToBlock(block.id, newOptionValue);
+                setNewOptionValue('');
+              }
+            }}
+            onBlur={() => {
+              if (newOptionValue.trim()) {
+                addOptionToBlock(block.id, newOptionValue);
+                setNewOptionValue('');
+              }
+            }}
+            className="h-8 text-xs"
+            placeholder="Adicionar opção..."
+          />
+          <div />
+          <div className="w-6" />
         </div>
       </div>
     </div>
