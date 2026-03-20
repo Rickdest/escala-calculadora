@@ -54,32 +54,38 @@ function calcRoasFromValues(precoVenda: number, custoP: number, gastoAds: number
     return { roasAtual: null, roasEmpate: null, roasSaudavel: null, roasIdeal: null, lucroBruto, taxaShopee, valorRecebido, margemInsuficiente: true };
   }
   const roasEmpate = parseFloat((precoVenda / lucroBruto).toFixed(2));
-  const roasSaudavel = parseFloat((roasEmpate * 1.4).toFixed(2));
-  const roasIdeal = parseFloat((roasSaudavel * 1.3).toFixed(2));
+  const roasSaudavel = parseFloat((roasEmpate / 0.61).toFixed(2));
+  const roasIdeal = parseFloat((roasEmpate / 0.40).toFixed(2));
   const roasAtual = gastoAds > 0 ? parseFloat((receitaAds / gastoAds).toFixed(2)) : null;
   return { roasAtual, roasEmpate, roasSaudavel, roasIdeal, lucroBruto, taxaShopee, valorRecebido, margemInsuficiente: false };
 }
 
-function getRoasStatus(roasAtual: number, roasEmpate: number, roasSaudavel: number) {
+function getRoasStatus(roasAtual: number, roasEmpate: number, roasSaudavel: number, roasIdeal: number) {
   if (roasAtual < roasEmpate) return 'danger';
+  if (roasAtual === roasEmpate) return 'empate';
   if (roasAtual < roasSaudavel) return 'warning';
+  if (roasAtual < roasIdeal) return 'medium';
   return 'success';
 }
 
 function getRoasMessage(status: string) {
   switch (status) {
-    case 'danger': return 'Os anúncios estão gerando prejuízo. Reduza o gasto ou otimize as palavras-chave.';
-    case 'warning': return 'Gerando lucro, mas ainda há espaço para otimizar antes de escalar.';
-    case 'success': return 'Campanha saudável! Pronta para escalar com segurança.';
+    case 'danger': return 'Seus anúncios estão gerando prejuízo. Reduza o gasto ou otimize as palavras-chave.';
+    case 'empate': return 'Você está na operação zero. Qualquer otimização já gera lucro.';
+    case 'warning': return 'Há lucro, mas ainda pequeno. Otimize o CPC ou o criativo para evoluir.';
+    case 'medium': return 'Boa performance. Considere aumentar o orçamento gradualmente.';
+    case 'success': return 'Excelente! Campanha muito lucrativa. Escale o investimento com segurança.';
     default: return '';
   }
 }
 
 function getRoasInsight(status: string) {
   switch (status) {
-    case 'danger': return { emoji: '⚠️', title: 'Campanha com prejuízo', desc: 'Reduza o gasto ou otimize palavras-chave para melhorar o retorno.' };
-    case 'warning': return { emoji: '👍', title: 'Resultado aceitável', desc: 'Há espaço para otimizar antes de escalar o investimento.' };
-    case 'success': return { emoji: '🔥', title: 'Campanha muito lucrativa', desc: 'Pronta para escalar com segurança. Continue monitorando.' };
+    case 'danger': return { emoji: '⚠️', title: 'Prejuízo', desc: 'Seus anúncios estão gerando prejuízo. Reduza o gasto ou otimize as palavras-chave.' };
+    case 'empate': return { emoji: '⚖️', title: 'ROAS Empate', desc: 'Você está na operação zero. Qualquer otimização já gera lucro.' };
+    case 'warning': return { emoji: '👍', title: 'Lucro Baixo', desc: 'Há lucro, mas ainda pequeno. Otimize o CPC ou o criativo para evoluir.' };
+    case 'medium': return { emoji: '📈', title: 'Lucro Médio', desc: 'Boa performance. Considere aumentar o orçamento gradualmente.' };
+    case 'success': return { emoji: '🔥', title: 'Lucrativo', desc: 'Excelente! Campanha muito lucrativa. Escale o investimento com segurança.' };
     default: return null;
   }
 }
@@ -87,14 +93,16 @@ function getRoasInsight(status: string) {
 function getRoasEmoji(status: string) {
   switch (status) {
     case 'danger': return '🔴';
+    case 'empate': return '🟠';
     case 'warning': return '🟡';
+    case 'medium': return '🟢';
     case 'success': return '🟢';
     default: return '';
   }
 }
 
-const statusColors = { danger: 'text-destructive', warning: 'text-warning', success: 'text-success' };
-const statusBg = { danger: 'bg-destructive/10 border-destructive/30', warning: 'bg-warning/10 border-warning/30', success: 'bg-success/10 border-success/30' };
+const statusColors: Record<string, string> = { danger: 'text-destructive', empate: 'text-orange-400', warning: 'text-yellow-400', medium: 'text-primary', success: 'text-success' };
+const statusBg: Record<string, string> = { danger: 'bg-destructive/10 border-destructive/30', empate: 'bg-orange-400/10 border-orange-400/30', warning: 'bg-warning/10 border-warning/30', medium: 'bg-primary/10 border-primary/30', success: 'bg-success/10 border-success/30' };
 const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
 const CHART_COLORS = [
@@ -123,7 +131,7 @@ function RoasGauge({ roasAtual, roasEmpate, roasIdeal, status }: {
 }) {
   const maxVal = Math.max(roasIdeal * 1.5, roasAtual * 1.2);
   const percent = Math.min((roasAtual / maxVal) * 100, 100);
-  const fillColor = status === 'danger' ? 'hsl(0, 85%, 60%)' : status === 'warning' ? 'hsl(40, 95%, 50%)' : 'hsl(152, 70%, 42%)';
+  const fillColor = status === 'danger' ? 'hsl(0, 85%, 60%)' : status === 'empate' ? 'hsl(25, 95%, 55%)' : status === 'warning' ? 'hsl(45, 95%, 50%)' : status === 'medium' ? 'hsl(24, 95%, 53%)' : 'hsl(152, 70%, 42%)';
   const data = [{ name: 'ROAS', value: percent, fill: fillColor }];
 
   return (
@@ -531,8 +539,8 @@ function ProductAnalysis() {
     return (roasData.lucroBruto / selectedProduct.salePrice) * 100;
   }, [roasData, selectedProduct]);
 
-  const status = roasData && !roasData.margemInsuficiente && roasData.roasAtual !== null && roasData.roasEmpate && roasData.roasSaudavel
-    ? getRoasStatus(roasData.roasAtual, roasData.roasEmpate, roasData.roasSaudavel) : null;
+  const status = roasData && !roasData.margemInsuficiente && roasData.roasAtual !== null && roasData.roasEmpate && roasData.roasSaudavel && roasData.roasIdeal
+    ? getRoasStatus(roasData.roasAtual, roasData.roasEmpate, roasData.roasSaudavel, roasData.roasIdeal) : null;
 
   if (!currentStore || currentStore.products.length === 0) {
     return (
@@ -587,9 +595,9 @@ function ProductAnalysis() {
               {/* Hero Results - 3-column KPIs with tooltips */}
               <div className="grid grid-cols-3 gap-2 animate-fade-in">
                 {[
-                  { label: 'Empate', value: roasData.roasEmpate!.toFixed(2) + 'x', color: 'text-warning', tip: 'O ROAS mínimo para não ter prejuízo. Abaixo disso você perde dinheiro em cada venda com anúncio.' },
-                  { label: 'Saudável', value: roasData.roasSaudavel!.toFixed(2) + 'x', color: 'text-success', tip: 'Garante lucro mesmo com variações de performance dos anúncios. Bom para escalar com segurança.' },
-                  { label: 'Ideal', value: roasData.roasIdeal!.toFixed(2) + 'x', color: 'text-success', tip: 'Margem confortável. Nesse nível vale aumentar o investimento em ads com confiança.' },
+                  { label: 'ROAS Empate', value: roasData.roasEmpate!.toFixed(2) + 'x', color: 'text-orange-400', tip: 'ROAS mínimo para não ter prejuízo. Abaixo disso cada venda com anúncio gera perda.' },
+                  { label: 'Lucro Médio', value: roasData.roasSaudavel!.toFixed(2) + 'x', color: 'text-primary', tip: 'A partir daqui o lucro já é consistente e seguro para escalar.' },
+                  { label: 'Lucrativo', value: roasData.roasIdeal!.toFixed(2) + 'x', color: 'text-success', tip: 'Margem excelente. Nesse nível vale aumentar o investimento em Ads com confiança.' },
                 ].map(({ label, value, color, tip }) => (
                   <div key={label} className="rounded-xl border border-border bg-card p-3 text-center">
                     <div className="flex items-center justify-center gap-1">
@@ -692,24 +700,32 @@ function ProductAnalysis() {
                 <div className="rounded-xl border border-border bg-card p-4 space-y-3">
                   <SectionLabel icon={BarChart3}>Posição do ROAS</SectionLabel>
                   <div className="relative pt-1">
-                    <div className="w-full h-3 rounded-full bg-secondary overflow-hidden">
+                    <div className="w-full h-3 rounded-full bg-secondary overflow-hidden relative">
+                      {/* 5-zone gradient background */}
+                      <div className="absolute inset-0 rounded-full" style={{
+                        background: `linear-gradient(to right, hsl(0 85% 60%) 0%, hsl(25 95% 55%) ${(roasData.roasEmpate / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%, hsl(45 95% 50%) ${(roasData.roasSaudavel! / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%, hsl(100 60% 45%) ${(roasData.roasIdeal / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%, hsl(152 70% 42%) 100%)`,
+                        opacity: 0.25,
+                      }} />
                       <div
-                        className={cn('h-full rounded-full transition-all duration-700 ease-out',
+                        className={cn('h-full rounded-full transition-all duration-700 ease-out relative z-10',
                           status === 'danger' && 'bg-destructive',
-                          status === 'warning' && 'bg-warning',
+                          status === 'empate' && 'bg-orange-400',
+                          status === 'warning' && 'bg-yellow-400',
+                          status === 'medium' && 'bg-primary',
                           status === 'success' && 'bg-success',
                         )}
                         style={{ width: `${Math.min((roasData.roasAtual / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100, 100)}%` }}
                       />
                     </div>
-                    <div className="absolute top-1 h-3 w-0.5 bg-warning/60 rounded-full" style={{ left: `${(roasData.roasEmpate / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%` }} />
-                    <div className="absolute top-1 h-3 w-0.5 bg-success/60 rounded-full" style={{ left: `${(roasData.roasIdeal / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%` }} />
+                    <div className="absolute top-1 h-3 w-0.5 bg-orange-400/60 rounded-full z-20" style={{ left: `${(roasData.roasEmpate / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%` }} />
+                    <div className="absolute top-1 h-3 w-0.5 bg-yellow-400/60 rounded-full z-20" style={{ left: `${(roasData.roasSaudavel! / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%` }} />
+                    <div className="absolute top-1 h-3 w-0.5 bg-success/60 rounded-full z-20" style={{ left: `${(roasData.roasIdeal / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%` }} />
                   </div>
                   <div className="flex justify-between text-[10px] text-muted-foreground font-bold">
                     <span>0</span>
-                    <span className="text-warning">Empate {roasData.roasEmpate.toFixed(1)}</span>
-                    <span className="text-success">Saudável {roasData.roasSaudavel?.toFixed(1)}</span>
-                    <span className="text-primary">Ideal {roasData.roasIdeal.toFixed(1)}</span>
+                    <span className="text-orange-400">Empate {roasData.roasEmpate.toFixed(1)}</span>
+                    <span className="text-yellow-400">L.Médio {roasData.roasSaudavel?.toFixed(1)}</span>
+                    <span className="text-success">Lucrativo {roasData.roasIdeal.toFixed(1)}</span>
                   </div>
                 </div>
               )}
@@ -959,8 +975,8 @@ function RoasRanking() {
     return currentStore.products
       .map(p => {
         const data = calcRoasFromValues(p.salePrice, p.costPrice, p.adsCost, p.adsRevenue);
-        const status = data.roasAtual !== null && data.roasEmpate && data.roasSaudavel && !data.margemInsuficiente
-          ? getRoasStatus(data.roasAtual, data.roasEmpate, data.roasSaudavel) : null;
+        const status = data.roasAtual !== null && data.roasEmpate && data.roasSaudavel && data.roasIdeal && !data.margemInsuficiente
+          ? getRoasStatus(data.roasAtual, data.roasEmpate, data.roasSaudavel, data.roasIdeal) : null;
         return { product: p, ...data, status };
       })
       .sort((a, b) => {
