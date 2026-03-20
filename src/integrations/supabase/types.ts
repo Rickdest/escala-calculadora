@@ -257,6 +257,92 @@ export type Database = {
           },
         ]
       }
+      product_ads_metrics: {
+        Row: {
+          acos: number | null
+          avg_position: number | null
+          clicks: number | null
+          conv_rate: number | null
+          cost_per_conv: number | null
+          created_at: string | null
+          ctr: number | null
+          direct_acos: number | null
+          direct_roas: number | null
+          gmv: number | null
+          id: string
+          imported_at: string | null
+          impressions: number | null
+          items_sold: number | null
+          period_end: string
+          period_start: string
+          product_id: string | null
+          roas: number | null
+          shopee_product_id: string | null
+          shopee_product_name: string | null
+          spend: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          acos?: number | null
+          avg_position?: number | null
+          clicks?: number | null
+          conv_rate?: number | null
+          cost_per_conv?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          direct_acos?: number | null
+          direct_roas?: number | null
+          gmv?: number | null
+          id?: string
+          imported_at?: string | null
+          impressions?: number | null
+          items_sold?: number | null
+          period_end: string
+          period_start: string
+          product_id?: string | null
+          roas?: number | null
+          shopee_product_id?: string | null
+          shopee_product_name?: string | null
+          spend?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          acos?: number | null
+          avg_position?: number | null
+          clicks?: number | null
+          conv_rate?: number | null
+          cost_per_conv?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          direct_acos?: number | null
+          direct_roas?: number | null
+          gmv?: number | null
+          id?: string
+          imported_at?: string | null
+          impressions?: number | null
+          items_sold?: number | null
+          period_end?: string
+          period_start?: string
+          product_id?: string | null
+          roas?: number | null
+          shopee_product_id?: string | null
+          shopee_product_name?: string | null
+          spend?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_ads_metrics_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           ads_cost: number | null
@@ -273,6 +359,7 @@ export type Database = {
           packaging_cost: number | null
           sale_price: number
           shopee_acelera: string | null
+          shopee_product_id: string | null
           stock_quantity: number | null
           store_id: string
           updated_at: string
@@ -294,6 +381,7 @@ export type Database = {
           packaging_cost?: number | null
           sale_price: number
           shopee_acelera?: string | null
+          shopee_product_id?: string | null
           stock_quantity?: number | null
           store_id: string
           updated_at?: string
@@ -315,6 +403,7 @@ export type Database = {
           packaging_cost?: number | null
           sale_price?: number
           shopee_acelera?: string | null
+          shopee_product_id?: string | null
           stock_quantity?: number | null
           store_id?: string
           updated_at?: string
