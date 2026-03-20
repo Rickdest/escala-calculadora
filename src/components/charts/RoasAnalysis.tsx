@@ -3,9 +3,9 @@ import { useStore } from '@/contexts/StoreContext';
 import { getShopeeFeeForPrice, Product } from '@/types/store';
 import { cn } from '@/lib/utils';
 import {
-  Target, AlertTriangle, TrendingUp, TrendingDown, Sliders, Upload,
+  Target, AlertTriangle, TrendingUp, TrendingDown, Upload,
   FileSpreadsheet, Trash2, Eye, Package, Search, DollarSign,
-  BarChart3, PieChart, Zap, ArrowUpRight, ArrowDownRight, Percent, ShoppingCart, Info
+  BarChart3, PieChart, Zap, Percent, ShoppingCart, Info, Megaphone
 } from 'lucide-react';
 import {
   Tooltip as ShadTooltip,
