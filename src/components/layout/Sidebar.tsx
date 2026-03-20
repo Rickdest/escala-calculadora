@@ -18,7 +18,7 @@ import {
 const navItems = [
   { icon: Home, label: 'Início', path: '/' },
   { icon: Package, label: 'Produtos', path: '/products' },
-  { icon: BarChart3, label: 'ROAS', path: '/roas' },
+  { icon: BarChart3, label: 'Ads', path: '/roas' },
   { icon: Warehouse, label: 'Estoque', path: '/stock' },
   { icon: Store, label: 'Lojas', path: '/stores' },
   { icon: UserCircle, label: 'Perfil', path: '/profile' },
