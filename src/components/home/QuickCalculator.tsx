@@ -186,42 +186,42 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
       {showResult && result && projection && (
         <div className="mt-4 animate-fade-up">
           {/* Result Card */}
-          <div className="mt-2 space-y-5">
-            {/* Métricas — 3 colunas inline */}
-            <div className="grid grid-cols-3 text-center gap-1">
-              <div className="min-w-0">
-                <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-1.5">Lucro</p>
+          <div className="mt-2 space-y-4">
+            {/* Métricas — 3 cards */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-surface-2 rounded-xl p-3 text-center border border-border/40">
+                <p className="text-[10px] font-medium text-text-3 tracking-wider mb-1">Lucro</p>
                 <p className={cn(
-                  'font-mono font-bold font-mono-num leading-tight',
-                  result.netProfit >= 0 ? 'text-[20px] text-success' : 'text-[16px] text-danger'
+                  'font-mono font-extrabold font-mono-num leading-tight',
+                  result.netProfit >= 0 ? 'text-[18px] text-success' : 'text-[15px] text-danger'
                 )}>
                   {formatCurrency(result.netProfit)}
                 </p>
               </div>
-              <div className="min-w-0">
-                <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-1.5">Margem</p>
+              <div className="bg-surface-2 rounded-xl p-3 text-center border border-border/40">
+                <p className="text-[10px] font-medium text-text-3 tracking-wider mb-1">Margem</p>
                 <p className={cn(
-                  'font-mono font-bold font-mono-num leading-tight',
-                  result.realMargin >= 0 ? 'text-[20px]' : 'text-[16px]',
+                  'font-mono font-extrabold font-mono-num leading-tight',
+                  result.realMargin >= 0 ? 'text-[18px]' : 'text-[15px]',
                   getMarginStatus(result.realMargin).color
                 )}>
                   {result.realMargin.toFixed(1)}%
                 </p>
               </div>
-              <div className="min-w-0">
-                <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-1.5">ROAS empate</p>
+              <div className="bg-surface-2 rounded-xl p-3 text-center border border-border/40">
+                <p className="text-[10px] font-medium text-text-3 tracking-wider mb-1">ROAS</p>
                 {result.roasEmpate > 0 ? (
-                  <p className="font-mono text-[20px] font-bold font-mono-num leading-tight text-warning">
+                  <p className="font-mono text-[18px] font-extrabold font-mono-num leading-tight text-warning">
                     {result.roasEmpate.toFixed(2)}
                   </p>
                 ) : (
-                  <p className="text-[12px] font-medium text-danger">Prejuízo</p>
+                  <p className="text-[12px] font-semibold text-danger mt-1">Prejuízo</p>
                 )}
               </div>
             </div>
 
             {/* Ações */}
-            <div className="flex items-center gap-2 mt-3">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowAnalysis(!showAnalysis)}
                 className="flex-1 h-11 bg-accent rounded-lg text-[13px] font-semibold text-white hover:bg-[#EA6C0A] active:scale-[0.98] transition-all"
