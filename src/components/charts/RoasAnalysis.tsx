@@ -200,13 +200,13 @@ function KpiCard({ icon: Icon, label, value, subValue, variant = 'default', high
 
   return (
     <div className={cn(
-      'rounded-xl border p-4 transition-all duration-200',
+      'rounded-xl border p-3 md:p-4 transition-all duration-200',
       variants[variant],
       highlight && 'border-primary/40 ring-1 ring-primary/10',
     )}>
-      <div className="flex items-start gap-3">
+      <div className="flex flex-col items-center text-center md:flex-row md:items-start md:text-left gap-1 md:gap-3">
         <div className={cn(
-          'w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0',
+          'w-9 h-9 rounded-lg items-center justify-center flex-shrink-0 hidden md:flex',
           iconVariants[variant],
         )}>
           <Icon className="w-4 h-4" />
@@ -217,7 +217,7 @@ function KpiCard({ icon: Icon, label, value, subValue, variant = 'default', high
           ) : (
             <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">{label}</p>
           )}
-          <p className={cn('font-extrabold tabular-nums leading-tight font-mono mt-1', large ? 'text-2xl' : 'text-lg')}>{value}</p>
+          <p className={cn('font-extrabold tabular-nums leading-tight font-mono mt-1', large ? 'text-xl md:text-2xl' : 'text-lg')}>{value}</p>
           {subValue && <p className="text-[10px] text-muted-foreground mt-0.5">{subValue}</p>}
         </div>
       </div>
