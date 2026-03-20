@@ -45,9 +45,11 @@ interface Props {
 
 export function StockWizard({ onClose, editProduct }: Props) {
   const { addProduto, updateProduto, updateVariacao } = useEstoque();
+  const { currentStore } = useStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const editInitRef = useRef(false);
   const [saving, setSaving] = useState(false);
+  const [step, setStep] = useState<'choose' | 'form'>(editProduct ? 'form' : 'choose');
 
   // Basic info
   const [nome, setNome] = useState(editProduct?.nome || '');
