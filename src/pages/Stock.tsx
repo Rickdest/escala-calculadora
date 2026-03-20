@@ -220,7 +220,7 @@ export default function Stock() {
       {activeDetail && (
         <StockDetail
           product={activeDetail}
-          onClose={() => setDetailProduct(null)}
+          onClose={() => { setDetailProduct(null); reload(); }}
           onEdit={() => {
             setEditProduct(activeDetail);
             setDetailProduct(null);
