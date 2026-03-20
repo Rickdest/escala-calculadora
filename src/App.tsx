@@ -7,6 +7,7 @@ import { StoreProvider } from "@/contexts/StoreContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionContext";
+import { SidebarProvider } from "@/contexts/SidebarContext";
 import { TrialExpiredBlock } from "@/components/TrialExpiredBlock";
 import { lazy, Suspense } from "react";
 
@@ -86,6 +87,7 @@ const App = () => (
       <TooltipProvider>
         <AuthProvider>
           <SubscriptionProvider>
+          <SidebarProvider>
           <StoreProvider>
             <Toaster />
             <Sonner />
@@ -107,6 +109,7 @@ const App = () => (
               </Suspense>
             </BrowserRouter>
           </StoreProvider>
+          </SidebarProvider>
           </SubscriptionProvider>
         </AuthProvider>
       </TooltipProvider>

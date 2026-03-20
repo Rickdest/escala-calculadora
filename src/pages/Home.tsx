@@ -79,13 +79,16 @@ export default function Home() {
   return (
     <AppLayout>
       <PageHeader title="Precify" />
-      <div className="px-4 py-4 space-y-4 md:px-6 md:py-6">
-        <TrialBanner />
+      <div className="px-4 py-4 space-y-4 md:px-6 md:py-6 md:grid md:grid-cols-12 md:gap-6 md:space-y-0">
+        <div className="md:col-span-12">
+          <TrialBanner />
+        </div>
 
         {/* Subscription CTA - trial */}
         {status === 'trialing' && trialEnd && (() => {
           const dLeft = Math.max(0, Math.ceil((new Date(trialEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
           return dLeft > 0 ? (
+            <div className="md:col-span-12">
             <button
               onClick={() => setShowPaywall(true)}
               className="w-full h-9 flex items-center gap-2 px-3 rounded-[8px] border-l-[3px] border-l-primary bg-surface-2 transition-colors hover:bg-surface-2/80 active:scale-[0.98] animate-fade-up"
@@ -95,10 +98,12 @@ export default function Home() {
                 {dLeft} {dLeft === 1 ? 'dia restante' : 'dias restantes'} · <span className="text-primary font-semibold">Garantir acesso →</span>
               </span>
             </button>
+            </div>
           ) : null;
         })()}
 
         {!isActive && status !== 'trialing' && (
+          <div className="md:col-span-12">
           <button
             onClick={() => setShowPaywall(true)}
             className="w-full h-9 flex items-center gap-2 px-3 rounded-[8px] border-l-[3px] border-l-primary bg-surface-2 transition-colors hover:bg-surface-2/80 active:scale-[0.98] animate-fade-up"
@@ -108,21 +113,72 @@ export default function Home() {
               Acesso expirou · <span className="text-primary font-semibold">Assinar R$49,90/ano →</span>
             </span>
           </button>
+          </div>
         )}
 
         {/* Quick Calculator */}
-        <QuickCalculator onSaveProduct={(prefill) => {
-          setPrefillProduct({
-            costPrice: parseFloat(prefill.costPrice) || 0,
-            salePrice: parseFloat(prefill.salePrice) || 0,
-            packagingCost: parseFloat(prefill.packaging) || 0,
-            name: '',
-          });
-          setShowProductForm(true);
-        }} />
+        <div className="md:col-span-8">
+          <QuickCalculator onSaveProduct={(prefill) => {
+            setPrefillProduct({
+              costPrice: parseFloat(prefill.costPrice) || 0,
+              salePrice: parseFloat(prefill.salePrice) || 0,
+              packagingCost: parseFloat(prefill.packaging) || 0,
+              name: '',
+            });
+            setShowProductForm(true);
+          }} />
+        </div>
+
+        {/* Store Metrics - sidebar on desktop */}
+        <div className="md:col-span-4 space-y-4">
+          <div className="animate-fade-up stagger-2">
+            <p className="section-label mb-3">Métricas da Loja</p>
+            <div className="grid grid-cols-2 md:grid-cols-1 gap-3">
+              <div className="surface-card p-4">
+                <p className="section-label mb-2">Margem Média</p>
+                <p className={cn(
+                  'font-mono text-[28px] font-bold font-mono-num leading-none',
+                  getMarginStatus(stats.avgMargin).color
+                )}>
+                  {stats.avgMargin.toFixed(1)}%
+                </p>
+                <p className={cn(
+                  'text-[12px] mt-1 flex items-center gap-1.5',
+                  getMarginStatus(stats.avgMargin).color
+                )}>
+                  {getMarginStatus(stats.avgMargin).label}
+                  <span className={cn('w-1.5 h-1.5 rounded-full', getMarginStatus(stats.avgMargin).color.replace('text-', 'bg-'))} />
+                </p>
+              </div>
+              <div className="surface-card p-4">
+                <p className="section-label mb-2">Produtos</p>
+                <p className="font-mono text-[28px] font-bold font-mono-num leading-none text-foreground">
+                  {stats.totalProducts}
+                </p>
+                <p className="text-[12px] text-text-3 mt-1">cadastrados</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Performance */}
+          {stats.totalProducts > 0 && (
+            <div className="animate-fade-up stagger-3">
+              <div className="surface-card rounded-[10px] px-4 py-3 flex items-center justify-center gap-2">
+                <span className="font-mono text-[14px] font-bold font-mono-num text-success">{stats.productsAboveTarget}</span>
+                <span className="text-[13px] text-text-2">na meta</span>
+                <span className="text-text-3 text-[13px]">·</span>
+                <span className={cn('font-mono text-[14px] font-bold font-mono-num', stats.productsBelowTarget > 0 ? 'text-warning' : 'text-text-3')}>{stats.productsBelowTarget}</span>
+                <span className="text-[13px] text-text-2">abaixo da meta</span>
+              </div>
+            </div>
+          )}
+
+          {/* Education Card */}
+          <HomeEducationCard />
+        </div>
 
         {/* Tools Grid */}
-        <div className="animate-fade-up">
+        <div className="animate-fade-up md:col-span-12">
           <p className="section-label mb-3">Ferramentas</p>
           <div className="grid grid-cols-4 md:grid-cols-8 gap-y-3 gap-x-2">
             {toolItems.map((item) => (
@@ -145,55 +201,9 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Store Metrics */}
-        <div className="animate-fade-up stagger-2">
-          <p className="section-label mb-3">Métricas da Loja</p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="surface-card p-4">
-              <p className="section-label mb-2">Margem Média</p>
-              <p className={cn(
-                'font-mono text-[28px] font-bold font-mono-num leading-none',
-                getMarginStatus(stats.avgMargin).color
-              )}>
-                {stats.avgMargin.toFixed(1)}%
-              </p>
-              <p className={cn(
-                'text-[12px] mt-1 flex items-center gap-1.5',
-                getMarginStatus(stats.avgMargin).color
-              )}>
-                {getMarginStatus(stats.avgMargin).label}
-                <span className={cn('w-1.5 h-1.5 rounded-full', getMarginStatus(stats.avgMargin).color.replace('text-', 'bg-'))} />
-              </p>
-            </div>
-            <div className="surface-card p-4">
-              <p className="section-label mb-2">Produtos</p>
-              <p className="font-mono text-[28px] font-bold font-mono-num leading-none text-foreground">
-                {stats.totalProducts}
-              </p>
-              <p className="text-[12px] text-text-3 mt-1">cadastrados</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Performance */}
-        {stats.totalProducts > 0 && (
-          <div className="animate-fade-up stagger-3">
-            <div className="surface-card rounded-[10px] px-4 py-3 flex items-center justify-center gap-2">
-              <span className="font-mono text-[14px] font-bold font-mono-num text-success">{stats.productsAboveTarget}</span>
-              <span className="text-[13px] text-text-2">na meta</span>
-              <span className="text-text-3 text-[13px]">·</span>
-              <span className={cn('font-mono text-[14px] font-bold font-mono-num', stats.productsBelowTarget > 0 ? 'text-warning' : 'text-text-3')}>{stats.productsBelowTarget}</span>
-              <span className="text-[13px] text-text-2">abaixo da meta</span>
-            </div>
-          </div>
-        )}
-
-        {/* Education Card */}
-        <HomeEducationCard />
-
         {/* Top Products */}
         {topProducts.length > 0 && (
-          <div className="space-y-2 animate-fade-up stagger-4">
+          <div className="space-y-2 animate-fade-up stagger-4 md:col-span-12">
             <div className="flex items-center justify-between">
               <p className="section-label">Seus Produtos</p>
               <button onClick={() => navigate('/products')} className="text-xs text-primary font-medium flex items-center gap-0.5">
@@ -224,7 +234,7 @@ export default function Home() {
         )}
 
         {stats.totalProducts === 0 && (
-          <div className="text-center py-10 animate-fade-up">
+          <div className="text-center py-10 animate-fade-up md:col-span-12">
             <div className="w-14 h-14 rounded-xl bg-surface-2 mx-auto flex items-center justify-center mb-3">
               <Package className="w-7 h-7 text-text-3" />
             </div>
