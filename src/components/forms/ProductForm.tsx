@@ -111,6 +111,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
         salePrice: parseFloat(salePrice) || 0,
         packagingCost: parseFloat(packagingCost) || 0,
         adsCost: enableAds ? (parseFloat(adsCostValue) || 0) : 0,
+        adsRevenue: enableAds ? (parseFloat(adsRevenue) || 0) : 0,
         imageUrl: imageUrl || undefined,
         stockQuantity: product?.stockQuantity || 0,
         hasVariations: product?.hasVariations || false,
