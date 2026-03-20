@@ -130,7 +130,7 @@ export default function Home() {
         </div>
 
         {/* Store Metrics - sidebar on desktop */}
-        <div className="md:col-span-4 space-y-4">
+        <div className="space-y-4">
           <div className="animate-fade-up stagger-2">
             <p className="section-label mb-3">Métricas da Loja</p>
             <div className="grid grid-cols-2 md:grid-cols-1 gap-3">
