@@ -18,6 +18,7 @@ const benefits = [
 
 export function TrialExpiredBlock() {
   const { handleCheckout, refreshSubscription, isActive } = useBilling();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
   const [checking, setChecking] = useState(false);
 
