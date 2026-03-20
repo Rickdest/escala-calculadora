@@ -455,7 +455,7 @@ function ProductAdsImport({ product, storeId }: { product: Product; storeId: str
       {displayAds && displayAds.length > 0 && (
         <div className="rounded-xl border border-border bg-card p-4 space-y-3 animate-fade-in">
           {displayTitle && <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{displayTitle}</p>}
-          <div className="space-y-1.5 max-h-[280px] overflow-y-auto scrollbar-thin">
+          <div className="space-y-1.5 max-h-[280px] overflow-y-auto scrollbar-thin" style={{ overscrollBehavior: 'contain' }}>
             {displayAds.map((ad, i) => {
               const roasVal = ad.roas;
               const adStatus = ad.spend === 0 ? null : roasVal >= 5 ? 'success' : roasVal >= 2 ? 'warning' : 'danger';
