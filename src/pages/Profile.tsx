@@ -76,7 +76,7 @@ export default function Profile() {
       // Update profile with new avatar URL
       await supabase
         .from('profiles')
-        .update({ avatar_url: publicUrl })
+        .update({ avatar_url: fileName })
         .eq('user_id', user.id);
 
       toast({
