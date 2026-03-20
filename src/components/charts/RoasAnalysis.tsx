@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import {
   Target, AlertTriangle, TrendingUp, TrendingDown, Upload,
   FileSpreadsheet, Trash2, Eye, Package, Search, DollarSign,
-  BarChart3, PieChart, Zap, Percent, ShoppingCart, Info, Megaphone
+  BarChart3, PieChart, Zap, Percent, Info, Megaphone
 } from 'lucide-react';
 import {
   Tooltip as ShadTooltip,
@@ -16,16 +16,14 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { parseShopeeCSV, ShopeeAdsReport, ShopeeAdRow } from '@/lib/shopeeAdsParser';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
   ResponsiveContainer, PieChart as RechartsPie, Pie, Cell, Tooltip,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, RadialBarChart, RadialBar,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
 import { TooltipLabel, getTooltipText } from '@/components/roas/TooltipLabel';
 import { ProductHealthBanner } from '@/components/roas/ProductHealthBanner';
-import { ShareResult } from '@/components/roas/ShareResult';
 import { AdsTab } from '@/components/roas/AdsTab';
 
 // ─── Shared Utilities ───
@@ -64,41 +62,7 @@ function getRoasStatus(roasAtual: number, roasEmpate: number, roasSaudavel: numb
   return 'success';
 }
 
-function getRoasMessage(status: string) {
-  switch (status) {
-    case 'danger': return 'Seus anúncios estão gerando prejuízo. Reduza o gasto ou otimize as palavras-chave.';
-    case 'empate': return 'Você está na operação zero. Qualquer otimização já gera lucro.';
-    case 'warning': return 'Há lucro, mas ainda pequeno. Otimize o CPC ou o criativo para evoluir.';
-    case 'medium': return 'Boa performance. Considere aumentar o orçamento gradualmente.';
-    case 'success': return 'Excelente! Campanha muito lucrativa. Escale o investimento com segurança.';
-    default: return '';
-  }
-}
-
-function getRoasInsight(status: string) {
-  switch (status) {
-    case 'danger': return { emoji: '⚠️', title: 'Prejuízo', desc: 'Seus anúncios estão gerando prejuízo. Reduza o gasto ou otimize as palavras-chave.' };
-    case 'empate': return { emoji: '⚖️', title: 'ROAS Empate', desc: 'Você está na operação zero. Qualquer otimização já gera lucro.' };
-    case 'warning': return { emoji: '👍', title: 'Lucro Baixo', desc: 'Há lucro, mas ainda pequeno. Otimize o CPC ou o criativo para evoluir.' };
-    case 'medium': return { emoji: '📈', title: 'Lucro Médio', desc: 'Boa performance. Considere aumentar o orçamento gradualmente.' };
-    case 'success': return { emoji: '🔥', title: 'Lucrativo', desc: 'Excelente! Campanha muito lucrativa. Escale o investimento com segurança.' };
-    default: return null;
-  }
-}
-
-function getRoasEmoji(status: string) {
-  switch (status) {
-    case 'danger': return '🔴';
-    case 'empate': return '🟠';
-    case 'warning': return '🟡';
-    case 'medium': return '🟢';
-    case 'success': return '🟢';
-    default: return '';
-  }
-}
-
 const statusColors: Record<string, string> = { danger: 'text-destructive', empate: 'text-orange-400', warning: 'text-yellow-400', medium: 'text-primary', success: 'text-success' };
-const statusBg: Record<string, string> = { danger: 'bg-destructive/10 border-destructive/30', empate: 'bg-orange-400/10 border-orange-400/30', warning: 'bg-warning/10 border-warning/30', medium: 'bg-primary/10 border-primary/30', success: 'bg-success/10 border-success/30' };
 const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
 const CHART_COLORS = [
@@ -116,40 +80,6 @@ function SectionLabel({ icon: Icon, children }: { icon: React.ElementType; child
     <div className="flex items-center gap-2 mb-3">
       <Icon className="w-4 h-4 text-primary" />
       <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{children}</p>
-    </div>
-  );
-}
-
-// ─── ROAS Gauge Chart ───
-
-function RoasGauge({ roasAtual, roasEmpate, roasIdeal, status }: {
-  roasAtual: number; roasEmpate: number; roasIdeal: number; status: string;
-}) {
-  const maxVal = Math.max(roasIdeal * 1.5, roasAtual * 1.2);
-  const percent = Math.min((roasAtual / maxVal) * 100, 100);
-  const fillColor = status === 'danger' ? 'hsl(0, 85%, 60%)' : status === 'empate' ? 'hsl(25, 95%, 55%)' : status === 'warning' ? 'hsl(45, 95%, 50%)' : status === 'medium' ? 'hsl(24, 95%, 53%)' : 'hsl(152, 70%, 42%)';
-  const data = [{ name: 'ROAS', value: percent, fill: fillColor }];
-
-  return (
-    <div className="relative w-full flex flex-col items-center">
-      <ResponsiveContainer width="100%" height={140}>
-        <RadialBarChart
-          cx="50%" cy="85%" innerRadius="70%" outerRadius="100%"
-          startAngle={180} endAngle={0} barSize={12} data={data}
-        >
-          <RadialBar
-            dataKey="value"
-            cornerRadius={8}
-            background={{ fill: 'hsl(var(--secondary))' }}
-          />
-        </RadialBarChart>
-      </ResponsiveContainer>
-      <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-center">
-        <p className={cn('text-3xl font-extrabold tabular-nums font-mono', statusColors[status as keyof typeof statusColors])}>
-          {roasAtual.toFixed(2)}
-        </p>
-        <p className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">ROAS ATUAL</p>
-      </div>
     </div>
   );
 }
@@ -306,193 +236,6 @@ function ProductSelector({ products, selectedId, onSelect }: { products: Product
   );
 }
 
-// ─── Product Import Section ───
-
-interface SavedReport {
-  id: string;
-  report_period: string;
-  shop_name: string;
-  imported_at: string;
-  ads_data: ShopeeAdRow[];
-  product_id: string | null;
-}
-
-function ProductAdsImport({ product, storeId }: { product: Product; storeId: string }) {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [importing, setImporting] = useState(false);
-  const [parsedReport, setParsedReport] = useState<ShopeeAdsReport | null>(null);
-  const [savedReports, setSavedReports] = useState<SavedReport[]>([]);
-  const [viewingReport, setViewingReport] = useState<SavedReport | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [showImport, setShowImport] = useState(false);
-
-  const loadReports = useCallback(async () => {
-    setLoading(true);
-    const { data } = await supabase
-      .from('ads_reports').select('*')
-      .eq('store_id', storeId).eq('product_id', product.id)
-      .order('imported_at', { ascending: false });
-    if (data) {
-      setSavedReports(data.map(r => ({
-        ...r, ads_data: (r.ads_data as unknown as ShopeeAdRow[]) || [],
-        product_id: (r as any).product_id || null,
-      })));
-    }
-    setLoading(false);
-  }, [storeId, product.id]);
-
-  useEffect(() => { loadReports(); }, [loadReports]);
-
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.name.endsWith('.csv')) { toast.error('Selecione um arquivo CSV exportado da Shopee'); return; }
-    setImporting(true);
-    try {
-      const text = await file.text();
-      const report = parseShopeeCSV(text);
-      if (!report || report.ads.length === 0) { toast.error('CSV inválido ou sem dados de Ads.'); return; }
-      setParsedReport(report);
-      toast.success(`${report.ads.length} anúncios encontrados!`);
-    } catch { toast.error('Erro ao ler o arquivo'); }
-    finally { setImporting(false); if (fileInputRef.current) fileInputRef.current.value = ''; }
-  };
-
-  const handleSaveReport = async () => {
-    if (!parsedReport) return;
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { toast.error('Faça login para salvar relatórios'); return; }
-    const { error } = await supabase.from('ads_reports').insert([{
-      user_id: user.id, store_id: storeId, product_id: product.id,
-      report_period: parsedReport.period, shop_name: parsedReport.shopName,
-      ads_data: JSON.parse(JSON.stringify(parsedReport.ads)),
-    }]);
-    if (error) { toast.error('Erro ao salvar relatório'); }
-    else { toast.success('Relatório salvo!'); setParsedReport(null); loadReports(); }
-  };
-
-  const handleDeleteReport = async (id: string) => {
-    const { error } = await supabase.from('ads_reports').delete().eq('id', id);
-    if (!error) { toast.success('Relatório removido'); loadReports(); if (viewingReport?.id === id) setViewingReport(null); }
-  };
-
-  const displayAds = viewingReport ? viewingReport.ads_data : parsedReport?.ads;
-  const displayTitle = viewingReport ? `${viewingReport.shop_name} — ${viewingReport.report_period}` : parsedReport ? `${parsedReport.shopName} — ${parsedReport.period}` : null;
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <FileSpreadsheet className="w-4 h-4 text-primary" />
-          <p className="text-sm font-bold text-foreground">Relatórios de Ads</p>
-        </div>
-        <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 rounded-lg active:scale-95 transition-transform" onClick={() => setShowImport(!showImport)}>
-          <Upload className="w-3.5 h-3.5" />
-          Importar CSV
-        </Button>
-      </div>
-
-      {showImport && (
-        <div className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-5 text-center space-y-3 transition-all animate-fade-in">
-          <Upload className="w-8 h-8 text-primary/50 mx-auto" />
-          <p className="text-xs text-muted-foreground">Exporte o relatório de Ads da Shopee (CSV)</p>
-          <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileSelect} className="hidden" />
-          <Button onClick={() => fileInputRef.current?.click()} disabled={importing} variant="outline" size="sm" className="h-9 text-xs active:scale-95 transition-transform">
-            {importing ? 'Importando...' : 'Selecionar arquivo'}
-          </Button>
-        </div>
-      )}
-
-      {parsedReport && !viewingReport && (
-        <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3 animate-fade-in">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-bold">{parsedReport.shopName}</p>
-              <p className="text-[10px] text-muted-foreground">{parsedReport.period}</p>
-            </div>
-            <Button size="sm" onClick={handleSaveReport} className="h-8 text-xs active:scale-95 transition-transform">💾 Salvar</Button>
-          </div>
-          <div className="grid grid-cols-4 gap-2">
-            {[
-              { label: 'Investido', value: formatCurrency(parsedReport.totals.totalSpend), color: 'text-destructive' },
-              { label: 'Receita', value: formatCurrency(parsedReport.totals.totalGmv), color: 'text-success' },
-              { label: 'ROAS', value: parsedReport.totals.avgRoas.toFixed(2), color: 'text-primary' },
-              { label: 'Vendidos', value: String(parsedReport.totals.totalItemsSold), color: 'text-foreground' },
-            ].map(item => (
-              <div key={item.label} className="p-2.5 rounded-lg bg-card text-center border border-border">
-                <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">{item.label}</p>
-                <p className={cn('text-sm font-extrabold tabular-nums font-mono', item.color)}>{item.value}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {savedReports.length > 0 && (
-        <div className="space-y-1.5">
-          {savedReports.map(report => (
-            <div key={report.id} className={cn('rounded-xl border p-3 flex items-center gap-3 transition-all duration-200', viewingReport?.id === report.id ? 'border-primary/30 bg-primary/5' : 'border-border bg-card')}>
-              <FileSpreadsheet className="w-4 h-4 text-primary flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold truncate">{report.shop_name || 'Relatório'}</p>
-                <p className="text-[10px] text-muted-foreground">{report.report_period} • {report.ads_data.length} anúncios</p>
-              </div>
-              <div className="flex gap-1 flex-shrink-0">
-                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => setViewingReport(viewingReport?.id === report.id ? null : report)}>
-                  <Eye className="w-3.5 h-3.5" />
-                </Button>
-                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDeleteReport(report.id)}>
-                  <Trash2 className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {loading && <p className="text-center text-xs text-muted-foreground py-2">Carregando...</p>}
-
-      {displayAds && displayAds.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-4 space-y-3 animate-fade-in">
-          {displayTitle && <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{displayTitle}</p>}
-          <div className="space-y-1.5 max-h-[280px] overflow-y-auto scrollbar-thin" style={{ overscrollBehavior: 'contain' }}>
-            {displayAds.map((ad, i) => {
-              const roasVal = ad.roas;
-              const adStatus = ad.spend === 0 ? null : roasVal >= 5 ? 'success' : roasVal >= 2 ? 'warning' : 'danger';
-              return (
-                <div key={i} className="p-3 rounded-lg bg-secondary/30 space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-xs font-bold truncate flex-1">{ad.adName}</p>
-                    <span className={cn('text-[9px] font-bold px-1.5 py-0.5 rounded-full flex-shrink-0',
-                      ad.status === 'Pausado' ? 'bg-warning/20 text-warning' : ad.status === 'Encerrado' ? 'bg-muted text-muted-foreground' : 'bg-success/20 text-success'
-                    )}>{ad.status}</span>
-                  </div>
-                  {(ad.keyword || ad.positioning) && (
-                    <div className="flex flex-wrap gap-1">
-                      {ad.keyword && ad.keyword !== '-' && <span className="text-[9px] bg-primary/10 text-primary font-semibold px-1.5 py-0.5 rounded-full">🔍 {ad.keyword}</span>}
-                      {ad.positioning && ad.positioning !== '-' && <span className="text-[9px] bg-secondary text-muted-foreground font-medium px-1.5 py-0.5 rounded-full">📍 {ad.positioning}</span>}
-                    </div>
-                  )}
-                  <div className="grid grid-cols-4 gap-2 text-[10px]">
-                    <div><p className="text-muted-foreground">Gasto</p><p className="font-bold text-destructive font-mono">{formatCurrency(ad.spend)}</p></div>
-                    <div><p className="text-muted-foreground">GMV</p><p className="font-bold text-success font-mono">{formatCurrency(ad.gmv)}</p></div>
-                    <div><p className="text-muted-foreground">ROAS</p><p className={cn('font-bold font-mono', adStatus ? statusColors[adStatus as keyof typeof statusColors] : 'text-muted-foreground')}>{roasVal.toFixed(2)}</p></div>
-                    <div><p className="text-muted-foreground">Vendidos</p><p className="font-bold font-mono">{ad.itemsSold}</p></div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {!loading && savedReports.length === 0 && !parsedReport && !showImport && (
-        <p className="text-[10px] text-muted-foreground text-center py-2 italic">Nenhum relatório importado para este produto</p>
-      )}
-    </div>
-  );
-}
-
 // ─── ROAS Dashboard (Product Analysis) ───
 
 function ProductAnalysis() {
@@ -601,7 +344,7 @@ function ProductAnalysis() {
                       <ShadTooltipProvider delayDuration={200}>
                         <ShadTooltip>
                           <ShadTooltipTrigger asChild>
-                            <button type="button" className="text-text-3 hover:text-primary transition-colors focus:outline-none">
+                            <button type="button" className="text-muted-foreground hover:text-primary transition-colors focus:outline-none">
                               <Info className="w-3 h-3" />
                             </button>
                           </ShadTooltipTrigger>
@@ -616,74 +359,12 @@ function ProductAnalysis() {
                 ))}
               </div>
 
-              {/* Diagnostic Banner */}
-              {roasData.roasAtual !== null && roasData.roasEmpate && roasData.roasSaudavel && roasData.roasIdeal && (() => {
-                const ra = roasData.roasAtual!;
-                const re = roasData.roasEmpate!;
-                const rs = roasData.roasSaudavel!;
-                const ri = roasData.roasIdeal!;
-                let icon: React.ElementType;
-                let text: string;
-                let colors: string;
-                if (ra < re) {
-                  icon = AlertTriangle;
-                  text = 'Seus anúncios estão no prejuízo. Cada venda com ads está custando mais do que traz. Reduza o CPC ou aumente o preço de venda.';
-                  colors = 'bg-danger/10 text-danger border border-danger/20';
-                } else if (ra < rs) {
-                  icon = Info;
-                  text = 'Seus anúncios cobrem os custos, mas a margem ainda é apertada. Tente melhorar o CTR ou reduzir o custo por clique.';
-                  colors = 'bg-warning/10 text-warning border border-warning/20';
-                } else if (ra < ri) {
-                  icon = TrendingUp;
-                  text = 'Boa performance. Seus anúncios são lucrativos. Considere aumentar o orçamento gradualmente.';
-                  colors = 'bg-primary/10 text-primary border border-primary/20';
-                } else {
-                  icon = Zap;
-                  text = 'Excelente! Seus anúncios estão performando muito acima do necessário. Escale o investimento com segurança.';
-                  colors = 'bg-success/10 text-success border border-success/20';
-                }
-                const Icon = icon;
-                return (
-                  <div className={cn('rounded-xl px-4 py-3 flex items-center gap-3 text-sm font-medium animate-fade-up', colors)}>
-                    <Icon className="w-5 h-5 flex-shrink-0" />
-                    <p>{text}</p>
-                  </div>
-                );
-              })()}
-
-
-              {/* Gauge + Cost Breakdown */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="rounded-xl border border-border bg-card p-4">
-                  {roasData.roasAtual !== null && roasData.roasEmpate && roasData.roasIdeal && status ? (
-                    <RoasGauge roasAtual={roasData.roasAtual} roasEmpate={roasData.roasEmpate} roasIdeal={roasData.roasIdeal} status={status} />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-[140px] md:h-[160px] text-center">
-                      <BarChart3 className="w-8 h-8 text-muted-foreground/30 mb-2" />
-                      <p className="text-xs text-muted-foreground">Preencha o gasto e a receita de Ads</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-                  <SectionLabel icon={PieChart}>Composição do Preço</SectionLabel>
-                  <CostBreakdownChart product={selectedProduct} roasData={roasData} />
-                </div>
-              </div>
-
-              {/* Lucro + Taxa */}
-              <div className="grid grid-cols-2 gap-3">
-                <KpiCard icon={DollarSign} label="Lucro Bruto" value={formatCurrency(roasData.lucroBruto)} subValue="Antes de Ads" variant={roasData.lucroBruto > 0 ? 'success' : 'danger'} tooltipKey="lucro_bruto" />
-                <KpiCard icon={Percent} label="Taxa Shopee" value={formatCurrency(roasData.taxaShopee)} subValue={`${((roasData.taxaShopee / selectedProduct.salePrice) * 100).toFixed(1)}% do preço`} variant="default" tooltipKey="taxa_shopee" />
-              </div>
-
               {/* ROAS Progress Bar */}
               {roasData.roasAtual !== null && roasData.roasEmpate && roasData.roasIdeal && status && (
                 <div className="rounded-xl border border-border bg-card p-4 space-y-3">
                   <SectionLabel icon={BarChart3}>Posição do ROAS</SectionLabel>
                   <div className="relative pt-1">
                     <div className="w-full h-3 rounded-full bg-secondary overflow-hidden relative">
-                      {/* 5-zone gradient background */}
                       <div className="absolute inset-0 rounded-full" style={{
                         background: `linear-gradient(to right, hsl(0 85% 60%) 0%, hsl(25 95% 55%) ${(roasData.roasEmpate / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%, hsl(45 95% 50%) ${(roasData.roasSaudavel! / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%, hsl(100 60% 45%) ${(roasData.roasIdeal / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%, hsl(152 70% 42%) 100%)`,
                         opacity: 0.25,
@@ -712,41 +393,16 @@ function ProductAnalysis() {
                 </div>
               )}
 
-              {/* Share */}
-              <div className="flex items-center gap-3 flex-wrap">
-                <ShareResult
-                  productName={selectedProduct.name}
-                  salePrice={selectedProduct.salePrice}
-                  lucroBruto={roasData.lucroBruto}
-                  roasEmpate={roasData.roasEmpate}
-                  roasSaudavel={roasData.roasSaudavel}
-                  roasIdeal={roasData.roasIdeal}
-                  status={status as 'danger' | 'warning' | 'success' | null}
-                />
+              {/* Cost Breakdown */}
+              <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+                <SectionLabel icon={PieChart}>Composição do Preço</SectionLabel>
+                <CostBreakdownChart product={selectedProduct} roasData={roasData} />
               </div>
 
-              {/* Financial Detail */}
-              <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-                <SectionLabel icon={ShoppingCart}>Detalhamento Financeiro</SectionLabel>
-                <div className="divide-y divide-border">
-                  {[
-                    { label: 'Preço de Venda', value: formatCurrency(selectedProduct.salePrice), color: 'text-foreground' },
-                    { label: 'Taxa Shopee', value: `-${formatCurrency(roasData.taxaShopee)}`, color: 'text-destructive' },
-                    { label: 'Valor Recebido', value: formatCurrency(roasData.valorRecebido), color: 'text-foreground' },
-                    { label: 'Custo do Produto', value: `-${formatCurrency(selectedProduct.costPrice)}`, color: 'text-destructive' },
-                  ].map(item => (
-                    <div key={item.label} className="flex items-center justify-between py-2.5 first:pt-0 last:pb-0">
-                      <span className="text-xs text-muted-foreground">{item.label}</span>
-                      <span className={cn('text-sm font-bold tabular-nums font-mono', item.color)}>{item.value}</span>
-                    </div>
-                  ))}
-                  <div className="flex items-center justify-between pt-3">
-                    <span className="text-sm font-extrabold">Lucro antes de Ads</span>
-                    <span className={cn('text-lg font-extrabold tabular-nums font-mono', roasData.lucroBruto >= 0 ? 'text-success' : 'text-destructive')}>
-                      {formatCurrency(roasData.lucroBruto)}
-                    </span>
-                  </div>
-                </div>
+              {/* Lucro + Taxa */}
+              <div className="grid grid-cols-2 gap-3">
+                <KpiCard icon={DollarSign} label="Lucro Bruto" value={formatCurrency(roasData.lucroBruto)} subValue="Antes de Ads" variant={roasData.lucroBruto > 0 ? 'success' : 'danger'} tooltipKey="lucro_bruto" />
+                <KpiCard icon={Percent} label="Taxa Shopee" value={formatCurrency(roasData.taxaShopee)} subValue={`${((roasData.taxaShopee / selectedProduct.salePrice) * 100).toFixed(1)}% do preço`} variant="default" tooltipKey="taxa_shopee" />
               </div>
 
             </>
@@ -765,13 +421,6 @@ function ProductAnalysis() {
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* Import Section */}
-          {selectedProduct && currentStore && (
-            <div className="rounded-xl border border-border bg-card p-4">
-              <ProductAdsImport product={selectedProduct} storeId={currentStore.id} />
             </div>
           )}
 
