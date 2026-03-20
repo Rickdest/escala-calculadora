@@ -6,75 +6,84 @@
 
 @layer base {
   :root {
-    /* Base — branco com leve quente, igual ao seller center da Shopee */
-    --background: 30 20% 97%;
-    --foreground: 20 15% 10%;
+    --background: 30 20% 96%;
+    --foreground: 20 15% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 20 15% 10%;
+    --card-foreground: 20 15% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 20 15% 10%;
+    --popover-foreground: 20 15% 8%;
 
-    /* Primary — laranja Shopee vibrante, não pastel */
     --primary: 11 86% 54%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary — cinza quente bem claro */
-    --secondary: 30 15% 93%;
-    --secondary-foreground: 20 15% 20%;
+    --secondary: 30 12% 90%;
+    --secondary-foreground: 20 15% 18%;
 
-    --muted: 30 12% 93%;
-    --muted-foreground: 20 10% 48%;
+    --muted: 30 12% 90%;
+    --muted-foreground: 20 10% 45%;
 
-    /* Accent — laranja bem suave para hover/fundo */
-    --accent: 16 90% 95%;
-    --accent-foreground: 11 86% 44%;
+    --accent: 16 90% 94%;
+    --accent-foreground: 11 86% 42%;
 
-    --destructive: 0 84% 55%;
+    --destructive: 0 84% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 65% 36%;
+    --success: 142 65% 34%;
     --success-foreground: 0 0% 100%;
-    --success-muted: 142 45% 93%;
+    --success-muted: 142 45% 91%;
 
-    --warning: 38 92% 44%;
+    --warning: 38 92% 42%;
     --warning-foreground: 0 0% 100%;
-    --warning-muted: 44 90% 93%;
+    --warning-muted: 44 90% 91%;
 
-    --danger: 0 84% 55%;
+    --danger: 0 84% 50%;
     --danger-foreground: 0 0% 100%;
-    --danger-muted: 0 80% 95%;
+    --danger-muted: 0 80% 94%;
 
-    /* Bordas quase invisíveis — Shopee usa shadow no lugar de border */
-    --border: 25 15% 88%;
-    --input: 25 15% 88%;
+    /* Borda mais visível nos inputs */
+    --border: 20 12% 78%;
+    --input: 20 12% 78%;
     --ring: 11 86% 54%;
 
     --radius: 0.875rem;
 
     --chart-1: 11 86% 54%;
-    --chart-2: 142 65% 36%;
+    --chart-2: 142 65% 34%;
     --chart-3: 220 70% 55%;
     --chart-4: 280 70% 55%;
-    --chart-5: 38 92% 44%;
+    --chart-5: 38 92% 42%;
 
-    /* Sidebar branca com acento laranja */
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 20 12% 35%;
+    --sidebar-foreground: 20 12% 32%;
     --sidebar-primary: 11 86% 54%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 16 90% 95%;
-    --sidebar-accent-foreground: 11 86% 40%;
-    --sidebar-border: 25 15% 90%;
+    --sidebar-accent: 16 90% 94%;
+    --sidebar-accent-foreground: 11 86% 38%;
+    --sidebar-border: 20 12% 85%;
     --sidebar-ring: 11 86% 54%;
 
-    /* Surface tokens */
+    /* Surface com contraste claro entre card e fundo */
     --surface: 0 0% 100%;
-    --surface-2: 30 15% 95%;
-    --text-1: 20 15% 10%;
-    --text-2: 20 10% 40%;
-    --text-3: 20 8% 62%;
+    --surface-2: 25 14% 91%;
+    --text-1: 20 15% 8%;
+    --text-2: 20 10% 38%;
+    --text-3: 20 8% 58%;
+  }
+
+  /* Garante inputs visíveis no tema claro */
+  :root input,
+  :root textarea {
+    background-color: hsl(0 0% 100%) !important;
+    border-color: hsl(20 12% 72%) !important;
+    color: hsl(20 15% 8%) !important;
+  }
+
+  /* Garante botão primário vibrante no tema claro */
+  :root .bg-primary {
+    background-color: hsl(11 86% 54%) !important;
+    opacity: 1 !important;
   }
 
   .dark {
