@@ -200,7 +200,7 @@ export default function Home() {
         {topProducts.length > 0 && (
           <div className="space-y-2 animate-fade-up stagger-4">
             <div className="flex items-center justify-between">
-              <p className="section-label">Melhores Margens</p>
+              <p className="section-label">Seus Produtos</p>
               <button onClick={() => navigate('/products')} className="text-xs text-primary font-medium flex items-center gap-0.5">
                 Ver Todos <ChevronRight className="w-3.5 h-3.5" />
               </button>
