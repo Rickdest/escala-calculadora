@@ -328,31 +328,112 @@ export function StockWizard({ onClose, editProduct }: Props) {
     );
   };
 
+  const handleImportProduct = (product: Product) => {
+    setNome(product.name);
+    setCategoria(product.category || '');
+    if (product.hasVariations && product.attributes.length > 0) {
+      setTemVariacoes(true);
+      const blocks: VariationBlock[] = product.attributes.map(attr => ({
+        id: Math.random().toString(36).substring(2, 10),
+        typeName: attr.name,
+        options: attr.values.map(v => ({ value: v, explanation: '' })),
+      }));
+      setVariationBlocks(blocks);
+    }
+    setStep('form');
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-foreground/30 backdrop-blur-sm">
       <div className="fixed inset-0 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:max-w-lg md:my-4 bg-surface md:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
         {/* ═══ HEADER ═══ */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-          <button onClick={onClose} className="p-1.5 hover:bg-surface-2/80 rounded-lg">
+          <button onClick={step === 'form' && !editProduct ? () => setStep('choose') : onClose} className="p-1.5 hover:bg-surface-2/80 rounded-lg">
             <X className="w-5 h-5" />
           </button>
-          <h2 className="text-base font-bold">{editProduct ? 'Editar Produto' : 'Novo Produto'}</h2>
-          <button
-            onClick={handleSave}
-            disabled={!nome.trim() || saving}
-            className={cn(
-              'px-4 py-1.5 rounded-[10px] text-sm font-semibold transition-all',
-              nome.trim() && !saving
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground cursor-not-allowed'
-            )}
-          >
-            {saving ? '...' : 'Salvar'}
-          </button>
+          <h2 className="text-base font-bold">{editProduct ? 'Editar Produto' : step === 'choose' ? 'Novo Produto' : 'Novo Produto'}</h2>
+          {step === 'form' ? (
+            <button
+              onClick={handleSave}
+              disabled={!nome.trim() || saving}
+              className={cn(
+                'px-4 py-1.5 rounded-[10px] text-sm font-semibold transition-all',
+                nome.trim() && !saving
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground cursor-not-allowed'
+              )}
+            >
+              {saving ? '...' : 'Salvar'}
+            </button>
+          ) : <div className="w-16" />}
         </div>
 
-        {/* ═══ SCROLLABLE CONTENT ═══ */}
-        <div className="flex-1 overflow-y-auto pb-20">
+        {/* ═══ STEP ZERO: Choose mode ═══ */}
+        {step === 'choose' && (
+          <div className="flex-1 overflow-y-auto">
+            <div className="p-4 space-y-4 animate-fade-up">
+              <h3 className="text-sm font-bold text-foreground">Como deseja cadastrar?</h3>
+
+              <button
+                onClick={() => setStep('form')}
+                className="w-full flex items-center gap-3 p-4 rounded-xl border border-border bg-card hover:border-primary/30 hover:bg-primary/5 transition-all active:scale-[0.98]"
+              >
+                <div className="w-10 h-10 rounded-lg bg-surface-2 flex items-center justify-center">
+                  <PenLine className="w-5 h-5 text-primary" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-foreground">Cadastrar do zero</p>
+                  <p className="text-xs text-text-2">Preencher todas as informações manualmente</p>
+                </div>
+              </button>
+
+              {currentStore && currentStore.products.length > 0 && (
+                <>
+                  <div className="flex items-center gap-2">
+                    <div className="h-px flex-1 bg-border" />
+                    <span className="text-[10px] text-text-3 font-semibold uppercase tracking-wider">ou</span>
+                    <div className="h-px flex-1 bg-border" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FileDown className="w-4 h-4 text-primary" />
+                      <p className="text-xs font-bold text-foreground">Importar de Produtos</p>
+                    </div>
+                    <div className="space-y-1.5 max-h-[400px] overflow-y-auto">
+                      {currentStore.products.map(product => (
+                        <button
+                          key={product.id}
+                          onClick={() => handleImportProduct(product)}
+                          className="w-full flex items-center gap-3 p-3 rounded-xl border border-border bg-card hover:border-primary/30 hover:bg-primary/5 transition-all active:scale-[0.98] text-left"
+                        >
+                          <div className="w-10 h-10 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            {product.imageUrl ? (
+                              <img src={product.imageUrl} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <Package className="w-4 h-4 text-text-3" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground truncate">{product.name}</p>
+                            <p className="text-xs text-text-2 truncate">
+                              {product.category && <span>{product.category} · </span>}
+                              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.salePrice)}
+                              {product.hasVariations && ' · Com variações'}
+                            </p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ═══ SCROLLABLE CONTENT (form step) ═══ */}
+        {step === 'form' && <div className="flex-1 overflow-y-auto pb-20">
 
           {/* ─── SEÇÃO: Informações Básicas ─── */}
           <div className="p-4 space-y-4 animate-fade-up">
