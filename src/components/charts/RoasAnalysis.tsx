@@ -70,9 +70,11 @@ function getRoasStatus(roasAtual: number, roasEmpate: number, roasSaudavel: numb
 
 function getRoasMessage(status: string) {
   switch (status) {
-    case 'danger': return 'Os anúncios estão gerando prejuízo. Reduza o gasto ou otimize as palavras-chave.';
-    case 'warning': return 'Gerando lucro, mas ainda há espaço para otimizar antes de escalar.';
-    case 'success': return 'Campanha saudável! Pronta para escalar com segurança.';
+    case 'danger': return 'Seus anúncios estão gerando prejuízo. Reduza o gasto ou otimize as palavras-chave.';
+    case 'empate': return 'Você está na operação zero. Qualquer otimização já gera lucro.';
+    case 'warning': return 'Há lucro, mas ainda pequeno. Otimize o CPC ou o criativo para evoluir.';
+    case 'medium': return 'Boa performance. Considere aumentar o orçamento gradualmente.';
+    case 'success': return 'Excelente! Campanha muito lucrativa. Escale o investimento com segurança.';
     default: return '';
   }
 }
