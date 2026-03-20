@@ -73,19 +73,19 @@
   }
 
   /* Garante inputs visíveis no tema claro */
-  :root input,
-  :root textarea {
+  html:not(.dark) input,
+  html:not(.dark) textarea {
     background-color: hsl(0 0% 100%) !important;
     border-color: hsl(20 12% 72%) !important;
     color: hsl(20 15% 8%) !important;
   }
 
-  :root input::placeholder {
+  html:not(.dark) input::placeholder {
     color: hsl(20 10% 48%) !important;
   }
 
   /* Garante botão primário vibrante no tema claro */
-  :root .bg-primary {
+  html:not(.dark) .bg-primary {
     background-color: hsl(11 86% 54%) !important;
     opacity: 1 !important;
   }
