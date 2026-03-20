@@ -189,28 +189,29 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
           <div className="mt-2 space-y-5">
             {/* Métricas — 3 colunas inline */}
             <div className="grid grid-cols-3 text-center gap-1">
-              <div className="min-w-0 overflow-hidden">
+              <div className="min-w-0">
                 <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-1.5">Lucro</p>
                 <p className={cn(
-                  'font-mono text-[20px] font-bold font-mono-num leading-none truncate',
-                  result.netProfit >= 0 ? 'text-success' : 'text-danger'
+                  'font-mono font-bold font-mono-num leading-tight',
+                  result.netProfit >= 0 ? 'text-[20px] text-success' : 'text-[16px] text-danger'
                 )}>
                   {formatCurrency(result.netProfit)}
                 </p>
               </div>
-              <div className="min-w-0 overflow-hidden">
+              <div className="min-w-0">
                 <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-1.5">Margem</p>
                 <p className={cn(
-                  'font-mono text-[20px] font-bold font-mono-num leading-none truncate',
+                  'font-mono font-bold font-mono-num leading-tight',
+                  result.realMargin >= 0 ? 'text-[20px]' : 'text-[16px]',
                   getMarginStatus(result.realMargin).color
                 )}>
                   {result.realMargin.toFixed(1)}%
                 </p>
               </div>
-              <div className="min-w-0 overflow-hidden">
+              <div className="min-w-0">
                 <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-1.5">ROAS empate</p>
                 {result.roasEmpate > 0 ? (
-                  <p className="font-mono text-[20px] font-bold font-mono-num leading-none text-warning truncate">
+                  <p className="font-mono text-[20px] font-bold font-mono-num leading-tight text-warning">
                     {result.roasEmpate.toFixed(2)}
                   </p>
                 ) : (
