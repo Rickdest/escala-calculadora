@@ -145,16 +145,28 @@ Deno.serve(async (req) => {
         break;
     }
 
-    // Find user by email using admin API with filter (not listAll)
-    const { data: userList } = await supabase.auth.admin.listUsers({
+    // Find user by email using admin API
+    let userId: string | null = null;
+    const { data: userLookup, error: lookupErr } = await supabase.auth.admin.listUsers({
       page: 1,
-      perPage: 1,
+      perPage: 50,
     });
-    // Filter server-side isn't supported well, so search in result
-    const userMatch = userList?.users?.find(
-      (u: any) => u.email?.toLowerCase() === email
-    );
-    const userId = userMatch?.id || null;
+    if (!lookupErr && userLookup?.users) {
+      const userMatch = userLookup.users.find(
+        (u: any) => u.email?.toLowerCase() === email
+      );
+      userId = userMatch?.id || null;
+    }
+
+    // If not found in first page, try looking up via profiles table
+    if (!userId) {
+      const { data: profileMatch } = await supabase
+        .from("profiles")
+        .select("user_id")
+        .eq("email", email)
+        .maybeSingle();
+      if (profileMatch) userId = profileMatch.user_id;
+    }
 
     // Build subscription data
     const subscriptionData: Record<string, unknown> = {

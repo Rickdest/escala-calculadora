@@ -2,3 +2,6 @@ project_id = "ymliqayraprjwdcesvqc"
 
 [functions.hotmart-webhook]
 verify_jwt = false
+
+[functions.check-subscription]
+verify_jwt = false
