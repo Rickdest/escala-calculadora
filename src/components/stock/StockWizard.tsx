@@ -117,9 +117,13 @@ export function StockWizard({ onClose, editProduct }: Props) {
     [variationBlocks]
   );
 
-  // Auto-regenerate combinations
+  // Auto-regenerate combinations (skip first run when editing to preserve loaded data)
   useEffect(() => {
     if (!temVariacoes) return;
+    if (editInitRef.current) {
+      editInitRef.current = false;
+      return;
+    }
     const combos = generateVariationCombinations(attributes);
     if (combos.length === 0) { setVarRows([]); return; }
     const existingMap = new Map<string, VarRow>();
