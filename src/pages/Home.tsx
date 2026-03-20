@@ -201,17 +201,20 @@ export default function Home() {
             </div>
             <div className="divide-y divide-border">
               {topProducts.map(({ product, calc }) => (
-                <button key={product.id} className="w-full py-3 text-left" onClick={() => navigate('/products')}>
-                  <p className="text-[15px] font-medium text-foreground truncate">{product.name}</p>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <span className={cn('font-mono text-[13px] font-mono-num', calc.netProfit >= 0 ? 'text-success' : 'text-danger')}>
-                      Lucro R$ {calc.netProfit.toFixed(2).replace('.', ',')}
-                    </span>
-                    <span className="text-text-3 text-[13px]">·</span>
-                    <span className={cn('font-mono text-[13px] font-bold font-mono-num', getMarginStatus(calc.realMargin).color)}>
-                      {calc.realMargin.toFixed(1)}%
-                    </span>
-                    <span className={cn('w-1.5 h-1.5 rounded-full', getMarginStatus(calc.realMargin).color.replace('text-', 'bg-'))} />
+                <button key={product.id} className="w-full py-3 flex items-center gap-3 text-left" onClick={() => navigate('/products')}>
+                  <ProductThumbnail productId={product.id} productName={product.name} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[15px] font-medium text-foreground truncate">{product.name}</p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <span className={cn('font-mono text-[13px] font-mono-num', calc.netProfit >= 0 ? 'text-success' : 'text-danger')}>
+                        Lucro R$ {calc.netProfit.toFixed(2).replace('.', ',')}
+                      </span>
+                      <span className="text-text-3 text-[13px]">·</span>
+                      <span className={cn('font-mono text-[13px] font-bold font-mono-num', getMarginStatus(calc.realMargin).color)}>
+                        {calc.realMargin.toFixed(1)}%
+                      </span>
+                      <span className={cn('w-1.5 h-1.5 rounded-full', getMarginStatus(calc.realMargin).color.replace('text-', 'bg-'))} />
+                    </div>
                   </div>
                 </button>
               ))}
