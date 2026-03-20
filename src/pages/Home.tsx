@@ -157,10 +157,11 @@ export default function Home() {
                 {stats.avgMargin.toFixed(1)}%
               </p>
               <p className={cn(
-                'text-[11px] mt-1',
+                'text-[12px] mt-1 flex items-center gap-1.5',
                 getMarginStatus(stats.avgMargin).color
               )}>
-                {getMarginStatus(stats.avgMargin).emoji} {getMarginStatus(stats.avgMargin).label}
+                {getMarginStatus(stats.avgMargin).label}
+                <span className={cn('w-1.5 h-1.5 rounded-full', getMarginStatus(stats.avgMargin).color.replace('text-', 'bg-'))} />
               </p>
             </div>
             <div className="surface-card p-4">
@@ -168,27 +169,20 @@ export default function Home() {
               <p className="font-mono text-[28px] font-bold font-mono-num leading-none text-foreground">
                 {stats.totalProducts}
               </p>
-              <p className="text-[11px] text-text-2 mt-1">cadastrados</p>
+              <p className="text-[12px] text-text-3 mt-1">cadastrados</p>
             </div>
           </div>
         </div>
 
         {/* Performance */}
         {stats.totalProducts > 0 && (
-          <div className="grid grid-cols-2 gap-3 animate-fade-up stagger-3">
-            <div className="surface-card p-3.5">
-              <div className="flex items-center gap-2 mb-1">
-                <CircleCheck className="w-4 h-4 text-success" />
-                <span className="text-[11px] font-medium text-text-2">Na meta</span>
-              </div>
-              <p className="font-mono text-xl font-bold font-mono-num text-success">{stats.productsAboveTarget} <span className="text-[13px] font-normal text-text-3">produtos</span></p>
-            </div>
-            <div className="surface-card p-3.5">
-              <div className="flex items-center gap-2 mb-1">
-                <AlertTriangle className="w-4 h-4 text-warning" />
-                <span className="text-[11px] font-medium text-text-2">Abaixo da meta</span>
-              </div>
-              <p className={cn('font-mono text-xl font-bold font-mono-num', stats.productsBelowTarget > 0 ? 'text-warning' : 'text-text-3')}>{stats.productsBelowTarget} <span className="text-[13px] font-normal text-text-3">produtos</span></p>
+          <div className="animate-fade-up stagger-3">
+            <div className="surface-card rounded-[10px] px-4 py-3 flex items-center justify-center gap-2">
+              <span className="font-mono text-[14px] font-bold font-mono-num text-success">{stats.productsAboveTarget}</span>
+              <span className="text-[13px] text-text-2">na meta</span>
+              <span className="text-text-3 text-[13px]">·</span>
+              <span className={cn('font-mono text-[14px] font-bold font-mono-num', stats.productsBelowTarget > 0 ? 'text-warning' : 'text-text-3')}>{stats.productsBelowTarget}</span>
+              <span className="text-[13px] text-text-2">abaixo da meta</span>
             </div>
           </div>
         )}
