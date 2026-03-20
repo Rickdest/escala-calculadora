@@ -147,7 +147,7 @@ export const DEFAULT_STORE_CONFIG: StoreConfig = {
   isCpfSeller: false,
   hasOver450Orders: false,
   taxes: 0,
-  desiredMargin: 17,
+  desiredMargin: 15,
   currency: 'BRL',
   enablePackaging: true,
   enableAds: true,
