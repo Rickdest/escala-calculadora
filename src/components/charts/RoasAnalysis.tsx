@@ -21,11 +21,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
   ResponsiveContainer, PieChart as RechartsPie, Pie, Cell, Tooltip,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, RadialBarChart, RadialBar,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
 import { TooltipLabel, getTooltipText } from '@/components/roas/TooltipLabel';
 import { ProductHealthBanner } from '@/components/roas/ProductHealthBanner';
-import { ShareResult } from '@/components/roas/ShareResult';
 import { AdsTab } from '@/components/roas/AdsTab';
 
 // ─── Shared Utilities ───
