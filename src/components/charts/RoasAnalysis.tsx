@@ -506,7 +506,10 @@ function RoasRanking() {
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 px-1">
                 <TrendingUp className="w-3 h-3" /> Com dados de Ads ({withAds.length})
               </p>
-              {withAds.map((r, i) => (
+              {withAds.map((r, i) => {
+                const rankIcon = r.roasAtual! >= 5 ? TrendingUp : r.roasAtual! >= 2 ? AlertTriangle : TrendingDown;
+                const RankIcon = rankIcon;
+                return (
                 <div key={r.product.id} className="rounded-xl border border-border bg-card p-4 animate-fade-in transition-all duration-200 hover:border-primary/20" style={{ animationDelay: `${i * 50}ms` }}>
                   <div className="flex items-center gap-3">
                     <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center text-sm font-extrabold flex-shrink-0',
@@ -514,26 +517,27 @@ function RoasRanking() {
                       #{i + 1}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-foreground truncate text-sm">{r.product.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-foreground truncate text-sm flex-1">{r.product.name}</p>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <RankIcon className={cn('w-4 h-4', r.roasAtual! >= 5 ? 'text-success' : r.roasAtual! >= 2 ? 'text-warning' : 'text-destructive')} />
+                          <span className={cn('font-extrabold text-xl tabular-nums font-mono', statusColors[r.status as keyof typeof statusColors])}>{r.roasAtual!.toFixed(2)}</span>
+                        </div>
+                      </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-xs text-muted-foreground tabular-nums font-mono">{formatCurrency(r.product.adsCost)}</span>
                         <span className="text-xs text-muted-foreground">→</span>
                         <span className="text-xs text-success font-semibold tabular-nums font-mono">{formatCurrency(r.product.adsRevenue)}</span>
                       </div>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <div className="flex items-center gap-1.5 justify-end">
-                        {r.status === 'success' ? <TrendingUp className="w-4 h-4 text-success" /> : r.status === 'danger' ? <TrendingDown className="w-4 h-4 text-destructive" /> : <Target className="w-4 h-4 text-warning" />}
-                        <span className={cn('font-extrabold text-xl tabular-nums font-mono', statusColors[r.status as keyof typeof statusColors])}>{r.roasAtual!.toFixed(2)}</span>
-                      </div>
-                      <div className="flex gap-3 text-[10px] text-muted-foreground mt-0.5">
+                      <div className="flex gap-3 text-[11px] text-muted-foreground mt-1">
                         <span>Emp: <span className="text-warning font-bold font-mono">{r.roasEmpate?.toFixed(1)}</span></span>
                         <span>Ideal: <span className="text-primary font-bold font-mono">{r.roasIdeal?.toFixed(1)}</span></span>
                       </div>
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
           {withoutAds.length > 0 && (

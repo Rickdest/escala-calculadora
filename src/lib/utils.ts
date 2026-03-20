@@ -17,7 +17,7 @@ export interface MarginStatus {
 export function getMarginStatus(margin: number): MarginStatus {
   if (margin < 0) return {
     label: 'Prejuízo',
-    emoji: '🔴',
+    emoji: 'trending-down',
     color: 'text-danger',
     bg: 'bg-danger/10',
     border: 'border-danger/30',
@@ -25,7 +25,7 @@ export function getMarginStatus(margin: number): MarginStatus {
   };
   if (margin < 10) return {
     label: 'Atenção',
-    emoji: '🟡',
+    emoji: 'alert-triangle',
     color: 'text-warning',
     bg: 'bg-warning/10',
     border: 'border-warning/30',
@@ -33,7 +33,7 @@ export function getMarginStatus(margin: number): MarginStatus {
   };
   if (margin < 17) return {
     label: 'Saudável',
-    emoji: '🟢',
+    emoji: 'check-circle',
     color: 'text-success',
     bg: 'bg-success/10',
     border: 'border-success/30',
@@ -41,7 +41,7 @@ export function getMarginStatus(margin: number): MarginStatus {
   };
   return {
     label: 'Lucrativo',
-    emoji: '💰',
+    emoji: 'trending-up',
     color: 'text-success',
     bg: 'bg-success/15',
     border: 'border-success/40',
