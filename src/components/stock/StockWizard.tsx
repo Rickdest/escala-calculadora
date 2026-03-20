@@ -227,6 +227,27 @@ export function StockWizard({ onClose, editProduct }: Props) {
       if (editProduct) {
         await updateProduto(editProduct.id, { nome, categoria: categoria || null, sku_base: skuBase || null, descricao: descricao || null, tem_variacoes: temVariacoes });
         if (imagePreview) saveLocalStockImage(editProduct.id, imagePreview);
+
+        // Save variation data
+        if (temVariacoes) {
+          for (const row of varRows) {
+            await updateVariacao(row.tempId, {
+              atributos: row.atributos as any,
+              sku: row.sku || null,
+              preco_custo: row.preco_custo,
+              quantidade: row.quantidade,
+              quantidade_minima: row.quantidade_minima,
+            });
+          }
+        } else if (editProduct.variacoes.length > 0) {
+          const v = editProduct.variacoes[0];
+          await updateVariacao(v.id, {
+            preco_custo: parseFloat(simpleCost) || 0,
+            quantidade: parseInt(simpleQty) || 0,
+            quantidade_minima: parseInt(simpleMin) || 5,
+            sku: simpleSku || null,
+          });
+        }
         toast.success('Produto atualizado!');
       } else {
         const variacoes = temVariacoes
