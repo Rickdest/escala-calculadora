@@ -1,59 +1,26 @@
 
 
-## Redesign do Resultado da Calculadora Rapida — Hero Compacto + Pills
+## Plano: Ativar Proteção contra Senhas Vazadas (HIBP)
 
-### Problema atual
-O resultado ocupa muito espaco vertical com blocos separados por bordas, criando um visual pesado e "boxy". O card com grid de 2 colunas para Margem/ROAS Empate parece rigido e desperdicado.
+### Diagnóstico
 
-### Nova abordagem: Hero compacto + pills
+Esta configuração **não pode ser feita via migration SQL nem via código**. O comando `ALTER SYSTEM SET auth.password_hibp_enabled = true` não está disponível em Lovable Cloud — é uma configuração do serviço de autenticação, não do banco de dados.
 
-```text
-┌─────────────────────────────────┐
-│                                 │
-│      LUCRO POR VENDA            │
-│      R$ 9,92                    │  ← Hero grande, centralizado
-│                                 │
-│  ┌──────────┐  ┌──────────────┐ │
-│  │ 33.2%    │  │ ROAS 3.01    │ │  ← Pills horizontais
-│  │ margem   │  │ empate       │ │
-│  └──────────┘  └──────────────┘ │
-│                                 │
-│  ⚠️ Taxas nao configuradas     │  ← Aviso inline (se aplicavel)
-│                                 │
-│  ↓ Analise  ·  💾 Salvar       │  ← Acoes
-└─────────────────────────────────┘
-```
+### Ação necessária (manual)
 
-### Mudancas no arquivo `src/components/home/QuickCalculator.tsx`
+Você precisa ativar isso manualmente no painel do Lovable Cloud:
 
-**Substituir blocos 1-4 do resultado (linhas 189-250) por:**
+1. Abrir a aba **Cloud** no Lovable
+2. Ir em **Users** → ícone de engrenagem (**Auth settings**)
+3. Na seção **Email settings**, ativar **Password HIBP Check**
 
-1. **Hero do Lucro** — Remover bordas ao redor. Usar padding generoso (py-6), valor 36px (reduzir de 42px para caber melhor), centralizado. Sem borda inferior.
+Isso bloqueará automaticamente senhas conhecidas em vazamentos de dados (HaveIBeenPwned).
 
-2. **Pills de Margem e ROAS** — Em vez de grid com bordas, usar dois "pills" lado a lado:
-   - Fundo `bg-surface-2`, border-radius 10px, padding 10px 16px
-   - Cada pill mostra valor + label embaixo
-   - Margem: valor colorido (verde/amarelo/vermelho) + label "margem" em text-3
-   - ROAS: valor amarelo + label "roas empate" em text-3
-   - Gap de 8px entre pills, centralizados com `flex gap-2 justify-center`
+### Sobre o finding "SECURITY DEFINER functions"
 
-3. **Aviso de taxas** — Inline discreto sem bordas, apenas texto com link
+O finding `handle_new_user_definer` (nível **info**) é apenas informativo — as 6 funções `SECURITY DEFINER` existentes (`has_role`, `has_active_subscription`, `handle_new_user`, `handle_new_user_trial`, `update_subscription_status`, `get_own_profile_protected`) estão corretamente escopadas e são necessárias para o funcionamento do sistema. Nenhuma ação é necessária.
 
-4. **Acoes** — Linha simples sem borda superior, mesmo estilo atual
+### Resultado
 
-### O que NAO muda
-- Logica de calculo (useMemo, result, projection)
-- Secao de analise completa (linhas 253-393)
-- Inputs e botao calcular
-- CostRow component
-- Funcionalidade de salvar produto
-
-### Detalhes tecnicos
-- Arquivo unico: `src/components/home/QuickCalculator.tsx`
-- Apenas as linhas 189-250 (bloco de resultado) serao reescritas
-- Manter todas as classes de animacao (`animate-fade-up`)
-- Pills usam `bg-surface-2 rounded-[10px] px-4 py-2.5 flex-1 text-center`
-- Valor do lucro: `font-mono text-[36px] font-bold`
-- Valores nos pills: `font-mono text-[20px] font-bold`
-- Labels nos pills: `text-[10px] uppercase text-text-3 mt-1`
+Não há alterações de código ou migrations a implementar. A única ação é a configuração manual descrita acima.
 
