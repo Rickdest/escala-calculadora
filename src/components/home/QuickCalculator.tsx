@@ -189,34 +189,33 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
           <div className="mt-2 space-y-4">
             {/* Métricas — 3 cards */}
             <div className="grid grid-cols-3 gap-2">
-              <div className="bg-surface-2 rounded-xl p-3 text-center border border-border/40">
+              <div className="bg-surface-2 rounded-xl p-3 flex flex-col items-center justify-center border border-border/40">
                 <p className="text-[10px] font-medium text-text-3 tracking-wider mb-1">Lucro</p>
                 <p className={cn(
-                'font-mono font-extrabold font-mono-num leading-tight',
-                result.netProfit >= 0 ? 'text-[18px] text-success' : 'text-[15px] text-danger'
-              )}>
+                  'font-mono text-[18px] font-extrabold font-mono-num leading-tight',
+                  result.netProfit >= 0 ? 'text-success' : 'text-danger'
+                )}>
                   {formatCurrency(result.netProfit)}
                 </p>
               </div>
-              <div className="bg-surface-2 rounded-xl p-3 text-center border border-border/40">
+              <div className="bg-surface-2 rounded-xl p-3 flex flex-col items-center justify-center border border-border/40">
                 <p className="text-[10px] font-medium text-text-3 tracking-wider mb-1">Margem</p>
                 <p className={cn(
-                'font-mono font-extrabold font-mono-num leading-tight',
-                result.realMargin >= 0 ? 'text-[18px]' : 'text-[15px]',
-                getMarginStatus(result.realMargin).color
-              )}>
+                  'font-mono text-[18px] font-extrabold font-mono-num leading-tight',
+                  getMarginStatus(result.realMargin).color
+                )}>
                   {result.realMargin.toFixed(1)}%
                 </p>
               </div>
-              <div className="bg-surface-2 rounded-xl p-3 text-center border border-border/40">
+              <div className="bg-surface-2 rounded-xl p-3 flex flex-col items-center justify-center border border-border/40">
                 <p className="text-[10px] font-medium text-text-3 tracking-wider mb-1">ROAS</p>
-                {result.roasEmpate > 0 ?
-              <p className="font-mono text-[18px] font-extrabold font-mono-num leading-tight text-warning">
+                {result.roasEmpate > 0 ? (
+                  <p className="font-mono text-[18px] font-extrabold font-mono-num leading-tight text-warning">
                     {result.roasEmpate.toFixed(2)}
-                  </p> :
-
-              <p className="text-[12px] font-semibold text-danger mt-1">Prejuízo</p>
-              }
+                  </p>
+                ) : (
+                  <p className="text-[12px] font-semibold text-danger mt-1">Prejuízo</p>
+                )}
               </div>
             </div>
 
