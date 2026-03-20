@@ -82,6 +82,7 @@ export function StockWizard({ onClose, editProduct }: Props) {
   // Init edit mode
   useEffect(() => {
     if (editProduct && editProduct.tem_variacoes && editProduct.variacoes.length > 0) {
+      editInitRef.current = true;
       const attrKeys = [...new Set(editProduct.variacoes.flatMap(v => Object.keys(v.atributos)))];
       const blocks: VariationBlock[] = attrKeys.map(key => ({
         id: Math.random().toString(36).substring(2, 10),
@@ -91,7 +92,7 @@ export function StockWizard({ onClose, editProduct }: Props) {
       setVariationBlocks(blocks);
       setVarRows(editProduct.variacoes.map(v => ({
         tempId: v.id,
-        atributos: v.atributos,
+        atributos: v.atributos as Record<string, string>,
         sku: v.sku || '',
         preco_custo: v.preco_custo,
         quantidade: v.quantidade,
