@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { checkSubscriptionServer, checkSubscriptionClient, SubscriptionData } from '@/services/billing.service';
+import { checkSubscription, SubscriptionData } from '@/services/billing.service';
 
 type SubscriptionStatus = 'free' | 'trialing' | 'active' | 'canceled' | 'past_due' | 'expired' | 'loading';
 
@@ -15,24 +15,14 @@ interface SubscriptionContextType {
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
 
-function applySubscriptionData(
-  data: SubscriptionData,
-  setStatus: (s: SubscriptionStatus) => void,
-  setPlan: (p: string) => void,
-  setTrialEnd: (t: string | null) => void,
-) {
-  const statusMap: Record<string, SubscriptionStatus> = {
-    active: 'active',
-    trialing: 'trialing',
-    canceled: 'canceled',
-    past_due: 'past_due',
-    expired: 'canceled',
-    free: 'free',
-  };
-  setStatus(statusMap[data.status] || 'canceled');
-  setPlan(data.plan);
-  setTrialEnd(data.trialEnd);
-}
+const STATUS_MAP: Record<string, SubscriptionStatus> = {
+  active: 'active',
+  trialing: 'trialing',
+  canceled: 'canceled',
+  past_due: 'past_due',
+  expired: 'expired',
+  free: 'free',
+};
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { user, session } = useAuth();
@@ -51,19 +41,15 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      // Try server-side validation first
-      const data = await checkSubscriptionServer(session.access_token);
-      applySubscriptionData(data, setStatus, setPlan, setTrialEnd);
+      const data = await checkSubscription(session.access_token);
+      setStatus(STATUS_MAP[data.status] || 'expired');
+      setPlan(data.plan);
+      setTrialEnd(data.trialEnd);
     } catch {
-      // Fallback to client-side (still protected by RLS)
-      try {
-        const data = await checkSubscriptionClient(user.id, user.email || undefined);
-        applySubscriptionData(data, setStatus, setPlan, setTrialEnd);
-      } catch {
-        setStatus('free');
-        setPlan('free');
-        setTrialEnd(null);
-      }
+      // Edge function failed — assume expired for safety
+      setStatus('expired');
+      setPlan('free');
+      setTrialEnd(null);
     } finally {
       setLoading(false);
     }
