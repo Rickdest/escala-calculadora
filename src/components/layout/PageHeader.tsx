@@ -56,6 +56,7 @@ export function PageHeader({ title, subtitle, showStoreSelector = true, action }
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+            </div>
           )}
           
           {action}
