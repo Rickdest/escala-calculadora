@@ -6,69 +6,68 @@
 
 @layer base {
   :root {
-    --background: 225 33% 5%;
-    --foreground: 225 30% 95%;
+    --background: 220 20% 97%;
+    --foreground: 225 25% 12%;
 
-    --card: 225 28% 8%;
-    --card-foreground: 225 30% 95%;
+    --card: 0 0% 100%;
+    --card-foreground: 225 25% 12%;
 
-    --popover: 225 28% 8%;
-    --popover-foreground: 225 30% 95%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 225 25% 12%;
 
     --primary: 24 95% 53%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 225 25% 11%;
-    --secondary-foreground: 225 15% 90%;
+    --secondary: 220 15% 92%;
+    --secondary-foreground: 225 25% 20%;
 
-    --muted: 225 25% 11%;
-    --muted-foreground: 225 15% 55%;
+    --muted: 220 15% 92%;
+    --muted-foreground: 225 15% 45%;
 
-    --accent: 225 20% 14%;
+    --accent: 220 15% 90%;
     --accent-foreground: 24 95% 53%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 84% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 71% 45%;
+    --success: 142 65% 38%;
     --success-foreground: 0 0% 100%;
-    --success-muted: 142 40% 12%;
+    --success-muted: 142 40% 92%;
 
-    --warning: 48 96% 53%;
-    --warning-foreground: 48 96% 15%;
-    --warning-muted: 48 50% 12%;
+    --warning: 38 90% 45%;
+    --warning-foreground: 0 0% 100%;
+    --warning-muted: 48 80% 92%;
 
-    --danger: 0 84% 60%;
+    --danger: 0 84% 55%;
     --danger-foreground: 0 0% 100%;
-    --danger-muted: 0 50% 12%;
+    --danger-muted: 0 50% 93%;
 
-    --border: 225 20% 16%;
-    --input: 225 20% 16%;
+    --border: 220 15% 85%;
+    --input: 220 15% 85%;
     --ring: 24 95% 53%;
 
     --radius: 0.875rem;
 
     --chart-1: 24 95% 53%;
-    --chart-2: 142 71% 45%;
+    --chart-2: 142 65% 38%;
     --chart-3: 220 70% 55%;
     --chart-4: 280 70% 55%;
-    --chart-5: 48 96% 53%;
+    --chart-5: 38 90% 45%;
 
-    --sidebar-background: 225 28% 6%;
-    --sidebar-foreground: 225 15% 75%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 225 20% 35%;
     --sidebar-primary: 24 95% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 225 20% 12%;
-    --sidebar-accent-foreground: 225 15% 90%;
-    --sidebar-border: 225 20% 14%;
+    --sidebar-accent: 220 15% 94%;
+    --sidebar-accent-foreground: 225 25% 15%;
+    --sidebar-border: 220 15% 88%;
     --sidebar-ring: 24 95% 53%;
 
-    /* Surface tokens */
-    --surface: 225 28% 8%;
-    --surface-2: 225 20% 14%;
-    --text-1: 225 30% 95%;
-    --text-2: 225 15% 60%;
-    --text-3: 225 18% 35%;
+    --surface: 0 0% 100%;
+    --surface-2: 220 15% 94%;
+    --text-1: 225 25% 12%;
+    --text-2: 225 15% 42%;
+    --text-3: 225 12% 65%;
   }
 
   .dark {
