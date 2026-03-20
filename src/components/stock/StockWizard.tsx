@@ -408,7 +408,7 @@ export function StockWizard({ onClose, editProduct }: Props) {
                 ))}
 
                 {/* Add Variation2 button */}
-                {variationBlocks.length === 1 && variationBlocks[0].options.some(o => o.value) && (
+                {variationBlocks.length === 1 && (
                   <button
                     onClick={() => {
                       if (variationBlocks.length >= 2) { toast.error('Máximo 2 variações'); return; }
