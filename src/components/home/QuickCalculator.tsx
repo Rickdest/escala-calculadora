@@ -52,8 +52,8 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
     const realMargin = sp > 0 ? netProfit / sp * 100 : 0;
 
     const roasEmpate = sp / (sp - totalCosts);
-    const roasSaudavel = isFinite(roasEmpate) && roasEmpate > 0 ? roasEmpate * 1.25 : 0;
-    const roasIdeal = isFinite(roasEmpate) && roasEmpate > 0 ? roasEmpate * 1.5 : 0;
+    const roasSaudavel = isFinite(roasEmpate) && roasEmpate > 0 ? parseFloat((roasEmpate / 0.61).toFixed(2)) : 0;
+    const roasIdeal = isFinite(roasEmpate) && roasEmpate > 0 ? parseFloat((roasEmpate / 0.40).toFixed(2)) : 0;
 
     return {
       netProfit,
