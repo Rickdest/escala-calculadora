@@ -178,17 +178,17 @@ export default function Home() {
           <div className="grid grid-cols-2 gap-3 animate-fade-up stagger-3">
             <div className="surface-card p-3.5">
               <div className="flex items-center gap-2 mb-1">
-                <TrendingUp className="w-3.5 h-3.5 text-success" />
-                <span className="text-[11px] font-medium text-success">Acima da Meta</span>
+                <span className="text-sm">💰</span>
+                <span className="text-[11px] font-medium text-text-2">Na meta</span>
               </div>
-              <p className="font-mono text-xl font-bold font-mono-num text-success">{stats.productsAboveTarget}</p>
+              <p className="font-mono text-xl font-bold font-mono-num text-success">{stats.productsAboveTarget} <span className="text-[13px] font-normal text-text-3">produtos</span></p>
             </div>
             <div className="surface-card p-3.5">
               <div className="flex items-center gap-2 mb-1">
-                <TrendingDown className="w-3.5 h-3.5 text-danger" />
-                <span className="text-[11px] font-medium text-danger">Abaixo da Meta</span>
+                <span className="text-sm">⚠️</span>
+                <span className="text-[11px] font-medium text-text-2">Abaixo da meta</span>
               </div>
-              <p className="font-mono text-xl font-bold font-mono-num text-danger">{stats.productsBelowTarget}</p>
+              <p className={cn('font-mono text-xl font-bold font-mono-num', stats.productsBelowTarget > 0 ? 'text-warning' : 'text-text-3')}>{stats.productsBelowTarget} <span className="text-[13px] font-normal text-text-3">produtos</span></p>
             </div>
           </div>
         )}
