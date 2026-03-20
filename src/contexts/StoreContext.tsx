@@ -3,6 +3,7 @@ import { Store, Product, StoreConfig, DEFAULT_STORE_CONFIG, ProductCalculation, 
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { compressImage } from '@/lib/imageUtils';
 
 interface StoreContextType {
   stores: Store[];
@@ -276,9 +277,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     if (error) { toast.error('Erro ao salvar produto'); throw error; }
 
-    // Save image locally
+    // Save image locally (compressed)
     if (productData.imageUrl) {
-      saveLocalImage(data.id, productData.imageUrl);
+      const compressed = await compressImage(productData.imageUrl);
+      saveLocalImage(data.id, compressed);
     }
 
     const newProduct = mapDbProduct(data);
@@ -325,10 +327,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (error) { toast.error('Erro ao atualizar produto'); return; }
     }
 
-    // Save image locally
+    // Save image locally (compressed)
     if (updates.imageUrl !== undefined) {
-      if (updates.imageUrl) saveLocalImage(productId, updates.imageUrl);
-      else removeLocalImage(productId);
+      if (updates.imageUrl) {
+        const compressed = await compressImage(updates.imageUrl);
+        saveLocalImage(productId, compressed);
+      } else {
+        removeLocalImage(productId);
+      }
     }
 
     setStores(prev => prev.map(store => ({
@@ -376,6 +382,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       attributes: original.attributes || [],
       variations: original.variations,
       shopee_acelera: original.shopeeAcelera || 'none',
+      category: original.category || null,
+      description: original.description || null,
+      min_stock_quantity: original.minStockQuantity ?? 5,
     } as any).select().single();
 
     if (error) { toast.error('Erro ao duplicar produto'); return null; }

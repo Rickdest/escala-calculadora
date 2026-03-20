@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn, getMarginStatus } from '@/lib/utils';
+import { compressImage } from '@/lib/imageUtils';
 
 interface ProductFormProps {
   product?: Product | null;
@@ -29,6 +30,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
 
   const [enableAds, setEnableAds] = useState((product?.adsCost || 0) > 0);
   const [adsCostValue, setAdsCostValue] = useState(product?.adsCost?.toString() || '0');
+  const [adsRevenue, setAdsRevenue] = useState(product?.adsRevenue?.toString() || '0');
   const [optionalCostsOpen, setOptionalCostsOpen] = useState(false);
   const [monthlySales, setMonthlySales] = useState(50);
 
@@ -109,6 +111,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
         salePrice: parseFloat(salePrice) || 0,
         packagingCost: parseFloat(packagingCost) || 0,
         adsCost: enableAds ? (parseFloat(adsCostValue) || 0) : 0,
+        adsRevenue: enableAds ? (parseFloat(adsRevenue) || 0) : 0,
         imageUrl: imageUrl || undefined,
         stockQuantity: product?.stockQuantity || 0,
         hasVariations: product?.hasVariations || false,
@@ -128,7 +131,10 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => { setImageUrl(reader.result as string); };
+      reader.onloadend = async () => {
+        const compressed = await compressImage(reader.result as string);
+        setImageUrl(compressed);
+      };
       reader.readAsDataURL(file);
     }
   };
@@ -219,13 +225,22 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                   <Switch checked={enableAds} onCheckedChange={setEnableAds} />
                 </div>
                 {enableAds && (
-                  <div className="space-y-1.5">
-                    <label className="section-label">Valor investido em Ads (R$)</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-2">R$</span>
-                      <Input type="number" inputMode="decimal" step="0.01" min="0" value={adsCostValue} onChange={(e) => setAdsCostValue(e.target.value)} placeholder="0,00" className="pl-12 h-10 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num" />
+                  <>
+                    <div className="space-y-1.5">
+                      <label className="section-label">Valor investido em Ads (R$)</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-2">R$</span>
+                        <Input type="number" inputMode="decimal" step="0.01" min="0" value={adsCostValue} onChange={(e) => setAdsCostValue(e.target.value)} placeholder="0,00" className="pl-12 h-10 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num" />
+                      </div>
                     </div>
-                  </div>
+                    <div className="space-y-1.5">
+                      <label className="section-label">Receita dos Ads (R$)</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-2">R$</span>
+                        <Input type="number" inputMode="decimal" step="0.01" min="0" value={adsRevenue} onChange={(e) => setAdsRevenue(e.target.value)} placeholder="0,00" className="pl-12 h-10 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num" />
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
             </CollapsibleContent>

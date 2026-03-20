@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { saveLocalStockImage, getLocalStockImage } from '@/hooks/useEstoque';
+import { compressImage } from '@/lib/imageUtils';
 
 const CATEGORIES = ['Moda', 'Calçados', 'Acessórios', 'Eletrônicos', 'Beleza', 'Casa e Decoração', 'Esporte', 'Alimentos', 'Outro'];
 
@@ -100,7 +101,10 @@ export function StockWizard({ onClose, editProduct }: Props) {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => setImagePreview(reader.result as string);
+    reader.onload = async () => {
+      const compressed = await compressImage(reader.result as string);
+      setImagePreview(compressed);
+    };
     reader.readAsDataURL(file);
   };
 

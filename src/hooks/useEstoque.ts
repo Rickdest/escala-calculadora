@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { compressImage } from '@/lib/imageUtils';
 
 export interface EstoqueProduto {
   id: string;
@@ -118,7 +119,8 @@ export function useEstoque() {
     if (error) { toast.error('Erro ao criar produto'); throw error; }
 
     if (data.imageDataUrl) {
-      saveLocalStockImage(prod.id, data.imageDataUrl);
+      const compressed = await compressImage(data.imageDataUrl);
+      saveLocalStockImage(prod.id, compressed);
     }
 
     // Insert variations
