@@ -237,7 +237,7 @@ function RankingSection({ ads }: { ads: ShopeeAdRow[] }) {
                 </span>
                 <div className="flex-1 min-w-0 px-1">
                   <div className="flex items-center gap-1.5">
-                    <p className="text-[13px] font-bold text-foreground truncate">{truncate(ad.adName, 40)}</p>
+                    <p className="text-[13px] font-bold text-foreground truncate">{truncate(ad.adName, 24)}</p>
                     <StatusIcon className={cn('w-4 h-4 flex-shrink-0', statusIcon.color)} />
                   </div>
                   <p className="text-[11px] text-muted-foreground font-mono tabular-nums mt-0.5">
