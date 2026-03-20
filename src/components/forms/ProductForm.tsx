@@ -131,7 +131,10 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => { setImageUrl(reader.result as string); };
+      reader.onloadend = async () => {
+        const compressed = await compressImage(reader.result as string);
+        setImageUrl(compressed);
+      };
       reader.readAsDataURL(file);
     }
   };
