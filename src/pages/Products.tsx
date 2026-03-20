@@ -154,7 +154,7 @@ export default function Products() {
         }
       />
 
-      <div className="px-4 py-4 space-y-4">
+      <div className="px-4 py-4 space-y-4 md:px-6 md:py-6">
         <Tabs defaultValue="products" className="w-full">
           <TabsList className="w-full grid grid-cols-2 h-10 rounded-lg bg-surface-2 p-0.5">
             <TabsTrigger value="products" className="text-xs font-semibold rounded-md data-[state=active]:bg-surface data-[state=active]:text-foreground text-text-2">

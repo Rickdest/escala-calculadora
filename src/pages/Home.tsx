@@ -148,7 +148,7 @@ export default function Home() {
         {/* Store Metrics */}
         <div className="animate-fade-up stagger-2">
           <p className="section-label mb-3">Métricas da Loja</p>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="surface-card p-4">
               <p className="section-label mb-2">Margem Média</p>
               <p className={cn(
