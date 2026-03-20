@@ -131,7 +131,7 @@ function RoasGauge({ roasAtual, roasEmpate, roasIdeal, status }: {
 }) {
   const maxVal = Math.max(roasIdeal * 1.5, roasAtual * 1.2);
   const percent = Math.min((roasAtual / maxVal) * 100, 100);
-  const fillColor = status === 'danger' ? 'hsl(0, 85%, 60%)' : status === 'warning' ? 'hsl(40, 95%, 50%)' : 'hsl(152, 70%, 42%)';
+  const fillColor = status === 'danger' ? 'hsl(0, 85%, 60%)' : status === 'empate' ? 'hsl(25, 95%, 55%)' : status === 'warning' ? 'hsl(45, 95%, 50%)' : status === 'medium' ? 'hsl(24, 95%, 53%)' : 'hsl(152, 70%, 42%)';
   const data = [{ name: 'ROAS', value: percent, fill: fillColor }];
 
   return (
