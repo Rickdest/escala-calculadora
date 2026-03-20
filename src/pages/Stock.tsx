@@ -84,11 +84,11 @@ export default function Stock() {
           {[
             { label: 'Total', value: stats.total, color: 'text-foreground' },
             { label: 'Ativo', value: stats.ativo, color: 'text-success' },
-            { label: 'Baixo 🟡', value: stats.baixo, color: 'text-warning' },
-            { label: 'Zerado 🔴', value: stats.zerado, color: 'text-destructive' },
+            { label: 'Baixo', value: stats.baixo, color: 'text-warning' },
+            { label: 'Zerado', value: stats.zerado, color: 'text-destructive' },
           ].map((s, i) => (
             <div key={s.label} className={cn('surface-card p-3 text-center', i < 2 ? 'stagger-1' : 'stagger-2')}>
-              <p className={cn('text-xl font-bold font-mono font-mono-num', s.color)}>{s.value}</p>
+              <p className={cn('text-2xl font-bold font-mono font-mono-num', s.color)}>{s.value}</p>
               <p className="section-label mt-0.5">{s.label}</p>
             </div>
           ))}
