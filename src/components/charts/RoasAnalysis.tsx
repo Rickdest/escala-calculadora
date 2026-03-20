@@ -183,7 +183,7 @@ function ProductSelector({ products, selectedId, onSelect }: { products: Product
           <Input placeholder="Buscar produto..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 input-modern h-10 text-sm" />
         </div>
       )}
-      <div className="grid grid-cols-1 gap-1.5 max-h-[260px] overflow-y-auto pr-0.5 scrollbar-thin" style={{ overscrollBehavior: 'contain' }}>
+      <div className="grid grid-cols-1 gap-1.5 max-h-[260px] overflow-y-auto pr-0.5 scrollbar-none" style={{ overscrollBehavior: 'contain', scrollbarWidth: 'none' }}>
         {filtered.map(p => {
           const isActive = p.id === selectedId;
           const roasData = calcRoasFromValues(p.salePrice, p.costPrice, p.adsCost, p.adsRevenue);
