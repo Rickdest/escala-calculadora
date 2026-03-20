@@ -93,7 +93,9 @@ function getRoasInsight(status: string) {
 function getRoasEmoji(status: string) {
   switch (status) {
     case 'danger': return '🔴';
+    case 'empate': return '🟠';
     case 'warning': return '🟡';
+    case 'medium': return '🟢';
     case 'success': return '🟢';
     default: return '';
   }
