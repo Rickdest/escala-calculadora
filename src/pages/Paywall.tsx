@@ -1,10 +1,7 @@
 import { AppLayout } from '@/components/layout/AppLayout';
-import { useSubscription } from '@/contexts/SubscriptionContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useBilling } from '@/hooks/useBilling';
 import { Lock, ArrowRight } from 'lucide-react';
 import logoIcon from '@/assets/logo-icon.png';
-
-const CHECKOUT_URL = import.meta.env.VITE_HOTMART_URL || 'https://pay.hotmart.com/B104846948H?off=au88x8b1&checkoutMode=6';
 
 const benefits = [
   'Cálculo automático de todas as taxas da Shopee',
@@ -17,14 +14,7 @@ const benefits = [
 ];
 
 export default function Paywall() {
-  const { refreshSubscription } = useSubscription();
-  const { user } = useAuth();
-
-  const handleCheckout = () => {
-    const url = new URL(CHECKOUT_URL);
-    if (user?.email) url.searchParams.set('email', user.email);
-    window.open(url.toString(), '_blank', 'noopener,noreferrer');
-  };
+  const { handleCheckout, refreshSubscription } = useBilling();
 
   return (
     <AppLayout>
@@ -66,7 +56,7 @@ export default function Paywall() {
 
         <button
           onClick={handleCheckout}
-          className="w-full h-14 rounded-xl bg-[#F97316] hover:bg-[#ea6c10] text-white font-bold text-[17px] transition-colors active:scale-[0.98]"
+          className="w-full h-14 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-[17px] transition-colors active:scale-[0.98]"
         >
           ⚡ Quero acesso completo
         </button>
