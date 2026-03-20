@@ -689,18 +689,6 @@ function ProductAnalysis() {
                 </div>
               </div>
 
-              {/* Saved Products */}
-              <SavedProducts
-                currentProduct={{
-                  salePrice: selectedProduct.salePrice,
-                  costPrice: selectedProduct.costPrice,
-                  lucroBruto: roasData.lucroBruto,
-                  roasEmpate: roasData.roasEmpate,
-                  roasSaudavel: roasData.roasSaudavel,
-                  roasIdeal: roasData.roasIdeal,
-                  marginPercent,
-                }}
-              />
             </>
           )}
 
