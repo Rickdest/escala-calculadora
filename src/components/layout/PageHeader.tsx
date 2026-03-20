@@ -30,6 +30,7 @@ export function PageHeader({ title, subtitle, showStoreSelector = true, action }
 
         <div className="flex items-center gap-2">
           {showStoreSelector && currentStore && stores.length > 0 && (
+            <div className="md:hidden">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-2 border border-border hover:border-primary/30 transition-colors">
