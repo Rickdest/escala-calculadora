@@ -475,6 +475,7 @@ export function StockWizard({ onClose, editProduct }: Props) {
                         {hasVar2 && <th className="text-left px-2 py-2 font-semibold">{var2Name}</th>}
                         <th className="text-left px-2 py-2 font-semibold"><span className="text-primary">●</span> Preço</th>
                         <th className="text-left px-2 py-2 font-semibold"><span className="text-primary">●</span> Estoque</th>
+                        <th className="text-left px-2 py-2 font-semibold">Mín. Alerta</th>
                         <th className="text-left px-2 py-2 font-semibold">SKU da Variação</th>
                       </tr>
                     </thead>
