@@ -277,9 +277,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     if (error) { toast.error('Erro ao salvar produto'); throw error; }
 
-    // Save image locally
+    // Save image locally (compressed)
     if (productData.imageUrl) {
-      saveLocalImage(data.id, productData.imageUrl);
+      const compressed = await compressImage(productData.imageUrl);
+      saveLocalImage(data.id, compressed);
     }
 
     const newProduct = mapDbProduct(data);
