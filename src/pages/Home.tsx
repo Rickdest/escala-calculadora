@@ -103,7 +103,7 @@ export default function Home() {
         })()}
 
         {!isActive && status !== 'trialing' && (
-          <div className="md:col-span-12">
+          <div className="md:col-span-full">
           <button
             onClick={() => setShowPaywall(true)}
             className="w-full h-9 flex items-center gap-2 px-3 rounded-[8px] border-l-[3px] border-l-primary bg-surface-2 transition-colors hover:bg-surface-2/80 active:scale-[0.98] animate-fade-up"
