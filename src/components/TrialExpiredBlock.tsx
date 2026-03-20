@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Lock, ArrowRight, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useBilling } from '@/hooks/useBilling';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import logoIcon from '@/assets/logo-icon.png';
 
@@ -17,6 +18,7 @@ const benefits = [
 
 export function TrialExpiredBlock() {
   const { handleCheckout, refreshSubscription, isActive } = useBilling();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
   const [checking, setChecking] = useState(false);
 
@@ -105,6 +107,17 @@ export function TrialExpiredBlock() {
           ) : (
             'Já assinei → Verificar acesso'
           )}
+        </button>
+
+        <button
+          onClick={async () => {
+            await signOut();
+            navigate('/auth', { replace: true });
+          }}
+          className="w-full text-center text-muted-foreground hover:text-foreground transition-colors"
+          style={{ fontSize: '13px' }}
+        >
+          Sair da conta
         </button>
       </div>
     </div>
