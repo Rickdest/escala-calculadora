@@ -178,7 +178,7 @@ export default function Home() {
           <div className="grid grid-cols-2 gap-3 animate-fade-up stagger-3">
             <div className="surface-card p-3.5">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-sm">💰</span>
+                <CircleCheck className="w-4 h-4 text-success" />
                 <span className="text-[11px] font-medium text-text-2">Na meta</span>
               </div>
               <p className="font-mono text-xl font-bold font-mono-num text-success">{stats.productsAboveTarget} <span className="text-[13px] font-normal text-text-3">produtos</span></p>
