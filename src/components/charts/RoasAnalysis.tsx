@@ -28,6 +28,8 @@ import {
 } from 'recharts';
 import { TooltipLabel, getTooltipText } from '@/components/roas/TooltipLabel';
 import { ProductHealthBanner } from '@/components/roas/ProductHealthBanner';
+import { ShareResult } from '@/components/roas/ShareResult';
+import { AdsTab } from '@/components/roas/AdsTab';
 import { MonthlySalesSimulation } from '@/components/roas/MonthlySalesSimulation';
 import { ShareResult } from '@/components/roas/ShareResult';
 
