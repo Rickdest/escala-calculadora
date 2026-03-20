@@ -470,12 +470,11 @@ export function StockWizard({ onClose, editProduct }: Props) {
                 </div>
 
                 {/* Variation list — compact rows */}
-                <div className="surface-card divide-y divide-border">
+                <div className="surface-card divide-y divide-border overflow-x-auto">
                   {/* Header */}
-                  <div className="grid items-center gap-2 px-3 py-2 bg-surface-2 text-text-2" style={{ gridTemplateColumns: '32px 1fr 1fr 80px 60px 60px' }}>
-                    <span />
+                  <div className="grid items-center gap-2 px-3 py-2 bg-surface-2 text-text-2" style={{ gridTemplateColumns: hasVar2 ? '1fr 1fr 80px 60px 60px' : '1fr 80px 60px 60px' }}>
                     <span className="section-label">{var1Name || 'Var 1'}</span>
-                    {hasVar2 ? <span className="section-label">{var2Name}</span> : <span />}
+                    {hasVar2 && <span className="section-label">{var2Name}</span>}
                     <span className="section-label">SKU</span>
                     <span className="section-label">Custo</span>
                     <span className="section-label">Qtd</span>
@@ -483,21 +482,16 @@ export function StockWizard({ onClose, editProduct }: Props) {
 
                   {/* Rows */}
                   {varRows.map(row => (
-                    <div key={row.tempId} className="grid items-center gap-2 px-3 py-2.5 hover:bg-surface-2/30 transition-colors" style={{ gridTemplateColumns: '32px 1fr 1fr 80px 60px 60px' }}>
-                      {/* Image placeholder */}
-                      <div className="w-8 h-8 rounded border border-dashed border-border flex items-center justify-center bg-surface-2">
-                        <Plus className="w-3.5 h-3.5 text-text-3" />
-                      </div>
-
+                    <div key={row.tempId} className="grid items-center gap-2 px-3 py-2.5 hover:bg-surface-2/30 transition-colors" style={{ gridTemplateColumns: hasVar2 ? '1fr 1fr 80px 60px 60px' : '1fr 80px 60px 60px' }}>
                       {/* Var1 value */}
                       <p className="text-sm font-medium text-foreground truncate">
                         {hasVar2 ? row.atributos[var1Name] : getVariationLabel(row.atributos)}
                       </p>
 
                       {/* Var2 value */}
-                      {hasVar2 ? (
+                      {hasVar2 && (
                         <p className="text-sm font-medium text-foreground truncate">{row.atributos[var2Name]}</p>
-                      ) : <span />}
+                      )}
 
                       {/* SKU */}
                       <input
