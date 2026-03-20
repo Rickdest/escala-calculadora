@@ -1,0 +1,6 @@
+COMMENT ON FUNCTION public.handle_new_user() IS '⚠️ SECURITY DEFINER — runs with owner privileges, bypasses RLS. Keep minimal. Review carefully before modifying.';
+COMMENT ON FUNCTION public.handle_new_user_trial() IS '⚠️ SECURITY DEFINER — runs with owner privileges, bypasses RLS. Keep minimal. Review carefully before modifying.';
+COMMENT ON FUNCTION public.has_role(public.app_role) IS '⚠️ SECURITY DEFINER — runs with owner privileges, bypasses RLS. Read-only role check. Keep minimal.';
+COMMENT ON FUNCTION public.has_active_subscription() IS '⚠️ SECURITY DEFINER — runs with owner privileges, bypasses RLS. Read-only subscription check. Keep minimal.';
+COMMENT ON FUNCTION public.get_own_profile_protected() IS '⚠️ SECURITY DEFINER — runs with owner privileges, bypasses RLS. Read-only profile access for RLS anti-recursion. Keep minimal.';
+COMMENT ON FUNCTION public.update_subscription_status(uuid, text, timestamptz, text, text) IS '⚠️ SECURITY DEFINER — runs with owner privileges, bypasses RLS. EXECUTE revoked from public/authenticated. Service-role only. Keep minimal.';
