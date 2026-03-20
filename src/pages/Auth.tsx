@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,10 +13,20 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [duplicateEmailError, setDuplicateEmailError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [activeTab, setActiveTab] = useState<'signup' | 'login'>('signup');
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (errorMessage) {
+      const timer = setTimeout(() => {
+        setErrorMessage('');
+      }, 6000);
+      return () => clearTimeout(timer);
+    }
+  }, [errorMessage]);
 
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
@@ -54,13 +64,13 @@ export default function Auth() {
         const { error, data } = await signUp(email, password);
         if (error) {
           if (error.message.includes('already registered') || error.message.includes('User already registered')) {
-            toast({ title: 'Email já cadastrado', description: 'Este email já está cadastrado. Faça login ou use outro email.', variant: 'destructive' });
+            setErrorMessage('Email já cadastrado — Faça login ou use outro email.');
             setActiveTab('login');
           } else {
             toast({ title: 'Erro ao criar conta', description: error.message, variant: 'destructive' });
           }
         } else if (data?.user?.identities?.length === 0) {
-          toast({ title: 'Email já cadastrado', description: 'Este email já está cadastrado. Faça login ou use outro email.', variant: 'destructive' });
+          setErrorMessage('Email já cadastrado — Faça login ou use outro email.');
           setActiveTab('login');
         } else {
           toast({ title: 'Conta criada!', description: 'Verifique seu email para confirmar o cadastro.' });
@@ -86,6 +96,13 @@ export default function Auth() {
             3 dias grátis · Sem cartão
           </span>
         </div>
+
+        {/* Inline error banner */}
+        {errorMessage && (
+          <div className="bg-[#EF4444] text-white text-[13px] px-4 py-2.5 rounded-lg max-h-12 flex items-center justify-center">
+            {errorMessage}
+          </div>
+        )}
 
         {/* Card */}
         <div className="bg-[#13161F] border border-[#1F2433] rounded-[14px] p-5">
