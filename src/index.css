@@ -86,7 +86,7 @@
 
   /* Garante botão primário vibrante no tema claro */
   html:not(.dark) .bg-primary {
-    background-color: hsl(11 86% 54%) !important;
+    background-color: hsl(24 95% 53%) !important;
     opacity: 1 !important;
   }
 
