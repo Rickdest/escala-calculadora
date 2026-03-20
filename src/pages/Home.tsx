@@ -185,7 +185,7 @@ export default function Home() {
             </div>
             <div className="surface-card p-3.5">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-sm">⚠️</span>
+                <AlertTriangle className="w-4 h-4 text-warning" />
                 <span className="text-[11px] font-medium text-text-2">Abaixo da meta</span>
               </div>
               <p className={cn('font-mono text-xl font-bold font-mono-num', stats.productsBelowTarget > 0 ? 'text-warning' : 'text-text-3')}>{stats.productsBelowTarget} <span className="text-[13px] font-normal text-text-3">produtos</span></p>
