@@ -397,7 +397,6 @@ function parseGeneralFormatCSV(csvContent: string): ParsedAdsFile | null {
         directConversions: parseBRNumber(getCol(cols, map.directConversions)),
         conversionRate: convRate,
         acos, directAcos: parseBRNumber(getCol(cols, map.directAcos)),
-        costPerConversion: parseBRNumber(getCol(cols, map.costPerConversion)),
         costPerConv: parseBRNumber(getCol(cols, map.costPerConversion)),
         itemsSold,
         directItemsSold: parseBRNumber(getCol(cols, map.directItemsSold)),
