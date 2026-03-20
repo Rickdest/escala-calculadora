@@ -286,20 +286,25 @@
   }
 
   /* Botões secundários/outline visíveis no tema claro */
-  html:not(.dark) .border,
-  html:not(.dark) [class*="outline"],
-  html:not(.dark) .bg-surface-2,
-  html:not(.dark) .bg-background {
-    &:is(button, [role="button"], a[class*="btn"]):not(.bg-primary):not(.bg-destructive):not(.bg-success) {
-      background-color: hsl(0 0% 100%);
-      border: 1.5px solid hsl(11 60% 80%);
-      color: hsl(11 86% 42%);
-      font-weight: 600;
-    }
+  html:not(.dark) button.border:not(.bg-primary):not(.bg-destructive):not(.bg-success),
+  html:not(.dark) button[class*="outline"]:not(.bg-primary):not(.bg-destructive):not(.bg-success),
+  html:not(.dark) button.bg-surface-2:not(.bg-primary):not(.bg-destructive):not(.bg-success),
+  html:not(.dark) button.bg-background:not(.bg-primary):not(.bg-destructive):not(.bg-success),
+  html:not(.dark) [role="button"].border:not(.bg-primary):not(.bg-destructive):not(.bg-success),
+  html:not(.dark) [role="button"][class*="outline"]:not(.bg-primary):not(.bg-destructive):not(.bg-success) {
+    background-color: hsl(0 0% 100%);
+    border: 1.5px solid hsl(11 60% 80%);
+    color: hsl(11 86% 42%);
+    font-weight: 600;
+  }
 
-    &:is(button, [role="button"], a[class*="btn"]):not(.bg-primary):not(.bg-destructive):not(.bg-success):hover {
-      background-color: hsl(16 90% 96%);
-    }
+  html:not(.dark) button.border:not(.bg-primary):not(.bg-destructive):not(.bg-success):hover,
+  html:not(.dark) button[class*="outline"]:not(.bg-primary):not(.bg-destructive):not(.bg-success):hover,
+  html:not(.dark) button.bg-surface-2:not(.bg-primary):not(.bg-destructive):not(.bg-success):hover,
+  html:not(.dark) button.bg-background:not(.bg-primary):not(.bg-destructive):not(.bg-success):hover,
+  html:not(.dark) [role="button"].border:not(.bg-primary):not(.bg-destructive):not(.bg-success):hover,
+  html:not(.dark) [role="button"][class*="outline"]:not(.bg-primary):not(.bg-destructive):not(.bg-success):hover {
+    background-color: hsl(16 90% 96%);
   }
 
   /* Bottom navigation */
