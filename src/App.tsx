@@ -8,39 +8,54 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionContext";
 import { TrialExpiredBlock } from "@/components/TrialExpiredBlock";
-import Home from "./pages/Home";
-import Products from "./pages/Products";
+import { lazy, Suspense } from "react";
 
-import Stores from "./pages/Stores";
-import Settings from "./pages/Settings";
-import Education from "./pages/Education";
-import Auth from "./pages/Auth";
-import Profile from "./pages/Profile";
-import Stock from "./pages/Stock";
-import Roas from "./pages/Roas";
-import Paywall from "./pages/Paywall";
-import NotFound from "./pages/NotFound";
+// Lazy-loaded pages
+const Home = lazy(() => import("./pages/Home"));
+const Products = lazy(() => import("./pages/Products"));
+const Stores = lazy(() => import("./pages/Stores"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Education = lazy(() => import("./pages/Education"));
+const Auth = lazy(() => import("./pages/Auth"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Stock = lazy(() => import("./pages/Stock"));
+const Roas = lazy(() => import("./pages/Roas"));
+const Paywall = lazy(() => import("./pages/Paywall"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
+function PageLoader() {
+  return (
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
+    </div>
+  );
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const { status, loading: subLoading, isActive } = useSubscription();
 
   if (loading || subLoading) {
-    return (
-      <div className="min-h-screen bg-background gradient-mesh flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
 
-  // Block app completely when trial expired or canceled - no exceptions
-  if (status === 'canceled' || status === 'past_due') {
+  // Block app completely when trial expired or canceled
+  if (status === 'canceled' || status === 'past_due' || status === 'expired') {
     return <TrialExpiredBlock />;
   }
 
@@ -55,11 +70,7 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background gradient-mesh flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (user) {
@@ -79,20 +90,21 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <Routes>
-                <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
-                <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-                <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
-                
-                <Route path="/stores" element={<ProtectedRoute><Stores /></ProtectedRoute>} />
-                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                <Route path="/education" element={<ProtectedRoute><Education /></ProtectedRoute>} />
-                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                <Route path="/stock" element={<ProtectedRoute><Stock /></ProtectedRoute>} />
-                <Route path="/roas" element={<ProtectedRoute><Roas /></ProtectedRoute>} />
-                <Route path="/paywall" element={<Paywall />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
+                  <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+                  <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
+                  <Route path="/stores" element={<ProtectedRoute><Stores /></ProtectedRoute>} />
+                  <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                  <Route path="/education" element={<ProtectedRoute><Education /></ProtectedRoute>} />
+                  <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                  <Route path="/stock" element={<ProtectedRoute><Stock /></ProtectedRoute>} />
+                  <Route path="/roas" element={<ProtectedRoute><Roas /></ProtectedRoute>} />
+                  <Route path="/paywall" element={<Paywall />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
             </BrowserRouter>
           </StoreProvider>
           </SubscriptionProvider>
