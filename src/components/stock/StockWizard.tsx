@@ -252,7 +252,13 @@ export function StockWizard({ onClose, editProduct }: Props) {
         // Update each existing variation
         if (temVariacoes) {
           for (const row of varRows) {
-            const existing = editProduct.variacoes.find(v => v.id === row.tempId);
+            let existing = editProduct.variacoes.find(v => v.id === row.tempId);
+            if (!existing) {
+              // Fallback: match by atributos content
+              existing = editProduct.variacoes.find(v =>
+                getVariationLabel(v.atributos as Record<string, string>) === getVariationLabel(row.atributos)
+              );
+            }
             if (existing) {
               await updateVariacao(existing.id, {
                 preco_custo: row.preco_custo,
