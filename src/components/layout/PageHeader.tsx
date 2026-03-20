@@ -19,7 +19,7 @@ export function PageHeader({ title, subtitle, showStoreSelector = true, action }
   const { stores, currentStore, setCurrentStore } = useStore();
 
   return (
-    <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border px-4 py-3.5 safe-top md:px-0 md:py-4">
+    <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border px-4 py-3.5 safe-top md:px-6 md:py-4">
       <div className="flex items-center justify-between max-w-lg mx-auto md:max-w-none">
         <div className="flex items-center gap-2 flex-1">
           <h1 className="text-xl font-bold text-foreground md:text-2xl">{title}</h1>
@@ -30,6 +30,7 @@ export function PageHeader({ title, subtitle, showStoreSelector = true, action }
 
         <div className="flex items-center gap-2">
           {showStoreSelector && currentStore && stores.length > 0 && (
+            <div className="md:hidden">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-2 border border-border hover:border-primary/30 transition-colors">
@@ -55,6 +56,7 @@ export function PageHeader({ title, subtitle, showStoreSelector = true, action }
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+            </div>
           )}
           
           {action}

@@ -15,7 +15,7 @@ export function BottomNavigation() {
   const navigate = useNavigate();
 
   return (
-    <nav className="bottom-nav">
+    <nav className="bottom-nav md:hidden">
       <div className="flex items-center justify-around max-w-lg mx-auto">
         {navItems.map(({ icon: Icon, label, path }) => {
           const isActive = location.pathname === path;
