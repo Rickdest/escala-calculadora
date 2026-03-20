@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,10 +13,20 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [duplicateEmailError, setDuplicateEmailError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [activeTab, setActiveTab] = useState<'signup' | 'login'>('signup');
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (errorMessage) {
+      const timer = setTimeout(() => {
+        setErrorMessage('');
+      }, 6000);
+      return () => clearTimeout(timer);
+    }
+  }, [errorMessage]);
 
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
