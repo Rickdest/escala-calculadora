@@ -212,7 +212,7 @@ export default function Stock() {
 
       {showWizard && (
         <StockWizard
-          onClose={() => { setShowWizard(false); setEditProduct(null); }}
+          onClose={() => { setShowWizard(false); setEditProduct(null); reload(); }}
           editProduct={editProduct}
         />
       )}
