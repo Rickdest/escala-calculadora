@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useBilling } from '@/hooks/useBilling';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,13 +7,10 @@ import { toast } from 'sonner';
 import logoIcon from '@/assets/logo-icon.png';
 
 const benefits = [
-  'Cálculo automático de todas as taxas da Shopee',
-  'Lucro real por produto',
-  'ROAS de empate, saudável e ideal',
-  'Histórico de produtos salvos',
-  'Compartilhar resultados',
-  'Conteúdo educacional exclusivo',
-  'Controle de estoque (bônus)',
+  { icon: '💰', text: 'Lucro real por produto' },
+  { icon: '📊', text: 'ROAS ideal para seus ads' },
+  { icon: '🏷️', text: 'Taxas automáticas' },
+  { icon: '📚', text: 'Conteúdo exclusivo' },
 ];
 
 export function TrialExpiredBlock() {
@@ -26,11 +23,7 @@ export function TrialExpiredBlock() {
     setChecking(true);
     try {
       await refreshSubscription();
-      // We need a small delay to let state propagate
       setTimeout(() => {
-        // Re-check after refresh — isActive won't update in this closure,
-        // so we rely on the context re-render to redirect via the parent gate.
-        // If still on this screen after refresh, show error toast.
         setChecking(false);
       }, 500);
     } catch {
@@ -39,86 +32,106 @@ export function TrialExpiredBlock() {
     }
   };
 
-  // If subscription became active after refresh, redirect
   if (isActive && !checking) {
     navigate('/', { replace: true });
     return null;
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-sm space-y-6">
-        <div className="flex flex-col items-center gap-3">
-          <img src={logoIcon} alt="Precify" className="w-10 h-10 rounded-xl opacity-60" />
-          <div className="w-12 h-12 rounded-full border border-border/50 flex items-center justify-center">
-            <Lock className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
-          </div>
+    <div className="min-h-screen bg-background flex items-center justify-center px-5 py-8">
+      <div className="w-full max-w-sm" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        {/* Logo */}
+        <div className="flex justify-center">
+          <img src={logoIcon} alt="Precify" className="w-10 h-10 rounded-xl" />
         </div>
 
+        {/* Headline */}
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold text-foreground">Seu teste gratuito encerrou</h1>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            Continue tendo acesso a tudo que o Precify oferece.
+          <h1 className="text-foreground font-bold leading-tight" style={{ fontSize: '24px' }}>
+            Continue precificando{'\n'}com inteligência
+          </h1>
+          <p className="text-muted-foreground leading-relaxed" style={{ fontSize: '14px' }}>
+            Você usou o período de teste.{' '}
+            Garanta seu acesso por menos de R$4,16 por mês.
           </p>
         </div>
 
-        <div className="rounded-xl border border-border/40 bg-card/50 p-5 space-y-3">
-          <p className="text-xs font-semibold text-muted-foreground tracking-wide text-center">
-            O que você tem acesso
-          </p>
-          <div className="space-y-2.5">
-            {benefits.map((b) => (
-              <div key={b} className="flex items-start gap-2.5">
-                <ArrowRight className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" strokeWidth={2} />
-                <span className="text-sm text-foreground/80 leading-snug">{b}</span>
-              </div>
-            ))}
+        {/* Benefits grid */}
+        <div className="grid grid-cols-2 gap-2.5">
+          {benefits.map((b) => (
+            <div
+              key={b.text}
+              className="rounded-[10px] border border-border bg-[hsl(var(--surface-2,228_15%_13%))] p-3 flex items-start gap-2"
+            >
+              <span style={{ fontSize: '20px', lineHeight: '1' }}>{b.icon}</span>
+              <span className="text-foreground/90" style={{ fontSize: '13px', lineHeight: '1.3' }}>{b.text}</span>
+            </div>
+          ))}
+          <div className="col-span-2 rounded-[10px] border border-border bg-[hsl(var(--surface-2,228_15%_13%))] p-3 flex items-center justify-center gap-2">
+            <span style={{ fontSize: '20px', lineHeight: '1' }}>📦</span>
+            <span className="text-foreground/90" style={{ fontSize: '13px' }}>Controle de estoque (bônus)</span>
           </div>
         </div>
 
-        <div className="text-center space-y-1">
-          <p className="text-3xl font-bold text-foreground">
-            R$ 49,90 <span className="text-base font-normal text-muted-foreground">/ano</span>
+        {/* Price */}
+        <div className="text-center space-y-1.5">
+          <span
+            className="inline-block rounded-full bg-primary/15 text-primary font-semibold px-3 py-1"
+            style={{ fontSize: '12px' }}
+          >
+            Oferta de lançamento
+          </span>
+          <p className="text-foreground font-bold font-mono" style={{ fontSize: '36px', lineHeight: '1.1' }}>
+            R$ 49,90 <span className="text-muted-foreground font-normal" style={{ fontSize: '16px' }}>/ano</span>
           </p>
-          <p className="text-sm text-muted-foreground">menos de R$ 4,16 por mês</p>
+          <p className="text-muted-foreground/60" style={{ fontSize: '13px' }}>
+            menos de R$ 4,16 por mês
+          </p>
         </div>
 
+        {/* CTA */}
         <button
           onClick={handleCheckout}
-          className="w-full h-14 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-[17px] transition-colors active:scale-[0.98]"
+          className="w-full rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold transition-colors active:scale-[0.98]"
+          style={{ height: '56px', fontSize: '17px', borderRadius: '12px' }}
         >
-          ⚡ Quero acesso completo
+          ⚡ Garantir acesso agora
         </button>
 
-        <p className="text-center text-xs text-muted-foreground">
-          🔒 Pagamento seguro · Cancele quando quiser
+        {/* Microcopy */}
+        <p className="text-center text-muted-foreground/60" style={{ fontSize: '13px' }}>
+          🔒 Pagamento seguro via Cakto
         </p>
 
-        <button
-          onClick={handleVerifyAccess}
-          disabled={checking}
-          className="w-full text-center text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-        >
-          {checking ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Verificando...
-            </>
-          ) : (
-            'Já assinei → Verificar acesso'
-          )}
-        </button>
+        {/* Secondary buttons */}
+        <div className="flex flex-col items-center">
+          <button
+            onClick={handleVerifyAccess}
+            disabled={checking}
+            className="text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors disabled:opacity-50 flex items-center gap-2"
+            style={{ fontSize: '13px' }}
+          >
+            {checking ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Verificando...
+              </>
+            ) : (
+              'Já assinei → Verificar acesso'
+            )}
+          </button>
 
-        <button
-          onClick={async () => {
-            await signOut();
-            navigate('/auth', { replace: true });
-          }}
-          className="w-full text-center text-muted-foreground hover:text-foreground transition-colors"
-          style={{ fontSize: '13px' }}
-        >
-          Sair da conta
-        </button>
+          <button
+            onClick={async () => {
+              await signOut();
+              navigate('/auth', { replace: true });
+            }}
+            className="text-muted-foreground/60 hover:text-foreground transition-colors"
+            style={{ fontSize: '13px', paddingTop: '8px' }}
+          >
+            Sair da conta
+          </button>
+        </div>
       </div>
     </div>
   );
