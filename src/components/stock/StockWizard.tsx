@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { saveLocalStockImage, getLocalStockImage } from '@/hooks/useEstoque';
+import { compressImage } from '@/lib/imageUtils';
 
 const CATEGORIES = ['Moda', 'Calçados', 'Acessórios', 'Eletrônicos', 'Beleza', 'Casa e Decoração', 'Esporte', 'Alimentos', 'Outro'];
 
