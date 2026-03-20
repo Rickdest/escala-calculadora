@@ -51,13 +51,17 @@ export default function Auth() {
           navigate('/');
         }
       } else {
-        const { error } = await signUp(email, password);
+        const { error, data } = await signUp(email, password);
         if (error) {
           if (error.message.includes('already registered') || error.message.includes('User already registered')) {
-            setDuplicateEmailError(true);
+            toast({ title: 'Email já cadastrado', description: 'Este email já está cadastrado. Faça login ou use outro email.', variant: 'destructive' });
+            setActiveTab('login');
           } else {
             toast({ title: 'Erro ao criar conta', description: error.message, variant: 'destructive' });
           }
+        } else if (data?.user?.identities?.length === 0) {
+          toast({ title: 'Email já cadastrado', description: 'Este email já está cadastrado. Faça login ou use outro email.', variant: 'destructive' });
+          setActiveTab('login');
         } else {
           toast({ title: 'Conta criada!', description: 'Verifique seu email para confirmar o cadastro.' });
         }
