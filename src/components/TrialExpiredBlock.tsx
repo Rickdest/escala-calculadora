@@ -108,6 +108,17 @@ export function TrialExpiredBlock() {
             'Já assinei → Verificar acesso'
           )}
         </button>
+
+        <button
+          onClick={async () => {
+            await signOut();
+            navigate('/auth', { replace: true });
+          }}
+          className="w-full text-center text-muted-foreground hover:text-foreground transition-colors"
+          style={{ fontSize: '13px' }}
+        >
+          Sair da conta
+        </button>
       </div>
     </div>
   );
