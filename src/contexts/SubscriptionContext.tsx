@@ -61,9 +61,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const isActive = status === 'active' || status === 'trialing';
 
+  const refreshSubscription = useCallback(async () => {
+    await fetchSubscription(true);
+  }, [fetchSubscription]);
+
   return (
     <SubscriptionContext.Provider
-      value={{ status, plan, isActive, trialEnd, loading, refreshSubscription: fetchSubscription }}
+      value={{ status, plan, isActive, trialEnd, loading, refreshSubscription }}
     >
       {children}
     </SubscriptionContext.Provider>
