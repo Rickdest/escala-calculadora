@@ -24,7 +24,6 @@ import { toast } from 'sonner';
 import {
   ResponsiveContainer, PieChart as RechartsPie, Pie, Cell, Tooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, RadialBarChart, RadialBar,
-  Legend
 } from 'recharts';
 import { TooltipLabel, getTooltipText } from '@/components/roas/TooltipLabel';
 import { ProductHealthBanner } from '@/components/roas/ProductHealthBanner';
