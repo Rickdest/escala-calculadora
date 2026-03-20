@@ -543,8 +543,8 @@ export function StockWizard({ onClose, editProduct }: Props) {
                   </div>
 
                   {/* Rows */}
-                  {varRows.map(row => (
-                    <div key={row.tempId} className="grid items-center gap-2 px-3 py-2.5 hover:bg-surface-2/30 transition-colors" style={{ gridTemplateColumns: hasVar2 ? '1fr 1fr 80px 60px 60px' : '1fr 80px 60px 60px' }}>
+                  {varRows.map((row, idx) => (
+                    <div key={row.tempId + '-' + idx} className="grid items-center gap-2 px-3 py-2.5 hover:bg-surface-2/30 transition-colors" style={{ gridTemplateColumns: hasVar2 ? '1fr 1fr 80px 60px 60px' : '1fr 80px 60px 60px' }}>
                       {/* Var1 value */}
                       <p className="text-sm font-medium text-foreground truncate">
                         {hasVar2 ? row.atributos[var1Name] : getVariationLabel(row.atributos)}
