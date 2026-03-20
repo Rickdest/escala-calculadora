@@ -109,6 +109,7 @@ const App = () => (
               </Suspense>
             </BrowserRouter>
           </StoreProvider>
+          </SidebarProvider>
           </SubscriptionProvider>
         </AuthProvider>
       </TooltipProvider>
