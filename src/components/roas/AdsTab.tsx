@@ -227,7 +227,7 @@ function RankingSection({ ads }: { ads: ShopeeAdRow[] }) {
             <div key={i}>
               <button
                 onClick={() => setExpandedIndex(isOpen ? null : i)}
-                className="w-full p-3.5 flex items-center gap-2 text-left hover:bg-card/50 transition-colors"
+                className="w-full p-2.5 md:p-3.5 flex items-center gap-2 text-left hover:bg-card/50 transition-colors"
               >
                 <span className={cn(
                   'w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-extrabold font-mono flex-shrink-0 bg-surface-2 border border-border',
@@ -237,7 +237,7 @@ function RankingSection({ ads }: { ads: ShopeeAdRow[] }) {
                 </span>
                 <div className="flex-1 min-w-0 px-1">
                   <div className="flex items-center gap-1.5">
-                    <p className="text-[13px] font-bold text-foreground truncate">{truncate(ad.adName, 40)}</p>
+                    <p className="text-[13px] font-bold text-foreground truncate">{truncate(ad.adName, 24)}</p>
                     <StatusIcon className={cn('w-4 h-4 flex-shrink-0', statusIcon.color)} />
                   </div>
                   <p className="text-[11px] text-muted-foreground font-mono tabular-nums mt-0.5">
@@ -251,9 +251,9 @@ function RankingSection({ ads }: { ads: ShopeeAdRow[] }) {
               </button>
 
               {isOpen && (
-                <div className="px-3.5 pb-3.5 space-y-3 animate-fade-in">
+                <div className="px-2.5 pb-2.5 md:px-3.5 md:pb-3.5 space-y-3 animate-fade-in">
                   <div className="h-px bg-border" />
-                  <div className="grid grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div>
                       <p className="text-[9px] text-muted-foreground uppercase">ACOS</p>
                       <p className={cn('text-[13px] font-bold font-mono tabular-nums', getAcosColor(ad.acos))}>{ad.acos.toFixed(1)}%</p>

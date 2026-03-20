@@ -80,7 +80,7 @@ export default function Stock() {
 
       <div className="px-4 space-y-3 pb-24">
         {/* Stats row */}
-        <div className="grid grid-cols-4 gap-2 animate-fade-up md:flex md:gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 animate-fade-up md:flex md:gap-3">
           {[
             { label: 'Total', value: stats.total, color: 'text-foreground' },
             { label: 'Ativo', value: stats.ativo, color: 'text-success' },

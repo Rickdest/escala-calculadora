@@ -130,7 +130,7 @@ export default function Home() {
         </div>
 
         {/* Store Metrics - sidebar on desktop */}
-        <div className="space-y-4">
+        <div className="space-y-4 order-2 md:order-none">
           <div className="animate-fade-up stagger-2">
             <p className="section-label mb-3">Métricas da Loja</p>
             <div className="grid grid-cols-2 md:grid-cols-1 gap-3">
@@ -178,7 +178,7 @@ export default function Home() {
         </div>
 
         {/* Tools Grid */}
-        <div className="animate-fade-up md:col-span-full">
+        <div className="animate-fade-up md:col-span-full order-3 md:order-none">
           <p className="section-label mb-3">Ferramentas</p>
           <div className="grid grid-cols-4 md:grid-cols-8 gap-y-3 gap-x-2">
             {toolItems.map((item) => (
@@ -203,7 +203,7 @@ export default function Home() {
 
         {/* Top Products */}
         {topProducts.length > 0 && (
-          <div className="space-y-2 animate-fade-up stagger-4 md:col-span-full">
+          <div className="space-y-2 animate-fade-up stagger-4 md:col-span-full order-4 md:order-none">
             <div className="flex items-center justify-between">
               <p className="section-label">Seus Produtos</p>
               <button onClick={() => navigate('/products')} className="text-xs text-primary font-medium flex items-center gap-0.5">

@@ -132,7 +132,7 @@ function RoasGauge({ roasAtual, roasEmpate, roasIdeal, status }: {
 
   return (
     <div className="relative w-full flex flex-col items-center">
-      <ResponsiveContainer width="100%" height={160}>
+      <ResponsiveContainer width="100%" height={140}>
         <RadialBarChart
           cx="50%" cy="85%" innerRadius="70%" outerRadius="100%"
           startAngle={180} endAngle={0} barSize={12} data={data}
@@ -589,14 +589,14 @@ function ProductAnalysis() {
               <ProductHealthBanner marginPercent={marginPercent} />
 
               {/* Hero Results - 3-column KPIs with tooltips */}
-              <div className="grid grid-cols-3 gap-2 animate-fade-in">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 animate-fade-in">
                 {[
                   { label: 'ROAS Empate', value: roasData.roasEmpate!.toFixed(2) + 'x', color: 'text-orange-400', tip: 'ROAS mínimo para não ter prejuízo. Abaixo disso cada venda com anúncio gera perda.' },
                   { label: 'Lucro Médio', value: roasData.roasSaudavel!.toFixed(2) + 'x', color: 'text-primary', tip: 'A partir daqui o lucro já é consistente e seguro para escalar.' },
                   { label: 'Lucrativo', value: roasData.roasIdeal!.toFixed(2) + 'x', color: 'text-success', tip: 'Margem excelente. Nesse nível vale aumentar o investimento em Ads com confiança.' },
                 ].map(({ label, value, color, tip }) => (
-                  <div key={label} className="rounded-xl border border-border bg-card p-3 text-center">
-                    <div className="flex items-center justify-center gap-1">
+                  <div key={label} className="rounded-xl border border-border bg-card p-3 flex items-center justify-between md:flex-col md:text-center">
+                    <div className="flex items-center gap-1 md:justify-center">
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">{label}</p>
                       <ShadTooltipProvider delayDuration={200}>
                         <ShadTooltip>
@@ -611,7 +611,7 @@ function ProductAnalysis() {
                         </ShadTooltip>
                       </ShadTooltipProvider>
                     </div>
-                    <p className={cn('font-extrabold tabular-nums font-mono text-lg mt-1', color)}>{value}</p>
+                    <p className={cn('font-extrabold tabular-nums font-mono text-lg md:mt-1', color)}>{value}</p>
                   </div>
                 ))}
               </div>
@@ -651,20 +651,6 @@ function ProductAnalysis() {
                 );
               })()}
 
-              {/* Insight Banner */}
-              {status && (() => {
-                const insight = getRoasInsight(status);
-                if (!insight) return null;
-                return (
-                  <div className={cn('rounded-xl border p-4 flex items-start gap-3 animate-fade-in', statusBg[status as keyof typeof statusBg])}>
-                    <span className="text-2xl mt-0.5">{insight.emoji}</span>
-                    <div className="flex-1">
-                      <p className={cn('font-bold text-sm', statusColors[status as keyof typeof statusColors])}>{insight.title}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{insight.desc}</p>
-                    </div>
-                  </div>
-                );
-              })()}
 
               {/* Gauge + Cost Breakdown */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
