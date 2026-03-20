@@ -486,24 +486,26 @@ export function StockWizard({ onClose, editProduct }: Props) {
                               <td className="px-2 py-2 align-top font-medium" rowSpan={group.rows.length}>
                                 <div className="space-y-1">
                                   <span>{group.key}</span>
-                                  {/* Group image upload */}
-                                  <button
-                                    onClick={() => groupFileRefs.current[group.key]?.click()}
-                                    className="block w-10 h-10 rounded border border-dashed border-border hover:border-primary/50 overflow-hidden"
-                                  >
-                                    {groupImages[group.key] ? (
-                                      <img src={groupImages[group.key]} alt="" className="w-full h-full object-cover" />
-                                    ) : (
-                                      <Camera className="w-3.5 h-3.5 text-text-3 m-auto mt-2.5" />
-                                    )}
-                                  </button>
-                                  <input
-                                    ref={el => { groupFileRefs.current[group.key] = el; }}
-                                    type="file"
-                                    accept="image/*"
-                                    className="hidden"
-                                    onChange={e => handleGroupImageSelect(group.key, e)}
-                                  />
+                                  {/* Group image upload — hidden on mobile */}
+                                  <div className="hidden md:block">
+                                    <button
+                                      onClick={() => groupFileRefs.current[group.key]?.click()}
+                                      className="block w-10 h-10 rounded border border-dashed border-border hover:border-primary/50 overflow-hidden"
+                                    >
+                                      {groupImages[group.key] ? (
+                                        <img src={groupImages[group.key]} alt="" className="w-full h-full object-cover" />
+                                      ) : (
+                                        <Camera className="w-3.5 h-3.5 text-text-3 m-auto mt-2.5" />
+                                      )}
+                                    </button>
+                                    <input
+                                      ref={el => { groupFileRefs.current[group.key] = el; }}
+                                      type="file"
+                                      accept="image/*"
+                                      className="hidden"
+                                      onChange={e => handleGroupImageSelect(group.key, e)}
+                                    />
+                                  </div>
                                 </div>
                               </td>
                             )}
