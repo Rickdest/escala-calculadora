@@ -1,11 +1,11 @@
-import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useStore } from '@/contexts/StoreContext';
 import { getShopeeFeeForPrice, Product } from '@/types/store';
 import { cn } from '@/lib/utils';
 import {
-  Target, AlertTriangle, TrendingUp, TrendingDown, Upload,
-  FileSpreadsheet, Trash2, Eye, Package, Search, DollarSign,
-  BarChart3, PieChart, Zap, Percent, Info, Megaphone
+  Target, AlertTriangle, TrendingUp, TrendingDown,
+  Package, Search, DollarSign,
+  BarChart3, PieChart, Zap, Percent, Info, Megaphone, Minus
 } from 'lucide-react';
 import {
   Tooltip as ShadTooltip,
@@ -16,8 +16,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 import {
   ResponsiveContainer, PieChart as RechartsPie, Pie, Cell, Tooltip,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -183,7 +181,7 @@ function ProductSelector({ products, selectedId, onSelect }: { products: Product
           <Input placeholder="Buscar produto..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 input-modern h-10 text-sm" />
         </div>
       )}
-      <div className="grid grid-cols-1 gap-1.5 max-h-[260px] overflow-y-auto pr-0.5 scrollbar-thin" style={{ overscrollBehavior: 'contain' }}>
+      <div className="grid grid-cols-1 gap-1.5 max-h-[260px] overflow-y-auto pr-0.5 scrollbar-none" style={{ overscrollBehavior: 'contain', scrollbarWidth: 'none' }}>
         {filtered.map(p => {
           const isActive = p.id === selectedId;
           const roasData = calcRoasFromValues(p.salePrice, p.costPrice, p.adsCost, p.adsRevenue);
@@ -335,8 +333,8 @@ function ProductAnalysis() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2 animate-fade-in">
                 {[
                   { label: 'ROAS Empate', value: roasData.roasEmpate!.toFixed(2) + 'x', color: 'text-orange-400', tip: 'ROAS mínimo para não ter prejuízo. Abaixo disso cada venda com anúncio gera perda.' },
-                  { label: 'Lucro Médio', value: roasData.roasSaudavel!.toFixed(2) + 'x', color: 'text-primary', tip: 'A partir daqui o lucro já é consistente e seguro para escalar.' },
-                  { label: 'Lucrativo', value: roasData.roasIdeal!.toFixed(2) + 'x', color: 'text-success', tip: 'Margem excelente. Nesse nível vale aumentar o investimento em Ads com confiança.' },
+                  { label: 'ROAS Saudável', value: roasData.roasSaudavel!.toFixed(2) + 'x', color: 'text-primary', tip: 'A partir daqui o lucro já é consistente e seguro para escalar.' },
+                  { label: 'ROAS Ideal', value: roasData.roasIdeal!.toFixed(2) + 'x', color: 'text-success', tip: 'Margem excelente. Nesse nível vale aumentar o investimento em Ads com confiança.' },
                 ].map(({ label, value, color, tip }) => (
                   <div key={label} className="rounded-xl border border-border bg-card p-3 flex items-center justify-between md:flex-col md:text-center">
                     <div className="flex items-center gap-1 md:justify-center">
@@ -387,8 +385,8 @@ function ProductAnalysis() {
                   <div className="flex justify-between text-[10px] text-muted-foreground font-bold">
                     <span>0</span>
                     <span className="text-orange-400">Empate {roasData.roasEmpate.toFixed(1)}</span>
-                    <span className="text-yellow-400">L.Médio {roasData.roasSaudavel?.toFixed(1)}</span>
-                    <span className="text-success">Lucrativo {roasData.roasIdeal.toFixed(1)}</span>
+                    <span className="text-yellow-400">Saudável {roasData.roasSaudavel?.toFixed(1)}</span>
+                    <span className="text-success">Ideal {roasData.roasIdeal.toFixed(1)}</span>
                   </div>
                 </div>
               )}
@@ -506,7 +504,10 @@ function RoasRanking() {
               <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 px-1">
                 <TrendingUp className="w-3 h-3" /> Com dados de Ads ({withAds.length})
               </p>
-              {withAds.map((r, i) => (
+              {withAds.map((r, i) => {
+                const rankIcon = r.roasAtual! >= 5 ? TrendingUp : r.roasAtual! >= 2 ? AlertTriangle : TrendingDown;
+                const RankIcon = rankIcon;
+                return (
                 <div key={r.product.id} className="rounded-xl border border-border bg-card p-4 animate-fade-in transition-all duration-200 hover:border-primary/20" style={{ animationDelay: `${i * 50}ms` }}>
                   <div className="flex items-center gap-3">
                     <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center text-sm font-extrabold flex-shrink-0',
@@ -514,26 +515,27 @@ function RoasRanking() {
                       #{i + 1}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-foreground truncate text-sm">{r.product.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-bold text-foreground truncate text-sm flex-1">{r.product.name}</p>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <RankIcon className={cn('w-4 h-4', r.roasAtual! >= 5 ? 'text-success' : r.roasAtual! >= 2 ? 'text-warning' : 'text-destructive')} />
+                          <span className={cn('font-extrabold text-xl tabular-nums font-mono', statusColors[r.status as keyof typeof statusColors])}>{r.roasAtual!.toFixed(2)}</span>
+                        </div>
+                      </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-xs text-muted-foreground tabular-nums font-mono">{formatCurrency(r.product.adsCost)}</span>
                         <span className="text-xs text-muted-foreground">→</span>
                         <span className="text-xs text-success font-semibold tabular-nums font-mono">{formatCurrency(r.product.adsRevenue)}</span>
                       </div>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <div className="flex items-center gap-1.5 justify-end">
-                        {r.status === 'success' ? <TrendingUp className="w-4 h-4 text-success" /> : r.status === 'danger' ? <TrendingDown className="w-4 h-4 text-destructive" /> : <Target className="w-4 h-4 text-warning" />}
-                        <span className={cn('font-extrabold text-xl tabular-nums font-mono', statusColors[r.status as keyof typeof statusColors])}>{r.roasAtual!.toFixed(2)}</span>
-                      </div>
-                      <div className="flex gap-3 text-[10px] text-muted-foreground mt-0.5">
+                      <div className="flex gap-3 text-[11px] text-muted-foreground mt-1">
                         <span>Emp: <span className="text-warning font-bold font-mono">{r.roasEmpate?.toFixed(1)}</span></span>
                         <span>Ideal: <span className="text-primary font-bold font-mono">{r.roasIdeal?.toFixed(1)}</span></span>
                       </div>
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
           {withoutAds.length > 0 && (
