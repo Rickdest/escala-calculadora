@@ -94,6 +94,15 @@ export default function Stock() {
           ))}
         </div>
 
+        {stats.valorTotal > 0 && (
+          <div className="surface-card px-4 py-3 flex items-center justify-between animate-fade-up">
+            <p className="section-label">CAPITAL EM ESTOQUE</p>
+            <p className="font-mono font-mono-num text-sm font-bold text-foreground">
+              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.valorTotal)}
+            </p>
+          </div>
+        )}
+
         {/* Search */}
         <div className="relative animate-fade-up">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-3" />
