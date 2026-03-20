@@ -234,7 +234,7 @@ export default function Home() {
         )}
 
         {stats.totalProducts === 0 && (
-          <div className="text-center py-10 animate-fade-up md:col-span-12">
+          <div className="text-center py-10 animate-fade-up md:col-span-full">
             <div className="w-14 h-14 rounded-xl bg-surface-2 mx-auto flex items-center justify-center mb-3">
               <Package className="w-7 h-7 text-text-3" />
             </div>

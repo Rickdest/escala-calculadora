@@ -309,7 +309,7 @@ export default function Products() {
                   ))}
                 </div>
 
-                <div className="space-y-0">
+                <div className="space-y-0 md:max-w-[800px]">
                   <p className="text-sm font-semibold text-foreground mb-2">Ranking de Produtos</p>
                   <div className="surface-card divide-y divide-border">
                     {analysisProducts.map(({ product, calc }, index) => (

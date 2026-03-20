@@ -20,7 +20,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Main content */}
       <div className={cn(
         'transition-all duration-200 ease-in-out',
-        collapsed ? 'md:pl-16' : 'md:pl-60'
+        collapsed ? 'md:pl-[60px]' : 'md:pl-[200px]'
       )}>
         {/* Desktop header */}
         <DesktopHeader />

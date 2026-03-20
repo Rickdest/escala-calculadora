@@ -66,7 +66,7 @@ export function Sidebar() {
               )}
             >
               <Icon className="w-5 h-5 flex-shrink-0" strokeWidth={isActive ? 2.5 : 2} />
-              {!collapsed && <span className="truncate">{label}</span>}
+              {!collapsed && <span className={cn('truncate text-[13px]', isActive ? 'text-primary' : 'text-text-3')}>{label}</span>}
             </button>
           );
 
