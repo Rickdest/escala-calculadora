@@ -1,92 +1,60 @@
 
 
-# Fix: Variation edit save not persisting
+## Plano: Verificar e Melhorar Responsividade Mobile
 
-## Root Cause
+Após análise completa do código em todas as páginas, identifiquei os seguintes problemas e melhorias para mobile (390px viewport):
 
-When editing a product with variations, two bugs prevent saving:
+---
 
-1. **Lost DB IDs on regeneration**: The `editInitRef` skips combination regeneration only once. If the user touches anything in the variation blocks (or even if the `attributes` memo recalculates), the `useEffect` fires, regenerates `varRows` with **new random `tempId`s**, and loses the real database UUIDs. When `handleSave` then does `editProduct.variacoes.find(v => v.id === row.tempId)`, it finds nothing because `tempId` is now a random string like `"a3f8b2c1d9e"` instead of the actual UUID.
+### Problemas Encontrados
 
-2. **Duplicate keys**: The combination generator can produce rows with colliding `tempId`s, causing React warnings.
+**1. Home — Grid de ferramentas e layout**
+- O grid `md:grid-cols-[3fr_2fr]` está correto para desktop, mas no mobile o `space-y-4` se perde porque o `md:space-y-0` é aplicado junto com `md:grid`. Isso funciona, mas a seção "Ferramentas" tem `md:col-span-full` que força ela abaixo das duas colunas — no mobile fica OK, mas "Seus Produtos" também tem `md:col-span-full` e aparece após ferramentas, quebrando a ordem visual mobile (ferramentas deveria vir depois de métricas no mobile).
 
-## Fix (single file: `StockWizard.tsx`)
+**2. RoasAnalysis — KPI cards 3 colunas apertados em 390px**
+- Os 3 cards de ROAS (Empate / Lucro Médio / Lucrativo) usam `grid-cols-3` sem responsividade. Em 390px com padding, cada card tem ~110px — os labels "Lucro Médio" e "Lucrativo" ficam apertados. Texto pode quebrar.
 
-### Change 1: Preserve real IDs during regeneration
+**3. RoasAnalysis — Diagnostic Banner + Insight Banner duplicados**
+- Há dois banners de diagnóstico consecutivos (linhas 620-667): o "Diagnostic Banner" e o "Insight Banner" mostram essencialmente a mesma informação com textos muito similares, ocupando espaço duplo no mobile.
 
-In the `useEffect` that regenerates combinations (lines 121-139), when matching existing rows, also try to match by atributos content against the **original** `editProduct.variacoes` to recover real DB IDs:
+**4. RoasAnalysis — ProductSelector overflow**
+- A lista de produtos com `max-h-[260px]` + cards de 4 colunas + gauge chart + barra ROAS torna o scroll muito longo no mobile. O layout `md:grid-cols-12` com col-span-4/8 funciona no desktop mas no mobile empilha tudo verticalmente.
 
-```typescript
-useEffect(() => {
-  if (!temVariacoes) return;
-  if (editInitRef.current) {
-    editInitRef.current = false;
-    return;
-  }
-  const combos = generateVariationCombinations(attributes);
-  if (combos.length === 0) { setVarRows([]); return; }
-  
-  // Build lookup from current varRows by label
-  const existingMap = new Map<string, VarRow>();
-  for (const v of varRows) existingMap.set(getVariationLabel(v.atributos), v);
-  
-  // Also build lookup from editProduct variacoes to recover real DB IDs
-  const dbMap = new Map<string, string>();
-  if (editProduct?.variacoes) {
-    for (const v of editProduct.variacoes) {
-      dbMap.set(getVariationLabel(v.atributos as Record<string,string>), v.id);
-    }
-  }
-  
-  const rows: VarRow[] = combos.map(combo => {
-    const label = getVariationLabel(combo);
-    const existing = existingMap.get(label);
-    if (existing) return { ...existing, atributos: combo };
-    // Try to recover DB ID for this combo
-    const dbId = dbMap.get(label);
-    return {
-      tempId: dbId || Math.random().toString(36).substring(2, 15),
-      atributos: combo, sku: '', preco_custo: 0, quantidade: 0, quantidade_minima: 5
-    };
-  });
-  setVarRows(rows);
-}, [temVariacoes, attributes]);
-```
+**5. Stock — Stats cards em 4 colunas no mobile**
+- `grid-cols-4` em 390px = ~85px por card. Os números `text-2xl` ficam aceitáveis, mas o label pode ficar apertado.
 
-### Change 2: Fix handleSave to match by atributos as fallback
+**6. AdsTab — Ranking items com muitos elementos na mesma linha**
+- O badge `#N` (w-8) + nome + status icon + ROAS value + chevron na mesma linha pode causar overflow em 375px.
 
-In `handleSave` (line 241-252), if `find(v => v.id === row.tempId)` fails, fall back to matching by atributos:
+---
 
-```typescript
-if (temVariacoes) {
-  for (const row of varRows) {
-    let existing = editProduct.variacoes.find(v => v.id === row.tempId);
-    if (!existing) {
-      // Fallback: match by atributos content
-      existing = editProduct.variacoes.find(v =>
-        getVariationLabel(v.atributos as Record<string,string>) === getVariationLabel(row.atributos)
-      );
-    }
-    if (existing) {
-      await updateVariacao(existing.id, {
-        preco_custo: row.preco_custo,
-        quantidade: row.quantidade,
-        quantidade_minima: row.quantidade_minima,
-        sku: row.sku || null,
-        atributos: row.atributos,
-      });
-    }
-  }
-}
-```
+### Correções Propostas
 
-### Change 3: Fix duplicate keys in render
+**Arquivo: `src/components/charts/RoasAnalysis.tsx`**
+1. Remover o "Insight Banner" duplicado (linhas 654-667) — o "Diagnostic Banner" já cobre a mesma funcionalidade com mensagens melhores
+2. KPI cards: usar `grid-cols-1` em mobile com layout horizontal compacto (label + valor na mesma linha), `grid-cols-3` em desktop
+3. Reduzir tamanho do gauge chart no mobile de 160px para 140px
 
-Ensure each `varRow` key uses a unique combination of `tempId + label` to avoid React duplicate key warnings. In the render loop, use `key={row.tempId + '-' + getVariationLabel(row.atributos)}`.
+**Arquivo: `src/components/roas/AdsTab.tsx`**
+4. No ranking, truncar nomes para 24 chars no mobile (já está 40, muito longo para 375px)
+5. Reduzir padding no ranking item de `p-3.5` para `p-2.5` no mobile
+6. Métricas expandidas: usar `grid-cols-2` em mobile ao invés de `grid-cols-4`
 
-## Summary
+**Arquivo: `src/pages/Home.tsx`**
+7. Reordenar as seções no mobile: Calculadora → Métricas → Ferramentas → Produtos (atualmente ferramentas vem depois de produtos no DOM mas o grid reordena no desktop)
 
-- File changed: `src/components/stock/StockWizard.tsx`
-- No database changes needed
-- No new dependencies
+**Arquivo: `src/pages/Stock.tsx`**
+8. Stats cards: usar `grid-cols-2` no mobile com `grid-cols-4` no desktop (de `grid-cols-4 md:flex`)
+
+---
+
+### Detalhes Técnicos
+
+- KPI cards: `grid grid-cols-1 md:grid-cols-3 gap-2` com cada card usando `flex items-center justify-between` no mobile
+- Ranking truncate: usar `useIsMobile()` hook ou simplesmente reduzir truncate para 24 e usar `sm:truncate` patterns
+- Stats Stock: `grid-cols-2 md:grid-cols-4`
+- AdsTab expanded metrics: `grid-cols-2 md:grid-cols-4`
+- Remover Insight Banner duplicado completamente
+
+Todas as alterações são CSS/layout only, sem mudanças em lógica ou funcionalidades.
 
