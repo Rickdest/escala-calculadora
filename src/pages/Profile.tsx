@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
-import { User, Camera, Mail, Lock, Save, Loader2, Check, Eye, EyeOff } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { User, Mail, Lock, Save, Loader2, Check, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { UserAvatar } from '@/components/UserAvatar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -13,17 +14,14 @@ import { useToast } from '@/hooks/use-toast';
 export default function Profile() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [displayName, setDisplayName] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
-  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -33,78 +31,18 @@ export default function Profile() {
 
   const loadProfile = async () => {
     if (!user) return;
-    
+
     setLoading(true);
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('profiles')
-      .select('display_name, avatar_url')
+      .select('display_name')
       .eq('user_id', user.id)
       .single();
 
     if (data) {
       setDisplayName(data.display_name || '');
-      // If avatar_url is a path (not a full URL), generate a signed URL
-      if (data.avatar_url) {
-        if (data.avatar_url.startsWith('http')) {
-          // Legacy full URL — try to extract path and get signed URL
-          setAvatarUrl(data.avatar_url);
-        } else {
-          const { data: signedData } = await supabase.storage
-            .from('avatars')
-            .createSignedUrl(data.avatar_url, 3600);
-          if (signedData?.signedUrl) {
-            setAvatarUrl(signedData.signedUrl);
-          }
-        }
-      }
     }
     setLoading(false);
-  };
-
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-
-    setUploadingAvatar(true);
-
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(fileName, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      const { data: signedData, error: signError } = await supabase.storage
-        .from('avatars')
-        .createSignedUrl(fileName, 3600);
-
-      if (signError || !signedData?.signedUrl) throw signError || new Error('Failed to get signed URL');
-
-      const newAvatarUrl = signedData.signedUrl;
-      setAvatarUrl(newAvatarUrl);
-
-      // Update profile with new avatar URL
-      await supabase
-        .from('profiles')
-        .update({ avatar_url: fileName })
-        .eq('user_id', user.id);
-
-      toast({
-        title: 'Foto atualizada!',
-        description: 'Sua foto de perfil foi atualizada com sucesso.',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Erro ao enviar foto',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setUploadingAvatar(false);
-    }
   };
 
   const handleSaveProfile = async () => {
@@ -210,40 +148,7 @@ export default function Profile() {
       <div className="px-4 py-6 space-y-6">
         {/* Avatar Section */}
         <div className="flex flex-col items-center animate-fade-up">
-          <div className="relative">
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="relative group"
-              disabled={uploadingAvatar}
-            >
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt="Avatar"
-                  className="w-28 h-28 rounded-full object-cover ring-4 ring-primary/20 group-hover:ring-primary/40 transition-all"
-                />
-              ) : (
-                <div className="w-28 h-28 rounded-full bg-secondary flex items-center justify-center ring-4 ring-border group-hover:ring-primary/40 transition-all">
-                  <User className="w-12 h-12 text-muted-foreground" />
-                </div>
-              )}
-              <div className="absolute inset-0 bg-foreground/30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                {uploadingAvatar ? (
-                  <Loader2 className="w-8 h-8 text-background animate-spin" />
-                ) : (
-                  <Camera className="w-8 h-8 text-background" />
-                )}
-              </div>
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleAvatarUpload}
-              className="hidden"
-            />
-          </div>
-          <p className="text-sm text-muted-foreground mt-3">Toque para alterar a foto</p>
+          <UserAvatar displayName={displayName} email={user.email} size="lg" />
         </div>
 
         {/* Profile Info */}
