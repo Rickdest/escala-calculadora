@@ -9,6 +9,16 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#039;');
 }
 
+function sanitizeCsvField(value: string | number): string {
+  const str = String(value ?? '');
+  let sanitized = str;
+  if (/^[=+\-@\t\r]/.test(sanitized)) {
+    sanitized = "'" + sanitized;
+  }
+  const escaped = sanitized.replace(/"/g, '""');
+  return `"${escaped}"`;
+}
+
 interface ExportData {
   product: Product;
   calc: ProductCalculation;
