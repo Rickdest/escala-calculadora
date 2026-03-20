@@ -81,9 +81,11 @@ function getRoasMessage(status: string) {
 
 function getRoasInsight(status: string) {
   switch (status) {
-    case 'danger': return { emoji: '⚠️', title: 'Campanha com prejuízo', desc: 'Reduza o gasto ou otimize palavras-chave para melhorar o retorno.' };
-    case 'warning': return { emoji: '👍', title: 'Resultado aceitável', desc: 'Há espaço para otimizar antes de escalar o investimento.' };
-    case 'success': return { emoji: '🔥', title: 'Campanha muito lucrativa', desc: 'Pronta para escalar com segurança. Continue monitorando.' };
+    case 'danger': return { emoji: '⚠️', title: 'Prejuízo', desc: 'Seus anúncios estão gerando prejuízo. Reduza o gasto ou otimize as palavras-chave.' };
+    case 'empate': return { emoji: '⚖️', title: 'ROAS Empate', desc: 'Você está na operação zero. Qualquer otimização já gera lucro.' };
+    case 'warning': return { emoji: '👍', title: 'Lucro Baixo', desc: 'Há lucro, mas ainda pequeno. Otimize o CPC ou o criativo para evoluir.' };
+    case 'medium': return { emoji: '📈', title: 'Lucro Médio', desc: 'Boa performance. Considere aumentar o orçamento gradualmente.' };
+    case 'success': return { emoji: '🔥', title: 'Lucrativo', desc: 'Excelente! Campanha muito lucrativa. Escale o investimento com segurança.' };
     default: return null;
   }
 }
