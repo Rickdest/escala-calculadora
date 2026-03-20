@@ -44,6 +44,7 @@ interface Props {
 export function StockWizard({ onClose, editProduct }: Props) {
   const { addProduto, updateProduto, updateVariacao } = useEstoque();
   const fileRef = useRef<HTMLInputElement>(null);
+  const editInitRef = useRef(false);
   const [saving, setSaving] = useState(false);
 
   // Basic info
@@ -81,6 +82,7 @@ export function StockWizard({ onClose, editProduct }: Props) {
   // Init edit mode
   useEffect(() => {
     if (editProduct && editProduct.tem_variacoes && editProduct.variacoes.length > 0) {
+      editInitRef.current = true;
       const attrKeys = [...new Set(editProduct.variacoes.flatMap(v => Object.keys(v.atributos)))];
       const blocks: VariationBlock[] = attrKeys.map(key => ({
         id: Math.random().toString(36).substring(2, 10),
@@ -90,7 +92,7 @@ export function StockWizard({ onClose, editProduct }: Props) {
       setVariationBlocks(blocks);
       setVarRows(editProduct.variacoes.map(v => ({
         tempId: v.id,
-        atributos: v.atributos,
+        atributos: v.atributos as Record<string, string>,
         sku: v.sku || '',
         preco_custo: v.preco_custo,
         quantidade: v.quantidade,
@@ -115,9 +117,13 @@ export function StockWizard({ onClose, editProduct }: Props) {
     [variationBlocks]
   );
 
-  // Auto-regenerate combinations
+  // Auto-regenerate combinations (skip first run when editing to preserve loaded data)
   useEffect(() => {
     if (!temVariacoes) return;
+    if (editInitRef.current) {
+      editInitRef.current = false;
+      return;
+    }
     const combos = generateVariationCombinations(attributes);
     if (combos.length === 0) { setVarRows([]); return; }
     const existingMap = new Map<string, VarRow>();
@@ -221,6 +227,27 @@ export function StockWizard({ onClose, editProduct }: Props) {
       if (editProduct) {
         await updateProduto(editProduct.id, { nome, categoria: categoria || null, sku_base: skuBase || null, descricao: descricao || null, tem_variacoes: temVariacoes });
         if (imagePreview) saveLocalStockImage(editProduct.id, imagePreview);
+
+        // Save variation data
+        if (temVariacoes) {
+          for (const row of varRows) {
+            await updateVariacao(row.tempId, {
+              atributos: row.atributos as any,
+              sku: row.sku || null,
+              preco_custo: row.preco_custo,
+              quantidade: row.quantidade,
+              quantidade_minima: row.quantidade_minima,
+            });
+          }
+        } else if (editProduct.variacoes.length > 0) {
+          const v = editProduct.variacoes[0];
+          await updateVariacao(v.id, {
+            preco_custo: parseFloat(simpleCost) || 0,
+            quantidade: parseInt(simpleQty) || 0,
+            quantidade_minima: parseInt(simpleMin) || 5,
+            sku: simpleSku || null,
+          });
+        }
         toast.success('Produto atualizado!');
       } else {
         const variacoes = temVariacoes
