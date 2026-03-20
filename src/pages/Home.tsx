@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Plus, Package, TrendingUp, TrendingDown, Target, BarChart3, GraduationCap, Store, Warehouse, UserCircle, Settings2, ChevronRight, Zap } from 'lucide-react';
+import { Plus, Package, Target, BarChart3, GraduationCap, Store, Warehouse, UserCircle, Settings2, ChevronRight, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -178,17 +178,17 @@ export default function Home() {
           <div className="grid grid-cols-2 gap-3 animate-fade-up stagger-3">
             <div className="surface-card p-3.5">
               <div className="flex items-center gap-2 mb-1">
-                <TrendingUp className="w-3.5 h-3.5 text-success" />
-                <span className="text-[11px] font-medium text-success">Acima da Meta</span>
+                <span className="text-sm">💰</span>
+                <span className="text-[11px] font-medium text-text-2">Na meta</span>
               </div>
-              <p className="font-mono text-xl font-bold font-mono-num text-success">{stats.productsAboveTarget}</p>
+              <p className="font-mono text-xl font-bold font-mono-num text-success">{stats.productsAboveTarget} <span className="text-[13px] font-normal text-text-3">produtos</span></p>
             </div>
             <div className="surface-card p-3.5">
               <div className="flex items-center gap-2 mb-1">
-                <TrendingDown className="w-3.5 h-3.5 text-danger" />
-                <span className="text-[11px] font-medium text-danger">Abaixo da Meta</span>
+                <span className="text-sm">⚠️</span>
+                <span className="text-[11px] font-medium text-text-2">Abaixo da meta</span>
               </div>
-              <p className="font-mono text-xl font-bold font-mono-num text-danger">{stats.productsBelowTarget}</p>
+              <p className={cn('font-mono text-xl font-bold font-mono-num', stats.productsBelowTarget > 0 ? 'text-warning' : 'text-text-3')}>{stats.productsBelowTarget} <span className="text-[13px] font-normal text-text-3">produtos</span></p>
             </div>
           </div>
         )}
@@ -200,7 +200,7 @@ export default function Home() {
         {topProducts.length > 0 && (
           <div className="space-y-2 animate-fade-up stagger-4">
             <div className="flex items-center justify-between">
-              <p className="section-label">Melhores Margens</p>
+              <p className="section-label">Seus Produtos</p>
               <button onClick={() => navigate('/products')} className="text-xs text-primary font-medium flex items-center gap-0.5">
                 Ver Todos <ChevronRight className="w-3.5 h-3.5" />
               </button>
@@ -218,7 +218,11 @@ export default function Home() {
                     <span className="font-medium text-foreground truncate max-w-[140px] text-[15px]">{product.name}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={cn('font-mono text-[15px] font-semibold font-mono-num', getMarginStatus(calc.realMargin).color)}>
+                    <span className={cn('font-mono text-[13px] font-semibold font-mono-num', calc.netProfit >= 0 ? 'text-success' : 'text-danger')}>
+                      R$ {calc.netProfit.toFixed(2).replace('.', ',')}
+                    </span>
+                    <span className="text-text-3 text-[13px]">·</span>
+                    <span className={cn('font-mono text-[13px] font-semibold font-mono-num', getMarginStatus(calc.realMargin).color)}>
                       {calc.realMargin.toFixed(1)}%
                     </span>
                     <span className={cn('w-1.5 h-1.5 rounded-full', getMarginStatus(calc.realMargin).color.replace('text-', 'bg-'))} />
