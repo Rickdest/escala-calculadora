@@ -7,6 +7,7 @@ import { StoreProvider } from "@/contexts/StoreContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionContext";
+import { SidebarProvider } from "@/contexts/SidebarContext";
 import { TrialExpiredBlock } from "@/components/TrialExpiredBlock";
 import { lazy, Suspense } from "react";
 
