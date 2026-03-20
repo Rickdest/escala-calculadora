@@ -31,7 +31,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [trialEnd, setTrialEnd] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchSubscription = useCallback(async () => {
+  const fetchSubscription = useCallback(async (noCache = false) => {
     if (!user || !session?.access_token) {
       setStatus('free');
       setPlan('free');
@@ -41,12 +41,12 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const data = await checkSubscription(session.access_token);
+      setLoading(true);
+      const data = await checkSubscription(session.access_token, noCache);
       setStatus(STATUS_MAP[data.status] || 'expired');
       setPlan(data.plan);
       setTrialEnd(data.trialEnd);
     } catch {
-      // Edge function failed — assume expired for safety
       setStatus('expired');
       setPlan('free');
       setTrialEnd(null);
@@ -61,9 +61,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const isActive = status === 'active' || status === 'trialing';
 
+  const refreshSubscription = useCallback(async () => {
+    await fetchSubscription(true);
+  }, [fetchSubscription]);
+
   return (
     <SubscriptionContext.Provider
-      value={{ status, plan, isActive, trialEnd, loading, refreshSubscription: fetchSubscription }}
+      value={{ status, plan, isActive, trialEnd, loading, refreshSubscription }}
     >
       {children}
     </SubscriptionContext.Provider>

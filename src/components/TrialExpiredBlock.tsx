@@ -1,5 +1,8 @@
-import { Lock, RefreshCw, ArrowRight } from 'lucide-react';
+import { useState } from 'react';
+import { Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useBilling } from '@/hooks/useBilling';
+import { toast } from 'sonner';
 import logoIcon from '@/assets/logo-icon.png';
 
 const benefits = [
@@ -13,7 +16,32 @@ const benefits = [
 ];
 
 export function TrialExpiredBlock() {
-  const { handleCheckout, refreshSubscription } = useBilling();
+  const { handleCheckout, refreshSubscription, isActive } = useBilling();
+  const navigate = useNavigate();
+  const [checking, setChecking] = useState(false);
+
+  const handleVerifyAccess = async () => {
+    setChecking(true);
+    try {
+      await refreshSubscription();
+      // We need a small delay to let state propagate
+      setTimeout(() => {
+        // Re-check after refresh — isActive won't update in this closure,
+        // so we rely on the context re-render to redirect via the parent gate.
+        // If still on this screen after refresh, show error toast.
+        setChecking(false);
+      }, 500);
+    } catch {
+      setChecking(false);
+      toast.error('Erro ao verificar assinatura. Tente novamente.');
+    }
+  };
+
+  // If subscription became active after refresh, redirect
+  if (isActive && !checking) {
+    navigate('/', { replace: true });
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-8">
@@ -65,10 +93,18 @@ export function TrialExpiredBlock() {
         </p>
 
         <button
-          onClick={refreshSubscription}
-          className="w-full text-center text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+          onClick={handleVerifyAccess}
+          disabled={checking}
+          className="w-full text-center text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
         >
-          Já assinei → Verificar acesso
+          {checking ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Verificando...
+            </>
+          ) : (
+            'Já assinei → Verificar acesso'
+          )}
         </button>
       </div>
     </div>

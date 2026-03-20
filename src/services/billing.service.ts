@@ -10,9 +10,13 @@ export interface SubscriptionData {
  * Single entry point: calls the check-subscription edge function.
  * This is the ONLY source of truth for subscription status.
  */
-export async function checkSubscription(accessToken: string): Promise<SubscriptionData> {
+export async function checkSubscription(accessToken: string, noCache = false): Promise<SubscriptionData> {
+  const headers: Record<string, string> = { Authorization: `Bearer ${accessToken}` };
+  if (noCache) {
+    headers['Cache-Control'] = 'no-cache';
+  }
   const { data, error } = await supabase.functions.invoke('check-subscription', {
-    headers: { Authorization: `Bearer ${accessToken}` },
+    headers,
   });
 
   if (error) {
