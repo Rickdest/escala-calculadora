@@ -327,10 +327,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (error) { toast.error('Erro ao atualizar produto'); return; }
     }
 
-    // Save image locally
+    // Save image locally (compressed)
     if (updates.imageUrl !== undefined) {
-      if (updates.imageUrl) saveLocalImage(productId, updates.imageUrl);
-      else removeLocalImage(productId);
+      if (updates.imageUrl) {
+        const compressed = await compressImage(updates.imageUrl);
+        saveLocalImage(productId, compressed);
+      } else {
+        removeLocalImage(productId);
+      }
     }
 
     setStores(prev => prev.map(store => ({
