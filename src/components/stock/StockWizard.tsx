@@ -204,6 +204,7 @@ export function StockWizard({ onClose, editProduct }: Props) {
       ...v,
       preco_custo: bulkCost ? parseFloat(bulkCost) : v.preco_custo,
       quantidade: bulkQty ? parseInt(bulkQty) : v.quantidade,
+      quantidade_minima: bulkMin ? parseInt(bulkMin) : v.quantidade_minima,
       sku: bulkSku ? bulkSku : v.sku,
     })));
     toast.success('Valores aplicados');
