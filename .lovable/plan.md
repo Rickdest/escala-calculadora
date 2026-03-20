@@ -1,60 +1,80 @@
 
 
-## Plano: Verificar e Melhorar Responsividade Mobile
-
-Após análise completa do código em todas as páginas, identifiquei os seguintes problemas e melhorias para mobile (390px viewport):
+## Plano: Corrigir Scroll e Melhorar Responsividade Desktop/Mobile
 
 ---
 
-### Problemas Encontrados
+### Problemas Identificados
 
-**1. Home — Grid de ferramentas e layout**
-- O grid `md:grid-cols-[3fr_2fr]` está correto para desktop, mas no mobile o `space-y-4` se perde porque o `md:space-y-0` é aplicado junto com `md:grid`. Isso funciona, mas a seção "Ferramentas" tem `md:col-span-full` que força ela abaixo das duas colunas — no mobile fica OK, mas "Seus Produtos" também tem `md:col-span-full` e aparece após ferramentas, quebrando a ordem visual mobile (ferramentas deveria vir depois de métricas no mobile).
+**Scroll bloqueado:**
+1. `overscroll-behavior: none` em html E body impede scroll natural em containers internos quando o conteúdo toca as bordas
+2. `overflow-x: hidden` em html e body pode capturar scroll events em containers com scroll interno (ex: lista de produtos no RoasAnalysis com `max-h-[260px]`, lista de ads com `max-h-[280px]`)
+3. A página Roas tem `pb-20 md:pb-4` no wrapper mas o conteúdo interno não tem overflow adequado — a combinação de `min-h-screen` no root + `overflow-x: hidden` no body cria situações onde o scroll vertical é bloqueado em containers intermediários
 
-**2. RoasAnalysis — KPI cards 3 colunas apertados em 390px**
-- Os 3 cards de ROAS (Empate / Lucro Médio / Lucrativo) usam `grid-cols-3` sem responsividade. Em 390px com padding, cada card tem ~110px — os labels "Lucro Médio" e "Lucrativo" ficam apertados. Texto pode quebrar.
-
-**3. RoasAnalysis — Diagnostic Banner + Insight Banner duplicados**
-- Há dois banners de diagnóstico consecutivos (linhas 620-667): o "Diagnostic Banner" e o "Insight Banner" mostram essencialmente a mesma informação com textos muito similares, ocupando espaço duplo no mobile.
-
-**4. RoasAnalysis — ProductSelector overflow**
-- A lista de produtos com `max-h-[260px]` + cards de 4 colunas + gauge chart + barra ROAS torna o scroll muito longo no mobile. O layout `md:grid-cols-12` com col-span-4/8 funciona no desktop mas no mobile empilha tudo verticalmente.
-
-**5. Stock — Stats cards em 4 colunas no mobile**
-- `grid-cols-4` em 390px = ~85px por card. Os números `text-2xl` ficam aceitáveis, mas o label pode ficar apertado.
-
-**6. AdsTab — Ranking items com muitos elementos na mesma linha**
-- O badge `#N` (w-8) + nome + status icon + ROAS value + chevron na mesma linha pode causar overflow em 375px.
+**Layout desktop pobre:**
+4. Páginas Profile e Settings não têm max-width no mobile, campos ficam largos demais no desktop
+5. Stock page stats cards se esticam demais em telas grandes
+6. Home desktop grid pode ficar desproporcional em monitores ultrawide
 
 ---
 
-### Correções Propostas
+### Correções
+
+**Arquivo: `src/index.css`**
+- Mover `overflow-x: hidden` apenas para `body`, remover de `html` — o html com overflow hidden captura eventos de scroll e bloqueia containers internos
+- Remover `overscroll-behavior: none` do `html` — manter apenas no body para prevenir pull-to-refresh sem bloquear scroll de containers
+- Adicionar smooth scrolling: `scroll-behavior: smooth` no html
+
+**Arquivo: `src/components/layout/AppLayout.tsx`**
+- Adicionar `overflow-y-auto` no container principal de conteúdo para garantir scroll independente
+- No desktop, fazer o main content area ter `min-h-screen` com scroll próprio para evitar dependência do body scroll
+- Adicionar padding lateral responsivo: `px-4 md:px-8 lg:px-12`
 
 **Arquivo: `src/components/charts/RoasAnalysis.tsx`**
-1. Remover o "Insight Banner" duplicado (linhas 654-667) — o "Diagnostic Banner" já cobre a mesma funcionalidade com mensagens melhores
-2. KPI cards: usar `grid-cols-1` em mobile com layout horizontal compacto (label + valor na mesma linha), `grid-cols-3` em desktop
-3. Reduzir tamanho do gauge chart no mobile de 160px para 140px
+- ProductSelector: adicionar `overscroll-behavior: contain` na lista scrollável para evitar que scroll interno propague para o body
+- Seção de ads importados (`max-h-[280px]`): mesmo fix
+- Tab content: garantir que não há `overflow: hidden` implícito bloqueando scroll
 
 **Arquivo: `src/components/roas/AdsTab.tsx`**
-4. No ranking, truncar nomes para 24 chars no mobile (já está 40, muito longo para 375px)
-5. Reduzir padding no ranking item de `p-3.5` para `p-2.5` no mobile
-6. Métricas expandidas: usar `grid-cols-2` em mobile ao invés de `grid-cols-4`
+- Ranking e Alerts com `divide-y` dentro de container fixo: adicionar `overflow-y-auto` com `max-h` adequado para telas pequenas
+- Desktop layout `md:grid-cols-[2fr_3fr]`: adicionar `overflow-y-auto` por coluna para scroll independente no desktop
 
 **Arquivo: `src/pages/Home.tsx`**
-7. Reordenar as seções no mobile: Calculadora → Métricas → Ferramentas → Produtos (atualmente ferramentas vem depois de produtos no DOM mas o grid reordena no desktop)
+- Desktop grid: adicionar `lg:max-w-[1400px]` e melhor proporção para ultra-wide
 
 **Arquivo: `src/pages/Stock.tsx`**
-8. Stats cards: usar `grid-cols-2` no mobile com `grid-cols-4` no desktop (de `grid-cols-4 md:flex`)
+- Container principal: adicionar `overflow-y-auto` para garantir scroll
+
+**Arquivo: `src/pages/Profile.tsx`**
+- Wrapper do form: `md:max-w-[600px]`
+
+**Arquivo: `src/pages/Settings.tsx`**
+- Wrapper do form: `md:max-w-[600px]`
 
 ---
 
 ### Detalhes Técnicos
 
-- KPI cards: `grid grid-cols-1 md:grid-cols-3 gap-2` com cada card usando `flex items-center justify-between` no mobile
-- Ranking truncate: usar `useIsMobile()` hook ou simplesmente reduzir truncate para 24 e usar `sm:truncate` patterns
-- Stats Stock: `grid-cols-2 md:grid-cols-4`
-- AdsTab expanded metrics: `grid-cols-2 md:grid-cols-4`
-- Remover Insight Banner duplicado completamente
+**Fix principal de scroll** — o problema central é que `html { overflow-x: hidden }` com `overscroll-behavior: none` cria um "scroll trap". Quando um container interno (como a lista de produtos no ROAS) atinge seu limite de scroll, o evento deveria propagar para o body, mas é bloqueado. A solução:
 
-Todas as alterações são CSS/layout only, sem mudanças em lógica ou funcionalidades.
+```css
+html {
+  /* REMOVER: overflow-x: hidden e overscroll-behavior: none */
+  scroll-behavior: smooth;
+}
+
+body {
+  overflow-x: hidden; /* manter apenas aqui */
+  overscroll-behavior-x: none; /* apenas eixo X */
+}
+```
+
+**Scroll em containers internos:**
+```css
+.scroll-container {
+  overscroll-behavior: contain; /* isola scroll sem bloquear */
+}
+```
+
+Nenhuma funcionalidade ou lógica será alterada. Apenas CSS e classes de layout.
 
