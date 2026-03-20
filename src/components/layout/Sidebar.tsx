@@ -35,7 +35,7 @@ export function Sidebar() {
     <aside
       className={cn(
         'hidden md:flex md:flex-col md:fixed md:inset-y-0 md:left-0 md:z-50 border-r border-border bg-sidebar transition-all duration-200 ease-in-out',
-        collapsed ? 'md:w-16' : 'md:w-60'
+        collapsed ? 'md:w-[60px]' : 'md:w-[200px]'
       )}
     >
       {/* Logo */}
@@ -66,7 +66,7 @@ export function Sidebar() {
               )}
             >
               <Icon className="w-5 h-5 flex-shrink-0" strokeWidth={isActive ? 2.5 : 2} />
-              {!collapsed && <span className="truncate">{label}</span>}
+              {!collapsed && <span className={cn('truncate text-[13px]', isActive ? 'text-primary' : 'text-text-3')}>{label}</span>}
             </button>
           );
 

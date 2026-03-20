@@ -154,7 +154,7 @@ export default function Products() {
         }
       />
 
-      <div className="px-4 py-4 space-y-4 md:px-6 md:py-6">
+      <div className="px-4 py-4 space-y-4 md:px-0 md:py-6 md:max-w-[800px]">
         <Tabs defaultValue="products" className="w-full">
           <TabsList className="w-full grid grid-cols-2 h-10 rounded-lg bg-surface-2 p-0.5">
             <TabsTrigger value="products" className="text-xs font-semibold rounded-md data-[state=active]:bg-surface data-[state=active]:text-foreground text-text-2">
@@ -247,7 +247,7 @@ export default function Products() {
           <TabsContent value="analysis" className="space-y-4 mt-3">
             {stats && analysisProducts.length > 0 ? (
               <>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <div className="surface-card p-4 animate-fade-up">
                     <p className="section-label mb-1">Margem Média</p>
                     <p className={cn('font-mono text-2xl font-bold font-mono-num', getMarginStatus(stats.avgMargin).color)}>
@@ -309,7 +309,7 @@ export default function Products() {
                   ))}
                 </div>
 
-                <div className="space-y-0">
+                <div className="space-y-0 md:max-w-[800px]">
                   <p className="text-sm font-semibold text-foreground mb-2">Ranking de Produtos</p>
                   <div className="surface-card divide-y divide-border">
                     {analysisProducts.map(({ product, calc }, index) => (
