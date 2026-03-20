@@ -54,8 +54,8 @@ function calcRoasFromValues(precoVenda: number, custoP: number, gastoAds: number
     return { roasAtual: null, roasEmpate: null, roasSaudavel: null, roasIdeal: null, lucroBruto, taxaShopee, valorRecebido, margemInsuficiente: true };
   }
   const roasEmpate = parseFloat((precoVenda / lucroBruto).toFixed(2));
-  const roasSaudavel = parseFloat((roasEmpate * 1.4).toFixed(2));
-  const roasIdeal = parseFloat((roasSaudavel * 1.3).toFixed(2));
+  const roasSaudavel = parseFloat((roasEmpate / 0.61).toFixed(2));
+  const roasIdeal = parseFloat((roasEmpate / 0.40).toFixed(2));
   const roasAtual = gastoAds > 0 ? parseFloat((receitaAds / gastoAds).toFixed(2)) : null;
   return { roasAtual, roasEmpate, roasSaudavel, roasIdeal, lucroBruto, taxaShopee, valorRecebido, margemInsuficiente: false };
 }
