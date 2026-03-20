@@ -1,80 +1,47 @@
 
 
-## Plano: Corrigir Scroll e Melhorar Responsividade Desktop/Mobile
+## Plano: Simplificar aba ROAS
 
----
+Após analisar o código, a aba ROAS tem **informação triplicada** em vários pontos. Aqui está o que é redundante e a proposta de limpeza:
 
 ### Problemas Identificados
 
-**Scroll bloqueado:**
-1. `overscroll-behavior: none` em html E body impede scroll natural em containers internos quando o conteúdo toca as bordas
-2. `overflow-x: hidden` em html e body pode capturar scroll events em containers com scroll interno (ex: lista de produtos no RoasAnalysis com `max-h-[260px]`, lista de ads com `max-h-[280px]`)
-3. A página Roas tem `pb-20 md:pb-4` no wrapper mas o conteúdo interno não tem overflow adequado — a combinação de `min-h-screen` no root + `overflow-x: hidden` no body cria situações onde o scroll vertical é bloqueado em containers intermediários
+1. **Gauge radial + Barra de progresso ROAS** → Ambos mostram a posição do ROAS nas zonas. Redundante.
+2. **Health Banner + Diagnostic Banner** → Dois banners consecutivos com mensagens quase idênticas sobre o status do produto.
+3. **Donut de composição + Detalhamento Financeiro** → Ambos mostram preço, taxa Shopee, custo e lucro. A tabela repete o donut.
+4. **3 KPI cards (Empate/Médio/Lucrativo)** → Já aparecem como labels na barra de progresso. Informação duplicada.
+5. **Botão Share** → Ocupa espaço, raramente usado.
+6. **Seção de importação CSV** dentro da aba ROAS → Já existe na aba Shopee Ads. Duplicado.
 
-**Layout desktop pobre:**
-4. Páginas Profile e Settings não têm max-width no mobile, campos ficam largos demais no desktop
-5. Stock page stats cards se esticam demais em telas grandes
-6. Home desktop grid pode ficar desproporcional em monitores ultrawide
-
----
-
-### Correções
-
-**Arquivo: `src/index.css`**
-- Mover `overflow-x: hidden` apenas para `body`, remover de `html` — o html com overflow hidden captura eventos de scroll e bloqueia containers internos
-- Remover `overscroll-behavior: none` do `html` — manter apenas no body para prevenir pull-to-refresh sem bloquear scroll de containers
-- Adicionar smooth scrolling: `scroll-behavior: smooth` no html
-
-**Arquivo: `src/components/layout/AppLayout.tsx`**
-- Adicionar `overflow-y-auto` no container principal de conteúdo para garantir scroll independente
-- No desktop, fazer o main content area ter `min-h-screen` com scroll próprio para evitar dependência do body scroll
-- Adicionar padding lateral responsivo: `px-4 md:px-8 lg:px-12`
+### Proposta de Layout Simplificado
 
 **Arquivo: `src/components/charts/RoasAnalysis.tsx`**
-- ProductSelector: adicionar `overscroll-behavior: contain` na lista scrollável para evitar que scroll interno propague para o body
-- Seção de ads importados (`max-h-[280px]`): mesmo fix
-- Tab content: garantir que não há `overflow: hidden` implícito bloqueando scroll
 
-**Arquivo: `src/components/roas/AdsTab.tsx`**
-- Ranking e Alerts com `divide-y` dentro de container fixo: adicionar `overflow-y-auto` com `max-h` adequado para telas pequenas
-- Desktop layout `md:grid-cols-[2fr_3fr]`: adicionar `overflow-y-auto` por coluna para scroll independente no desktop
+Após selecionar produto e preencher ads, mostrar apenas:
 
-**Arquivo: `src/pages/Home.tsx`**
-- Desktop grid: adicionar `lg:max-w-[1400px]` e melhor proporção para ultra-wide
+1. **Health Banner** — mantém (diagnóstico visual rápido)
+2. **3 KPI cards** — mantém mas compactar (Empate / Médio / Lucrativo em linha)
+3. **Barra de progresso ROAS** — mantém (visualização principal)
+4. **Donut de composição** — mantém (visual útil)
+5. **2 cards Lucro + Taxa** — mantém (compacto e útil)
 
-**Arquivo: `src/pages/Stock.tsx`**
-- Container principal: adicionar `overflow-y-auto` para garantir scroll
+**Remover:**
+- Gauge radial (RoasGauge) — ~30 linhas
+- Diagnostic Banner — ~30 linhas (Health Banner já cobre)
+- Detalhamento Financeiro — ~25 linhas (donut já cobre)
+- Botão Share — ~10 linhas
+- ProductAdsImport na aba ROAS — ~110 linhas (já existe na aba Shopee Ads)
 
-**Arquivo: `src/pages/Profile.tsx`**
-- Wrapper do form: `md:max-w-[600px]`
-
-**Arquivo: `src/pages/Settings.tsx`**
-- Wrapper do form: `md:max-w-[600px]`
-
----
+**Resultado:** ~200 linhas removidas. O scroll no mobile reduz ~60%. A informação essencial permanece sem repetição.
 
 ### Detalhes Técnicos
 
-**Fix principal de scroll** — o problema central é que `html { overflow-x: hidden }` com `overscroll-behavior: none` cria um "scroll trap". Quando um container interno (como a lista de produtos no ROAS) atinge seu limite de scroll, o evento deveria propagar para o body, mas é bloqueado. A solução:
+- Remover componente `RoasGauge` e sua invocação (linhas 125-155, 657-666)
+- Remover bloco Diagnostic Banner (linhas 620-652)
+- Remover bloco Financial Detail (linhas 728-750)
+- Remover `ShareResult` import e uso (linhas 716-726)
+- Remover `ProductAdsImport` invocação da aba ROAS (linhas 772-776) — mantém o componente pois pode ser usado em outro lugar
+- Ajustar grid: onde tinha `md:grid-cols-2` para gauge+donut, fica só o donut centralizado com `max-w-sm mx-auto`
 
-```css
-html {
-  /* REMOVER: overflow-x: hidden e overscroll-behavior: none */
-  scroll-behavior: smooth;
-}
-
-body {
-  overflow-x: hidden; /* manter apenas aqui */
-  overscroll-behavior-x: none; /* apenas eixo X */
-}
-```
-
-**Scroll em containers internos:**
-```css
-.scroll-container {
-  overscroll-behavior: contain; /* isola scroll sem bloquear */
-}
-```
-
-Nenhuma funcionalidade ou lógica será alterada. Apenas CSS e classes de layout.
+Nenhuma funcionalidade, cálculo ou outra tela será alterada.
 
