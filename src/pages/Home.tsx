@@ -79,7 +79,7 @@ export default function Home() {
   return (
     <AppLayout>
       <PageHeader title="Precify" />
-      <div className="px-4 py-4 space-y-4">
+      <div className="px-4 py-4 space-y-4 md:px-6 md:py-6">
         <TrialBanner />
 
         {/* Subscription CTA - trial */}
