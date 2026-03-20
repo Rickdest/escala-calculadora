@@ -1,5 +1,14 @@
 import { Product, ProductCalculation, Store, StoreConfig } from '@/types/store';
 
+function escapeHtml(str: string): string {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 interface ExportData {
   product: Product;
   calc: ProductCalculation;
@@ -68,7 +77,7 @@ export function generatePDFContent(data: ExportData[], store: Store): string {
     <html>
     <head>
       <meta charset="utf-8">
-      <title>Relatório - ${store.name}</title>
+      <title>Relatório - ${escapeHtml(store.name)}</title>
       <style>
         body { font-family: Arial, sans-serif; padding: 20px; }
         h1 { color: #333; border-bottom: 2px solid #7c3aed; padding-bottom: 10px; }
@@ -87,7 +96,7 @@ export function generatePDFContent(data: ExportData[], store: Store): string {
       </style>
     </head>
     <body>
-      <h1>Relatório de Produtos - ${store.name}</h1>
+      <h1>Relatório de Produtos - ${escapeHtml(store.name)}</h1>
       
       <div class="summary">
         <div class="summary-grid">
@@ -128,7 +137,7 @@ export function generatePDFContent(data: ExportData[], store: Store): string {
     const marginClass = calc.isAboveTarget ? 'positive' : 'negative';
     html += `
       <tr>
-        <td>${product.name}</td>
+        <td>${escapeHtml(product.name)}</td>
         <td>${formatCurrency(product.costPrice)}</td>
         <td>${formatCurrency(product.salePrice)}</td>
         <td class="${calc.netProfit >= 0 ? 'positive' : 'negative'}">${formatCurrency(calc.netProfit)}</td>
