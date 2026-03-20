@@ -285,6 +285,23 @@
     border-radius: 14px;
   }
 
+  /* Botões secundários/outline visíveis no tema claro */
+  html:not(.dark) .border,
+  html:not(.dark) [class*="outline"],
+  html:not(.dark) .bg-surface-2,
+  html:not(.dark) .bg-background {
+    &:is(button, [role="button"], a[class*="btn"]):not(.bg-primary):not(.bg-destructive):not(.bg-success) {
+      background-color: hsl(0 0% 100%);
+      border: 1.5px solid hsl(11 60% 80%);
+      color: hsl(11 86% 42%);
+      font-weight: 600;
+    }
+
+    &:is(button, [role="button"], a[class*="btn"]):not(.bg-primary):not(.bg-destructive):not(.bg-success):hover {
+      background-color: hsl(16 90% 96%);
+    }
+  }
+
   /* Bottom navigation */
   .bottom-nav {
     @apply fixed bottom-0 left-0 right-0 border-t;
