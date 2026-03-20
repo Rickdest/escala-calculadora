@@ -1,4 +1,4 @@
-import { Home, Package, BarChart3, GraduationCap, Settings, Warehouse, Store, UserCircle, ChevronDown } from 'lucide-react';
+import { Home, Package, BarChart3, Settings, Warehouse, Store, UserCircle, ChevronDown } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { useSidebarState } from '@/contexts/SidebarContext';
@@ -20,7 +20,6 @@ const navItems = [
   { icon: Package, label: 'Produtos', path: '/products' },
   { icon: BarChart3, label: 'ROAS', path: '/roas' },
   { icon: Warehouse, label: 'Estoque', path: '/stock' },
-  { icon: GraduationCap, label: 'Educação', path: '/education' },
   { icon: Store, label: 'Lojas', path: '/stores' },
   { icon: UserCircle, label: 'Perfil', path: '/profile' },
   { icon: Settings, label: 'Configurações', path: '/settings' },
