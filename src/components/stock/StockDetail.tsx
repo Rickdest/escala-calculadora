@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { X, Plus, Minus, Edit2, Trash2, Package, AlertTriangle, ArrowUp, ArrowDown, Settings2 } from 'lucide-react';
 import { EstoqueProduto, EstoqueMovimentacao, useEstoque, getLocalStockImage } from '@/hooks/useEstoque';
 import { Button } from '@/components/ui/button';
@@ -25,8 +25,25 @@ export function StockDetail({ product, onClose, onEdit }: Props) {
   const [movimentacoes, setMovimentacoes] = useState<EstoqueMovimentacao[]>([]);
   const [loadingHist, setLoadingHist] = useState(false);
 
+  // Local quantity state so +/- buttons reflect immediately
+  const [localQtys, setLocalQtys] = useState<Record<string, number>>({});
+  // Which variation is being edited inline
+  const [editingQtyId, setEditingQtyId] = useState<string | null>(null);
+  const [editingQtyValue, setEditingQtyValue] = useState('');
+
+  // Initialize local quantities from product
+  useEffect(() => {
+    const map: Record<string, number> = {};
+    for (const v of product.variacoes) {
+      map[v.id] = v.quantidade;
+    }
+    setLocalQtys(map);
+  }, [product]);
+
+  const getQty = (varId: string) => localQtys[varId] ?? 0;
+
   const localImg = getLocalStockImage(product.id);
-  const totalQty = product.variacoes.reduce((s, v) => s + v.quantidade, 0);
+  const totalQty = Object.values(localQtys).reduce((s, q) => s + q, 0);
 
   useEffect(() => {
     if (tab === 'historico') {
@@ -47,6 +64,17 @@ export function StockDetail({ product, onClose, onEdit }: Props) {
     if (!movModal || !movQty) return;
     const qty = parseInt(movQty);
     if (isNaN(qty) || qty <= 0) return;
+
+    // Update local state immediately
+    setLocalQtys(prev => {
+      const current = prev[movModal.variacaoId] ?? 0;
+      let newQty = current;
+      if (movModal.tipo === 'entrada') newQty = current + qty;
+      else if (movModal.tipo === 'saida') newQty = Math.max(0, current - qty);
+      else newQty = qty;
+      return { ...prev, [movModal.variacaoId]: newQty };
+    });
+
     await addMovimentacao(movModal.variacaoId, movModal.tipo, qty, movMotivo || undefined);
     setMovModal(null);
     setMovQty('');
@@ -54,8 +82,39 @@ export function StockDetail({ product, onClose, onEdit }: Props) {
   };
 
   const quickChange = async (variacaoId: string, delta: number) => {
+    // Update local state immediately
+    setLocalQtys(prev => {
+      const current = prev[variacaoId] ?? 0;
+      return { ...prev, [variacaoId]: Math.max(0, current + delta) };
+    });
+
     const tipo = delta > 0 ? 'entrada' : 'saida';
     await addMovimentacao(variacaoId, tipo, Math.abs(delta), tipo === 'entrada' ? 'Entrada rápida' : 'Saída rápida');
+  };
+
+  const startEditQty = (varId: string) => {
+    setEditingQtyId(varId);
+    setEditingQtyValue(String(getQty(varId)));
+  };
+
+  const confirmEditQty = async (varId: string) => {
+    const newQty = parseInt(editingQtyValue);
+    if (isNaN(newQty) || newQty < 0) {
+      setEditingQtyId(null);
+      return;
+    }
+    const oldQty = getQty(varId);
+    if (newQty === oldQty) {
+      setEditingQtyId(null);
+      return;
+    }
+
+    // Update locally
+    setLocalQtys(prev => ({ ...prev, [varId]: newQty }));
+    setEditingQtyId(null);
+
+    // Send as ajuste
+    await addMovimentacao(varId, 'ajuste', newQty, 'Ajuste manual');
   };
 
   const getStatus = (qty: number, min: number) => {
@@ -117,11 +176,31 @@ export function StockDetail({ product, onClose, onEdit }: Props) {
                 (() => {
                   const v = product.variacoes[0];
                   if (!v) return <p className="text-sm text-text-2">Nenhuma variação cadastrada</p>;
-                  const st = getStatus(v.quantidade, v.quantidade_minima);
+                  const qty = getQty(v.id);
+                  const st = getStatus(qty, v.quantidade_minima);
                   return (
                     <div className="space-y-4">
                       <div className="text-center py-4">
-                        <p className={cn('text-5xl font-bold font-mono font-mono-num', st.color)}>{v.quantidade}</p>
+                        {editingQtyId === v.id ? (
+                          <Input
+                            type="number"
+                            min="0"
+                            autoFocus
+                            value={editingQtyValue}
+                            onChange={e => setEditingQtyValue(e.target.value)}
+                            onBlur={() => confirmEditQty(v.id)}
+                            onKeyDown={e => { if (e.key === 'Enter') confirmEditQty(v.id); if (e.key === 'Escape') setEditingQtyId(null); }}
+                            className="w-32 mx-auto text-center text-4xl font-bold font-mono h-16 bg-surface-2 border-primary"
+                          />
+                        ) : (
+                          <p
+                            className={cn('text-5xl font-bold font-mono font-mono-num cursor-pointer hover:opacity-70 transition-opacity', st.color)}
+                            onClick={() => startEditQty(v.id)}
+                            title="Clique para editar"
+                          >
+                            {qty}
+                          </p>
+                        )}
                         <p className="text-xs text-text-2 mt-1">unidades · {st.icon} {st.label}</p>
                         <p className="text-xs text-text-3">Mín: {v.quantidade_minima} un</p>
                       </div>
@@ -140,7 +219,7 @@ export function StockDetail({ product, onClose, onEdit }: Props) {
 
                       <div className="surface-card p-3 space-y-1.5 text-sm">
                         <div className="flex justify-between"><span className="text-text-2">Custo unitário</span><span className="font-semibold font-mono font-mono-num">{formatCurrency(v.preco_custo)}</span></div>
-                        <div className="flex justify-between"><span className="text-text-2">Valor em estoque</span><span className="font-bold font-mono font-mono-num text-primary">{formatCurrency(v.preco_custo * v.quantidade)}</span></div>
+                        <div className="flex justify-between"><span className="text-text-2">Valor em estoque</span><span className="font-bold font-mono font-mono-num text-primary">{formatCurrency(v.preco_custo * qty)}</span></div>
                         {v.sku && <div className="flex justify-between"><span className="text-text-2">SKU</span><span className="font-semibold">{v.sku}</span></div>}
                       </div>
                     </div>
@@ -154,27 +233,45 @@ export function StockDetail({ product, onClose, onEdit }: Props) {
                   </div>
 
                   <div className="surface-card overflow-hidden">
-                    <div className="grid grid-cols-[1fr_50px_auto] gap-0 bg-surface-2 px-3 py-1.5">
+                    <div className="grid grid-cols-[1fr_60px_auto] gap-0 bg-surface-2 px-3 py-1.5">
                       <span className="section-label">Variação</span><span className="section-label text-center">Qtd</span><span className="section-label text-center">Ação</span>
                     </div>
                     <div className="divide-y divide-border">
                       {product.variacoes.map(v => {
                         const label = Object.values(v.atributos).join(' / ') || 'Padrão';
-                        const st = getStatus(v.quantidade, v.quantidade_minima);
+                        const qty = getQty(v.id);
+                        const st = getStatus(qty, v.quantidade_minima);
                         return (
-                          <div key={v.id} className="grid grid-cols-[1fr_50px_auto] gap-0 px-3 py-2 items-center">
+                          <div key={v.id} className="grid grid-cols-[1fr_60px_auto] gap-0 px-3 py-2 items-center">
                             <div>
                               <p className="text-xs font-medium">{label}</p>
                               {v.sku && <p className="text-[10px] text-text-3">SKU: {v.sku}</p>}
                             </div>
-                            <p className={cn('text-center text-sm font-bold font-mono font-mono-num', st.color)}>
-                              {v.quantidade}{st.icon === '🔴' ? '🔴' : st.icon === '🟡' ? '🟡' : ''}
-                            </p>
+                            {editingQtyId === v.id ? (
+                              <Input
+                                type="number"
+                                min="0"
+                                autoFocus
+                                value={editingQtyValue}
+                                onChange={e => setEditingQtyValue(e.target.value)}
+                                onBlur={() => confirmEditQty(v.id)}
+                                onKeyDown={e => { if (e.key === 'Enter') confirmEditQty(v.id); if (e.key === 'Escape') setEditingQtyId(null); }}
+                                className="w-14 h-7 text-center text-sm font-bold font-mono px-1 bg-surface-2 border-primary"
+                              />
+                            ) : (
+                              <p
+                                className={cn('text-center text-sm font-bold font-mono font-mono-num cursor-pointer hover:opacity-70 transition-opacity', st.color)}
+                                onClick={() => startEditQty(v.id)}
+                                title="Clique para editar"
+                              >
+                                {qty}
+                              </p>
+                            )}
                             <div className="flex items-center gap-1">
-                              <button onClick={() => quickChange(v.id, -1)} className="w-7 h-7 rounded border border-border flex items-center justify-center hover:bg-surface-2/80">
+                              <button onClick={() => quickChange(v.id, -1)} className="w-7 h-7 rounded border border-border flex items-center justify-center hover:bg-surface-2/80 active:scale-95 transition-transform">
                                 <Minus className="w-3 h-3" />
                               </button>
-                              <button onClick={() => quickChange(v.id, 1)} className="w-7 h-7 rounded border border-border flex items-center justify-center hover:bg-surface-2/80">
+                              <button onClick={() => quickChange(v.id, 1)} className="w-7 h-7 rounded border border-border flex items-center justify-center hover:bg-surface-2/80 active:scale-95 transition-transform">
                                 <Plus className="w-3 h-3" />
                               </button>
                               <button onClick={() => setMovModal({ variacaoId: v.id, tipo: 'entrada' })} className="w-7 h-7 rounded border border-border flex items-center justify-center hover:bg-surface-2/80 text-text-2">
