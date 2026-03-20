@@ -135,11 +135,27 @@ export default function Products() {
       <PageHeader
         title="Produtos"
         action={
-          <div className="flex gap-2">
+          <Button size="sm" onClick={() => setShowProductForm(true)} className="h-8 bg-primary hover:bg-primary/90 rounded-lg text-[13px] font-semibold px-3">
+            <Plus className="w-3.5 h-3.5 mr-1" />Novo
+          </Button>
+        }
+      />
+
+      <div className="px-4 pt-3 pb-4 space-y-3 md:px-0 md:py-6 md:max-w-[800px]">
+        <Tabs defaultValue="products" className="w-full">
+          <div className="flex items-center gap-2">
+            <TabsList className="flex-1 grid grid-cols-2 h-9 rounded-lg bg-surface-2 p-0.5">
+              <TabsTrigger value="products" className="text-xs font-semibold rounded-md data-[state=active]:bg-surface data-[state=active]:text-foreground text-text-2">
+                Produtos <span className="text-text-3 ml-1">({stats?.totalProducts || 0})</span>
+              </TabsTrigger>
+              <TabsTrigger value="analysis" className="text-xs font-semibold rounded-md data-[state=active]:bg-surface data-[state=active]:text-foreground text-text-2">
+                Análise
+              </TabsTrigger>
+            </TabsList>
             {analysisProducts.length > 0 && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="outline" className="h-9 border-border bg-surface-2"><Download className="w-4 h-4" /></Button>
+                  <Button size="sm" variant="outline" className="h-9 w-9 p-0 border-border bg-surface-2 flex-shrink-0"><Download className="w-4 h-4" /></Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={handleExportCSV}><FileSpreadsheet className="w-4 h-4 mr-2" />Exportar CSV</DropdownMenuItem>
@@ -147,23 +163,7 @@ export default function Products() {
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-            <Button size="sm" onClick={() => setShowProductForm(true)} className="h-9 bg-primary hover:bg-primary/90 rounded-[10px] text-[13px] font-semibold">
-              <Plus className="w-4 h-4 mr-1" />Precificar
-            </Button>
           </div>
-        }
-      />
-
-      <div className="px-4 py-4 space-y-4 md:px-0 md:py-6 md:max-w-[800px]">
-        <Tabs defaultValue="products" className="w-full">
-          <TabsList className="w-full grid grid-cols-2 h-10 rounded-lg bg-surface-2 p-0.5">
-            <TabsTrigger value="products" className="text-xs font-semibold rounded-md data-[state=active]:bg-surface data-[state=active]:text-foreground text-text-2">
-              Produtos <span className="text-text-3 ml-1">({stats?.totalProducts || 0})</span>
-            </TabsTrigger>
-            <TabsTrigger value="analysis" className="text-xs font-semibold rounded-md data-[state=active]:bg-surface data-[state=active]:text-foreground text-text-2">
-              Análise
-            </TabsTrigger>
-          </TabsList>
 
           <TabsContent value="products" className="space-y-3 mt-3">
             {/* Margin bar */}
