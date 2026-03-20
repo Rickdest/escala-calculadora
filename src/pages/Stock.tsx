@@ -84,11 +84,11 @@ export default function Stock() {
           {[
             { label: 'Total', value: stats.total, color: 'text-foreground' },
             { label: 'Ativo', value: stats.ativo, color: 'text-success' },
-            { label: 'Baixo 🟡', value: stats.baixo, color: 'text-warning' },
-            { label: 'Zerado 🔴', value: stats.zerado, color: 'text-destructive' },
+            { label: 'Baixo', value: stats.baixo, color: 'text-warning' },
+            { label: 'Zerado', value: stats.zerado, color: 'text-destructive' },
           ].map((s, i) => (
             <div key={s.label} className={cn('surface-card p-3 text-center', i < 2 ? 'stagger-1' : 'stagger-2')}>
-              <p className={cn('text-xl font-bold font-mono font-mono-num', s.color)}>{s.value}</p>
+              <p className={cn('text-2xl font-bold font-mono font-mono-num', s.color)}>{s.value}</p>
               <p className="section-label mt-0.5">{s.label}</p>
             </div>
           ))}
@@ -174,19 +174,19 @@ export default function Stock() {
             })}
           </div>
         ) : (
-          <div className="text-center py-16 animate-fade-up">
-            <div className="w-16 h-16 rounded-xl bg-surface-2 mx-auto flex items-center justify-center mb-4">
+          <div className="flex flex-col items-center justify-center py-20 animate-fade-up">
+            <div className="w-16 h-16 rounded-2xl bg-surface-2 flex items-center justify-center">
               <Package className="w-8 h-8 text-text-3" />
             </div>
-            <h3 className="font-bold text-foreground mb-1">
-              {search || filter !== 'all' ? 'Nenhum produto encontrado' : 'Sem produtos no estoque'}
+            <h3 className="font-bold text-foreground text-lg mt-4">
+              {search || filter !== 'all' ? 'Nenhum produto encontrado' : 'Nenhum produto no estoque'}
             </h3>
-            <p className="text-sm text-text-2 mb-4">
-              {search || filter !== 'all' ? 'Tente outros termos ou filtros' : 'Adicione seu primeiro produto'}
+            <p className="text-sm text-text-2 text-center max-w-xs mx-auto mt-2">
+              {search || filter !== 'all' ? 'Tente outros termos ou filtros' : 'Cadastre produtos para controlar seu estoque e receber alertas de reposição'}
             </p>
             {!search && filter === 'all' && (
-              <Button onClick={() => setShowWizard(true)} className="bg-primary text-primary-foreground rounded-[10px] font-semibold">
-                <Plus className="w-4 h-4 mr-1.5" /> Adicionar Produto
+              <Button onClick={() => setShowWizard(true)} className="bg-primary text-primary-foreground rounded-[10px] h-11 px-6 font-semibold mt-5">
+                <Plus className="w-4 h-4 mr-1.5" /> Novo Produto
               </Button>
             )}
           </div>
