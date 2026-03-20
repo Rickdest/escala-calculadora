@@ -651,20 +651,6 @@ function ProductAnalysis() {
                 );
               })()}
 
-              {/* Insight Banner */}
-              {status && (() => {
-                const insight = getRoasInsight(status);
-                if (!insight) return null;
-                return (
-                  <div className={cn('rounded-xl border p-4 flex items-start gap-3 animate-fade-in', statusBg[status as keyof typeof statusBg])}>
-                    <span className="text-2xl mt-0.5">{insight.emoji}</span>
-                    <div className="flex-1">
-                      <p className={cn('font-bold text-sm', statusColors[status as keyof typeof statusColors])}>{insight.title}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{insight.desc}</p>
-                    </div>
-                  </div>
-                );
-              })()}
 
               {/* Gauge + Cost Breakdown */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
