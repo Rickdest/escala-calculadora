@@ -1,5 +1,14 @@
 import { Product, ProductCalculation, Store, StoreConfig } from '@/types/store';
 
+function escapeHtml(str: string): string {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 interface ExportData {
   product: Product;
   calc: ProductCalculation;
