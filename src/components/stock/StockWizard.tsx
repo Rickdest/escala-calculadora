@@ -362,9 +362,10 @@ export function StockWizard({ onClose, editProduct }: Props) {
                 <button
                   onClick={() => {
                     setTemVariacoes(true);
-                    if (variationBlocks.length === 0) {
-                      setVariationBlocks([{ id: Math.random().toString(36).substring(2, 10), typeName: '', options: [] }]);
-                    }
+                    setVariationBlocks(prev => prev.length === 0
+                      ? [{ id: Math.random().toString(36).substring(2, 10), typeName: '', options: [] }]
+                      : prev
+                    );
                   }}
                   className="w-full border-2 border-dashed border-primary/50 text-primary rounded-[10px] py-2.5 text-sm font-semibold hover:bg-primary/5 transition-colors"
                 >
