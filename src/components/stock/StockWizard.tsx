@@ -437,195 +437,71 @@ export function StockWizard({ onClose, editProduct }: Props) {
             )}
           </div>
 
-          {/* ─── SEÇÃO: Lista de Variações (table) ─── */}
+          {/* ─── SEÇÃO: Lista de Variações ─── */}
           {temVariacoes && varRows.length > 0 && (
             <>
               <div className="h-2 bg-surface-2" />
               <div className="p-4 space-y-3 animate-fade-up">
-                <p className="section-label mb-3">LISTA DE VARIAÇÕES</p>
-
-                {/* Bulk apply */}
                 <div className="space-y-2">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    <div>
-                      <Label className="section-label">Custo (R$)</Label>
-                      <Input type="number" step="0.01" value={bulkCost} onChange={e => setBulkCost(e.target.value)} placeholder="0,00" className="h-8 text-xs bg-surface-2 border-border focus:border-primary" />
+                  {/* Bulk fill */}
+                  <div className="surface-card p-3 space-y-3">
+                    <p className="section-label">PREENCHER TODOS IGUAL</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <p className="section-label mb-1">CUSTO (R$)</p>
+                        <Input type="number" step="0.01" value={bulkCost} onChange={e => setBulkCost(e.target.value)} placeholder="0,00" className="h-10 bg-surface-2 border-border text-sm" />
+                      </div>
+                      <div>
+                        <p className="section-label mb-1">QUANTIDADE</p>
+                        <Input type="number" value={bulkQty} onChange={e => setBulkQty(e.target.value)} placeholder="0" className="h-10 bg-surface-2 border-border text-sm" />
+                      </div>
+                      <div>
+                        <p className="section-label mb-1">MÍN. ALERTA</p>
+                        <Input type="number" value={bulkMin} onChange={e => setBulkMin(e.target.value)} placeholder="5" className="h-10 bg-surface-2 border-border text-sm" />
+                      </div>
+                      <div>
+                        <p className="section-label mb-1">SKU</p>
+                        <Input value={bulkSku || ''} onChange={e => setBulkSku(e.target.value)} placeholder="SKU" className="h-10 bg-surface-2 border-border text-sm" />
+                      </div>
                     </div>
-                    <div>
-                      <Label className="section-label">Qtd</Label>
-                      <Input type="number" value={bulkQty} onChange={e => setBulkQty(e.target.value)} placeholder="0" className="h-8 text-xs bg-surface-2 border-border focus:border-primary" />
-                    </div>
-                    <div>
-                      <Label className="section-label">Mín.</Label>
-                      <Input type="number" value={bulkMin} onChange={e => setBulkMin(e.target.value)} placeholder="5" className="h-8 text-xs bg-surface-2 border-border focus:border-primary" />
-                    </div>
-                    <div>
-                      <Label className="section-label">SKU</Label>
-                      <Input value={bulkSku} onChange={e => setBulkSku(e.target.value)} placeholder="SKU" className="h-8 text-xs bg-surface-2 border-border focus:border-primary" />
-                    </div>
+                    <Button onClick={applyBulk} className="w-full bg-primary text-primary-foreground rounded-[10px] h-10 font-semibold text-sm">
+                      Aplicar a todos
+                    </Button>
                   </div>
-                  <button
-                    onClick={applyBulk}
-                    className="w-full md:w-auto px-4 h-8 border border-primary text-primary rounded-[10px] text-xs font-semibold hover:bg-primary/5"
-                  >
-                    Aplicar a todos
-                  </button>
-                </div>
 
-                {/* ── Mobile: card list ── */}
-                <div className="md:hidden space-y-3">
+                  {/* Each variation as a row */}
+                  <p className="section-label pt-2">VARIAÇÕES ({varRows.length})</p>
                   {varRows.map(row => (
-                    <div key={row.tempId} className="surface-card p-3 rounded-xl space-y-3">
+                    <div key={row.tempId} className="surface-card p-3 space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold text-foreground">{getVariationLabel(row.atributos)}</span>
-                        <button
-                          onClick={() => setVarRows(prev => prev.filter(v => v.tempId !== row.tempId))}
-                          className="p-1 hover:bg-surface-2/80 rounded"
-                        >
-                          <X className="w-4 h-4 text-text-2" />
+                        <p className="text-sm font-semibold text-foreground">{getVariationLabel(row.atributos)}</p>
+                        <button onClick={() => removeVarRow(row.tempId)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-surface-2 text-text-3 hover:text-destructive transition-colors">
+                          <X className="w-4 h-4" />
                         </button>
                       </div>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="section-label">Preço de Custo (R$)</label>
-                          <div className="flex items-center bg-surface-2 border border-border rounded-lg overflow-hidden">
-                            <span className="pl-2 text-xs text-text-3 shrink-0">R$</span>
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={row.preco_custo || ''}
-                              onChange={e => updateVarRow(row.tempId, 'preco_custo', e.target.value)}
-                              className="h-10 bg-transparent text-sm px-2 w-full outline-none"
-                            />
+                          <p className="section-label mb-1">CUSTO (R$)</p>
+                          <div className="flex items-center h-10 bg-surface-2 border border-border rounded-lg px-3 gap-2">
+                            <span className="text-text-3 text-sm">R$</span>
+                            <input type="number" step="0.01" value={row.preco_custo || ''} onChange={e => updateVarRow(row.tempId, 'preco_custo', e.target.value)} className="flex-1 bg-transparent text-sm text-foreground outline-none font-mono font-mono-num" placeholder="0,00" />
                           </div>
                         </div>
                         <div>
-                          <label className="section-label">Quantidade</label>
-                          <Input
-                            type="number"
-                            min="0"
-                            value={row.quantidade || ''}
-                            onChange={e => updateVarRow(row.tempId, 'quantidade', e.target.value)}
-                            className="h-10 bg-surface-2 border-border rounded-lg text-sm px-3 w-full"
-                          />
+                          <p className="section-label mb-1">QUANTIDADE</p>
+                          <input type="number" min="0" value={row.quantidade || ''} onChange={e => updateVarRow(row.tempId, 'quantidade', e.target.value)} className="w-full h-10 bg-surface-2 border border-border rounded-lg px-3 text-sm text-foreground outline-none font-mono font-mono-num" placeholder="0" />
                         </div>
                         <div>
-                          <label className="section-label">Mín. Alerta</label>
-                          <Input
-                            type="number"
-                            min="0"
-                            value={row.quantidade_minima || ''}
-                            onChange={e => updateVarRow(row.tempId, 'quantidade_minima', e.target.value)}
-                            className="h-10 bg-surface-2 border-border rounded-lg text-sm px-3 w-full"
-                          />
+                          <p className="section-label mb-1">MÍN. ALERTA</p>
+                          <input type="number" min="0" value={row.quantidade_minima || ''} onChange={e => updateVarRow(row.tempId, 'quantidade_minima', e.target.value)} className="w-full h-10 bg-surface-2 border border-border rounded-lg px-3 text-sm text-foreground outline-none font-mono font-mono-num" placeholder="5" />
                         </div>
                         <div>
-                          <label className="section-label">SKU</label>
-                          <Input
-                            value={row.sku}
-                            onChange={e => updateVarRow(row.tempId, 'sku', e.target.value)}
-                            className="h-10 bg-surface-2 border-border rounded-lg text-sm px-3 w-full"
-                          />
+                          <p className="section-label mb-1">SKU</p>
+                          <input value={row.sku} onChange={e => updateVarRow(row.tempId, 'sku', e.target.value)} className="w-full h-10 bg-surface-2 border border-border rounded-lg px-3 text-sm text-foreground outline-none" placeholder="SKU" />
                         </div>
                       </div>
                     </div>
                   ))}
-                </div>
-
-                {/* ── Desktop: table ── */}
-                <div className="hidden md:block surface-card overflow-x-auto">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="bg-surface-2 text-text-2">
-                        <th className="text-left px-3 py-2 section-label">{var1Name}</th>
-                        {hasVar2 && <th className="text-left px-3 py-2 section-label">{var2Name}</th>}
-                        <th className="text-left px-3 py-2 section-label"><span className="text-primary">●</span> Preço</th>
-                        <th className="text-left px-3 py-2 section-label"><span className="text-primary">●</span> Estoque</th>
-                        <th className="text-left px-3 py-2 section-label">Mín. Alerta</th>
-                        <th className="text-left px-3 py-2 section-label">SKU da Variação</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {groupedRows.map((group, gi) => (
-                        group.rows.map((row, ri) => (
-                          <tr
-                            key={row.tempId}
-                            className={cn(
-                              ri === 0 && gi > 0 && 'border-t-2 border-border',
-                              gi % 2 === 0 ? 'bg-surface' : 'bg-surface-2/30'
-                            )}
-                          >
-                            {ri === 0 && (
-                              <td className="px-3 py-2 align-top font-medium" rowSpan={group.rows.length}>
-                                <div className="space-y-1">
-                                  <span>{group.key}</span>
-                                  <div>
-                                    <button
-                                      onClick={() => groupFileRefs.current[group.key]?.click()}
-                                      className="block w-10 h-10 rounded border border-dashed border-border hover:border-primary/50 overflow-hidden"
-                                    >
-                                      {groupImages[group.key] ? (
-                                        <img src={groupImages[group.key]} alt="" className="w-full h-full object-cover" />
-                                      ) : (
-                                        <Camera className="w-3.5 h-3.5 text-text-3 m-auto mt-2.5" />
-                                      )}
-                                    </button>
-                                    <input
-                                      ref={el => { groupFileRefs.current[group.key] = el; }}
-                                      type="file"
-                                      accept="image/*"
-                                      className="hidden"
-                                      onChange={e => handleGroupImageSelect(group.key, e)}
-                                    />
-                                  </div>
-                                </div>
-                              </td>
-                            )}
-                            {hasVar2 && (
-                              <td className="px-3 py-2">{row.atributos[var2Name]}</td>
-                            )}
-                            <td className="px-3 py-1.5">
-                              <div className="relative">
-                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-text-3">R$</span>
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  value={row.preco_custo || ''}
-                                  onChange={e => updateVarRow(row.tempId, 'preco_custo', e.target.value)}
-                                  className="h-9 text-xs pl-8 w-[100px] bg-surface-2 border-border focus:border-primary"
-                                />
-                              </div>
-                            </td>
-                            <td className="px-3 py-1.5">
-                              <Input
-                                type="number"
-                                min="0"
-                                value={row.quantidade || ''}
-                                onChange={e => updateVarRow(row.tempId, 'quantidade', e.target.value)}
-                                className="h-9 text-xs w-[80px] bg-surface-2 border-border focus:border-primary"
-                              />
-                            </td>
-                            <td className="px-3 py-1.5">
-                              <Input
-                                type="number"
-                                min="0"
-                                value={row.quantidade_minima || ''}
-                                onChange={e => updateVarRow(row.tempId, 'quantidade_minima', e.target.value)}
-                                className="h-9 text-xs w-[80px] bg-surface-2 border-border focus:border-primary"
-                              />
-                            </td>
-                            <td className="px-3 py-1.5">
-                              <Input
-                                value={row.sku}
-                                onChange={e => updateVarRow(row.tempId, 'sku', e.target.value)}
-                                className="h-9 text-xs w-[90px] bg-surface-2 border-border focus:border-primary"
-                              />
-                            </td>
-                          </tr>
-                        ))
-                      ))}
-                    </tbody>
-                  </table>
                 </div>
               </div>
             </>
