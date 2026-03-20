@@ -967,8 +967,8 @@ function RoasRanking() {
     return currentStore.products
       .map(p => {
         const data = calcRoasFromValues(p.salePrice, p.costPrice, p.adsCost, p.adsRevenue);
-        const status = data.roasAtual !== null && data.roasEmpate && data.roasSaudavel && !data.margemInsuficiente
-          ? getRoasStatus(data.roasAtual, data.roasEmpate, data.roasSaudavel) : null;
+        const status = data.roasAtual !== null && data.roasEmpate && data.roasSaudavel && data.roasIdeal && !data.margemInsuficiente
+          ? getRoasStatus(data.roasAtual, data.roasEmpate, data.roasSaudavel, data.roasIdeal) : null;
         return { product: p, ...data, status };
       })
       .sort((a, b) => {
