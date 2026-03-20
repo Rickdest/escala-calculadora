@@ -178,7 +178,7 @@ export default function Home() {
         </div>
 
         {/* Tools Grid */}
-        <div className="animate-fade-up md:col-span-full">
+        <div className="animate-fade-up md:col-span-full order-3 md:order-none">
           <p className="section-label mb-3">Ferramentas</p>
           <div className="grid grid-cols-4 md:grid-cols-8 gap-y-3 gap-x-2">
             {toolItems.map((item) => (
