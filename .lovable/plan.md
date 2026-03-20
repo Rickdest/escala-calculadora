@@ -1,26 +1,31 @@
 
 
-## Plano: Ativar Proteção contra Senhas Vazadas (HIBP)
+## Plano: Redesenhar Seção de Métricas da Home
 
-### Diagnóstico
+### Arquivos alterados
 
-Esta configuração **não pode ser feita via migration SQL nem via código**. O comando `ALTER SYSTEM SET auth.password_hibp_enabled = true` não está disponível em Lovable Cloud — é uma configuração do serviço de autenticação, não do banco de dados.
+1. **`src/pages/Home.tsx`** — linhas 147-233
+2. **`src/components/home/HomeEducationCard.tsx`** — remover ícone
 
-### Ação necessária (manual)
+### Alterações
 
-Você precisa ativar isso manualmente no painel do Lovable Cloud:
+**1. Métricas da Loja (linhas 147-174)** — Manter estrutura de 2 cards grid, remover emoji do status da margem. Exibir apenas `{label} ●` sem emoji prefix.
 
-1. Abrir a aba **Cloud** no Lovable
-2. Ir em **Users** → ícone de engrenagem (**Auth settings**)
-3. Na seção **Email settings**, ativar **Password HIBP Check**
+**2. Performance cards (linhas 176-194)** — Substituir os 2 cards separados por UMA linha horizontal única:
+- Container: `surface-card` com `rounded-[10px] px-4 py-3 flex items-center justify-center gap-2`
+- `{productsAboveTarget}` em DM Mono 14px bold text-success + `na meta` em 13px text-2
+- Separador `·` em text-3
+- `{productsBelowTarget}` em DM Mono 14px bold (warning se > 0, text-3 se = 0) + `abaixo da meta` em 13px text-2
+- Sem ícones CircleCheck/AlertTriangle — remover imports não usados
 
-Isso bloqueará automaticamente senhas conhecidas em vazamentos de dados (HaveIBeenPwned).
+**3. HomeEducationCard** — Remover o `<GraduationCap>` icon. Manter tudo mais igual.
 
-### Sobre o finding "SECURITY DEFINER functions"
+**4. Seus Produtos (linhas 200-233)** — Reestruturar cada item:
+- Remover badge numérico (1, 2, 3) com fundo laranja/surface-2
+- Layout em 2 linhas por produto:
+  - Linha 1: Nome do produto (15px text-foreground)
+  - Linha 2: `R$ X,XX lucro · 10.0% ●` (DM Mono 13px, cores por status)
+- Manter `surface-card divide-y divide-border`
 
-O finding `handle_new_user_definer` (nível **info**) é apenas informativo — as 6 funções `SECURITY DEFINER` existentes (`has_role`, `has_active_subscription`, `handle_new_user`, `handle_new_user_trial`, `update_subscription_status`, `get_own_profile_protected`) estão corretamente escopadas e são necessárias para o funcionamento do sistema. Nenhuma ação é necessária.
-
-### Resultado
-
-Não há alterações de código ou migrations a implementar. A única ação é a configuração manual descrita acima.
+**5. Cleanup** — Remover `CircleCheck`, `AlertTriangle` dos imports se não usados em outro lugar.
 
