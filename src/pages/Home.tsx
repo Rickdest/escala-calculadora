@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Plus, Package, Target, BarChart3, GraduationCap, Store, Warehouse, UserCircle, Settings2, ChevronRight, Zap, CircleCheck, AlertTriangle } from 'lucide-react';
+import { Plus, Package, Target, BarChart3, GraduationCap, Store, Warehouse, UserCircle, Settings2, ChevronRight, Zap } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -157,10 +157,11 @@ export default function Home() {
                 {stats.avgMargin.toFixed(1)}%
               </p>
               <p className={cn(
-                'text-[11px] mt-1',
+                'text-[12px] mt-1 flex items-center gap-1.5',
                 getMarginStatus(stats.avgMargin).color
               )}>
-                {getMarginStatus(stats.avgMargin).emoji} {getMarginStatus(stats.avgMargin).label}
+                {getMarginStatus(stats.avgMargin).label}
+                <span className={cn('w-1.5 h-1.5 rounded-full', getMarginStatus(stats.avgMargin).color.replace('text-', 'bg-'))} />
               </p>
             </div>
             <div className="surface-card p-4">
@@ -168,27 +169,20 @@ export default function Home() {
               <p className="font-mono text-[28px] font-bold font-mono-num leading-none text-foreground">
                 {stats.totalProducts}
               </p>
-              <p className="text-[11px] text-text-2 mt-1">cadastrados</p>
+              <p className="text-[12px] text-text-3 mt-1">cadastrados</p>
             </div>
           </div>
         </div>
 
         {/* Performance */}
         {stats.totalProducts > 0 && (
-          <div className="grid grid-cols-2 gap-3 animate-fade-up stagger-3">
-            <div className="surface-card p-3.5">
-              <div className="flex items-center gap-2 mb-1">
-                <CircleCheck className="w-4 h-4 text-success" />
-                <span className="text-[11px] font-medium text-text-2">Na meta</span>
-              </div>
-              <p className="font-mono text-xl font-bold font-mono-num text-success">{stats.productsAboveTarget} <span className="text-[13px] font-normal text-text-3">produtos</span></p>
-            </div>
-            <div className="surface-card p-3.5">
-              <div className="flex items-center gap-2 mb-1">
-                <AlertTriangle className="w-4 h-4 text-warning" />
-                <span className="text-[11px] font-medium text-text-2">Abaixo da meta</span>
-              </div>
-              <p className={cn('font-mono text-xl font-bold font-mono-num', stats.productsBelowTarget > 0 ? 'text-warning' : 'text-text-3')}>{stats.productsBelowTarget} <span className="text-[13px] font-normal text-text-3">produtos</span></p>
+          <div className="animate-fade-up stagger-3">
+            <div className="surface-card rounded-[10px] px-4 py-3 flex items-center justify-center gap-2">
+              <span className="font-mono text-[14px] font-bold font-mono-num text-success">{stats.productsAboveTarget}</span>
+              <span className="text-[13px] text-text-2">na meta</span>
+              <span className="text-text-3 text-[13px]">·</span>
+              <span className={cn('font-mono text-[14px] font-bold font-mono-num', stats.productsBelowTarget > 0 ? 'text-warning' : 'text-text-3')}>{stats.productsBelowTarget}</span>
+              <span className="text-[13px] text-text-2">abaixo da meta</span>
             </div>
           </div>
         )}
@@ -206,23 +200,15 @@ export default function Home() {
               </button>
             </div>
             <div className="surface-card divide-y divide-border">
-              {topProducts.map(({ product, calc }, index) => (
-                <button key={product.id} className="w-full px-4 py-3 flex items-center justify-between hover:bg-surface-2/50 transition-colors" onClick={() => navigate('/products')}>
-                  <div className="flex items-center gap-3">
-                    <div className={cn(
-                      'w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold font-mono-num',
-                      index === 0 ? 'bg-primary text-primary-foreground' : 'bg-surface-2 text-text-2'
-                    )}>
-                      {index + 1}
-                    </div>
-                    <span className="font-medium text-foreground truncate max-w-[140px] text-[15px]">{product.name}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={cn('font-mono text-[13px] font-semibold font-mono-num', calc.netProfit >= 0 ? 'text-success' : 'text-danger')}>
-                      R$ {calc.netProfit.toFixed(2).replace('.', ',')}
+              {topProducts.map(({ product, calc }) => (
+                <button key={product.id} className="w-full px-4 py-3 text-left hover:bg-surface-2/50 transition-colors" onClick={() => navigate('/products')}>
+                  <p className="text-[15px] font-medium text-foreground truncate">{product.name}</p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className={cn('font-mono text-[13px] font-mono-num', calc.netProfit >= 0 ? 'text-success' : 'text-danger')}>
+                      R$ {calc.netProfit.toFixed(2).replace('.', ',')} lucro
                     </span>
                     <span className="text-text-3 text-[13px]">·</span>
-                    <span className={cn('font-mono text-[13px] font-semibold font-mono-num', getMarginStatus(calc.realMargin).color)}>
+                    <span className={cn('font-mono text-[13px] font-bold font-mono-num', getMarginStatus(calc.realMargin).color)}>
                       {calc.realMargin.toFixed(1)}%
                     </span>
                     <span className={cn('w-1.5 h-1.5 rounded-full', getMarginStatus(calc.realMargin).color.replace('text-', 'bg-'))} />
