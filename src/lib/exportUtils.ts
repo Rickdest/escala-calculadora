@@ -77,7 +77,7 @@ export function generatePDFContent(data: ExportData[], store: Store): string {
     <html>
     <head>
       <meta charset="utf-8">
-      <title>Relatório - ${store.name}</title>
+      <title>Relatório - ${escapeHtml(store.name)}</title>
       <style>
         body { font-family: Arial, sans-serif; padding: 20px; }
         h1 { color: #333; border-bottom: 2px solid #7c3aed; padding-bottom: 10px; }
