@@ -259,10 +259,10 @@ export function StockWizard({ onClose, editProduct }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 bg-foreground/30 backdrop-blur-sm">
-      <div className="fixed inset-0 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:max-w-lg md:my-4 bg-card md:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+      <div className="fixed inset-0 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:max-w-lg md:my-4 bg-surface md:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
         {/* ═══ HEADER ═══ */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-          <button onClick={onClose} className="p-1.5 hover:bg-secondary rounded-lg">
+          <button onClick={onClose} className="p-1.5 hover:bg-surface-2/80 rounded-lg">
             <X className="w-5 h-5" />
           </button>
           <h2 className="text-base font-bold">{editProduct ? 'Editar Produto' : 'Novo Produto'}</h2>
@@ -270,7 +270,7 @@ export function StockWizard({ onClose, editProduct }: Props) {
             onClick={handleSave}
             disabled={!nome.trim() || saving}
             className={cn(
-              'px-4 py-1.5 rounded-lg text-sm font-bold transition-all',
+              'px-4 py-1.5 rounded-[10px] text-sm font-semibold transition-all',
               nome.trim() && !saving
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-muted text-muted-foreground cursor-not-allowed'
@@ -284,21 +284,21 @@ export function StockWizard({ onClose, editProduct }: Props) {
         <div className="flex-1 overflow-y-auto pb-20">
 
           {/* ─── SEÇÃO: Informações Básicas ─── */}
-          <div className="p-4 space-y-4">
+          <div className="p-4 space-y-4 animate-fade-up">
             <h3 className="text-sm font-bold text-foreground">Informações Básicas</h3>
 
             {/* Photo */}
             <div className="flex items-start gap-4">
               <button
                 onClick={() => fileRef.current?.click()}
-                className="w-20 h-20 shrink-0 rounded-lg border-2 border-dashed border-border hover:border-primary/50 flex flex-col items-center justify-center gap-1 overflow-hidden transition-colors bg-secondary/30"
+                className="w-20 h-20 shrink-0 rounded-lg border-2 border-dashed border-border hover:border-primary/50 flex flex-col items-center justify-center gap-1 overflow-hidden transition-colors bg-surface-2"
               >
                 {imagePreview ? (
                   <img src={imagePreview} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <>
-                    <Camera className="w-5 h-5 text-muted-foreground" />
-                    <span className="text-[9px] text-muted-foreground">Foto</span>
+                    <Camera className="w-5 h-5 text-text-3" />
+                    <span className="text-[9px] text-text-3">Foto</span>
                   </>
                 )}
               </button>
@@ -306,7 +306,7 @@ export function StockWizard({ onClose, editProduct }: Props) {
 
               <div className="flex-1 space-y-1.5">
                 <Label className="text-xs font-semibold">Nome do Produto <span className="text-destructive">*</span></Label>
-                <Input value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Camiseta Oversized" className="h-10 text-sm" />
+                <Input value={nome} onChange={e => setNome(e.target.value)} placeholder="Ex: Camiseta Oversized" className="h-10 text-sm bg-surface-2 border-border focus:border-primary" />
               </div>
             </div>
 
@@ -314,7 +314,7 @@ export function StockWizard({ onClose, editProduct }: Props) {
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold">Categoria</Label>
               <Select value={categoria} onValueChange={setCategoria}>
-                <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectTrigger className="h-10 text-sm bg-surface-2 border-border focus:border-primary"><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
                   {CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                 </SelectContent>
@@ -323,8 +323,8 @@ export function StockWizard({ onClose, editProduct }: Props) {
 
             {/* SKU Base */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">SKU Base <span className="text-muted-foreground font-normal">(opcional)</span></Label>
-              <Input value={skuBase} onChange={e => setSkuBase(e.target.value)} placeholder="Ex: CAM-001" className="h-10 text-sm" />
+              <Label className="text-xs font-semibold">SKU Base <span className="text-text-3 font-normal">(opcional)</span></Label>
+              <Input value={skuBase} onChange={e => setSkuBase(e.target.value)} placeholder="Ex: CAM-001" className="h-10 text-sm bg-surface-2 border-border focus:border-primary" />
             </div>
 
             {/* Descrição colapsável */}
@@ -333,15 +333,15 @@ export function StockWizard({ onClose, editProduct }: Props) {
                 {showDesc ? '− Ocultar descrição' : '+ Adicionar descrição'}
               </button>
               {showDesc && (
-                <Textarea value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Detalhes do produto..." className="mt-2 text-sm min-h-[60px]" />
+                <Textarea value={descricao} onChange={e => setDescricao(e.target.value)} placeholder="Detalhes do produto..." className="mt-2 text-sm min-h-[60px] bg-surface-2 border-border focus:border-primary" />
               )}
             </div>
           </div>
 
-          <div className="h-2 bg-secondary/30" />
+          <div className="h-2 bg-surface-2" />
 
           {/* ─── SEÇÃO: Informações de Vendas ─── */}
-          <div className="p-4 space-y-4">
+          <div className="p-4 space-y-4 animate-fade-up">
             <h3 className="text-sm font-bold text-foreground">Informações de vendas</h3>
 
             {/* Variações header */}
@@ -360,7 +360,7 @@ export function StockWizard({ onClose, editProduct }: Props) {
                       setVariationBlocks([{ id: Math.random().toString(36).substring(2, 10), typeName: '', options: [] }]);
                     }
                   }}
-                  className="w-full border-2 border-dashed border-primary/50 text-primary rounded-lg py-2.5 text-sm font-semibold hover:bg-primary/5 transition-colors"
+                  className="w-full border-2 border-dashed border-primary/50 text-primary rounded-[10px] py-2.5 text-sm font-semibold hover:bg-primary/5 transition-colors"
                 >
                   + Habilitar Variações
                 </button>
@@ -370,21 +370,21 @@ export function StockWizard({ onClose, editProduct }: Props) {
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">Preço de Custo <span className="text-destructive">*</span></Label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
-                      <Input type="number" step="0.01" value={simpleCost} onChange={e => setSimpleCost(e.target.value)} placeholder="0,00" className="h-10 text-sm pl-9" />
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-text-3">R$</span>
+                      <Input type="number" step="0.01" value={simpleCost} onChange={e => setSimpleCost(e.target.value)} placeholder="0,00" className="h-10 text-sm pl-9 bg-surface-2 border-border focus:border-primary" />
                     </div>
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">Estoque <span className="text-destructive">*</span></Label>
-                    <Input type="number" min="0" value={simpleQty} onChange={e => setSimpleQty(e.target.value)} className="h-10 text-sm" />
+                    <Input type="number" min="0" value={simpleQty} onChange={e => setSimpleQty(e.target.value)} className="h-10 text-sm bg-surface-2 border-border focus:border-primary" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">Estoque mínimo alerta</Label>
-                    <Input type="number" min="0" value={simpleMin} onChange={e => setSimpleMin(e.target.value)} className="h-10 text-sm" />
+                    <Input type="number" min="0" value={simpleMin} onChange={e => setSimpleMin(e.target.value)} className="h-10 text-sm bg-surface-2 border-border focus:border-primary" />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">SKU <span className="text-muted-foreground font-normal">(opcional)</span></Label>
-                    <Input value={simpleSku} onChange={e => setSimpleSku(e.target.value)} className="h-10 text-sm" />
+                    <Label className="text-xs font-semibold">SKU <span className="text-text-3 font-normal">(opcional)</span></Label>
+                    <Input value={simpleSku} onChange={e => setSimpleSku(e.target.value)} className="h-10 text-sm bg-surface-2 border-border focus:border-primary" />
                   </div>
                 </div>
               </>
@@ -414,7 +414,7 @@ export function StockWizard({ onClose, editProduct }: Props) {
                       if (variationBlocks.length >= 2) { toast.error('Máximo 2 variações'); return; }
                       setVariationBlocks(prev => [...prev, { id: Math.random().toString(36).substring(2, 10), typeName: '', options: [] }]);
                     }}
-                    className="w-full border border-dashed border-primary/50 text-primary rounded-lg py-2 text-sm font-semibold hover:bg-primary/5 transition-colors"
+                    className="w-full border border-dashed border-primary/50 text-primary rounded-[10px] py-2 text-sm font-semibold hover:bg-primary/5 transition-colors"
                   >
                     + Adicionar Variação {variationBlocks.length + 1}
                   </button>
@@ -423,7 +423,7 @@ export function StockWizard({ onClose, editProduct }: Props) {
                 {/* Disable variations link */}
                 <button
                   onClick={() => { setTemVariacoes(false); setVariationBlocks([]); setVarRows([]); }}
-                  className="text-xs text-muted-foreground hover:text-destructive"
+                  className="text-xs text-text-2 hover:text-destructive"
                 >
                   Desabilitar variações
                 </button>
@@ -434,37 +434,37 @@ export function StockWizard({ onClose, editProduct }: Props) {
           {/* ─── SEÇÃO: Lista de Variações (table) ─── */}
           {temVariacoes && varRows.length > 0 && (
             <>
-              <div className="h-2 bg-secondary/30" />
-              <div className="p-4 space-y-3">
+              <div className="h-2 bg-surface-2" />
+              <div className="p-4 space-y-3 animate-fade-up">
                 <h3 className="text-sm font-bold text-foreground">Lista de Variações</h3>
 
                 {/* Bulk apply row */}
                 <div className="flex items-end gap-2">
                   <div className="flex-1">
-                    <Label className="text-[10px] text-muted-foreground">R$ Preço</Label>
-                    <Input type="number" step="0.01" value={bulkCost} onChange={e => setBulkCost(e.target.value)} placeholder="0,00" className="h-8 text-xs" />
+                    <Label className="section-label">R$ Preço</Label>
+                    <Input type="number" step="0.01" value={bulkCost} onChange={e => setBulkCost(e.target.value)} placeholder="0,00" className="h-8 text-xs bg-surface-2 border-border focus:border-primary" />
                   </div>
                   <div className="flex-1">
-                    <Label className="text-[10px] text-muted-foreground">Estoque</Label>
-                    <Input type="number" value={bulkQty} onChange={e => setBulkQty(e.target.value)} placeholder="0" className="h-8 text-xs" />
+                    <Label className="section-label">Estoque</Label>
+                    <Input type="number" value={bulkQty} onChange={e => setBulkQty(e.target.value)} placeholder="0" className="h-8 text-xs bg-surface-2 border-border focus:border-primary" />
                   </div>
                   <div className="flex-1">
-                    <Label className="text-[10px] text-muted-foreground">SKU</Label>
-                    <Input value={bulkSku} onChange={e => setBulkSku(e.target.value)} placeholder="SKU" className="h-8 text-xs" />
+                    <Label className="section-label">SKU</Label>
+                    <Input value={bulkSku} onChange={e => setBulkSku(e.target.value)} placeholder="SKU" className="h-8 text-xs bg-surface-2 border-border focus:border-primary" />
                   </div>
                   <button
                     onClick={applyBulk}
-                    className="shrink-0 px-3 h-8 border border-primary text-primary rounded-lg text-xs font-semibold hover:bg-primary/5"
+                    className="shrink-0 px-3 h-8 border border-primary text-primary rounded-[10px] text-xs font-semibold hover:bg-primary/5"
                   >
                     Aplicar a todos
                   </button>
                 </div>
 
                 {/* Table */}
-                <div className="border border-border rounded-lg overflow-x-auto">
+                <div className="surface-card overflow-x-auto">
                   <table className="w-full text-xs min-w-[500px]">
                     <thead>
-                      <tr className="bg-secondary/50 text-muted-foreground">
+                      <tr className="bg-surface-2 text-text-2">
                         <th className="text-left px-2 py-2 font-semibold">{var1Name}</th>
                         {hasVar2 && <th className="text-left px-2 py-2 font-semibold">{var2Name}</th>}
                         <th className="text-left px-2 py-2 font-semibold"><span className="text-primary">●</span> Preço</th>
@@ -479,7 +479,7 @@ export function StockWizard({ onClose, editProduct }: Props) {
                             key={row.tempId}
                             className={cn(
                               ri === 0 && gi > 0 && 'border-t-2 border-border',
-                              gi % 2 === 0 ? 'bg-card' : 'bg-secondary/20'
+                              gi % 2 === 0 ? 'bg-surface' : 'bg-surface-2/30'
                             )}
                           >
                             {ri === 0 && (
@@ -494,7 +494,7 @@ export function StockWizard({ onClose, editProduct }: Props) {
                                     {groupImages[group.key] ? (
                                       <img src={groupImages[group.key]} alt="" className="w-full h-full object-cover" />
                                     ) : (
-                                      <Camera className="w-3.5 h-3.5 text-muted-foreground m-auto mt-2.5" />
+                                      <Camera className="w-3.5 h-3.5 text-text-3 m-auto mt-2.5" />
                                     )}
                                   </button>
                                   <input
@@ -512,13 +512,13 @@ export function StockWizard({ onClose, editProduct }: Props) {
                             )}
                             <td className="px-2 py-1.5">
                               <div className="relative">
-                                <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">R$</span>
+                                <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-text-3">R$</span>
                                 <Input
                                   type="number"
                                   step="0.01"
                                   value={row.preco_custo || ''}
                                   onChange={e => updateVarRow(row.tempId, 'preco_custo', e.target.value)}
-                                  className="h-8 text-xs pl-7 w-20"
+                                  className="h-8 text-xs pl-7 w-20 bg-surface-2 border-border focus:border-primary"
                                 />
                               </div>
                             </td>
@@ -528,14 +528,14 @@ export function StockWizard({ onClose, editProduct }: Props) {
                                 min="0"
                                 value={row.quantidade || ''}
                                 onChange={e => updateVarRow(row.tempId, 'quantidade', e.target.value)}
-                                className="h-8 text-xs w-16"
+                                className="h-8 text-xs w-16 bg-surface-2 border-border focus:border-primary"
                               />
                             </td>
                             <td className="px-2 py-1.5">
                               <Input
                                 value={row.sku}
                                 onChange={e => updateVarRow(row.tempId, 'sku', e.target.value)}
-                                className="h-8 text-xs w-24"
+                                className="h-8 text-xs w-24 bg-surface-2 border-border focus:border-primary"
                               />
                             </td>
                           </tr>
@@ -550,12 +550,12 @@ export function StockWizard({ onClose, editProduct }: Props) {
         </div>
 
         {/* ═══ FOOTER ═══ */}
-        <div className="shrink-0 p-4 border-t border-border bg-card">
+        <div className="shrink-0 p-4 border-t border-border bg-surface">
           <button
             onClick={handleSave}
             disabled={!nome.trim() || saving}
             className={cn(
-              'w-full h-[52px] rounded-lg text-base font-bold transition-all',
+              'w-full h-[52px] rounded-[10px] text-base font-semibold transition-all',
               nome.trim() && !saving
                 ? 'bg-primary text-primary-foreground'
                 : 'bg-muted text-muted-foreground cursor-not-allowed'
@@ -601,12 +601,12 @@ function VariationBlockUI({
   const showDropdown = activeDropdown === block.id && suggestions.length > 0;
 
   return (
-    <div className="border border-border rounded-lg p-3 space-y-3">
+    <div className="surface-card p-3 space-y-3">
       {/* Title + remove */}
       <div className="flex items-center justify-between">
         <span className="text-sm font-bold">Variação {blockIdx + 1}</span>
-        <button onClick={() => removeBlock(block.id)} className="p-1 hover:bg-secondary rounded">
-          <X className="w-4 h-4 text-muted-foreground" />
+        <button onClick={() => removeBlock(block.id)} className="p-1 hover:bg-surface-2/80 rounded">
+          <X className="w-4 h-4 text-text-2" />
         </button>
       </div>
 
@@ -621,14 +621,14 @@ function VariationBlockUI({
           onFocus={() => setActiveDropdown(block.id)}
           onBlur={() => setTimeout(() => setActiveDropdown(null), 150)}
           placeholder="Digite ou Selecione (ex: Cor, Tamanho)"
-          className="h-10 text-sm"
+          className="h-10 text-sm bg-surface-2 border-border focus:border-primary"
         />
         {showDropdown && (
           <div className="absolute z-10 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg overflow-hidden">
             {suggestions.map(s => (
               <button
                 key={s}
-                className="w-full text-left px-3 py-2 text-sm hover:bg-accent transition-colors"
+                className="w-full text-left px-3 py-2 text-sm hover:bg-surface-2/80 transition-colors"
                 onMouseDown={e => {
                   e.preventDefault();
                   updateBlock(block.id, { typeName: s });
@@ -652,28 +652,28 @@ function VariationBlockUI({
       <div className="space-y-2">
         {block.options.map((opt, i) => (
           <div key={i} className="grid grid-cols-[auto_1fr_1fr_auto] gap-2 items-center">
-            <GripVertical className="w-4 h-4 text-muted-foreground/50 cursor-grab" />
+            <GripVertical className="w-4 h-4 text-text-3/50 cursor-grab" />
             <Input
               value={opt.value}
               onChange={e => updateOptionInBlock(block.id, i, { value: e.target.value })}
-              className="h-8 text-xs"
+              className="h-8 text-xs bg-surface-2 border-border focus:border-primary"
               placeholder="Opção"
             />
             <Input
               value={opt.explanation}
               onChange={e => updateOptionInBlock(block.id, i, { explanation: e.target.value })}
-              className="h-8 text-xs"
+              className="h-8 text-xs bg-surface-2 border-border focus:border-primary"
               placeholder="Adicionar uma explicação"
             />
-            <button onClick={() => removeOptionFromBlock(block.id, i)} className="p-1 hover:bg-secondary rounded">
-              <Trash2 className="w-3.5 h-3.5 text-muted-foreground hover:text-destructive" />
+            <button onClick={() => removeOptionFromBlock(block.id, i)} className="p-1 hover:bg-surface-2/80 rounded">
+              <Trash2 className="w-3.5 h-3.5 text-text-2 hover:text-destructive" />
             </button>
           </div>
         ))}
 
         {/* Empty row to add new option */}
         <div className="grid grid-cols-[auto_1fr_1fr_auto] gap-2 items-center">
-          <GripVertical className="w-4 h-4 text-muted-foreground/20" />
+          <GripVertical className="w-4 h-4 text-text-3/20" />
           <Input
             value={newOptionValue}
             onChange={e => setNewOptionValue(e.target.value)}
@@ -690,7 +690,7 @@ function VariationBlockUI({
                 setNewOptionValue('');
               }
             }}
-            className="h-8 text-xs"
+            className="h-8 text-xs bg-surface-2 border-border focus:border-primary"
             placeholder="Adicionar opção..."
           />
           <div />

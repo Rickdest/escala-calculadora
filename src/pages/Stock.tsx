@@ -70,9 +70,9 @@ export default function Stock() {
   return (
     <AppLayout>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-5 pb-3">
-        <h1 className="text-xl font-extrabold text-foreground">Estoque</h1>
-        <Button onClick={() => { setEditProduct(null); setShowWizard(true); }} className="gradient-primary font-bold h-10 px-4 text-sm">
+      <div className="flex items-center justify-between px-4 pt-5 pb-3 animate-fade-up">
+        <h1 className="text-xl font-bold text-foreground">Estoque</h1>
+        <Button onClick={() => { setEditProduct(null); setShowWizard(true); }} className="bg-primary text-primary-foreground rounded-[10px] font-semibold h-10 px-4 text-sm">
           <Plus className="w-4 h-4 mr-1.5" />
           Novo Produto
         </Button>
@@ -80,24 +80,24 @@ export default function Stock() {
 
       <div className="px-4 space-y-3 pb-24">
         {/* Stats row */}
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-4 gap-2 animate-fade-up">
           {[
             { label: 'Total', value: stats.total, color: 'text-foreground' },
             { label: 'Ativo', value: stats.ativo, color: 'text-success' },
             { label: 'Baixo 🟡', value: stats.baixo, color: 'text-warning' },
             { label: 'Zerado 🔴', value: stats.zerado, color: 'text-destructive' },
-          ].map(s => (
-            <div key={s.label} className="bg-card border border-border/50 rounded-xl p-3 text-center">
-              <p className={cn('text-xl font-extrabold', s.color)}>{s.value}</p>
-              <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">{s.label}</p>
+          ].map((s, i) => (
+            <div key={s.label} className={cn('surface-card p-3 text-center', i < 2 ? 'stagger-1' : 'stagger-2')}>
+              <p className={cn('text-xl font-bold font-mono font-mono-num', s.color)}>{s.value}</p>
+              <p className="section-label mt-0.5">{s.label}</p>
             </div>
           ))}
         </div>
 
         {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nome ou SKU..." className="pl-10 h-10 text-sm bg-card border-border/50" />
+        <div className="relative animate-fade-up">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-3" />
+          <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nome ou SKU..." className="pl-10 h-10 text-sm bg-surface-2 border-border focus:border-primary" />
         </div>
 
         {/* Filter chips */}
@@ -114,7 +114,7 @@ export default function Stock() {
                 'px-3 py-1.5 rounded-full text-xs font-semibold transition-all border',
                 filter === f.key
                   ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-card text-muted-foreground border-border/50 hover:border-primary/30'
+                  : 'bg-surface-2 text-text-2 border-border'
               )}
             >
               {f.label}
@@ -122,9 +122,9 @@ export default function Stock() {
           ))}
         </div>
 
-        {/* Product list - Shopee style rows */}
+        {/* Product list */}
         {filtered.length > 0 ? (
-          <div className="space-y-1">
+          <div className="surface-card divide-y divide-border animate-fade-up">
             {filtered.map(product => {
               const status = getProductStatus(product);
               const totalQty = getProductTotalQty(product);
@@ -138,14 +138,14 @@ export default function Stock() {
                 <button
                   key={product.id}
                   onClick={() => setDetailProduct(product)}
-                  className="w-full bg-card border border-border/30 rounded-lg p-3 flex items-center gap-3 text-left hover:bg-accent/30 transition-colors active:scale-[0.99]"
+                  className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-surface-2/50 transition-colors active:scale-[0.99]"
                 >
                   {/* Image */}
-                  <div className="w-12 h-12 rounded-lg bg-secondary flex-shrink-0 flex items-center justify-center overflow-hidden">
+                  <div className="w-12 h-12 rounded-lg bg-surface-2 flex-shrink-0 flex items-center justify-center overflow-hidden">
                     {localImg ? (
                       <img src={localImg} alt={product.nome} className="w-full h-full object-cover" />
                     ) : (
-                      <Package className="w-5 h-5 text-muted-foreground" />
+                      <Package className="w-5 h-5 text-text-3" />
                     )}
                   </div>
 
@@ -157,35 +157,35 @@ export default function Stock() {
                         {status.icon} {status.label}
                       </span>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                    <p className="text-xs text-text-2 mt-0.5 truncate">
                       {product.categoria && <span>{product.categoria} · </span>}
                       {product.tem_variacoes
                         ? `${varCount} variações · ${attrNames}`
                         : `Estoque: ${totalQty} un`}
                     </p>
                     {product.tem_variacoes && (
-                      <p className="text-xs text-muted-foreground">Estoque total: {totalQty} unidades</p>
+                      <p className="text-xs text-text-2">Estoque total: {totalQty} unidades</p>
                     )}
                   </div>
 
-                  <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-text-3 flex-shrink-0" />
                 </button>
               );
             })}
           </div>
         ) : (
-          <div className="text-center py-16">
-            <div className="w-16 h-16 rounded-xl bg-secondary mx-auto flex items-center justify-center mb-4">
-              <Package className="w-8 h-8 text-muted-foreground" />
+          <div className="text-center py-16 animate-fade-up">
+            <div className="w-16 h-16 rounded-xl bg-surface-2 mx-auto flex items-center justify-center mb-4">
+              <Package className="w-8 h-8 text-text-3" />
             </div>
             <h3 className="font-bold text-foreground mb-1">
               {search || filter !== 'all' ? 'Nenhum produto encontrado' : 'Sem produtos no estoque'}
             </h3>
-            <p className="text-sm text-muted-foreground mb-4">
+            <p className="text-sm text-text-2 mb-4">
               {search || filter !== 'all' ? 'Tente outros termos ou filtros' : 'Adicione seu primeiro produto'}
             </p>
             {!search && filter === 'all' && (
-              <Button onClick={() => setShowWizard(true)} className="gradient-primary font-bold">
+              <Button onClick={() => setShowWizard(true)} className="bg-primary text-primary-foreground rounded-[10px] font-semibold">
                 <Plus className="w-4 h-4 mr-1.5" /> Adicionar Produto
               </Button>
             )}

@@ -68,27 +68,27 @@ export function StockDetail({ product, onClose, onEdit }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 bg-foreground/30 backdrop-blur-sm">
-      <div className="fixed inset-0 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:max-w-lg md:my-4 bg-card md:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+      <div className="fixed inset-0 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:max-w-lg md:my-4 bg-surface md:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-border/50">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
           {localImg && <img src={localImg} alt="" className="w-10 h-10 rounded-lg object-cover" />}
           <div className="flex-1 min-w-0">
             <h2 className="text-base font-bold truncate">{product.nome}</h2>
-            {product.categoria && <p className="text-xs text-muted-foreground">{product.categoria}</p>}
+            {product.categoria && <p className="text-xs text-text-2">{product.categoria}</p>}
           </div>
           <div className="flex gap-1.5">
-            <button onClick={onEdit} className="p-2 hover:bg-secondary rounded-lg"><Edit2 className="w-4 h-4" /></button>
-            <button onClick={() => setShowDelete(true)} className="p-2 hover:bg-secondary rounded-lg text-destructive"><Trash2 className="w-4 h-4" /></button>
-            <button onClick={onClose} className="p-2 hover:bg-secondary rounded-lg"><X className="w-5 h-5" /></button>
+            <button onClick={onEdit} className="p-2 hover:bg-surface-2/80 rounded-lg"><Edit2 className="w-4 h-4" /></button>
+            <button onClick={() => setShowDelete(true)} className="p-2 hover:bg-surface-2/80 rounded-lg text-destructive"><Trash2 className="w-4 h-4" /></button>
+            <button onClick={onClose} className="p-2 hover:bg-surface-2/80 rounded-lg"><X className="w-5 h-5" /></button>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-border/50">
+        <div className="flex border-b border-border">
           {(['estoque', 'historico'] as const).map(t => (
             <button key={t} onClick={() => setTab(t)} className={cn(
               'flex-1 py-2.5 text-xs font-semibold transition-all border-b-2',
-              tab === t ? 'text-primary border-primary' : 'text-muted-foreground border-transparent'
+              tab === t ? 'text-primary border-primary' : 'text-text-2 border-transparent'
             )}>
               {t === 'estoque' ? 'Estoque' : 'Histórico'}
             </button>
@@ -116,18 +116,18 @@ export function StockDetail({ product, onClose, onEdit }: Props) {
                 /* Simple product */
                 (() => {
                   const v = product.variacoes[0];
-                  if (!v) return <p className="text-sm text-muted-foreground">Nenhuma variação cadastrada</p>;
+                  if (!v) return <p className="text-sm text-text-2">Nenhuma variação cadastrada</p>;
                   const st = getStatus(v.quantidade, v.quantidade_minima);
                   return (
                     <div className="space-y-4">
                       <div className="text-center py-4">
-                        <p className={cn('text-5xl font-extrabold', st.color)}>{v.quantidade}</p>
-                        <p className="text-xs text-muted-foreground mt-1">unidades · {st.icon} {st.label}</p>
-                        <p className="text-xs text-muted-foreground">Mín: {v.quantidade_minima} un</p>
+                        <p className={cn('text-5xl font-bold font-mono font-mono-num', st.color)}>{v.quantidade}</p>
+                        <p className="text-xs text-text-2 mt-1">unidades · {st.icon} {st.label}</p>
+                        <p className="text-xs text-text-3">Mín: {v.quantidade_minima} un</p>
                       </div>
 
                       <div className="grid grid-cols-3 gap-2">
-                        <Button onClick={() => setMovModal({ variacaoId: v.id, tipo: 'entrada' })} className="h-11 flex flex-col gap-0.5 gradient-primary text-xs">
+                        <Button onClick={() => setMovModal({ variacaoId: v.id, tipo: 'entrada' })} className="h-11 flex flex-col gap-0.5 bg-primary text-primary-foreground rounded-[10px] font-semibold text-xs">
                           <Plus className="w-4 h-4" /> Entrada
                         </Button>
                         <Button onClick={() => setMovModal({ variacaoId: v.id, tipo: 'saida' })} variant="outline" className="h-11 flex flex-col gap-0.5 text-xs">
@@ -138,10 +138,10 @@ export function StockDetail({ product, onClose, onEdit }: Props) {
                         </Button>
                       </div>
 
-                      <div className="border border-border/50 rounded-lg p-3 space-y-1.5 text-sm">
-                        <div className="flex justify-between"><span className="text-muted-foreground">Custo unitário</span><span className="font-semibold">{formatCurrency(v.preco_custo)}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Valor em estoque</span><span className="font-bold text-primary">{formatCurrency(v.preco_custo * v.quantidade)}</span></div>
-                        {v.sku && <div className="flex justify-between"><span className="text-muted-foreground">SKU</span><span className="font-semibold">{v.sku}</span></div>}
+                      <div className="surface-card p-3 space-y-1.5 text-sm">
+                        <div className="flex justify-between"><span className="text-text-2">Custo unitário</span><span className="font-semibold font-mono font-mono-num">{formatCurrency(v.preco_custo)}</span></div>
+                        <div className="flex justify-between"><span className="text-text-2">Valor em estoque</span><span className="font-bold font-mono font-mono-num text-primary">{formatCurrency(v.preco_custo * v.quantidade)}</span></div>
+                        {v.sku && <div className="flex justify-between"><span className="text-text-2">SKU</span><span className="font-semibold">{v.sku}</span></div>}
                       </div>
                     </div>
                   );
@@ -150,14 +150,14 @@ export function StockDetail({ product, onClose, onEdit }: Props) {
                 /* With variations */
                 <div className="space-y-2">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs text-muted-foreground font-semibold">Total: {totalQty} un · {product.variacoes.length} variações</span>
+                    <span className="text-xs text-text-2 font-semibold">Total: {totalQty} un · {product.variacoes.length} variações</span>
                   </div>
 
-                  <div className="border border-border/50 rounded-lg overflow-hidden">
-                    <div className="grid grid-cols-[1fr_50px_auto] gap-0 bg-secondary/50 px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase">
-                      <span>Variação</span><span className="text-center">Qtd</span><span className="text-center">Ação</span>
+                  <div className="surface-card overflow-hidden">
+                    <div className="grid grid-cols-[1fr_50px_auto] gap-0 bg-surface-2 px-3 py-1.5">
+                      <span className="section-label">Variação</span><span className="section-label text-center">Qtd</span><span className="section-label text-center">Ação</span>
                     </div>
-                    <div className="divide-y divide-border/30">
+                    <div className="divide-y divide-border">
                       {product.variacoes.map(v => {
                         const label = Object.values(v.atributos).join(' / ') || 'Padrão';
                         const st = getStatus(v.quantidade, v.quantidade_minima);
@@ -165,19 +165,19 @@ export function StockDetail({ product, onClose, onEdit }: Props) {
                           <div key={v.id} className="grid grid-cols-[1fr_50px_auto] gap-0 px-3 py-2 items-center">
                             <div>
                               <p className="text-xs font-medium">{label}</p>
-                              {v.sku && <p className="text-[10px] text-muted-foreground">SKU: {v.sku}</p>}
+                              {v.sku && <p className="text-[10px] text-text-3">SKU: {v.sku}</p>}
                             </div>
-                            <p className={cn('text-center text-sm font-bold', st.color)}>
+                            <p className={cn('text-center text-sm font-bold font-mono font-mono-num', st.color)}>
                               {v.quantidade}{st.icon === '🔴' ? '🔴' : st.icon === '🟡' ? '🟡' : ''}
                             </p>
                             <div className="flex items-center gap-1">
-                              <button onClick={() => quickChange(v.id, -1)} className="w-7 h-7 rounded border border-border/50 flex items-center justify-center hover:bg-secondary">
+                              <button onClick={() => quickChange(v.id, -1)} className="w-7 h-7 rounded border border-border flex items-center justify-center hover:bg-surface-2/80">
                                 <Minus className="w-3 h-3" />
                               </button>
-                              <button onClick={() => quickChange(v.id, 1)} className="w-7 h-7 rounded border border-border/50 flex items-center justify-center hover:bg-secondary">
+                              <button onClick={() => quickChange(v.id, 1)} className="w-7 h-7 rounded border border-border flex items-center justify-center hover:bg-surface-2/80">
                                 <Plus className="w-3 h-3" />
                               </button>
-                              <button onClick={() => setMovModal({ variacaoId: v.id, tipo: 'entrada' })} className="w-7 h-7 rounded border border-border/50 flex items-center justify-center hover:bg-secondary text-muted-foreground">
+                              <button onClick={() => setMovModal({ variacaoId: v.id, tipo: 'entrada' })} className="w-7 h-7 rounded border border-border flex items-center justify-center hover:bg-surface-2/80 text-text-2">
                                 <span className="text-[10px]">···</span>
                               </button>
                             </div>
@@ -196,15 +196,15 @@ export function StockDetail({ product, onClose, onEdit }: Props) {
               {loadingHist ? (
                 <div className="flex justify-center py-8"><div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" /></div>
               ) : movimentacoes.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">Nenhuma movimentação registrada</p>
+                <p className="text-sm text-text-2 text-center py-8">Nenhuma movimentação registrada</p>
               ) : (
                 movimentacoes.map(m => {
                   const isIn = m.tipo === 'entrada';
                   const isAdj = m.tipo === 'ajuste';
                   return (
-                    <div key={m.id} className="flex items-center gap-3 py-2 border-b border-border/20">
-                      <div className={cn('w-7 h-7 rounded flex items-center justify-center', isIn ? 'bg-success/10' : isAdj ? 'bg-secondary' : 'bg-destructive/10')}>
-                        {isIn ? <ArrowUp className="w-3.5 h-3.5 text-success" /> : isAdj ? <Settings2 className="w-3.5 h-3.5 text-muted-foreground" /> : <ArrowDown className="w-3.5 h-3.5 text-destructive" />}
+                    <div key={m.id} className="flex items-center gap-3 py-2 border-b border-border">
+                      <div className={cn('w-7 h-7 rounded flex items-center justify-center', isIn ? 'bg-success/10' : isAdj ? 'bg-surface-2' : 'bg-destructive/10')}>
+                        {isIn ? <ArrowUp className="w-3.5 h-3.5 text-success" /> : isAdj ? <Settings2 className="w-3.5 h-3.5 text-text-2" /> : <ArrowDown className="w-3.5 h-3.5 text-destructive" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold">
@@ -214,7 +214,7 @@ export function StockDetail({ product, onClose, onEdit }: Props) {
                           {' '}{m.motivo || m.tipo}
                         </p>
                       </div>
-                      <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                      <span className="text-[10px] text-text-3 whitespace-nowrap">
                         {new Date(m.created_at).toLocaleDateString('pt-BR')} {new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
@@ -229,13 +229,13 @@ export function StockDetail({ product, onClose, onEdit }: Props) {
       {/* Movement modal */}
       {movModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-foreground/20 backdrop-blur-sm p-4">
-          <div className="bg-card rounded-xl shadow-2xl w-full max-w-sm p-4 space-y-4">
+          <div className="bg-surface rounded-xl shadow-2xl w-full max-w-sm p-4 space-y-4">
             <h3 className="text-base font-bold">Movimentação de estoque</h3>
 
             <div className="space-y-1.5">
               <label className="text-xs font-semibold">Tipo</label>
               <Select value={movModal.tipo} onValueChange={v => setMovModal({ ...movModal, tipo: v as any })}>
-                <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-9 text-sm bg-surface-2 border-border focus:border-primary"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="entrada">Entrada</SelectItem>
                   <SelectItem value="saida">Saída</SelectItem>
@@ -246,13 +246,13 @@ export function StockDetail({ product, onClose, onEdit }: Props) {
 
             <div className="space-y-1.5">
               <label className="text-xs font-semibold">Quantidade</label>
-              <Input type="number" min="1" value={movQty} onChange={e => setMovQty(e.target.value)} className="h-9 text-sm" placeholder="0" />
+              <Input type="number" min="1" value={movQty} onChange={e => setMovQty(e.target.value)} className="h-9 text-sm bg-surface-2 border-border focus:border-primary" placeholder="0" />
             </div>
 
             <div className="space-y-1.5">
               <label className="text-xs font-semibold">Motivo</label>
               <Select value={movMotivo} onValueChange={setMovMotivo}>
-                <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectTrigger className="h-9 text-sm bg-surface-2 border-border focus:border-primary"><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
                   {MOTIVOS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                 </SelectContent>
@@ -261,7 +261,7 @@ export function StockDetail({ product, onClose, onEdit }: Props) {
 
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => { setMovModal(null); setMovQty(''); setMovMotivo(''); }} className="flex-1">Cancelar</Button>
-              <Button onClick={handleMov} disabled={!movQty || parseInt(movQty) <= 0} className="flex-1 gradient-primary font-bold">Confirmar</Button>
+              <Button onClick={handleMov} disabled={!movQty || parseInt(movQty) <= 0} className="flex-1 bg-primary text-primary-foreground rounded-[10px] font-semibold">Confirmar</Button>
             </div>
           </div>
         </div>
