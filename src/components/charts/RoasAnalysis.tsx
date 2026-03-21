@@ -582,7 +582,7 @@ export function RoasAnalysis() {
           </TabsTrigger>
           <TabsTrigger value="ads" className="text-[13px] md:text-sm md:px-6 font-bold rounded-full gap-1.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">
             <Megaphone className="w-4 h-4" />
-            Shopee Ads
+            Análise de Ads
           </TabsTrigger>
         </TabsList>
         <TabsContent value="product" className="mt-4 animate-fade-in">

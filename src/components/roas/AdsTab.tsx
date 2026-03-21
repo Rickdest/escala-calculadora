@@ -298,7 +298,6 @@ function RankingSection({ metrics, products }: { metrics: AdMetricDerived[]; pro
   const sorted = useMemo(() => [...metrics].sort((a, b) => b.roas - a.roas), [metrics]);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
-  // Compute dynamic empate/ideal per metric
   const getProductRoasTargets = useCallback((m: AdMetricDerived) => {
     if (!config) return { empate: 2, ideal: 5 };
     const pid = (m as any)._productId;
@@ -317,23 +316,36 @@ function RankingSection({ metrics, products }: { metrics: AdMetricDerived[]; pro
           const isOpen = expandedIndex === i;
           const targets = getProductRoasTargets(m);
           const statusColor = getRoasColorDynamic(m.roas, targets.empate, targets.ideal);
-          const StatusIcon = m.roas >= targets.ideal ? TrendingUp : m.roas >= targets.empate ? AlertTriangle : TrendingDown;
           return (
             <div key={i}>
-              <button onClick={() => setExpandedIndex(isOpen ? null : i)} className="w-full p-2.5 md:p-4 flex items-center gap-2 text-left hover:bg-card/50 transition-colors">
-                <span className={cn('w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-extrabold font-mono flex-shrink-0', i < 3 ? 'bg-primary text-primary-foreground' : 'bg-surface-2 border border-border text-text-2')}>#{i + 1}</span>
-                <div className="flex-1 min-w-0 px-1">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-[13px] font-bold text-foreground truncate md:max-w-none">{truncate(m.shopeeProductName, 24)}</p>
-                    <StatusIcon className={cn('w-4 h-4 flex-shrink-0', statusColor)} />
+              <button onClick={() => setExpandedIndex(isOpen ? null : i)} className="w-full flex items-center justify-between px-3 py-3 md:px-4 text-left hover:bg-card/50 transition-colors">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <span className={cn('w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-extrabold font-mono flex-shrink-0', i < 3 ? 'bg-primary text-primary-foreground' : 'bg-surface-2 border border-border text-text-2')}>#{i + 1}</span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{truncate(m.shopeeProductName, 28)}</p>
+                    <p className="text-xs text-text-2 font-mono tabular-nums mt-0.5">{formatCurrency(m.spend)} investido</p>
                   </div>
-                  <p className="text-[11px] text-text-2 font-mono tabular-nums mt-0.5">{formatCurrency(m.spend)} → {formatCurrency(m.gmv)}</p>
                 </div>
-                <span className={cn('text-[15px] font-extrabold tabular-nums font-mono flex-shrink-0', statusColor)}>{m.roas.toFixed(2)}</span>
-                {isOpen ? <ChevronUp className="w-3.5 h-3.5 text-text-2 flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 text-text-2 flex-shrink-0" />}
+                <div className="flex items-center gap-4 flex-shrink-0">
+                  {m.avgPosition !== null && (
+                    <div className="text-center hidden md:block">
+                      <p className="section-label">POS.</p>
+                      <p className="text-sm font-bold font-mono tabular-nums text-foreground">#{m.avgPosition}</p>
+                    </div>
+                  )}
+                  <div className="text-center">
+                    <p className="section-label">ROAS</p>
+                    <p className={cn('text-sm font-bold font-mono tabular-nums', statusColor)}>{m.roas.toFixed(2)}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="section-label">GMV</p>
+                    <p className="text-sm font-bold font-mono tabular-nums text-foreground">{formatShort(m.gmv)}</p>
+                  </div>
+                  {isOpen ? <ChevronUp className="w-3.5 h-3.5 text-text-2 flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 text-text-2 flex-shrink-0" />}
+                </div>
               </button>
               {isOpen && (
-                <div className="px-2.5 pb-2.5 md:px-4 md:pb-4 space-y-3 animate-fade-in">
+                <div className="px-3 pb-3 md:px-4 md:pb-4 space-y-3 animate-fade-in">
                   <div className="h-px bg-border" />
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div><p className="section-label">ACOS</p><p className={cn('text-[13px] font-bold font-mono tabular-nums', getAcosColor(m.acos))}>{m.acos.toFixed(1)}%</p></div>
@@ -346,7 +358,7 @@ function RankingSection({ metrics, products }: { metrics: AdMetricDerived[]; pro
                     <div><p className="section-label">VENDIDOS</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{m.itemsSold} itens</p></div>
                   </div>
                   {m.avgPosition !== null && (
-                    <div><p className="section-label">POSIÇÃO MÉDIA</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">#{m.avgPosition}</p></div>
+                    <div className="md:hidden"><p className="section-label">POSIÇÃO MÉDIA</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">#{m.avgPosition}</p></div>
                   )}
                   <RoasBar roas={m.roas} empate={targets.empate} ideal={targets.ideal} />
                 </div>
