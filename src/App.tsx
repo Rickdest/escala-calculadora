@@ -9,6 +9,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionContext";
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import { TrialExpiredBlock } from "@/components/TrialExpiredBlock";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { lazy, Suspense } from "react";
 
 // Lazy-loaded pages
