@@ -322,7 +322,7 @@
 
   /* Bottom navigation */
   .bottom-nav {
-    @apply fixed bottom-0 left-0 right-0 border-t;
+    @apply fixed bottom-0 left-0 right-0 border-t z-50;
     background: hsl(var(--surface) / 0.9);
     backdrop-filter: blur(16px);
     border-color: hsl(var(--border));
