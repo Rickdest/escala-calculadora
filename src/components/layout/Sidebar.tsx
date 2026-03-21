@@ -91,30 +91,26 @@ export function Sidebar() {
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <a
-                href="https://wa.me/5511930291287"
+                href="https://wa.me/5511930291287?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20o%20Precify"
                 target="_blank"
                 rel="noopener noreferrer"
-                className={cn(
-                  'w-full flex items-center gap-3 rounded-lg text-[13px] font-medium transition-colors text-text-3 hover:bg-sidebar-accent hover:text-foreground justify-center px-0 py-2.5'
-                )}
+                className="w-full flex items-center justify-center rounded-lg py-2.5 transition-colors text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
               >
-                <MessageCircle className="w-5 h-5 flex-shrink-0 text-success" />
+                <MessageCircle className="w-5 h-5 flex-shrink-0 text-green-500" />
               </a>
             </TooltipTrigger>
             <TooltipContent side="right" className="text-xs">
-              Suporte
+              Suporte via WhatsApp
             </TooltipContent>
           </Tooltip>
         ) : (
           <a
-            href="https://wa.me/5511930291287"
+            href="https://wa.me/5511930291287?text=Ol%C3%A1%2C%20preciso%20de%20ajuda%20com%20o%20Precify"
             target="_blank"
             rel="noopener noreferrer"
-            className={cn(
-              'w-full flex items-center gap-3 rounded-lg text-[13px] font-medium transition-colors text-text-3 hover:bg-sidebar-accent hover:text-foreground px-3 py-2.5'
-            )}
+            className="w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-colors text-muted-foreground hover:bg-sidebar-accent hover:text-foreground"
           >
-            <MessageCircle className="w-5 h-5 flex-shrink-0 text-success" />
+            <MessageCircle className="w-5 h-5 flex-shrink-0 text-green-500" />
             <span className="truncate">Suporte</span>
           </a>
         )}
