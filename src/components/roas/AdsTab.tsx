@@ -384,7 +384,7 @@ function MarginSection({ metrics, products }: { metrics: AdMetricDerived[]; prod
           else if (marginWithAds >= 0) { StatusIcon = AlertTriangle; color = 'text-warning'; message = 'Margem apertada — otimize o ACOS'; }
           else { StatusIcon = XCircle; color = 'text-destructive'; message = 'Ads estão consumindo toda a margem'; }
           return (
-            <div key={i} className="rounded-xl border border-border bg-secondary p-3.5 space-y-2">
+            <div key={i} className="surface-card p-3.5 space-y-2">
               <div className="flex items-center gap-2"><Link2 className="w-3.5 h-3.5 text-primary flex-shrink-0" /><p className="text-sm font-bold text-foreground truncate flex-1">{truncate(product.name, 35)}</p></div>
               <div className="space-y-1.5 text-xs">
                 <div className="flex justify-between"><span className="text-muted-foreground">Margem do produto:</span><span className="font-bold font-mono tabular-nums">{margin.toFixed(1)}%</span></div>
