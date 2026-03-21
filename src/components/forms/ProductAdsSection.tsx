@@ -132,7 +132,7 @@ export function ProductAdsSection({ productId, shopeeProductId }: ProductAdsSect
   })() : null;
 
   return (
-    <div className="rounded-xl border border-border bg-secondary p-3.5 space-y-3">
+    <div className="surface-card p-3.5 space-y-3">
       <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileSelect} className="hidden" />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
