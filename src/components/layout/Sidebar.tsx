@@ -1,4 +1,4 @@
-import { Home, Package, BarChart3, Settings, Warehouse, Store, UserCircle, ChevronDown } from 'lucide-react';
+import { Calculator, ShoppingBag, TrendingUp, Settings2, Boxes, Store, UserCircle, ChevronDown } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { useSidebarState } from '@/contexts/SidebarContext';
