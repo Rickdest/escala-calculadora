@@ -617,7 +617,7 @@ export function AdsTab() {
         <>
           {/* Header */}
           <div className="flex items-center justify-between">
-            <p className="text-[13px] font-bold text-foreground">{periodLabel && <span className="text-muted-foreground font-normal">· {periodLabel}</span>}</p>
+            <p className="text-[13px] font-bold text-foreground">{periodLabel && <span className="text-text-2 font-normal">· {periodLabel}</span>}</p>
             <Button size="sm" variant="outline" onClick={handleImport} className="h-8 text-[11px] gap-1.5 rounded-lg">
               <RefreshCw className="w-3 h-3" /> Atualizar
             </Button>
