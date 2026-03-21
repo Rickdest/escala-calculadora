@@ -1,79 +1,50 @@
 
 
-## Plano: Melhorar layout das abas Ads no desktop
+## Plano: Banner Carousel + Remoção de duplicatas
 
-Manter as 2 abas (ROAS e Shopee Ads) mas redesenhar o conteúdo interno para desktop com grid mais limpo e melhor hierarquia.
+### Problema atual
+- O DesktopHeader mostra Margem Média, Produtos, Na Meta
+- A sidebar da Home repete exatamente as mesmas métricas
+- O Hero card é texto estático genérico que não agrega valor
 
----
+### Solução
 
-### Aba 1 — ROAS (ProductAnalysis + RoasRanking)
+**1. `src/pages/Home.tsx` — Substituir Hero card por carousel de banners**
 
-**Arquivo: `src/components/charts/RoasAnalysis.tsx`**
+Remover o bloco hero card textual. No lugar, usar um carousel de banners visuais com auto-play. Cada banner é um card com gradiente/cor de fundo, emoji/icone grande, título curto e CTA.
 
-**ProductAnalysis — desktop grid:**
-- Sidebar de produtos (`md:col-span-4`): manter como está, já funciona bem
-- Área principal (`md:col-span-8`): reorganizar KPIs
-  - Os 3 cards ROAS Empate/Saudável/Ideal: mudar de `md:grid-cols-3` para uma row horizontal com valores maiores (`text-2xl`) e labels menores
-  - Barra de progresso ROAS: dar mais altura (`h-4` em vez de `h-3`) e adicionar `md:p-5` no card
-  - Composição do Preço (donut): aumentar donut para `width={140} height={140}` no desktop
-  - Cards Lucro Bruto e Taxa Shopee: manter grid 2 colunas
+Banners fixos (hardcoded, sem banco):
+- "Precifique com precisão" → bg gradient laranja → CTA abre formulário
+- "Analise seus Ads" → bg gradient azul → CTA vai para /roas  
+- "Controle seu Estoque" → bg gradient verde → CTA vai para /stock
 
-**RoasRanking — desktop grid:**
-- Gráfico de barras (`md:col-span-5`): aumentar altura do chart de `220` para `280` no desktop
-- Lista de produtos: usar `md:grid-cols-2` para mostrar 2 cards por linha em vez de lista vertical
+Carousel: usar o componente `Carousel` do embla já existente em `src/components/ui/carousel.tsx` com autoplay. Cada slide tem ~200px de altura, rounded-xl, com conteúdo alinhado à esquerda.
 
-**Substituir tokens antigos:**
-- `text-muted-foreground` → `text-text-2` (restantes no arquivo)
-- `bg-secondary` → `bg-surface-2`
+Indicadores: dots abaixo do carousel.
 
----
+**2. `src/pages/Home.tsx` — Remover métricas duplicadas da sidebar**
 
-### Aba 2 — Shopee Ads (AdsTab)
+Remover da coluna direita:
+- Cards "Margem Média" e "Produtos" (já no header)
+- Card "na meta · abaixo da meta" (já no header)
 
-**Arquivo: `src/components/roas/AdsTab.tsx`**
+Manter na sidebar direita:
+- Alerta de estoque baixo
+- HomeEducationCard
 
-**Layout desktop atual:** `md:grid-cols-[2fr_3fr]` — Resumo+Alertas à esquerda, Ranking+Margem à direita.
+**3. `src/pages/Home.tsx` — Reorganizar coluna direita**
 
-**Melhorias:**
+Com menos conteúdo, a sidebar fica mais limpa:
+- Alerta de estoque (se houver)
+- Card de educação
 
-1. **Resumo — cards KPI maiores no desktop:**
-   - Adicionar `md:p-3.5` nos MetricCards
-   - Valores: `text-lg` → `md:text-xl` para destaque
-   - Grid `cols-3` (ROAS/ACOS/ROI): manter, mas com mais padding
+No mobile, esses elementos aparecem após a calculadora e ferramentas.
 
-2. **Ranking — expandir no desktop:**
-   - Items: aumentar padding `md:p-4` 
-   - Nome do produto: `md:max-w-none` para não truncar tanto
-   - RoasBar: dar mais altura no desktop `md:h-2`
-   - Grid de métricas expandidas: `md:grid-cols-4` (já está, manter)
+### Arquivos alterados
+- `src/pages/Home.tsx` — único arquivo
 
-3. **Alertas — mais compactos:**
-   - Manter accordion mas com `md:h-14` por item para mais respiro
-   - Texto de recomendação: `md:text-xs` em vez de `text-[11px]`
-
-4. **Margem vs Ads — grid no desktop:**
-   - Quando há 2+ matches: `md:grid md:grid-cols-2 md:gap-3` para mostrar lado a lado
-   - Cards individuais: `md:p-4` para mais respiro
-
-5. **Header (período + botão Atualizar):**
-   - Aumentar fonte do período: `md:text-sm`
-   - Botão Atualizar: `md:h-9 md:text-xs` mais visível
-
----
-
-### Tab bar
-
-**Manter a pill-style tab bar** mas ajustar no desktop:
-- `md:w-auto md:inline-flex` em vez de `w-full grid` — tabs não precisam ocupar 100% no desktop
-- `md:h-12` para mais presença
-- `md:text-sm` nos triggers
-
----
-
-### Resumo das mudanças
-
-- 2 arquivos: `RoasAnalysis.tsx` e `AdsTab.tsx`
-- Apenas classes CSS com `md:` prefix
-- Zero alteração funcional ou mobile
-- Foco em: padding, tamanhos de fonte, grids, e respiro visual no desktop
+### Não altera
+- Nenhum outro componente ou arquivo
+- Lógica de cálculo
+- Layout mobile (ferramentas, ordem)
 
