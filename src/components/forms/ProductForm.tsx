@@ -60,7 +60,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
     const shopeeFeeFixed = range.fixed;
     const cpfExtra = config?.isCpfSeller && config?.hasOver450Orders ? 3 : 0;
     const totalShopeeFee = shopeeFeePercent + shopeeFeeFixed + cpfExtra;
-    const adsCost = parseFloat(adsCostValue) || 0;
+    const adsCost = enableAds ? (parseFloat(adsCostValue) || 0) : 0;
     const taxesCost = (config?.taxes || 0) > 0 ? sp * ((config?.taxes || 0) / 100) : 0;
     const affiliateCost = config?.enableAffiliateCommission ? sp * ((config?.affiliateCommission || 0) / 100) : 0;
     const campaignsCost = config?.enableShopeeCampaigns ? sp * ((config?.shopeeCampaigns || 0) / 100) : 0;
