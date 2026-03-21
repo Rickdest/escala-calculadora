@@ -413,8 +413,8 @@ export function StockWizard({ onClose, editProduct }: Props) {
                         onClick={() => handleImportProduct(product)}
                         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface-2/50 transition-colors text-left"
                       >
-                        <div className="w-8 h-8 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0">
-                          <span className="text-[13px] font-bold text-text-2">{product.name.charAt(0).toUpperCase()}</span>
+                        <div className="w-8 h-8 rounded-lg border border-border bg-surface flex items-center justify-center flex-shrink-0">
+                          <span className="text-[13px] font-bold text-foreground">{product.name.charAt(0).toUpperCase()}</span>
                         </div>
                         <p className="text-sm font-bold text-foreground flex-1 min-w-0 truncate">{product.name}</p>
                         <span className="text-[13px] text-text-3 font-mono font-mono-num flex-shrink-0">
