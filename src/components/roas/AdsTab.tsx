@@ -543,10 +543,10 @@ export function AdsTab() {
       variations: [],
       shopeeAcelera: 'none' as const,
     };
-    await addProduct(newProduct);
-    // Get the newly created product
-    const created = currentStore?.products.find(p => (p as any).shopeeProductId === metric.shopeeProductId);
-    await saveMetricToDB(metric, created?.id);
+    // BUG 5 FIX: Use return value from addProduct and update with shopeeProductId
+    const created = await addProduct(newProduct);
+    await updateProduct(created.id, { shopeeProductId: metric.shopeeProductId } as any);
+    await saveMetricToDB(metric, created.id);
     toast.success('Produto criado — complete preço de venda e custo');
     advanceLinking();
   };
