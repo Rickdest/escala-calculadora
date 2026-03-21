@@ -326,13 +326,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (error) { toast.error('Erro ao atualizar produto'); return; }
     }
 
-    // Save image locally (compressed)
-    if (updates.imageUrl !== undefined) {
+    // Handle image upload/delete
+    if (updates.imageUrl !== undefined && user) {
       if (updates.imageUrl) {
-        const compressed = await compressImage(updates.imageUrl);
-        saveLocalImage(productId, compressed);
+        const url = await uploadProductImage(user.id, productId, updates.imageUrl);
+        if (url) {
+          await supabase.from('products').update({ image_url: url } as any).eq('id', productId);
+          updates.imageUrl = url;
+        }
       } else {
-        removeLocalImage(productId);
+        await deleteProductImage(user.id, productId);
+        await supabase.from('products').update({ image_url: null } as any).eq('id', productId);
       }
     }
 
