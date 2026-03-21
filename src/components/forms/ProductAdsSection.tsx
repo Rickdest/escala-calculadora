@@ -180,9 +180,9 @@ export function ProductAdsSection({ productId, shopeeProductId }: ProductAdsSect
           </div>
 
           <div className="grid grid-cols-3 gap-2">
-            <div><p className="text-[9px] uppercase text-muted-foreground tracking-wider">CONV%</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{metric.convRate.toFixed(2)}%</p></div>
-            <div><p className="text-[9px] uppercase text-muted-foreground tracking-wider">VENDIDOS</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{metric.itemsSold} itens</p></div>
-            <div><p className="text-[9px] uppercase text-muted-foreground tracking-wider">INVESTIDO</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{formatCurrency(metric.spend)}</p></div>
+            <div><p className="section-label">CONV%</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{metric.convRate.toFixed(2)}%</p></div>
+            <div><p className="section-label">VENDIDOS</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{metric.itemsSold} itens</p></div>
+            <div><p className="section-label">INVESTIDO</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{formatCurrency(metric.spend)}</p></div>
           </div>
 
           {/* Bid recommendation */}
