@@ -39,7 +39,7 @@ export function Sidebar() {
       )}
     >
       {/* Logo */}
-      <div className="h-14 flex items-center px-4 border-b border-border flex-shrink-0 overflow-hidden">
+      <div className="h-16 flex items-center px-4 border-b border-border flex-shrink-0 overflow-hidden">
         <span className={cn(
           'font-bold text-foreground transition-all duration-200 whitespace-nowrap',
           collapsed ? 'text-base' : 'text-xl'

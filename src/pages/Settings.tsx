@@ -110,7 +110,7 @@ export default function Settings() {
         subtitle={currentStore.name}
       />
 
-      <div className="py-6 space-y-6">
+      <div className="py-6 md:py-8 space-y-6">
         {/* User Profile Link */}
         {user && (
           <Button
