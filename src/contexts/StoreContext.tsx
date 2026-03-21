@@ -352,9 +352,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const deleteProduct = useCallback(async (productId: string) => {
+    if (user) await deleteProductImage(user.id, productId);
     const { error } = await supabase.from('products').delete().eq('id', productId);
     if (error) { toast.error('Erro ao excluir produto'); return; }
-    removeLocalImage(productId);
     setStores(prev => prev.map(store => ({
       ...store,
       products: store.products.filter(p => p.id !== productId),
