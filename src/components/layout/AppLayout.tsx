@@ -1,6 +1,5 @@
 import { ReactNode } from 'react';
 import { BottomNavigation } from './BottomNavigation';
-import { WhatsAppFab } from './WhatsAppFab';
 import { Sidebar } from './Sidebar';
 import { DesktopHeader } from './DesktopHeader';
 import { useSidebarState } from '@/contexts/SidebarContext';
@@ -15,15 +14,12 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Desktop sidebar */}
       <Sidebar />
 
-      {/* Main content */}
       <div className={cn(
         'transition-all duration-200 ease-in-out min-h-screen flex flex-col',
         collapsed ? 'md:pl-[60px]' : 'md:pl-[200px]'
       )}>
-        {/* Desktop header */}
         <DesktopHeader />
 
         <div className="flex-1 overflow-y-auto pb-20 md:pb-0">
@@ -33,8 +29,6 @@ export function AppLayout({ children }: AppLayoutProps) {
         </div>
       </div>
 
-      {/* Mobile bottom nav */}
-      <WhatsAppFab />
       <BottomNavigation />
     </div>
   );
