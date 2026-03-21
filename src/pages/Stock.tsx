@@ -143,12 +143,12 @@ export default function Stock() {
                   onClick={() => setDetailProduct(product)}
                   className="w-full px-4 py-3 flex items-center gap-3 hover:bg-surface-2/50 transition-colors"
                 >
-                  {/* Image */}
+                  {/* Initial */}
                   <div className="w-10 h-10 rounded-lg bg-surface-2 flex-shrink-0 flex items-center justify-center overflow-hidden">
                     {localImg ? (
                       <img src={localImg} alt={product.nome} className="w-full h-full object-cover" />
                     ) : (
-                      <Package className="w-5 h-5 text-text-3" />
+                      <span className="text-[15px] font-bold text-text-2">{product.nome.charAt(0).toUpperCase()}</span>
                     )}
                   </div>
 
