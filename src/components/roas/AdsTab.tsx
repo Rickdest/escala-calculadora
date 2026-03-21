@@ -231,22 +231,23 @@ function AlertsSection({ metrics }: { metrics: AdMetricDerived[] }) {
 
 // ─── Ranking ───
 
-function RoasBar({ roas }: { roas: number }) {
-  const maxRoas = Math.max(10, roas * 1.3);
-  const empate = 2, ideal = 5;
+function RoasBar({ roas, empate, ideal }: { roas: number; empate?: number; ideal?: number }) {
+  const e = empate ?? 2;
+  const id = ideal ?? 5;
+  const maxRoas = Math.max(10, roas * 1.3, id * 1.5);
   const pos = Math.min((roas / maxRoas) * 100, 100);
-  const empatePos = (empate / maxRoas) * 100;
-  const idealPos = (ideal / maxRoas) * 100;
+  const empatePos = (e / maxRoas) * 100;
+  const idealPos = (id / maxRoas) * 100;
   return (
     <div className="space-y-1">
       <div className="relative w-full h-1.5 rounded-full overflow-hidden">
         <div className="absolute inset-0 rounded-full" style={{ background: `linear-gradient(to right, hsl(0 85% 60%) 0%, hsl(45 95% 50%) ${empatePos}%, hsl(152 70% 42%) ${idealPos}%, hsl(152 70% 42%) 100%)`, opacity: 0.25 }} />
-        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pos}%`, backgroundColor: roas >= 5 ? 'hsl(152,70%,42%)' : roas >= 2 ? 'hsl(45,95%,50%)' : 'hsl(0,85%,60%)' }} />
+        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pos}%`, backgroundColor: roas >= id ? 'hsl(152,70%,42%)' : roas >= e ? 'hsl(45,95%,50%)' : 'hsl(0,85%,60%)' }} />
       </div>
       <div className="flex items-center gap-2 text-[9px] text-muted-foreground font-bold">
         <span>0</span><span className="flex-1" />
-        <span className="text-warning">Empate {empate}</span>
-        <span className="text-success">Ideal {ideal}</span>
+        <span className="text-warning">Empate {e.toFixed(1)}</span>
+        <span className="text-success">Ideal {id.toFixed(1)}</span>
         <span className={cn('font-mono', getRoasColor(roas))}>{roas.toFixed(2)}</span>
       </div>
     </div>
