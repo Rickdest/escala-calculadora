@@ -142,6 +142,30 @@ export default function Home() {
               setShowProductForm(true);
             }} />
 
+            {/* Tools Grid — mobile only */}
+            <div className="animate-fade-up md:hidden">
+              <p className="section-label mb-3">Ferramentas</p>
+              <div className="grid grid-cols-4 gap-y-3 gap-x-2">
+                {toolItems.map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={() => handleToolClick(item)}
+                    className="flex flex-col items-center gap-1.5 py-2 transition-colors active:scale-95"
+                  >
+                    <div className={cn(
+                      'w-11 h-11 rounded-xl flex items-center justify-center',
+                      item.isAccent ? 'bg-primary text-primary-foreground' : 'bg-surface-2 text-text-2'
+                    )}>
+                      <item.icon className="w-5 h-5" />
+                    </div>
+                    <span className="text-[11px] font-medium text-text-2 leading-tight text-center px-1 line-clamp-2">
+                      {item.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Top Products */}
             {topProducts.length > 0 && (
               <div className="space-y-2 animate-fade-up stagger-4 order-7 md:order-none">
@@ -248,29 +272,6 @@ export default function Home() {
             <HomeEducationCard />
           </div>
 
-          {/* Tools Grid — mobile only */}
-          <div className="animate-fade-up order-6 md:hidden">
-            <p className="section-label mb-3">Ferramentas</p>
-            <div className="grid grid-cols-4 gap-y-3 gap-x-2">
-              {toolItems.map((item) => (
-                <button
-                  key={item.label}
-                  onClick={() => handleToolClick(item)}
-                  className="flex flex-col items-center gap-1.5 py-2 transition-colors active:scale-95"
-                >
-                  <div className={cn(
-                    'w-11 h-11 rounded-xl flex items-center justify-center',
-                    item.isAccent ? 'bg-primary text-primary-foreground' : 'bg-surface-2 text-text-2'
-                  )}>
-                    <item.icon className="w-5 h-5" />
-                  </div>
-                  <span className="text-[11px] font-medium text-text-2 leading-tight text-center px-1 line-clamp-2">
-                    {item.label}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
 
