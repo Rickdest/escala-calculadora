@@ -417,7 +417,7 @@ function EmptyState({ onImport }: { onImport: () => void }) {
       <Button onClick={onImport} className="h-12 w-4/5 max-w-[320px] rounded-xl text-sm font-bold gap-2 bg-primary text-primary-foreground hover:bg-primary/90 mt-6">
         <Upload className="w-4 h-4" /> Importar relatório CSV
       </Button>
-      <p className="text-[11px] text-muted-foreground mt-3">Shopee Ads → Exportar dados → Dados Gerais de Anúncios</p>
+      <p className="text-[11px] text-text-2 mt-3">Shopee Ads → Exportar dados → Dados Gerais de Anúncios</p>
     </div>
   );
 }
