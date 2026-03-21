@@ -139,7 +139,8 @@ export function HomeBanners() {
                 onClick={() => banner.cta_url && navigate(banner.cta_url)}
                 className={cn(
                   'rounded-xl p-5 relative overflow-hidden cursor-pointer transition-all active:scale-[0.98] hover:opacity-95',
-                  banner.bg_class
+                  banner.bg_class,
+                  banner.bg_class === 'bg-surface-2' && 'border border-border'
                 )}
               >
                 {banner.emoji && (
@@ -178,6 +179,15 @@ export function HomeBanners() {
           </button>
         )}
       </div>
+
+      {/* Pagination dots - mobile only */}
+      {banners.length > 1 && (
+        <div className="flex justify-center gap-1.5 mt-2 md:hidden">
+          {banners.map((_, i) => (
+            <span key={i} className={cn('w-1.5 h-1.5 rounded-full transition-colors', i === 0 ? 'bg-primary' : 'bg-border')} />
+          ))}
+        </div>
+      )}
 
       {/* New banner form */}
       {editingId === 'new' && <EditFormContent onClose={() => setEditingId(null)} />}
