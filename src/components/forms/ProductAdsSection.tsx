@@ -193,8 +193,8 @@ export function ProductAdsSection({ productId, shopeeProductId }: ProductAdsSect
             </div>
           ) : metric.avgPosition === null ? (
             <div className="border-t border-dashed border-border pt-2 flex items-start gap-2">
-              <Info className="w-4 h-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
-              <p className="text-[11px] text-muted-foreground">Posição: não disponível. Importe o CSV por produto para ver a posição média</p>
+              <Info className="w-4 h-4 mt-0.5 flex-shrink-0 text-text-2" />
+              <p className="text-[11px] text-text-2">Posição: não disponível. Importe o CSV por produto para ver a posição média</p>
             </div>
           ) : null}
 
