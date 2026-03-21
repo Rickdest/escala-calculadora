@@ -16,7 +16,11 @@ import { calcFullRoas } from '@/lib/roasUtils';
 
 const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 function truncate(str: string, max: number) { return str.length > max ? str.slice(0, max) + '…' : str; }
-function getRoasColor(roas: number) { return roas >= 5 ? 'text-success' : roas >= 2 ? 'text-warning' : 'text-destructive'; }
+function getRoasColorDynamic(roas: number, empate: number, ideal: number) {
+  if (roas < empate) return 'text-destructive';
+  if (roas < ideal) return 'text-warning';
+  return 'text-success';
+}
 function getAcosColor(acos: number) { return acos <= 20 ? 'text-success' : acos <= 40 ? 'text-warning' : 'text-destructive'; }
 function getRoiColor(roi: number) { return roi > 100 ? 'text-success' : roi >= 0 ? 'text-warning' : 'text-destructive'; }
 
