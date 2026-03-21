@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { openCheckout } from '@/services/checkout.service';
 import { useAuth } from '@/contexts/AuthContext';
 
-const CHECKOUT_URL = import.meta.env.VITE_HOTMART_URL || 'https://pay.hotmart.com/B104846948H?off=au88x8b1&checkoutMode=6';
 const LAST_OFFER_KEY = 'precify-last-offer-date';
 
 export function DailyOfferModal() {
