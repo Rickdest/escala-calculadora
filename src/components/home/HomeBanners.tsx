@@ -139,7 +139,8 @@ export function HomeBanners() {
                 onClick={() => banner.cta_url && navigate(banner.cta_url)}
                 className={cn(
                   'rounded-xl p-5 relative overflow-hidden cursor-pointer transition-all active:scale-[0.98] hover:opacity-95',
-                  banner.bg_class
+                  banner.bg_class,
+                  banner.bg_class === 'bg-surface-2' && 'border border-border'
                 )}
               >
                 {banner.emoji && (
