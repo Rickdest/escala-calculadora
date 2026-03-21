@@ -3,7 +3,7 @@ import { Store, Product, StoreConfig, DEFAULT_STORE_CONFIG, ProductCalculation, 
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { compressImage } from '@/lib/imageUtils';
+import { uploadProductImage, deleteProductImage, getProductImageUrl } from '@/lib/imageUtils';
 
 interface StoreContextType {
   stores: Store[];
@@ -26,32 +26,23 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 const LOCAL_IMAGES_KEY = 'precify-local-images';
 const CURRENT_STORE_KEY = 'precify-current-store';
+const MIGRATION_DONE_KEY = 'precify-images-migrated';
 
 function getLocalImages(): Record<string, string> {
   try { return JSON.parse(localStorage.getItem(LOCAL_IMAGES_KEY) || '{}'); } catch { return {}; }
 }
 
-function saveLocalImage(productId: string, imageUrl: string) {
-  const images = getLocalImages();
-  images[productId] = imageUrl;
-  localStorage.setItem(LOCAL_IMAGES_KEY, JSON.stringify(images));
-}
-
-function removeLocalImage(productId: string) {
-  const images = getLocalImages();
-  delete images[productId];
-  localStorage.setItem(LOCAL_IMAGES_KEY, JSON.stringify(images));
-}
-
 function mapDbProduct(p: any): Product {
-  const localImages = getLocalImages();
   const variations = p.variations ?? [];
   const attributes = p.attributes ?? [];
   const hasVariations = p.has_variations ?? false;
-  // If product has variations, stockQuantity = sum of variation stocks
   const stockQuantity = hasVariations && variations.length > 0
     ? variations.reduce((sum: number, v: any) => sum + (Number(v.stockQuantity) || 0), 0)
     : Number(p.stock_quantity ?? 0);
+
+  // Use imageUrl from DB column; fallback to localStorage for migration
+  const localImages = getLocalImages();
+  const imageUrl = p.image_url || localImages[p.id] || undefined;
 
   return {
     id: p.id,
@@ -64,7 +55,7 @@ function mapDbProduct(p: any): Product {
     packagingCost: Number(p.packaging_cost ?? 0),
     adsCost: Number(p.ads_cost ?? 0),
     adsRevenue: Number(p.ads_revenue ?? 0),
-    imageUrl: localImages[p.id] || undefined,
+    imageUrl,
     stockQuantity,
     minStockQuantity: Number(p.min_stock_quantity ?? 5),
     hasVariations,
@@ -117,6 +108,43 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     loadData();
   }, [user?.id]);
 
+  const migrateLocalImages = async (userId: string, products: Product[]) => {
+    try {
+      const localImages = getLocalImages();
+      const productIds = Object.keys(localImages);
+      if (productIds.length === 0) {
+        localStorage.setItem(MIGRATION_DONE_KEY, '1');
+        return;
+      }
+
+      let migrated = 0;
+      for (const productId of productIds) {
+        const base64 = localImages[productId];
+        if (!base64) continue;
+
+        const url = await uploadProductImage(userId, productId, base64);
+        if (url) {
+          await supabase.from('products').update({ image_url: url } as any).eq('id', productId).eq('user_id', userId);
+          delete localImages[productId];
+          migrated++;
+        }
+      }
+
+      localStorage.setItem(LOCAL_IMAGES_KEY, JSON.stringify(localImages));
+      if (Object.keys(localImages).length === 0) {
+        localStorage.removeItem(LOCAL_IMAGES_KEY);
+      }
+      localStorage.setItem(MIGRATION_DONE_KEY, '1');
+
+      if (migrated > 0) {
+        toast.success(`${migrated} imagem(ns) migrada(s) para a nuvem`);
+        loadData(); // Reload to get updated URLs
+      }
+    } catch {
+      // Silent — don't block the app
+    }
+  };
+
   const loadData = async () => {
     if (!user) return;
     setIsLoading(true);
@@ -154,6 +182,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           setStores([newStore]);
           setCurrentStoreState(newStore);
         }
+      }
+
+      // Migrate localStorage images to Storage (one-time)
+      if (!localStorage.getItem(MIGRATION_DONE_KEY)) {
+        migrateLocalImages(user.id, products);
       }
     } catch (err) {
       toast.error('Erro ao carregar dados da nuvem');
@@ -277,14 +310,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     if (error) { toast.error('Erro ao salvar produto'); throw error; }
 
-    // Save image locally (compressed)
+    // Upload image to Storage
     if (productData.imageUrl) {
-      const compressed = await compressImage(productData.imageUrl);
-      saveLocalImage(data.id, compressed);
+      const url = await uploadProductImage(user.id, data.id, productData.imageUrl);
+      if (url) {
+        // Save URL to DB
+        await supabase.from('products').update({ image_url: url } as any).eq('id', data.id);
+        (data as any).image_url = url;
+      } else {
+        // Fallback: keep in localStorage
+        const localImages = getLocalImages();
+        localImages[data.id] = productData.imageUrl;
+        localStorage.setItem(LOCAL_IMAGES_KEY, JSON.stringify(localImages));
+      }
     }
 
     const newProduct = mapDbProduct(data);
-    if (productData.imageUrl) newProduct.imageUrl = productData.imageUrl;
 
     setStores(prev => prev.map(store =>
       store.id === productData.storeId
@@ -327,13 +368,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (error) { toast.error('Erro ao atualizar produto'); return; }
     }
 
-    // Save image locally (compressed)
-    if (updates.imageUrl !== undefined) {
+    // Handle image upload/delete
+    if (updates.imageUrl !== undefined && user) {
       if (updates.imageUrl) {
-        const compressed = await compressImage(updates.imageUrl);
-        saveLocalImage(productId, compressed);
+        const url = await uploadProductImage(user.id, productId, updates.imageUrl);
+        if (url) {
+          await supabase.from('products').update({ image_url: url } as any).eq('id', productId);
+          updates.imageUrl = url;
+        }
       } else {
-        removeLocalImage(productId);
+        await deleteProductImage(user.id, productId);
+        await supabase.from('products').update({ image_url: null } as any).eq('id', productId);
       }
     }
 
@@ -346,12 +391,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       ),
       updatedAt: store.products.some(p => p.id === productId) ? new Date() : store.updatedAt,
     })));
-  }, []);
+  }, [user]);
 
   const deleteProduct = useCallback(async (productId: string) => {
+    if (user) await deleteProductImage(user.id, productId);
     const { error } = await supabase.from('products').delete().eq('id', productId);
     if (error) { toast.error('Erro ao excluir produto'); return; }
-    removeLocalImage(productId);
     setStores(prev => prev.map(store => ({
       ...store,
       products: store.products.filter(p => p.id !== productId),
@@ -389,10 +434,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     if (error) { toast.error('Erro ao duplicar produto'); return null; }
 
-    if (original.imageUrl) saveLocalImage(data.id, original.imageUrl);
+    // Copy image for duplicated product
+    if (original.imageUrl && user) {
+      const url = await uploadProductImage(user.id, data.id, original.imageUrl);
+      if (url) {
+        await supabase.from('products').update({ image_url: url } as any).eq('id', data.id);
+        (data as any).image_url = url;
+      }
+    }
 
     const duplicated = mapDbProduct(data);
-    if (original.imageUrl) duplicated.imageUrl = original.imageUrl;
 
     setStores(prev => prev.map(store =>
       store.id === original!.storeId

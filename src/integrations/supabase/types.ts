@@ -399,6 +399,7 @@ export type Database = {
           description: string | null
           has_variations: boolean | null
           id: string
+          image_url: string | null
           min_stock_quantity: number | null
           name: string
           packaging_cost: number | null
@@ -421,6 +422,7 @@ export type Database = {
           description?: string | null
           has_variations?: boolean | null
           id?: string
+          image_url?: string | null
           min_stock_quantity?: number | null
           name: string
           packaging_cost?: number | null
@@ -443,6 +445,7 @@ export type Database = {
           description?: string | null
           has_variations?: boolean | null
           id?: string
+          image_url?: string | null
           min_stock_quantity?: number | null
           name?: string
           packaging_cost?: number | null
