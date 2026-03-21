@@ -268,21 +268,21 @@ function parseProductFormatCSV(csvContent: string): ParsedAdsFile | null {
       dataRowCount++;
 
       // Column positions depend on format. Common product format:
-      // Impressions at ~6, Clicks at ~7, etc.
-      // We'll use relative positions based on header length
       const numCols = headerCols.length;
-      let impIdx: number, clickIdx: number, itemsSoldIdx: number, gmvIdx: number, spendIdx: number, roasIdx: number;
+      let impIdx: number, clickIdx: number, itemsSoldIdx: number, gmvIdx: number, spendIdx: number, roasIdx: number, convIdx: number;
 
       if (numCols >= 23) {
         // Full product format
-        impIdx = 6; clickIdx = 7; itemsSoldIdx = 15; gmvIdx = 17; spendIdx = 19; roasIdx = 20;
+        impIdx = 6; clickIdx = 7; convIdx = 9; itemsSoldIdx = 15; gmvIdx = 17; spendIdx = 19; roasIdx = 20;
       } else {
         // Shorter format - estimate positions
-        impIdx = 6; clickIdx = 7; itemsSoldIdx = 13; gmvIdx = 15; spendIdx = 17; roasIdx = 18;
+        impIdx = 6; clickIdx = 7; convIdx = 9; itemsSoldIdx = 13; gmvIdx = 15; spendIdx = 17; roasIdx = 18;
       }
 
       totalImpressions += parseBRNumber(getCol(cols, impIdx));
       totalClicks += parseBRNumber(getCol(cols, clickIdx));
+      // BUG 7 FIX: increment totalConversions
+      totalConversions += parseBRNumber(getCol(cols, convIdx));
       totalItemsSold += parseBRNumber(getCol(cols, itemsSoldIdx));
       totalGmv += parseBRNumber(getCol(cols, gmvIdx));
       totalSpend += parseBRNumber(getCol(cols, spendIdx));

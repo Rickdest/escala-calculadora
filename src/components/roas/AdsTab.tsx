@@ -11,7 +11,8 @@ import { Input } from '@/components/ui/input';
 import { parseShopeeAdsCSV, ParsedAdsFile, ParsedAdMetric, deriveMetrics, AdMetricDerived } from '@/lib/shopeeAdsParser';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { getShopeeFeeForPrice, Product } from '@/types/store';
+import { Product } from '@/types/store';
+import { calcFullRoas } from '@/lib/roasUtils';
 
 const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 function truncate(str: string, max: number) { return str.length > max ? str.slice(0, max) + '…' : str; }
@@ -231,31 +232,45 @@ function AlertsSection({ metrics }: { metrics: AdMetricDerived[] }) {
 
 // ─── Ranking ───
 
-function RoasBar({ roas }: { roas: number }) {
-  const maxRoas = Math.max(10, roas * 1.3);
-  const empate = 2, ideal = 5;
+function RoasBar({ roas, empate, ideal }: { roas: number; empate?: number; ideal?: number }) {
+  const e = empate ?? 2;
+  const id = ideal ?? 5;
+  const maxRoas = Math.max(10, roas * 1.3, id * 1.5);
   const pos = Math.min((roas / maxRoas) * 100, 100);
-  const empatePos = (empate / maxRoas) * 100;
-  const idealPos = (ideal / maxRoas) * 100;
+  const empatePos = (e / maxRoas) * 100;
+  const idealPos = (id / maxRoas) * 100;
   return (
     <div className="space-y-1">
       <div className="relative w-full h-1.5 rounded-full overflow-hidden">
         <div className="absolute inset-0 rounded-full" style={{ background: `linear-gradient(to right, hsl(0 85% 60%) 0%, hsl(45 95% 50%) ${empatePos}%, hsl(152 70% 42%) ${idealPos}%, hsl(152 70% 42%) 100%)`, opacity: 0.25 }} />
-        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pos}%`, backgroundColor: roas >= 5 ? 'hsl(152,70%,42%)' : roas >= 2 ? 'hsl(45,95%,50%)' : 'hsl(0,85%,60%)' }} />
+        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pos}%`, backgroundColor: roas >= id ? 'hsl(152,70%,42%)' : roas >= e ? 'hsl(45,95%,50%)' : 'hsl(0,85%,60%)' }} />
       </div>
       <div className="flex items-center gap-2 text-[9px] text-muted-foreground font-bold">
         <span>0</span><span className="flex-1" />
-        <span className="text-warning">Empate {empate}</span>
-        <span className="text-success">Ideal {ideal}</span>
+        <span className="text-warning">Empate {e.toFixed(1)}</span>
+        <span className="text-success">Ideal {id.toFixed(1)}</span>
         <span className={cn('font-mono', getRoasColor(roas))}>{roas.toFixed(2)}</span>
       </div>
     </div>
   );
 }
 
-function RankingSection({ metrics }: { metrics: AdMetricDerived[] }) {
+function RankingSection({ metrics, products }: { metrics: AdMetricDerived[]; products: Product[] }) {
+  const { currentStore } = useStore();
+  const config = currentStore?.config;
   const sorted = useMemo(() => [...metrics].sort((a, b) => b.roas - a.roas), [metrics]);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+
+  // Compute dynamic empate/ideal per metric
+  const getProductRoasTargets = useCallback((m: AdMetricDerived) => {
+    if (!config) return { empate: 2, ideal: 5 };
+    const pid = (m as any)._productId;
+    const product = pid ? products.find(p => p.id === pid) : null;
+    if (!product || product.salePrice <= 0) return { empate: 2, ideal: 5 };
+    const result = calcFullRoas(product.salePrice, product.costPrice, config, product.packagingCost, 0, 0);
+    if (result.margemInsuficiente || !result.roasEmpate) return { empate: 2, ideal: 5 };
+    return { empate: result.roasEmpate, ideal: result.roasIdeal || 5 };
+  }, [config, products]);
 
   return (
     <div className="space-y-2">
@@ -265,6 +280,7 @@ function RankingSection({ metrics }: { metrics: AdMetricDerived[] }) {
           const isOpen = expandedIndex === i;
           const StatusIcon = m.roas >= 5 ? TrendingUp : m.roas >= 2 ? AlertTriangle : TrendingDown;
           const statusColor = getRoasColor(m.roas);
+          const targets = getProductRoasTargets(m);
           return (
             <div key={i}>
               <button onClick={() => setExpandedIndex(isOpen ? null : i)} className="w-full p-2.5 md:p-3.5 flex items-center gap-2 text-left hover:bg-card/50 transition-colors">
@@ -295,7 +311,7 @@ function RankingSection({ metrics }: { metrics: AdMetricDerived[] }) {
                   {m.avgPosition !== null && (
                     <div><p className="text-[9px] text-muted-foreground uppercase">POSIÇÃO MÉDIA</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">#{m.avgPosition}</p></div>
                   )}
-                  <RoasBar roas={m.roas} />
+                  <RoasBar roas={m.roas} empate={targets.empate} ideal={targets.ideal} />
                 </div>
               )}
             </div>
@@ -309,6 +325,8 @@ function RankingSection({ metrics }: { metrics: AdMetricDerived[] }) {
 // ─── Margin vs Ads ───
 
 function MarginSection({ metrics, products }: { metrics: AdMetricDerived[]; products: Product[] }) {
+  const { currentStore, calculateProduct } = useStore();
+  const config = currentStore?.config;
   const matches = useMemo(() => {
     const result: Array<{ metric: AdMetricDerived; product: Product }> = [];
     for (const m of metrics) {
@@ -328,16 +346,16 @@ function MarginSection({ metrics, products }: { metrics: AdMetricDerived[]; prod
     return result;
   }, [metrics, products]);
 
-  if (matches.length === 0) return null;
+  if (matches.length === 0 || !config) return null;
 
   return (
     <div className="space-y-2">
       <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">MARGEM vs ADS</p>
       <div className="space-y-2">
         {matches.map(({ metric: m, product }, i) => {
-          const fee = getShopeeFeeForPrice(product.salePrice);
-          const taxaShopee = (product.salePrice * fee.percent / 100) + fee.fixed;
-          const margin = ((product.salePrice - taxaShopee - product.costPrice) / product.salePrice) * 100;
+          // BUG 3 FIX: Use calculateProduct for real margin with ALL costs
+          const calc = calculateProduct(product, config);
+          const margin = calc.realMargin;
           const marginWithAds = margin - m.acos;
           let StatusIcon: React.ElementType, color: string, message: string;
           if (marginWithAds >= 17) { StatusIcon = TrendingUp; color = 'text-success'; message = 'Margem excelente mesmo com ads'; }
@@ -525,10 +543,10 @@ export function AdsTab() {
       variations: [],
       shopeeAcelera: 'none' as const,
     };
-    await addProduct(newProduct);
-    // Get the newly created product
-    const created = currentStore?.products.find(p => (p as any).shopeeProductId === metric.shopeeProductId);
-    await saveMetricToDB(metric, created?.id);
+    // BUG 5 FIX: Use return value from addProduct and update with shopeeProductId
+    const created = await addProduct(newProduct);
+    await updateProduct(created.id, { shopeeProductId: metric.shopeeProductId } as any);
+    await saveMetricToDB(metric, created.id);
     toast.success('Produto criado — complete preço de venda e custo');
     advanceLinking();
   };
@@ -591,7 +609,7 @@ export function AdsTab() {
               <AlertsSection metrics={derivedMetrics} />
             </div>
             <div className="space-y-4">
-              <RankingSection metrics={derivedMetrics} />
+              <RankingSection metrics={derivedMetrics} products={products} />
               <MarginSection metrics={derivedMetrics} products={products} />
             </div>
           </div>

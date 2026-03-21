@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useStore } from '@/contexts/StoreContext';
-import { getShopeeFeeForPrice, Product } from '@/types/store';
+import { Product } from '@/types/store';
 import { cn } from '@/lib/utils';
+import { calcFullRoas, calcProductRoas, getRoasStatus, RoasResult } from '@/lib/roasUtils';
 import {
   Target, AlertTriangle, TrendingUp, TrendingDown,
   Package, Search, DollarSign,
@@ -14,7 +15,6 @@ import {
   TooltipTrigger as ShadTooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ResponsiveContainer, PieChart as RechartsPie, Pie, Cell, Tooltip,
@@ -26,40 +26,6 @@ import { AdsTab } from '@/components/roas/AdsTab';
 
 // ─── Shared Utilities ───
 
-interface RoasResult {
-  roasAtual: number | null;
-  roasEmpate: number | null;
-  roasSaudavel: number | null;
-  roasIdeal: number | null;
-  lucroBruto: number;
-  taxaShopee: number;
-  valorRecebido: number;
-  margemInsuficiente: boolean;
-}
-
-function calcRoasFromValues(precoVenda: number, custoP: number, gastoAds: number, receitaAds: number): RoasResult {
-  const fee = getShopeeFeeForPrice(precoVenda);
-  const taxaShopee = (precoVenda * fee.percent / 100) + fee.fixed;
-  const valorRecebido = precoVenda - taxaShopee;
-  const lucroBruto = valorRecebido - custoP;
-  if (lucroBruto <= 0) {
-    return { roasAtual: null, roasEmpate: null, roasSaudavel: null, roasIdeal: null, lucroBruto, taxaShopee, valorRecebido, margemInsuficiente: true };
-  }
-  const roasEmpate = parseFloat((precoVenda / lucroBruto).toFixed(2));
-  const roasSaudavel = parseFloat((roasEmpate / 0.61).toFixed(2));
-  const roasIdeal = parseFloat((roasEmpate / 0.40).toFixed(2));
-  const roasAtual = gastoAds > 0 ? parseFloat((receitaAds / gastoAds).toFixed(2)) : null;
-  return { roasAtual, roasEmpate, roasSaudavel, roasIdeal, lucroBruto, taxaShopee, valorRecebido, margemInsuficiente: false };
-}
-
-function getRoasStatus(roasAtual: number, roasEmpate: number, roasSaudavel: number, roasIdeal: number) {
-  if (roasAtual < roasEmpate) return 'danger';
-  if (roasAtual === roasEmpate) return 'empate';
-  if (roasAtual < roasSaudavel) return 'warning';
-  if (roasAtual < roasIdeal) return 'medium';
-  return 'success';
-}
-
 const statusColors: Record<string, string> = { danger: 'text-destructive', empate: 'text-orange-400', warning: 'text-yellow-400', medium: 'text-primary', success: 'text-success' };
 const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
@@ -69,6 +35,9 @@ const CHART_COLORS = [
   'hsl(40, 95%, 50%)',
   'hsl(220, 70%, 55%)',
   'hsl(280, 70%, 55%)',
+  'hsl(340, 80%, 55%)',
+  'hsl(190, 70%, 45%)',
+  'hsl(60, 80%, 45%)',
 ];
 
 // ─── Section Label ───
@@ -82,14 +51,26 @@ function SectionLabel({ icon: Icon, children }: { icon: React.ElementType; child
   );
 }
 
-// ─── Cost Breakdown Donut ───
+// ─── Cost Breakdown Donut (BUG 6 FIX: show ALL costs) ───
 
 function CostBreakdownChart({ product, roasData }: { product: Product; roasData: RoasResult }) {
-  const data = useMemo(() => [
-    { name: 'Custo Produto', value: product.costPrice, color: CHART_COLORS[0] },
-    { name: 'Taxa Shopee', value: roasData.taxaShopee, color: CHART_COLORS[1] },
-    { name: 'Lucro', value: Math.max(0, roasData.lucroBruto), color: CHART_COLORS[2] },
-  ], [product, roasData]);
+  const data = useMemo(() => {
+    const costs = roasData.costs;
+    const items: Array<{ name: string; value: number; color: string }> = [];
+    let colorIdx = 0;
+    const addItem = (name: string, value: number) => {
+      if (value > 0) items.push({ name, value, color: CHART_COLORS[colorIdx++ % CHART_COLORS.length] });
+    };
+    addItem('Custo Produto', costs.costPrice);
+    addItem('Taxa Shopee', costs.shopeeFee);
+    addItem('Embalagem', costs.packagingCost);
+    addItem('Impostos', costs.taxes);
+    addItem('Afiliados', costs.affiliateCommission);
+    addItem('Campanhas', costs.campaigns);
+    addItem('Acelera', costs.acelera);
+    items.push({ name: 'Lucro', value: Math.max(0, roasData.lucroBruto), color: 'hsl(152, 70%, 42%)' });
+    return items;
+  }, [roasData]);
 
   return (
     <div className="flex items-center gap-3">
@@ -101,7 +82,7 @@ function CostBreakdownChart({ product, roasData }: { product: Product; roasData:
           <Tooltip formatter={(v: number) => formatCurrency(v)} />
         </RechartsPie>
       </ResponsiveContainer>
-      <div className="flex-1 space-y-1.5">
+      <div className="flex-1 space-y-1">
         {data.map((item, i) => (
           <div key={i} className="flex items-center gap-2 text-xs">
             <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
@@ -165,7 +146,7 @@ function KpiCard({ icon: Icon, label, value, subValue, variant = 'default', high
 
 // ─── Product Selector ───
 
-function ProductSelector({ products, selectedId, onSelect }: { products: Product[]; selectedId: string; onSelect: (id: string) => void }) {
+function ProductSelector({ products, selectedId, onSelect, config }: { products: Product[]; selectedId: string; onSelect: (id: string) => void; config: any }) {
   const [search, setSearch] = useState('');
   const filtered = useMemo(() => {
     if (!search.trim()) return products;
@@ -184,7 +165,7 @@ function ProductSelector({ products, selectedId, onSelect }: { products: Product
       <div className="grid grid-cols-1 gap-1.5 max-h-[260px] overflow-y-auto pr-0.5 scrollbar-none" style={{ overscrollBehavior: 'contain', scrollbarWidth: 'none' }}>
         {filtered.map(p => {
           const isActive = p.id === selectedId;
-          const roasData = calcRoasFromValues(p.salePrice, p.costPrice, p.adsCost, p.adsRevenue);
+          const roasData = calcProductRoas(p, config);
           const hasAds = p.adsCost > 0;
 
           return (
@@ -238,6 +219,7 @@ function ProductSelector({ products, selectedId, onSelect }: { products: Product
 
 function ProductAnalysis() {
   const { currentStore, updateProduct } = useStore();
+  const config = currentStore?.config;
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [gastoAds, setGastoAds] = useState<string>('');
   const [receitaAds, setReceitaAds] = useState<string>('');
@@ -267,13 +249,20 @@ function ProductAnalysis() {
   }, [gastoAds, receitaAds, selectedProduct?.id]);
 
   const roasData = useMemo(() => {
-    if (!selectedProduct) return null;
-    return calcRoasFromValues(selectedProduct.salePrice, selectedProduct.costPrice, parseFloat(gastoAds) || 0, parseFloat(receitaAds) || 0);
-  }, [selectedProduct, gastoAds, receitaAds]);
+    if (!selectedProduct || !config) return null;
+    return calcFullRoas(
+      selectedProduct.salePrice,
+      selectedProduct.costPrice,
+      config,
+      selectedProduct.packagingCost,
+      parseFloat(gastoAds) || 0,
+      parseFloat(receitaAds) || 0,
+    );
+  }, [selectedProduct, config, gastoAds, receitaAds]);
 
   const marginPercent = useMemo(() => {
     if (!roasData || !selectedProduct) return 0;
-    return (roasData.lucroBruto / selectedProduct.salePrice) * 100;
+    return selectedProduct.salePrice > 0 ? (roasData.lucroBruto / selectedProduct.salePrice) * 100 : 0;
   }, [roasData, selectedProduct]);
 
   const status = roasData && !roasData.margemInsuficiente && roasData.roasAtual !== null && roasData.roasEmpate && roasData.roasSaudavel && roasData.roasIdeal
@@ -293,13 +282,11 @@ function ProductAnalysis() {
 
   return (
     <div className="space-y-6">
-      {/* Desktop: 2-column layout | Mobile: stacked */}
       <div className="md:grid md:grid-cols-12 md:gap-6 space-y-4 md:space-y-0">
-        {/* Left: Product Selector + Ads Input */}
         <div className="md:col-span-4 space-y-4">
           <div className="rounded-xl border border-border bg-card p-4 space-y-3">
             <SectionLabel icon={Package}>Produto</SectionLabel>
-            <ProductSelector products={currentStore.products} selectedId={selectedProductId} onSelect={setSelectedProductId} />
+            <ProductSelector products={currentStore.products} selectedId={selectedProductId} onSelect={setSelectedProductId} config={config} />
           </div>
 
           {selectedProduct && (
@@ -322,14 +309,11 @@ function ProductAnalysis() {
           )}
         </div>
 
-        {/* Right: Results */}
         <div className="md:col-span-8 space-y-4">
           {selectedProduct && roasData && !roasData.margemInsuficiente && (
             <>
-              {/* Health Banner */}
               <ProductHealthBanner marginPercent={marginPercent} />
 
-              {/* Hero Results - 3-column KPIs with tooltips */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2 animate-fade-in">
                 {[
                   { label: 'ROAS Empate', value: roasData.roasEmpate!.toFixed(2) + 'x', color: 'text-orange-400', tip: 'ROAS mínimo para não ter prejuízo. Abaixo disso cada venda com anúncio gera perda.' },
@@ -391,6 +375,14 @@ function ProductAnalysis() {
                 </div>
               )}
 
+              {/* Empty state when no ads data */}
+              {roasData.roasAtual === null && (
+                <div className="rounded-xl border border-border bg-card p-6 flex flex-col items-center justify-center text-center">
+                  <BarChart3 className="w-8 h-8 text-muted-foreground mb-2" />
+                  <p className="text-xs text-muted-foreground">Preencha o gasto e receita de Ads</p>
+                </div>
+              )}
+
               {/* Cost Breakdown */}
               <div className="rounded-xl border border-border bg-card p-4 space-y-3">
                 <SectionLabel icon={PieChart}>Composição do Preço</SectionLabel>
@@ -439,11 +431,12 @@ function ProductAnalysis() {
 
 function RoasRanking() {
   const { currentStore } = useStore();
+  const config = currentStore?.config;
   const ranking = useMemo(() => {
-    if (!currentStore || currentStore.products.length === 0) return [];
+    if (!currentStore || !config || currentStore.products.length === 0) return [];
     return currentStore.products
       .map(p => {
-        const data = calcRoasFromValues(p.salePrice, p.costPrice, p.adsCost, p.adsRevenue);
+        const data = calcProductRoas(p, config);
         const status = data.roasAtual !== null && data.roasEmpate && data.roasSaudavel && data.roasIdeal && !data.margemInsuficiente
           ? getRoasStatus(data.roasAtual, data.roasEmpate, data.roasSaudavel, data.roasIdeal) : null;
         return { product: p, ...data, status };
@@ -454,7 +447,7 @@ function RoasRanking() {
         if (b.roasAtual !== null) return 1;
         return (a.roasEmpate ?? 999) - (b.roasEmpate ?? 999);
       });
-  }, [currentStore]);
+  }, [currentStore, config]);
 
   const chartData = useMemo(() => {
     return ranking
