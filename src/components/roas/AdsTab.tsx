@@ -150,7 +150,10 @@ function MetricCard({ label, value, color }: { label: string; value: string; col
   );
 }
 
-function SummarySection({ metrics }: { metrics: AdMetricDerived[] }) {
+function SummarySection({ metrics, products }: { metrics: AdMetricDerived[]; products: Product[] }) {
+  const { currentStore } = useStore();
+  const config = currentStore?.config;
+
   const totals = useMemo(() => {
     const totalSpend = metrics.reduce((s, m) => s + m.spend, 0);
     const totalGmv = metrics.reduce((s, m) => s + m.gmv, 0);
@@ -162,15 +165,29 @@ function SummarySection({ metrics }: { metrics: AdMetricDerived[] }) {
     return { totalSpend, totalGmv, totalItemsSold, avgRoas, avgAcos, totalLiquidReturn, avgRoi };
   }, [metrics]);
 
+  // Compute average empate/ideal across linked products for summary ROAS color
+  const avgTargets = useMemo(() => {
+    if (!config || products.length === 0) return { empate: 2, ideal: 5 };
+    const targets = products.filter(p => p.salePrice > 0 && p.costPrice > 0).map(p => {
+      const r = calcFullRoas(p.salePrice, p.costPrice, config, p.packagingCost, 0, 0);
+      return r.margemInsuficiente ? null : { empate: r.roasEmpate!, ideal: r.roasIdeal! };
+    }).filter(Boolean) as { empate: number; ideal: number }[];
+    if (targets.length === 0) return { empate: 2, ideal: 5 };
+    return {
+      empate: targets.reduce((s, t) => s + t.empate, 0) / targets.length,
+      ideal: targets.reduce((s, t) => s + t.ideal, 0) / targets.length,
+    };
+  }, [config, products]);
+
   return (
     <div className="space-y-2">
-      <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">RESUMO</p>
+      <p className="section-label font-bold">RESUMO</p>
       <div className="grid grid-cols-2 gap-2">
         <MetricCard label="INVESTIDO" value={formatCurrency(totals.totalSpend)} color="text-foreground" />
         <MetricCard label="RETORNO LÍQUIDO" value={formatCurrency(totals.totalLiquidReturn)} color={totals.totalLiquidReturn >= 0 ? 'text-success' : 'text-destructive'} />
       </div>
       <div className="grid grid-cols-3 gap-2">
-        <MetricCard label="ROAS" value={totals.avgRoas.toFixed(2)} color={getRoasColor(totals.avgRoas)} />
+        <MetricCard label="ROAS" value={totals.avgRoas.toFixed(2)} color={getRoasColorDynamic(totals.avgRoas, avgTargets.empate, avgTargets.ideal)} />
         <MetricCard label="ACOS" value={`${totals.avgAcos.toFixed(1)}%`} color={getAcosColor(totals.avgAcos)} />
         <MetricCard label="ROI" value={`${totals.avgRoi.toFixed(0)}%`} color={getRoiColor(totals.avgRoi)} />
       </div>
