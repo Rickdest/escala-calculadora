@@ -124,7 +124,7 @@ function LinkingModal({ metric, products, onLink, onCreate, onSkip, onClose }: L
                 {filtered.length > 0 ? filtered.map(p => (
                   <button key={p.id} onClick={() => onLink(p.id)} className="w-full text-left p-2.5 rounded-lg hover:bg-surface-2/50 transition-colors">
                     <p className="text-sm font-semibold text-foreground truncate">{p.name}</p>
-                    <p className="text-[11px] text-muted-foreground">{p.category || 'Sem categoria'} · R$ {p.salePrice.toFixed(2)}</p>
+                    <p className="text-[11px] text-text-2">{p.category || 'Sem categoria'} · R$ {p.salePrice.toFixed(2)}</p>
                   </button>
                 )) : (
                   <p className="text-center text-sm text-muted-foreground py-6">Nenhum produto encontrado</p>
