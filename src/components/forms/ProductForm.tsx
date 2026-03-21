@@ -29,9 +29,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
   const [imageUrl, setImageUrl] = useState(product?.imageUrl || '');
   const [isSaving, setIsSaving] = useState(false);
 
-  const [enableAds, setEnableAds] = useState((product?.adsCost || 0) > 0);
   const [adsCostValue, setAdsCostValue] = useState(product?.adsCost?.toString() || '0');
-  const [adsRevenue, setAdsRevenue] = useState(product?.adsRevenue?.toString() || '0');
   const [optionalCostsOpen, setOptionalCostsOpen] = useState(false);
   const [monthlySales, setMonthlySales] = useState(50);
 
