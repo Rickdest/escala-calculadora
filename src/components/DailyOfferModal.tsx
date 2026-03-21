@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { openCheckout } from '@/services/checkout.service';
 import { useAuth } from '@/contexts/AuthContext';
 
-const CHECKOUT_URL = import.meta.env.VITE_HOTMART_URL || 'https://pay.hotmart.com/B104846948H?off=au88x8b1&checkoutMode=6';
 const LAST_OFFER_KEY = 'precify-last-offer-date';
 
 export function DailyOfferModal() {
@@ -28,11 +28,7 @@ export function DailyOfferModal() {
 
   if (!show) return null;
 
-  const handleCheckout = () => {
-    const url = new URL(CHECKOUT_URL);
-    if (user?.email) url.searchParams.set('email', user.email);
-    window.open(url.toString(), '_blank', 'noopener,noreferrer');
-  };
+  const handleCheckout = () => openCheckout(user?.email || undefined);
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center">

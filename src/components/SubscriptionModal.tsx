@@ -1,7 +1,6 @@
 import { ArrowRight, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-
-const CHECKOUT_URL = import.meta.env.VITE_HOTMART_URL || 'https://pay.hotmart.com/B104846948H?off=au88x8b1&checkoutMode=6';
+import { openCheckout } from '@/services/checkout.service';
 
 const benefits = [
   'Cálculo automático de todas as taxas da Shopee',
@@ -23,11 +22,7 @@ export function SubscriptionModal({ open, onClose }: SubscriptionModalProps) {
 
   if (!open) return null;
 
-  const handleCheckout = () => {
-    const url = new URL(CHECKOUT_URL);
-    if (user?.email) url.searchParams.set('email', user.email);
-    window.open(url.toString(), '_blank', 'noopener,noreferrer');
-  };
+  const handleCheckout = () => openCheckout(user?.email || undefined);
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center">

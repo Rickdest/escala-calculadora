@@ -6,7 +6,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
-import { TrialBanner } from '@/components/TrialBanner';
+
 import { DailyOfferModal } from '@/components/DailyOfferModal';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { cn } from '@/lib/utils';
@@ -152,7 +152,7 @@ export default function Home() {
     .sort((a, b) => b.calc.realMargin - a.calc.realMargin)
     .slice(0, 5);
 
-  const trialBanner = <TrialBanner />;
+  
 
   const subscriptionCta = status === 'trialing' && trialEnd && (() => {
     const dLeft = Math.max(0, Math.ceil((new Date(trialEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
@@ -234,7 +234,6 @@ export default function Home() {
       <div className="md:hidden py-3 space-y-3">
         {/* Trial / CTA banners */}
         <div className="space-y-2">
-          {trialBanner}
           {subscriptionCta}
           {expiredCta}
         </div>
@@ -348,7 +347,6 @@ export default function Home() {
       <div className="hidden md:block py-8 space-y-6">
         {/* Trial / CTA banners */}
         <div className="space-y-2">
-          {trialBanner}
           {subscriptionCta}
           {expiredCta}
         </div>

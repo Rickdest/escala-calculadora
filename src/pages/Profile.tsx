@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { User, Mail, Lock, Save, Loader2, Check, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { openCheckout } from '@/services/checkout.service';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -278,17 +279,11 @@ export default function Profile() {
   );
 }
 
-const CHECKOUT_URL = import.meta.env.VITE_HOTMART_URL || 'https://pay.hotmart.com/B104846948H?off=au88x8b1&checkoutMode=6';
-
 function SubscriptionSection() {
   const { status, trialEnd, isActive } = useSubscription();
   const { user } = useAuth();
 
-  const handleCheckout = () => {
-    const url = new URL(CHECKOUT_URL);
-    if (user?.email) url.searchParams.set('email', user.email);
-    window.open(url.toString(), '_blank', 'noopener,noreferrer');
-  };
+  const handleCheckout = () => openCheckout(user?.email || undefined);
 
   let statusText = '';
   let statusEmoji = '';
