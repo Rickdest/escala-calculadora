@@ -145,7 +145,7 @@ export default function Profile() {
     <AppLayout>
       <PageHeader title="Perfil" showStoreSelector={false} />
 
-      <div className="px-4 py-6 space-y-6 md:max-w-[600px] md:px-0">
+      <div className="py-6 space-y-6">
         {/* Avatar Section */}
         <div className="flex flex-col items-center animate-fade-up">
           <UserAvatar displayName={displayName} email={user.email} size="lg" />
