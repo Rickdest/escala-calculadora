@@ -131,6 +131,7 @@ export default function Home() {
 
           {/* Left column: Calculator + Products */}
           <div className="space-y-4 order-1 md:order-none">
+            <HomeBanners />
             <QuickCalculator onSaveProduct={(prefill) => {
               setPrefillProduct({
                 costPrice: parseFloat(prefill.costPrice) || 0,
