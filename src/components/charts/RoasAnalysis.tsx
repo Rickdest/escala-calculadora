@@ -46,7 +46,7 @@ function SectionLabel({ icon: Icon, children }: { icon: React.ElementType; child
   return (
     <div className="flex items-center gap-2 mb-3">
       <Icon className="w-4 h-4 text-primary" />
-      <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{children}</p>
+      <p className="text-xs font-bold uppercase tracking-wider text-text-2">{children}</p>
     </div>
   );
 }
@@ -73,20 +73,22 @@ function CostBreakdownChart({ product, roasData }: { product: Product; roasData:
   }, [roasData]);
 
   return (
-    <div className="flex items-center gap-3">
-      <ResponsiveContainer width={100} height={100}>
-        <RechartsPie data={data}>
-          <Pie data={data} cx="50%" cy="50%" innerRadius={28} outerRadius={45} paddingAngle={3} dataKey="value" strokeWidth={0}>
-            {data.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-          </Pie>
-          <Tooltip formatter={(v: number) => formatCurrency(v)} />
-        </RechartsPie>
-      </ResponsiveContainer>
+    <div className="flex items-center gap-3 md:gap-5">
+      <div className="w-[100px] h-[100px] md:w-[140px] md:h-[140px] flex-shrink-0">
+        <ResponsiveContainer width="100%" height="100%">
+          <RechartsPie data={data}>
+            <Pie data={data} cx="50%" cy="50%" innerRadius={28} outerRadius={45} paddingAngle={3} dataKey="value" strokeWidth={0}>
+              {data.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+            </Pie>
+            <Tooltip formatter={(v: number) => formatCurrency(v)} />
+          </RechartsPie>
+        </ResponsiveContainer>
+      </div>
       <div className="flex-1 space-y-1">
         {data.map((item, i) => (
           <div key={i} className="flex items-center gap-2 text-xs">
             <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
-            <span className="text-muted-foreground flex-1 text-[11px]">{item.name}</span>
+            <span className="text-text-2 flex-1 text-[11px]">{item.name}</span>
             <span className="font-bold tabular-nums text-[11px] font-mono">{formatCurrency(item.value)}</span>
           </div>
         ))}
@@ -134,10 +136,10 @@ function KpiCard({ icon: Icon, label, value, subValue, variant = 'default', high
           {tooltipKey ? (
             <TooltipLabel label={label} tooltip={getTooltipText(tooltipKey)} />
           ) : (
-            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">{label}</p>
+            <p className="text-[10px] uppercase tracking-wider text-text-2 font-bold">{label}</p>
           )}
-          <p className={cn('font-extrabold tabular-nums leading-tight font-mono mt-1', large ? 'text-xl md:text-2xl' : 'text-lg')}>{value}</p>
-          {subValue && <p className="text-[10px] text-muted-foreground mt-0.5">{subValue}</p>}
+          <p className={cn('font-extrabold tabular-nums leading-tight font-mono mt-1', large ? 'text-xl md:text-2xl' : 'text-lg md:text-xl')}>{value}</p>
+          {subValue && <p className="text-[10px] text-text-2 mt-0.5">{subValue}</p>}
         </div>
       </div>
     </div>
@@ -158,7 +160,7 @@ function ProductSelector({ products, selectedId, onSelect, config }: { products:
     <div className="space-y-3">
       {products.length > 3 && (
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-2" />
           <Input placeholder="Buscar produto..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 input-modern h-10 text-sm" />
         </div>
       )}
@@ -181,18 +183,18 @@ function ProductSelector({ products, selectedId, onSelect, config }: { products:
             >
               <div className={cn(
                 'w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors',
-                isActive ? 'bg-primary/20' : 'bg-secondary group-hover:bg-primary/10'
+                isActive ? 'bg-primary/20' : 'bg-surface-2 group-hover:bg-primary/10'
               )}>
                 {p.imageUrl ? (
                   <img src={p.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover" />
                 ) : (
-                  <Package className={cn('w-4 h-4 transition-colors', isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-primary/70')} />
+                  <Package className={cn('w-4 h-4 transition-colors', isActive ? 'text-primary' : 'text-text-2 group-hover:text-primary/70')} />
                 )}
               </div>
               <div className="flex-1 min-w-0">
                 <p className={cn('text-sm font-semibold truncate transition-colors', isActive ? 'text-foreground' : 'text-foreground')}>{p.name}</p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-xs text-muted-foreground tabular-nums font-mono">{formatCurrency(p.salePrice)}</span>
+                  <span className="text-xs text-text-2 tabular-nums font-mono">{formatCurrency(p.salePrice)}</span>
                   {hasAds && roasData.roasAtual !== null && !roasData.margemInsuficiente && (
                     <span className={cn('text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums font-mono',
                       roasData.roasAtual >= (roasData.roasIdeal || 0) ? 'bg-success/15 text-success' :
@@ -209,7 +211,7 @@ function ProductSelector({ products, selectedId, onSelect, config }: { products:
         })}
       </div>
       {filtered.length === 0 && search.trim() && (
-        <p className="text-center text-xs text-muted-foreground py-3">Nenhum produto encontrado</p>
+        <p className="text-center text-xs text-text-2 py-3">Nenhum produto encontrado</p>
       )}
     </div>
   );
@@ -271,11 +273,11 @@ function ProductAnalysis() {
   if (!currentStore || currentStore.products.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-secondary flex items-center justify-center mb-3">
-          <Target className="w-7 h-7 text-muted-foreground" />
+        <div className="w-14 h-14 rounded-2xl bg-surface-2 flex items-center justify-center mb-3">
+          <Target className="w-7 h-7 text-text-2" />
         </div>
         <p className="text-sm font-bold text-foreground mb-1">Nenhum produto cadastrado</p>
-        <p className="text-xs text-muted-foreground max-w-xs">Adicione seus produtos na página Produtos para começar a analisar o ROAS.</p>
+        <p className="text-xs text-text-2 max-w-xs">Adicione seus produtos na página Produtos para começar a analisar o ROAS.</p>
       </div>
     );
   }
@@ -302,7 +304,7 @@ function ProductAnalysis() {
                   <Input type="number" inputMode="decimal" min="0" step="0.01" value={receitaAds} onChange={e => setReceitaAds(e.target.value)} placeholder="0,00" className="input-modern h-11 text-sm font-semibold" />
                 </div>
               </div>
-              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+              <p className="text-[10px] text-text-2 flex items-center gap-1">
                 <Zap className="w-3 h-3 text-primary" /> Valores salvos automaticamente
               </p>
             </div>
@@ -314,19 +316,19 @@ function ProductAnalysis() {
             <>
               <ProductHealthBanner marginPercent={marginPercent} />
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2 animate-fade-in">
+              <div className="grid grid-cols-3 gap-2 md:gap-3 animate-fade-in">
                 {[
                   { label: 'ROAS Empate', value: roasData.roasEmpate!.toFixed(2) + 'x', color: 'text-orange-400', tip: 'ROAS mínimo para não ter prejuízo. Abaixo disso cada venda com anúncio gera perda.' },
                   { label: 'ROAS Saudável', value: roasData.roasSaudavel!.toFixed(2) + 'x', color: 'text-primary', tip: 'A partir daqui o lucro já é consistente e seguro para escalar.' },
                   { label: 'ROAS Ideal', value: roasData.roasIdeal!.toFixed(2) + 'x', color: 'text-success', tip: 'Margem excelente. Nesse nível vale aumentar o investimento em Ads com confiança.' },
                 ].map(({ label, value, color, tip }) => (
-                  <div key={label} className="rounded-xl border border-border bg-card p-3 flex items-center justify-between md:flex-col md:text-center">
-                    <div className="flex items-center gap-1 md:justify-center">
-                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">{label}</p>
+                  <div key={label} className="rounded-xl border border-border bg-card p-3 md:p-4 flex flex-col text-center">
+                    <div className="flex items-center gap-1 justify-center">
+                      <p className="text-[10px] uppercase tracking-wider text-text-2 font-bold">{label}</p>
                       <ShadTooltipProvider delayDuration={200}>
                         <ShadTooltip>
                           <ShadTooltipTrigger asChild>
-                            <button type="button" className="text-muted-foreground hover:text-primary transition-colors focus:outline-none">
+                            <button type="button" className="text-text-2 hover:text-primary transition-colors focus:outline-none">
                               <Info className="w-3 h-3" />
                             </button>
                           </ShadTooltipTrigger>
@@ -336,17 +338,17 @@ function ProductAnalysis() {
                         </ShadTooltip>
                       </ShadTooltipProvider>
                     </div>
-                    <p className={cn('font-extrabold tabular-nums font-mono text-lg md:mt-1', color)}>{value}</p>
+                    <p className={cn('font-extrabold tabular-nums font-mono text-lg md:text-2xl mt-1', color)}>{value}</p>
                   </div>
                 ))}
               </div>
 
               {/* ROAS Progress Bar */}
               {roasData.roasAtual !== null && roasData.roasEmpate && roasData.roasIdeal && status && (
-                <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+                <div className="rounded-xl border border-border bg-card p-4 md:p-5 space-y-3">
                   <SectionLabel icon={BarChart3}>Posição do ROAS</SectionLabel>
                   <div className="relative pt-1">
-                    <div className="w-full h-3 rounded-full bg-secondary overflow-hidden relative">
+                    <div className="w-full h-3 md:h-4 rounded-full bg-surface-2 overflow-hidden relative">
                       <div className="absolute inset-0 rounded-full" style={{
                         background: `linear-gradient(to right, hsl(0 85% 60%) 0%, hsl(25 95% 55%) ${(roasData.roasEmpate / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%, hsl(45 95% 50%) ${(roasData.roasSaudavel! / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%, hsl(100 60% 45%) ${(roasData.roasIdeal / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%, hsl(152 70% 42%) 100%)`,
                         opacity: 0.25,
@@ -366,7 +368,7 @@ function ProductAnalysis() {
                     <div className="absolute top-1 h-3 w-0.5 bg-yellow-400/60 rounded-full z-20" style={{ left: `${(roasData.roasSaudavel! / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%` }} />
                     <div className="absolute top-1 h-3 w-0.5 bg-success/60 rounded-full z-20" style={{ left: `${(roasData.roasIdeal / Math.max(roasData.roasIdeal * 1.3, roasData.roasAtual * 1.1)) * 100}%` }} />
                   </div>
-                  <div className="flex justify-between text-[10px] text-muted-foreground font-bold">
+                  <div className="flex justify-between text-[10px] text-text-2 font-bold">
                     <span>0</span>
                     <span className="text-orange-400">Empate {roasData.roasEmpate.toFixed(1)}</span>
                     <span className="text-yellow-400">Saudável {roasData.roasSaudavel?.toFixed(1)}</span>
@@ -378,8 +380,8 @@ function ProductAnalysis() {
               {/* Empty state when no ads data */}
               {roasData.roasAtual === null && (
                 <div className="rounded-xl border border-border bg-card p-6 flex flex-col items-center justify-center text-center">
-                  <BarChart3 className="w-8 h-8 text-muted-foreground mb-2" />
-                  <p className="text-xs text-muted-foreground">Preencha o gasto e receita de Ads</p>
+                  <BarChart3 className="w-8 h-8 text-text-2 mb-2" />
+                  <p className="text-xs text-text-2">Preencha o gasto e receita de Ads</p>
                 </div>
               )}
 
@@ -406,8 +408,8 @@ function ProductAnalysis() {
                   <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="font-bold text-destructive text-sm">Margem insuficiente para anunciar</p>
-                    <p className="text-xs text-muted-foreground mt-1">Lucro antes de Ads: {formatCurrency(roasData.lucroBruto)}</p>
-                    <p className="text-xs text-muted-foreground mt-1">Aumente o preço de venda ou reduza o custo do produto.</p>
+                    <p className="text-xs text-text-2 mt-1">Lucro antes de Ads: {formatCurrency(roasData.lucroBruto)}</p>
+                    <p className="text-xs text-text-2 mt-1">Aumente o preço de venda ou reduza o custo do produto.</p>
                   </div>
                 </div>
               </div>
@@ -416,9 +418,9 @@ function ProductAnalysis() {
 
           {!selectedProduct && (
             <div className="flex flex-col items-center justify-center py-20 text-center rounded-xl border border-border bg-card">
-              <Target className="w-10 h-10 text-muted-foreground/30 mb-3" />
-              <p className="text-sm font-semibold text-muted-foreground">Selecione um produto</p>
-              <p className="text-xs text-muted-foreground mt-1">Escolha um produto ao lado para ver a análise de ROAS</p>
+              <Target className="w-10 h-10 text-text-2/30 mb-3" />
+              <p className="text-sm font-semibold text-text-2">Selecione um produto</p>
+              <p className="text-xs text-text-2 mt-1">Escolha um produto ao lado para ver a análise de ROAS</p>
             </div>
           )}
         </div>
@@ -474,29 +476,32 @@ function RoasRanking() {
         <div className="md:col-span-5">
           {chartData.length > 0 && (
             <div className="rounded-xl border border-border bg-card p-4 space-y-3 md:sticky md:top-20">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Comparativo de ROAS</p>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={chartData} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="name" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} />
-                  <YAxis tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} />
-                  <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '10px', fontSize: '11px' }} />
-                  <Bar dataKey="roas" name="ROAS Atual" radius={[4, 4, 0, 0]}>
-                    {chartData.map((entry, i) => (
-                      <Cell key={i} fill={entry.status === 'danger' ? 'hsl(0, 85%, 60%)' : entry.status === 'warning' ? 'hsl(40, 95%, 50%)' : 'hsl(152, 70%, 42%)'} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              <p className="text-[10px] font-bold text-text-2 uppercase tracking-wider">Comparativo de ROAS</p>
+              <div className="h-[220px] md:h-[280px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} margin={{ top: 5, right: 0, left: -20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="name" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} />
+                    <YAxis tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} />
+                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '10px', fontSize: '11px' }} />
+                    <Bar dataKey="roas" name="ROAS Atual" radius={[4, 4, 0, 0]}>
+                      {chartData.map((entry, i) => (
+                        <Cell key={i} fill={entry.status === 'danger' ? 'hsl(0, 85%, 60%)' : entry.status === 'warning' ? 'hsl(40, 95%, 50%)' : 'hsl(152, 70%, 42%)'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           )}
         </div>
         <div className="md:col-span-7 space-y-4">
           {withAds.length > 0 && (
             <div className="space-y-2">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 px-1">
+              <p className="text-[10px] font-bold text-text-2 uppercase tracking-wider flex items-center gap-1.5 px-1">
                 <TrendingUp className="w-3 h-3" /> Com dados de Ads ({withAds.length})
               </p>
+              <div className="space-y-2 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
               {withAds.map((r, i) => {
                 const rankIcon = r.roasAtual! >= 5 ? TrendingUp : r.roasAtual! >= 2 ? AlertTriangle : TrendingDown;
                 const RankIcon = rankIcon;
@@ -516,11 +521,11 @@ function RoasRanking() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs text-muted-foreground tabular-nums font-mono">{formatCurrency(r.product.adsCost)}</span>
-                        <span className="text-xs text-muted-foreground">→</span>
+                        <span className="text-xs text-text-2 tabular-nums font-mono">{formatCurrency(r.product.adsCost)}</span>
+                        <span className="text-xs text-text-2">→</span>
                         <span className="text-xs text-success font-semibold tabular-nums font-mono">{formatCurrency(r.product.adsRevenue)}</span>
                       </div>
-                      <div className="flex gap-3 text-[11px] text-muted-foreground mt-1">
+                      <div className="flex gap-3 text-[11px] text-text-2 mt-1">
                         <span>Emp: <span className="text-warning font-bold font-mono">{r.roasEmpate?.toFixed(1)}</span></span>
                         <span>Ideal: <span className="text-primary font-bold font-mono">{r.roasIdeal?.toFixed(1)}</span></span>
                       </div>
@@ -529,24 +534,25 @@ function RoasRanking() {
                 </div>
                 );
               })}
+              </div>
             </div>
           )}
           {withoutAds.length > 0 && (
             <div className="space-y-2">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider px-1">Sem dados de Ads ({withoutAds.length})</p>
+              <p className="text-[10px] font-bold text-text-2 uppercase tracking-wider px-1">Sem dados de Ads ({withoutAds.length})</p>
               {withoutAds.map(r => (
                 <div key={r.product.id} className="rounded-xl border border-border bg-card p-3.5 opacity-50">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-extrabold flex-shrink-0 bg-secondary text-muted-foreground">—</div>
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center text-xs font-extrabold flex-shrink-0 bg-surface-2 text-text-2">—</div>
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-foreground truncate text-sm">{r.product.name}</p>
-                      <p className="text-xs text-muted-foreground tabular-nums font-mono">{formatCurrency(r.product.salePrice)}</p>
+                      <p className="text-xs text-text-2 tabular-nums font-mono">{formatCurrency(r.product.salePrice)}</p>
                     </div>
                     <div className="text-right flex-shrink-0">
                       {r.margemInsuficiente ? (
                         <span className="text-xs font-bold text-destructive">Margem insuficiente</span>
                       ) : (
-                        <div className="text-[10px] text-muted-foreground space-y-0.5">
+                        <div className="text-[10px] text-text-2 space-y-0.5">
                           <p>Emp: <span className="text-warning font-bold font-mono">{r.roasEmpate?.toFixed(2)}</span></p>
                           <p>Ideal: <span className="text-primary font-bold font-mono">{r.roasIdeal?.toFixed(2)}</span></p>
                         </div>
@@ -569,12 +575,12 @@ export function RoasAnalysis() {
   return (
     <div className="space-y-4 pb-20 md:pb-4">
       <Tabs defaultValue="product" className="w-full">
-        <TabsList className="w-full grid grid-cols-2 h-11 rounded-full bg-card p-1 border border-border sticky top-0 z-10">
-          <TabsTrigger value="product" className="text-[13px] font-bold rounded-full gap-1.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">
+        <TabsList className="w-full grid grid-cols-2 md:w-auto md:inline-flex h-11 md:h-12 rounded-full bg-card p-1 border border-border sticky top-0 z-10">
+          <TabsTrigger value="product" className="text-[13px] md:text-sm md:px-6 font-bold rounded-full gap-1.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">
             <Target className="w-4 h-4" />
             ROAS
           </TabsTrigger>
-          <TabsTrigger value="ads" className="text-[13px] font-bold rounded-full gap-1.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">
+          <TabsTrigger value="ads" className="text-[13px] md:text-sm md:px-6 font-bold rounded-full gap-1.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">
             <Megaphone className="w-4 h-4" />
             Shopee Ads
           </TabsTrigger>
