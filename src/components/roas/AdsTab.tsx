@@ -299,9 +299,9 @@ function RankingSection({ metrics, products }: { metrics: AdMetricDerived[]; pro
       <div className="rounded-xl border border-border bg-surface-2 divide-y divide-border overflow-hidden">
         {sorted.map((m, i) => {
           const isOpen = expandedIndex === i;
-          const StatusIcon = m.roas >= 5 ? TrendingUp : m.roas >= 2 ? AlertTriangle : TrendingDown;
-          const statusColor = getRoasColor(m.roas);
           const targets = getProductRoasTargets(m);
+          const statusColor = getRoasColorDynamic(m.roas, targets.empate, targets.ideal);
+          const StatusIcon = m.roas >= targets.ideal ? TrendingUp : m.roas >= targets.empate ? AlertTriangle : TrendingDown;
           return (
             <div key={i}>
               <button onClick={() => setExpandedIndex(isOpen ? null : i)} className="w-full p-2.5 md:p-3.5 flex items-center gap-2 text-left hover:bg-card/50 transition-colors">
