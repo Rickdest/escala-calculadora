@@ -11,7 +11,8 @@ import { Input } from '@/components/ui/input';
 import { parseShopeeAdsCSV, ParsedAdsFile, ParsedAdMetric, deriveMetrics, AdMetricDerived } from '@/lib/shopeeAdsParser';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { getShopeeFeeForPrice, Product } from '@/types/store';
+import { Product } from '@/types/store';
+import { calcFullRoas } from '@/lib/roasUtils';
 
 const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 function truncate(str: string, max: number) { return str.length > max ? str.slice(0, max) + '…' : str; }
