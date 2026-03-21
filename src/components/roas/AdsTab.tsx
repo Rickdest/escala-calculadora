@@ -407,8 +407,8 @@ function MarginSection({ metrics, products }: { metrics: AdMetricDerived[]; prod
 function EmptyState({ onImport }: { onImport: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
-      <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center">
-        <FileSpreadsheet className="w-12 h-12 text-muted-foreground" />
+      <div className="w-16 h-16 rounded-2xl bg-surface-2 flex items-center justify-center">
+        <FileSpreadsheet className="w-12 h-12 text-text-2" />
       </div>
       <div className="space-y-2 mt-4">
         <p className="text-[15px] font-bold text-foreground">Importe seu relatório de Ads</p>
