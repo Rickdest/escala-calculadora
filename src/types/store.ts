@@ -134,6 +134,7 @@ export interface ProductCalculation {
   affiliateCommission: number;
   shopeeCampaigns: number;
   shopeeAcelera: number;
+  adsRevenue: number;
   totalCosts: number;
   netProfit: number;
   realMargin: number;

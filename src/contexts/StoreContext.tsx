@@ -416,17 +416,19 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const taxesValue = grossRevenue * (config.taxes / 100);
     const packagingCost = config.enablePackaging ? product.packagingCost : 0;
     const adsCost = config.enableAds ? product.adsCost : 0;
+    const adsRevenue = config.enableAds ? product.adsRevenue : 0;
     const affiliateCommissionValue = config.enableAffiliateCommission ? grossRevenue * ((config.affiliateCommission || 0) / 100) : 0;
     const shopeeCampaignsValue = config.enableShopeeCampaigns ? grossRevenue * ((config.shopeeCampaigns || 0) / 100) : 0;
 
-    const aceleraCost = config.shopeeAcelera === 'indicado'
-      ? grossRevenue * 0.025
-      : config.shopeeAcelera === 'nao_indicado'
-      ? grossRevenue * 0.035
-      : 0;
+    const productAcelera = product.shopeeAcelera !== 'none' ? product.shopeeAcelera : config.shopeeAcelera;
+    const aceleraCost = productAcelera === 'indicado'
+      ? grossRevenue * 0.05
+      : productAcelera === 'nao_indicado'
+        ? grossRevenue * 0.03
+        : 0;
 
     const totalCosts = product.costPrice + packagingCost + adsCost + totalShopeeFee + taxesValue + affiliateCommissionValue + shopeeCampaignsValue + aceleraCost;
-    const netProfit = grossRevenue - totalCosts;
+    const netProfit = grossRevenue + adsRevenue - totalCosts;
     const realMargin = grossRevenue > 0 ? (netProfit / grossRevenue) * 100 : 0;
     const marginDifference = realMargin - config.desiredMargin;
 
@@ -439,6 +441,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       affiliateCommission: affiliateCommissionValue,
       shopeeCampaigns: shopeeCampaignsValue,
       shopeeAcelera: aceleraCost,
+      adsRevenue,
       totalCosts,
       netProfit,
       realMargin,
