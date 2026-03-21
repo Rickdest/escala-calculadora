@@ -347,7 +347,6 @@ export default function Home() {
       <div className="hidden md:block py-8 space-y-6">
         {/* Trial / CTA banners */}
         <div className="space-y-2">
-          {trialBanner}
           {subscriptionCta}
           {expiredCta}
         </div>

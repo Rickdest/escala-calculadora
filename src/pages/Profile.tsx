@@ -278,17 +278,11 @@ export default function Profile() {
   );
 }
 
-const CHECKOUT_URL = import.meta.env.VITE_HOTMART_URL || 'https://pay.hotmart.com/B104846948H?off=au88x8b1&checkoutMode=6';
-
 function SubscriptionSection() {
   const { status, trialEnd, isActive } = useSubscription();
   const { user } = useAuth();
 
-  const handleCheckout = () => {
-    const url = new URL(CHECKOUT_URL);
-    if (user?.email) url.searchParams.set('email', user.email);
-    window.open(url.toString(), '_blank', 'noopener,noreferrer');
-  };
+  const handleCheckout = () => openCheckout(user?.email || undefined);
 
   let statusText = '';
   let statusEmoji = '';

@@ -166,7 +166,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (currentStore) {
       const updated = stores.find(s => s.id === currentStore.id);
-      if (updated && JSON.stringify(updated) !== JSON.stringify(currentStore)) {
+      if (updated && updated !== currentStore) {
         setCurrentStoreState(updated);
       }
       localStorage.setItem(CURRENT_STORE_KEY, currentStore.id);
