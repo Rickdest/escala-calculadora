@@ -387,8 +387,8 @@ function MarginSection({ metrics, products }: { metrics: AdMetricDerived[]; prod
             <div key={i} className="surface-card p-3.5 space-y-2">
               <div className="flex items-center gap-2"><Link2 className="w-3.5 h-3.5 text-primary flex-shrink-0" /><p className="text-sm font-bold text-foreground truncate flex-1">{truncate(product.name, 35)}</p></div>
               <div className="space-y-1.5 text-xs">
-                <div className="flex justify-between"><span className="text-muted-foreground">Margem do produto:</span><span className="font-bold font-mono tabular-nums">{margin.toFixed(1)}%</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">ACOS do anúncio:</span><span className="font-bold font-mono tabular-nums">{m.acos.toFixed(1)}%</span></div>
+                <div className="flex justify-between"><span className="text-text-2">Margem do produto:</span><span className="font-bold font-mono tabular-nums">{margin.toFixed(1)}%</span></div>
+                <div className="flex justify-between"><span className="text-text-2">ACOS do anúncio:</span><span className="font-bold font-mono tabular-nums">{m.acos.toFixed(1)}%</span></div>
               </div>
               <div className="border-t border-dashed border-border pt-2">
                 <div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">Margem c/ ads:</span><span className={cn('text-sm font-extrabold font-mono tabular-nums flex items-center gap-1', color)}>{marginWithAds.toFixed(1)}%<StatusIcon className="w-3.5 h-3.5" /></span></div>
