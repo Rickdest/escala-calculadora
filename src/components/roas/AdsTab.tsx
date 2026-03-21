@@ -228,8 +228,8 @@ function AlertsSection({ metrics }: { metrics: AdMetricDerived[] }) {
 
   return (
     <div className="space-y-2">
-      <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">ALERTAS</p>
-      <div className="rounded-xl border border-border bg-secondary divide-y divide-border overflow-hidden">
+      <p className="section-label font-bold">ALERTAS</p>
+      <div className="rounded-xl border border-border bg-surface-2 divide-y divide-border overflow-hidden">
         {alerts.map((alert, i) => {
           const cfg = alertConfig[alert.type];
           const Icon = cfg.icon;
