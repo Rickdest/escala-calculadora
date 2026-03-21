@@ -42,7 +42,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
     try {
       setLoading(true);
-      const data = await checkSubscription(session.access_token, noCache);
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), 10000)
+      );
+      const data = await Promise.race([
+        checkSubscription(session.access_token, noCache),
+        timeoutPromise,
+      ]);
       setStatus(STATUS_MAP[data.status] || 'expired');
       setPlan(data.plan);
       setTrialEnd(data.trialEnd);
