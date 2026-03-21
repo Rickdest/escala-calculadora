@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { BottomNavigation } from './BottomNavigation';
+import { WhatsAppFab } from './WhatsAppFab';
 import { Sidebar } from './Sidebar';
 import { DesktopHeader } from './DesktopHeader';
 import { useSidebarState } from '@/contexts/SidebarContext';
