@@ -189,7 +189,7 @@ export function ProductAdsSection({ productId, shopeeProductId }: ProductAdsSect
           {bidRec ? (
             <div className="border-t border-dashed border-border pt-2 flex items-start gap-2">
               <bidRec.icon className={cn('w-4 h-4 mt-0.5 flex-shrink-0', bidRec.color)} />
-              <p className="text-[11px] text-muted-foreground">{bidRec.text}</p>
+              <p className="text-[11px] text-text-2">{bidRec.text}</p>
             </div>
           ) : metric.avgPosition === null ? (
             <div className="border-t border-dashed border-border pt-2 flex items-start gap-2">
