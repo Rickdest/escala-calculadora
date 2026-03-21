@@ -16,6 +16,8 @@ import { calcFullRoas } from '@/lib/roasUtils';
 
 const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 function truncate(str: string, max: number) { return str.length > max ? str.slice(0, max) + '…' : str; }
+function formatK(v: number) { return v >= 1000 ? `${(v / 1000).toFixed(1).replace(/\.0$/, '')}k` : String(v); }
+function formatShort(v: number) { return v >= 1000 ? `R$${(v / 1000).toFixed(1).replace(/\.0$/, '')}k` : formatCurrency(v); }
 function getRoasColorDynamic(roas: number, empate: number, ideal: number) {
   if (roas < empate) return 'text-destructive';
   if (roas < ideal) return 'text-warning';
