@@ -305,7 +305,7 @@ function RankingSection({ metrics, products }: { metrics: AdMetricDerived[]; pro
           return (
             <div key={i}>
               <button onClick={() => setExpandedIndex(isOpen ? null : i)} className="w-full p-2.5 md:p-3.5 flex items-center gap-2 text-left hover:bg-card/50 transition-colors">
-                <span className={cn('w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-extrabold font-mono flex-shrink-0', i < 3 ? 'bg-primary text-primary-foreground' : 'bg-secondary border border-border text-muted-foreground')}>#{i + 1}</span>
+                <span className={cn('w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-extrabold font-mono flex-shrink-0', i < 3 ? 'bg-primary text-primary-foreground' : 'bg-surface-2 border border-border text-text-2')}>#{i + 1}</span>
                 <div className="flex-1 min-w-0 px-1">
                   <div className="flex items-center gap-1.5">
                     <p className="text-[13px] font-bold text-foreground truncate">{truncate(m.shopeeProductName, 24)}</p>
