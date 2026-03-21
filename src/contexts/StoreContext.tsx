@@ -268,14 +268,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     if (error) { toast.error('Erro ao salvar produto'); throw error; }
 
-    // Save image locally (compressed)
+    // Upload image to Storage
     if (productData.imageUrl) {
-      const compressed = await compressImage(productData.imageUrl);
-      saveLocalImage(data.id, compressed);
+      const url = await uploadProductImage(user.id, data.id, productData.imageUrl);
+      if (url) {
+        // Save URL to DB
+        await supabase.from('products').update({ image_url: url } as any).eq('id', data.id);
+        data.image_url = url;
+      } else {
+        // Fallback: keep in localStorage
+        const localImages = getLocalImages();
+        localImages[data.id] = productData.imageUrl;
+        localStorage.setItem(LOCAL_IMAGES_KEY, JSON.stringify(localImages));
+      }
     }
 
     const newProduct = mapDbProduct(data);
-    if (productData.imageUrl) newProduct.imageUrl = productData.imageUrl;
 
     setStores(prev => prev.map(store =>
       store.id === productData.storeId
