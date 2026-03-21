@@ -138,7 +138,7 @@ export function ProductAdsSection({ productId, shopeeProductId }: ProductAdsSect
         <div className="flex items-center gap-2">
           <Megaphone className="w-4 h-4 text-primary" />
           <span className="text-sm font-bold text-foreground">ADS</span>
-          {metric && <span className="text-[11px] text-muted-foreground">· Período: {periodLabel}</span>}
+          {metric && <span className="text-[11px] text-text-2">· Período: {periodLabel}</span>}
         </div>
       </div>
 
