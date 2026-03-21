@@ -175,17 +175,6 @@ export default function Home() {
           {expiredCta}
         </div>
 
-        {/* QuickCalculator — principal */}
-        <QuickCalculator onSaveProduct={(prefill) => {
-          setPrefillProduct({
-            costPrice: parseFloat(prefill.costPrice) || 0,
-            salePrice: parseFloat(prefill.salePrice) || 0,
-            packagingCost: parseFloat(prefill.packaging) || 0,
-            name: '',
-          });
-          setShowProductForm(true);
-        }} />
-
         {/* Banner Carousel */}
         <div className="animate-fade-up">
           <Carousel
@@ -239,6 +228,17 @@ export default function Home() {
             ))}
           </div>
         </div>
+
+        {/* QuickCalculator — principal */}
+        <QuickCalculator onSaveProduct={(prefill) => {
+          setPrefillProduct({
+            costPrice: parseFloat(prefill.costPrice) || 0,
+            salePrice: parseFloat(prefill.salePrice) || 0,
+            packagingCost: parseFloat(prefill.packaging) || 0,
+            name: '',
+          });
+          setShowProductForm(true);
+        }} />
 
         {/* Two-column grid */}
         <div className="flex flex-col space-y-3 md:grid md:grid-cols-[1fr_280px] md:gap-6 md:space-y-0">
