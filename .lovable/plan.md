@@ -1,47 +1,127 @@
 
 
-## Plano: Simplificar aba ROAS
+## Auditoria: Cálculos, Taxas e Bugs
 
-Após analisar o código, a aba ROAS tem **informação triplicada** em vários pontos. Aqui está o que é redundante e a proposta de limpeza:
+Analisei todos os arquivos de cálculo do projeto. Aqui estão os problemas encontrados:
 
-### Problemas Identificados
+---
 
-1. **Gauge radial + Barra de progresso ROAS** → Ambos mostram a posição do ROAS nas zonas. Redundante.
-2. **Health Banner + Diagnostic Banner** → Dois banners consecutivos com mensagens quase idênticas sobre o status do produto.
-3. **Donut de composição + Detalhamento Financeiro** → Ambos mostram preço, taxa Shopee, custo e lucro. A tabela repete o donut.
-4. **3 KPI cards (Empate/Médio/Lucrativo)** → Já aparecem como labels na barra de progresso. Informação duplicada.
-5. **Botão Share** → Ocupa espaço, raramente usado.
-6. **Seção de importação CSV** dentro da aba ROAS → Já existe na aba Shopee Ads. Duplicado.
+### BUG 1 — ROAS Empate na QuickCalculator está ERRADO
 
-### Proposta de Layout Simplificado
+**Arquivo:** `src/components/home/QuickCalculator.tsx` (linha 54)
 
-**Arquivo: `src/components/charts/RoasAnalysis.tsx`**
+A fórmula usada é:
+```
+roasEmpate = sp / (sp - totalCosts)
+```
+Isso calcula `preço / lucro`, que é o inverso do correto.
 
-Após selecionar produto e preencher ads, mostrar apenas:
+Na `RoasAnalysis.tsx`, a fórmula correta é:
+```
+roasEmpate = precoVenda / lucroBruto
+```
+Onde `lucroBruto = valorRecebido - custoP` (preço menos taxa Shopee menos custo).
 
-1. **Health Banner** — mantém (diagnóstico visual rápido)
-2. **3 KPI cards** — mantém mas compactar (Empate / Médio / Lucrativo em linha)
-3. **Barra de progresso ROAS** — mantém (visualização principal)
-4. **Donut de composição** — mantém (visual útil)
-5. **2 cards Lucro + Taxa** — mantém (compacto e útil)
+O problema: **a QuickCalculator inclui TODOS os custos** (embalagem, impostos, afiliados, campanhas, acelera) no denominador, enquanto o `calcRoasFromValues` do ROAS só subtrai taxa Shopee e custo do produto. São fórmulas diferentes para a mesma métrica — o ROAS Empate mostrado na Home será diferente do mostrado na aba ROAS para o mesmo produto.
 
-**Remover:**
-- Gauge radial (RoasGauge) — ~30 linhas
-- Diagnostic Banner — ~30 linhas (Health Banner já cobre)
-- Detalhamento Financeiro — ~25 linhas (donut já cobre)
-- Botão Share — ~10 linhas
-- ProductAdsImport na aba ROAS — ~110 linhas (já existe na aba Shopee Ads)
+**Correção:** Unificar a fórmula. O cálculo correto de ROAS Empate deve considerar o lucro bruto = preço venda - taxa Shopee - custo produto (sem embalagem/impostos no denominador do ROAS).
 
-**Resultado:** ~200 linhas removidas. O scroll no mobile reduz ~60%. A informação essencial permanece sem repetição.
+---
 
-### Detalhes Técnicos
+### BUG 2 — `calcRoasFromValues` NÃO considera custos globais
 
-- Remover componente `RoasGauge` e sua invocação (linhas 125-155, 657-666)
-- Remover bloco Diagnostic Banner (linhas 620-652)
-- Remover bloco Financial Detail (linhas 728-750)
-- Remover `ShareResult` import e uso (linhas 716-726)
-- Remover `ProductAdsImport` invocação da aba ROAS (linhas 772-776) — mantém o componente pois pode ser usado em outro lugar
-- Ajustar grid: onde tinha `md:grid-cols-2` para gauge+donut, fica só o donut centralizado com `max-w-sm mx-auto`
+**Arquivo:** `src/components/charts/RoasAnalysis.tsx` (linha 40-53)
 
-Nenhuma funcionalidade, cálculo ou outra tela será alterada.
+A função `calcRoasFromValues` calcula lucro bruto como:
+```
+lucroBruto = valorRecebido - custoP
+```
+Onde `valorRecebido = precoVenda - taxaShopee`.
+
+Mas ignora completamente: impostos, embalagem, afiliados, campanhas, Shopee Acelera e adicional CPF. Isso significa que o ROAS Empate mostrado na aba ROAS é **otimista demais** — não considera todos os custos reais que o `calculateProduct` do StoreContext considera.
+
+**Correção:** `calcRoasFromValues` deveria receber o `StoreConfig` e o `Product` completo para calcular todos os custos, igual ao `calculateProduct`.
+
+---
+
+### BUG 3 — Margem vs Ads ignora custos globais
+
+**Arquivo:** `src/components/roas/AdsTab.tsx` (linhas 338-341)
+
+A `MarginSection` calcula margem como:
+```
+margin = (salePrice - taxaShopee - costPrice) / salePrice * 100
+```
+Ignora: embalagem, impostos, afiliados, campanhas, Shopee Acelera, CPF adicional. O `calculateProduct` no StoreContext soma tudo isso. A margem mostrada aqui será **maior que a real**.
+
+**Correção:** Usar o `calculateProduct` do StoreContext (já disponível via `useStore()`) para obter a margem real.
+
+---
+
+### BUG 4 — RoasBar usa constantes hardcoded (empate=2, ideal=5)
+
+**Arquivo:** `src/components/roas/AdsTab.tsx` (linhas 234-253)
+
+A `RoasBar` no Ranking da aba Shopee Ads usa `empate=2` e `ideal=5` fixos. Esses valores deveriam ser calculados dinamicamente por produto (baseados no lucro bruto real), como é feito no `calcRoasFromValues`.
+
+**Correção:** Receber `empate` e `ideal` como props calculados por produto.
+
+---
+
+### BUG 5 — `handleCreate` nunca vincula o produto criado
+
+**Arquivo:** `src/components/roas/AdsTab.tsx` (linhas 511-533)
+
+Ao criar produto novo no fluxo de importação:
+1. `addProduct` cria o produto sem `shopeeProductId` (não é passado no objeto)
+2. Logo depois tenta `find` pelo `shopeeProductId` — nunca encontra
+3. `saveMetricToDB` é chamado sem `productId`
+
+O produto é criado mas nunca vinculado às métricas.
+
+**Correção:** Passar `shopeeProductId` no objeto de criação e usar o retorno de `addProduct` (que retorna o produto criado) ao invés de buscar no store.
+
+---
+
+### BUG 6 — Donut de Composição ignora custos globais
+
+**Arquivo:** `src/components/charts/RoasAnalysis.tsx` (linhas 87-115)
+
+O `CostBreakdownChart` mostra apenas 3 fatias: Custo Produto, Taxa Shopee e Lucro. Ignora embalagem, impostos, afiliados, campanhas e Shopee Acelera. A visualização é enganosa pois sugere que o lucro é maior do que realmente é.
+
+**Correção:** Adicionar todas as fatias de custo relevantes (condicional aos toggles do config).
+
+---
+
+### BUG 7 — `convRate` calculado com conversions=0 no parser product format
+
+**Arquivo:** `src/lib/shopeeAdsParser.ts` (linha 302)
+
+No `parseProductFormatCSV`, `totalConversions` é declarado mas nunca incrementado no loop (linhas 257-293). Os dados de conversões não são somados. Resultado: `convRate` e `costPerConv` são sempre 0 no formato "Por Produto".
+
+**Correção:** Adicionar parsing e soma de conversões no loop de dados.
+
+---
+
+### Problema Menor — Consistência de terminologia
+
+Na QuickCalculator, os labels ROAS usam "Lucro Médio" e "Lucrativo", enquanto na RoasAnalysis usam "Saudável" e "Ideal". Deveria ser consistente em todo o app.
+
+---
+
+### Plano de Correção (por prioridade)
+
+1. **Unificar cálculo de ROAS** — Criar função `calcFullRoas(product, config)` que usa a mesma lógica do `calculateProduct` para derivar lucro bruto e ROAS Empate/Saudável/Ideal. Usar em: RoasAnalysis, QuickCalculator, AdsTab MarginSection, RoasBar.
+
+2. **Fix handleCreate** — Usar retorno de `addProduct` e passar `shopeeProductId`.
+
+3. **Fix convRate parser** — Incrementar `totalConversions` no loop do formato produto.
+
+4. **Donut completo** — Adicionar fatias de impostos, embalagem, afiliados, campanhas, acelera.
+
+5. **RoasBar dinâmico** — Calcular empate/ideal por produto ao invés de hardcoded.
+
+6. **Terminologia** — Padronizar para "Saudável" e "Ideal" em todo o app.
+
+Nenhuma taxa Shopee será alterada. Nenhuma outra tela será afetada.
 
