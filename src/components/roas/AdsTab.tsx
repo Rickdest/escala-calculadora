@@ -16,6 +16,8 @@ import { calcFullRoas } from '@/lib/roasUtils';
 
 const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 function truncate(str: string, max: number) { return str.length > max ? str.slice(0, max) + '…' : str; }
+function formatK(v: number) { return v >= 1000 ? `${(v / 1000).toFixed(1).replace(/\.0$/, '')}k` : String(v); }
+function formatShort(v: number) { return v >= 1000 ? `R$${(v / 1000).toFixed(1).replace(/\.0$/, '')}k` : formatCurrency(v); }
 function getRoasColorDynamic(roas: number, empate: number, ideal: number) {
   if (roas < empate) return 'text-destructive';
   if (roas < ideal) return 'text-warning';
@@ -141,11 +143,14 @@ function LinkingModal({ metric, products, onLink, onCreate, onSkip, onClose }: L
 
 // ─── Summary ───
 
-function MetricCard({ label, value, color }: { label: string; value: string; color: string }) {
+function SummaryCard({ label, value, barColor, textColor }: { label: string; value: string; barColor: string; textColor?: string }) {
   return (
-    <div className="rounded-[10px] border border-border bg-surface-2 px-3 py-2.5 md:px-4 md:py-3.5">
-      <p className="section-label">{label}</p>
-      <p className={cn('text-lg md:text-xl font-extrabold tabular-nums font-mono mt-0.5 leading-tight', color)}>{value}</p>
+    <div className="surface-card overflow-hidden">
+      <div className={cn('h-1 w-full rounded-full', barColor)} />
+      <div className="px-3 py-3">
+        <p className="section-label mb-1">{label}</p>
+        <p className={cn('text-xl font-extrabold font-mono font-mono-num leading-tight', textColor || 'text-foreground')}>{value}</p>
+      </div>
     </div>
   );
 }
@@ -155,17 +160,21 @@ function SummarySection({ metrics, products }: { metrics: AdMetricDerived[]; pro
   const config = currentStore?.config;
 
   const totals = useMemo(() => {
+    const totalImpressions = metrics.reduce((s, m) => s + m.impressions, 0);
+    const totalClicks = metrics.reduce((s, m) => s + m.clicks, 0);
     const totalSpend = metrics.reduce((s, m) => s + m.spend, 0);
     const totalGmv = metrics.reduce((s, m) => s + m.gmv, 0);
     const totalItemsSold = metrics.reduce((s, m) => s + m.itemsSold, 0);
+    const avgCtr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
     const avgRoas = totalSpend > 0 ? totalGmv / totalSpend : 0;
-    const avgAcos = totalGmv > 0 ? (totalSpend / totalGmv) * 100 : 0;
     const totalLiquidReturn = totalGmv - totalSpend;
-    const avgRoi = totalSpend > 0 ? ((totalGmv - totalSpend) / totalSpend) * 100 : 0;
-    return { totalSpend, totalGmv, totalItemsSold, avgRoas, avgAcos, totalLiquidReturn, avgRoi };
+    const avgConvRate = totalClicks > 0 ? (totalItemsSold / totalClicks) * 100 : 0;
+    const avgCpc = totalClicks > 0 ? totalSpend / totalClicks : 0;
+    const positions = metrics.map(m => m.avgPosition).filter((p): p is number => p !== null);
+    const avgPosition = positions.length > 0 ? positions.reduce((s, p) => s + p, 0) / positions.length : null;
+    return { totalImpressions, totalClicks, totalSpend, totalGmv, totalItemsSold, avgCtr, avgRoas, totalLiquidReturn, avgConvRate, avgCpc, avgPosition };
   }, [metrics]);
 
-  // Compute average empate/ideal across linked products for summary ROAS color
   const avgTargets = useMemo(() => {
     if (!config || products.length === 0) return { empate: 2, ideal: 5 };
     const targets = products.filter(p => p.salePrice > 0 && p.costPrice > 0).map(p => {
@@ -179,22 +188,29 @@ function SummarySection({ metrics, products }: { metrics: AdMetricDerived[]; pro
     };
   }, [config, products]);
 
+  const roasBarColor = totals.avgRoas >= avgTargets.ideal ? 'bg-success' : totals.avgRoas >= avgTargets.empate ? 'bg-warning' : 'bg-destructive';
+  const roasTextColor = getRoasColorDynamic(totals.avgRoas, avgTargets.empate, avgTargets.ideal);
+
+  const secondaryParts: string[] = [];
+  if (totals.avgPosition !== null) secondaryParts.push(`Posição Média: #${Math.round(totals.avgPosition)}`);
+  secondaryParts.push(`CPC: ${formatCurrency(totals.avgCpc)}`);
+  secondaryParts.push(`Conv: ${totals.avgConvRate.toFixed(2)}%`);
+  secondaryParts.push(`Retorno Líquido: ${formatCurrency(totals.totalLiquidReturn)}`);
+
   return (
-    <div className="space-y-2">
-      <p className="section-label font-bold">RESUMO</p>
-      <div className="grid grid-cols-2 gap-2">
-        <MetricCard label="INVESTIDO" value={formatCurrency(totals.totalSpend)} color="text-foreground" />
-        <MetricCard label="RETORNO LÍQUIDO" value={formatCurrency(totals.totalLiquidReturn)} color={totals.totalLiquidReturn >= 0 ? 'text-success' : 'text-destructive'} />
+    <div className="space-y-3">
+      <p className="section-label font-bold">DESEMPENHO</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <SummaryCard label="IMPRESSÕES" value={formatK(totals.totalImpressions)} barColor="bg-blue-500" />
+        <SummaryCard label="CLIQUES" value={formatK(totals.totalClicks)} barColor="bg-yellow-400" />
+        <SummaryCard label="CTR" value={`${totals.avgCtr.toFixed(2)}%`} barColor="bg-primary" />
+        <SummaryCard label="PEDIDOS" value={String(totals.totalItemsSold)} barColor="bg-success" />
+        <SummaryCard label="ITENS VENDIDOS" value={String(totals.totalItemsSold)} barColor="bg-success" />
+        <SummaryCard label="VENDAS (GMV)" value={formatCurrency(totals.totalGmv)} barColor="bg-success" />
+        <SummaryCard label="INVESTIMENTO" value={formatCurrency(totals.totalSpend)} barColor="bg-destructive" />
+        <SummaryCard label="ROAS" value={totals.avgRoas.toFixed(2)} barColor={roasBarColor} textColor={roasTextColor} />
       </div>
-      <div className="grid grid-cols-3 gap-2">
-        <MetricCard label="ROAS" value={totals.avgRoas.toFixed(2)} color={getRoasColorDynamic(totals.avgRoas, avgTargets.empate, avgTargets.ideal)} />
-        <MetricCard label="ACOS" value={`${totals.avgAcos.toFixed(1)}%`} color={getAcosColor(totals.avgAcos)} />
-        <MetricCard label="ROI" value={`${totals.avgRoi.toFixed(0)}%`} color={getRoiColor(totals.avgRoi)} />
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <MetricCard label="GMV TOTAL" value={formatCurrency(totals.totalGmv)} color="text-foreground" />
-        <MetricCard label="VENDIDOS" value={`${totals.totalItemsSold} itens`} color="text-foreground" />
-      </div>
+      <p className="text-xs text-text-2 px-1">{secondaryParts.join('  ·  ')}</p>
     </div>
   );
 }
@@ -282,7 +298,6 @@ function RankingSection({ metrics, products }: { metrics: AdMetricDerived[]; pro
   const sorted = useMemo(() => [...metrics].sort((a, b) => b.roas - a.roas), [metrics]);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
-  // Compute dynamic empate/ideal per metric
   const getProductRoasTargets = useCallback((m: AdMetricDerived) => {
     if (!config) return { empate: 2, ideal: 5 };
     const pid = (m as any)._productId;
@@ -301,23 +316,36 @@ function RankingSection({ metrics, products }: { metrics: AdMetricDerived[]; pro
           const isOpen = expandedIndex === i;
           const targets = getProductRoasTargets(m);
           const statusColor = getRoasColorDynamic(m.roas, targets.empate, targets.ideal);
-          const StatusIcon = m.roas >= targets.ideal ? TrendingUp : m.roas >= targets.empate ? AlertTriangle : TrendingDown;
           return (
             <div key={i}>
-              <button onClick={() => setExpandedIndex(isOpen ? null : i)} className="w-full p-2.5 md:p-4 flex items-center gap-2 text-left hover:bg-card/50 transition-colors">
-                <span className={cn('w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-extrabold font-mono flex-shrink-0', i < 3 ? 'bg-primary text-primary-foreground' : 'bg-surface-2 border border-border text-text-2')}>#{i + 1}</span>
-                <div className="flex-1 min-w-0 px-1">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-[13px] font-bold text-foreground truncate md:max-w-none">{truncate(m.shopeeProductName, 24)}</p>
-                    <StatusIcon className={cn('w-4 h-4 flex-shrink-0', statusColor)} />
+              <button onClick={() => setExpandedIndex(isOpen ? null : i)} className="w-full flex items-center justify-between px-3 py-3 md:px-4 text-left hover:bg-card/50 transition-colors">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <span className={cn('w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-extrabold font-mono flex-shrink-0', i < 3 ? 'bg-primary text-primary-foreground' : 'bg-surface-2 border border-border text-text-2')}>#{i + 1}</span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate">{truncate(m.shopeeProductName, 28)}</p>
+                    <p className="text-xs text-text-2 font-mono tabular-nums mt-0.5">{formatCurrency(m.spend)} investido</p>
                   </div>
-                  <p className="text-[11px] text-text-2 font-mono tabular-nums mt-0.5">{formatCurrency(m.spend)} → {formatCurrency(m.gmv)}</p>
                 </div>
-                <span className={cn('text-[15px] font-extrabold tabular-nums font-mono flex-shrink-0', statusColor)}>{m.roas.toFixed(2)}</span>
-                {isOpen ? <ChevronUp className="w-3.5 h-3.5 text-text-2 flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 text-text-2 flex-shrink-0" />}
+                <div className="flex items-center gap-4 flex-shrink-0">
+                  {m.avgPosition !== null && (
+                    <div className="text-center hidden md:block">
+                      <p className="section-label">POS.</p>
+                      <p className="text-sm font-bold font-mono tabular-nums text-foreground">#{m.avgPosition}</p>
+                    </div>
+                  )}
+                  <div className="text-center">
+                    <p className="section-label">ROAS</p>
+                    <p className={cn('text-sm font-bold font-mono tabular-nums', statusColor)}>{m.roas.toFixed(2)}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="section-label">GMV</p>
+                    <p className="text-sm font-bold font-mono tabular-nums text-foreground">{formatShort(m.gmv)}</p>
+                  </div>
+                  {isOpen ? <ChevronUp className="w-3.5 h-3.5 text-text-2 flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 text-text-2 flex-shrink-0" />}
+                </div>
               </button>
               {isOpen && (
-                <div className="px-2.5 pb-2.5 md:px-4 md:pb-4 space-y-3 animate-fade-in">
+                <div className="px-3 pb-3 md:px-4 md:pb-4 space-y-3 animate-fade-in">
                   <div className="h-px bg-border" />
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div><p className="section-label">ACOS</p><p className={cn('text-[13px] font-bold font-mono tabular-nums', getAcosColor(m.acos))}>{m.acos.toFixed(1)}%</p></div>
@@ -330,7 +358,7 @@ function RankingSection({ metrics, products }: { metrics: AdMetricDerived[]; pro
                     <div><p className="section-label">VENDIDOS</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{m.itemsSold} itens</p></div>
                   </div>
                   {m.avgPosition !== null && (
-                    <div><p className="section-label">POSIÇÃO MÉDIA</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">#{m.avgPosition}</p></div>
+                    <div className="md:hidden"><p className="section-label">POSIÇÃO MÉDIA</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">#{m.avgPosition}</p></div>
                   )}
                   <RoasBar roas={m.roas} empate={targets.empate} ideal={targets.ideal} />
                 </div>
