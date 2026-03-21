@@ -127,7 +127,7 @@ function LinkingModal({ metric, products, onLink, onCreate, onSkip, onClose }: L
                     <p className="text-[11px] text-text-2">{p.category || 'Sem categoria'} · R$ {p.salePrice.toFixed(2)}</p>
                   </button>
                 )) : (
-                  <p className="text-center text-sm text-muted-foreground py-6">Nenhum produto encontrado</p>
+                  <p className="text-center text-sm text-text-2 py-6">Nenhum produto encontrado</p>
                 )}
               </div>
               <Button onClick={() => setShowList(false)} variant="ghost" size="sm" className="w-full">Voltar</Button>
