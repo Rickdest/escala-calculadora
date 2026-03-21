@@ -325,6 +325,8 @@ function RankingSection({ metrics, products }: { metrics: AdMetricDerived[]; pro
 // ─── Margin vs Ads ───
 
 function MarginSection({ metrics, products }: { metrics: AdMetricDerived[]; products: Product[] }) {
+  const { currentStore, calculateProduct } = useStore();
+  const config = currentStore?.config;
   const matches = useMemo(() => {
     const result: Array<{ metric: AdMetricDerived; product: Product }> = [];
     for (const m of metrics) {
@@ -344,16 +346,16 @@ function MarginSection({ metrics, products }: { metrics: AdMetricDerived[]; prod
     return result;
   }, [metrics, products]);
 
-  if (matches.length === 0) return null;
+  if (matches.length === 0 || !config) return null;
 
   return (
     <div className="space-y-2">
       <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">MARGEM vs ADS</p>
       <div className="space-y-2">
         {matches.map(({ metric: m, product }, i) => {
-          const fee = getShopeeFeeForPrice(product.salePrice);
-          const taxaShopee = (product.salePrice * fee.percent / 100) + fee.fixed;
-          const margin = ((product.salePrice - taxaShopee - product.costPrice) / product.salePrice) * 100;
+          // BUG 3 FIX: Use calculateProduct for real margin with ALL costs
+          const calc = calculateProduct(product, config);
+          const margin = calc.realMargin;
           const marginWithAds = margin - m.acos;
           let StatusIcon: React.ElementType, color: string, message: string;
           if (marginWithAds >= 17) { StatusIcon = TrendingUp; color = 'text-success'; message = 'Margem excelente mesmo com ads'; }
