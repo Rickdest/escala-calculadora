@@ -1,9 +1,9 @@
-import { Home, ShoppingBag, TrendingUp, Boxes, Settings2 } from 'lucide-react';
+import { Calculator, ShoppingBag, TrendingUp, Boxes, Settings2 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { icon: Home, label: 'Início', path: '/' },
+  { icon: Calculator, label: 'Calcular', path: '/' },
   { icon: ShoppingBag, label: 'Produtos', path: '/products' },
   { icon: TrendingUp, label: 'Ads', path: '/roas' },
   { icon: Boxes, label: 'Estoque', path: '/stock' },
