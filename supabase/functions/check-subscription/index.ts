@@ -101,13 +101,40 @@ Deno.serve(async (req) => {
     // 2. Single source of truth: subscriptions table only
     const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { data: sub } = await adminClient
+    // Busca por user_id primeiro
+    let { data: sub } = await adminClient
       .from("subscriptions")
-      .select("status, plan, trial_end")
+      .select("id, status, plan, trial_end, user_id")
       .eq("user_id", userId)
       .order("updated_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+
+    // Se não encontrou por user_id, tentar reconciliar pelo email (compra antes do cadastro)
+    if (!sub) {
+      const userEmail = claimsData.claims.email as string | undefined;
+      if (userEmail) {
+        const { data: subByEmail } = await adminClient
+          .from("subscriptions")
+          .select("id, status, plan, trial_end, user_id")
+          .eq("email", userEmail.toLowerCase().trim())
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (subByEmail) {
+          // Vincular ao user_id real se ainda estiver com placeholder
+          const PLACEHOLDER_UUID = "00000000-0000-0000-0000-000000000000";
+          if (subByEmail.user_id === PLACEHOLDER_UUID) {
+            await adminClient
+              .from("subscriptions")
+              .update({ user_id: userId, updated_at: new Date().toISOString() })
+              .eq("id", subByEmail.id);
+          }
+          sub = subByEmail;
+        }
+      }
+    }
 
     if (sub) {
       return respond(resolveStatus(sub), corsHeaders);
