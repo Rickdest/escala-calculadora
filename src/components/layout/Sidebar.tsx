@@ -1,4 +1,4 @@
-import { Home, Package, BarChart3, Settings, Warehouse, Store, UserCircle, ChevronDown } from 'lucide-react';
+import { Calculator, ShoppingBag, TrendingUp, Settings2, Boxes, Store, UserCircle, ChevronDown } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { useSidebarState } from '@/contexts/SidebarContext';
@@ -16,13 +16,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const navItems = [
-  { icon: Home, label: 'Início', path: '/' },
-  { icon: Package, label: 'Produtos', path: '/products' },
-  { icon: BarChart3, label: 'Ads', path: '/roas' },
-  { icon: Warehouse, label: 'Estoque', path: '/stock' },
+  { icon: Calculator, label: 'Início', path: '/' },
+  { icon: ShoppingBag, label: 'Produtos', path: '/products' },
+  { icon: TrendingUp, label: 'Ads', path: '/roas' },
+  { icon: Boxes, label: 'Estoque', path: '/stock' },
   { icon: Store, label: 'Lojas', path: '/stores' },
   { icon: UserCircle, label: 'Perfil', path: '/profile' },
-  { icon: Settings, label: 'Configurações', path: '/settings' },
+  { icon: Settings2, label: 'Configurações', path: '/settings' },
 ];
 
 export function Sidebar() {
