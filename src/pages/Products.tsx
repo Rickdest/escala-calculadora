@@ -136,7 +136,7 @@ export default function Products() {
         title="Produtos"
       />
 
-      <div className="pt-2 pb-24 md:pb-6 space-y-2.5 md:py-6">
+      <div className="pt-2 pb-24 md:pb-6 space-y-2.5 md:pt-6">
         <Tabs defaultValue="products" className="w-full">
           <div className="flex items-center gap-2">
             <TabsList className="flex-1 grid grid-cols-2 h-9 rounded-lg bg-surface-2 p-0.5">

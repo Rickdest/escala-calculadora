@@ -139,7 +139,7 @@ export default function Education() {
         showStoreSelector={false}
       />
 
-      <div className="py-6 space-y-6">
+      <div className="py-6 md:py-8 space-y-6">
         {/* Tutorial Videos */}
         <section className="space-y-4 animate-fade-up">
           <h2 className="font-bold text-foreground flex items-center gap-2">

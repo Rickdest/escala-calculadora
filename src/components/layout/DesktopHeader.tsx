@@ -19,7 +19,7 @@ export function DesktopHeader() {
   const info = statusLabels[status] || statusLabels.free;
 
   return (
-    <header className="hidden md:flex items-center h-14 border-b border-border bg-background/90 backdrop-blur-md px-4 gap-4 sticky top-0 z-40">
+    <header className="hidden md:flex items-center h-16 border-b border-border bg-background/90 backdrop-blur-md px-6 gap-4 sticky top-0 z-40">
       <button
         onClick={toggle}
         className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-sidebar-accent transition-colors text-muted-foreground hover:text-foreground"
