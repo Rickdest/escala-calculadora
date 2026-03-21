@@ -267,8 +267,7 @@ function RankingSection({ metrics, products }: { metrics: AdMetricDerived[]; pro
     const pid = (m as any)._productId;
     const product = pid ? products.find(p => p.id === pid) : null;
     if (!product || product.salePrice <= 0) return { empate: 2, ideal: 5 };
-    const { calcFullRoas: calc } = require('@/lib/roasUtils');
-    const result = calc(product.salePrice, product.costPrice, config, product.packagingCost, 0, 0);
+    const result = calcFullRoas(product.salePrice, product.costPrice, config, product.packagingCost, 0, 0);
     if (result.margemInsuficiente || !result.roasEmpate) return { empate: 2, ideal: 5 };
     return { empate: result.roasEmpate, ideal: result.roasIdeal || 5 };
   }, [config, products]);
