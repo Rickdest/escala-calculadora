@@ -1,7 +1,6 @@
 import { ArrowRight, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-
-const CHECKOUT_URL = import.meta.env.VITE_HOTMART_URL || 'https://pay.hotmart.com/B104846948H?off=au88x8b1&checkoutMode=6';
+import { openCheckout } from '@/services/checkout.service';
 
 const benefits = [
   'Cálculo automático de todas as taxas da Shopee',
