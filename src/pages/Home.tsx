@@ -168,19 +168,83 @@ export default function Home() {
     <AppLayout>
       <PageHeader title="Precify" />
       <div className="py-3 space-y-3 md:py-8">
-        {/* Full-width banners */}
-        <div className="md:col-span-2 space-y-2">
+        {/* Trial / CTA banners */}
+        <div className="space-y-2">
           {trialBanner}
           {subscriptionCta}
           {expiredCta}
         </div>
 
-        {/* Desktop: two-column grid / Mobile: stacked */}
+        {/* Banner Carousel — full width on desktop (md:col-span-2) */}
+        <div className="animate-fade-up">
+          <Carousel
+            setApi={setCarouselApi}
+            opts={{ loop: true }}
+            plugins={[Autoplay({ delay: 5000, stopOnInteraction: true })]}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-0">
+              {bannerSlides.map((slide, i) => (
+                <CarouselItem key={i} className="pl-0">
+                  <button
+                    onClick={() => handleBannerClick(slide)}
+                    className={cn(
+                      'w-full rounded-xl p-4 text-left relative overflow-hidden transition-all active:scale-[0.99] h-[100px] flex flex-col justify-between',
+                      slide.bgClass
+                    )}
+                  >
+                    <span className="absolute top-3 right-3 text-5xl opacity-20 select-none">{slide.emoji}</span>
+                    <div className="relative z-10">
+                      <h2 className={cn('text-sm font-bold mb-0.5 leading-tight', slide.textClass)}>
+                        {slide.title}
+                      </h2>
+                      <p className={cn('text-[11px] opacity-90 max-w-[70%]', slide.textClass)}>
+                        {slide.subtitle}
+                      </p>
+                    </div>
+                    <div className="relative z-10">
+                      <span className={cn(
+                        'inline-flex items-center gap-1 h-6 px-3 rounded-md text-[11px] font-semibold bg-white/20 backdrop-blur-sm',
+                        slide.textClass
+                      )}>
+                        {slide.cta}
+                      </span>
+                    </div>
+                  </button>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+          </Carousel>
+          <div className="flex justify-center gap-1.5 mt-2">
+            {bannerSlides.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => carouselApi?.scrollTo(i)}
+                className={cn(
+                  'w-2 h-2 rounded-full transition-all',
+                  i === currentSlide ? 'bg-primary w-5' : 'bg-border'
+                )}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Two-column grid */}
         <div className="flex flex-col space-y-3 md:grid md:grid-cols-[1fr_280px] md:gap-6 md:space-y-0">
 
           {/* Left column */}
-          <div className="space-y-4 order-1 md:order-none">
-            {/* Tools Grid — mobile only (before carousel) */}
+          <div className="space-y-4">
+            <QuickCalculator onSaveProduct={(prefill) => {
+              setPrefillProduct({
+                costPrice: parseFloat(prefill.costPrice) || 0,
+                salePrice: parseFloat(prefill.salePrice) || 0,
+                packagingCost: parseFloat(prefill.packaging) || 0,
+                name: '',
+              });
+              setShowProductForm(true);
+            }} />
+
+            {/* Tools Grid — mobile only */}
             <div className="animate-fade-up md:hidden">
               <p className="section-label mb-3">Ferramentas</p>
               <div className="grid grid-cols-4 gap-y-3 gap-x-2">
@@ -204,73 +268,9 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Banner Carousel — compact */}
-            <div className="animate-fade-up">
-              <Carousel
-                setApi={setCarouselApi}
-                opts={{ loop: true }}
-                plugins={[Autoplay({ delay: 5000, stopOnInteraction: true })]}
-                className="w-full"
-              >
-                <CarouselContent className="-ml-0">
-                  {bannerSlides.map((slide, i) => (
-                    <CarouselItem key={i} className="pl-0">
-                      <button
-                        onClick={() => handleBannerClick(slide)}
-                        className={cn(
-                          'w-full rounded-xl p-4 text-left relative overflow-hidden transition-all active:scale-[0.99] h-[100px] flex flex-col justify-between',
-                          slide.bgClass
-                        )}
-                      >
-                        <span className="absolute top-3 right-3 text-5xl opacity-20 select-none">{slide.emoji}</span>
-                        <div className="relative z-10">
-                          <h2 className={cn('text-sm font-bold mb-0.5 leading-tight', slide.textClass)}>
-                            {slide.title}
-                          </h2>
-                          <p className={cn('text-[11px] opacity-90 max-w-[70%]', slide.textClass)}>
-                            {slide.subtitle}
-                          </p>
-                        </div>
-                        <div className="relative z-10">
-                          <span className={cn(
-                            'inline-flex items-center gap-1 h-6 px-3 rounded-md text-[11px] font-semibold bg-white/20 backdrop-blur-sm',
-                            slide.textClass
-                          )}>
-                            {slide.cta}
-                          </span>
-                        </div>
-                      </button>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-              </Carousel>
-              <div className="flex justify-center gap-1.5 mt-2">
-                {bannerSlides.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => carouselApi?.scrollTo(i)}
-                    className={cn(
-                      'w-2 h-2 rounded-full transition-all',
-                      i === currentSlide ? 'bg-primary w-5' : 'bg-border'
-                    )}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <QuickCalculator onSaveProduct={(prefill) => {
-              setPrefillProduct({
-                costPrice: parseFloat(prefill.costPrice) || 0,
-                salePrice: parseFloat(prefill.salePrice) || 0,
-                packagingCost: parseFloat(prefill.packaging) || 0,
-                name: '',
-              });
-              setShowProductForm(true);
-            }} />
-
             {/* Top Products */}
             {topProducts.length > 0 && (
-              <div className="space-y-2 animate-fade-up stagger-4 order-7 md:order-none">
+              <div className="space-y-2 animate-fade-up stagger-4">
                 <div className="flex items-center justify-between">
                   <p className="section-label">Seus Produtos</p>
                   <button onClick={() => navigate('/products')} className="text-xs text-primary font-medium flex items-center gap-0.5">
@@ -302,7 +302,7 @@ export default function Home() {
             )}
 
             {stats.totalProducts === 0 && (
-              <div className="text-center py-10 animate-fade-up order-7 md:order-none">
+              <div className="text-center py-10 animate-fade-up">
                 <div className="w-14 h-14 rounded-xl bg-surface-2 mx-auto flex items-center justify-center mb-3">
                   <Package className="w-7 h-7 text-text-3" />
                 </div>
@@ -312,9 +312,8 @@ export default function Home() {
             )}
           </div>
 
-          {/* Right column: slim sidebar */}
-          <div className="space-y-4 order-2 md:order-none md:sticky md:top-20 md:self-start">
-            {/* Low stock alert */}
+          {/* Right column: sidebar */}
+          <div className="space-y-4 md:sticky md:top-20 md:self-start">
             {estoqueStats.baixo > 0 && (
               <button onClick={() => navigate('/stock')} className="surface-card px-4 py-3 flex items-center justify-between w-full hover:bg-surface-2/50 transition-colors animate-fade-up">
                 <div className="flex items-center gap-2">
@@ -327,8 +326,6 @@ export default function Home() {
                 <ChevronRight className="w-4 h-4 text-text-3" />
               </button>
             )}
-
-            {/* Education Card */}
             <HomeEducationCard />
           </div>
 
