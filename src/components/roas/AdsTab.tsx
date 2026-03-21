@@ -295,8 +295,8 @@ function RankingSection({ metrics, products }: { metrics: AdMetricDerived[]; pro
 
   return (
     <div className="space-y-2">
-      <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">RANKING</p>
-      <div className="rounded-xl border border-border bg-secondary divide-y divide-border overflow-hidden">
+      <p className="section-label font-bold">RANKING</p>
+      <div className="rounded-xl border border-border bg-surface-2 divide-y divide-border overflow-hidden">
         {sorted.map((m, i) => {
           const isOpen = expandedIndex === i;
           const StatusIcon = m.roas >= 5 ? TrendingUp : m.roas >= 2 ? AlertTriangle : TrendingDown;
