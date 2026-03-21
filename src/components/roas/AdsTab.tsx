@@ -92,7 +92,7 @@ function LinkingModal({ metric, products, onLink, onCreate, onSkip, onClose }: L
       <div className="bg-card border border-border rounded-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col animate-scale-up">
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h3 className="font-bold text-foreground text-sm">Produto encontrado</h3>
-          <button onClick={onClose} className="p-1 hover:bg-secondary rounded-lg"><X className="w-4 h-4 text-muted-foreground" /></button>
+          <button onClick={onClose} className="p-1 hover:bg-surface-2 rounded-lg"><X className="w-4 h-4 text-text-2" /></button>
         </div>
         <div className="p-4 space-y-4 flex-1 overflow-y-auto">
           {!showList ? (
