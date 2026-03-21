@@ -1,7 +1,8 @@
-import { PanelLeftClose, PanelLeft } from 'lucide-react';
+import { PanelLeftClose, PanelLeft, Sun, Moon } from 'lucide-react';
 import { useSidebarState } from '@/contexts/SidebarContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useStore } from '@/contexts/StoreContext';
+import { useTheme } from '@/contexts/ThemeContext';
 import { cn, getMarginStatus } from '@/lib/utils';
 
 const statusLabels: Record<string, { label: string; color: string }> = {
@@ -18,6 +19,7 @@ export function DesktopHeader() {
   const { collapsed, toggle } = useSidebarState();
   const { status } = useSubscription();
   const { currentStore, getStoreStats } = useStore();
+  const { theme, toggleTheme } = useTheme();
   const info = statusLabels[status] || statusLabels.free;
 
   const stats = currentStore ? getStoreStats(currentStore) : null;
@@ -60,13 +62,31 @@ export function DesktopHeader() {
         </div>
       )}
 
-      {/* Subscription status */}
-      {info.label && (
-        <div className="flex items-center gap-2">
-          <span className={cn('w-1.5 h-1.5 rounded-full', info.color.replace('text-', 'bg-'))} />
-          <span className={cn('text-[13px] font-medium', info.color)}>{info.label}</span>
+      {/* Theme toggle */}
+      <button
+        onClick={toggleTheme}
+        className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-sidebar-accent transition-colors text-muted-foreground hover:text-foreground"
+        aria-label="Alternar tema"
+      >
+        {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+      </button>
+
+      {/* Avatar + store + status */}
+      <div className="flex items-center gap-2.5">
+        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-bold flex-shrink-0">
+          {currentStore?.name?.[0]?.toUpperCase() || 'P'}
         </div>
-      )}
+        <div className="min-w-0">
+          <p className="text-[13px] font-semibold text-foreground truncate max-w-[120px]">
+            {currentStore?.name || 'Minha Loja'}
+          </p>
+          {info.label && (
+            <p className={cn('text-[11px] font-medium', info.color)}>
+              {info.label}
+            </p>
+          )}
+        </div>
+      </div>
     </header>
   );
 }
