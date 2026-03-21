@@ -16,13 +16,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const navItems = [
-  { icon: Home, label: 'Início', path: '/' },
-  { icon: Package, label: 'Produtos', path: '/products' },
-  { icon: BarChart3, label: 'Ads', path: '/roas' },
-  { icon: Warehouse, label: 'Estoque', path: '/stock' },
+  { icon: Calculator, label: 'Início', path: '/' },
+  { icon: ShoppingBag, label: 'Produtos', path: '/products' },
+  { icon: TrendingUp, label: 'Ads', path: '/roas' },
+  { icon: Boxes, label: 'Estoque', path: '/stock' },
   { icon: Store, label: 'Lojas', path: '/stores' },
   { icon: UserCircle, label: 'Perfil', path: '/profile' },
-  { icon: Settings, label: 'Configurações', path: '/settings' },
+  { icon: Settings2, label: 'Configurações', path: '/settings' },
 ];
 
 export function Sidebar() {
