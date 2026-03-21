@@ -26,21 +26,10 @@ const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
 const LOCAL_IMAGES_KEY = 'precify-local-images';
 const CURRENT_STORE_KEY = 'precify-current-store';
+const MIGRATION_DONE_KEY = 'precify-images-migrated';
 
 function getLocalImages(): Record<string, string> {
   try { return JSON.parse(localStorage.getItem(LOCAL_IMAGES_KEY) || '{}'); } catch { return {}; }
-}
-
-function saveLocalImage(productId: string, imageUrl: string) {
-  const images = getLocalImages();
-  images[productId] = imageUrl;
-  localStorage.setItem(LOCAL_IMAGES_KEY, JSON.stringify(images));
-}
-
-function removeLocalImage(productId: string) {
-  const images = getLocalImages();
-  delete images[productId];
-  localStorage.setItem(LOCAL_IMAGES_KEY, JSON.stringify(images));
 }
 
 function mapDbProduct(p: any): Product {
