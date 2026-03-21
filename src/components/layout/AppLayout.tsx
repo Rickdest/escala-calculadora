@@ -34,6 +34,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       </div>
 
       {/* Mobile bottom nav */}
+      <WhatsAppFab />
       <BottomNavigation />
     </div>
   );
