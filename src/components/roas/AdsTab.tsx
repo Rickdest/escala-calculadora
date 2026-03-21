@@ -266,11 +266,11 @@ function RoasBar({ roas, empate, ideal }: { roas: number; empate?: number; ideal
         <div className="absolute inset-0 rounded-full" style={{ background: `linear-gradient(to right, hsl(0 85% 60%) 0%, hsl(45 95% 50%) ${empatePos}%, hsl(152 70% 42%) ${idealPos}%, hsl(152 70% 42%) 100%)`, opacity: 0.25 }} />
         <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pos}%`, backgroundColor: roas >= id ? 'hsl(152,70%,42%)' : roas >= e ? 'hsl(45,95%,50%)' : 'hsl(0,85%,60%)' }} />
       </div>
-      <div className="flex items-center gap-2 text-[9px] text-muted-foreground font-bold">
+      <div className="flex items-center gap-2 text-[9px] text-text-2 font-bold">
         <span>0</span><span className="flex-1" />
         <span className="text-warning">Empate {e.toFixed(1)}</span>
         <span className="text-success">Ideal {id.toFixed(1)}</span>
-        <span className={cn('font-mono', getRoasColor(roas))}>{roas.toFixed(2)}</span>
+        <span className={cn('font-mono', getRoasColorDynamic(roas, e, id))}>{roas.toFixed(2)}</span>
       </div>
     </div>
   );
