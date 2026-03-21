@@ -143,11 +143,14 @@ function LinkingModal({ metric, products, onLink, onCreate, onSkip, onClose }: L
 
 // ─── Summary ───
 
-function MetricCard({ label, value, color }: { label: string; value: string; color: string }) {
+function SummaryCard({ label, value, barColor, textColor }: { label: string; value: string; barColor: string; textColor?: string }) {
   return (
-    <div className="rounded-[10px] border border-border bg-surface-2 px-3 py-2.5 md:px-4 md:py-3.5">
-      <p className="section-label">{label}</p>
-      <p className={cn('text-lg md:text-xl font-extrabold tabular-nums font-mono mt-0.5 leading-tight', color)}>{value}</p>
+    <div className="surface-card overflow-hidden">
+      <div className={cn('h-1 w-full rounded-full', barColor)} />
+      <div className="px-3 py-3">
+        <p className="section-label mb-1">{label}</p>
+        <p className={cn('text-xl font-extrabold font-mono font-mono-num leading-tight', textColor || 'text-foreground')}>{value}</p>
+      </div>
     </div>
   );
 }
@@ -157,17 +160,21 @@ function SummarySection({ metrics, products }: { metrics: AdMetricDerived[]; pro
   const config = currentStore?.config;
 
   const totals = useMemo(() => {
+    const totalImpressions = metrics.reduce((s, m) => s + m.impressions, 0);
+    const totalClicks = metrics.reduce((s, m) => s + m.clicks, 0);
     const totalSpend = metrics.reduce((s, m) => s + m.spend, 0);
     const totalGmv = metrics.reduce((s, m) => s + m.gmv, 0);
     const totalItemsSold = metrics.reduce((s, m) => s + m.itemsSold, 0);
+    const avgCtr = totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0;
     const avgRoas = totalSpend > 0 ? totalGmv / totalSpend : 0;
-    const avgAcos = totalGmv > 0 ? (totalSpend / totalGmv) * 100 : 0;
     const totalLiquidReturn = totalGmv - totalSpend;
-    const avgRoi = totalSpend > 0 ? ((totalGmv - totalSpend) / totalSpend) * 100 : 0;
-    return { totalSpend, totalGmv, totalItemsSold, avgRoas, avgAcos, totalLiquidReturn, avgRoi };
+    const avgConvRate = totalClicks > 0 ? (totalItemsSold / totalClicks) * 100 : 0;
+    const avgCpc = totalClicks > 0 ? totalSpend / totalClicks : 0;
+    const positions = metrics.map(m => m.avgPosition).filter((p): p is number => p !== null);
+    const avgPosition = positions.length > 0 ? positions.reduce((s, p) => s + p, 0) / positions.length : null;
+    return { totalImpressions, totalClicks, totalSpend, totalGmv, totalItemsSold, avgCtr, avgRoas, totalLiquidReturn, avgConvRate, avgCpc, avgPosition };
   }, [metrics]);
 
-  // Compute average empate/ideal across linked products for summary ROAS color
   const avgTargets = useMemo(() => {
     if (!config || products.length === 0) return { empate: 2, ideal: 5 };
     const targets = products.filter(p => p.salePrice > 0 && p.costPrice > 0).map(p => {
@@ -181,22 +188,29 @@ function SummarySection({ metrics, products }: { metrics: AdMetricDerived[]; pro
     };
   }, [config, products]);
 
+  const roasBarColor = totals.avgRoas >= avgTargets.ideal ? 'bg-success' : totals.avgRoas >= avgTargets.empate ? 'bg-warning' : 'bg-destructive';
+  const roasTextColor = getRoasColorDynamic(totals.avgRoas, avgTargets.empate, avgTargets.ideal);
+
+  const secondaryParts: string[] = [];
+  if (totals.avgPosition !== null) secondaryParts.push(`Posição Média: #${Math.round(totals.avgPosition)}`);
+  secondaryParts.push(`CPC: ${formatCurrency(totals.avgCpc)}`);
+  secondaryParts.push(`Conv: ${totals.avgConvRate.toFixed(2)}%`);
+  secondaryParts.push(`Retorno Líquido: ${formatCurrency(totals.totalLiquidReturn)}`);
+
   return (
-    <div className="space-y-2">
-      <p className="section-label font-bold">RESUMO</p>
-      <div className="grid grid-cols-2 gap-2">
-        <MetricCard label="INVESTIDO" value={formatCurrency(totals.totalSpend)} color="text-foreground" />
-        <MetricCard label="RETORNO LÍQUIDO" value={formatCurrency(totals.totalLiquidReturn)} color={totals.totalLiquidReturn >= 0 ? 'text-success' : 'text-destructive'} />
+    <div className="space-y-3">
+      <p className="section-label font-bold">DESEMPENHO</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <SummaryCard label="IMPRESSÕES" value={formatK(totals.totalImpressions)} barColor="bg-blue-500" />
+        <SummaryCard label="CLIQUES" value={formatK(totals.totalClicks)} barColor="bg-yellow-400" />
+        <SummaryCard label="CTR" value={`${totals.avgCtr.toFixed(2)}%`} barColor="bg-primary" />
+        <SummaryCard label="PEDIDOS" value={String(totals.totalItemsSold)} barColor="bg-success" />
+        <SummaryCard label="ITENS VENDIDOS" value={String(totals.totalItemsSold)} barColor="bg-success" />
+        <SummaryCard label="VENDAS (GMV)" value={formatCurrency(totals.totalGmv)} barColor="bg-success" />
+        <SummaryCard label="INVESTIMENTO" value={formatCurrency(totals.totalSpend)} barColor="bg-destructive" />
+        <SummaryCard label="ROAS" value={totals.avgRoas.toFixed(2)} barColor={roasBarColor} textColor={roasTextColor} />
       </div>
-      <div className="grid grid-cols-3 gap-2">
-        <MetricCard label="ROAS" value={totals.avgRoas.toFixed(2)} color={getRoasColorDynamic(totals.avgRoas, avgTargets.empate, avgTargets.ideal)} />
-        <MetricCard label="ACOS" value={`${totals.avgAcos.toFixed(1)}%`} color={getAcosColor(totals.avgAcos)} />
-        <MetricCard label="ROI" value={`${totals.avgRoi.toFixed(0)}%`} color={getRoiColor(totals.avgRoi)} />
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <MetricCard label="GMV TOTAL" value={formatCurrency(totals.totalGmv)} color="text-foreground" />
-        <MetricCard label="VENDIDOS" value={`${totals.totalItemsSold} itens`} color="text-foreground" />
-      </div>
+      <p className="text-xs text-text-2 px-1">{secondaryParts.join('  ·  ')}</p>
     </div>
   );
 }
