@@ -372,79 +372,59 @@ export function StockWizard({ onClose, editProduct }: Props) {
         {/* ═══ STEP ZERO: Choose mode ═══ */}
         {step === 'choose' && (
           <div className="flex-1 overflow-y-auto">
-            <div className="p-5 space-y-5 animate-fade-up">
-              <div className="text-center pt-4 pb-2">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 mx-auto flex items-center justify-center mb-3">
-                  <Package className="w-7 h-7 text-primary" />
-                </div>
-                <h3 className="text-lg font-bold text-foreground">Novo Produto</h3>
-                <p className="text-sm text-text-2 mt-1">Como deseja cadastrar?</p>
-              </div>
+            <div className="p-4 space-y-4 animate-fade-up">
 
+              {/* Cadastrar do zero */}
               <button
                 onClick={() => setStep('form')}
-                className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-border bg-card hover:border-primary/40 hover:bg-primary/5 transition-all active:scale-[0.98]"
+                className="w-full flex items-center gap-3 h-12 px-4 rounded-xl border border-border bg-surface-2 hover:border-primary/40 transition-all active:scale-[0.98]"
               >
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <PenLine className="w-5 h-5 text-primary" />
-                </div>
-                <div className="text-left flex-1">
-                  <p className="text-[15px] font-semibold text-foreground">Cadastrar do zero</p>
-                  <p className="text-xs text-text-2 mt-0.5">Preencher todas as informações manualmente</p>
-                </div>
+                <Plus className="w-4 h-4 text-text-2 flex-shrink-0" />
+                <span className="text-sm font-bold text-foreground flex-1 text-left">Cadastrar do zero</span>
                 <ChevronRight className="w-4 h-4 text-text-3 flex-shrink-0" />
               </button>
 
               {currentStore && currentStore.products.length > 0 && (
                 <>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 py-1">
                     <div className="h-px flex-1 bg-border" />
-                    <span className="text-[10px] text-text-3 font-semibold uppercase tracking-wider">ou importar</span>
+                    <span className="text-[11px] text-text-3">ou importar produto cadastrado</span>
                     <div className="h-px flex-1 bg-border" />
                   </div>
 
-                  <div className="space-y-3">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-3" />
-                      <input
-                        type="text"
-                        value={importSearch}
-                        onChange={e => setImportSearch(e.target.value)}
-                        placeholder="Buscar produto para importar..."
-                        className="w-full h-10 pl-10 pr-3 bg-surface-2 border border-border rounded-lg text-sm text-foreground outline-none focus:border-primary transition-colors"
-                      />
-                    </div>
-                    <div className="surface-card divide-y divide-border max-h-[320px] overflow-y-auto scrollbar-hide rounded-xl">
-                      {currentStore.products
-                        .filter(p => p.name.toLowerCase().includes(importSearch.toLowerCase()))
-                        .map(product => (
-                        <button
-                          key={product.id}
-                          onClick={() => handleImportProduct(product)}
-                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface-2/50 transition-colors active:scale-[0.98] text-left"
-                        >
-                          <div className="w-10 h-10 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                            {product.imageUrl ? (
-                              <img src={product.imageUrl} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <Package className="w-4 h-4 text-text-3" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[15px] font-medium text-foreground truncate">{product.name}</p>
-                            <p className="text-[13px] text-text-2 truncate font-mono font-mono-num">
-                              {product.category && <span>{product.category} · </span>}
-                              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.salePrice)}
-                              {product.hasVariations && ' · Variações'}
-                            </p>
-                          </div>
-                          <ChevronRight className="w-4 h-4 text-text-3 flex-shrink-0" />
-                        </button>
-                      ))}
-                      {currentStore.products.filter(p => p.name.toLowerCase().includes(importSearch.toLowerCase())).length === 0 && (
-                        <p className="text-center text-sm text-text-3 py-8">Nenhum produto encontrado</p>
-                      )}
-                    </div>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-3" />
+                    <input
+                      type="text"
+                      value={importSearch}
+                      onChange={e => setImportSearch(e.target.value)}
+                      placeholder="Buscar produto..."
+                      className="w-full h-10 pl-9 pr-3 bg-surface-2 border border-border rounded-[10px] text-[13px] text-foreground placeholder:text-text-2 outline-none focus:border-primary transition-colors"
+                    />
+                  </div>
+
+                  <div className="surface-card divide-y divide-border max-h-[360px] overflow-y-auto scrollbar-hide">
+                    {currentStore.products
+                      .filter(p => p.name.toLowerCase().includes(importSearch.toLowerCase()))
+                      .map(product => (
+                      <button
+                        key={product.id}
+                        onClick={() => handleImportProduct(product)}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface-2/50 transition-colors text-left"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0">
+                          <span className="text-[13px] font-bold text-text-2">{product.name.charAt(0).toUpperCase()}</span>
+                        </div>
+                        <p className="text-sm font-bold text-foreground flex-1 min-w-0 truncate">{product.name}</p>
+                        <span className="text-[13px] text-text-3 font-mono font-mono-num flex-shrink-0">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.salePrice)}
+                        </span>
+                        <ChevronRight className="w-4 h-4 text-text-3 flex-shrink-0" />
+                      </button>
+                    ))}
+                    {currentStore.products.filter(p => p.name.toLowerCase().includes(importSearch.toLowerCase())).length === 0 && (
+                      <p className="text-center text-sm text-text-3 py-8">Nenhum produto encontrado</p>
+                    )}
                   </div>
                 </>
               )}
