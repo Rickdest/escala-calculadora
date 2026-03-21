@@ -1,50 +1,29 @@
 
 
-## Plano: Banner Carousel + Remoção de duplicatas
+## Plano: Melhorar DesktopHeader — remover métricas, toggle pill, avatar premium
 
-### Problema atual
-- O DesktopHeader mostra Margem Média, Produtos, Na Meta
-- A sidebar da Home repete exatamente as mesmas métricas
-- O Hero card é texto estático genérico que não agrega valor
+### Alterações em `src/components/layout/DesktopHeader.tsx`
 
-### Solução
+**1. Remover métricas inline (MARGEM MÉDIA, PRODUTOS, NA META)**
+- Remover todo o bloco condicional `{stats && stats.totalProducts > 0 && ...}`
+- Remover imports não usados (`getMarginStatus`)
 
-**1. `src/pages/Home.tsx` — Substituir Hero card por carousel de banners**
+**2. Toggle de tema estilo pill (como na imagem)**
+- Substituir o botão simples por um toggle pill: container oval com fundo escuro (`bg-surface-2 border border-border`), dois ícones lado a lado (Sol e Lua), e um indicador circular que desliza para o lado ativo
+- Transição suave com `transition-all duration-200`
+- Tamanho compacto: ~52px largura, 28px altura
 
-Remover o bloco hero card textual. No lugar, usar um carousel de banners visuais com auto-play. Cada banner é um card com gradiente/cor de fundo, emoji/icone grande, título curto e CTA.
+**3. Melhorar avatar**
+- Aumentar de `w-8 h-8` para `w-9 h-9`
+- Usar `bg-primary` com `text-primary-foreground` (laranja sólido com texto branco) em vez do `bg-primary/10` translúcido
+- Adicionar `ring-2 ring-primary/20` para destaque sutil
+- Remover o texto de nome/status ao lado (simplificar como na referência — só o avatar)
 
-Banners fixos (hardcoded, sem banco):
-- "Precifique com precisão" → bg gradient laranja → CTA abre formulário
-- "Analise seus Ads" → bg gradient azul → CTA vai para /roas  
-- "Controle seu Estoque" → bg gradient verde → CTA vai para /stock
+**4. Ordem final**
+```
+[toggle sidebar] [nome da loja] [flex-1] [toggle tema pill] [avatar]
+```
 
-Carousel: usar o componente `Carousel` do embla já existente em `src/components/ui/carousel.tsx` com autoplay. Cada slide tem ~200px de altura, rounded-xl, com conteúdo alinhado à esquerda.
-
-Indicadores: dots abaixo do carousel.
-
-**2. `src/pages/Home.tsx` — Remover métricas duplicadas da sidebar**
-
-Remover da coluna direita:
-- Cards "Margem Média" e "Produtos" (já no header)
-- Card "na meta · abaixo da meta" (já no header)
-
-Manter na sidebar direita:
-- Alerta de estoque baixo
-- HomeEducationCard
-
-**3. `src/pages/Home.tsx` — Reorganizar coluna direita**
-
-Com menos conteúdo, a sidebar fica mais limpa:
-- Alerta de estoque (se houver)
-- Card de educação
-
-No mobile, esses elementos aparecem após a calculadora e ferramentas.
-
-### Arquivos alterados
-- `src/pages/Home.tsx` — único arquivo
-
-### Não altera
-- Nenhum outro componente ou arquivo
-- Lógica de cálculo
-- Layout mobile (ferramentas, ordem)
+### Arquivo alterado
+- `src/components/layout/DesktopHeader.tsx` — único arquivo
 
