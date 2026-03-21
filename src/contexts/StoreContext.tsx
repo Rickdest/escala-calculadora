@@ -397,7 +397,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const url = await uploadProductImage(user.id, data.id, original.imageUrl);
       if (url) {
         await supabase.from('products').update({ image_url: url } as any).eq('id', data.id);
-        data.image_url = url;
+        (data as any).image_url = url;
       }
     }
 
