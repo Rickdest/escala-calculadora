@@ -1,4 +1,4 @@
-import { Calculator, ShoppingBag, TrendingUp, Settings2, Boxes, Store, UserCircle, ChevronDown, Plus } from 'lucide-react';
+import { Calculator, ShoppingBag, TrendingUp, Settings2, Boxes, Store, UserCircle, ChevronDown, Plus, MessageCircle } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { useSidebarState } from '@/contexts/SidebarContext';
@@ -84,6 +84,41 @@ export function Sidebar() {
           return button;
         })}
       </nav>
+
+      {/* Suporte */}
+      <div className="px-2 pb-1 border-t border-border pt-2">
+        {collapsed ? (
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <a
+                href="https://wa.me/5511930291287"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  'w-full flex items-center gap-3 rounded-lg text-[13px] font-medium transition-colors text-text-3 hover:bg-sidebar-accent hover:text-foreground justify-center px-0 py-2.5'
+                )}
+              >
+                <MessageCircle className="w-5 h-5 flex-shrink-0 text-success" />
+              </a>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="text-xs">
+              Suporte
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <a
+            href="https://wa.me/5511930291287"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              'w-full flex items-center gap-3 rounded-lg text-[13px] font-medium transition-colors text-text-3 hover:bg-sidebar-accent hover:text-foreground px-3 py-2.5'
+            )}
+          >
+            <MessageCircle className="w-5 h-5 flex-shrink-0 text-success" />
+            <span className="truncate">Suporte</span>
+          </a>
+        )}
+      </div>
 
       {/* Store selector footer */}
       {currentStore && stores.length > 0 && (
