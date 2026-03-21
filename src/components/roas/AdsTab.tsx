@@ -412,7 +412,7 @@ function EmptyState({ onImport }: { onImport: () => void }) {
       </div>
       <div className="space-y-2 mt-4">
         <p className="text-[15px] font-bold text-foreground">Importe seu relatório de Ads</p>
-        <p className="text-[13px] text-muted-foreground max-w-[280px] mx-auto">Exporte "Dados Gerais de Anúncios" no painel da Shopee e importe aqui</p>
+        <p className="text-[13px] text-text-2 max-w-[280px] mx-auto">Exporte "Dados Gerais de Anúncios" no painel da Shopee e importe aqui</p>
       </div>
       <Button onClick={onImport} className="h-12 w-4/5 max-w-[320px] rounded-xl text-sm font-bold gap-2 bg-primary text-primary-foreground hover:bg-primary/90 mt-6">
         <Upload className="w-4 h-4" /> Importar relatório CSV
