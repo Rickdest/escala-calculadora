@@ -314,7 +314,7 @@ function RankingSection({ metrics, products }: { metrics: AdMetricDerived[]; pro
                   <p className="text-[11px] text-text-2 font-mono tabular-nums mt-0.5">{formatCurrency(m.spend)} → {formatCurrency(m.gmv)}</p>
                 </div>
                 <span className={cn('text-[15px] font-extrabold tabular-nums font-mono flex-shrink-0', statusColor)}>{m.roas.toFixed(2)}</span>
-                {isOpen ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />}
+                {isOpen ? <ChevronUp className="w-3.5 h-3.5 text-text-2 flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 text-text-2 flex-shrink-0" />}
               </button>
               {isOpen && (
                 <div className="px-2.5 pb-2.5 md:px-3.5 md:pb-3.5 space-y-3 animate-fade-in">
