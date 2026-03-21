@@ -6,7 +6,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
-import { TrialBanner } from '@/components/TrialBanner';
+
 import { DailyOfferModal } from '@/components/DailyOfferModal';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { cn } from '@/lib/utils';
