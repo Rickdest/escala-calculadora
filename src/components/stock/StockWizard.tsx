@@ -377,19 +377,20 @@ export function StockWizard({ onClose, editProduct }: Props) {
               {/* Cadastrar do zero */}
               <button
                 onClick={() => setStep('form')}
-                className="w-full flex items-center gap-3 h-12 px-4 rounded-xl border border-border bg-surface-2 hover:border-primary/40 transition-all active:scale-[0.98]"
+                className="w-full flex items-center gap-3 h-12 px-4 rounded-xl hover:brightness-110 transition-all active:scale-[0.98]"
+                style={{ backgroundColor: '#F97316' }}
               >
-                <Plus className="w-4 h-4 text-text-2 flex-shrink-0" />
-                <span className="text-sm font-bold text-foreground flex-1 text-left">Cadastrar do zero</span>
-                <ChevronRight className="w-4 h-4 text-text-3 flex-shrink-0" />
+                <Plus className="w-4 h-4 text-white flex-shrink-0" />
+                <span className="text-sm font-bold text-white flex-1 text-left">Cadastrar do zero</span>
+                <ChevronRight className="w-4 h-4 text-white flex-shrink-0" />
               </button>
 
               {currentStore && currentStore.products.length > 0 && (
                 <>
-                  <div className="flex items-center gap-3 py-1">
-                    <div className="h-px flex-1 bg-border" />
+                  <div className="flex items-center gap-3 py-3">
+                    <div className="h-px flex-1 bg-border/40" />
                     <span className="text-[11px] text-text-3">ou importar produto cadastrado</span>
-                    <div className="h-px flex-1 bg-border" />
+                    <div className="h-px flex-1 bg-border/40" />
                   </div>
 
                   <div className="relative">
@@ -412,8 +413,8 @@ export function StockWizard({ onClose, editProduct }: Props) {
                         onClick={() => handleImportProduct(product)}
                         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface-2/50 transition-colors text-left"
                       >
-                        <div className="w-8 h-8 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0">
-                          <span className="text-[13px] font-bold text-text-2">{product.name.charAt(0).toUpperCase()}</span>
+                        <div className="w-8 h-8 rounded-lg border border-border bg-surface flex items-center justify-center flex-shrink-0">
+                          <span className="text-[13px] font-bold text-foreground">{product.name.charAt(0).toUpperCase()}</span>
                         </div>
                         <p className="text-sm font-bold text-foreground flex-1 min-w-0 truncate">{product.name}</p>
                         <span className="text-[13px] text-text-3 font-mono font-mono-num flex-shrink-0">
