@@ -128,6 +128,23 @@ export default function Settings() {
           </Button>
         )}
 
+        {/* Suporte WhatsApp - visível no topo */}
+        <a
+          href="https://api.whatsapp.com/send?phone=5511930291287&text=Ol%C3%A1%2C%20preciso%20de%20suporte%20no%20Precify"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="glass-card p-3.5 flex items-center gap-3 hover:bg-secondary/50 transition-colors animate-fade-up"
+        >
+          <div className="p-2 rounded-xl bg-primary/10">
+            <MessageCircle className="w-[18px] h-[18px] text-primary" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-bold text-foreground">Falar com suporte</p>
+            <p className="text-xs text-muted-foreground">Atendimento via WhatsApp</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        </a>
+
         {/* Theme Toggle */}
         <div className="glass-card p-5 animate-fade-up stagger-1">
           <div className="flex items-center justify-between">
@@ -416,26 +433,6 @@ export default function Settings() {
           Gerenciar Lojas
         </Button>
 
-        {/* Suporte */}
-        <div className="space-y-1 pt-4">
-          <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Suporte</h3>
-        </div>
-
-        <a
-          href="https://wa.me/5511930291287?text=Ol%C3%A1%2C%20preciso%20de%20suporte%20no%20Precify"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="glass-card p-3.5 flex items-center gap-3 hover:bg-surface-2/50 transition-colors"
-        >
-          <div className="p-2 rounded-xl bg-primary/10">
-            <MessageCircle className="w-[18px] h-[18px] text-primary" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-bold text-foreground">Falar com suporte</p>
-            <p className="text-xs text-muted-foreground">Atendimento via WhatsApp</p>
-          </div>
-          <ChevronRight className="w-4 h-4 text-muted-foreground" />
-        </a>
 
         {/* Logout Section */}
         {user && (
