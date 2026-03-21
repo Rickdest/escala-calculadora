@@ -122,7 +122,7 @@ function LinkingModal({ metric, products, onLink, onCreate, onSkip, onClose }: L
               </div>
               <div className="space-y-1 max-h-[300px] overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
                 {filtered.length > 0 ? filtered.map(p => (
-                  <button key={p.id} onClick={() => onLink(p.id)} className="w-full text-left p-2.5 rounded-lg hover:bg-secondary/50 transition-colors">
+                  <button key={p.id} onClick={() => onLink(p.id)} className="w-full text-left p-2.5 rounded-lg hover:bg-surface-2/50 transition-colors">
                     <p className="text-sm font-semibold text-foreground truncate">{p.name}</p>
                     <p className="text-[11px] text-muted-foreground">{p.category || 'Sem categoria'} · R$ {p.salePrice.toFixed(2)}</p>
                   </button>
