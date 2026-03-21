@@ -234,7 +234,6 @@ export default function Home() {
       <div className="md:hidden py-3 space-y-3">
         {/* Trial / CTA banners */}
         <div className="space-y-2">
-          {trialBanner}
           {subscriptionCta}
           {expiredCta}
         </div>
