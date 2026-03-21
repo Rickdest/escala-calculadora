@@ -274,7 +274,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (url) {
         // Save URL to DB
         await supabase.from('products').update({ image_url: url } as any).eq('id', data.id);
-        data.image_url = url;
+        (data as any).image_url = url;
       } else {
         // Fallback: keep in localStorage
         const localImages = getLocalImages();
