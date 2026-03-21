@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Plus, Package, BarChart3, GraduationCap, Store, Warehouse, UserCircle, Settings2, ChevronRight, AlertTriangle } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
@@ -9,11 +9,13 @@ import { SubscriptionModal } from '@/components/SubscriptionModal';
 import { TrialBanner } from '@/components/TrialBanner';
 import { DailyOfferModal } from '@/components/DailyOfferModal';
 import { useSubscription } from '@/contexts/SubscriptionContext';
-import { cn, getMarginStatus } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { QuickCalculator } from '@/components/home/QuickCalculator';
 import { HomeEducationCard } from '@/components/home/HomeEducationCard';
 import { ProductThumbnail } from '@/components/ProductThumbnail';
 import { useEstoque } from '@/hooks/useEstoque';
+import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel';
+import Autoplay from 'embla-carousel-autoplay';
 
 const toolItems = [
   { icon: Plus, label: 'Precificar', isAccent: true, action: 'addProduct' as const },
@@ -26,6 +28,36 @@ const toolItems = [
   { icon: UserCircle, label: 'Perfil', route: '/profile' },
 ];
 
+const bannerSlides = [
+  {
+    title: 'Precifique com precisão',
+    subtitle: 'Calcule custos, taxas e margem real dos seus produtos Shopee',
+    cta: 'Precificar produto',
+    emoji: '🎯',
+    action: 'addProduct' as const,
+    bgClass: 'bg-gradient-to-br from-primary to-primary/80',
+    textClass: 'text-primary-foreground',
+  },
+  {
+    title: 'Analise seus Ads',
+    subtitle: 'Importe o CSV da Shopee e descubra o ROAS real de cada produto',
+    cta: 'Ver Análise →',
+    emoji: '📊',
+    route: '/roas',
+    bgClass: 'bg-gradient-to-br from-blue-600 to-blue-500',
+    textClass: 'text-white',
+  },
+  {
+    title: 'Controle seu Estoque',
+    subtitle: 'Cadastre variações e receba alertas automáticos de reposição',
+    cta: 'Ver Estoque →',
+    emoji: '📦',
+    route: '/stock',
+    bgClass: 'bg-gradient-to-br from-emerald-600 to-emerald-500',
+    textClass: 'text-white',
+  },
+];
+
 export default function Home() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -35,6 +67,8 @@ export default function Home() {
   const [showProductForm, setShowProductForm] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [prefillProduct, setPrefillProduct] = useState<Partial<import('@/types/store').Product> | null>(null);
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
     if (searchParams.get('new') === '1') {
@@ -42,6 +76,22 @@ export default function Home() {
       setSearchParams({});
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!carouselApi) return;
+    const onSelect = () => setCurrentSlide(carouselApi.selectedScrollSnap());
+    carouselApi.on('select', onSelect);
+    onSelect();
+    return () => { carouselApi.off('select', onSelect); };
+  }, [carouselApi]);
+
+  const handleBannerClick = useCallback((slide: typeof bannerSlides[number]) => {
+    if ('action' in slide && slide.action === 'addProduct') {
+      setShowProductForm(true);
+    } else if ('route' in slide && slide.route) {
+      navigate(slide.route);
+    }
+  }, [navigate]);
 
   if (isLoading) {
     return (
@@ -125,39 +175,63 @@ export default function Home() {
           {expiredCta}
         </div>
 
-        {/* Desktop: two-column grid / Mobile: stacked with order */}
+        {/* Desktop: two-column grid / Mobile: stacked */}
         <div className="flex flex-col space-y-3 md:grid md:grid-cols-[1fr_280px] md:gap-6 md:space-y-0">
 
-          {/* Left column: Hero + Calculator + Products */}
+          {/* Left column */}
           <div className="space-y-4 order-1 md:order-none">
-            {/* Hero card */}
-            <div className="md:col-span-2 surface-card p-5 animate-fade-up">
-              <p className="text-xs text-text-3 font-medium mb-1">Bem-vindo ao Precify</p>
-              <h2 className="text-lg font-bold text-foreground mb-1">
-                Central do vendedor Shopee
-              </h2>
-              <p className="text-sm text-text-2 mb-4">
-                Precifique produtos, analise seus anúncios e controle seu estoque em um só lugar.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setShowProductForm(true)}
-                  className="h-9 px-4 bg-primary text-primary-foreground rounded-lg text-sm font-semibold flex items-center gap-1.5 hover:bg-primary/90 transition-colors active:scale-[0.98]"
-                >
-                  <Plus className="w-4 h-4" /> Precificar produto
-                </button>
-                <button
-                  onClick={() => navigate('/roas')}
-                  className="h-9 px-4 bg-surface-2 text-foreground border border-border rounded-lg text-sm font-semibold flex items-center gap-1.5 hover:border-primary hover:text-primary transition-colors"
-                >
-                  📊 Análise de Ads
-                </button>
-                <button
-                  onClick={() => navigate('/stock')}
-                  className="h-9 px-4 bg-surface-2 text-foreground border border-border rounded-lg text-sm font-semibold flex items-center gap-1.5 hover:border-primary hover:text-primary transition-colors"
-                >
-                  📦 Estoque
-                </button>
+            {/* Banner Carousel */}
+            <div className="animate-fade-up">
+              <Carousel
+                setApi={setCarouselApi}
+                opts={{ loop: true }}
+                plugins={[Autoplay({ delay: 5000, stopOnInteraction: true })]}
+                className="w-full"
+              >
+                <CarouselContent className="-ml-0">
+                  {bannerSlides.map((slide, i) => (
+                    <CarouselItem key={i} className="pl-0">
+                      <button
+                        onClick={() => handleBannerClick(slide)}
+                        className={cn(
+                          'w-full rounded-xl p-6 md:p-8 text-left relative overflow-hidden transition-all active:scale-[0.99] min-h-[160px] md:min-h-[180px] flex flex-col justify-between',
+                          slide.bgClass
+                        )}
+                      >
+                        <span className="absolute top-4 right-4 text-4xl md:text-5xl opacity-30 select-none">{slide.emoji}</span>
+                        <div className="relative z-10">
+                          <h2 className={cn('text-xl md:text-2xl font-extrabold mb-1.5 leading-tight', slide.textClass)}>
+                            {slide.title}
+                          </h2>
+                          <p className={cn('text-sm md:text-base opacity-90 max-w-sm', slide.textClass)}>
+                            {slide.subtitle}
+                          </p>
+                        </div>
+                        <div className="relative z-10 mt-4">
+                          <span className={cn(
+                            'inline-flex items-center gap-1.5 h-9 px-4 rounded-lg text-sm font-semibold bg-white/20 backdrop-blur-sm',
+                            slide.textClass
+                          )}>
+                            {slide.cta}
+                          </span>
+                        </div>
+                      </button>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+              </Carousel>
+              {/* Dots */}
+              <div className="flex justify-center gap-1.5 mt-3">
+                {bannerSlides.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => carouselApi?.scrollTo(i)}
+                    className={cn(
+                      'w-2 h-2 rounded-full transition-all',
+                      i === currentSlide ? 'bg-primary w-5' : 'bg-border'
+                    )}
+                  />
+                ))}
               </div>
             </div>
 
@@ -215,10 +289,11 @@ export default function Home() {
                             Lucro R$ {calc.netProfit.toFixed(2).replace('.', ',')}
                           </span>
                           <span className="text-text-3 text-[13px]">·</span>
-                          <span className={cn('font-mono text-[13px] font-bold font-mono-num', getMarginStatus(calc.realMargin).color)}>
+                          <span className={cn('font-mono text-[13px] font-bold font-mono-num', 
+                            calc.realMargin >= 20 ? 'text-success' : calc.realMargin >= 12 ? 'text-warning' : 'text-danger'
+                          )}>
                             {calc.realMargin.toFixed(1)}%
                           </span>
-                          <span className={cn('w-1.5 h-1.5 rounded-full', getMarginStatus(calc.realMargin).color.replace('text-', 'bg-'))} />
                         </div>
                       </div>
                     </button>
@@ -238,51 +313,8 @@ export default function Home() {
             )}
           </div>
 
-          {/* Right column: Metrics sidebar (sticky on desktop) */}
+          {/* Right column: slim sidebar */}
           <div className="space-y-4 order-2 md:order-none md:sticky md:top-20 md:self-start">
-            {/* Store Metrics */}
-            <div className="animate-fade-up stagger-2">
-              <p className="section-label mb-3">Métricas da Loja</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="surface-card p-4">
-                  <p className="section-label mb-2">Margem Média</p>
-                  <p className={cn(
-                    'font-mono text-[28px] font-bold font-mono-num leading-none',
-                    getMarginStatus(stats.avgMargin).color
-                  )}>
-                    {stats.avgMargin.toFixed(1)}%
-                  </p>
-                  <p className={cn(
-                    'text-[12px] mt-1 flex items-center gap-1.5',
-                    getMarginStatus(stats.avgMargin).color
-                  )}>
-                    {getMarginStatus(stats.avgMargin).label}
-                    <span className={cn('w-1.5 h-1.5 rounded-full', getMarginStatus(stats.avgMargin).color.replace('text-', 'bg-'))} />
-                  </p>
-                </div>
-                <div className="surface-card p-4">
-                  <p className="section-label mb-2">Produtos</p>
-                  <p className="font-mono text-[28px] font-bold font-mono-num leading-none text-foreground">
-                    {stats.totalProducts}
-                  </p>
-                  <p className="text-[12px] text-text-3 mt-1">cadastrados</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Performance */}
-            {stats.totalProducts > 0 && (
-              <div className="animate-fade-up stagger-3">
-                <div className="surface-card rounded-[10px] px-4 py-3 flex items-center justify-center gap-2">
-                  <span className="font-mono text-[14px] font-bold font-mono-num text-success">{stats.productsAboveTarget}</span>
-                  <span className="text-[13px] text-text-2">na meta</span>
-                  <span className="text-text-3 text-[13px]">·</span>
-                  <span className={cn('font-mono text-[14px] font-bold font-mono-num', stats.productsBelowTarget > 0 ? 'text-warning' : 'text-text-3')}>{stats.productsBelowTarget}</span>
-                  <span className="text-[13px] text-text-2">abaixo da meta</span>
-                </div>
-              </div>
-            )}
-
             {/* Low stock alert */}
             {estoqueStats.baixo > 0 && (
               <button onClick={() => navigate('/stock')} className="surface-card px-4 py-3 flex items-center justify-between w-full hover:bg-surface-2/50 transition-colors animate-fade-up">
