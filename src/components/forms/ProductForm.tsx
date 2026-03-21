@@ -29,6 +29,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
   const [imageUrl, setImageUrl] = useState(product?.imageUrl || '');
   const [isSaving, setIsSaving] = useState(false);
 
+  const [enableAds, setEnableAds] = useState((product?.adsCost || 0) > 0);
   const [adsCostValue, setAdsCostValue] = useState(product?.adsCost?.toString() || '0');
   const [optionalCostsOpen, setOptionalCostsOpen] = useState(false);
   const [monthlySales, setMonthlySales] = useState(50);
@@ -59,7 +60,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
     const shopeeFeeFixed = range.fixed;
     const cpfExtra = config?.isCpfSeller && config?.hasOver450Orders ? 3 : 0;
     const totalShopeeFee = shopeeFeePercent + shopeeFeeFixed + cpfExtra;
-    const adsCost = parseFloat(adsCostValue) || 0;
+    const adsCost = enableAds ? (parseFloat(adsCostValue) || 0) : 0;
     const taxesCost = (config?.taxes || 0) > 0 ? sp * ((config?.taxes || 0) / 100) : 0;
     const affiliateCost = config?.enableAffiliateCommission ? sp * ((config?.affiliateCommission || 0) / 100) : 0;
     const campaignsCost = config?.enableShopeeCampaigns ? sp * ((config?.shopeeCampaigns || 0) / 100) : 0;
@@ -77,7 +78,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
       isAboveTarget: realMargin >= (config?.desiredMargin || 17),
       marginDifference: realMargin - (config?.desiredMargin || 17),
     };
-  }, [salePrice, costPrice, packagingCost, adsCostValue, config]);
+  }, [salePrice, costPrice, packagingCost, enableAds, adsCostValue, config]);
 
   const roasValues = useMemo(() => {
     if (!localCalc || localCalc.grossRevenue <= 0) return null;
@@ -109,7 +110,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
         costPrice: parseFloat(costPrice) || 0,
         salePrice: parseFloat(salePrice) || 0,
         packagingCost: parseFloat(packagingCost) || 0,
-        adsCost: parseFloat(adsCostValue) || 0,
+        adsCost: enableAds ? (parseFloat(adsCostValue) || 0) : 0,
         adsRevenue: 0,
         imageUrl: imageUrl || undefined,
         stockQuantity: product?.stockQuantity || 0,
@@ -218,16 +219,20 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent className="pt-2 space-y-2">
-              <div className="surface-card p-3.5 space-y-2">
-                <label className="text-[10px] uppercase tracking-wider text-text-3 font-medium">Shopee Ads</label>
-                <div className="space-y-1.5">
-                  <label className="section-label">Custo estimado de Ads por venda</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-2">R$</span>
-                    <Input type="number" inputMode="decimal" step="0.01" min="0" value={adsCostValue} onChange={(e) => setAdsCostValue(e.target.value)} placeholder="0,00" className="pl-12 h-10 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num" />
-                  </div>
-                  <p className="text-[11px] text-text-3">Valor médio gasto em ads por unidade vendida. Ex: R$5,00</p>
+              <div className="surface-card p-3.5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-foreground">Shopee Ads</span>
+                  <Switch checked={enableAds} onCheckedChange={setEnableAds} />
                 </div>
+                {enableAds && (
+                  <div className="space-y-1.5">
+                    <label className="section-label">Custo de Ads (R$)</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-2">R$</span>
+                      <Input type="number" inputMode="decimal" step="0.01" min="0" value={adsCostValue} onChange={(e) => setAdsCostValue(e.target.value)} placeholder="0,00" className="pl-12 h-10 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num" />
+                    </div>
+                  </div>
+                )}
               </div>
             </CollapsibleContent>
           </Collapsible>
