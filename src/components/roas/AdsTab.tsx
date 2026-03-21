@@ -99,9 +99,9 @@ function LinkingModal({ metric, products, onLink, onCreate, onSkip, onClose }: L
             <>
               <div className="surface-card p-3 space-y-1">
                 <p className="text-sm font-bold text-foreground">{truncate(metric.shopeeProductName, 50)}</p>
-                {metric.shopeeProductId && <p className="text-[11px] text-muted-foreground font-mono">ID Shopee: {metric.shopeeProductId}</p>}
+                {metric.shopeeProductId && <p className="text-[11px] text-text-2 font-mono">ID Shopee: {metric.shopeeProductId}</p>}
               </div>
-              <p className="text-xs text-muted-foreground">Este produto já está cadastrado no Precify?</p>
+              <p className="text-xs text-text-2">Este produto já está cadastrado no Precify?</p>
               <div className="space-y-2">
                 <Button onClick={() => setShowList(true)} variant="outline" className="w-full h-11 justify-start gap-2 text-sm">
                   <Link2 className="w-4 h-4 text-primary" /> Vincular a produto existente
