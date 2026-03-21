@@ -1,13 +1,13 @@
-import { Home, Package, BarChart3, Warehouse, Settings } from 'lucide-react';
+import { Home, ShoppingBag, BarChart2, Archive, SlidersHorizontal } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { icon: Home, label: 'Início', path: '/' },
-  { icon: Package, label: 'Produtos', path: '/products' },
-  { icon: BarChart3, label: 'Ads', path: '/roas' },
-  { icon: Warehouse, label: 'Estoque', path: '/stock' },
-  { icon: Settings, label: 'Config', path: '/settings' },
+  { icon: ShoppingBag, label: 'Produtos', path: '/products' },
+  { icon: BarChart2, label: 'Ads', path: '/roas' },
+  { icon: Archive, label: 'Estoque', path: '/stock' },
+  { icon: SlidersHorizontal, label: 'Config', path: '/settings' },
 ];
 
 export function BottomNavigation() {
