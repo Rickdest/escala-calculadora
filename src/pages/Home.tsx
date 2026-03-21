@@ -152,7 +152,7 @@ export default function Home() {
     .sort((a, b) => b.calc.realMargin - a.calc.realMargin)
     .slice(0, 5);
 
-  const trialBanner = <TrialBanner />;
+  
 
   const subscriptionCta = status === 'trialing' && trialEnd && (() => {
     const dLeft = Math.max(0, Math.ceil((new Date(trialEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
