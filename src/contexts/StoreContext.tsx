@@ -108,6 +108,43 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     loadData();
   }, [user?.id]);
 
+  const migrateLocalImages = async (userId: string, products: Product[]) => {
+    try {
+      const localImages = getLocalImages();
+      const productIds = Object.keys(localImages);
+      if (productIds.length === 0) {
+        localStorage.setItem(MIGRATION_DONE_KEY, '1');
+        return;
+      }
+
+      let migrated = 0;
+      for (const productId of productIds) {
+        const base64 = localImages[productId];
+        if (!base64) continue;
+
+        const url = await uploadProductImage(userId, productId, base64);
+        if (url) {
+          await supabase.from('products').update({ image_url: url } as any).eq('id', productId).eq('user_id', userId);
+          delete localImages[productId];
+          migrated++;
+        }
+      }
+
+      localStorage.setItem(LOCAL_IMAGES_KEY, JSON.stringify(localImages));
+      if (Object.keys(localImages).length === 0) {
+        localStorage.removeItem(LOCAL_IMAGES_KEY);
+      }
+      localStorage.setItem(MIGRATION_DONE_KEY, '1');
+
+      if (migrated > 0) {
+        toast.success(`${migrated} imagem(ns) migrada(s) para a nuvem`);
+        loadData(); // Reload to get updated URLs
+      }
+    } catch {
+      // Silent — don't block the app
+    }
+  };
+
   const loadData = async () => {
     if (!user) return;
     setIsLoading(true);
