@@ -311,7 +311,7 @@ function RankingSection({ metrics, products }: { metrics: AdMetricDerived[]; pro
                     <p className="text-[13px] font-bold text-foreground truncate">{truncate(m.shopeeProductName, 24)}</p>
                     <StatusIcon className={cn('w-4 h-4 flex-shrink-0', statusColor)} />
                   </div>
-                  <p className="text-[11px] text-muted-foreground font-mono tabular-nums mt-0.5">{formatCurrency(m.spend)} → {formatCurrency(m.gmv)}</p>
+                  <p className="text-[11px] text-text-2 font-mono tabular-nums mt-0.5">{formatCurrency(m.spend)} → {formatCurrency(m.gmv)}</p>
                 </div>
                 <span className={cn('text-[15px] font-extrabold tabular-nums font-mono flex-shrink-0', statusColor)}>{m.roas.toFixed(2)}</span>
                 {isOpen ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />}
