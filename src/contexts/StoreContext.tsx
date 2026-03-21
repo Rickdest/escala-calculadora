@@ -349,7 +349,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       ),
       updatedAt: store.products.some(p => p.id === productId) ? new Date() : store.updatedAt,
     })));
-  }, []);
+  }, [user]);
 
   const deleteProduct = useCallback(async (productId: string) => {
     if (user) await deleteProductImage(user.id, productId);
