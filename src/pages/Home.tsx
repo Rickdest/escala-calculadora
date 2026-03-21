@@ -12,7 +12,6 @@ import { useSubscription } from '@/contexts/SubscriptionContext';
 import { cn, getMarginStatus } from '@/lib/utils';
 import { QuickCalculator } from '@/components/home/QuickCalculator';
 import { HomeEducationCard } from '@/components/home/HomeEducationCard';
-import { HomeBanners } from '@/components/home/HomeBanners';
 import { ProductThumbnail } from '@/components/ProductThumbnail';
 import { useEstoque } from '@/hooks/useEstoque';
 
@@ -127,11 +126,41 @@ export default function Home() {
         </div>
 
         {/* Desktop: two-column grid / Mobile: stacked with order */}
-        <div className="flex flex-col space-y-3 md:grid md:grid-cols-[1fr_320px] md:gap-6 md:space-y-0">
+        <div className="flex flex-col space-y-3 md:grid md:grid-cols-[1fr_280px] md:gap-6 md:space-y-0">
 
-          {/* Left column: Calculator + Products */}
+          {/* Left column: Hero + Calculator + Products */}
           <div className="space-y-4 order-1 md:order-none">
-            <HomeBanners />
+            {/* Hero card */}
+            <div className="md:col-span-2 surface-card p-5 animate-fade-up">
+              <p className="text-xs text-text-3 font-medium mb-1">Bem-vindo ao Precify</p>
+              <h2 className="text-lg font-bold text-foreground mb-1">
+                Central do vendedor Shopee
+              </h2>
+              <p className="text-sm text-text-2 mb-4">
+                Precifique produtos, analise seus anúncios e controle seu estoque em um só lugar.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setShowProductForm(true)}
+                  className="h-9 px-4 bg-primary text-primary-foreground rounded-lg text-sm font-semibold flex items-center gap-1.5 hover:bg-primary/90 transition-colors active:scale-[0.98]"
+                >
+                  <Plus className="w-4 h-4" /> Precificar produto
+                </button>
+                <button
+                  onClick={() => navigate('/roas')}
+                  className="h-9 px-4 bg-surface-2 text-foreground border border-border rounded-lg text-sm font-semibold flex items-center gap-1.5 hover:border-primary hover:text-primary transition-colors"
+                >
+                  📊 Análise de Ads
+                </button>
+                <button
+                  onClick={() => navigate('/stock')}
+                  className="h-9 px-4 bg-surface-2 text-foreground border border-border rounded-lg text-sm font-semibold flex items-center gap-1.5 hover:border-primary hover:text-primary transition-colors"
+                >
+                  📦 Estoque
+                </button>
+              </div>
+            </div>
+
             <QuickCalculator onSaveProduct={(prefill) => {
               setPrefillProduct({
                 costPrice: parseFloat(prefill.costPrice) || 0,
