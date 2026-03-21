@@ -240,9 +240,9 @@ function AlertsSection({ metrics }: { metrics: AdMetricDerived[] }) {
                 <Icon className={cn('w-4 h-4 flex-shrink-0', cfg.iconColor)} />
                 <span className="text-[13px] font-semibold text-foreground truncate flex-1">{truncate(alert.metric.shopeeProductName, 28)}</span>
                 <span className={cn('text-xs font-bold font-mono tabular-nums flex-shrink-0', cfg.iconColor)}>{cfg.metricLabel(alert.metric)}</span>
-                {isOpen ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />}
+                {isOpen ? <ChevronUp className="w-3.5 h-3.5 text-text-2 flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 text-text-2 flex-shrink-0" />}
               </button>
-              {isOpen && <div className="px-3 pb-2.5 pl-10"><p className="text-[11px] text-muted-foreground">{cfg.rec}</p></div>}
+              {isOpen && <div className="px-3 pb-2.5 pl-10"><p className="text-[11px] text-text-2">{cfg.rec}</p></div>}
             </div>
           );
         })}
