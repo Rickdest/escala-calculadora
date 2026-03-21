@@ -146,6 +146,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           setCurrentStoreState(newStore);
         }
       }
+
+      // Migrate localStorage images to Storage (one-time)
+      if (!localStorage.getItem(MIGRATION_DONE_KEY)) {
+        migrateLocalImages(user.id, products);
+      }
     } catch (err) {
       toast.error('Erro ao carregar dados da nuvem');
     } finally {
