@@ -326,8 +326,8 @@ function RankingSection({ metrics, products }: { metrics: AdMetricDerived[]; pro
                     <div><p className="section-label">CONV</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{m.convRate.toFixed(2)}%</p></div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><p className="text-[9px] text-muted-foreground uppercase">RETORNO LÍQUIDO</p><p className={cn('text-[13px] font-bold font-mono tabular-nums', m.liquidReturn >= 0 ? 'text-success' : 'text-destructive')}>{formatCurrency(m.liquidReturn)}</p></div>
-                    <div><p className="text-[9px] text-muted-foreground uppercase">VENDIDOS</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{m.itemsSold} itens</p></div>
+                    <div><p className="section-label">RETORNO LÍQUIDO</p><p className={cn('text-[13px] font-bold font-mono tabular-nums', m.liquidReturn >= 0 ? 'text-success' : 'text-destructive')}>{formatCurrency(m.liquidReturn)}</p></div>
+                    <div><p className="section-label">VENDIDOS</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{m.itemsSold} itens</p></div>
                   </div>
                   {m.avgPosition !== null && (
                     <div><p className="text-[9px] text-muted-foreground uppercase">POSIÇÃO MÉDIA</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">#{m.avgPosition}</p></div>
