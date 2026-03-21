@@ -222,6 +222,51 @@ export type Database = {
           },
         ]
       }
+      home_banners: {
+        Row: {
+          bg_class: string | null
+          created_at: string | null
+          cta_label: string | null
+          cta_url: string | null
+          display_order: number | null
+          emoji: string | null
+          id: string
+          is_active: boolean | null
+          subtitle: string | null
+          text_class: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          bg_class?: string | null
+          created_at?: string | null
+          cta_label?: string | null
+          cta_url?: string | null
+          display_order?: number | null
+          emoji?: string | null
+          id?: string
+          is_active?: boolean | null
+          subtitle?: string | null
+          text_class?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          bg_class?: string | null
+          created_at?: string | null
+          cta_label?: string | null
+          cta_url?: string | null
+          display_order?: number | null
+          emoji?: string | null
+          id?: string
+          is_active?: boolean | null
+          subtitle?: string | null
+          text_class?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       price_history: {
         Row: {
           cost_price: number
