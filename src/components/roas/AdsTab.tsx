@@ -609,7 +609,7 @@ export function AdsTab() {
               <AlertsSection metrics={derivedMetrics} />
             </div>
             <div className="space-y-4">
-              <RankingSection metrics={derivedMetrics} />
+              <RankingSection metrics={derivedMetrics} products={products} />
               <MarginSection metrics={derivedMetrics} products={products} />
             </div>
           </div>
