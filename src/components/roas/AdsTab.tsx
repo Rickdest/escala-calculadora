@@ -117,7 +117,7 @@ function LinkingModal({ metric, products, onLink, onCreate, onSkip, onClose }: L
           ) : (
             <>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-2" />
                 <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar produto..." className="pl-10 h-10 text-sm" />
               </div>
               <div className="space-y-1 max-h-[300px] overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
