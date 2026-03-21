@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Package, BarChart3, GraduationCap, Store, Warehouse, UserCircle, Settings2, ChevronRight, AlertTriangle } from 'lucide-react';
+import { Plus, Package, BarChart3, GraduationCap, Store, Warehouse, UserCircle, Settings2, ChevronRight, AlertTriangle, ArrowRight } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -56,6 +56,13 @@ const bannerSlides = [
     bgClass: 'bg-gradient-to-br from-emerald-600 to-emerald-500',
     textClass: 'text-white',
   },
+];
+
+const desktopQuickLinks = [
+  { icon: BarChart3, label: 'Análise de Ads', desc: 'ROAS real dos seus produtos', route: '/roas', color: 'text-blue-500', bg: 'bg-blue-500/10' },
+  { icon: Warehouse, label: 'Estoque', desc: 'Controle e alertas de reposição', route: '/stock', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  { icon: GraduationCap, label: 'Educação', desc: 'Tutoriais e dicas exclusivas', route: '/education', color: 'text-amber-500', bg: 'bg-amber-500/10' },
+  { icon: Settings2, label: 'Configurações', desc: 'Taxas e comissões da loja', route: '/settings', color: 'text-muted-foreground', bg: 'bg-muted/50' },
 ];
 
 export default function Home() {
@@ -130,6 +137,16 @@ export default function Home() {
     }
   };
 
+  const onSaveFromCalc = (prefill: { costPrice: string; salePrice: string; packaging: string }) => {
+    setPrefillProduct({
+      costPrice: parseFloat(prefill.costPrice) || 0,
+      salePrice: parseFloat(prefill.salePrice) || 0,
+      packagingCost: parseFloat(prefill.packaging) || 0,
+      name: '',
+    });
+    setShowProductForm(true);
+  };
+
   const topProducts = currentStore.products
     .map(p => ({ product: p, calc: calculateProduct(p, currentStore.config) }))
     .sort((a, b) => b.calc.realMargin - a.calc.realMargin)
@@ -164,10 +181,57 @@ export default function Home() {
     </button>
   ) : null;
 
+  /* ─── Products list (shared between mobile & desktop) ─── */
+  const productsSection = topProducts.length > 0 ? (
+    <div className="space-y-2 animate-fade-up stagger-4">
+      <div className="flex items-center justify-between">
+        <p className="section-label">Seus Produtos</p>
+        <button onClick={() => navigate('/products')} className="text-xs text-primary font-medium flex items-center gap-0.5">
+          Ver Todos <ChevronRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
+      <div className="divide-y divide-border">
+        {topProducts.map(({ product, calc }) => (
+          <button key={product.id} className="w-full py-3 flex items-center gap-3 text-left" onClick={() => navigate('/products')}>
+            <ProductThumbnail productId={product.id} productName={product.name} />
+            <div className="flex-1 min-w-0">
+              <p className="text-[15px] font-medium text-foreground truncate">{product.name}</p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className={cn('font-mono text-[13px] font-mono-num', calc.netProfit >= 0 ? 'text-success' : 'text-danger')}>
+                  Lucro R$ {calc.netProfit.toFixed(2).replace('.', ',')}
+                </span>
+                <span className="text-text-3 text-[13px]">·</span>
+                <span className={cn('font-mono text-[13px] font-bold font-mono-num',
+                  calc.realMargin >= 20 ? 'text-success' : calc.realMargin >= 12 ? 'text-warning' : 'text-danger'
+                )}>
+                  {calc.realMargin.toFixed(1)}%
+                </span>
+              </div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  ) : null;
+
+  const emptyState = stats.totalProducts === 0 ? (
+    <div className="text-center py-10 animate-fade-up">
+      <div className="w-14 h-14 rounded-xl bg-surface-2 mx-auto flex items-center justify-center mb-3">
+        <Package className="w-7 h-7 text-text-3" />
+      </div>
+      <h3 className="font-semibold text-foreground mb-1">Nenhum produto ainda</h3>
+      <p className="text-sm text-text-2 mb-5 max-w-xs mx-auto">Adicione seu primeiro produto para começar a precificar</p>
+    </div>
+  ) : null;
+
   return (
     <AppLayout>
       <PageHeader title="Precify" />
-      <div className="py-3 space-y-3 md:py-8">
+
+      {/* ══════════════════════════════════════════════
+          MOBILE LAYOUT — identical to before
+          ══════════════════════════════════════════════ */}
+      <div className="md:hidden py-3 space-y-3">
         {/* Trial / CTA banners */}
         <div className="space-y-2">
           {trialBanner}
@@ -229,95 +293,131 @@ export default function Home() {
           </div>
         </div>
 
-        {/* QuickCalculator — principal */}
-        <QuickCalculator onSaveProduct={(prefill) => {
-          setPrefillProduct({
-            costPrice: parseFloat(prefill.costPrice) || 0,
-            salePrice: parseFloat(prefill.salePrice) || 0,
-            packagingCost: parseFloat(prefill.packaging) || 0,
-            name: '',
-          });
-          setShowProductForm(true);
-        }} />
+        {/* QuickCalculator */}
+        <QuickCalculator onSaveProduct={onSaveFromCalc} />
 
-        {/* Two-column grid */}
-        <div className="flex flex-col space-y-3 md:grid md:grid-cols-[1fr_280px] md:gap-6 md:space-y-0">
+        {/* Tools Grid */}
+        <div className="animate-fade-up">
+          <p className="section-label mb-3">Ferramentas</p>
+          <div className="grid grid-cols-4 gap-y-3 gap-x-2">
+            {toolItems.map((item) => (
+              <button
+                key={item.label}
+                onClick={() => handleToolClick(item)}
+                className="flex flex-col items-center gap-1.5 py-2 transition-colors active:scale-95"
+              >
+                <div className={cn(
+                  'w-11 h-11 rounded-xl flex items-center justify-center',
+                  item.isAccent ? 'bg-primary text-primary-foreground' : 'bg-surface-2 text-text-2'
+                )}>
+                  <item.icon className="w-5 h-5" />
+                </div>
+                <span className="text-[11px] font-medium text-text-2 leading-tight text-center px-1 line-clamp-2">
+                  {item.label}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
 
+        {/* Sidebar content inline on mobile */}
+        <div className="space-y-4">
+          {estoqueStats.baixo > 0 && (
+            <button onClick={() => navigate('/stock')} className="surface-card px-4 py-3 flex items-center justify-between w-full hover:bg-surface-2/50 transition-colors animate-fade-up">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-warning" />
+                <div className="text-left">
+                  <p className="text-[13px] font-semibold text-foreground">Estoque baixo</p>
+                  <p className="text-[11px] text-text-2">{estoqueStats.baixo} {estoqueStats.baixo === 1 ? 'variação' : 'variações'} abaixo do mínimo</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-text-3" />
+            </button>
+          )}
+          <HomeEducationCard />
+        </div>
+
+        {/* Products */}
+        {productsSection}
+        {emptyState}
+      </div>
+
+      {/* ══════════════════════════════════════════════
+          DESKTOP LAYOUT — redesigned
+          ══════════════════════════════════════════════ */}
+      <div className="hidden md:block py-8 space-y-6">
+        {/* Trial / CTA banners */}
+        <div className="space-y-2">
+          {trialBanner}
+          {subscriptionCta}
+          {expiredCta}
+        </div>
+
+        {/* Hero Banner — inspired by Seller Bump */}
+        <div className="rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 p-8 relative overflow-hidden animate-fade-up">
+          <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'radial-gradient(circle at 70% 30%, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+          <div className="relative z-10 max-w-2xl">
+            <p className="text-primary-foreground/70 text-sm font-medium mb-1">Precify · Central do Vendedor</p>
+            <h1 className="text-2xl font-bold text-primary-foreground mb-2 leading-tight">
+              Precifique, analise e controle tudo em um só lugar
+            </h1>
+            <p className="text-primary-foreground/80 text-sm mb-5 max-w-lg">
+              Calcule margens reais, importe relatórios de anúncios e gerencie seu estoque com alertas inteligentes.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => setShowProductForm(true)}
+                className="h-10 px-5 bg-white text-primary rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-white/90 transition-colors shadow-sm"
+              >
+                <Plus className="w-4 h-4" /> Precificar produto
+              </button>
+              <button
+                onClick={() => navigate('/roas')}
+                className="h-10 px-5 bg-white/15 text-primary-foreground border border-white/20 rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-white/25 transition-colors backdrop-blur-sm"
+              >
+                <BarChart3 className="w-4 h-4" /> Análise de Ads
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Main grid: left (calculator + products) + right (quick links + alerts) */}
+        <div className="grid grid-cols-[1fr_320px] gap-6">
           {/* Left column */}
-          <div className="space-y-4">
+          <div className="space-y-6">
+            <QuickCalculator onSaveProduct={onSaveFromCalc} />
+            {productsSection}
+            {emptyState}
+          </div>
 
-            {/* Tools Grid — mobile only */}
-            <div className="animate-fade-up md:hidden">
-              <p className="section-label mb-3">Ferramentas</p>
-              <div className="grid grid-cols-4 gap-y-3 gap-x-2">
-                {toolItems.map((item) => (
+          {/* Right column — sticky sidebar */}
+          <div className="space-y-4 sticky top-20 self-start">
+            {/* Quick links */}
+            <div className="space-y-2">
+              <p className="section-label">Atalhos</p>
+              <div className="space-y-2">
+                {desktopQuickLinks.map((link) => (
                   <button
-                    key={item.label}
-                    onClick={() => handleToolClick(item)}
-                    className="flex flex-col items-center gap-1.5 py-2 transition-colors active:scale-95"
+                    key={link.route}
+                    onClick={() => navigate(link.route)}
+                    className="w-full surface-card px-4 py-3 flex items-center gap-3 text-left hover:bg-surface-2/50 transition-colors group"
                   >
-                    <div className={cn(
-                      'w-11 h-11 rounded-xl flex items-center justify-center',
-                      item.isAccent ? 'bg-primary text-primary-foreground' : 'bg-surface-2 text-text-2'
-                    )}>
-                      <item.icon className="w-5 h-5" />
+                    <div className={cn('w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0', link.bg)}>
+                      <link.icon className={cn('w-4.5 h-4.5', link.color)} />
                     </div>
-                    <span className="text-[11px] font-medium text-text-2 leading-tight text-center px-1 line-clamp-2">
-                      {item.label}
-                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-semibold text-foreground">{link.label}</p>
+                      <p className="text-[11px] text-text-3">{link.desc}</p>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-text-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Top Products */}
-            {topProducts.length > 0 && (
-              <div className="space-y-2 animate-fade-up stagger-4">
-                <div className="flex items-center justify-between">
-                  <p className="section-label">Seus Produtos</p>
-                  <button onClick={() => navigate('/products')} className="text-xs text-primary font-medium flex items-center gap-0.5">
-                    Ver Todos <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <div className="divide-y divide-border">
-                  {topProducts.map(({ product, calc }) => (
-                    <button key={product.id} className="w-full py-3 flex items-center gap-3 text-left" onClick={() => navigate('/products')}>
-                      <ProductThumbnail productId={product.id} productName={product.name} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[15px] font-medium text-foreground truncate">{product.name}</p>
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <span className={cn('font-mono text-[13px] font-mono-num', calc.netProfit >= 0 ? 'text-success' : 'text-danger')}>
-                            Lucro R$ {calc.netProfit.toFixed(2).replace('.', ',')}
-                          </span>
-                          <span className="text-text-3 text-[13px]">·</span>
-                          <span className={cn('font-mono text-[13px] font-bold font-mono-num', 
-                            calc.realMargin >= 20 ? 'text-success' : calc.realMargin >= 12 ? 'text-warning' : 'text-danger'
-                          )}>
-                            {calc.realMargin.toFixed(1)}%
-                          </span>
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {stats.totalProducts === 0 && (
-              <div className="text-center py-10 animate-fade-up">
-                <div className="w-14 h-14 rounded-xl bg-surface-2 mx-auto flex items-center justify-center mb-3">
-                  <Package className="w-7 h-7 text-text-3" />
-                </div>
-                <h3 className="font-semibold text-foreground mb-1">Nenhum produto ainda</h3>
-                <p className="text-sm text-text-2 mb-5 max-w-xs mx-auto">Adicione seu primeiro produto para começar a precificar</p>
-              </div>
-            )}
-          </div>
-
-          {/* Right column: sidebar */}
-          <div className="space-y-4 md:sticky md:top-20 md:self-start">
+            {/* Stock alert */}
             {estoqueStats.baixo > 0 && (
-              <button onClick={() => navigate('/stock')} className="surface-card px-4 py-3 flex items-center justify-between w-full hover:bg-surface-2/50 transition-colors animate-fade-up">
+              <button onClick={() => navigate('/stock')} className="surface-card px-4 py-3 flex items-center justify-between w-full hover:bg-surface-2/50 transition-colors border-l-[3px] border-l-warning">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-warning" />
                   <div className="text-left">
@@ -328,9 +428,10 @@ export default function Home() {
                 <ChevronRight className="w-4 h-4 text-text-3" />
               </button>
             )}
+
+            {/* Education */}
             <HomeEducationCard />
           </div>
-
         </div>
       </div>
 
