@@ -626,7 +626,7 @@ export function AdsTab() {
           {/* Desktop 2-column */}
           <div className="md:grid md:grid-cols-[2fr_3fr] md:gap-6 space-y-4 md:space-y-0">
             <div className="space-y-4">
-              <SummarySection metrics={derivedMetrics} />
+              <SummarySection metrics={derivedMetrics} products={products} />
               <AlertsSection metrics={derivedMetrics} />
             </div>
             <div className="space-y-4">

@@ -203,7 +203,7 @@ export function ProductAdsSection({ productId, shopeeProductId }: ProductAdsSect
             <Button onClick={handleImport} size="sm" variant="outline" className="flex-1 h-8 text-[11px] gap-1">
               <RefreshCw className="w-3 h-3" /> Atualizar CSV
             </Button>
-            <Button onClick={handleUnlink} size="sm" variant="ghost" className="h-8 text-[11px] text-muted-foreground">
+            <Button onClick={handleUnlink} size="sm" variant="ghost" className="h-8 text-[11px] text-text-2">
               Desvincular
             </Button>
           </div>
