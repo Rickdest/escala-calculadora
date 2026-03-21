@@ -180,6 +180,15 @@ export function HomeBanners() {
         )}
       </div>
 
+      {/* Pagination dots - mobile only */}
+      {banners.length > 1 && (
+        <div className="flex justify-center gap-1.5 mt-2 md:hidden">
+          {banners.map((_, i) => (
+            <span key={i} className={cn('w-1.5 h-1.5 rounded-full transition-colors', i === 0 ? 'bg-primary' : 'bg-border')} />
+          ))}
+        </div>
+      )}
+
       {/* New banner form */}
       {editingId === 'new' && <EditFormContent onClose={() => setEditingId(null)} />}
     </div>
