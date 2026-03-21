@@ -132,19 +132,19 @@ export function ProductAdsSection({ productId, shopeeProductId }: ProductAdsSect
   })() : null;
 
   return (
-    <div className="rounded-xl border border-border bg-secondary p-3.5 space-y-3">
+    <div className="surface-card p-3.5 space-y-3">
       <input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileSelect} className="hidden" />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Megaphone className="w-4 h-4 text-primary" />
           <span className="text-sm font-bold text-foreground">ADS</span>
-          {metric && <span className="text-[11px] text-muted-foreground">· Período: {periodLabel}</span>}
+          {metric && <span className="text-[11px] text-text-2">· Período: {periodLabel}</span>}
         </div>
       </div>
 
       {!metric ? (
         <div className="text-center py-3 space-y-2">
-          <p className="text-xs text-muted-foreground">Nenhum dado de Ads vinculado</p>
+          <p className="text-xs text-text-2">Nenhum dado de Ads vinculado</p>
           <Button onClick={handleImport} size="sm" variant="outline" className="h-9 text-xs gap-1.5">
             <Upload className="w-3.5 h-3.5" /> Importar CSV deste produto
           </Button>
@@ -160,7 +160,7 @@ export function ProductAdsSection({ productId, shopeeProductId }: ProductAdsSect
               { label: 'CTR', value: `${metric.ctr.toFixed(2)}%`, color: 'text-foreground' },
             ].map(({ label, value, color }) => (
               <div key={label}>
-                <p className="text-[9px] uppercase text-muted-foreground tracking-wider">{label}</p>
+                <p className="section-label">{label}</p>
                 <p className={cn('text-[13px] font-bold font-mono tabular-nums', color)}>{value}</p>
               </div>
             ))}
@@ -173,28 +173,28 @@ export function ProductAdsSection({ productId, shopeeProductId }: ProductAdsSect
               { label: 'CUSTO/VENDA', value: metric.costPerSale > 0 ? formatCurrency(metric.costPerSale) : '—', color: 'text-foreground' },
             ].map(({ label, value, color }) => (
               <div key={label}>
-                <p className="text-[9px] uppercase text-muted-foreground tracking-wider">{label}</p>
+                <p className="section-label">{label}</p>
                 <p className={cn('text-[13px] font-bold font-mono tabular-nums', color)}>{value}</p>
               </div>
             ))}
           </div>
 
           <div className="grid grid-cols-3 gap-2">
-            <div><p className="text-[9px] uppercase text-muted-foreground tracking-wider">CONV%</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{metric.convRate.toFixed(2)}%</p></div>
-            <div><p className="text-[9px] uppercase text-muted-foreground tracking-wider">VENDIDOS</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{metric.itemsSold} itens</p></div>
-            <div><p className="text-[9px] uppercase text-muted-foreground tracking-wider">INVESTIDO</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{formatCurrency(metric.spend)}</p></div>
+            <div><p className="section-label">CONV%</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{metric.convRate.toFixed(2)}%</p></div>
+            <div><p className="section-label">VENDIDOS</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{metric.itemsSold} itens</p></div>
+            <div><p className="section-label">INVESTIDO</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{formatCurrency(metric.spend)}</p></div>
           </div>
 
           {/* Bid recommendation */}
           {bidRec ? (
             <div className="border-t border-dashed border-border pt-2 flex items-start gap-2">
               <bidRec.icon className={cn('w-4 h-4 mt-0.5 flex-shrink-0', bidRec.color)} />
-              <p className="text-[11px] text-muted-foreground">{bidRec.text}</p>
+              <p className="text-[11px] text-text-2">{bidRec.text}</p>
             </div>
           ) : metric.avgPosition === null ? (
             <div className="border-t border-dashed border-border pt-2 flex items-start gap-2">
-              <Info className="w-4 h-4 mt-0.5 flex-shrink-0 text-muted-foreground" />
-              <p className="text-[11px] text-muted-foreground">Posição: não disponível. Importe o CSV por produto para ver a posição média</p>
+              <Info className="w-4 h-4 mt-0.5 flex-shrink-0 text-text-2" />
+              <p className="text-[11px] text-text-2">Posição: não disponível. Importe o CSV por produto para ver a posição média</p>
             </div>
           ) : null}
 
@@ -203,7 +203,7 @@ export function ProductAdsSection({ productId, shopeeProductId }: ProductAdsSect
             <Button onClick={handleImport} size="sm" variant="outline" className="flex-1 h-8 text-[11px] gap-1">
               <RefreshCw className="w-3 h-3" /> Atualizar CSV
             </Button>
-            <Button onClick={handleUnlink} size="sm" variant="ghost" className="h-8 text-[11px] text-muted-foreground">
+            <Button onClick={handleUnlink} size="sm" variant="ghost" className="h-8 text-[11px] text-text-2">
               Desvincular
             </Button>
           </div>

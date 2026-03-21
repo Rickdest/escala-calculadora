@@ -16,7 +16,11 @@ import { calcFullRoas } from '@/lib/roasUtils';
 
 const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 function truncate(str: string, max: number) { return str.length > max ? str.slice(0, max) + '…' : str; }
-function getRoasColor(roas: number) { return roas >= 5 ? 'text-success' : roas >= 2 ? 'text-warning' : 'text-destructive'; }
+function getRoasColorDynamic(roas: number, empate: number, ideal: number) {
+  if (roas < empate) return 'text-destructive';
+  if (roas < ideal) return 'text-warning';
+  return 'text-success';
+}
 function getAcosColor(acos: number) { return acos <= 20 ? 'text-success' : acos <= 40 ? 'text-warning' : 'text-destructive'; }
 function getRoiColor(roi: number) { return roi > 100 ? 'text-success' : roi >= 0 ? 'text-warning' : 'text-destructive'; }
 
@@ -88,16 +92,16 @@ function LinkingModal({ metric, products, onLink, onCreate, onSkip, onClose }: L
       <div className="bg-card border border-border rounded-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col animate-scale-up">
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h3 className="font-bold text-foreground text-sm">Produto encontrado</h3>
-          <button onClick={onClose} className="p-1 hover:bg-secondary rounded-lg"><X className="w-4 h-4 text-muted-foreground" /></button>
+          <button onClick={onClose} className="p-1 hover:bg-surface-2 rounded-lg"><X className="w-4 h-4 text-text-2" /></button>
         </div>
         <div className="p-4 space-y-4 flex-1 overflow-y-auto">
           {!showList ? (
             <>
               <div className="surface-card p-3 space-y-1">
                 <p className="text-sm font-bold text-foreground">{truncate(metric.shopeeProductName, 50)}</p>
-                {metric.shopeeProductId && <p className="text-[11px] text-muted-foreground font-mono">ID Shopee: {metric.shopeeProductId}</p>}
+                {metric.shopeeProductId && <p className="text-[11px] text-text-2 font-mono">ID Shopee: {metric.shopeeProductId}</p>}
               </div>
-              <p className="text-xs text-muted-foreground">Este produto já está cadastrado no Precify?</p>
+              <p className="text-xs text-text-2">Este produto já está cadastrado no Precify?</p>
               <div className="space-y-2">
                 <Button onClick={() => setShowList(true)} variant="outline" className="w-full h-11 justify-start gap-2 text-sm">
                   <Link2 className="w-4 h-4 text-primary" /> Vincular a produto existente
@@ -105,7 +109,7 @@ function LinkingModal({ metric, products, onLink, onCreate, onSkip, onClose }: L
                 <Button onClick={onCreate} variant="outline" className="w-full h-11 justify-start gap-2 text-sm">
                   <FileSpreadsheet className="w-4 h-4 text-primary" /> Criar produto novo
                 </Button>
-                <Button onClick={onSkip} variant="ghost" className="w-full h-11 justify-start gap-2 text-sm text-muted-foreground">
+                <Button onClick={onSkip} variant="ghost" className="w-full h-11 justify-start gap-2 text-sm text-text-2">
                   <Upload className="w-4 h-4" /> Importar só os dados de Ads
                 </Button>
               </div>
@@ -113,17 +117,17 @@ function LinkingModal({ metric, products, onLink, onCreate, onSkip, onClose }: L
           ) : (
             <>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-2" />
                 <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar produto..." className="pl-10 h-10 text-sm" />
               </div>
               <div className="space-y-1 max-h-[300px] overflow-y-auto" style={{ overscrollBehavior: 'contain' }}>
                 {filtered.length > 0 ? filtered.map(p => (
-                  <button key={p.id} onClick={() => onLink(p.id)} className="w-full text-left p-2.5 rounded-lg hover:bg-secondary/50 transition-colors">
+                  <button key={p.id} onClick={() => onLink(p.id)} className="w-full text-left p-2.5 rounded-lg hover:bg-surface-2/50 transition-colors">
                     <p className="text-sm font-semibold text-foreground truncate">{p.name}</p>
-                    <p className="text-[11px] text-muted-foreground">{p.category || 'Sem categoria'} · R$ {p.salePrice.toFixed(2)}</p>
+                    <p className="text-[11px] text-text-2">{p.category || 'Sem categoria'} · R$ {p.salePrice.toFixed(2)}</p>
                   </button>
                 )) : (
-                  <p className="text-center text-sm text-muted-foreground py-6">Nenhum produto encontrado</p>
+                  <p className="text-center text-sm text-text-2 py-6">Nenhum produto encontrado</p>
                 )}
               </div>
               <Button onClick={() => setShowList(false)} variant="ghost" size="sm" className="w-full">Voltar</Button>
@@ -139,14 +143,17 @@ function LinkingModal({ metric, products, onLink, onCreate, onSkip, onClose }: L
 
 function MetricCard({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div className="rounded-[10px] border border-border bg-secondary px-3 py-2.5">
-      <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">{label}</p>
+    <div className="rounded-[10px] border border-border bg-surface-2 px-3 py-2.5">
+      <p className="section-label">{label}</p>
       <p className={cn('text-lg font-extrabold tabular-nums font-mono mt-0.5 leading-tight', color)}>{value}</p>
     </div>
   );
 }
 
-function SummarySection({ metrics }: { metrics: AdMetricDerived[] }) {
+function SummarySection({ metrics, products }: { metrics: AdMetricDerived[]; products: Product[] }) {
+  const { currentStore } = useStore();
+  const config = currentStore?.config;
+
   const totals = useMemo(() => {
     const totalSpend = metrics.reduce((s, m) => s + m.spend, 0);
     const totalGmv = metrics.reduce((s, m) => s + m.gmv, 0);
@@ -158,15 +165,29 @@ function SummarySection({ metrics }: { metrics: AdMetricDerived[] }) {
     return { totalSpend, totalGmv, totalItemsSold, avgRoas, avgAcos, totalLiquidReturn, avgRoi };
   }, [metrics]);
 
+  // Compute average empate/ideal across linked products for summary ROAS color
+  const avgTargets = useMemo(() => {
+    if (!config || products.length === 0) return { empate: 2, ideal: 5 };
+    const targets = products.filter(p => p.salePrice > 0 && p.costPrice > 0).map(p => {
+      const r = calcFullRoas(p.salePrice, p.costPrice, config, p.packagingCost, 0, 0);
+      return r.margemInsuficiente ? null : { empate: r.roasEmpate!, ideal: r.roasIdeal! };
+    }).filter(Boolean) as { empate: number; ideal: number }[];
+    if (targets.length === 0) return { empate: 2, ideal: 5 };
+    return {
+      empate: targets.reduce((s, t) => s + t.empate, 0) / targets.length,
+      ideal: targets.reduce((s, t) => s + t.ideal, 0) / targets.length,
+    };
+  }, [config, products]);
+
   return (
     <div className="space-y-2">
-      <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">RESUMO</p>
+      <p className="section-label font-bold">RESUMO</p>
       <div className="grid grid-cols-2 gap-2">
         <MetricCard label="INVESTIDO" value={formatCurrency(totals.totalSpend)} color="text-foreground" />
         <MetricCard label="RETORNO LÍQUIDO" value={formatCurrency(totals.totalLiquidReturn)} color={totals.totalLiquidReturn >= 0 ? 'text-success' : 'text-destructive'} />
       </div>
       <div className="grid grid-cols-3 gap-2">
-        <MetricCard label="ROAS" value={totals.avgRoas.toFixed(2)} color={getRoasColor(totals.avgRoas)} />
+        <MetricCard label="ROAS" value={totals.avgRoas.toFixed(2)} color={getRoasColorDynamic(totals.avgRoas, avgTargets.empate, avgTargets.ideal)} />
         <MetricCard label="ACOS" value={`${totals.avgAcos.toFixed(1)}%`} color={getAcosColor(totals.avgAcos)} />
         <MetricCard label="ROI" value={`${totals.avgRoi.toFixed(0)}%`} color={getRoiColor(totals.avgRoi)} />
       </div>
@@ -207,8 +228,8 @@ function AlertsSection({ metrics }: { metrics: AdMetricDerived[] }) {
 
   return (
     <div className="space-y-2">
-      <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">ALERTAS</p>
-      <div className="rounded-xl border border-border bg-secondary divide-y divide-border overflow-hidden">
+      <p className="section-label font-bold">ALERTAS</p>
+      <div className="rounded-xl border border-border bg-surface-2 divide-y divide-border overflow-hidden">
         {alerts.map((alert, i) => {
           const cfg = alertConfig[alert.type];
           const Icon = cfg.icon;
@@ -219,9 +240,9 @@ function AlertsSection({ metrics }: { metrics: AdMetricDerived[] }) {
                 <Icon className={cn('w-4 h-4 flex-shrink-0', cfg.iconColor)} />
                 <span className="text-[13px] font-semibold text-foreground truncate flex-1">{truncate(alert.metric.shopeeProductName, 28)}</span>
                 <span className={cn('text-xs font-bold font-mono tabular-nums flex-shrink-0', cfg.iconColor)}>{cfg.metricLabel(alert.metric)}</span>
-                {isOpen ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />}
+                {isOpen ? <ChevronUp className="w-3.5 h-3.5 text-text-2 flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 text-text-2 flex-shrink-0" />}
               </button>
-              {isOpen && <div className="px-3 pb-2.5 pl-10"><p className="text-[11px] text-muted-foreground">{cfg.rec}</p></div>}
+              {isOpen && <div className="px-3 pb-2.5 pl-10"><p className="text-[11px] text-text-2">{cfg.rec}</p></div>}
             </div>
           );
         })}
@@ -245,11 +266,11 @@ function RoasBar({ roas, empate, ideal }: { roas: number; empate?: number; ideal
         <div className="absolute inset-0 rounded-full" style={{ background: `linear-gradient(to right, hsl(0 85% 60%) 0%, hsl(45 95% 50%) ${empatePos}%, hsl(152 70% 42%) ${idealPos}%, hsl(152 70% 42%) 100%)`, opacity: 0.25 }} />
         <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pos}%`, backgroundColor: roas >= id ? 'hsl(152,70%,42%)' : roas >= e ? 'hsl(45,95%,50%)' : 'hsl(0,85%,60%)' }} />
       </div>
-      <div className="flex items-center gap-2 text-[9px] text-muted-foreground font-bold">
+      <div className="flex items-center gap-2 text-[9px] text-text-2 font-bold">
         <span>0</span><span className="flex-1" />
         <span className="text-warning">Empate {e.toFixed(1)}</span>
         <span className="text-success">Ideal {id.toFixed(1)}</span>
-        <span className={cn('font-mono', getRoasColor(roas))}>{roas.toFixed(2)}</span>
+        <span className={cn('font-mono', getRoasColorDynamic(roas, e, id))}>{roas.toFixed(2)}</span>
       </div>
     </div>
   );
@@ -274,42 +295,42 @@ function RankingSection({ metrics, products }: { metrics: AdMetricDerived[]; pro
 
   return (
     <div className="space-y-2">
-      <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">RANKING</p>
-      <div className="rounded-xl border border-border bg-secondary divide-y divide-border overflow-hidden">
+      <p className="section-label font-bold">RANKING</p>
+      <div className="rounded-xl border border-border bg-surface-2 divide-y divide-border overflow-hidden">
         {sorted.map((m, i) => {
           const isOpen = expandedIndex === i;
-          const StatusIcon = m.roas >= 5 ? TrendingUp : m.roas >= 2 ? AlertTriangle : TrendingDown;
-          const statusColor = getRoasColor(m.roas);
           const targets = getProductRoasTargets(m);
+          const statusColor = getRoasColorDynamic(m.roas, targets.empate, targets.ideal);
+          const StatusIcon = m.roas >= targets.ideal ? TrendingUp : m.roas >= targets.empate ? AlertTriangle : TrendingDown;
           return (
             <div key={i}>
               <button onClick={() => setExpandedIndex(isOpen ? null : i)} className="w-full p-2.5 md:p-3.5 flex items-center gap-2 text-left hover:bg-card/50 transition-colors">
-                <span className={cn('w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-extrabold font-mono flex-shrink-0', i < 3 ? 'bg-primary text-primary-foreground' : 'bg-secondary border border-border text-muted-foreground')}>#{i + 1}</span>
+                <span className={cn('w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-extrabold font-mono flex-shrink-0', i < 3 ? 'bg-primary text-primary-foreground' : 'bg-surface-2 border border-border text-text-2')}>#{i + 1}</span>
                 <div className="flex-1 min-w-0 px-1">
                   <div className="flex items-center gap-1.5">
                     <p className="text-[13px] font-bold text-foreground truncate">{truncate(m.shopeeProductName, 24)}</p>
                     <StatusIcon className={cn('w-4 h-4 flex-shrink-0', statusColor)} />
                   </div>
-                  <p className="text-[11px] text-muted-foreground font-mono tabular-nums mt-0.5">{formatCurrency(m.spend)} → {formatCurrency(m.gmv)}</p>
+                  <p className="text-[11px] text-text-2 font-mono tabular-nums mt-0.5">{formatCurrency(m.spend)} → {formatCurrency(m.gmv)}</p>
                 </div>
                 <span className={cn('text-[15px] font-extrabold tabular-nums font-mono flex-shrink-0', statusColor)}>{m.roas.toFixed(2)}</span>
-                {isOpen ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />}
+                {isOpen ? <ChevronUp className="w-3.5 h-3.5 text-text-2 flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 text-text-2 flex-shrink-0" />}
               </button>
               {isOpen && (
                 <div className="px-2.5 pb-2.5 md:px-3.5 md:pb-3.5 space-y-3 animate-fade-in">
                   <div className="h-px bg-border" />
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div><p className="text-[9px] text-muted-foreground uppercase">ACOS</p><p className={cn('text-[13px] font-bold font-mono tabular-nums', getAcosColor(m.acos))}>{m.acos.toFixed(1)}%</p></div>
-                    <div><p className="text-[9px] text-muted-foreground uppercase">ROI</p><p className={cn('text-[13px] font-bold font-mono tabular-nums', getRoiColor(m.roi))}>{m.roi.toFixed(0)}%</p></div>
-                    <div><p className="text-[9px] text-muted-foreground uppercase">CTR</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{m.ctr.toFixed(2)}%</p></div>
-                    <div><p className="text-[9px] text-muted-foreground uppercase">CONV</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{m.convRate.toFixed(2)}%</p></div>
+                    <div><p className="section-label">ACOS</p><p className={cn('text-[13px] font-bold font-mono tabular-nums', getAcosColor(m.acos))}>{m.acos.toFixed(1)}%</p></div>
+                    <div><p className="section-label">ROI</p><p className={cn('text-[13px] font-bold font-mono tabular-nums', getRoiColor(m.roi))}>{m.roi.toFixed(0)}%</p></div>
+                    <div><p className="section-label">CTR</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{m.ctr.toFixed(2)}%</p></div>
+                    <div><p className="section-label">CONV</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{m.convRate.toFixed(2)}%</p></div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><p className="text-[9px] text-muted-foreground uppercase">RETORNO LÍQUIDO</p><p className={cn('text-[13px] font-bold font-mono tabular-nums', m.liquidReturn >= 0 ? 'text-success' : 'text-destructive')}>{formatCurrency(m.liquidReturn)}</p></div>
-                    <div><p className="text-[9px] text-muted-foreground uppercase">VENDIDOS</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{m.itemsSold} itens</p></div>
+                    <div><p className="section-label">RETORNO LÍQUIDO</p><p className={cn('text-[13px] font-bold font-mono tabular-nums', m.liquidReturn >= 0 ? 'text-success' : 'text-destructive')}>{formatCurrency(m.liquidReturn)}</p></div>
+                    <div><p className="section-label">VENDIDOS</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{m.itemsSold} itens</p></div>
                   </div>
                   {m.avgPosition !== null && (
-                    <div><p className="text-[9px] text-muted-foreground uppercase">POSIÇÃO MÉDIA</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">#{m.avgPosition}</p></div>
+                    <div><p className="section-label">POSIÇÃO MÉDIA</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">#{m.avgPosition}</p></div>
                   )}
                   <RoasBar roas={m.roas} empate={targets.empate} ideal={targets.ideal} />
                 </div>
@@ -350,7 +371,7 @@ function MarginSection({ metrics, products }: { metrics: AdMetricDerived[]; prod
 
   return (
     <div className="space-y-2">
-      <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">MARGEM vs ADS</p>
+      <p className="section-label font-bold">MARGEM vs ADS</p>
       <div className="space-y-2">
         {matches.map(({ metric: m, product }, i) => {
           // BUG 3 FIX: Use calculateProduct for real margin with ALL costs
@@ -363,15 +384,15 @@ function MarginSection({ metrics, products }: { metrics: AdMetricDerived[]; prod
           else if (marginWithAds >= 0) { StatusIcon = AlertTriangle; color = 'text-warning'; message = 'Margem apertada — otimize o ACOS'; }
           else { StatusIcon = XCircle; color = 'text-destructive'; message = 'Ads estão consumindo toda a margem'; }
           return (
-            <div key={i} className="rounded-xl border border-border bg-secondary p-3.5 space-y-2">
+            <div key={i} className="surface-card p-3.5 space-y-2">
               <div className="flex items-center gap-2"><Link2 className="w-3.5 h-3.5 text-primary flex-shrink-0" /><p className="text-sm font-bold text-foreground truncate flex-1">{truncate(product.name, 35)}</p></div>
               <div className="space-y-1.5 text-xs">
-                <div className="flex justify-between"><span className="text-muted-foreground">Margem do produto:</span><span className="font-bold font-mono tabular-nums">{margin.toFixed(1)}%</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">ACOS do anúncio:</span><span className="font-bold font-mono tabular-nums">{m.acos.toFixed(1)}%</span></div>
+                <div className="flex justify-between"><span className="text-text-2">Margem do produto:</span><span className="font-bold font-mono tabular-nums">{margin.toFixed(1)}%</span></div>
+                <div className="flex justify-between"><span className="text-text-2">ACOS do anúncio:</span><span className="font-bold font-mono tabular-nums">{m.acos.toFixed(1)}%</span></div>
               </div>
               <div className="border-t border-dashed border-border pt-2">
-                <div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">Margem c/ ads:</span><span className={cn('text-sm font-extrabold font-mono tabular-nums flex items-center gap-1', color)}>{marginWithAds.toFixed(1)}%<StatusIcon className="w-3.5 h-3.5" /></span></div>
-                <p className="text-[11px] text-muted-foreground mt-1">{message}</p>
+                <div className="flex items-center justify-between"><span className="text-xs text-text-2">Margem c/ ads:</span><span className={cn('text-sm font-extrabold font-mono tabular-nums flex items-center gap-1', color)}>{marginWithAds.toFixed(1)}%<StatusIcon className="w-3.5 h-3.5" /></span></div>
+                <p className="text-[11px] text-text-2 mt-1">{message}</p>
               </div>
             </div>
           );
@@ -386,17 +407,17 @@ function MarginSection({ metrics, products }: { metrics: AdMetricDerived[]; prod
 function EmptyState({ onImport }: { onImport: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
-      <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center">
-        <FileSpreadsheet className="w-12 h-12 text-muted-foreground" />
+      <div className="w-16 h-16 rounded-2xl bg-surface-2 flex items-center justify-center">
+        <FileSpreadsheet className="w-12 h-12 text-text-2" />
       </div>
       <div className="space-y-2 mt-4">
         <p className="text-[15px] font-bold text-foreground">Importe seu relatório de Ads</p>
-        <p className="text-[13px] text-muted-foreground max-w-[280px] mx-auto">Exporte "Dados Gerais de Anúncios" no painel da Shopee e importe aqui</p>
+        <p className="text-[13px] text-text-2 max-w-[280px] mx-auto">Exporte "Dados Gerais de Anúncios" no painel da Shopee e importe aqui</p>
       </div>
       <Button onClick={onImport} className="h-12 w-4/5 max-w-[320px] rounded-xl text-sm font-bold gap-2 bg-primary text-primary-foreground hover:bg-primary/90 mt-6">
         <Upload className="w-4 h-4" /> Importar relatório CSV
       </Button>
-      <p className="text-[11px] text-muted-foreground mt-3">Shopee Ads → Exportar dados → Dados Gerais de Anúncios</p>
+      <p className="text-[11px] text-text-2 mt-3">Shopee Ads → Exportar dados → Dados Gerais de Anúncios</p>
     </div>
   );
 }
@@ -596,7 +617,7 @@ export function AdsTab() {
         <>
           {/* Header */}
           <div className="flex items-center justify-between">
-            <p className="text-[13px] font-bold text-foreground">{periodLabel && <span className="text-muted-foreground font-normal">· {periodLabel}</span>}</p>
+            <p className="text-[13px] font-bold text-foreground">{periodLabel && <span className="text-text-2 font-normal">· {periodLabel}</span>}</p>
             <Button size="sm" variant="outline" onClick={handleImport} className="h-8 text-[11px] gap-1.5 rounded-lg">
               <RefreshCw className="w-3 h-3" /> Atualizar
             </Button>
@@ -605,7 +626,7 @@ export function AdsTab() {
           {/* Desktop 2-column */}
           <div className="md:grid md:grid-cols-[2fr_3fr] md:gap-6 space-y-4 md:space-y-0">
             <div className="space-y-4">
-              <SummarySection metrics={derivedMetrics} />
+              <SummarySection metrics={derivedMetrics} products={products} />
               <AlertsSection metrics={derivedMetrics} />
             </div>
             <div className="space-y-4">
