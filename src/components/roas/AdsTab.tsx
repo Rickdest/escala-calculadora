@@ -391,8 +391,8 @@ function MarginSection({ metrics, products }: { metrics: AdMetricDerived[]; prod
                 <div className="flex justify-between"><span className="text-text-2">ACOS do anúncio:</span><span className="font-bold font-mono tabular-nums">{m.acos.toFixed(1)}%</span></div>
               </div>
               <div className="border-t border-dashed border-border pt-2">
-                <div className="flex items-center justify-between"><span className="text-xs text-muted-foreground">Margem c/ ads:</span><span className={cn('text-sm font-extrabold font-mono tabular-nums flex items-center gap-1', color)}>{marginWithAds.toFixed(1)}%<StatusIcon className="w-3.5 h-3.5" /></span></div>
-                <p className="text-[11px] text-muted-foreground mt-1">{message}</p>
+                <div className="flex items-center justify-between"><span className="text-xs text-text-2">Margem c/ ads:</span><span className={cn('text-sm font-extrabold font-mono tabular-nums flex items-center gap-1', color)}>{marginWithAds.toFixed(1)}%<StatusIcon className="w-3.5 h-3.5" /></span></div>
+                <p className="text-[11px] text-text-2 mt-1">{message}</p>
               </div>
             </div>
           );
