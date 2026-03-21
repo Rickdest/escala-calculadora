@@ -78,7 +78,7 @@ export default function Stores() {
         }
       />
 
-      <div className="px-4 py-6 space-y-4">
+      <div className="py-6 space-y-4">
         {/* Add New Store */}
         {isAdding && (
           <div className="glass-card p-4 animate-scale-up">

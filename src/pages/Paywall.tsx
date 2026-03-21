@@ -18,7 +18,7 @@ export default function Paywall() {
 
   return (
     <AppLayout>
-      <div className="px-4 py-8 space-y-6 max-w-sm mx-auto">
+      <div className="py-8 space-y-6 max-w-sm mx-auto">
         <div className="flex flex-col items-center gap-3">
           <img src={logoIcon} alt="Precify" className="w-10 h-10 rounded-xl opacity-60" />
           <div className="w-12 h-12 rounded-full border border-border/50 flex items-center justify-center">

@@ -26,7 +26,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         <DesktopHeader />
 
         <div className="flex-1 overflow-y-auto pb-20 md:pb-0">
-          <main className="w-full max-w-lg mx-auto md:max-w-[1200px] md:mx-auto px-4 md:px-8 lg:px-12">
+          <main className="w-full px-4 md:max-w-[720px] md:mx-auto md:px-10">
             {children}
           </main>
         </div>
