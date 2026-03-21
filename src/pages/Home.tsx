@@ -175,7 +175,18 @@ export default function Home() {
           {expiredCta}
         </div>
 
-        {/* Banner Carousel — full width on desktop (md:col-span-2) */}
+        {/* QuickCalculator — principal */}
+        <QuickCalculator onSaveProduct={(prefill) => {
+          setPrefillProduct({
+            costPrice: parseFloat(prefill.costPrice) || 0,
+            salePrice: parseFloat(prefill.salePrice) || 0,
+            packagingCost: parseFloat(prefill.packaging) || 0,
+            name: '',
+          });
+          setShowProductForm(true);
+        }} />
+
+        {/* Banner Carousel */}
         <div className="animate-fade-up">
           <Carousel
             setApi={setCarouselApi}
@@ -234,15 +245,6 @@ export default function Home() {
 
           {/* Left column */}
           <div className="space-y-4">
-            <QuickCalculator onSaveProduct={(prefill) => {
-              setPrefillProduct({
-                costPrice: parseFloat(prefill.costPrice) || 0,
-                salePrice: parseFloat(prefill.salePrice) || 0,
-                packagingCost: parseFloat(prefill.packaging) || 0,
-                name: '',
-              });
-              setShowProductForm(true);
-            }} />
 
             {/* Tools Grid — mobile only */}
             <div className="animate-fade-up md:hidden">
