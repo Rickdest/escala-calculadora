@@ -144,7 +144,7 @@ export function ProductAdsSection({ productId, shopeeProductId }: ProductAdsSect
 
       {!metric ? (
         <div className="text-center py-3 space-y-2">
-          <p className="text-xs text-muted-foreground">Nenhum dado de Ads vinculado</p>
+          <p className="text-xs text-text-2">Nenhum dado de Ads vinculado</p>
           <Button onClick={handleImport} size="sm" variant="outline" className="h-9 text-xs gap-1.5">
             <Upload className="w-3.5 h-3.5" /> Importar CSV deste produto
           </Button>
