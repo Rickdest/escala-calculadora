@@ -173,7 +173,7 @@ export function ProductAdsSection({ productId, shopeeProductId }: ProductAdsSect
               { label: 'CUSTO/VENDA', value: metric.costPerSale > 0 ? formatCurrency(metric.costPerSale) : '—', color: 'text-foreground' },
             ].map(({ label, value, color }) => (
               <div key={label}>
-                <p className="text-[9px] uppercase text-muted-foreground tracking-wider">{label}</p>
+                <p className="section-label">{label}</p>
                 <p className={cn('text-[13px] font-bold font-mono tabular-nums', color)}>{value}</p>
               </div>
             ))}
