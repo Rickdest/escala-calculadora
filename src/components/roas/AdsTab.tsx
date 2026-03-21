@@ -143,9 +143,9 @@ function LinkingModal({ metric, products, onLink, onCreate, onSkip, onClose }: L
 
 function MetricCard({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div className="rounded-[10px] border border-border bg-surface-2 px-3 py-2.5">
+    <div className="rounded-[10px] border border-border bg-surface-2 px-3 py-2.5 md:px-4 md:py-3.5">
       <p className="section-label">{label}</p>
-      <p className={cn('text-lg font-extrabold tabular-nums font-mono mt-0.5 leading-tight', color)}>{value}</p>
+      <p className={cn('text-lg md:text-xl font-extrabold tabular-nums font-mono mt-0.5 leading-tight', color)}>{value}</p>
     </div>
   );
 }
@@ -236,13 +236,13 @@ function AlertsSection({ metrics }: { metrics: AdMetricDerived[] }) {
           const isOpen = expandedIdx === i;
           return (
             <div key={i}>
-              <button onClick={() => setExpandedIdx(isOpen ? null : i)} className="w-full h-12 flex items-center gap-3 px-3 text-left hover:bg-card/50 transition-colors">
+              <button onClick={() => setExpandedIdx(isOpen ? null : i)} className="w-full h-12 md:h-14 flex items-center gap-3 px-3 text-left hover:bg-card/50 transition-colors">
                 <Icon className={cn('w-4 h-4 flex-shrink-0', cfg.iconColor)} />
                 <span className="text-[13px] font-semibold text-foreground truncate flex-1">{truncate(alert.metric.shopeeProductName, 28)}</span>
                 <span className={cn('text-xs font-bold font-mono tabular-nums flex-shrink-0', cfg.iconColor)}>{cfg.metricLabel(alert.metric)}</span>
                 {isOpen ? <ChevronUp className="w-3.5 h-3.5 text-text-2 flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 text-text-2 flex-shrink-0" />}
               </button>
-              {isOpen && <div className="px-3 pb-2.5 pl-10"><p className="text-[11px] text-text-2">{cfg.rec}</p></div>}
+              {isOpen && <div className="px-3 pb-2.5 pl-10"><p className="text-[11px] md:text-xs text-text-2">{cfg.rec}</p></div>}
             </div>
           );
         })}
@@ -262,7 +262,7 @@ function RoasBar({ roas, empate, ideal }: { roas: number; empate?: number; ideal
   const idealPos = (id / maxRoas) * 100;
   return (
     <div className="space-y-1">
-      <div className="relative w-full h-1.5 rounded-full overflow-hidden">
+      <div className="relative w-full h-1.5 md:h-2 rounded-full overflow-hidden">
         <div className="absolute inset-0 rounded-full" style={{ background: `linear-gradient(to right, hsl(0 85% 60%) 0%, hsl(45 95% 50%) ${empatePos}%, hsl(152 70% 42%) ${idealPos}%, hsl(152 70% 42%) 100%)`, opacity: 0.25 }} />
         <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pos}%`, backgroundColor: roas >= id ? 'hsl(152,70%,42%)' : roas >= e ? 'hsl(45,95%,50%)' : 'hsl(0,85%,60%)' }} />
       </div>
@@ -304,11 +304,11 @@ function RankingSection({ metrics, products }: { metrics: AdMetricDerived[]; pro
           const StatusIcon = m.roas >= targets.ideal ? TrendingUp : m.roas >= targets.empate ? AlertTriangle : TrendingDown;
           return (
             <div key={i}>
-              <button onClick={() => setExpandedIndex(isOpen ? null : i)} className="w-full p-2.5 md:p-3.5 flex items-center gap-2 text-left hover:bg-card/50 transition-colors">
+              <button onClick={() => setExpandedIndex(isOpen ? null : i)} className="w-full p-2.5 md:p-4 flex items-center gap-2 text-left hover:bg-card/50 transition-colors">
                 <span className={cn('w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-extrabold font-mono flex-shrink-0', i < 3 ? 'bg-primary text-primary-foreground' : 'bg-surface-2 border border-border text-text-2')}>#{i + 1}</span>
                 <div className="flex-1 min-w-0 px-1">
                   <div className="flex items-center gap-1.5">
-                    <p className="text-[13px] font-bold text-foreground truncate">{truncate(m.shopeeProductName, 24)}</p>
+                    <p className="text-[13px] font-bold text-foreground truncate md:max-w-none">{truncate(m.shopeeProductName, 24)}</p>
                     <StatusIcon className={cn('w-4 h-4 flex-shrink-0', statusColor)} />
                   </div>
                   <p className="text-[11px] text-text-2 font-mono tabular-nums mt-0.5">{formatCurrency(m.spend)} → {formatCurrency(m.gmv)}</p>
@@ -317,7 +317,7 @@ function RankingSection({ metrics, products }: { metrics: AdMetricDerived[]; pro
                 {isOpen ? <ChevronUp className="w-3.5 h-3.5 text-text-2 flex-shrink-0" /> : <ChevronDown className="w-3.5 h-3.5 text-text-2 flex-shrink-0" />}
               </button>
               {isOpen && (
-                <div className="px-2.5 pb-2.5 md:px-3.5 md:pb-3.5 space-y-3 animate-fade-in">
+                <div className="px-2.5 pb-2.5 md:px-4 md:pb-4 space-y-3 animate-fade-in">
                   <div className="h-px bg-border" />
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <div><p className="section-label">ACOS</p><p className={cn('text-[13px] font-bold font-mono tabular-nums', getAcosColor(m.acos))}>{m.acos.toFixed(1)}%</p></div>
@@ -372,7 +372,7 @@ function MarginSection({ metrics, products }: { metrics: AdMetricDerived[]; prod
   return (
     <div className="space-y-2">
       <p className="section-label font-bold">MARGEM vs ADS</p>
-      <div className="space-y-2">
+      <div className="space-y-2 md:grid md:grid-cols-2 md:gap-3 md:space-y-0">
         {matches.map(({ metric: m, product }, i) => {
           // BUG 3 FIX: Use calculateProduct for real margin with ALL costs
           const calc = calculateProduct(product, config);
@@ -384,7 +384,7 @@ function MarginSection({ metrics, products }: { metrics: AdMetricDerived[]; prod
           else if (marginWithAds >= 0) { StatusIcon = AlertTriangle; color = 'text-warning'; message = 'Margem apertada — otimize o ACOS'; }
           else { StatusIcon = XCircle; color = 'text-destructive'; message = 'Ads estão consumindo toda a margem'; }
           return (
-            <div key={i} className="surface-card p-3.5 space-y-2">
+            <div key={i} className="surface-card p-3.5 md:p-4 space-y-2">
               <div className="flex items-center gap-2"><Link2 className="w-3.5 h-3.5 text-primary flex-shrink-0" /><p className="text-sm font-bold text-foreground truncate flex-1">{truncate(product.name, 35)}</p></div>
               <div className="space-y-1.5 text-xs">
                 <div className="flex justify-between"><span className="text-text-2">Margem do produto:</span><span className="font-bold font-mono tabular-nums">{margin.toFixed(1)}%</span></div>
@@ -617,8 +617,8 @@ export function AdsTab() {
         <>
           {/* Header */}
           <div className="flex items-center justify-between">
-            <p className="text-[13px] font-bold text-foreground">{periodLabel && <span className="text-text-2 font-normal">· {periodLabel}</span>}</p>
-            <Button size="sm" variant="outline" onClick={handleImport} className="h-8 text-[11px] gap-1.5 rounded-lg">
+            <p className="text-[13px] md:text-sm font-bold text-foreground">{periodLabel && <span className="text-text-2 font-normal">· {periodLabel}</span>}</p>
+            <Button size="sm" variant="outline" onClick={handleImport} className="h-8 md:h-9 text-[11px] md:text-xs gap-1.5 rounded-lg">
               <RefreshCw className="w-3 h-3" /> Atualizar
             </Button>
           </div>
