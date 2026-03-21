@@ -374,6 +374,8 @@ export function StockWizard({ onClose, editProduct }: Props) {
           <div className="flex-1 overflow-y-auto">
             <div className="p-4 space-y-4 animate-fade-up">
 
+              <p className="text-[13px] text-text-3 mt-1 mb-3">Adicionar ao estoque:</p>
+
               {/* Cadastrar do zero */}
               <button
                 onClick={() => setStep('form')}
