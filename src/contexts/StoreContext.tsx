@@ -392,10 +392,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     if (error) { toast.error('Erro ao duplicar produto'); return null; }
 
-    if (original.imageUrl) saveLocalImage(data.id, original.imageUrl);
+    // Copy image for duplicated product
+    if (original.imageUrl && user) {
+      const url = await uploadProductImage(user.id, data.id, original.imageUrl);
+      if (url) {
+        await supabase.from('products').update({ image_url: url } as any).eq('id', data.id);
+        data.image_url = url;
+      }
+    }
 
     const duplicated = mapDbProduct(data);
-    if (original.imageUrl) duplicated.imageUrl = original.imageUrl;
 
     setStores(prev => prev.map(store =>
       store.id === original!.storeId
