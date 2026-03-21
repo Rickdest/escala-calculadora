@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { X, Camera, Trash2, GripVertical, Plus, Package, FileDown, PenLine, Search } from 'lucide-react';
+import { X, Camera, Trash2, GripVertical, Plus, Package, FileDown, PenLine, Search, ChevronRight } from 'lucide-react';
 import { useEstoque, EstoqueProduto } from '@/hooks/useEstoque';
 import { useStore } from '@/contexts/StoreContext';
 import { Product } from '@/types/store';
