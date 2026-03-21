@@ -1,29 +1,35 @@
 
 
-## Plano: Melhorar DesktopHeader — remover métricas, toggle pill, avatar premium
+## Plano: Corrigir link WhatsApp + Mover suporte para o topo da Config
 
-### Alterações em `src/components/layout/DesktopHeader.tsx`
+### Problema 1: Link WhatsApp não funciona
+O domínio `wa.me` pode ser bloqueado em alguns ambientes. Trocar para `https://api.whatsapp.com/send?phone=5511930291287&text=...` que é mais confiável em todos os dispositivos.
 
-**1. Remover métricas inline (MARGEM MÉDIA, PRODUTOS, NA META)**
-- Remover todo o bloco condicional `{stats && stats.totalProducts > 0 && ...}`
-- Remover imports não usados (`getMarginStatus`)
+### Problema 2: Suporte invisível no mobile
+A seção de suporte está enterrada no final da página (linha 419), depois do botão salvar, tabela de taxas e gerenciar lojas. No mobile o usuário precisa rolar muito para chegar.
 
-**2. Toggle de tema estilo pill (como na imagem)**
-- Substituir o botão simples por um toggle pill: container oval com fundo escuro (`bg-surface-2 border border-border`), dois ícones lado a lado (Sol e Lua), e um indicador circular que desliza para o lado ativo
-- Transição suave com `transition-all duration-200`
-- Tamanho compacto: ~52px largura, 28px altura
+### Solução
 
-**3. Melhorar avatar**
-- Aumentar de `w-8 h-8` para `w-9 h-9`
-- Usar `bg-primary` com `text-primary-foreground` (laranja sólido com texto branco) em vez do `bg-primary/10` translúcido
-- Adicionar `ring-2 ring-primary/20` para destaque sutil
-- Remover o texto de nome/status ao lado (simplificar como na referência — só o avatar)
+**`src/pages/Settings.tsx`**
+- Mover o card de suporte para logo após o link "Meu Perfil" (linha 129), antes do toggle de tema — fica visível sem scroll
+- Trocar URL de `wa.me` para `api.whatsapp.com/send`
+- Remover a seção "SUPORTE" duplicada de baixo (linhas 419-438)
 
-**4. Ordem final**
-```
-[toggle sidebar] [nome da loja] [flex-1] [toggle tema pill] [avatar]
-```
+**`src/components/layout/Sidebar.tsx`**
+- Trocar URL de `wa.me` para `api.whatsapp.com/send`
 
-### Arquivo alterado
-- `src/components/layout/DesktopHeader.tsx` — único arquivo
+### Ordem no mobile (Settings)
+1. Meu Perfil
+2. **Falar com suporte** ← movido para cá
+3. Tema do App
+4. Minha Loja (margem, vendedor)
+5. Custos Opcionais
+6. Salvar
+7. Taxas da Shopee
+8. Gerenciar Lojas
+9. Sair
+
+### Arquivos alterados
+- `src/pages/Settings.tsx`
+- `src/components/layout/Sidebar.tsx`
 
