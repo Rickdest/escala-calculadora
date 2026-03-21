@@ -109,7 +109,7 @@ function LinkingModal({ metric, products, onLink, onCreate, onSkip, onClose }: L
                 <Button onClick={onCreate} variant="outline" className="w-full h-11 justify-start gap-2 text-sm">
                   <FileSpreadsheet className="w-4 h-4 text-primary" /> Criar produto novo
                 </Button>
-                <Button onClick={onSkip} variant="ghost" className="w-full h-11 justify-start gap-2 text-sm text-muted-foreground">
+                <Button onClick={onSkip} variant="ghost" className="w-full h-11 justify-start gap-2 text-sm text-text-2">
                   <Upload className="w-4 h-4" /> Importar só os dados de Ads
                 </Button>
               </div>
