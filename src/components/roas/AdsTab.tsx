@@ -320,10 +320,10 @@ function RankingSection({ metrics, products }: { metrics: AdMetricDerived[]; pro
                 <div className="px-2.5 pb-2.5 md:px-3.5 md:pb-3.5 space-y-3 animate-fade-in">
                   <div className="h-px bg-border" />
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div><p className="text-[9px] text-muted-foreground uppercase">ACOS</p><p className={cn('text-[13px] font-bold font-mono tabular-nums', getAcosColor(m.acos))}>{m.acos.toFixed(1)}%</p></div>
-                    <div><p className="text-[9px] text-muted-foreground uppercase">ROI</p><p className={cn('text-[13px] font-bold font-mono tabular-nums', getRoiColor(m.roi))}>{m.roi.toFixed(0)}%</p></div>
-                    <div><p className="text-[9px] text-muted-foreground uppercase">CTR</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{m.ctr.toFixed(2)}%</p></div>
-                    <div><p className="text-[9px] text-muted-foreground uppercase">CONV</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{m.convRate.toFixed(2)}%</p></div>
+                    <div><p className="section-label">ACOS</p><p className={cn('text-[13px] font-bold font-mono tabular-nums', getAcosColor(m.acos))}>{m.acos.toFixed(1)}%</p></div>
+                    <div><p className="section-label">ROI</p><p className={cn('text-[13px] font-bold font-mono tabular-nums', getRoiColor(m.roi))}>{m.roi.toFixed(0)}%</p></div>
+                    <div><p className="section-label">CTR</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{m.ctr.toFixed(2)}%</p></div>
+                    <div><p className="section-label">CONV</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{m.convRate.toFixed(2)}%</p></div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div><p className="text-[9px] text-muted-foreground uppercase">RETORNO LÍQUIDO</p><p className={cn('text-[13px] font-bold font-mono tabular-nums', m.liquidReturn >= 0 ? 'text-success' : 'text-destructive')}>{formatCurrency(m.liquidReturn)}</p></div>
