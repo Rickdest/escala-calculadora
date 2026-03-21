@@ -77,7 +77,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
       isAboveTarget: realMargin >= (config?.desiredMargin || 17),
       marginDifference: realMargin - (config?.desiredMargin || 17),
     };
-  }, [salePrice, costPrice, packagingCost, enableAds, adsCostValue, config]);
+  }, [salePrice, costPrice, packagingCost, adsCostValue, config]);
 
   const roasValues = useMemo(() => {
     if (!localCalc || localCalc.grossRevenue <= 0) return null;
