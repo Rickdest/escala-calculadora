@@ -371,7 +371,7 @@ function MarginSection({ metrics, products }: { metrics: AdMetricDerived[]; prod
 
   return (
     <div className="space-y-2">
-      <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">MARGEM vs ADS</p>
+      <p className="section-label font-bold">MARGEM vs ADS</p>
       <div className="space-y-2">
         {matches.map(({ metric: m, product }, i) => {
           // BUG 3 FIX: Use calculateProduct for real margin with ALL costs
