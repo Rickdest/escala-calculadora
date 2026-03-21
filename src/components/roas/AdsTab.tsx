@@ -254,9 +254,23 @@ function RoasBar({ roas, empate, ideal }: { roas: number; empate?: number; ideal
   );
 }
 
-function RankingSection({ metrics }: { metrics: AdMetricDerived[] }) {
+function RankingSection({ metrics, products }: { metrics: AdMetricDerived[]; products: Product[] }) {
+  const { currentStore } = useStore();
+  const config = currentStore?.config;
   const sorted = useMemo(() => [...metrics].sort((a, b) => b.roas - a.roas), [metrics]);
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+
+  // Compute dynamic empate/ideal per metric
+  const getProductRoasTargets = useCallback((m: AdMetricDerived) => {
+    if (!config) return { empate: 2, ideal: 5 };
+    const pid = (m as any)._productId;
+    const product = pid ? products.find(p => p.id === pid) : null;
+    if (!product || product.salePrice <= 0) return { empate: 2, ideal: 5 };
+    const { calcFullRoas: calc } = require('@/lib/roasUtils');
+    const result = calc(product.salePrice, product.costPrice, config, product.packagingCost, 0, 0);
+    if (result.margemInsuficiente || !result.roasEmpate) return { empate: 2, ideal: 5 };
+    return { empate: result.roasEmpate, ideal: result.roasIdeal || 5 };
+  }, [config, products]);
 
   return (
     <div className="space-y-2">
@@ -266,6 +280,7 @@ function RankingSection({ metrics }: { metrics: AdMetricDerived[] }) {
           const isOpen = expandedIndex === i;
           const StatusIcon = m.roas >= 5 ? TrendingUp : m.roas >= 2 ? AlertTriangle : TrendingDown;
           const statusColor = getRoasColor(m.roas);
+          const targets = getProductRoasTargets(m);
           return (
             <div key={i}>
               <button onClick={() => setExpandedIndex(isOpen ? null : i)} className="w-full p-2.5 md:p-3.5 flex items-center gap-2 text-left hover:bg-card/50 transition-colors">
@@ -296,7 +311,7 @@ function RankingSection({ metrics }: { metrics: AdMetricDerived[] }) {
                   {m.avgPosition !== null && (
                     <div><p className="text-[9px] text-muted-foreground uppercase">POSIÇÃO MÉDIA</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">#{m.avgPosition}</p></div>
                   )}
-                  <RoasBar roas={m.roas} />
+                  <RoasBar roas={m.roas} empate={targets.empate} ideal={targets.ideal} />
                 </div>
               )}
             </div>
