@@ -35,48 +35,40 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
     const cp = parseFloat(costPrice) || 0;
     if (sp <= 0 || cp <= 0) return null;
 
+    const activeConfig = config || DEFAULT_STORE_CONFIG;
+    const packagingCost = parseFloat(packaging) || 0;
+
+    // Use unified ROAS calculation
+    const roasResult = calcFullRoas(sp, cp, activeConfig, packagingCost, 0, 0);
+
     const range = getShopeeFeeForPrice(sp);
     const shopeeFeePercent = sp * (range.percent / 100);
     const shopeeFeeFixed = range.fixed;
-    const cpfExtra = config?.isCpfSeller && config?.hasOver450Orders ? 3 : 0;
-    const totalShopeeFee = shopeeFeePercent + shopeeFeeFixed + cpfExtra;
-    const taxesCost = (config?.taxes || 0) > 0 ? sp * ((config?.taxes || 0) / 100) : 0;
-    const affiliateCost = config?.enableAffiliateCommission ? sp * ((config?.affiliateCommission || 0) / 100) : 0;
-    const campaignsCost = config?.enableShopeeCampaigns ? sp * ((config?.shopeeCampaigns || 0) / 100) : 0;
-    const aceleraVal = config?.shopeeAcelera || 'none';
+    const cpfExtra = roasResult.costs.cpfAdditional;
+    const aceleraVal = activeConfig.shopeeAcelera || 'none';
     const aceleraPercent = aceleraVal === 'indicado' ? 2.5 : aceleraVal === 'nao_indicado' ? 3.5 : 0;
-    const aceleraCost = sp * (aceleraPercent / 100);
-
-    const packagingCost = parseFloat(packaging) || 0;
-    const totalCosts = cp + packagingCost + totalShopeeFee + taxesCost + affiliateCost + campaignsCost + aceleraCost;
-    const netProfit = sp - totalCosts;
-    const realMargin = sp > 0 ? netProfit / sp * 100 : 0;
-
-    const roasEmpate = sp / (sp - totalCosts);
-    const roasSaudavel = isFinite(roasEmpate) && roasEmpate > 0 ? parseFloat((roasEmpate / 0.61).toFixed(2)) : 0;
-    const roasIdeal = isFinite(roasEmpate) && roasEmpate > 0 ? parseFloat((roasEmpate / 0.40).toFixed(2)) : 0;
 
     return {
-      netProfit,
-      realMargin,
+      netProfit: roasResult.lucroBruto,
+      realMargin: sp > 0 ? (roasResult.lucroBruto / sp) * 100 : 0,
       cp,
-      roasEmpate: isFinite(roasEmpate) && roasEmpate > 0 ? roasEmpate : 0,
-      roasSaudavel,
-      roasIdeal,
-      totalShopeeFee,
+      roasEmpate: roasResult.roasEmpate && roasResult.roasEmpate > 0 ? roasResult.roasEmpate : 0,
+      roasSaudavel: roasResult.roasSaudavel && roasResult.roasSaudavel > 0 ? roasResult.roasSaudavel : 0,
+      roasIdeal: roasResult.roasIdeal && roasResult.roasIdeal > 0 ? roasResult.roasIdeal : 0,
+      totalShopeeFee: roasResult.costs.shopeeFee,
       shopeeFeePercent,
       shopeeFeeFixed,
       cpfExtra,
-      packagingCost,
-      taxesCost,
-      taxesPercent: config?.taxes || 0,
-      affiliateCost,
-      affiliatePercent: config?.affiliateCommission || 0,
-      campaignsCost,
-      campaignsPercent: config?.shopeeCampaigns || 0,
-      aceleraCost,
+      packagingCost: roasResult.costs.packagingCost,
+      taxesCost: roasResult.costs.taxes,
+      taxesPercent: activeConfig.taxes || 0,
+      affiliateCost: roasResult.costs.affiliateCommission,
+      affiliatePercent: activeConfig.affiliateCommission || 0,
+      campaignsCost: roasResult.costs.campaigns,
+      campaignsPercent: activeConfig.shopeeCampaigns || 0,
+      aceleraCost: roasResult.costs.acelera,
       aceleraPercent,
-      totalCosts,
+      totalCosts: roasResult.totalCosts,
       sp
     };
   }, [salePrice, costPrice, packaging, config]);
