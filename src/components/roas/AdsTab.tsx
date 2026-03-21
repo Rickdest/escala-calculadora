@@ -330,7 +330,7 @@ function RankingSection({ metrics, products }: { metrics: AdMetricDerived[]; pro
                     <div><p className="section-label">VENDIDOS</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">{m.itemsSold} itens</p></div>
                   </div>
                   {m.avgPosition !== null && (
-                    <div><p className="text-[9px] text-muted-foreground uppercase">POSIÇÃO MÉDIA</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">#{m.avgPosition}</p></div>
+                    <div><p className="section-label">POSIÇÃO MÉDIA</p><p className="text-[13px] font-bold font-mono tabular-nums text-foreground">#{m.avgPosition}</p></div>
                   )}
                   <RoasBar roas={m.roas} empate={targets.empate} ideal={targets.ideal} />
                 </div>
