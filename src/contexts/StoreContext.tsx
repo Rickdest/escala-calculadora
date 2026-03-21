@@ -33,14 +33,16 @@ function getLocalImages(): Record<string, string> {
 }
 
 function mapDbProduct(p: any): Product {
-  const localImages = getLocalImages();
   const variations = p.variations ?? [];
   const attributes = p.attributes ?? [];
   const hasVariations = p.has_variations ?? false;
-  // If product has variations, stockQuantity = sum of variation stocks
   const stockQuantity = hasVariations && variations.length > 0
     ? variations.reduce((sum: number, v: any) => sum + (Number(v.stockQuantity) || 0), 0)
     : Number(p.stock_quantity ?? 0);
+
+  // Use imageUrl from DB column; fallback to localStorage for migration
+  const localImages = getLocalImages();
+  const imageUrl = p.image_url || localImages[p.id] || undefined;
 
   return {
     id: p.id,
@@ -53,7 +55,7 @@ function mapDbProduct(p: any): Product {
     packagingCost: Number(p.packaging_cost ?? 0),
     adsCost: Number(p.ads_cost ?? 0),
     adsRevenue: Number(p.ads_revenue ?? 0),
-    imageUrl: localImages[p.id] || undefined,
+    imageUrl,
     stockQuantity,
     minStockQuantity: Number(p.min_stock_quantity ?? 5),
     hasVariations,
