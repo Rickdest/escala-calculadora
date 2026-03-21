@@ -2,8 +2,9 @@ import { useState, useMemo } from 'react';
 import { Zap, Loader2, ChevronDown, ChevronUp, Info, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
-import { getShopeeFeeForPrice } from '@/types/store';
+import { getShopeeFeeForPrice, DEFAULT_STORE_CONFIG } from '@/types/store';
 import { cn, getMarginStatus } from '@/lib/utils';
+import { calcFullRoas } from '@/lib/roasUtils';
 
 interface QuickCalculatorProps {
   onSaveProduct: (prefill: {costPrice: string;salePrice: string;packaging: string;}) => void;
