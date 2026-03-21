@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
-import { Plus, Package, Target, BarChart3, GraduationCap, Store, Warehouse, UserCircle, Settings2, ChevronRight, Zap } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Plus, Package, BarChart3, GraduationCap, Store, Warehouse, UserCircle, Settings2, ChevronRight, AlertTriangle } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -8,12 +8,12 @@ import { ProductForm } from '@/components/forms/ProductForm';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
 import { TrialBanner } from '@/components/TrialBanner';
 import { DailyOfferModal } from '@/components/DailyOfferModal';
-import { Button } from '@/components/ui/button';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { cn, getMarginStatus } from '@/lib/utils';
 import { QuickCalculator } from '@/components/home/QuickCalculator';
 import { HomeEducationCard } from '@/components/home/HomeEducationCard';
 import { ProductThumbnail } from '@/components/ProductThumbnail';
+import { useEstoque } from '@/hooks/useEstoque';
 
 const toolItems = [
   { icon: Plus, label: 'Precificar', isAccent: true, action: 'addProduct' as const },
@@ -28,11 +28,20 @@ const toolItems = [
 
 export default function Home() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { currentStore, stores, addStore, addProduct, getStoreStats, calculateProduct, isLoading } = useStore();
   const { isActive, status, trialEnd } = useSubscription();
+  const { stats: estoqueStats } = useEstoque();
   const [showProductForm, setShowProductForm] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [prefillProduct, setPrefillProduct] = useState<Partial<import('@/types/store').Product> | null>(null);
+
+  useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      setShowProductForm(true);
+      setSearchParams({});
+    }
+  }, [searchParams]);
 
   if (isLoading) {
     return (
@@ -76,7 +85,6 @@ export default function Home() {
     .sort((a, b) => b.calc.realMargin - a.calc.realMargin)
     .slice(0, 5);
 
-  // Banners (full width on desktop)
   const trialBanner = <TrialBanner />;
 
   const subscriptionCta = status === 'trialing' && trialEnd && (() => {
@@ -111,15 +119,17 @@ export default function Home() {
       <PageHeader title="Precify" />
       <div className="py-3 space-y-3 md:py-8">
         {/* Full-width banners */}
-        {trialBanner}
-        {subscriptionCta}
-        {expiredCta}
+        <div className="md:col-span-2 space-y-2">
+          {trialBanner}
+          {subscriptionCta}
+          {expiredCta}
+        </div>
 
-        {/* Desktop: two-column grid / Mobile: stacked */}
-        <div className="space-y-3 md:grid md:grid-cols-[1fr_340px] md:gap-6 md:space-y-0">
+        {/* Desktop: two-column grid / Mobile: stacked with order */}
+        <div className="flex flex-col space-y-3 md:grid md:grid-cols-[1fr_320px] md:gap-6 md:space-y-0">
 
           {/* Left column: Calculator + Products */}
-          <div className="space-y-4">
+          <div className="space-y-4 order-1 md:order-none">
             <QuickCalculator onSaveProduct={(prefill) => {
               setPrefillProduct({
                 costPrice: parseFloat(prefill.costPrice) || 0,
@@ -130,33 +140,9 @@ export default function Home() {
               setShowProductForm(true);
             }} />
 
-            {/* Tools Grid */}
-            <div className="animate-fade-up">
-              <p className="section-label mb-3">Ferramentas</p>
-              <div className="grid grid-cols-4 gap-y-3 gap-x-2">
-                {toolItems.map((item) => (
-                  <button
-                    key={item.label}
-                    onClick={() => handleToolClick(item)}
-                    className="flex flex-col items-center gap-1.5 py-2 transition-colors active:scale-95"
-                  >
-                    <div className={cn(
-                      'w-11 h-11 rounded-xl flex items-center justify-center',
-                      item.isAccent ? 'bg-primary text-primary-foreground' : 'bg-surface-2 text-text-2'
-                    )}>
-                      <item.icon className="w-5 h-5" />
-                    </div>
-                    <span className="text-[11px] font-medium text-text-2 leading-tight text-center px-1 line-clamp-2">
-                      {item.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Top Products */}
             {topProducts.length > 0 && (
-              <div className="space-y-2 animate-fade-up stagger-4">
+              <div className="space-y-2 animate-fade-up stagger-4 order-7 md:order-none">
                 <div className="flex items-center justify-between">
                   <p className="section-label">Seus Produtos</p>
                   <button onClick={() => navigate('/products')} className="text-xs text-primary font-medium flex items-center gap-0.5">
@@ -187,7 +173,7 @@ export default function Home() {
             )}
 
             {stats.totalProducts === 0 && (
-              <div className="text-center py-10 animate-fade-up">
+              <div className="text-center py-10 animate-fade-up order-7 md:order-none">
                 <div className="w-14 h-14 rounded-xl bg-surface-2 mx-auto flex items-center justify-center mb-3">
                   <Package className="w-7 h-7 text-text-3" />
                 </div>
@@ -198,7 +184,7 @@ export default function Home() {
           </div>
 
           {/* Right column: Metrics sidebar (sticky on desktop) */}
-          <div className="space-y-4 md:sticky md:top-20 md:self-start">
+          <div className="space-y-4 order-2 md:order-none md:sticky md:top-20 md:self-start">
             {/* Store Metrics */}
             <div className="animate-fade-up stagger-2">
               <p className="section-label mb-3">Métricas da Loja</p>
@@ -242,8 +228,46 @@ export default function Home() {
               </div>
             )}
 
+            {/* Low stock alert */}
+            {estoqueStats.baixo > 0 && (
+              <button onClick={() => navigate('/stock')} className="surface-card px-4 py-3 flex items-center justify-between w-full hover:bg-surface-2/50 transition-colors animate-fade-up">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-warning" />
+                  <div className="text-left">
+                    <p className="text-[13px] font-semibold text-foreground">Estoque baixo</p>
+                    <p className="text-[11px] text-text-2">{estoqueStats.baixo} {estoqueStats.baixo === 1 ? 'variação' : 'variações'} abaixo do mínimo</p>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 text-text-3" />
+              </button>
+            )}
+
             {/* Education Card */}
             <HomeEducationCard />
+          </div>
+
+          {/* Tools Grid — mobile only */}
+          <div className="animate-fade-up order-6 md:hidden">
+            <p className="section-label mb-3">Ferramentas</p>
+            <div className="grid grid-cols-4 gap-y-3 gap-x-2">
+              {toolItems.map((item) => (
+                <button
+                  key={item.label}
+                  onClick={() => handleToolClick(item)}
+                  className="flex flex-col items-center gap-1.5 py-2 transition-colors active:scale-95"
+                >
+                  <div className={cn(
+                    'w-11 h-11 rounded-xl flex items-center justify-center',
+                    item.isAccent ? 'bg-primary text-primary-foreground' : 'bg-surface-2 text-text-2'
+                  )}>
+                    <item.icon className="w-5 h-5" />
+                  </div>
+                  <span className="text-[11px] font-medium text-text-2 leading-tight text-center px-1 line-clamp-2">
+                    {item.label}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>

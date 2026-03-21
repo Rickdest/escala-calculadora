@@ -1,4 +1,4 @@
-import { Calculator, ShoppingBag, TrendingUp, Settings2, Boxes, Store, UserCircle, ChevronDown } from 'lucide-react';
+import { Calculator, ShoppingBag, TrendingUp, Settings2, Boxes, Store, UserCircle, ChevronDown, Plus } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { useSidebarState } from '@/contexts/SidebarContext';
@@ -47,6 +47,31 @@ export function Sidebar() {
           {collapsed ? 'P' : 'Precify'}
         </span>
       </div>
+
+      {/* Precificar button */}
+      {!collapsed && (
+        <div className="px-2 pt-3">
+          <button
+            onClick={() => navigate('/?new=1')}
+            className="w-full h-9 bg-primary text-primary-foreground rounded-lg text-[13px] font-semibold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors active:scale-[0.98]"
+          >
+            <Plus className="w-4 h-4" />
+            Precificar
+          </button>
+        </div>
+      )}
+      {collapsed && (
+        <Tooltip delayDuration={0}>
+          <TooltipTrigger asChild>
+            <button onClick={() => navigate('/?new=1')} className="w-full flex justify-center py-2 text-primary hover:bg-sidebar-accent rounded-lg transition-colors mx-2 mt-3">
+              <Plus className="w-5 h-5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="text-xs">
+            Precificar
+          </TooltipContent>
+        </Tooltip>
+      )}
 
       {/* Nav */}
       <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto overflow-x-hidden">
