@@ -143,8 +143,8 @@ function LinkingModal({ metric, products, onLink, onCreate, onSkip, onClose }: L
 
 function MetricCard({ label, value, color }: { label: string; value: string; color: string }) {
   return (
-    <div className="rounded-[10px] border border-border bg-secondary px-3 py-2.5">
-      <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">{label}</p>
+    <div className="rounded-[10px] border border-border bg-surface-2 px-3 py-2.5">
+      <p className="section-label">{label}</p>
       <p className={cn('text-lg font-extrabold tabular-nums font-mono mt-0.5 leading-tight', color)}>{value}</p>
     </div>
   );
