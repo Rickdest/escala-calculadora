@@ -290,7 +290,7 @@ export default function Home() {
                 onClick={() => navigate('/roas')}
                 className="h-10 px-5 bg-white/15 text-primary-foreground border border-white/20 rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-white/25 transition-colors backdrop-blur-sm"
               >
-                <BarChart3 className="w-4 h-4" /> Análise de Ads
+                <TrendingUp className="w-4 h-4" /> Análise de Ads
               </button>
             </div>
           </div>
