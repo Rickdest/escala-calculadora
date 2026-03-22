@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Package, BarChart3, GraduationCap, Store, Warehouse, UserCircle, Settings2, ChevronRight, AlertTriangle, ArrowRight, Image as ImageIcon } from 'lucide-react';
+import { Plus, ShoppingBag, TrendingUp, GraduationCap, Store, Boxes, UserCircle, Settings2, ChevronRight, AlertTriangle, ArrowRight, Image as ImageIcon } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -19,10 +19,10 @@ import { useAdmin } from '@/hooks/useAdmin';
 
 const toolItems = [
   { icon: Plus, label: 'Precificar', isAccent: true, action: 'addProduct' as const },
-  { icon: Package, label: 'Produtos', route: '/products' },
-  { icon: BarChart3, label: 'ROAS', route: '/roas' },
+  { icon: ShoppingBag, label: 'Produtos', route: '/products' },
+  { icon: TrendingUp, label: 'Ads', route: '/roas' },
   { icon: GraduationCap, label: 'Educação', route: '/education' },
-  { icon: Warehouse, label: 'Estoque', route: '/stock' },
+  { icon: Boxes, label: 'Estoque', route: '/stock' },
   { icon: Settings2, label: 'Taxas da Loja', route: '/settings' },
   { icon: Store, label: 'Lojas', route: '/stores' },
   { icon: UserCircle, label: 'Perfil', route: '/profile' },
@@ -30,8 +30,8 @@ const toolItems = [
 
 
 const desktopQuickLinks = [
-  { icon: BarChart3, label: 'Análise de Ads', desc: 'ROAS real dos seus produtos', route: '/roas', color: 'text-blue-500', bg: 'bg-blue-500/10' },
-  { icon: Warehouse, label: 'Estoque', desc: 'Controle e alertas de reposição', route: '/stock', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  { icon: TrendingUp, label: 'Análise de Ads', desc: 'ROAS real dos seus produtos', route: '/roas', color: 'text-blue-500', bg: 'bg-blue-500/10' },
+  { icon: Boxes, label: 'Estoque', desc: 'Controle e alertas de reposição', route: '/stock', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
   { icon: GraduationCap, label: 'Educação', desc: 'Tutoriais e dicas exclusivas', route: '/education', color: 'text-amber-500', bg: 'bg-amber-500/10' },
   { icon: Settings2, label: 'Configurações', desc: 'Taxas e comissões da loja', route: '/settings', color: 'text-muted-foreground', bg: 'bg-muted/50' },
 ];
@@ -172,7 +172,7 @@ export default function Home() {
   const emptyState = stats.totalProducts === 0 ? (
     <div className="text-center py-10 animate-fade-up">
       <div className="w-14 h-14 rounded-xl bg-surface-2 mx-auto flex items-center justify-center mb-3">
-        <Package className="w-7 h-7 text-text-3" />
+        <ShoppingBag className="w-7 h-7 text-text-3" />
       </div>
       <h3 className="font-semibold text-foreground mb-1">Nenhum produto ainda</h3>
       <p className="text-sm text-text-2 mb-5 max-w-xs mx-auto">Adicione seu primeiro produto para começar a precificar</p>
@@ -290,7 +290,7 @@ export default function Home() {
                 onClick={() => navigate('/roas')}
                 className="h-10 px-5 bg-white/15 text-primary-foreground border border-white/20 rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-white/25 transition-colors backdrop-blur-sm"
               >
-                <BarChart3 className="w-4 h-4" /> Análise de Ads
+                <TrendingUp className="w-4 h-4" /> Análise de Ads
               </button>
             </div>
           </div>
