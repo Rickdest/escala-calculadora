@@ -152,6 +152,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const loadData = async () => {
     if (!user) return;
     setIsLoading(true);
+    setLoadError(false);
     try {
       const [{ data: storesData, error: storesErr }, { data: productsData, error: productsErr }] = await Promise.all([
         supabase.from('stores').select('*').eq('user_id', user.id),
