@@ -34,8 +34,8 @@ function getLocalImages(): Record<string, string> {
 }
 
 function mapDbProduct(p: Tables<'products'>): Product {
-  const variations = p.variations ?? [];
-  const attributes = p.attributes ?? [];
+  const variations = (p.variations ?? []) as unknown as Product['variations'];
+  const attributes = (p.attributes ?? []) as unknown as Product['attributes'];
   const hasVariations = p.has_variations ?? false;
   const stockQuantity = hasVariations && variations.length > 0
     ? variations.reduce((sum: number, v: any) => sum + (Number(v.stockQuantity) || 0), 0)
