@@ -10,6 +10,8 @@ interface StoreContextType {
   stores: Store[];
   currentStore: Store | null;
   isLoading: boolean;
+  loadError: boolean;
+  retryLoad: () => void;
   setCurrentStore: (store: Store) => void;
   addStore: (name: string) => Promise<Store>;
   updateStore: (storeId: string, updates: Partial<Store>) => Promise<void>;
