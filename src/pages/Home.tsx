@@ -196,6 +196,18 @@ export default function Home() {
         {/* Banner Carousel from DB */}
         <BannerCarousel />
 
+        {/* Admin: link to manage banners */}
+        {isAdmin && (
+          <button
+            onClick={() => navigate('/admin/banners')}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-2 text-text-2 text-xs hover:bg-surface-2/80 transition-colors"
+          >
+            <ImageIcon className="w-3.5 h-3.5" />
+            <span>Gerenciar Banners</span>
+            <ChevronRight className="w-3.5 h-3.5 ml-auto" />
+          </button>
+        )}
+
 
         {/* QuickCalculator */}
         <QuickCalculator onSaveProduct={onSaveFromCalc} />
