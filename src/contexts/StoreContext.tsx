@@ -99,6 +99,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [stores, setStores] = useState<Store[]>([]);
   const [currentStore, setCurrentStoreState] = useState<Store | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   // Load from Supabase when user changes
   useEffect(() => {
