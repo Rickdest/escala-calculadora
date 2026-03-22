@@ -3,7 +3,7 @@
  * Centralizes all payment link logic.
  */
 
-const CHECKOUT_URL = import.meta.env.VITE_CAKTO_URL || 'https://pay.cakto.com.br/YOUR_PRODUCT_ID';
+const CHECKOUT_URL = import.meta.env.VITE_CAKTO_URL || 'https://pay.cakto.com.br/3d2fqxo';
 
 export function buildCheckoutUrl(email?: string): string {
   const url = new URL(CHECKOUT_URL);
