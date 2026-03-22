@@ -1,10 +1,11 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { Store, Product, StoreConfig, DEFAULT_STORE_CONFIG, ProductCalculation, getShopeeFeeForPrice, ShopeeAceleraOption, SHOPEE_ACELERA_RATES } from '@/types/store';
 import { Tables } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { uploadProductImage, deleteProductImage, getProductImageUrl } from '@/lib/imageUtils';
+import { uploadProductImage, deleteProductImage } from '@/lib/imageUtils';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface StoreContextType {
   stores: Store[];
@@ -43,7 +44,6 @@ function mapDbProduct(p: Tables<'products'>): Product {
     ? variations.reduce((sum: number, v: any) => sum + (Number(v.stockQuantity) || 0), 0)
     : Number(p.stock_quantity ?? 0);
 
-  // Use imageUrl from DB column; fallback to localStorage for migration
   const localImages = getLocalImages();
   const imageUrl = p.image_url || localImages[p.id] || undefined;
 
@@ -94,123 +94,144 @@ function mapDbStore(s: Tables<'stores'>, products: Product[]): Store {
   };
 }
 
+/** Fetches stores and products, auto-creates first store for new users */
+async function fetchStoresAndProducts(userId: string): Promise<Store[]> {
+  const [{ data: storesData, error: storesErr }, { data: productsData, error: productsErr }] = await Promise.all([
+    supabase.from('stores').select('*').eq('user_id', userId),
+    supabase.from('products').select('*').eq('user_id', userId),
+  ]);
+
+  if (storesErr) throw storesErr;
+  if (productsErr) throw productsErr;
+
+  const products = (productsData || []).map((p) => mapDbProduct(p));
+  const loaded = (storesData || []).map((s) => mapDbStore(s, products));
+
+  if (loaded.length > 0) return loaded;
+
+  // Auto-create first store for new users
+  const { data, error: createErr } = await supabase.from('stores').insert({
+    name: 'Minha Loja',
+    user_id: userId,
+    taxes: DEFAULT_STORE_CONFIG.taxes,
+    desired_margin: DEFAULT_STORE_CONFIG.desiredMargin,
+    enable_packaging: DEFAULT_STORE_CONFIG.enablePackaging,
+    enable_ads: DEFAULT_STORE_CONFIG.enableAds,
+    affiliate_commission: DEFAULT_STORE_CONFIG.affiliateCommission,
+    shopee_campaigns: DEFAULT_STORE_CONFIG.shopeeCampaigns,
+  } as any).select().single();
+
+  if (createErr || !data) throw createErr || new Error('Falha ao criar loja');
+  return [mapDbStore(data, [])];
+}
+
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const [stores, setStores] = useState<Store[]>([]);
+  const queryClient = useQueryClient();
   const [currentStore, setCurrentStoreState] = useState<Store | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState(false);
+  const migrationStarted = useRef(false);
 
-  // Load from Supabase when user changes
+  const queryKey = ['stores-and-products', user?.id];
+
+  const {
+    data: stores = [],
+    isLoading,
+    isError: loadError,
+    refetch,
+  } = useQuery({
+    queryKey,
+    queryFn: () => fetchStoresAndProducts(user!.id),
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // 5 min cache
+    retry: 1,
+    meta: { errorMessage: 'Erro ao carregar dados da nuvem' },
+  });
+
+  // Show toast on error
   useEffect(() => {
-    if (!user) {
-      setStores([]);
-      setCurrentStoreState(null);
-      setIsLoading(false);
+    if (loadError) {
+      toast.error('Erro ao carregar dados da nuvem');
+    }
+  }, [loadError]);
+
+  // Select current store when stores data changes
+  useEffect(() => {
+    if (stores.length === 0) {
+      if (!isLoading && !user) setCurrentStoreState(null);
       return;
     }
-    loadData();
-  }, [user?.id]);
 
-  const migrateLocalImages = async (userId: string, products: Product[]) => {
-    try {
-      const localImages = getLocalImages();
-      const productIds = Object.keys(localImages);
-      if (productIds.length === 0) {
-        localStorage.setItem(MIGRATION_DONE_KEY, '1');
-        return;
-      }
+    const savedStoreId = localStorage.getItem(CURRENT_STORE_KEY);
 
-      let migrated = 0;
-      for (const productId of productIds) {
-        const base64 = localImages[productId];
-        if (!base64) continue;
-
-        const url = await uploadProductImage(userId, productId, base64);
-        if (url) {
-          await supabase.from('products').update({ image_url: url } as any).eq('id', productId).eq('user_id', userId);
-          delete localImages[productId];
-          migrated++;
-        }
-      }
-
-      localStorage.setItem(LOCAL_IMAGES_KEY, JSON.stringify(localImages));
-      if (Object.keys(localImages).length === 0) {
-        localStorage.removeItem(LOCAL_IMAGES_KEY);
-      }
-      localStorage.setItem(MIGRATION_DONE_KEY, '1');
-
-      if (migrated > 0) {
-        toast.success(`${migrated} imagem(ns) migrada(s) para a nuvem`);
-        loadData(); // Reload to get updated URLs
-      }
-    } catch {
-      // Silent — don't block the app
-    }
-  };
-
-  const loadData = async () => {
-    if (!user) return;
-    setIsLoading(true);
-    setLoadError(false);
-    try {
-      const [{ data: storesData, error: storesErr }, { data: productsData, error: productsErr }] = await Promise.all([
-        supabase.from('stores').select('*').eq('user_id', user.id),
-        supabase.from('products').select('*').eq('user_id', user.id),
-      ]);
-
-      if (storesErr) throw storesErr;
-      if (productsErr) throw productsErr;
-
-      const products = (productsData || []).map((p) => mapDbProduct(p));
-      const loaded = (storesData || []).map((s) => mapDbStore(s, products));
-
-      if (loaded.length > 0) {
-        setStores(loaded);
-        const savedStoreId = localStorage.getItem(CURRENT_STORE_KEY);
-        const found = savedStoreId ? loaded.find(s => s.id === savedStoreId) : null;
-        setCurrentStoreState(found || loaded[0]);
-      } else {
-        // Auto-create first store for new users
-        const { data, error: createErr } = await supabase.from('stores').insert({
-          name: 'Minha Loja',
-          user_id: user.id,
-          taxes: DEFAULT_STORE_CONFIG.taxes,
-          desired_margin: DEFAULT_STORE_CONFIG.desiredMargin,
-          enable_packaging: DEFAULT_STORE_CONFIG.enablePackaging,
-          enable_ads: DEFAULT_STORE_CONFIG.enableAds,
-          affiliate_commission: DEFAULT_STORE_CONFIG.affiliateCommission,
-          shopee_campaigns: DEFAULT_STORE_CONFIG.shopeeCampaigns,
-        } as any).select().single();
-        if (!createErr && data) {
-          const newStore = mapDbStore(data, []);
-          setStores([newStore]);
-          setCurrentStoreState(newStore);
-        }
-      }
-
-      // Migrate localStorage images to Storage (one-time)
-      if (!localStorage.getItem(MIGRATION_DONE_KEY)) {
-        migrateLocalImages(user.id, products);
-      }
-    } catch (err) {
-      setLoadError(true);
-      toast.error('Erro ao carregar dados da nuvem');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Sync currentStore with stores array
-  useEffect(() => {
+    // If we have a current store, sync it with fresh data
     if (currentStore) {
       const updated = stores.find(s => s.id === currentStore.id);
-      if (updated && updated !== currentStore) {
+      if (updated) {
         setCurrentStoreState(updated);
+      } else {
+        // Current store was deleted; pick first
+        setCurrentStoreState(stores[0]);
       }
+    } else {
+      // First load: pick saved or first
+      const found = savedStoreId ? stores.find(s => s.id === savedStoreId) : null;
+      setCurrentStoreState(found || stores[0]);
+    }
+  }, [stores]);
+
+  // Persist current store selection
+  useEffect(() => {
+    if (currentStore) {
       localStorage.setItem(CURRENT_STORE_KEY, currentStore.id);
     }
-  }, [stores, currentStore]);
+  }, [currentStore?.id]);
+
+  // One-time migration of localStorage images to Storage
+  useEffect(() => {
+    if (!user || migrationStarted.current || localStorage.getItem(MIGRATION_DONE_KEY)) return;
+    if (stores.length === 0 || isLoading) return;
+
+    migrationStarted.current = true;
+    (async () => {
+      try {
+        const localImages = getLocalImages();
+        const productIds = Object.keys(localImages);
+        if (productIds.length === 0) {
+          localStorage.setItem(MIGRATION_DONE_KEY, '1');
+          return;
+        }
+
+        let migrated = 0;
+        for (const productId of productIds) {
+          const base64 = localImages[productId];
+          if (!base64) continue;
+          const url = await uploadProductImage(user.id, productId, base64);
+          if (url) {
+            await supabase.from('products').update({ image_url: url } as any).eq('id', productId).eq('user_id', user.id);
+            delete localImages[productId];
+            migrated++;
+          }
+        }
+
+        localStorage.setItem(LOCAL_IMAGES_KEY, JSON.stringify(localImages));
+        if (Object.keys(localImages).length === 0) localStorage.removeItem(LOCAL_IMAGES_KEY);
+        localStorage.setItem(MIGRATION_DONE_KEY, '1');
+
+        if (migrated > 0) {
+          toast.success(`${migrated} imagem(ns) migrada(s) para a nuvem`);
+          invalidate();
+        }
+      } catch {
+        // Silent — don't block the app
+      }
+    })();
+  }, [user?.id, stores, isLoading]);
+
+  const invalidate = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey });
+  }, [queryClient, queryKey]);
+
+  const retryLoad = useCallback(() => { refetch(); }, [refetch]);
 
   const setCurrentStore = useCallback((store: Store) => {
     setCurrentStoreState(store);
@@ -231,20 +252,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     if (error) { toast.error('Erro ao criar loja'); throw error; }
     const newStore = mapDbStore(data, []);
-    setStores(prev => [...prev, newStore]);
+    invalidate();
     if (!currentStore) setCurrentStoreState(newStore);
     return newStore;
-  }, [user, currentStore]);
+  }, [user, currentStore, invalidate]);
 
   const updateStore = useCallback(async (storeId: string, updates: Partial<Store>) => {
     const dbUpdates: any = {};
     if (updates.name !== undefined) dbUpdates.name = updates.name;
     const { error } = await supabase.from('stores').update(dbUpdates).eq('id', storeId);
     if (error) { toast.error('Erro ao atualizar loja'); return; }
-    setStores(prev => prev.map(store =>
-      store.id === storeId ? { ...store, ...updates, updatedAt: new Date() } : store
-    ));
-  }, []);
+    invalidate();
+  }, [invalidate]);
 
   const updateStoreConfig = useCallback(async (storeId: string, config: Partial<StoreConfig>) => {
     const dbConfig: any = {};
@@ -262,33 +281,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     const { error } = await supabase.from('stores').update(dbConfig).eq('id', storeId);
     if (error) { toast.error('Erro ao atualizar configuração'); return; }
-    setStores(prev => prev.map(store =>
-      store.id === storeId
-        ? { ...store, config: { ...store.config, ...config }, updatedAt: new Date() }
-        : store
-    ));
-  }, []);
+    invalidate();
+  }, [invalidate]);
 
   const deleteStore = useCallback(async (storeId: string) => {
-    // Delete products first, then store
     await supabase.from('products').delete().eq('store_id', storeId);
     const { error } = await supabase.from('stores').delete().eq('id', storeId);
     if (error) { toast.error('Erro ao excluir loja'); return; }
-    setStores(prev => {
-      const filtered = prev.filter(s => s.id !== storeId);
-      if (currentStore?.id === storeId && filtered.length > 0) {
-        setCurrentStoreState(filtered[0]);
-      } else if (filtered.length === 0) {
-        setCurrentStoreState(null);
-      }
-      return filtered;
-    });
-  }, [currentStore]);
+    if (currentStore?.id === storeId) setCurrentStoreState(null);
+    invalidate();
+  }, [currentStore, invalidate]);
 
   const addProduct = useCallback(async (productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<Product> => {
     if (!user) throw new Error('Não autenticado');
 
-    // Calculate stock from variations if applicable
     const hasVars = productData.hasVariations || false;
     const variations = productData.variations || [];
     const stockQty = hasVars && variations.length > 0
@@ -316,15 +322,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     if (error) { toast.error('Erro ao salvar produto'); throw error; }
 
-    // Upload image to Storage
     if (productData.imageUrl) {
       const url = await uploadProductImage(user.id, data.id, productData.imageUrl);
       if (url) {
-        // Save URL to DB
         await supabase.from('products').update({ image_url: url } as any).eq('id', data.id);
         (data as any).image_url = url;
       } else {
-        // Fallback: keep in localStorage
         const localImages = getLocalImages();
         localImages[data.id] = productData.imageUrl;
         localStorage.setItem(LOCAL_IMAGES_KEY, JSON.stringify(localImages));
@@ -332,15 +335,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
 
     const newProduct = mapDbProduct(data);
-
-    setStores(prev => prev.map(store =>
-      store.id === productData.storeId
-        ? { ...store, products: [...store.products, newProduct], updatedAt: new Date() }
-        : store
-    ));
-
+    invalidate();
     return newProduct;
-  }, [user]);
+  }, [user, invalidate]);
 
   const updateProduct = useCallback(async (productId: string, updates: Partial<Product>) => {
     const dbUpdates: any = {};
@@ -358,14 +355,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (updates.category !== undefined) dbUpdates.category = updates.category;
     if (updates.description !== undefined) dbUpdates.description = updates.description;
     if (updates.minStockQuantity !== undefined) dbUpdates.min_stock_quantity = updates.minStockQuantity;
-    // Recalculate stock from variations if applicable
     if (updates.variations !== undefined && updates.hasVariations !== false) {
       const vars = updates.variations || [];
       if (vars.length > 0) {
         dbUpdates.stock_quantity = vars.reduce((sum: number, v: any) => sum + (v.stockQuantity || 0), 0);
-        if (updates.stockQuantity === undefined) {
-          updates.stockQuantity = dbUpdates.stock_quantity;
-        }
       }
     }
 
@@ -374,13 +367,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (error) { toast.error('Erro ao atualizar produto'); return; }
     }
 
-    // Handle image upload/delete
     if (updates.imageUrl !== undefined && user) {
       if (updates.imageUrl) {
         const url = await uploadProductImage(user.id, productId, updates.imageUrl);
         if (url) {
           await supabase.from('products').update({ image_url: url } as any).eq('id', productId);
-          updates.imageUrl = url;
         }
       } else {
         await deleteProductImage(user.id, productId);
@@ -388,27 +379,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       }
     }
 
-    setStores(prev => prev.map(store => ({
-      ...store,
-      products: store.products.map(product =>
-        product.id === productId
-          ? { ...product, ...updates, updatedAt: new Date() }
-          : product
-      ),
-      updatedAt: store.products.some(p => p.id === productId) ? new Date() : store.updatedAt,
-    })));
-  }, [user]);
+    invalidate();
+  }, [user, invalidate]);
 
   const deleteProduct = useCallback(async (productId: string) => {
     if (user) await deleteProductImage(user.id, productId);
     const { error } = await supabase.from('products').delete().eq('id', productId);
     if (error) { toast.error('Erro ao excluir produto'); return; }
-    setStores(prev => prev.map(store => ({
-      ...store,
-      products: store.products.filter(p => p.id !== productId),
-      updatedAt: store.products.some(p => p.id === productId) ? new Date() : store.updatedAt,
-    })));
-  }, []);
+    invalidate();
+  }, [user, invalidate]);
 
   const duplicateProduct = useCallback(async (productId: string): Promise<Product | null> => {
     if (!user) return null;
@@ -440,7 +419,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     if (error) { toast.error('Erro ao duplicar produto'); return null; }
 
-    // Copy image for duplicated product
     if (original.imageUrl && user) {
       const url = await uploadProductImage(user.id, data.id, original.imageUrl);
       if (url) {
@@ -450,15 +428,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
 
     const duplicated = mapDbProduct(data);
-
-    setStores(prev => prev.map(store =>
-      store.id === original!.storeId
-        ? { ...store, products: [...store.products, duplicated], updatedAt: new Date() }
-        : store
-    ));
-
+    invalidate();
     return duplicated;
-  }, [user, stores]);
+  }, [user, stores, invalidate]);
 
   const calculateProduct = useCallback((product: Product, config: StoreConfig): ProductCalculation => {
     const grossRevenue = product.salePrice;
@@ -517,7 +489,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <StoreContext.Provider value={{
-      stores, currentStore, isLoading, loadError, retryLoad: loadData, setCurrentStore, addStore, updateStore, updateStoreConfig,
+      stores, currentStore, isLoading, loadError, retryLoad, setCurrentStore, addStore, updateStore, updateStoreConfig,
       deleteStore, addProduct, updateProduct, deleteProduct, duplicateProduct, calculateProduct, getStoreStats,
     }}>
       {children}
