@@ -39,7 +39,7 @@ const desktopQuickLinks = [
 export default function Home() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { currentStore, stores, addStore, addProduct, getStoreStats, calculateProduct, isLoading } = useStore();
+  const { currentStore, stores, addStore, addProduct, getStoreStats, calculateProduct, isLoading, loadError, retryLoad } = useStore();
   const { isActive, status, trialEnd } = useSubscription();
   const { stats: estoqueStats } = useEstoque();
   const { isAdmin } = useAdmin();
