@@ -119,6 +119,18 @@ export default function Products() {
     );
   }
 
+  if (loadError) {
+    return (
+      <AppLayout>
+        <PageHeader title="Produtos" showStoreSelector={false} />
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-6 text-center">
+          <p className="text-text-2 text-sm">Erro ao carregar seus dados.</p>
+          <button onClick={retryLoad} className="text-primary underline text-sm">Tentar novamente</button>
+        </div>
+      </AppLayout>
+    );
+  }
+
   if (!currentStore) {
     return (
       <AppLayout>

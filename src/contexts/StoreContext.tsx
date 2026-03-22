@@ -517,7 +517,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <StoreContext.Provider value={{
-      stores, currentStore, isLoading, setCurrentStore, addStore, updateStore, updateStoreConfig,
+      stores, currentStore, isLoading, loadError, retryLoad: loadData, setCurrentStore, addStore, updateStore, updateStoreConfig,
       deleteStore, addProduct, updateProduct, deleteProduct, duplicateProduct, calculateProduct, getStoreStats,
     }}>
       {children}
