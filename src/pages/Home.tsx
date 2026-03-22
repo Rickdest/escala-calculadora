@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Package, BarChart3, GraduationCap, Store, Warehouse, UserCircle, Settings2, ChevronRight, AlertTriangle, ArrowRight } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
@@ -14,8 +14,6 @@ import { QuickCalculator } from '@/components/home/QuickCalculator';
 import { HomeEducationCard } from '@/components/home/HomeEducationCard';
 import { ProductThumbnail } from '@/components/ProductThumbnail';
 import { useEstoque } from '@/hooks/useEstoque';
-import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel';
-import Autoplay from 'embla-carousel-autoplay';
 import { BannerCarousel } from '@/components/home/BannerCarousel';
 
 const toolItems = [
