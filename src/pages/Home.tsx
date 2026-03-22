@@ -19,10 +19,10 @@ import { useAdmin } from '@/hooks/useAdmin';
 
 const toolItems = [
   { icon: Plus, label: 'Precificar', isAccent: true, action: 'addProduct' as const },
-  { icon: Package, label: 'Produtos', route: '/products' },
-  { icon: BarChart3, label: 'ROAS', route: '/roas' },
+  { icon: ShoppingBag, label: 'Produtos', route: '/products' },
+  { icon: TrendingUp, label: 'Ads', route: '/roas' },
   { icon: GraduationCap, label: 'Educação', route: '/education' },
-  { icon: Warehouse, label: 'Estoque', route: '/stock' },
+  { icon: Boxes, label: 'Estoque', route: '/stock' },
   { icon: Settings2, label: 'Taxas da Loja', route: '/settings' },
   { icon: Store, label: 'Lojas', route: '/stores' },
   { icon: UserCircle, label: 'Perfil', route: '/profile' },
@@ -30,8 +30,8 @@ const toolItems = [
 
 
 const desktopQuickLinks = [
-  { icon: BarChart3, label: 'Análise de Ads', desc: 'ROAS real dos seus produtos', route: '/roas', color: 'text-blue-500', bg: 'bg-blue-500/10' },
-  { icon: Warehouse, label: 'Estoque', desc: 'Controle e alertas de reposição', route: '/stock', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  { icon: TrendingUp, label: 'Análise de Ads', desc: 'ROAS real dos seus produtos', route: '/roas', color: 'text-blue-500', bg: 'bg-blue-500/10' },
+  { icon: Boxes, label: 'Estoque', desc: 'Controle e alertas de reposição', route: '/stock', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
   { icon: GraduationCap, label: 'Educação', desc: 'Tutoriais e dicas exclusivas', route: '/education', color: 'text-amber-500', bg: 'bg-amber-500/10' },
   { icon: Settings2, label: 'Configurações', desc: 'Taxas e comissões da loja', route: '/settings', color: 'text-muted-foreground', bg: 'bg-muted/50' },
 ];
