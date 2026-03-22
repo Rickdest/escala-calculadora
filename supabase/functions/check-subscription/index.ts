@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
     // Fallback: verificar trial em profiles
     const { data: profile } = await adminClient
       .from("profiles")
-      .select("status, trial_fim, trial_inicio")
+      .select("status, trial_fim, trial_inicio, payment_status, payment_email")
       .eq("user_id", userId)
       .maybeSingle();
 

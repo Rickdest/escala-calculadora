@@ -1,6 +1,6 @@
 project_id = "ymliqayraprjwdcesvqc"
 
-[functions.hotmart-webhook]
+[functions.cakto-webhook]
 verify_jwt = false
 
 [functions.check-subscription]

@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-hotmart-hottok",
+    "authorization, x-client-info, apikey, content-type",
 };
 
 Deno.serve(async (req) => {
@@ -11,7 +11,6 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Only accept POST
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
@@ -22,7 +21,7 @@ Deno.serve(async (req) => {
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const HOTMART_HOTTOK = Deno.env.get("HOTMART_HOTTOK");
+    const CAKTO_WEBHOOK_SECRET = Deno.env.get("CAKTO_WEBHOOK_SECRET");
 
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       console.error("Missing Supabase env vars");
@@ -32,36 +31,32 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Validate hottok - MANDATORY
-    if (!HOTMART_HOTTOK) {
-      console.error("HOTMART_HOTTOK not configured");
+    if (!CAKTO_WEBHOOK_SECRET) {
+      console.error("CAKTO_WEBHOOK_SECRET not configured");
       return new Response(JSON.stringify({ error: "Server config error" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const hottok = req.headers.get("x-hotmart-hottok");
-    if (hottok !== HOTMART_HOTTOK) {
-      console.error("Invalid hottok");
+    const body = await req.json();
+
+    // Validate secret from body
+    const secret = body.secret || body.fields?.secret;
+    if (secret !== CAKTO_WEBHOOK_SECRET) {
+      console.error("Invalid webhook secret");
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const body = await req.json();
-    
-    // Log only event type, not full payload (avoid leaking PII)
-    const event = body.event || body.data?.event;
-    console.log("Hotmart webhook event:", event);
+    const event = body.event;
+    console.log("Cakto webhook event:", event);
 
-    const buyer = body.data?.buyer || body.buyer;
-    const purchase = body.data?.purchase || body.purchase;
-    const subscription = body.data?.subscription || body.subscription;
-
-    if (!buyer?.email || typeof buyer.email !== "string") {
-      return new Response(JSON.stringify({ error: "Missing buyer email" }), {
+    const customer = body.customer;
+    if (!customer?.email || typeof customer.email !== "string") {
+      return new Response(JSON.stringify({ error: "Missing customer email" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -69,7 +64,7 @@ Deno.serve(async (req) => {
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const email = buyer.email.toLowerCase().trim();
+    const email = customer.email.toLowerCase().trim();
     if (!emailRegex.test(email) || email.length > 255) {
       return new Response(JSON.stringify({ error: "Invalid email" }), {
         status: 400,
@@ -79,22 +74,22 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const transactionId = typeof purchase?.transaction === "string" 
-      ? purchase.transaction.slice(0, 100) : null;
-    const subscriptionId = typeof subscription?.subscriber?.code === "string" 
-      ? subscription.subscriber.code.slice(0, 100) : null;
+    const orderId = typeof body.id === "string" ? body.id.slice(0, 100) : null;
+    const refId = typeof body.refId === "string" ? body.refId.slice(0, 100) : null;
+    const subscriptionId = typeof body.subscription?.id === "string"
+      ? body.subscription.id.slice(0, 100) : null;
     const planName = (
-      typeof purchase?.offer?.code === "string" ? purchase.offer.code :
-      typeof body.data?.product?.name === "string" ? body.data.product.name : "pro"
+      typeof body.product?.name === "string" ? body.product.name : "pro"
     ).slice(0, 50);
 
-    // Map Hotmart events to subscription status
+    // Map Cakto events to subscription status
     const allowedEvents = [
-      "PURCHASE_APPROVED", "PURCHASE_COMPLETE",
-      "PURCHASE_CANCELED", "SUBSCRIPTION_CANCELLATION",
-      "PURCHASE_REFUNDED", "PURCHASE_CHARGEBACK",
-      "PURCHASE_DELAYED", "PURCHASE_PROTEST",
-      "SWITCH_PLAN",
+      "purchase_approved",
+      "refund",
+      "chargeback",
+      "subscription_canceled",
+      "subscription_renewed",
+      "subscription_renewal_refused",
     ];
 
     if (!allowedEvents.includes(event)) {
@@ -106,51 +101,30 @@ Deno.serve(async (req) => {
     }
 
     let status = "free";
-    let trialStart: string | null = null;
-    let trialEnd: string | null = null;
     let periodStart: string | null = null;
-    let periodEnd: string | null = null;
 
     switch (event) {
-      case "PURCHASE_APPROVED":
-      case "PURCHASE_COMPLETE":
+      case "purchase_approved":
+      case "subscription_renewed":
         status = "active";
         periodStart = new Date().toISOString();
-        if (purchase?.offer?.payment_mode === "SUBSCRIPTION" || subscription) {
-          if (subscription?.trial_period_days || purchase?.recurrence_number === 0) {
-            status = "trialing";
-            trialStart = new Date().toISOString();
-            const trialDays = Math.min(
-              Math.max(Number(subscription?.trial_period_days) || 7, 1),
-              90
-            );
-            trialEnd = new Date(Date.now() + trialDays * 86400000).toISOString();
-            periodEnd = trialEnd;
-          }
-        }
         break;
-      case "PURCHASE_CANCELED":
-      case "SUBSCRIPTION_CANCELLATION":
-      case "PURCHASE_REFUNDED":
-      case "PURCHASE_CHARGEBACK":
+      case "refund":
+      case "chargeback":
+      case "subscription_canceled":
         status = "canceled";
         break;
-      case "PURCHASE_DELAYED":
-      case "PURCHASE_PROTEST":
+      case "subscription_renewal_refused":
         status = "past_due";
-        break;
-      case "SWITCH_PLAN":
-        status = "active";
-        periodStart = new Date().toISOString();
         break;
     }
 
-    // Find user by email using admin API (O(1) lookup)
+    // Find user by email
     let userId: string | null = null;
     const { data: userByEmail } = await supabase.auth.admin.getUserByEmail(email);
     userId = userByEmail?.user?.id || null;
 
-    // Fallback: try looking up via profiles table
+    // Fallback: try profiles table
     if (!userId) {
       const { data: profileMatch } = await supabase
         .from("profiles")
@@ -169,12 +143,9 @@ Deno.serve(async (req) => {
     };
 
     if (userId) subscriptionData.user_id = userId;
-    if (transactionId) subscriptionData.hotmart_transaction_id = transactionId;
-    if (subscriptionId) subscriptionData.hotmart_subscription_id = subscriptionId;
-    if (trialStart) subscriptionData.trial_start = trialStart;
-    if (trialEnd) subscriptionData.trial_end = trialEnd;
+    if (orderId) subscriptionData.cakto_order_id = orderId;
+    if (subscriptionId) subscriptionData.cakto_subscription_id = subscriptionId;
     if (periodStart) subscriptionData.current_period_start = periodStart;
-    if (periodEnd) subscriptionData.current_period_end = periodEnd;
 
     // Upsert by email
     const { data: existing } = await supabase
