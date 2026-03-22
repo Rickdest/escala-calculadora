@@ -62,6 +62,36 @@ export type Database = {
           },
         ]
       }
+      banners: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          id: string
+          image_url: string
+          link_destino: string | null
+          ordem: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          id?: string
+          image_url: string
+          link_destino?: string | null
+          ordem?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          link_destino?: string | null
+          ordem?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       education_content: {
         Row: {
           content_data: Json
