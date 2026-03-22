@@ -172,7 +172,7 @@ export default function Home() {
   const emptyState = stats.totalProducts === 0 ? (
     <div className="text-center py-10 animate-fade-up">
       <div className="w-14 h-14 rounded-xl bg-surface-2 mx-auto flex items-center justify-center mb-3">
-        <Package className="w-7 h-7 text-text-3" />
+        <ShoppingBag className="w-7 h-7 text-text-3" />
       </div>
       <h3 className="font-semibold text-foreground mb-1">Nenhum produto ainda</h3>
       <p className="text-sm text-text-2 mb-5 max-w-xs mx-auto">Adicione seu primeiro produto para começar a precificar</p>
