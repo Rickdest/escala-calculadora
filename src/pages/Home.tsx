@@ -52,21 +52,6 @@ export default function Home() {
     }
   }, [searchParams]);
 
-  useEffect(() => {
-    if (!carouselApi) return;
-    const onSelect = () => setCurrentSlide(carouselApi.selectedScrollSnap());
-    carouselApi.on('select', onSelect);
-    onSelect();
-    return () => { carouselApi.off('select', onSelect); };
-  }, [carouselApi]);
-
-  const handleBannerClick = useCallback((slide: typeof bannerSlides[number]) => {
-    if ('action' in slide && slide.action === 'addProduct') {
-      setShowProductForm(true);
-    } else if ('route' in slide && slide.route) {
-      navigate(slide.route);
-    }
-  }, [navigate]);
 
   if (isLoading) {
     return (
