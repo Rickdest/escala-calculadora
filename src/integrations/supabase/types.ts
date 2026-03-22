@@ -503,9 +503,9 @@ export type Database = {
           created_at: string
           display_name: string | null
           email: string | null
-          hotmart_email: string | null
-          hotmart_status: string | null
           id: string
+          payment_email: string | null
+          payment_status: string | null
           push_subscription: Json | null
           status: string | null
           termos_aceitos_em: string | null
@@ -518,9 +518,9 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           email?: string | null
-          hotmart_email?: string | null
-          hotmart_status?: string | null
           id?: string
+          payment_email?: string | null
+          payment_status?: string | null
           push_subscription?: Json | null
           status?: string | null
           termos_aceitos_em?: string | null
@@ -533,9 +533,9 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           email?: string | null
-          hotmart_email?: string | null
-          hotmart_status?: string | null
           id?: string
+          payment_email?: string | null
+          payment_status?: string | null
           push_subscription?: Json | null
           status?: string | null
           termos_aceitos_em?: string | null
@@ -611,12 +611,12 @@ export type Database = {
       }
       subscriptions: {
         Row: {
+          cakto_order_id: string | null
+          cakto_subscription_id: string | null
           created_at: string
           current_period_end: string | null
           current_period_start: string | null
           email: string
-          hotmart_subscription_id: string | null
-          hotmart_transaction_id: string | null
           id: string
           plan: string
           status: string
@@ -626,12 +626,12 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cakto_order_id?: string | null
+          cakto_subscription_id?: string | null
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
           email: string
-          hotmart_subscription_id?: string | null
-          hotmart_transaction_id?: string | null
           id?: string
           plan?: string
           status?: string
@@ -641,12 +641,12 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cakto_order_id?: string | null
+          cakto_subscription_id?: string | null
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
           email?: string
-          hotmart_subscription_id?: string | null
-          hotmart_transaction_id?: string | null
           id?: string
           plan?: string
           status?: string
@@ -686,8 +686,8 @@ export type Database = {
       get_own_profile_protected: {
         Args: never
         Returns: {
-          hotmart_email: string
-          hotmart_status: string
+          payment_email: string
+          payment_status: string
           status: string
           trial_fim: string
           trial_inicio: string
@@ -700,8 +700,8 @@ export type Database = {
       }
       update_subscription_status: {
         Args: {
-          p_hotmart_email?: string
-          p_hotmart_status?: string
+          p_payment_email?: string
+          p_payment_status?: string
           p_status: string
           p_trial_fim?: string
           p_user_id: string
