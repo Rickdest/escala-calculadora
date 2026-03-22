@@ -42,6 +42,7 @@ export default function Home() {
   const { currentStore, stores, addStore, addProduct, getStoreStats, calculateProduct, isLoading } = useStore();
   const { isActive, status, trialEnd } = useSubscription();
   const { stats: estoqueStats } = useEstoque();
+  const { isAdmin } = useAdmin();
   const [showProductForm, setShowProductForm] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [prefillProduct, setPrefillProduct] = useState<Partial<import('@/types/store').Product> | null>(null);
