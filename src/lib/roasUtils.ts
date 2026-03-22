@@ -47,8 +47,7 @@ export function calcFullRoas(
   const pkg = config.enablePackaging ? packagingCost : 0;
   const affiliateCommission = config.enableAffiliateCommission ? sp * ((config.affiliateCommission || 0) / 100) : 0;
   const campaigns = config.enableShopeeCampaigns ? sp * ((config.shopeeCampaigns || 0) / 100) : 0;
-  const aceleraPercent = config.shopeeAcelera === 'indicado' ? 2.5 : config.shopeeAcelera === 'nao_indicado' ? 3.5 : 0;
-  const acelera = sp * (aceleraPercent / 100);
+  const acelera = sp * (SHOPEE_ACELERA_RATES[config.shopeeAcelera] ?? 0);
 
   const totalCosts = costPrice + pkg + totalShopeeFee + taxesCost + affiliateCommission + campaigns + acelera;
   const netProfit = sp - totalCosts;

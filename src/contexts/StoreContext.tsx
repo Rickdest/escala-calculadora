@@ -472,11 +472,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const shopeeCampaignsValue = config.enableShopeeCampaigns ? grossRevenue * ((config.shopeeCampaigns || 0) / 100) : 0;
 
     const productAcelera = product.shopeeAcelera !== 'none' ? product.shopeeAcelera : config.shopeeAcelera;
-    const aceleraCost = productAcelera === 'indicado'
-      ? grossRevenue * 0.05
-      : productAcelera === 'nao_indicado'
-        ? grossRevenue * 0.03
-        : 0;
+    const aceleraCost = grossRevenue * (SHOPEE_ACELERA_RATES[productAcelera] ?? 0);
 
     const totalCosts = product.costPrice + packagingCost + adsCost + totalShopeeFee + taxesValue + affiliateCommissionValue + shopeeCampaignsValue + aceleraCost;
     const netProfit = grossRevenue + adsRevenue - totalCosts;
