@@ -194,59 +194,6 @@ export default function Home() {
         {/* Banner Carousel from DB */}
         <BannerCarousel />
 
-        {/* Fallback static carousel if no DB banners */}
-        <div className="animate-fade-up">
-          <Carousel
-            setApi={setCarouselApi}
-            opts={{ loop: true }}
-            plugins={[Autoplay({ delay: 5000, stopOnInteraction: true })]}
-            className="w-full"
-          >
-            <CarouselContent className="-ml-0">
-              {bannerSlides.map((slide, i) => (
-                <CarouselItem key={i} className="pl-0">
-                  <button
-                    onClick={() => handleBannerClick(slide)}
-                    className={cn(
-                      'w-full rounded-xl p-4 text-left relative overflow-hidden transition-all active:scale-[0.99] h-[100px] flex flex-col justify-between',
-                      slide.bgClass
-                    )}
-                  >
-                    <span className="absolute top-3 right-3 text-5xl opacity-20 select-none">{slide.emoji}</span>
-                    <div className="relative z-10">
-                      <h2 className={cn('text-sm font-bold mb-0.5 leading-tight', slide.textClass)}>
-                        {slide.title}
-                      </h2>
-                      <p className={cn('text-[11px] opacity-90 max-w-[70%]', slide.textClass)}>
-                        {slide.subtitle}
-                      </p>
-                    </div>
-                    <div className="relative z-10">
-                      <span className={cn(
-                        'inline-flex items-center gap-1 h-6 px-3 rounded-md text-[11px] font-semibold bg-white/20 backdrop-blur-sm',
-                        slide.textClass
-                      )}>
-                        {slide.cta}
-                      </span>
-                    </div>
-                  </button>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-          </Carousel>
-          <div className="flex justify-center gap-1.5 mt-2">
-            {bannerSlides.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => carouselApi?.scrollTo(i)}
-                className={cn(
-                  'w-2 h-2 rounded-full transition-all',
-                  i === currentSlide ? 'bg-primary w-5' : 'bg-border'
-                )}
-              />
-            ))}
-          </div>
-        </div>
 
         {/* QuickCalculator */}
         <QuickCalculator onSaveProduct={onSaveFromCalc} />
