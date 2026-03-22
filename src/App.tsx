@@ -24,6 +24,7 @@ const Stock = lazy(() => import("./pages/Stock"));
 const Roas = lazy(() => import("./pages/Roas"));
 const Paywall = lazy(() => import("./pages/Paywall"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const AdminBanners = lazy(() => import("./pages/AdminBanners"));
 
 const queryClient = new QueryClient({
   defaultOptions: {

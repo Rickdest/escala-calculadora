@@ -239,7 +239,10 @@ export default function Home() {
           {expiredCta}
         </div>
 
-        {/* Banner Carousel */}
+        {/* Banner Carousel from DB */}
+        <BannerCarousel />
+
+        {/* Fallback static carousel if no DB banners */}
         <div className="animate-fade-up">
           <Carousel
             setApi={setCarouselApi}
