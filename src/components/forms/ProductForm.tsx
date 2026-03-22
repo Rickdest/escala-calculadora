@@ -106,7 +106,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
       const productData = {
         ...(product?.id && { id: product.id }),
         storeId: currentStore.id,
-        name,
+        name: name.trim(),
         costPrice: parseFloat(costPrice) || 0,
         salePrice: parseFloat(salePrice) || 0,
         packagingCost: parseFloat(packagingCost) || 0,
