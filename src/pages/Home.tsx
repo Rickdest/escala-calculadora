@@ -27,35 +27,6 @@ const toolItems = [
   { icon: UserCircle, label: 'Perfil', route: '/profile' },
 ];
 
-const bannerSlides = [
-  {
-    title: 'Precifique com precisão',
-    subtitle: 'Calcule custos, taxas e margem real dos seus produtos Shopee',
-    cta: 'Precificar produto',
-    emoji: '🎯',
-    action: 'addProduct' as const,
-    bgClass: 'bg-gradient-to-br from-primary to-primary/80',
-    textClass: 'text-primary-foreground',
-  },
-  {
-    title: 'Analise seus Ads',
-    subtitle: 'Importe o CSV da Shopee e descubra o ROAS real de cada produto',
-    cta: 'Ver Análise →',
-    emoji: '📊',
-    route: '/roas',
-    bgClass: 'bg-gradient-to-br from-blue-600 to-blue-500',
-    textClass: 'text-white',
-  },
-  {
-    title: 'Controle seu Estoque',
-    subtitle: 'Cadastre variações e receba alertas automáticos de reposição',
-    cta: 'Ver Estoque →',
-    emoji: '📦',
-    route: '/stock',
-    bgClass: 'bg-gradient-to-br from-emerald-600 to-emerald-500',
-    textClass: 'text-white',
-  },
-];
 
 const desktopQuickLinks = [
   { icon: BarChart3, label: 'Análise de Ads', desc: 'ROAS real dos seus produtos', route: '/roas', color: 'text-blue-500', bg: 'bg-blue-500/10' },
