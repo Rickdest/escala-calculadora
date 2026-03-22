@@ -68,7 +68,7 @@ function mapDbProduct(p: Tables<'products'>): Product {
   };
 }
 
-function mapDbStore(s: any, products: Product[]): Store {
+function mapDbStore(s: Tables<'stores'>, products: Product[]): Store {
   return {
     id: s.id,
     name: s.name,
