@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Store, Product, StoreConfig, DEFAULT_STORE_CONFIG, ProductCalculation, getShopeeFeeForPrice, ShopeeAceleraOption } from '@/types/store';
+import { Store, Product, StoreConfig, DEFAULT_STORE_CONFIG, ProductCalculation, getShopeeFeeForPrice, ShopeeAceleraOption, SHOPEE_ACELERA_RATES } from '@/types/store';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -472,11 +472,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     const shopeeCampaignsValue = config.enableShopeeCampaigns ? grossRevenue * ((config.shopeeCampaigns || 0) / 100) : 0;
 
     const productAcelera = product.shopeeAcelera !== 'none' ? product.shopeeAcelera : config.shopeeAcelera;
-    const aceleraCost = productAcelera === 'indicado'
-      ? grossRevenue * 0.05
-      : productAcelera === 'nao_indicado'
-        ? grossRevenue * 0.03
-        : 0;
+    const aceleraCost = grossRevenue * (SHOPEE_ACELERA_RATES[productAcelera] ?? 0);
 
     const totalCosts = product.costPrice + packagingCost + adsCost + totalShopeeFee + taxesValue + affiliateCommissionValue + shopeeCampaignsValue + aceleraCost;
     const netProfit = grossRevenue + adsRevenue - totalCosts;

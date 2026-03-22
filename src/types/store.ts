@@ -13,6 +13,12 @@ export const SHOPEE_FEE_RANGES: ShopeeFeeRange[] = [
   { minPrice: 300, maxPrice: null, percent: 14, fixed: 26, label: 'Acima de R$300' },
 ];
 
+export const SHOPEE_ACELERA_RATES: Record<string, number> = {
+  indicado: 0.025,
+  nao_indicado: 0.035,
+  none: 0,
+};
+
 export function getShopeeFeeForPrice(salePrice: number): ShopeeFeeRange {
   for (const range of SHOPEE_FEE_RANGES) {
     if (range.maxPrice === null || salePrice <= range.maxPrice) {
