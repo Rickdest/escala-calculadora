@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Store, Product, StoreConfig, DEFAULT_STORE_CONFIG, ProductCalculation, getShopeeFeeForPrice, ShopeeAceleraOption, SHOPEE_ACELERA_RATES } from '@/types/store';
+import { Tables } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -32,9 +33,9 @@ function getLocalImages(): Record<string, string> {
   try { return JSON.parse(localStorage.getItem(LOCAL_IMAGES_KEY) || '{}'); } catch { return {}; }
 }
 
-function mapDbProduct(p: any): Product {
-  const variations = p.variations ?? [];
-  const attributes = p.attributes ?? [];
+function mapDbProduct(p: Tables<'products'>): Product {
+  const variations = (p.variations ?? []) as unknown as Product['variations'];
+  const attributes = (p.attributes ?? []) as unknown as Product['attributes'];
   const hasVariations = p.has_variations ?? false;
   const stockQuantity = hasVariations && variations.length > 0
     ? variations.reduce((sum: number, v: any) => sum + (Number(v.stockQuantity) || 0), 0)
@@ -67,7 +68,7 @@ function mapDbProduct(p: any): Product {
   };
 }
 
-function mapDbStore(s: any, products: Product[]): Store {
+function mapDbStore(s: Tables<'stores'>, products: Product[]): Store {
   return {
     id: s.id,
     name: s.name,
@@ -157,8 +158,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (storesErr) throw storesErr;
       if (productsErr) throw productsErr;
 
-      const products = (productsData || []).map((p: any) => mapDbProduct(p));
-      const loaded = (storesData || []).map((s: any) => mapDbStore(s, products));
+      const products = (productsData || []).map((p) => mapDbProduct(p));
+      const loaded = (storesData || []).map((s) => mapDbStore(s, products));
 
       if (loaded.length > 0) {
         setStores(loaded);
