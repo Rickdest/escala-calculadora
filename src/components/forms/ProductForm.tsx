@@ -139,7 +139,10 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
     }
   };
 
-  const isValid = name && costPrice && salePrice;
+  const isValid =
+    name.trim().length > 0 &&
+    parseFloat(costPrice) > 0 &&
+    parseFloat(salePrice) > 0;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm animate-fade-up">
