@@ -44,8 +44,6 @@ export default function Home() {
   const [showProductForm, setShowProductForm] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [prefillProduct, setPrefillProduct] = useState<Partial<import('@/types/store').Product> | null>(null);
-  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
-  const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
     if (searchParams.get('new') === '1') {
