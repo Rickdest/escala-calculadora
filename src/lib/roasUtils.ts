@@ -1,4 +1,4 @@
-import { Product, StoreConfig, getShopeeFeeForPrice } from '@/types/store';
+import { Product, StoreConfig, getShopeeFeeForPrice, SHOPEE_ACELERA_RATES } from '@/types/store';
 
 export interface RoasCostBreakdown {
   costPrice: number;
