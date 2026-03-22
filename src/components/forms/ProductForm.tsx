@@ -100,13 +100,13 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentStore || !name || !costPrice || !salePrice) return;
+    if (!currentStore || !name.trim() || parseFloat(costPrice) <= 0 || parseFloat(salePrice) <= 0) return;
     setIsSaving(true);
     try {
       const productData = {
         ...(product?.id && { id: product.id }),
         storeId: currentStore.id,
-        name,
+        name: name.trim(),
         costPrice: parseFloat(costPrice) || 0,
         salePrice: parseFloat(salePrice) || 0,
         packagingCost: parseFloat(packagingCost) || 0,
@@ -139,7 +139,10 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
     }
   };
 
-  const isValid = name && costPrice && salePrice;
+  const isValid =
+    name.trim().length > 0 &&
+    parseFloat(costPrice) > 0 &&
+    parseFloat(salePrice) > 0;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm animate-fade-up">
