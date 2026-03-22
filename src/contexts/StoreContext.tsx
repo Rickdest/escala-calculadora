@@ -33,7 +33,7 @@ function getLocalImages(): Record<string, string> {
   try { return JSON.parse(localStorage.getItem(LOCAL_IMAGES_KEY) || '{}'); } catch { return {}; }
 }
 
-function mapDbProduct(p: any): Product {
+function mapDbProduct(p: Tables<'products'>): Product {
   const variations = p.variations ?? [];
   const attributes = p.attributes ?? [];
   const hasVariations = p.has_variations ?? false;
