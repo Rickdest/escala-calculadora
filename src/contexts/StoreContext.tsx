@@ -194,6 +194,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         migrateLocalImages(user.id, products);
       }
     } catch (err) {
+      setLoadError(true);
       toast.error('Erro ao carregar dados da nuvem');
     } finally {
       setIsLoading(false);
