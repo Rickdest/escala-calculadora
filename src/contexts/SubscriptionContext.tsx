@@ -1,6 +1,7 @@
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { checkSubscription, SubscriptionData } from '@/services/billing.service';
+import { toast } from 'sonner';
 
 type SubscriptionStatus = 'free' | 'trialing' | 'active' | 'canceled' | 'past_due' | 'expired' | 'loading';
 
@@ -30,6 +31,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [plan, setPlan] = useState('free');
   const [trialEnd, setTrialEnd] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const lastKnownStatus = useRef<{ status: SubscriptionStatus; plan: string; trialEnd: string | null } | null>(null);
 
   const fetchSubscription = useCallback(async (noCache = false) => {
     if (!user || !session?.access_token) {
@@ -49,13 +51,22 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         checkSubscription(session.access_token, noCache),
         timeoutPromise,
       ]);
-      setStatus(STATUS_MAP[data.status] || 'expired');
+      const newStatus = STATUS_MAP[data.status] || 'expired';
+      lastKnownStatus.current = { status: newStatus, plan: data.plan, trialEnd: data.trialEnd };
+      setStatus(newStatus);
       setPlan(data.plan);
       setTrialEnd(data.trialEnd);
     } catch {
-      setStatus('expired');
-      setPlan('free');
-      setTrialEnd(null);
+      if (lastKnownStatus.current) {
+        setStatus(lastKnownStatus.current.status);
+        setPlan(lastKnownStatus.current.plan);
+        setTrialEnd(lastKnownStatus.current.trialEnd);
+        toast.warning('Não foi possível verificar sua assinatura. Usando dados anteriores.');
+      } else {
+        setStatus('expired');
+        setPlan('free');
+        setTrialEnd(null);
+      }
     } finally {
       setLoading(false);
     }
