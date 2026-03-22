@@ -10,6 +10,8 @@ interface StoreContextType {
   stores: Store[];
   currentStore: Store | null;
   isLoading: boolean;
+  loadError: boolean;
+  retryLoad: () => void;
   setCurrentStore: (store: Store) => void;
   addStore: (name: string) => Promise<Store>;
   updateStore: (storeId: string, updates: Partial<Store>) => Promise<void>;
@@ -97,6 +99,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [stores, setStores] = useState<Store[]>([]);
   const [currentStore, setCurrentStoreState] = useState<Store | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   // Load from Supabase when user changes
   useEffect(() => {
@@ -149,6 +152,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const loadData = async () => {
     if (!user) return;
     setIsLoading(true);
+    setLoadError(false);
     try {
       const [{ data: storesData, error: storesErr }, { data: productsData, error: productsErr }] = await Promise.all([
         supabase.from('stores').select('*').eq('user_id', user.id),
@@ -190,6 +194,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         migrateLocalImages(user.id, products);
       }
     } catch (err) {
+      setLoadError(true);
       toast.error('Erro ao carregar dados da nuvem');
     } finally {
       setIsLoading(false);
@@ -512,7 +517,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <StoreContext.Provider value={{
-      stores, currentStore, isLoading, setCurrentStore, addStore, updateStore, updateStoreConfig,
+      stores, currentStore, isLoading, loadError, retryLoad: loadData, setCurrentStore, addStore, updateStore, updateStoreConfig,
       deleteStore, addProduct, updateProduct, deleteProduct, duplicateProduct, calculateProduct, getStoreStats,
     }}>
       {children}

@@ -39,7 +39,7 @@ const desktopQuickLinks = [
 export default function Home() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { currentStore, stores, addStore, addProduct, getStoreStats, calculateProduct, isLoading } = useStore();
+  const { currentStore, stores, addStore, addProduct, getStoreStats, calculateProduct, isLoading, loadError, retryLoad } = useStore();
   const { isActive, status, trialEnd } = useSubscription();
   const { stats: estoqueStats } = useEstoque();
   const { isAdmin } = useAdmin();
@@ -61,6 +61,17 @@ export default function Home() {
         <div className="flex flex-col items-center justify-center min-h-[85vh]">
           <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mb-4" />
           <p className="text-text-2 text-sm">Carregando...</p>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center min-h-[85vh] gap-4 px-6 text-center">
+          <p className="text-text-2 text-sm">Erro ao carregar seus dados.</p>
+          <button onClick={retryLoad} className="text-primary underline text-sm">Tentar novamente</button>
         </div>
       </AppLayout>
     );

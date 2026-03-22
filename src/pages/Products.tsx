@@ -38,7 +38,7 @@ const analysisSortOptions: { value: SortOption; label: string }[] = [
 ];
 
 export default function Products() {
-  const { currentStore, addProduct, updateProduct, deleteProduct, duplicateProduct, calculateProduct, getStoreStats, isLoading } = useStore();
+  const { currentStore, addProduct, updateProduct, deleteProduct, duplicateProduct, calculateProduct, getStoreStats, isLoading, loadError, retryLoad } = useStore();
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -114,6 +114,18 @@ export default function Products() {
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
           <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mb-4" />
           <p className="text-text-2 text-sm">Carregando...</p>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <AppLayout>
+        <PageHeader title="Produtos" showStoreSelector={false} />
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-6 text-center">
+          <p className="text-text-2 text-sm">Erro ao carregar seus dados.</p>
+          <button onClick={retryLoad} className="text-primary underline text-sm">Tentar novamente</button>
         </div>
       </AppLayout>
     );
