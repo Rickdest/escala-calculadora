@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Package, BarChart3, GraduationCap, Store, Warehouse, UserCircle, Settings2, ChevronRight, AlertTriangle, ArrowRight } from 'lucide-react';
+import { Plus, Package, BarChart3, GraduationCap, Store, Warehouse, UserCircle, Settings2, ChevronRight, AlertTriangle, ArrowRight, Image as ImageIcon } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -15,6 +15,7 @@ import { HomeEducationCard } from '@/components/home/HomeEducationCard';
 import { ProductThumbnail } from '@/components/ProductThumbnail';
 import { useEstoque } from '@/hooks/useEstoque';
 import { BannerCarousel } from '@/components/home/BannerCarousel';
+import { useAdmin } from '@/hooks/useAdmin';
 
 const toolItems = [
   { icon: Plus, label: 'Precificar', isAccent: true, action: 'addProduct' as const },
@@ -41,6 +42,7 @@ export default function Home() {
   const { currentStore, stores, addStore, addProduct, getStoreStats, calculateProduct, isLoading } = useStore();
   const { isActive, status, trialEnd } = useSubscription();
   const { stats: estoqueStats } = useEstoque();
+  const { isAdmin } = useAdmin();
   const [showProductForm, setShowProductForm] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [prefillProduct, setPrefillProduct] = useState<Partial<import('@/types/store').Product> | null>(null);
@@ -193,6 +195,18 @@ export default function Home() {
 
         {/* Banner Carousel from DB */}
         <BannerCarousel />
+
+        {/* Admin: link to manage banners */}
+        {isAdmin && (
+          <button
+            onClick={() => navigate('/admin/banners')}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-2 text-text-2 text-xs hover:bg-surface-2/80 transition-colors"
+          >
+            <ImageIcon className="w-3.5 h-3.5" />
+            <span>Gerenciar Banners</span>
+            <ChevronRight className="w-3.5 h-3.5 ml-auto" />
+          </button>
+        )}
 
 
         {/* QuickCalculator */}
