@@ -158,8 +158,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (storesErr) throw storesErr;
       if (productsErr) throw productsErr;
 
-      const products = (productsData || []).map((p: any) => mapDbProduct(p));
-      const loaded = (storesData || []).map((s: any) => mapDbStore(s, products));
+      const products = (productsData || []).map((p) => mapDbProduct(p));
+      const loaded = (storesData || []).map((s) => mapDbStore(s, products));
 
       if (loaded.length > 0) {
         setStores(loaded);
