@@ -100,7 +100,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentStore || !name || !costPrice || !salePrice) return;
+    if (!currentStore || !name.trim() || parseFloat(costPrice) <= 0 || parseFloat(salePrice) <= 0) return;
     setIsSaving(true);
     try {
       const productData = {
