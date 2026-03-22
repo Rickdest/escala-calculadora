@@ -16,6 +16,7 @@ import { ProductThumbnail } from '@/components/ProductThumbnail';
 import { useEstoque } from '@/hooks/useEstoque';
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel';
 import Autoplay from 'embla-carousel-autoplay';
+import { BannerCarousel } from '@/components/home/BannerCarousel';
 
 const toolItems = [
   { icon: Plus, label: 'Precificar', isAccent: true, action: 'addProduct' as const },
@@ -238,7 +239,10 @@ export default function Home() {
           {expiredCta}
         </div>
 
-        {/* Banner Carousel */}
+        {/* Banner Carousel from DB */}
+        <BannerCarousel />
+
+        {/* Fallback static carousel if no DB banners */}
         <div className="animate-fade-up">
           <Carousel
             setApi={setCarouselApi}
