@@ -25,6 +25,7 @@ const Roas = lazy(() => import("./pages/Roas"));
 const Paywall = lazy(() => import("./pages/Paywall"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const AdminBanners = lazy(() => import("./pages/AdminBanners"));
+const Calculators = lazy(() => import("./pages/Calculators"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -108,6 +109,7 @@ const App = () => (
                   <Route path="/roas" element={<ProtectedRoute><Roas /></ProtectedRoute>} />
                   <Route path="/paywall" element={<Paywall />} />
                   <Route path="/admin/banners" element={<ProtectedRoute><AdminBanners /></ProtectedRoute>} />
+                  <Route path="/calculadoras" element={<ProtectedRoute><Calculators /></ProtectedRoute>} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
