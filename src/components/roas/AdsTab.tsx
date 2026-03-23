@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import {
   Upload, TrendingUp, TrendingDown, AlertTriangle, Zap, Package,
   MapPin, ClipboardList, Search, RefreshCw, Link2, Unlink, Trash2,
-  Megaphone, Eye, MousePointerClick, ShoppingCart, FileText
+  Megaphone, Eye, MousePointerClick, ShoppingCart, FileText, Clock
 } from 'lucide-react';
 import { AdsDetailView } from './AdsDetailView';
 import { AdsLinkModal } from './AdsLinkModal';
@@ -102,6 +102,10 @@ function FilterChips({ filter, setFilter, data }: { filter: FilterType; setFilte
 }
 
 // ─── Product Card ───
+function getDiasPeriodo(inicio: string, fim: string): number {
+  return Math.ceil((new Date(fim).getTime() - new Date(inicio).getTime()) / (1000 * 60 * 60 * 24));
+}
+
 function AdsProductCard({
   ad, onClick, onLink, onUpdatePosition,
 }: {
@@ -118,6 +122,8 @@ function AdsProductCard({
   })();
 
   const roasDireto = ad.roas_direto || ad.roas;
+  const dias = getDiasPeriodo(ad.periodo_inicio, ad.periodo_fim);
+  const emAprendizado = dias < 7;
 
   return (
     <div
@@ -133,10 +139,15 @@ function AdsProductCard({
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className={cn('inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[10px] font-bold', cls.bg, cls.color)}>
               <ClsIcon className="w-3 h-3" /> {cls.label}
             </span>
+            {emAprendizado && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-primary/30 bg-primary/10 text-[10px] font-bold text-primary">
+                <Clock className="w-3 h-3" /> Aprendizado
+              </span>
+            )}
           </div>
           <p className="text-sm font-bold text-foreground truncate mt-1">{ad.nome_produto_csv}</p>
           <p className="text-[11px] text-muted-foreground font-mono tabular-nums">{periodLabel}</p>

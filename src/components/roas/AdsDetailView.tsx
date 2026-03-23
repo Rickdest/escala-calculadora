@@ -3,7 +3,7 @@ import { useStore } from '@/contexts/StoreContext';
 import {
   X, TrendingUp, TrendingDown, AlertTriangle, Target, Zap, MapPin,
   Eye, MousePointerClick, ShoppingCart, DollarSign, Percent, Upload,
-  Link2, BarChart3, Info
+  Link2, BarChart3, Info, Clock, Wallet
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,10 @@ function Stat({ label, value, sub, icon: Icon }: { label: string; value: string;
       {sub && <p className="text-[10px] text-muted-foreground">{sub}</p>}
     </div>
   );
+}
+
+function getDiasPeriodo(inicio: string, fim: string): number {
+  return Math.ceil((new Date(fim).getTime() - new Date(inicio).getTime()) / (1000 * 60 * 60 * 24));
 }
 
 export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) {
@@ -76,6 +80,31 @@ export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) 
   const custoVenda = ad.itens_vendidos > 0 ? ad.despesas / ad.itens_vendidos : 0;
   const lucroPorVenda = empateResult ? empateResult.lucroPorUnidade - custoVenda : null;
 
+  const dias = getDiasPeriodo(ad.periodo_inicio, ad.periodo_fim);
+  const emAprendizado = dias < 7;
+
+  // Custo vs Lucro calculations
+  const custoPorPedido = ad.conversoes > 0 ? ad.despesas / ad.conversoes : 0;
+  const custoPorUnidade = ad.itens_vendidos > 0 ? ad.despesas / ad.itens_vendidos : 0;
+  const sobraPorVenda = empateResult ? empateResult.lucroPorUnidade - custoPorUnidade : null;
+  const lucroTotalPeriodo = sobraPorVenda !== null ? sobraPorVenda * ad.itens_vendidos : null;
+  const pctConsumo = empateResult && empateResult.lucroPorUnidade > 0 ? (custoPorUnidade / empateResult.lucroPorUnidade) * 100 : null;
+
+  // ACOS vs Margem
+  const acosDireto = ad.acos_direto || ad.acos;
+  const folgaAcosMargem = margemContrib !== null ? margemContrib - acosDireto : null;
+
+  // Orçamento sugerido
+  const custoConversao = ad.custo_por_conversao || custoPorPedido;
+  const orcamentoProtecao = custoConversao * 5;
+  const orcamentoMinimo = custoConversao * 3;
+  const convPorDia = dias > 0 ? (ad.conversoes || 0) / dias : 0;
+  const qualificaProtecao = convPorDia >= 5;
+
+  // Bid type detection
+  const isMetaRoas = ad.metodo_lance?.toLowerCase().includes('meta de roas') || ad.metodo_lance?.toLowerCase().includes('target roas');
+  const isAutomatic = ad.metodo_lance?.toLowerCase().includes('automático') || ad.metodo_lance?.toLowerCase().includes('automatic');
+
   const periodLabel = (() => {
     const f = (d: string) => { const [y, m, dd] = d.split('-'); return `${dd}/${m}/${y}`; };
     return `${f(ad.periodo_inicio)} – ${f(ad.periodo_fim)}`;
@@ -101,7 +130,7 @@ export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) 
           )}
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-foreground text-sm truncate">{ad.nome_produto_csv}</h3>
-            <p className="text-[11px] text-muted-foreground font-mono tabular-nums">{periodLabel}</p>
+            <p className="text-[11px] text-muted-foreground font-mono tabular-nums">{periodLabel} ({dias} dias)</p>
           </div>
           <button onClick={onClose} className="p-1.5 hover:bg-secondary rounded-lg">
             <X className="w-4 h-4 text-muted-foreground" />
@@ -109,6 +138,17 @@ export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) 
         </div>
 
         <div className="p-4 space-y-4 overflow-y-auto flex-1">
+          {/* 1. Learning Phase Warning */}
+          {emAprendizado && (
+            <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 flex items-start gap-2.5">
+              <Clock className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-foreground">Fase de aprendizado</p>
+                <p className="text-[11px] text-muted-foreground">Anúncio com apenas {dias} dias. Aguarde 7 dias antes de tomar decisões. O algoritmo ainda está otimizando.</p>
+              </div>
+            </div>
+          )}
+
           {/* Section 1: Status */}
           {classification ? (
             <div className={cn('rounded-xl border p-4 space-y-2', `bg-${statusColor}/10 border-${statusColor}/30`)}>
@@ -164,6 +204,81 @@ export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) 
             <Stat icon={Percent} label="ACOS" value={`${ad.acos.toFixed(1)}%`} sub={margemContrib ? `Margem: ${margemContrib.toFixed(1)}%` : undefined} />
           </div>
 
+          {/* 2. Custo vs Lucro por Venda */}
+          {empateResult && ad.itens_vendidos > 0 && (
+            <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+              <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground flex items-center gap-1.5">
+                <Wallet className="w-3.5 h-3.5 text-primary" /> Custo vs Lucro por Venda
+              </p>
+              <div className="space-y-1.5 text-xs font-mono tabular-nums">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Custo por pedido:</span>
+                  <span className="font-bold">{fmt(custoPorPedido)}</span>
+                </div>
+                {ad.itens_vendidos !== (ad.conversoes || 0) && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Custo por unidade:</span>
+                    <span className="font-bold">{fmt(custoPorUnidade)} <span className="text-[10px] text-muted-foreground">({ad.itens_vendidos} itens/{ad.conversoes || 0} ped.)</span></span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Lucro por unidade:</span>
+                  <span className="font-bold">{fmt(empateResult.lucroPorUnidade)}</span>
+                </div>
+                <div className="border-t border-dashed border-border pt-1.5">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground font-bold">Sobra por venda:</span>
+                    <span className={cn('font-extrabold', sobraPorVenda !== null && sobraPorVenda >= 0 ? 'text-success' : 'text-destructive')}>
+                      {sobraPorVenda !== null ? (sobraPorVenda >= 0 ? fmt(sobraPorVenda) + ' ✅' : `Prejuízo de ${fmt(Math.abs(sobraPorVenda))} 🔴`) : '—'}
+                    </span>
+                  </div>
+                  {lucroTotalPeriodo !== null && (
+                    <div className="flex justify-between mt-1">
+                      <span className="text-muted-foreground">Lucro total período:</span>
+                      <span className={cn('font-bold', lucroTotalPeriodo >= 0 ? 'text-success' : 'text-destructive')}>{fmt(lucroTotalPeriodo)}</span>
+                    </div>
+                  )}
+                </div>
+                {pctConsumo !== null && (
+                  <p className="text-[11px] text-muted-foreground pt-1">
+                    O ads consome {pctConsumo.toFixed(1)}% do lucro por unidade
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 4. ACOS vs Margem */}
+          {margemContrib !== null && (
+            <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+              <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">ACOS vs Margem</p>
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-muted-foreground w-12">ACOS</span>
+                  <div className="flex-1 h-3 rounded-full bg-secondary overflow-hidden">
+                    <div className={cn('h-full rounded-full', acosDireto <= margemContrib ? 'bg-primary' : 'bg-destructive')} style={{ width: `${Math.min((acosDireto / Math.max(margemContrib, 1)) * 100, 100)}%` }} />
+                  </div>
+                  <span className="text-xs font-bold font-mono tabular-nums w-14 text-right">{acosDireto.toFixed(1)}%</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-muted-foreground w-12">Margem</span>
+                  <div className="flex-1 h-3 rounded-full bg-secondary overflow-hidden">
+                    <div className="h-full rounded-full bg-success" style={{ width: `${Math.min(100, (margemContrib / Math.max(margemContrib, 1)) * 100)}%` }} />
+                  </div>
+                  <span className="text-xs font-bold font-mono tabular-nums w-14 text-right">{margemContrib.toFixed(1)}%</span>
+                </div>
+              </div>
+              {folgaAcosMargem !== null && (
+                <p className={cn('text-xs font-bold', folgaAcosMargem > 0 ? 'text-success' : 'text-destructive')}>
+                  {folgaAcosMargem > 0
+                    ? `Folga: ${folgaAcosMargem.toFixed(2)}% ✅ — O ads consome ${acosDireto.toFixed(1)}% do faturamento. Sua margem é ${margemContrib.toFixed(1)}%. Sobram ${folgaAcosMargem.toFixed(2)}%.`
+                    : `ACOS maior que margem 🔴 — O custo de publicidade (${acosDireto.toFixed(1)}%) supera sua margem (${margemContrib.toFixed(1)}%).`
+                  }
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Section 3: Geral vs Direto */}
           {ad.roas_direto > 0 && (
             <div className="rounded-xl border border-border bg-secondary/30 p-3 space-y-2">
@@ -182,21 +297,57 @@ export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) 
             </div>
           )}
 
-          {/* Section 4: Config + Meta ROAS */}
+          {/* Section 4: Config + Meta ROAS + 3. Diagnóstico por tipo de lance + 5. Orçamento */}
           {(ad.metodo_lance || metaRoas) && (
             <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+              {/* 3. Bid type diagnosis */}
               {ad.metodo_lance && (
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="text-muted-foreground">Tipo:</span>
-                  <span className="font-bold text-foreground">{ad.metodo_lance}</span>
+                <div className="space-y-1.5">
+                  {isMetaRoas ? (
+                    <>
+                      <div className="flex items-center gap-2 text-xs">
+                        <TrendingUp className="w-3.5 h-3.5 text-success" />
+                        <span className="font-bold text-foreground">Tipo: {ad.metodo_lance}</span>
+                      </div>
+                      <ul className="text-[11px] text-muted-foreground space-y-0.5 ml-5">
+                        <li>• Você define a meta, algoritmo otimiza</li>
+                        <li>• Proteção de ROAS: {convPorDia >= 5 ? <span className="text-success font-bold">Ativa ✓</span> : <span className="text-warning font-bold">Inativa (precisa ≥5 conv/dia, atual: {convPorDia.toFixed(1)})</span>}</li>
+                      </ul>
+                    </>
+                  ) : isAutomatic ? (
+                    <>
+                      <div className="flex items-center gap-2 text-xs">
+                        <AlertTriangle className="w-3.5 h-3.5 text-warning" />
+                        <span className="font-bold text-foreground">Tipo: {ad.metodo_lance}</span>
+                      </div>
+                      <ul className="text-[11px] text-muted-foreground space-y-0.5 ml-5">
+                        <li>• Sem meta de ROAS definida</li>
+                        <li>• Sem proteção — algoritmo maximiza GMV</li>
+                      </ul>
+                      {roasEmpate && (
+                        <p className={cn('text-[11px] font-bold ml-5', roasDireto >= roasEmpate ? 'text-primary' : 'text-destructive')}>
+                          {roasDireto >= roasEmpate
+                            ? '💡 ROAS está bom. Considere migrar para Meta de ROAS para ter mais controle.'
+                            : '🔴 ROAS abaixo do empate e sem proteção. Pause ou migre para Meta de ROAS.'}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex items-center gap-2 text-xs">
+                      <span className="text-muted-foreground">Tipo:</span>
+                      <span className="font-bold text-foreground">{ad.metodo_lance}</span>
+                    </div>
+                  )}
                 </div>
               )}
+
               {ad.status_anuncio && (
                 <div className="flex items-center gap-2 text-xs">
                   <span className="text-muted-foreground">Status:</span>
                   <span className="font-bold text-foreground">{ad.status_anuncio}</span>
                 </div>
               )}
+
               {metaRoas && (
                 <div className="space-y-1.5 pt-2 border-t border-dashed border-border">
                   <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Meta de ROAS sugerida</p>
@@ -216,6 +367,39 @@ export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) 
                   <p className="text-[10px] text-warning flex items-center gap-1">
                     <AlertTriangle className="w-3 h-3" /> Nunca abaixo de {roasEmpate?.toFixed(2)} (seu empate)
                   </p>
+                  {/* 6. Aviso de não alterar */}
+                  <p className="text-[10px] text-muted-foreground flex items-start gap-1 mt-1">
+                    <Info className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                    Após alterar a meta na Shopee, aguarde 3-5 dias para o algoritmo se ajustar. Não faça mudanças consecutivas.
+                  </p>
+                </div>
+              )}
+
+              {/* 5. Orçamento sugerido */}
+              {custoConversao > 0 && (
+                <div className="space-y-1.5 pt-2 border-t border-dashed border-border">
+                  <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground flex items-center gap-1.5">
+                    <Wallet className="w-3.5 h-3.5 text-primary" /> Orçamento Sugerido
+                  </p>
+                  <div className="text-xs font-mono tabular-nums space-y-1">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Custo por conversão atual:</span>
+                      <span className="font-bold">{fmt(custoConversao)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Para proteção ROAS (≥5 vendas/dia):</span>
+                      <span className="font-bold text-primary">{fmt(orcamentoProtecao)}/dia</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Mínimo saudável (≥3 vendas/dia):</span>
+                      <span className="font-bold">{fmt(orcamentoMinimo)}/dia</span>
+                    </div>
+                  </div>
+                  <p className={cn('text-[11px] font-bold', qualificaProtecao ? 'text-success' : 'text-warning')}>
+                    {qualificaProtecao
+                      ? '✅ Você qualifica para proteção de ROAS'
+                      : `⚠️ Aumente budget para proteção (atual: ${convPorDia.toFixed(1)} conv/dia)`}
+                  </p>
                 </div>
               )}
             </div>
@@ -229,7 +413,6 @@ export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) 
                 <span className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Posicionamento</span>
                 <span className="text-base font-extrabold font-mono tabular-nums text-foreground ml-auto">#{ad.posicao_media}</span>
               </div>
-              {/* Position ruler */}
               <div className="relative w-full h-8 bg-secondary rounded-lg overflow-hidden">
                 <div className="absolute inset-0 flex items-center">
                   {[1, 3, 8, 16].map(p => (
@@ -288,6 +471,13 @@ export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) 
                       <AlertTriangle className="w-3 h-3" /> Nunca abaixo de {roasEmpate.toFixed(2)} (empate)
                     </p>
                   )}
+                  {/* 6. Aviso aguardar when action is AUMENTAR_META_ROAS */}
+                  {classification?.acao === 'AUMENTAR_META_ROAS' && (
+                    <p className="text-[10px] text-muted-foreground flex items-start gap-1 mt-1">
+                      <Info className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                      Após alterar a meta na Shopee, aguarde 3-5 dias para o algoritmo se ajustar.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -313,12 +503,19 @@ export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) 
                     <Info className="w-3 h-3" /> Importe CSV individual para diagnóstico de posição
                   </p>
                 )}
+                {/* 6. Aviso aguardar when action is AUMENTAR_META_ROAS */}
+                {classification.acao === 'AUMENTAR_META_ROAS' && (
+                  <p className="flex items-start gap-1.5 text-muted-foreground mt-1">
+                    <Info className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                    Após alterar a meta na Shopee, aguarde 3-5 dias para o algoritmo se ajustar. Não faça mudanças consecutivas.
+                  </p>
+                )}
               </div>
             </div>
           ) : null}
 
-          {/* Profit per sale */}
-          {lucroPorVenda !== null && (
+          {/* Profit per sale (legacy kept) */}
+          {lucroPorVenda !== null && !empateResult && (
             <div className="grid grid-cols-2 gap-2">
               <div className="rounded-xl border border-border bg-card p-2.5">
                 <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">Lucro/und</p>
