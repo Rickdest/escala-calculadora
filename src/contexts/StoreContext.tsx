@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { Store, Product, StoreConfig, DEFAULT_STORE_CONFIG, ProductCalculation, getShopeeFeeForPrice, ShopeeAceleraOption, SHOPEE_ACELERA_RATES } from '@/types/store';
+import { Store, Product, StoreConfig, DEFAULT_STORE_CONFIG, ProductCalculation, ShopeeAceleraOption } from '@/types/store';
+import { calculateProduct as calculateProductFn, getStoreStats as getStoreStatsFn } from '@/lib/calculateProduct';
 import { Tables } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
