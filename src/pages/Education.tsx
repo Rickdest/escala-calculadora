@@ -79,7 +79,7 @@ export default function Education() {
       return;
     }
     if (contentData.youtube_id && !/^[a-zA-Z0-9_-]{11}$/.test(contentData.youtube_id)) {
-      toast({ title: 'Erro', description: 'ID do YouTube inválido (deve ter 11 caracteres alfanuméricos).', variant: 'destructive' });
+      toast.error('ID do YouTube inválido (deve ter 11 caracteres alfanuméricos).');
       setSaving(false);
       return;
     }
