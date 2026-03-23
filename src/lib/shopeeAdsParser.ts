@@ -18,6 +18,13 @@ export interface ParsedAdMetric {
   directRoas: number;
   directAcos: number;
   costPerConv: number;
+  // Extra fields from general CSV
+  status?: string;
+  bidMethod?: string;
+  conversions?: number;
+  directGmv?: number;
+  productImpressions?: number | null;
+  productClicks?: number | null;
 }
 
 export interface ParsedAdsFile {
