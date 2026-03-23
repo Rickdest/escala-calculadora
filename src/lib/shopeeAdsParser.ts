@@ -216,12 +216,20 @@ function parseProductFormatCSV(csvContent: string): ParsedAdsFile | null {
 
     const headerCols = parseCSVLine(lines[headerIndex]);
     
-    const posCol = headerCols.findIndex(h => {
+    let posCol = headerCols.findIndex(h => {
       const hl = h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
       return hl.includes('posicao') || hl.includes('posicionamento') || hl.includes('position')
         || hl.includes('posicao media') || hl.includes('posicionamento medio')
         || hl.includes('ranking') || hl.includes('avg position') || hl.includes('media de posicao');
     });
+
+    // Fallback: check column 20 (0-indexed) directly for position data
+    if (posCol === -1 && headerCols.length >= 21) {
+      const col20 = (headerCols[20] || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (col20.includes('posi') || col20.includes('media') || col20.includes('medio')) {
+        posCol = 20;
+      }
+    }
 
     // Aggregate all data rows into one metric for this product
     let totalImpressions = 0, totalClicks = 0, totalConversions = 0;
