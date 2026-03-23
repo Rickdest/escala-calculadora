@@ -1,75 +1,64 @@
 
 
-## Diagnóstico e Correções — Aba Análise de Ads
+## Redesign da Aba Análise de Ads — Estilo Shopee Seller Center
 
-### Problemas Encontrados
+### Visão Geral
 
-Analisando o banco de dados, o código e os logs do console, encontrei **7 problemas concretos**:
+Redesenhar o layout da aba "Análise de Ads" para se parecer com o painel de Ads do Shopee Seller Center: toolbar no topo com ações, tabela/lista organizada com métricas em colunas, e opção de excluir dados. Layout mais profissional e denso no desktop, mantendo cards no mobile.
 
-**1. Duplicatas massivas** — O "Cropped Corset" tem 3 rows idênticos (ids `7df7cb3e`, `057fac85`, `85eb82e4`) com mesmo `nome_produto_csv`, período e dados. O `importProductCSV` com `targetAdsDataId` cria dedup por `nome_produto_csv + periodo`, mas quando chamado sem target, a dedup falha se o produto já tem `posicao_importada: true` (os rows existentes vieram de product CSV, não do general). Além disso, o `importGeneralCSV` deleta apenas rows com `posicao_importada: false`, então rows importados via product CSV nunca são limpos.
+### Mudanças
 
-**2. `roas_direto = 0` e `roas_empate = null`** — Todos os 5 rows têm `roas_direto: 0.00` e `gmv_direto: 0.00`. O parser de product CSV (`parseProductFormatCSV`) seta `directRoas: 0` e nunca extrai `directRevenue`. No general CSV, o fallback `gmv_direto: (m as any).directGmv || (m as any).directRevenue || m.gmv` deveria funcionar, mas os rows atuais vieram do product CSV que não calcula esses campos. Resultado: sem `roas_direto` real, a classificação não funciona e o enrichment falha.
+#### 1. `src/components/roas/AdsTab.tsx` — Layout principal redesenhado
 
-**3. `classificacao = null` em 4 de 5 rows** — Porque `roas_empate` é null. O `importProductCSV` calcula `calcDerived()` que chama `calcularRoasEmpate`, mas o resultado não é salvo quando o product tem `costPrice: 0` (produto id `6df24a20` tem `cost_price: 0`, `sale_price: 0`). Para o "Cropped Corset" (product `ec2e92df`), o produto existe mas os rows importados via product CSV não rodaram `calcDerived` corretamente.
+**Toolbar no topo** (estilo Shopee):
+- Row horizontal com: contagem de anúncios ("X anúncios"), botão "Importar CSV", botão "Excluir Tudo" (destructive, com confirmação via AlertDialog)
+- FilterChips movidos para abaixo da toolbar
+- No desktop, SummaryCards e toolbar ficam lado a lado ou empilhados de forma compacta
 
-**4. `nome_produto_csv` vazio** — Rows `a749d5d1` e `c4522bfb` têm `nome_produto_csv: ""`. Isso vem do parser quando o campo "Nome do Produto" está em branco no CSV do produto.
+**Botão Excluir Tudo**:
+- Ícone `Trash2`, variante `ghost` destructive
+- Ao clicar, abre AlertDialog: "Tem certeza? Isso removerá todos os dados de Ads importados."
+- Chama `deleteAll()` do `useAdsData`
 
-**5. `posicao_media = null` mesmo com `posicao_importada = true`** — Todos os rows com `posicao_importada: true` têm `posicao_media: null`. O parser extrai `avgPosition` mas o CSV provavelmente não tem coluna de posição, retornando `null`. O flag `posicao_importada` deveria só ser `true` se `posicao_media` realmente existe.
+**Desktop layout** (≥1024px):
+- Grid `lg:grid-cols-12`: conteúdo principal em `lg:col-span-9`, alertas em `lg:col-span-3`
+- Cards em grid `md:grid-cols-2 xl:grid-cols-3` no desktop
+- SummaryCards em row horizontal compacta
 
-**6. Botão "Vincular" não aparece** — No card state 1 (unlinked), o botão existe e funciona. Mas como os rows duplicados do Cropped Corset têm `product_id` preenchido, eles aparecem como state 2/3 onde não há botão de vincular. O problema real é que todos os rows aparecem como "vinculados" quando na verdade a classificação está quebrada, dando a impressão de que não funciona.
+**Mobile**: mantém stack vertical atual
 
-**7. forwardRef warning** — `Stat` component no `AdsDetailView` é function component sem forwardRef, mas é usado num contexto onde Radix tenta passar ref.
+#### 2. `src/components/roas/AdsProductCard.tsx` — Adicionar botão excluir individual
 
-### Plano de Correções
+- Adicionar prop `onDelete: () => void`
+- No canto superior direito do card (ao lado do score ou progress badge), adicionar um botão `Trash2` discreto (`text-text-3 hover:text-destructive`)
+- Click com `e.stopPropagation()` para não abrir o detalhe
+- Sem confirmação no card individual (ação rápida)
 
-#### Arquivo 1: `src/hooks/useAdsData.ts`
+#### 3. `src/components/roas/AdsTab.tsx` — Passar deleteAdsData e deleteAll
 
-**Fix importGeneralCSV:**
-- Antes de inserir, deletar TODOS os rows antigos do usuário que não têm posição real (`posicao_media IS NULL`), não apenas `posicao_importada = false`
-- Adicionar deduplicação por `shopee_product_id` ou `nome_produto_csv` nos rows parseados antes de inserir (o parser já agrega, mas o import não verifica duplicatas)
+- Desestruturar `deleteAdsData` e `deleteAll` do `useAdsData()`
+- Passar `onDelete={() => deleteAdsData(ad.id)}` para cada `AdsProductCard`
+- Botão "Excluir Tudo" na toolbar usa `deleteAll()`
+- Usar `AlertDialog` do shadcn para confirmação do "Excluir Tudo"
 
-**Fix importProductCSV:**
-- Quando `targetAdsDataId` é fornecido: só setar `posicao_importada = true` se `avgPos !== null`
-- Quando sem target: buscar duplicata por `nome_produto_csv + periodo` E `shopee_product_id + periodo`, ignorando `posicao_importada`
-- Sempre calcular `roas_empate` e `classificacao` via `calcDerived`, usando `roas` como fallback quando `roas_direto = 0`
+#### 4. `src/components/roas/SummaryCards.tsx` — Layout mais compacto no desktop
 
-**Fix fetchData enrichment:**
-- Na classificação, quando `row.roas_direto === 0`, usar `row.roas` como o valor para classificar (já faz `row.roas_direto || row.roas` mas precisa garantir que isso propague pro `classificacaoResult`)
+- No desktop: cards menores, grid `grid-cols-4` com padding reduzido
+- Barra de status (lucrativos/atenção/prejuízo) mais inline e compacta
 
-**Fix importProductCSV — gmv_direto:**
-- No `rowData`, usar `m.gmv` como fallback para `gmv_direto` quando `directGmv` é 0 (o product CSV não tem esse campo separado)
+#### 5. `src/components/roas/AdsEmptyState.tsx` — Melhorar empty state
 
-#### Arquivo 2: `src/lib/shopeeAdsParser.ts`
+- Adicionar instrução visual mais clara estilo Shopee: passo a passo com numeração (1. Acesse Shopee Seller → 2. Marketing → 3. Exportar CSV)
 
-**Fix parseProductFormatCSV:**
-- Extrair `directRevenue` e `directItemsSold` das colunas corretas quando disponíveis
-- Se não disponíveis, usar `gmv` e `itemsSold` como fallback (product CSV geralmente representa vendas diretas)
-- Garantir que `shopeeProductName` nunca seja string vazia — se o metadata não tiver nome, usar `"Produto " + productId`
-
-#### Arquivo 3: `src/components/roas/AdsDetailView.tsx`
-
-**Fix forwardRef warning:**
-- Não é o `Stat` que precisa de forwardRef — o warning acontece porque `AdsDetailView` é renderizado dentro de `TabsContent` do Radix. Mas na verdade, `AdsTab` que é filho de `TabsContent`, não `AdsDetailView`. O `Stat` function component recebe ref implicitamente do Radix tooltip? Não — o stack trace mostra que é o `Stat` dentro de `AdsDetailView`. Como `Stat` não precisa de ref, basta não renderizá-lo com um component que passe ref. Na verdade o warning é inofensivo mas pode ser corrigido removendo a possibilidade de ref leak.
-
-#### Arquivo 4: `src/components/roas/AdsProductCard.tsx`
-
-**Fix card display:**
-- Quando `classificacao` é null mas `product_id` existe, mostrar badge "Classificação pendente" em vez de "Não vinculado"
-- Mostrar ROAS (geral, não direto) quando `roas_direto` é 0 como valor principal
-
-#### Arquivo 5: `src/components/roas/AdsTab.tsx`
-
-**Melhorias de layout desktop:**
-- Import button: reduzir padding no desktop, tornar mais compacto
-- Cards grid: garantir `md:grid-cols-2` funciona com gap adequado
-- AlertsSection sidebar: sticky no desktop para acompanhar scroll
-
-**Fix CSV detection:**
-- Melhorar heurística de detecção: checar por `Nome do Produto` nos primeiros 10 linhas (metadata do product CSV) além dos headers existentes
+### Arquivos alterados
+- `src/components/roas/AdsTab.tsx`
+- `src/components/roas/AdsProductCard.tsx`
+- `src/components/roas/SummaryCards.tsx`
+- `src/components/roas/AdsEmptyState.tsx`
 
 ### Não altera
-- Lógica de cálculo em `adsLogic.ts` (funções já estão corretas)
-- Design system / tokens CSS
-- QuickRegisterModal, AdsLinkModal, FilterChips, SummaryCards (funcionam corretamente)
+- `useAdsData.ts` (já tem `deleteAdsData` e `deleteAll`)
+- `adsLogic.ts`, `shopeeAdsParser.ts`
+- `AdsDetailView.tsx`
 - Nenhuma funcionalidade removida
 
