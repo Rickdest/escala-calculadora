@@ -357,6 +357,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (updates.category !== undefined) dbUpdates.category = updates.category;
     if (updates.description !== undefined) dbUpdates.description = updates.description;
     if (updates.minStockQuantity !== undefined) dbUpdates.min_stock_quantity = updates.minStockQuantity;
+    if (updates.outrosCanais !== undefined) dbUpdates.outros_canais = updates.outrosCanais ?? null;
     if (updates.variations !== undefined && updates.hasVariations !== false) {
       const vars = updates.variations || [];
       if (vars.length > 0) {
