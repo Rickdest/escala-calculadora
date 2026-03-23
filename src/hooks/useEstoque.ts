@@ -167,12 +167,13 @@ export function useEstoque() {
   }, [invalidate]);
 
   const deleteProduto = useCallback(async (id: string) => {
+    if (user) await deleteEstoqueImage(user.id, id);
     const { error } = await (supabase.from('estoque_produtos' as any) as any).delete().eq('id', id);
     if (error) { toast.error('Erro ao excluir produto'); return; }
     removeLocalStockImage(id);
     invalidate();
     toast.success('Produto excluído');
-  }, [invalidate]);
+  }, [user, invalidate]);
 
   const updateVariacao = useCallback(async (id: string, data: Partial<EstoqueVariacao>) => {
     const { error } = await (supabase.from('estoque_variacoes' as any) as any).update(data).eq('id', id);
