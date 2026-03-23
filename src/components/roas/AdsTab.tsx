@@ -28,6 +28,7 @@ export function AdsTab() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [positionTarget, setPositionTarget] = useState<string | undefined>();
   const positionFileRef = useRef<HTMLInputElement>(null);
+  const [positionJustImported, setPositionJustImported] = useState(false);
 
   const products = currentStore?.products || [];
 
