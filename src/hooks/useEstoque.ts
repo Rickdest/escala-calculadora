@@ -125,8 +125,14 @@ export function useEstoque() {
     if (error) { toast.error('Erro ao criar produto'); throw error; }
 
     if (data.imageDataUrl) {
-      const compressed = await compressImage(data.imageDataUrl);
-      saveLocalStockImage(prod.id, compressed);
+      const url = await uploadEstoqueImage(user.id, prod.id, data.imageDataUrl);
+      if (url) {
+        await (supabase.from('estoque_produtos' as any) as any)
+          .update({ image_url: url }).eq('id', prod.id);
+      } else {
+        const compressed = await compressImage(data.imageDataUrl);
+        saveLocalStockImage(prod.id, compressed); // fallback se upload falhar
+      }
     }
 
     if (data.variacoes.length > 0) {
