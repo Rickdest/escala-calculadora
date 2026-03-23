@@ -78,7 +78,7 @@ export default function Products() {
 
   const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
-  const handleSaveProduct = async (productData: any) => {
+  const handleSaveProduct = async (productData: Partial<Product>) => {
     if (editingProduct) {
       await updateProduct(editingProduct.id, productData);
     } else {
