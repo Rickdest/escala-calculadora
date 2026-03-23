@@ -500,6 +500,7 @@ function MLTab() {
         margin={result?.margin ?? 0}
         salePrice={sp}
         isReady={isReady && !!result}
+        showRoas
       />
     </div>
   );
