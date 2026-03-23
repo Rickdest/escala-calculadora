@@ -48,7 +48,7 @@ export default function Home() {
   const { isAdmin } = useAdmin();
   const [showProductForm, setShowProductForm] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
-  const [prefillProduct, setPrefillProduct] = useState<Partial<import('@/types/store').Product> | null>(null);
+  const [prefillProduct, setPrefillProduct] = useState<Partial<Product> | null>(null);
 
   useEffect(() => {
     if (searchParams.get('new') === '1') {
