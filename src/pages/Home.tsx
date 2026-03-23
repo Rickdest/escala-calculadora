@@ -228,17 +228,22 @@ export default function Home() {
           <p className="section-label mb-3">Outras plataformas</p>
           <div className="grid grid-cols-4 gap-2">
             {[
-              { emoji: '🎵', name: 'TikTok Shop', rate: '12% + R$4', tab: 'tiktok' },
-              { emoji: '👗', name: 'Shein', rate: 'Moda 20%', tab: 'shein' },
-              { emoji: '📦', name: 'Amazon', rate: '10–15%', tab: 'amazon' },
-              { emoji: '🟡', name: 'Mercado Livre', rate: '10–19%', tab: 'ml' },
+              { sigla: 'TK', name: 'TikTok Shop', rate: '12% + R$4', tab: 'tiktok', bg: '#010101', text: 'text-white' },
+              { sigla: 'SH', name: 'Shein', rate: 'Moda 20%', tab: 'shein', bg: '#E43D79', text: 'text-white' },
+              { sigla: 'AZ', name: 'Amazon', rate: '10–15%', tab: 'amazon', bg: '#FF9900', text: 'text-white' },
+              { sigla: 'ML', name: 'Mercado Livre', rate: '10–19%', tab: 'ml', bg: '#FFE600', text: 'text-black' },
             ].map((mp) => (
               <button
                 key={mp.tab}
                 onClick={() => navigate(`/calculadoras?tab=${mp.tab}`)}
                 className="flex flex-col items-center gap-1.5 py-2.5 px-1 bg-surface-2 rounded-xl border border-border transition-colors active:scale-95 hover:border-primary/50"
               >
-                <span className="text-2xl">{mp.emoji}</span>
+                <div
+                  className={cn('w-9 h-9 rounded-lg flex items-center justify-center text-[13px] font-extrabold', mp.text)}
+                  style={{ backgroundColor: mp.bg }}
+                >
+                  {mp.sigla}
+                </div>
                 <span className="text-[10px] font-semibold text-text-2 text-center leading-tight">{mp.name}</span>
                 <span className="text-[9px] text-text-3">{mp.rate}</span>
               </button>
