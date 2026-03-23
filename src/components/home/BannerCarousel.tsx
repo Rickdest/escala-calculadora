@@ -52,6 +52,8 @@ export function BannerCarousel() {
   const [hasBanners, setHasBanners] = useState<boolean | null>(null);
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
+  const autoplayDb = useRef(Autoplay({ delay: 4000, stopOnInteraction: true }));
+  const autoplayFallback = useRef(Autoplay({ delay: 5000, stopOnInteraction: true }));
 
   useEffect(() => {
     supabase
