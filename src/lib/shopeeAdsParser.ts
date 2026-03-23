@@ -217,8 +217,10 @@ function parseProductFormatCSV(csvContent: string): ParsedAdsFile | null {
     const headerCols = parseCSVLine(lines[headerIndex]);
     
     const posCol = headerCols.findIndex(h => {
-      const hl = h.toLowerCase().trim();
-      return hl.includes('posição') || hl.includes('posicao') || hl.includes('position') || hl.includes('posicionamento');
+      const hl = h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+      return hl.includes('posicao') || hl.includes('posicionamento') || hl.includes('position')
+        || hl.includes('posicao media') || hl.includes('posicionamento medio')
+        || hl.includes('ranking') || hl.includes('avg position') || hl.includes('media de posicao');
     });
 
     // Aggregate all data rows into one metric for this product
