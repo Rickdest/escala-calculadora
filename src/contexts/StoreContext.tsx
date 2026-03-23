@@ -319,6 +319,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       category: productData.category || null,
       description: productData.description || null,
       min_stock_quantity: productData.minStockQuantity ?? 5,
+      outros_canais: productData.outrosCanais ?? null,
     } as any).select().single();
 
     if (error) { toast.error('Erro ao salvar produto'); throw error; }
