@@ -284,7 +284,7 @@ function SheinTab() {
   const [salePrice, setSalePrice] = useState('');
   const [costPrice, setCostPrice] = useState('');
   const [category, setCategory] = useState<SheinCategory>('moda');
-  const [weight, setWeight] = useState('');
+  const [weightBand, setWeightBand] = useState('0.3');
   const [packaging, setPackaging] = useState('');
   const [taxes, setTaxes] = useState('');
 
@@ -294,8 +294,8 @@ function SheinTab() {
 
   const result = useMemo<SheinResult | null>(() => {
     if (!isReady) return null;
-    return calcShein(sp, cp, category, parseFloat(weight) || 0, parseFloat(packaging) || 0, parseFloat(taxes) || 0);
-  }, [sp, cp, category, weight, packaging, taxes, isReady]);
+    return calcShein(sp, cp, category, parseFloat(weightBand), parseFloat(packaging) || 0, parseFloat(taxes) || 0);
+  }, [sp, cp, category, weightBand, packaging, taxes, isReady]);
 
   const costs: CostLine[] = result ? [
     { label: 'Custo do produto', value: result.costPrice },
@@ -322,7 +322,19 @@ function SheinTab() {
           </Select>
         </div>
 
-        <NumInput label="Peso do produto" value={weight} onChange={setWeight} suffix="kg" />
+        <div className="space-y-1.5">
+          <Label className="text-xs text-text-2 font-medium">Peso do produto</Label>
+          <Select value={weightBand} onValueChange={setWeightBand}>
+            <SelectTrigger className="input-modern"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0.3">Até 300g — R$4,00</SelectItem>
+              <SelectItem value="1">300g até 1kg — R$5,00</SelectItem>
+              <SelectItem value="2">1kg até 2kg — R$5,00</SelectItem>
+              <SelectItem value="5">2kg até 5kg — R$6,00</SelectItem>
+              <SelectItem value="9">5kg até 9kg — R$7,00</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <NumInput label="Embalagem" value={packaging} onChange={setPackaging} suffix="R$" />
         <NumInput label="Impostos" value={taxes} onChange={setTaxes} suffix="%" />
       </div>
