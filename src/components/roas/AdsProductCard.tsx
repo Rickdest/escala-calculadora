@@ -205,38 +205,32 @@ export function AdsProductCard({
               posInfo?.classe === 'PRIMEIRA_PAGINA' ? 'border-primary/40 bg-primary/10 ring-primary/20' :
               'border-warning/40 bg-warning/10 ring-warning/20'
             )}>
-          <div className={cn(
-            'rounded-lg border-2 p-2.5 text-center relative overflow-hidden',
-            posInfo?.classe === 'TOPO' ? 'border-success/40 bg-success/10' :
-            posInfo?.classe === 'PRIMEIRA_PAGINA' ? 'border-primary/40 bg-primary/10' :
-            'border-warning/40 bg-warning/10'
-          )}>
-            <div className="absolute top-0 right-0">
-              <span className={cn(
-                'text-[8px] font-extrabold px-1.5 py-0.5 rounded-bl-lg',
-                posInfo?.classe === 'TOPO' ? 'bg-success text-success-foreground' :
-                posInfo?.classe === 'PRIMEIRA_PAGINA' ? 'bg-primary text-primary-foreground' :
-                'bg-warning text-warning-foreground'
+              <div className="absolute top-0 right-0">
+                <span className={cn(
+                  'text-[8px] font-extrabold px-1.5 py-0.5 rounded-bl-lg',
+                  posInfo?.classe === 'TOPO' ? 'bg-success text-success-foreground' :
+                  posInfo?.classe === 'PRIMEIRA_PAGINA' ? 'bg-primary text-primary-foreground' :
+                  'bg-warning text-warning-foreground'
+                )}>
+                  {posInfo?.classe === 'TOPO' ? '🏆 TOPO' : posInfo?.classe === 'PRIMEIRA_PAGINA' ? '📍 PÁG.1' : '📍 PÁG.2+'}
+                </span>
+              </div>
+              <p className="section-label flex items-center justify-center gap-1">
+                <MapPin className="w-3 h-3" /> POSIÇÃO
+              </p>
+              <p className={cn(
+                'text-2xl font-black font-mono tabular-nums mt-0.5',
+                posInfo?.classe === 'TOPO' ? 'text-success' :
+                posInfo?.classe === 'PRIMEIRA_PAGINA' ? 'text-primary' : 'text-warning'
               )}>
-                {posInfo?.classe === 'TOPO' ? '🏆 TOPO' : posInfo?.classe === 'PRIMEIRA_PAGINA' ? '📍 PÁG.1' : '📍 PÁG.2+'}
-              </span>
-            </div>
-            <p className="section-label flex items-center justify-center gap-1">
-              <MapPin className="w-3 h-3" /> POSIÇÃO
-            </p>
-            <p className={cn(
-              'text-2xl font-black font-mono tabular-nums mt-0.5',
-              posInfo?.classe === 'TOPO' ? 'text-success' :
-              posInfo?.classe === 'PRIMEIRA_PAGINA' ? 'text-primary' : 'text-warning'
-            )}>
-              #{ad.posicao_media}
-            </p>
-            <p className={cn('text-[9px] font-bold',
-              posInfo?.classe === 'TOPO' ? 'text-success' :
-              posInfo?.classe === 'PRIMEIRA_PAGINA' ? 'text-primary' : 'text-warning'
-            )}>
-              {posInfo?.label.split('—')[0].trim()}
-            </p>
+                #{ad.posicao_media}
+              </p>
+              <p className={cn('text-[9px] font-bold',
+                posInfo?.classe === 'TOPO' ? 'text-success' :
+                posInfo?.classe === 'PRIMEIRA_PAGINA' ? 'text-primary' : 'text-warning'
+              )}>
+                {posInfo?.label.split('—')[0].trim()}
+              </p>
             </div>
 
             {/* ROAS */}
