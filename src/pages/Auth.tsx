@@ -34,7 +34,7 @@ export default function Auth() {
   const [activeTab, setActiveTab] = useState<'signup' | 'login'>('signup');
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  
 
   useEffect(() => {
     if (errorMessage) {
