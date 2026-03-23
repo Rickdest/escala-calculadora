@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { calcOutrosCanais, getBestChannel } from '@/lib/outrosCanaisUtils';
 import { X, Camera, Calculator, TrendingUp, TrendingDown, AlertTriangle, Save, Loader2, ChevronDown, CalendarDays, Settings2, Info, ExternalLink } from 'lucide-react';
 import { ProductAdsSection } from '@/components/forms/ProductAdsSection';
 import { Product, ShopeeAceleraOption, getShopeeFeeForPrice, OutrosCanais } from '@/types/store';
@@ -92,6 +93,19 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
     if (!isFinite(roasEmpate) || roasEmpate <= 0) return null;
     return { roasEmpate, roasSaudavel: roasEmpate * 1.2, roasIdeal: roasEmpate * 1.5 };
   }, [localCalc]);
+
+  const channelComparison = useMemo(() => {
+    if (Object.keys(outrosCanais).length === 0) return null;
+    const valid: typeof outrosCanais = {};
+    for (const [key, val] of Object.entries(outrosCanais)) {
+      if (val && val.costPrice > 0 && val.salePrice > 0) {
+        valid[key as keyof typeof outrosCanais] = val;
+      }
+    }
+    if (Object.keys(valid).length === 0) return null;
+    const results = calcOutrosCanais(valid, config?.taxes ?? 0);
+    return { results, best: getBestChannel(results) };
+  }, [outrosCanais, config?.taxes]);
 
   const monthlyRevenue = localCalc ? localCalc.grossRevenue * monthlySales : 0;
   const monthlyCosts = localCalc ? localCalc.totalCosts * monthlySales : 0;
@@ -416,6 +430,67 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
               <p className="text-[9px] text-text-3 leading-tight">Meta para escalar</p>
             </div>
           </div>
+
+          {/* Comparativo de canais — tempo real */}
+          {channelComparison && localCalc && (
+            <div className="surface-card p-3.5 space-y-2.5">
+              <div className="flex items-center gap-2">
+                <span className="text-base">🌐</span>
+                <span className="text-sm font-semibold text-foreground">Comparativo de canais</span>
+                <span className="text-[10px] text-text-3 ml-auto">Tempo real</span>
+              </div>
+              <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${channelComparison.results.length + 1}, minmax(0, 1fr))` }}>
+                {/* Shopee — sempre primeiro */}
+                <div className="px-2 py-3 text-center border border-border rounded-lg bg-background/50">
+                  <p className="text-[8px] font-bold uppercase tracking-wide text-text-3 leading-tight mb-1">Shopee</p>
+                  <p className={cn(
+                    'text-[13px] font-extrabold tabular-nums font-mono leading-none',
+                    localCalc.realMargin >= 15 ? 'text-success' : localCalc.realMargin >= 0 ? 'text-warning' : 'text-danger'
+                  )}>
+                    {localCalc.realMargin.toFixed(1)}%
+                  </p>
+                  <p className="text-[9px] text-text-3 tabular-nums font-mono mt-0.5">
+                    {formatCurrency(localCalc.netProfit)}
+                  </p>
+                </div>
+                {/* Outros canais */}
+                {channelComparison.results.map((r) => {
+                  const isBest = r.key === channelComparison.best?.key;
+                  const shortLabel: Record<string, string> = {
+                    tiktok: 'TikTok',
+                    shein: 'Shein',
+                    amazon: 'Amazon',
+                    ml: 'Merc. Livre',
+                  };
+                  return (
+                    <div
+                      key={r.key}
+                      className={cn(
+                        'px-2 py-3 text-center relative rounded-lg border',
+                        isBest ? 'border-success/35 bg-success/5' : 'border-border bg-background/50'
+                      )}
+                    >
+                      {isBest && (
+                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[11px] leading-none">👑</span>
+                      )}
+                      <p className="text-[8px] font-bold uppercase tracking-wide text-text-3 leading-tight mb-1">
+                        {shortLabel[r.key] ?? r.label}
+                      </p>
+                      <p className={cn(
+                        'text-[13px] font-extrabold tabular-nums font-mono leading-none',
+                        r.margin >= 15 ? 'text-success' : r.margin >= 0 ? 'text-warning' : 'text-danger'
+                      )}>
+                        {r.margin.toFixed(1)}%
+                      </p>
+                      <p className="text-[9px] text-text-3 tabular-nums font-mono mt-0.5">
+                        {formatCurrency(r.netProfit)}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Monthly Projection */}
           <div className="surface-card p-4 space-y-3">
