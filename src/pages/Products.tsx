@@ -219,6 +219,7 @@ export default function Products() {
                     key={product.id}
                     product={product}
                     calculation={calc}
+                    adsMetric={metricsMap[product.id]}
                     onEdit={handleEdit}
                     onDuplicate={async (id) => { await duplicateProduct(id); }}
                     onDelete={async (id) => { await deleteProduct(id); }}
