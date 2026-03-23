@@ -17,7 +17,7 @@ import { TrendingUp, AlertTriangle, TrendingDown, ExternalLink, CalendarDays } f
 type TabKey = 'tiktok' | 'shein' | 'amazon' | 'ml';
 
 const TABS: { key: TabKey; label: string }[] = [
-  { key: 'tiktok', label: 'TikTok Shop' },
+  { key: 'tiktok', label: 'TikTok' },
   { key: 'shein', label: 'Shein' },
   { key: 'amazon', label: 'Amazon' },
   { key: 'ml', label: 'Mercado Livre' },
@@ -546,13 +546,13 @@ export default function Calculators() {
 
       <div className="py-4 space-y-5 max-w-4xl mx-auto">
         {/* Tab bar */}
-        <div className="flex gap-1 overflow-x-auto no-scrollbar rounded-[10px] bg-surface-2 border border-border p-1">
+        <div className="flex gap-1 rounded-[10px] bg-surface-2 border border-border p-1">
           {TABS.map(({ key, label }) => (
             <button
               key={key}
               onClick={() => setTab(key)}
               className={cn(
-                'flex-1 min-w-fit px-3 py-2 text-sm font-semibold rounded-lg transition-all whitespace-nowrap',
+                'flex-1 px-2 py-2 text-[12px] font-semibold rounded-lg transition-all text-center',
                 activeTab === key
                   ? 'bg-primary text-primary-foreground shadow-sm'
                   : 'text-text-2 hover:text-foreground hover:bg-background/50'
