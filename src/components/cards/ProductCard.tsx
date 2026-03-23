@@ -168,45 +168,58 @@ export function ProductCard({ product, calculation, onEdit, onDuplicate, onDelet
 
       {/* Outros Canais */}
       {channelResults && channelResults.length > 0 && (
-        <div className="mt-3 space-y-2">
+        <div className="mt-3 space-y-1.5">
           <button
             onClick={(e) => { e.stopPropagation(); setCompareOpen(o => !o); }}
             className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-surface-2 border border-border text-xs font-semibold text-text-2 hover:border-primary/40 hover:text-primary transition-colors active:scale-[0.98]"
           >
-            🌐 Comparar canais · {channelResults.map(r => r.label).join(' · ')}
+            🌐 Comparar canais
+            <span className="bg-white/8 rounded px-1.5 py-0.5 text-[10px] font-bold">
+              {channelResults.length} {channelResults.length === 1 ? 'canal' : 'canais'}
+            </span>
+            <span className={cn('text-[10px] transition-transform', compareOpen && 'rotate-180')}>▼</span>
           </button>
+
           {compareOpen && (
-            <div className="surface-card p-3 space-y-2 animate-fade-up">
-              <p className="section-label">Margem por canal</p>
-              <div className="grid grid-cols-2 gap-2">
-                {channelResults.map((r) => (
-                  <div
-                    key={r.key}
-                    className={cn(
-                      'rounded-lg border p-2.5 text-center',
-                      r.key === bestChannel?.key
-                        ? 'border-success/30 bg-success/5'
-                        : 'border-border bg-background/50'
-                    )}
-                  >
-                    <p className="section-label">{r.label}</p>
-                    <p className={cn(
-                      'text-base font-extrabold tabular-nums font-mono mt-0.5',
-                      r.margin >= 15 ? 'text-success' : r.margin >= 0 ? 'text-warning' : 'text-danger'
-                    )}>
-                      {r.margin.toFixed(1)}%
-                    </p>
-                    <p className="text-[10px] text-text-3 tabular-nums mt-0.5">
-                      {formatCurrency(r.netProfit)}
-                    </p>
-                  </div>
-                ))}
+            <div className="bg-surface-2 border border-border rounded-xl p-2.5 animate-fade-up">
+              <div className="grid grid-cols-4 gap-1.5">
+                {channelResults.map((r) => {
+                  const isBest = r.key === bestChannel?.key;
+                  const shortLabel: Record<string, string> = {
+                    tiktok: 'TikTok',
+                    shein: 'Shein',
+                    amazon: 'Amazon',
+                    ml: 'Merc. Livre',
+                  };
+                  return (
+                    <div
+                      key={r.key}
+                      className={cn(
+                        'relative rounded-lg border px-1.5 py-2 text-center',
+                        isBest
+                          ? 'border-success/35 bg-success/5'
+                          : 'border-border bg-background/50'
+                      )}
+                    >
+                      {isBest && (
+                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[11px] leading-none">👑</span>
+                      )}
+                      <p className="text-[8px] font-bold uppercase tracking-wide text-text-3 leading-tight mb-1">
+                        {shortLabel[r.key] ?? r.label}
+                      </p>
+                      <p className={cn(
+                        'text-[13px] font-extrabold tabular-nums font-mono leading-none',
+                        r.margin >= 15 ? 'text-success' : r.margin >= 0 ? 'text-warning' : 'text-danger'
+                      )}>
+                        {r.margin.toFixed(1)}%
+                      </p>
+                      <p className="text-[9px] text-text-3 tabular-nums font-mono mt-0.5">
+                        {formatCurrency(r.netProfit)}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
-              {bestChannel && (
-                <p className="text-[10px] text-success font-semibold pt-1 border-t border-border/50 text-center">
-                  ✓ Melhor margem: {bestChannel.label}
-                </p>
-              )}
             </div>
           )}
         </div>
