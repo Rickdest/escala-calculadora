@@ -99,6 +99,13 @@ export function AdsProductCard({
             <p className="text-sm font-bold text-foreground truncate">{ad.nome_produto_csv || 'Produto sem nome'}</p>
             <p className="text-[11px] text-text-3 mt-0.5">Não vinculado · {periodLabel}</p>
           </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="p-1.5 rounded-lg text-text-3 hover:text-destructive hover:bg-destructive/10 transition-colors flex-shrink-0"
+            title="Excluir"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
           <ProgressBadge level={1} />
         </div>
 
