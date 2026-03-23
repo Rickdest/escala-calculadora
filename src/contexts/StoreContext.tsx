@@ -70,7 +70,7 @@ function mapDbProduct(p: Tables<'products'>): Product {
     attributes,
     variations,
     shopeeAcelera: (p.shopee_acelera as ShopeeAceleraOption) ?? 'none',
-    outrosCanais: p.outros_canais ?? undefined,
+    outrosCanais: (p.outros_canais as unknown as Product['outrosCanais']) ?? undefined,
     createdAt: new Date(p.created_at),
     updatedAt: new Date(p.updated_at),
   };
