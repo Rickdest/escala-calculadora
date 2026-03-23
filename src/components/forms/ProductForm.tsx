@@ -150,8 +150,8 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
     parseFloat(salePrice) > 0;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm animate-fade-up">
-      <div className="fixed inset-x-0 bottom-0 z-50 bg-surface rounded-t-2xl animate-slide-up max-h-[92vh] overflow-hidden flex flex-col border-t border-border">
+    <div className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm animate-fade-up">
+      <div className="fixed inset-x-0 bottom-0 z-[70] bg-surface rounded-t-2xl animate-slide-up max-h-[92vh] overflow-hidden flex flex-col border-t border-border">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="text-base font-bold text-foreground">{product ? 'Editar Produto' : 'Novo Produto'}</h2>
