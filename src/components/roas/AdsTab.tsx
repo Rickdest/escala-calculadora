@@ -335,7 +335,7 @@ const ByProductContent = forwardRef<HTMLDivElement, {
       </Button>
     </div>
   );
-}
+});
 
 // ─── Main AdsTab ───
 export function AdsTab() {
