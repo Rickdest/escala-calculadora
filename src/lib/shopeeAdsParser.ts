@@ -52,44 +52,8 @@ export function deriveMetrics(m: ParsedAdMetric): AdMetricDerived {
   };
 }
 
-// Legacy re-exports for backward compatibility
-export type ShopeeAdRow = AdMetricDerived & {
-  index: number;
-  adName: string;
-  status: string;
-  adType: string;
-  productId: string;
-  positioning: string;
-  keyword: string;
-  matchType: string;
-  bidMethod: string;
-  conversions: number;
-  directConversions: number;
-  conversionRate: number;
-  directItemsSold: number;
-  directRevenue: number;
-  rentability: number;
-  productImpressions: number;
-  productClicks: number;
-  productCtr: number;
-};
 
-export interface ShopeeAdsReport {
-  shopName: string;
-  storeId: string;
-  period: string;
-  createdAt: string;
-  ads: ShopeeAdRow[];
-  totals: {
-    totalSpend: number;
-    totalGmv: number;
-    totalItemsSold: number;
-    avgRoas: number;
-    avgAcos: number;
-    totalLiquidReturn: number;
-    avgRoi: number;
-  };
-}
+
 
 // ─── Helpers ───
 
