@@ -17,7 +17,7 @@ import { TrendingUp, AlertTriangle, TrendingDown, ExternalLink, CalendarDays } f
 type TabKey = 'tiktok' | 'shein' | 'amazon' | 'ml';
 
 const TABS: { key: TabKey; label: string }[] = [
-  { key: 'tiktok', label: 'TikTok Shop' },
+  { key: 'tiktok', label: 'TikTok' },
   { key: 'shein', label: 'Shein' },
   { key: 'amazon', label: 'Amazon' },
   { key: 'ml', label: 'Mercado Livre' },
