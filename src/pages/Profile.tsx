@@ -92,11 +92,7 @@ export default function Profile() {
       setNewPassword('');
       setConfirmPassword('');
     } catch (error: any) {
-      toast({
-        title: 'Erro ao alterar senha',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao alterar senha', { description: error.message });
     } finally {
       setSavingPassword(false);
     }
