@@ -131,7 +131,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
     });
 
     if (!validation.success) {
-      const firstError = Object.values(validation.errors)[0];
+      const firstError = Object.values((validation as { success: false; errors: Record<string, string> }).errors)[0];
       toast.error(firstError || 'Dados inválidos');
       return;
     }
