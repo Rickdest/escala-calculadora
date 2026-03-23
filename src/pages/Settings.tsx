@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import { storeSettingsSchema, validateForm } from '@/lib/validations';
 import { cn } from '@/lib/utils';
 
 export default function Settings() {
