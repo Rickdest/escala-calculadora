@@ -39,11 +39,23 @@ export function useProductAdsMetrics() {
   const loadMetrics = useCallback(async () => {
     if (!user) { setLoading(false); return; }
     setLoading(true);
-    const { data } = await supabase
-      .from('product_ads_metrics')
+    // Try ads_data first, fall back to product_ads_metrics
+    let result = await supabase
+      .from('ads_data' as any)
       .select('*')
       .eq('user_id', user.id)
+      .not('product_id', 'is', null)
       .order('roas', { ascending: false });
+
+    if (!result.data || result.data.length === 0) {
+      result = await supabase
+        .from('product_ads_metrics')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('roas', { ascending: false });
+    }
+
+    const data = result.data;
 
     if (data) {
       const derived = data.map(rowToMetric);
