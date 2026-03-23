@@ -44,7 +44,7 @@ export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) 
   const { currentStore } = useStore();
   const config = currentStore?.config;
 
-  const roasDireto = ad.roas_direto || ad.roas;
+  const roasDireto = ad.roas_direto && ad.roas_direto > 0 ? ad.roas_direto : ad.roas;
   const product = ad.product;
 
   const empateResult = useMemo(() => {
