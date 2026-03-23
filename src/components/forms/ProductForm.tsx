@@ -245,6 +245,89 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             </CollapsibleContent>
           </Collapsible>
 
+          {/* Outros Canais */}
+          <Collapsible open={outrosCanaisOpen} onOpenChange={setOutrosCanaisOpen}>
+            <CollapsibleTrigger asChild>
+              <button type="button" className="w-full surface-card p-3.5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🌐</span>
+                  <span className="text-sm font-medium text-foreground">Outros canais</span>
+                  <span className="text-[10px] text-text-3">Opcional</span>
+                </div>
+                <ChevronDown className={cn("w-4 h-4 text-text-3 transition-transform duration-150", outrosCanaisOpen && "rotate-180")} />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="surface-card p-3.5 space-y-3 rounded-t-none border-t-0">
+                <p className="text-[11px] text-text-3">
+                  Preencha os canais onde também vende. O imposto de Configurações é aplicado automaticamente.
+                </p>
+                {(['tiktok', 'shein', 'amazon', 'ml'] as const).map((key) => {
+                  const labels: Record<string, string> = {
+                    tiktok: 'TikTok Shop',
+                    shein: 'Shein',
+                    amazon: 'Amazon',
+                    ml: 'Mercado Livre',
+                  };
+                  const active = !!outrosCanais[key];
+                  return (
+                    <div key={key} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-foreground">{labels[key]}</span>
+                        <Switch
+                          checked={active}
+                          onCheckedChange={(checked) => {
+                            if (!checked) {
+                              const next = { ...outrosCanais };
+                              delete next[key];
+                              setOutrosCanais(next);
+                            } else {
+                              setOutrosCanais(prev => ({
+                                ...prev,
+                                [key]: {
+                                  costPrice: parseFloat(costPrice) || 0,
+                                  salePrice: parseFloat(salePrice) || 0,
+                                },
+                              }));
+                            }
+                          }}
+                        />
+                      </div>
+                      {active && (
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="space-y-1">
+                            <label className="section-label">Custo (R$)</label>
+                            <Input
+                              type="number" inputMode="decimal" step="0.01" min="0"
+                              value={outrosCanais[key]?.costPrice || ''}
+                              onChange={(e) => setOutrosCanais(prev => ({
+                                ...prev,
+                                [key]: { ...prev[key]!, costPrice: parseFloat(e.target.value) || 0 },
+                              }))}
+                              className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="section-label">Venda (R$)</label>
+                            <Input
+                              type="number" inputMode="decimal" step="0.01" min="0"
+                              value={outrosCanais[key]?.salePrice || ''}
+                              onChange={(e) => setOutrosCanais(prev => ({
+                                ...prev,
+                                [key]: { ...prev[key]!, salePrice: parseFloat(e.target.value) || 0 },
+                              }))}
+                              className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
           {/* Global Configs */}
           <div className="surface-card p-3.5">
             {activeGlobalConfigs.length > 0 ? (
