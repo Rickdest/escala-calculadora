@@ -141,7 +141,7 @@ export function BannerCarousel() {
       <Carousel
         setApi={setApi}
         opts={{ loop: true }}
-        plugins={[Autoplay({ delay: 5000, stopOnInteraction: true })]}
+        plugins={[autoplayFallback.current]}
         className="w-full"
       >
         <CarouselContent className="-ml-0">
