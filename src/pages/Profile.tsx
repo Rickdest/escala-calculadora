@@ -74,11 +74,7 @@ export default function Profile() {
     }
 
     if (newPassword.length < 6) {
-      toast({
-        title: 'Senha muito curta',
-        description: 'A senha deve ter pelo menos 6 caracteres.',
-        variant: 'destructive',
-      });
+      toast.error('Senha muito curta', { description: 'A senha deve ter pelo menos 6 caracteres.' });
       return;
     }
 
