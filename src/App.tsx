@@ -91,7 +91,6 @@ const App = () => (
           <SubscriptionProvider>
           <SidebarProvider>
           <StoreProvider>
-            <Toaster />
             <Sonner />
             <BrowserRouter>
               <ErrorBoundary>
