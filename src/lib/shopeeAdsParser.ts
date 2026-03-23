@@ -348,6 +348,15 @@ function parseGeneralFormatCSV(csvContent: string): ParsedAdsFile | null {
       const productIdVal = getCol(cols, map.productId) || '-';
       const adName = getCol(cols, map.adName);
 
+      const conversions = parseBRNumber(getCol(cols, map.conversions));
+      const directConversions = parseBRNumber(getCol(cols, map.directConversions));
+      const directItemsSold = parseBRNumber(getCol(cols, map.directItemsSold));
+      const directRevenue = parseBRNumber(getCol(cols, map.directRevenue));
+      const status = getCol(cols, map.status);
+      const bidMethod = getCol(cols, map.bidMethod);
+      const productImpressions = parseBRNumber(getCol(cols, map.productImpressions));
+      const productClicks = parseBRNumber(getCol(cols, map.productClicks));
+
       // Aggregate per product
       const key = productIdVal !== '-' ? productIdVal : `name:${adName}`;
       const existing = productMap.get(key);
@@ -357,20 +366,20 @@ function parseGeneralFormatCSV(csvContent: string): ParsedAdsFile | null {
         existing.itemsSold += itemsSold;
         existing.gmv += gmv;
         existing.spend += spend;
-        existing.conversions += ad.conversions;
-        existing.directConversions += ad.directConversions;
-        existing.directItemsSold += ad.directItemsSold;
-        existing.directRevenue += ad.directRevenue;
-        existing.productImpressions += ad.productImpressions;
-        existing.productClicks += ad.productClicks;
+        existing.conversions += conversions;
+        existing.directConversions += directConversions;
+        existing.directItemsSold += directItemsSold;
+        existing.directRevenue += directRevenue;
+        existing.productImpressions += productImpressions;
+        existing.productClicks += productClicks;
       } else {
         productMap.set(key, {
           name: adName, id: productIdVal,
           impressions, clicks, itemsSold, gmv, spend,
-          conversions: ad.conversions, directConversions: ad.directConversions,
-          directItemsSold: ad.directItemsSold, directRevenue: ad.directRevenue,
-          status: ad.status, bidMethod: ad.bidMethod,
-          productImpressions: ad.productImpressions, productClicks: ad.productClicks,
+          conversions, directConversions,
+          directItemsSold, directRevenue,
+          status, bidMethod,
+          productImpressions, productClicks,
         });
       }
     }
