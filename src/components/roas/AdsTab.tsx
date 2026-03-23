@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import {
   Upload, TrendingUp, TrendingDown, AlertTriangle, Zap, Package,
   MapPin, ClipboardList, Search, RefreshCw, Link2, Unlink, Trash2,
-  Megaphone, Eye, MousePointerClick, ShoppingCart, FileText
+  Megaphone, Eye, MousePointerClick, ShoppingCart, FileText, Clock
 } from 'lucide-react';
 import { AdsDetailView } from './AdsDetailView';
 import { AdsLinkModal } from './AdsLinkModal';

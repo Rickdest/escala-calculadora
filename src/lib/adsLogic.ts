@@ -149,6 +149,8 @@ export function generateAlerts(adsData: Array<{
   despesas: number;
   roas_empate: number | null;
   margem_contribuicao: number | null;
+  periodo_inicio?: string;
+  periodo_fim?: string;
 }>): AlertItem[] {
   const alerts: AlertItem[] = [];
 
@@ -156,8 +158,19 @@ export function generateAlerts(adsData: Array<{
     const name = ad.nome_produto_csv;
     if (ad.despesas <= 0) continue;
 
+    // Check learning phase — suppress "pausar" alerts for <7 days
+    let emAprendizado = false;
+    if (ad.periodo_inicio && ad.periodo_fim) {
+      const dias = Math.ceil((new Date(ad.periodo_fim).getTime() - new Date(ad.periodo_inicio).getTime()) / (1000 * 60 * 60 * 24));
+      emAprendizado = dias < 7;
+    }
+
     if (ad.roas_direto < 1) {
-      alerts.push({ productName: name, type: 'critico', priority: 1, message: `Cada R$1 investido retorna R$${ad.roas_direto.toFixed(2)}. Pause imediatamente.`, cor: 'destructive' });
+      if (emAprendizado) {
+        alerts.push({ productName: name, type: 'atencao', priority: 2, message: `ROAS ${ad.roas_direto.toFixed(2)} baixo, mas anúncio em fase de aprendizado (< 7 dias). Aguarde antes de pausar.`, cor: 'warning' });
+      } else {
+        alerts.push({ productName: name, type: 'critico', priority: 1, message: `Cada R$1 investido retorna R$${ad.roas_direto.toFixed(2)}. Pause imediatamente.`, cor: 'destructive' });
+      }
       continue;
     }
 
