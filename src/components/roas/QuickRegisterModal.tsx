@@ -72,9 +72,7 @@ export function QuickRegisterModal({ adData, onClose, onRegistered }: QuickRegis
         attributes: [],
         variations: [],
         shopeeAcelera: 'none',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
+      } as any);
       toast.success('Produto cadastrado e vinculado!');
       onRegistered(newProduct.id);
     } catch {
