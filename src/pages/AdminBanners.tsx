@@ -139,8 +139,8 @@ export default function AdminBanners() {
         ordem: formData.ordem,
         ativo: formData.ativo,
       }).eq('id', editingId!);
-      if (error) toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
-      else toast({ title: 'Banner atualizado!' });
+      if (error) toast.error('Erro ao salvar', { description: error.message });
+      else toast.success('Banner atualizado!');
     }
     setSaving(false);
     setEditingId(null);
