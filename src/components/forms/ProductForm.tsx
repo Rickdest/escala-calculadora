@@ -439,7 +439,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                 <span className="text-sm font-semibold text-foreground">Comparativo de canais</span>
                 <span className="text-[10px] text-text-3 ml-auto">Tempo real</span>
               </div>
-              <div className={cn('grid gap-1.5', `grid-cols-${channelComparison.results.length + 1}`)}>
+              <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${channelComparison.results.length + 1}, minmax(0, 1fr))` }}>
                 {/* Shopee — sempre primeiro */}
                 <div className="px-2 py-3 text-center border border-border rounded-lg bg-background/50">
                   <p className="text-[8px] font-bold uppercase tracking-wide text-text-3 leading-tight mb-1">Shopee</p>
