@@ -336,7 +336,7 @@ export function useAdsData() {
         custo_por_conversao: m.costPerConv,
         itens_vendidos_diretos: m.directItemsSold || m.itemsSold,
         conversoes_diretas: m.directConversions || 0,
-        posicao_media: avgPos, posicao_importada: hasRealPosition,
+        ...(hasRealPosition ? { posicao_media: avgPos, posicao_importada: true } : {}),
         periodo_inicio: m.periodStart, periodo_fim: m.periodEnd,
         ...derived,
       };
