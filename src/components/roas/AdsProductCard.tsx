@@ -237,20 +237,50 @@ export function AdsProductCard({
             )}>
               {posInfo?.label.split('—')[0].trim()}
             </p>
-          </div>
+            </div>
+
+            {/* ROAS */}
+            <div className="rounded-lg border border-border bg-surface-2 p-2.5 text-center">
+              <p className="section-label">ROAS</p>
+              <p className={cn('text-lg font-extrabold font-mono tabular-nums mt-0.5', getRoasColor(roasDireto))}>
+                {roasDireto.toFixed(2)}
+              </p>
+              {ad.roas_empate && ad.roas_empate > 0 ? (
+                <p className="text-[9px] text-text-3 font-mono">emp {ad.roas_empate.toFixed(2)}</p>
+              ) : (
+                <p className="text-[9px] text-text-3">—</p>
+              )}
+            </div>
+          </>
         ) : (
-          <div
-            className="rounded-lg border-2 border-dashed border-primary/40 bg-primary/5 p-2.5 text-center cursor-pointer hover:bg-primary/15 hover:border-primary/60 transition-all group"
-            onClick={(e) => { e.stopPropagation(); onUpdatePosition(); }}
-          >
-            <p className="section-label flex items-center justify-center gap-1">
-              <MapPin className="w-3 h-3" /> POSIÇÃO
-            </p>
-            <p className="text-2xl font-bold text-text-3 mt-0.5 group-hover:text-primary transition-colors">—</p>
-            <p className="text-[9px] text-primary font-bold flex items-center justify-center gap-0.5 animate-pulse">
-              <Upload className="w-3 h-3" /> Importar CSV
-            </p>
-          </div>
+          <>
+            {/* ROAS primeiro quando sem posição */}
+            <div className="rounded-lg border border-border bg-surface-2 p-2.5 text-center">
+              <p className="section-label">ROAS</p>
+              <p className={cn('text-lg font-extrabold font-mono tabular-nums mt-0.5', getRoasColor(roasDireto))}>
+                {roasDireto.toFixed(2)}
+              </p>
+              {ad.roas_empate && ad.roas_empate > 0 ? (
+                <p className="text-[9px] text-text-3 font-mono">emp {ad.roas_empate.toFixed(2)}</p>
+              ) : (
+                <p className="text-[9px] text-text-3">—</p>
+              )}
+            </div>
+
+            {/* Posição vazia — botão importar */}
+            <div
+              className="rounded-lg border-2 border-dashed border-primary/40 bg-primary/5 p-2.5 text-center cursor-pointer hover:bg-primary/15 hover:border-primary/60 transition-all group"
+              onClick={(e) => { e.stopPropagation(); onUpdatePosition(); }}
+            >
+              <p className="section-label flex items-center justify-center gap-1">
+                <MapPin className="w-3 h-3" /> POSIÇÃO
+              </p>
+              <p className="text-2xl font-bold text-text-3 mt-0.5 group-hover:text-primary transition-colors">—</p>
+              <p className="text-[9px] text-primary font-bold flex items-center justify-center gap-0.5 animate-pulse">
+                <Upload className="w-3 h-3" /> Importar CSV
+              </p>
+            </div>
+          </>
         )}
 
         {/* Custo/Unidade */}

@@ -127,6 +127,19 @@ export function AdsTab() {
             </div>
           </div>
 
+          {/* ═══ Position banner ═══ */}
+          {positionJustImported && (
+            <div className="rounded-xl border-2 border-success/40 bg-success/10 p-4 flex items-center gap-3 animate-fade-in">
+              <MapPin className="w-6 h-6 text-success flex-shrink-0" />
+              <div>
+                <p className="text-sm font-bold text-success">📍 Posição na Pesquisa Detectada!</p>
+                <p className="text-xs text-text-2 mt-0.5">
+                  O Posicionamento Médio foi extraído automaticamente do CSV Por Produto.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* ═══ Summary + Filters ═══ */}
           <SummaryCards data={data} />
           <FilterChips filter={filter} setFilter={setFilter} data={data} />
