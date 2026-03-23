@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { EnrichedAdsData } from '@/hooks/useAdsData';
 import { cn } from '@/lib/utils';
-import { Package, MapPin, Link2, Clock } from 'lucide-react';
+import { Package, MapPin, Link2, Clock, Plus } from 'lucide-react';
 import { fmt, getClassCor, getRoasColor, getDiasPeriodo } from './adsHelpers';
 import { calcAdEfficiencyScore, calcHaloEffect, calcCostVsMarginAlert, classificarPosicao } from '@/lib/adsLogic';
 
@@ -24,16 +24,26 @@ function ScoreDots({ score }: { score: number }) {
   );
 }
 
+function ProgressBadge({ level }: { level: 1 | 2 | 3 }) {
+  return (
+    <span className={cn(
+      'inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold',
+      level === 3 ? 'bg-success/10 text-success' : 'bg-surface-2 text-text-3'
+    )}>
+      {level}/3{level === 3 && ' ✓'}
+    </span>
+  );
+}
+
 export function AdsProductCard({
-  ad, onClick, onLink, onUpdatePosition,
+  ad, onClick, onLink, onQuickRegister, onUpdatePosition,
 }: {
   ad: EnrichedAdsData;
   onClick: () => void;
   onLink: () => void;
+  onQuickRegister: () => void;
   onUpdatePosition: () => void;
 }) {
-  const cls = getClassCor(ad.classificacao);
-  const ClsIcon = cls.icon;
   const periodLabel = (() => {
     const f = (d: string) => { const parts = d.split('-'); return `${parts[2]}/${parts[1]}`; };
     return `${f(ad.periodo_inicio)} – ${f(ad.periodo_fim)}`;
@@ -42,10 +52,16 @@ export function AdsProductCard({
   const roasDireto = ad.roas_direto || ad.roas;
   const dias = getDiasPeriodo(ad.periodo_inicio, ad.periodo_fim);
   const emAprendizado = dias < 7;
+  const isLinked = !!ad.product_id;
+  const hasPosition = ad.posicao_importada && ad.posicao_media !== null;
+  const level: 1 | 2 | 3 = !isLinked ? 1 : hasPosition ? 3 : 2;
+
+  const cls = getClassCor(ad.classificacao);
+  const ClsIcon = cls.icon;
 
   const efficiency = useMemo(() =>
-    calcAdEfficiencyScore(roasDireto, ad.roas_empate, ad.ctr, ad.taxa_conversao, ad.posicao_media),
-    [roasDireto, ad.roas_empate, ad.ctr, ad.taxa_conversao, ad.posicao_media]
+    isLinked ? calcAdEfficiencyScore(roasDireto, ad.roas_empate, ad.ctr, ad.taxa_conversao, ad.posicao_media) : null,
+    [roasDireto, ad.roas_empate, ad.ctr, ad.taxa_conversao, ad.posicao_media, isLinked]
   );
 
   const halo = useMemo(() =>
@@ -61,9 +77,66 @@ export function AdsProductCard({
 
   const posInfo = ad.posicao_media !== null ? classificarPosicao(ad.posicao_media) : null;
 
+  // ═══ STATE 1: Unlinked ═══
+  if (!isLinked) {
+    return (
+      <div
+        className="rounded-xl border-2 border-dashed border-warning/30 bg-warning/5 p-4 space-y-3 cursor-pointer hover:border-warning/50 transition-colors active:scale-[0.99]"
+        onClick={onClick}
+      >
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-surface-2 flex items-center justify-center flex-shrink-0">
+            <Package className="w-5 h-5 text-text-3" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-foreground truncate">{ad.nome_produto_csv}</p>
+            <p className="text-[11px] text-text-3 mt-0.5">Não vinculado · {periodLabel}</p>
+          </div>
+          <ProgressBadge level={1} />
+        </div>
+
+        {/* Basic metrics in one line */}
+        <div className="text-[11px] text-text-2 font-mono tabular-nums flex items-center gap-2 flex-wrap">
+          <span className={cn('font-bold', getRoasColor(roasDireto))}>ROAS {roasDireto.toFixed(2)}</span>
+          <span className="text-text-3">·</span>
+          <span>{ad.itens_vendidos} un</span>
+          <span className="text-text-3">·</span>
+          <span>Gasto {fmt(ad.despesas)}</span>
+          <span className="text-text-3">·</span>
+          <span>GMV {fmt(ad.gmv)}</span>
+        </div>
+
+        {/* Action buttons */}
+        <div className="flex gap-2" onClick={e => e.stopPropagation()}>
+          <button
+            onClick={onLink}
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-card text-xs font-bold text-foreground hover:border-primary/30 transition-colors"
+          >
+            <Link2 className="w-3.5 h-3.5" /> Vincular produto
+          </button>
+          <button
+            onClick={onQuickRegister}
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-primary/30 bg-primary/10 text-xs font-bold text-primary hover:bg-primary/20 transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" /> Cadastro Rápido
+          </button>
+        </div>
+
+        <p className="text-[10px] text-warning font-bold">
+          ⚠️ Vincule para desbloquear análise completa
+        </p>
+      </div>
+    );
+  }
+
+  // ═══ STATE 2 & 3: Linked (with or without position) ═══
+  const borderClass = level === 3
+    ? (ad.classificacao === 'LUCRATIVO' ? 'border-success/20 bg-success/5' : ad.classificacao === 'PREJUIZO' ? 'border-destructive/20 bg-destructive/5' : 'border-border bg-card')
+    : 'border-border bg-card';
+
   return (
     <div
-      className="rounded-xl border border-border bg-card p-4 space-y-3 cursor-pointer hover:border-primary/30 transition-colors active:scale-[0.99]"
+      className={cn('rounded-xl border p-4 space-y-3 cursor-pointer hover:border-primary/30 transition-colors active:scale-[0.99]', borderClass)}
       onClick={onClick}
     >
       {/* Row 1: Product info + Score */}
@@ -90,10 +163,14 @@ export function AdsProductCard({
           </div>
         </div>
         <div className="text-right flex-shrink-0 space-y-1">
-          <p className={cn('text-lg font-extrabold font-mono tabular-nums', efficiency.color)}>
-            {efficiency.score}<span className="text-[10px] text-text-3 font-normal">/100</span>
-          </p>
-          <ScoreDots score={efficiency.score} />
+          {efficiency && (
+            <>
+              <p className={cn('text-lg font-extrabold font-mono tabular-nums', efficiency.color)}>
+                {efficiency.score}<span className="text-[10px] text-text-3 font-normal">/100</span>
+              </p>
+              <ScoreDots score={efficiency.score} />
+            </>
+          )}
         </div>
       </div>
 
@@ -106,26 +183,37 @@ export function AdsProductCard({
             {roasDireto.toFixed(2)}
           </p>
           {ad.roas_empate ? (
-            <p className="text-[9px] text-text-3 font-mono">vs {ad.roas_empate.toFixed(2)}</p>
+            <p className="text-[9px] text-text-3 font-mono">emp {ad.roas_empate.toFixed(2)}</p>
           ) : (
             <p className="text-[9px] text-text-3">—</p>
           )}
         </div>
+
         {/* Posição */}
-        <div className="rounded-lg border border-border bg-surface-2 p-2.5 text-center">
-          <p className="section-label">Posição</p>
-          {ad.posicao_media !== null ? (
-            <>
-              <p className="text-lg font-extrabold font-mono tabular-nums mt-0.5 text-foreground">#{ad.posicao_media}</p>
-              <p className="text-[9px] text-text-3">{posInfo?.label.split('—')[0].trim()}</p>
-            </>
-          ) : (
-            <>
-              <p className="text-lg font-extrabold font-mono tabular-nums mt-0.5 text-text-3">—</p>
-              <p className="text-[9px] text-text-3">Importe CSV</p>
-            </>
-          )}
-        </div>
+        {hasPosition ? (
+          <div className="rounded-lg border border-border bg-surface-2 p-2.5 text-center">
+            <p className="section-label">POSIÇÃO</p>
+            <p className="text-lg font-extrabold font-mono tabular-nums mt-0.5 text-foreground">#{ad.posicao_media}</p>
+            <p className={cn('text-[9px] font-bold',
+              posInfo?.classe === 'TOPO' ? 'text-success' :
+              posInfo?.classe === 'PRIMEIRA_PAGINA' ? 'text-primary' : 'text-warning'
+            )}>
+              {posInfo?.label.split('—')[0].trim()} ✓
+            </p>
+          </div>
+        ) : (
+          <div
+            className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-2.5 text-center cursor-pointer hover:bg-primary/10 transition-colors"
+            onClick={(e) => { e.stopPropagation(); onUpdatePosition(); }}
+          >
+            <p className="section-label">POSIÇÃO</p>
+            <p className="text-lg font-bold text-text-3 mt-0.5">—</p>
+            <p className="text-[9px] text-primary font-bold flex items-center justify-center gap-0.5">
+              <MapPin className="w-3 h-3" /> Importar CSV
+            </p>
+          </div>
+        )}
+
         {/* Custo/Unidade */}
         <div className="rounded-lg border border-border bg-surface-2 p-2.5 text-center">
           <p className="section-label">Custo/Un</p>
@@ -150,29 +238,26 @@ export function AdsProductCard({
       </div>
 
       {/* Row 3: Key metrics line */}
-      <div className="text-[11px] text-text-2 font-mono tabular-nums space-y-0.5">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span>{ad.itens_vendidos} un vendidas</span>
-          <span className="text-text-3">·</span>
-          <span>{ad.conversoes || ad.itens_vendidos} pedidos</span>
-          <span className="text-text-3">·</span>
-          <span>Gasto {fmt(ad.despesas)}</span>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <span>GMV {fmt(ad.gmv)}</span>
-          {ad.gmv_direto > 0 && ad.gmv_direto !== ad.gmv && (
-            <>
-              <span className="text-text-3">·</span>
-              <span>Direta {fmt(ad.gmv_direto)}</span>
-            </>
-          )}
-        </div>
+      <div className="text-[11px] text-text-2 font-mono tabular-nums flex items-center gap-2 flex-wrap">
+        <span>{ad.itens_vendidos} un</span>
+        <span className="text-text-3">·</span>
+        <span>Gasto {fmt(ad.despesas)}</span>
+        <span className="text-text-3">·</span>
+        <span>GMV {fmt(ad.gmv)}</span>
       </div>
 
       {/* Row 4: Halo effect */}
       {halo && (
         <p className={cn('text-[11px] font-mono tabular-nums', halo.isSignificant ? 'text-primary font-bold' : 'text-text-3')}>
           {halo.isSignificant ? '🔗 ' : ''}+{fmt(halo.haloGmv)} em vendas indiretas ({halo.haloPct.toFixed(1)}%)
+        </p>
+      )}
+
+      {/* Diagnostic line for complete cards */}
+      {level === 3 && ad.classificacao && (
+        <p className={cn('text-[11px] font-bold', cls.color)}>
+          {ad.classificacao === 'LUCRATIVO' ? '🚀' : '⚠️'} {cls.label}
+          {ad.roas_empate ? ` · Meta: ${ad.roas_empate.toFixed(1)}` : ''}
         </p>
       )}
 
@@ -188,21 +273,10 @@ export function AdsProductCard({
         </div>
       )}
 
-      {/* Link button */}
-      {!ad.product_id && (
-        <button
-          onClick={(e) => { e.stopPropagation(); onLink(); }}
-          className="flex items-center gap-1.5 text-[11px] font-bold text-primary hover:text-primary/80 transition-colors"
-        >
-          <Link2 className="w-3 h-3" /> Vincular ao cadastro
-        </button>
-      )}
-
-      {ad.posicao_media !== null && (
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold font-mono tabular-nums text-text-2">
-          <MapPin className="w-3 h-3 text-primary" /> Pos. #{ad.posicao_media}
-        </span>
-      )}
+      {/* Progress badge */}
+      <div className="flex justify-end">
+        <ProgressBadge level={level} />
+      </div>
     </div>
   );
 }

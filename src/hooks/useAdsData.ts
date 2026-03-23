@@ -156,7 +156,7 @@ export function useAdsData() {
         acos: m.acos,
         roas_direto: m.directRoas,
         acos_direto: m.directAcos,
-        gmv_direto: (m as any).directGmv || 0,
+        gmv_direto: (m as any).directGmv || (m as any).directRevenue || m.gmv,
         custo_por_conversao: m.costPerConv,
         itens_vendidos_diretos: (m as any).directItemsSold || 0,
         conversoes_diretas: (m as any).directConversions || (m as any).conversions || 0,
