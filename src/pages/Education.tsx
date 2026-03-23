@@ -69,7 +69,7 @@ export default function Education() {
 
     // Validate inputs
     if (title && title.length > 200) {
-      toast({ title: 'Erro', description: 'Título deve ter no máximo 200 caracteres.', variant: 'destructive' });
+      toast.error('Título deve ter no máximo 200 caracteres.');
       setSaving(false);
       return;
     }
