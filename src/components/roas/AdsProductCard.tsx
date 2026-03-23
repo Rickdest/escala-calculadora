@@ -194,69 +194,87 @@ export function AdsProductCard({
         </div>
       </div>
 
-      {/* Row 2: 3 KPI boxes */}
+      {/* Row 2: 3 KPI boxes — Position first when available */}
       <div className="grid grid-cols-3 gap-2">
-        {/* ROAS */}
-        <div className="rounded-lg border border-border bg-surface-2 p-2.5 text-center">
-          <p className="section-label">ROAS</p>
-          <p className={cn('text-lg font-extrabold font-mono tabular-nums mt-0.5', getRoasColor(roasDireto))}>
-            {roasDireto.toFixed(2)}
-          </p>
-          {ad.roas_empate && ad.roas_empate > 0 ? (
-            <p className="text-[9px] text-text-3 font-mono">emp {ad.roas_empate.toFixed(2)}</p>
-          ) : (
-            <p className="text-[9px] text-text-3">—</p>
-          )}
-        </div>
-
-        {/* Posição — DESTAQUE */}
         {hasPosition ? (
-          <div className={cn(
-            'rounded-lg border-2 p-2.5 text-center relative overflow-hidden',
-            posInfo?.classe === 'TOPO' ? 'border-success/40 bg-success/10' :
-            posInfo?.classe === 'PRIMEIRA_PAGINA' ? 'border-primary/40 bg-primary/10' :
-            'border-warning/40 bg-warning/10'
-          )}>
-            <div className="absolute top-0 right-0">
-              <span className={cn(
-                'text-[8px] font-extrabold px-1.5 py-0.5 rounded-bl-lg',
-                posInfo?.classe === 'TOPO' ? 'bg-success text-success-foreground' :
-                posInfo?.classe === 'PRIMEIRA_PAGINA' ? 'bg-primary text-primary-foreground' :
-                'bg-warning text-warning-foreground'
+          <>
+            {/* POSIÇÃO primeiro quando disponível */}
+            <div className={cn(
+              'rounded-lg border-2 p-2.5 text-center relative overflow-hidden ring-2',
+              posInfo?.classe === 'TOPO' ? 'border-success/40 bg-success/10 ring-success/20' :
+              posInfo?.classe === 'PRIMEIRA_PAGINA' ? 'border-primary/40 bg-primary/10 ring-primary/20' :
+              'border-warning/40 bg-warning/10 ring-warning/20'
+            )}>
+              <div className="absolute top-0 right-0">
+                <span className={cn(
+                  'text-[8px] font-extrabold px-1.5 py-0.5 rounded-bl-lg',
+                  posInfo?.classe === 'TOPO' ? 'bg-success text-success-foreground' :
+                  posInfo?.classe === 'PRIMEIRA_PAGINA' ? 'bg-primary text-primary-foreground' :
+                  'bg-warning text-warning-foreground'
+                )}>
+                  {posInfo?.classe === 'TOPO' ? '🏆 TOPO' : posInfo?.classe === 'PRIMEIRA_PAGINA' ? '📍 PÁG.1' : '📍 PÁG.2+'}
+                </span>
+              </div>
+              <p className="section-label flex items-center justify-center gap-1">
+                <MapPin className="w-3 h-3" /> POSIÇÃO
+              </p>
+              <p className={cn(
+                'text-2xl font-black font-mono tabular-nums mt-0.5',
+                posInfo?.classe === 'TOPO' ? 'text-success' :
+                posInfo?.classe === 'PRIMEIRA_PAGINA' ? 'text-primary' : 'text-warning'
               )}>
-                {posInfo?.classe === 'TOPO' ? '🏆 TOPO' : posInfo?.classe === 'PRIMEIRA_PAGINA' ? '📍 PÁG.1' : '📍 PÁG.2+'}
-              </span>
+                #{ad.posicao_media}
+              </p>
+              <p className={cn('text-[9px] font-bold',
+                posInfo?.classe === 'TOPO' ? 'text-success' :
+                posInfo?.classe === 'PRIMEIRA_PAGINA' ? 'text-primary' : 'text-warning'
+              )}>
+                {posInfo?.label.split('—')[0].trim()}
+              </p>
             </div>
-            <p className="section-label flex items-center justify-center gap-1">
-              <MapPin className="w-3 h-3" /> POSIÇÃO
-            </p>
-            <p className={cn(
-              'text-2xl font-black font-mono tabular-nums mt-0.5',
-              posInfo?.classe === 'TOPO' ? 'text-success' :
-              posInfo?.classe === 'PRIMEIRA_PAGINA' ? 'text-primary' : 'text-warning'
-            )}>
-              #{ad.posicao_media}
-            </p>
-            <p className={cn('text-[9px] font-bold',
-              posInfo?.classe === 'TOPO' ? 'text-success' :
-              posInfo?.classe === 'PRIMEIRA_PAGINA' ? 'text-primary' : 'text-warning'
-            )}>
-              {posInfo?.label.split('—')[0].trim()}
-            </p>
-          </div>
+
+            {/* ROAS */}
+            <div className="rounded-lg border border-border bg-surface-2 p-2.5 text-center">
+              <p className="section-label">ROAS</p>
+              <p className={cn('text-lg font-extrabold font-mono tabular-nums mt-0.5', getRoasColor(roasDireto))}>
+                {roasDireto.toFixed(2)}
+              </p>
+              {ad.roas_empate && ad.roas_empate > 0 ? (
+                <p className="text-[9px] text-text-3 font-mono">emp {ad.roas_empate.toFixed(2)}</p>
+              ) : (
+                <p className="text-[9px] text-text-3">—</p>
+              )}
+            </div>
+          </>
         ) : (
-          <div
-            className="rounded-lg border-2 border-dashed border-primary/40 bg-primary/5 p-2.5 text-center cursor-pointer hover:bg-primary/15 hover:border-primary/60 transition-all group"
-            onClick={(e) => { e.stopPropagation(); onUpdatePosition(); }}
-          >
-            <p className="section-label flex items-center justify-center gap-1">
-              <MapPin className="w-3 h-3" /> POSIÇÃO
-            </p>
-            <p className="text-2xl font-bold text-text-3 mt-0.5 group-hover:text-primary transition-colors">—</p>
-            <p className="text-[9px] text-primary font-bold flex items-center justify-center gap-0.5 animate-pulse">
-              <Upload className="w-3 h-3" /> Importar CSV
-            </p>
-          </div>
+          <>
+            {/* ROAS primeiro quando sem posição */}
+            <div className="rounded-lg border border-border bg-surface-2 p-2.5 text-center">
+              <p className="section-label">ROAS</p>
+              <p className={cn('text-lg font-extrabold font-mono tabular-nums mt-0.5', getRoasColor(roasDireto))}>
+                {roasDireto.toFixed(2)}
+              </p>
+              {ad.roas_empate && ad.roas_empate > 0 ? (
+                <p className="text-[9px] text-text-3 font-mono">emp {ad.roas_empate.toFixed(2)}</p>
+              ) : (
+                <p className="text-[9px] text-text-3">—</p>
+              )}
+            </div>
+
+            {/* Posição vazia — botão importar */}
+            <div
+              className="rounded-lg border-2 border-dashed border-primary/40 bg-primary/5 p-2.5 text-center cursor-pointer hover:bg-primary/15 hover:border-primary/60 transition-all group"
+              onClick={(e) => { e.stopPropagation(); onUpdatePosition(); }}
+            >
+              <p className="section-label flex items-center justify-center gap-1">
+                <MapPin className="w-3 h-3" /> POSIÇÃO
+              </p>
+              <p className="text-2xl font-bold text-text-3 mt-0.5 group-hover:text-primary transition-colors">—</p>
+              <p className="text-[9px] text-primary font-bold flex items-center justify-center gap-0.5 animate-pulse">
+                <Upload className="w-3 h-3" /> Importar CSV
+              </p>
+            </div>
+          </>
         )}
 
         {/* Custo/Unidade */}

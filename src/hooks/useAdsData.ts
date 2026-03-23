@@ -328,8 +328,14 @@ export function useAdsData() {
       }
     }
 
-    const posMsg = hasRealPosition ? ` · 📍 Posição média: #${avgPos}` : '';
-    toast.success(`Dados importados com sucesso${posMsg}`);
+    if (hasRealPosition) {
+      toast.success(`📍 Posição #${avgPos} na Pesquisa detectada!`, {
+        description: 'O Posicionamento Médio foi extraído automaticamente do CSV.',
+        duration: 5000,
+      });
+    } else {
+      toast.success('Dados do produto importados com sucesso');
+    }
     await fetchData();
   }, [user, products, config, data, fetchData]);
 

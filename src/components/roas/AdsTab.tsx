@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef } from 'react';
 import { useStore } from '@/contexts/StoreContext';
 import { useAdsData, EnrichedAdsData } from '@/hooks/useAdsData';
-import { Upload, Trash2, Megaphone } from 'lucide-react';
+import { Upload, Trash2, Megaphone, MapPin } from 'lucide-react';
 import { AdsDetailView } from './AdsDetailView';
 import { AdsLinkModal } from './AdsLinkModal';
 import { QuickRegisterModal } from './QuickRegisterModal';
@@ -28,6 +28,7 @@ export function AdsTab() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [positionTarget, setPositionTarget] = useState<string | undefined>();
   const positionFileRef = useRef<HTMLInputElement>(null);
+  const [positionJustImported, setPositionJustImported] = useState(false);
 
   const products = currentStore?.products || [];
 
@@ -52,6 +53,8 @@ export function AdsTab() {
     );
     if (hasProductMeta || hasPositionHeaders) {
       await importProductCSV(text);
+      setPositionJustImported(true);
+      setTimeout(() => setPositionJustImported(false), 8000);
     } else {
       await importGeneralCSV(text);
     }
@@ -123,6 +126,19 @@ export function AdsTab() {
               </AlertDialog>
             </div>
           </div>
+
+          {/* ═══ Position banner ═══ */}
+          {positionJustImported && (
+            <div className="rounded-xl border-2 border-success/40 bg-success/10 p-4 flex items-center gap-3 animate-fade-in">
+              <MapPin className="w-6 h-6 text-success flex-shrink-0" />
+              <div>
+                <p className="text-sm font-bold text-success">📍 Posição na Pesquisa Detectada!</p>
+                <p className="text-xs text-text-2 mt-0.5">
+                  O Posicionamento Médio foi extraído automaticamente do CSV Por Produto.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* ═══ Summary + Filters ═══ */}
           <SummaryCards data={data} />
