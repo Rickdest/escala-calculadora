@@ -27,6 +27,8 @@ export interface AdsDataRow {
   acos_direto: number;
   gmv_direto: number;
   custo_por_conversao: number;
+  itens_vendidos_diretos: number;
+  conversoes_diretas: number;
   metodo_lance: string | null;
   status_anuncio: string | null;
   impressoes_produto: number | null;
