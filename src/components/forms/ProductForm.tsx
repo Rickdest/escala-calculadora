@@ -431,6 +431,67 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             </div>
           </div>
 
+          {/* Comparativo de canais — tempo real */}
+          {channelComparison && localCalc && (
+            <div className="surface-card p-3.5 space-y-2.5">
+              <div className="flex items-center gap-2">
+                <span className="text-base">🌐</span>
+                <span className="text-sm font-semibold text-foreground">Comparativo de canais</span>
+                <span className="text-[10px] text-text-3 ml-auto">Tempo real</span>
+              </div>
+              <div className={cn('grid gap-1.5', `grid-cols-${channelComparison.results.length + 1}`)}>
+                {/* Shopee — sempre primeiro */}
+                <div className="px-2 py-3 text-center border border-border rounded-lg bg-background/50">
+                  <p className="text-[8px] font-bold uppercase tracking-wide text-text-3 leading-tight mb-1">Shopee</p>
+                  <p className={cn(
+                    'text-[13px] font-extrabold tabular-nums font-mono leading-none',
+                    localCalc.realMargin >= 15 ? 'text-success' : localCalc.realMargin >= 0 ? 'text-warning' : 'text-danger'
+                  )}>
+                    {localCalc.realMargin.toFixed(1)}%
+                  </p>
+                  <p className="text-[9px] text-text-3 tabular-nums font-mono mt-0.5">
+                    {formatCurrency(localCalc.netProfit)}
+                  </p>
+                </div>
+                {/* Outros canais */}
+                {channelComparison.results.map((r) => {
+                  const isBest = r.key === channelComparison.best?.key;
+                  const shortLabel: Record<string, string> = {
+                    tiktok: 'TikTok',
+                    shein: 'Shein',
+                    amazon: 'Amazon',
+                    ml: 'Merc. Livre',
+                  };
+                  return (
+                    <div
+                      key={r.key}
+                      className={cn(
+                        'px-2 py-3 text-center relative rounded-lg border',
+                        isBest ? 'border-success/35 bg-success/5' : 'border-border bg-background/50'
+                      )}
+                    >
+                      {isBest && (
+                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[11px] leading-none">👑</span>
+                      )}
+                      <p className="text-[8px] font-bold uppercase tracking-wide text-text-3 leading-tight mb-1">
+                        {shortLabel[r.key] ?? r.label}
+                      </p>
+                      <p className={cn(
+                        'text-[13px] font-extrabold tabular-nums font-mono leading-none',
+                        r.margin >= 15 ? 'text-success' : r.margin >= 0 ? 'text-warning' : 'text-danger'
+                      )}>
+                        {r.margin.toFixed(1)}%
+                      </p>
+                      <p className="text-[9px] text-text-3 tabular-nums font-mono mt-0.5">
+                        {formatCurrency(r.netProfit)}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Monthly Projection */}
           <div className="surface-card p-4 space-y-3">
             <div className="flex items-center gap-2">
