@@ -258,6 +258,8 @@ export function useAdsData() {
         roas_direto: m.directRoas || 0, acos_direto: m.directAcos || 0,
         gmv_direto: (m as any).directGmv || 0,
         custo_por_conversao: m.costPerConv,
+        itens_vendidos_diretos: (m as any).directItemsSold || m.itemsSold,
+        conversoes_diretas: (m as any).directConversions || 0,
         posicao_media: avgPos, posicao_importada: true,
         periodo_inicio: m.periodStart, periodo_fim: m.periodEnd,
         ...derived,
