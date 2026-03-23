@@ -22,7 +22,7 @@ interface EducationContent {
 
 export default function Education() {
   const { isAdmin, loading: adminLoading } = useAdmin();
-  const { toast } = useToast();
+  
   const [content, setContent] = useState<EducationContent[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
