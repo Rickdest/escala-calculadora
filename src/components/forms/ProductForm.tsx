@@ -120,7 +120,22 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentStore || !name.trim() || parseFloat(costPrice) <= 0 || parseFloat(salePrice) <= 0) return;
+    if (!currentStore) return;
+
+    const validation = validateForm(productSchema, {
+      name: name.trim(),
+      costPrice: parseFloat(costPrice) || 0,
+      salePrice: parseFloat(salePrice) || 0,
+      packagingCost: parseFloat(packagingCost) || 0,
+      adsCost: enableAds ? (parseFloat(adsCostValue) || 0) : 0,
+    });
+
+    if (!validation.success) {
+      const firstError = Object.values(validation.errors)[0];
+      toast.error(firstError || 'Dados inválidos');
+      return;
+    }
+
     setIsSaving(true);
     try {
       const productData = {
