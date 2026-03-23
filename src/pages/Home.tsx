@@ -348,7 +348,7 @@ export default function Home() {
                 {[
                   { sigla: 'TK', name: 'TikTok Shop', rate: '12% + R$4 fixo', tab: 'tiktok', bg: '#010101', text: 'text-white' },
                   { sigla: 'SH', name: 'Shein', rate: 'Moda 20% · Outros 18%', tab: 'shein', bg: '#E43D79', text: 'text-white' },
-                  { sigla: 'AZ', name: 'Amazon', rate: '10–15% por categoria', tab: 'amazon', bg: '#FF9900', text: 'text-white' },
+                  { sigla: 'AZ', name: 'Amazon', rate: '10–15% por categoria', tab: 'amazon', bg: '#232F3E', text: 'text-white' },
                   { sigla: 'ML', name: 'Mercado Livre', rate: 'Clássico / Premium', tab: 'ml', bg: '#FFE600', text: 'text-black' },
                 ].map((mp) => (
                   <button
