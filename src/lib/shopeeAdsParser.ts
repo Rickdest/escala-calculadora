@@ -439,12 +439,16 @@ function parseGeneralFormatCSV(csvContent: string): ParsedAdsFile | null {
         existing.directConversions += ad.directConversions;
         existing.directItemsSold += ad.directItemsSold;
         existing.directRevenue += ad.directRevenue;
+        existing.productImpressions += ad.productImpressions;
+        existing.productClicks += ad.productClicks;
       } else {
         productMap.set(key, {
           name: adName, id: productIdVal,
           impressions, clicks, itemsSold, gmv, spend,
           conversions: ad.conversions, directConversions: ad.directConversions,
           directItemsSold: ad.directItemsSold, directRevenue: ad.directRevenue,
+          status: ad.status, bidMethod: ad.bidMethod,
+          productImpressions: ad.productImpressions, productClicks: ad.productClicks,
         });
       }
     }
