@@ -18,11 +18,13 @@ export interface ParsedAdMetric {
   directRoas: number;
   directAcos: number;
   costPerConv: number;
-  // Extra fields from general CSV
+  // Extra fields
   status?: string;
   bidMethod?: string;
   conversions?: number;
+  directConversions?: number;
   directGmv?: number;
+  directItemsSold?: number;
   productImpressions?: number | null;
   productClicks?: number | null;
 }
@@ -53,8 +55,6 @@ export function deriveMetrics(m: ParsedAdMetric): AdMetricDerived {
 }
 
 
-
-
 // ─── Helpers ───
 
 function parseNumber(val: string): number {
@@ -65,9 +65,7 @@ function parseNumber(val: string): number {
 
 function parseBRNumber(val: string): number {
   if (!val || val === '-' || val === '') return 0;
-  // Handle BR format: 1.234,56 → 1234.56
   const cleaned = val.replace(/\s/g, '').replace('%', '');
-  // Check if it uses BR format (has comma as decimal separator)
   if (cleaned.includes(',')) {
     return parseFloat(cleaned.replace(/\./g, '').replace(',', '.')) || 0;
   }
@@ -94,11 +92,9 @@ function parseCSVLine(line: string): string[] {
 }
 
 function parsePeriod(periodStr: string): { start: string; end: string } {
-  // Try to extract dates from period string like "20/02/2026 - 20/03/2026"
   const match = periodStr.match(/(\d{2}\/\d{2}\/\d{4})\s*[-–]\s*(\d{2}\/\d{2}\/\d{4})/);
   if (match) {
     const [, s, e] = match;
-    // Convert dd/mm/yyyy to yyyy-mm-dd
     const toISO = (d: string) => {
       const [dd, mm, yyyy] = d.split('/');
       return `${yyyy}-${mm}-${dd}`;
@@ -180,8 +176,6 @@ function getCol(cols: string[], index: number): string {
 // ─── Format B: "Por Produto" (Product-level, ~25 cols) ───
 
 function isProductFormat(lines: string[]): boolean {
-  // Product format has metadata in first rows and "Consulta de pesquisa" or specific structure
-  // Also detectable by having product info in early rows
   for (let i = 0; i < Math.min(10, lines.length); i++) {
     const lower = lines[i].toLowerCase();
     if (lower.includes('nome do produto') || lower.includes('id do produto') || lower.includes('consulta de pesquisa')) {
@@ -211,23 +205,26 @@ function parseProductFormatCSV(csvContent: string): ParsedAdsFile | null {
       if (label.includes('período') || label.includes('periodo')) periodStr = cols[1] || '';
     }
 
+    // Fallback for empty product name
+    if (!productName || productName.trim() === '') {
+      productName = productId ? `Produto ${productId}` : 'Produto Desconhecido';
+    }
+
     // Find header row
     const headerIndex = lines.findIndex(l => l.startsWith('#,') || l.toLowerCase().includes('consulta de pesquisa'));
     if (headerIndex === -1) return null;
 
     const headerCols = parseCSVLine(lines[headerIndex]);
     
-    // Determine column positions for product format
-    // Typically: #, Keyword/Query, Match, Status, Bid, Position, Impressions, Clicks, CTR, Conv, DirectConv, ConvRate, ACOS, DirectACOS, CostPerConv, ItemsSold, DirectItemsSold, GMV, DirectRev, Spend, ROAS, DirectROAS, AvgPosition
     const posCol = headerCols.findIndex(h => {
       const hl = h.toLowerCase().trim();
-      return hl.includes('posição') || hl.includes('posicao') || hl.includes('position');
+      return hl.includes('posição') || hl.includes('posicao') || hl.includes('position') || hl.includes('posicionamento');
     });
 
     // Aggregate all data rows into one metric for this product
     let totalImpressions = 0, totalClicks = 0, totalConversions = 0;
     let totalItemsSold = 0, totalGmv = 0, totalSpend = 0;
-    let totalDirectItemsSold = 0, totalDirectRevenue = 0;
+    let totalDirectItemsSold = 0, totalDirectRevenue = 0, totalDirectConversions = 0;
     let positionSum = 0, positionCount = 0;
     let dataRowCount = 0;
 
@@ -238,24 +235,30 @@ function parseProductFormatCSV(csvContent: string): ParsedAdsFile | null {
       if (idx === 0) continue;
       dataRowCount++;
 
-      // Column positions depend on format. Common product format:
       const numCols = headerCols.length;
-      let impIdx: number, clickIdx: number, itemsSoldIdx: number, gmvIdx: number, spendIdx: number, roasIdx: number, convIdx: number;
+      let impIdx: number, clickIdx: number, itemsSoldIdx: number, gmvIdx: number, spendIdx: number;
+      let convIdx: number, directItemsSoldIdx: number, directRevenueIdx: number, directConvIdx: number;
 
       if (numCols >= 23) {
         // Full product format
-        impIdx = 6; clickIdx = 7; convIdx = 9; itemsSoldIdx = 15; gmvIdx = 17; spendIdx = 19; roasIdx = 20;
+        impIdx = 6; clickIdx = 7; convIdx = 9; directConvIdx = 10;
+        itemsSoldIdx = 15; directItemsSoldIdx = 16;
+        gmvIdx = 17; directRevenueIdx = 18; spendIdx = 19;
       } else {
-        // Shorter format - estimate positions
-        impIdx = 6; clickIdx = 7; convIdx = 9; itemsSoldIdx = 13; gmvIdx = 15; spendIdx = 17; roasIdx = 18;
+        // Shorter format
+        impIdx = 6; clickIdx = 7; convIdx = 9; directConvIdx = 10;
+        itemsSoldIdx = 13; directItemsSoldIdx = 14;
+        gmvIdx = 15; directRevenueIdx = 16; spendIdx = 17;
       }
 
       totalImpressions += parseBRNumber(getCol(cols, impIdx));
       totalClicks += parseBRNumber(getCol(cols, clickIdx));
-      // BUG 7 FIX: increment totalConversions
       totalConversions += parseBRNumber(getCol(cols, convIdx));
+      totalDirectConversions += parseBRNumber(getCol(cols, directConvIdx));
       totalItemsSold += parseBRNumber(getCol(cols, itemsSoldIdx));
+      totalDirectItemsSold += parseBRNumber(getCol(cols, directItemsSoldIdx));
       totalGmv += parseBRNumber(getCol(cols, gmvIdx));
+      totalDirectRevenue += parseBRNumber(getCol(cols, directRevenueIdx));
       totalSpend += parseBRNumber(getCol(cols, spendIdx));
 
       if (posCol >= 0) {
@@ -274,6 +277,12 @@ function parseProductFormatCSV(csvContent: string): ParsedAdsFile | null {
     const costPerConv = totalConversions > 0 ? totalSpend / totalConversions : 0;
     const avgPos = positionCount > 0 ? Math.round(positionSum / positionCount) : null;
 
+    // For product CSV: if no direct fields found, use total as direct (product CSV = direct data)
+    const effectiveDirectRevenue = totalDirectRevenue > 0 ? totalDirectRevenue : totalGmv;
+    const effectiveDirectItemsSold = totalDirectItemsSold > 0 ? totalDirectItemsSold : totalItemsSold;
+    const directRoas = totalSpend > 0 ? effectiveDirectRevenue / totalSpend : 0;
+    const directAcos = effectiveDirectRevenue > 0 ? (totalSpend / effectiveDirectRevenue) * 100 : 0;
+
     const metric: ParsedAdMetric = {
       shopeeProductId: productId,
       shopeeProductName: productName,
@@ -289,9 +298,13 @@ function parseProductFormatCSV(csvContent: string): ParsedAdsFile | null {
       avgPosition: avgPos,
       ctr: parseFloat(ctr.toFixed(2)),
       convRate: parseFloat(convRate.toFixed(2)),
-      directRoas: 0,
-      directAcos: 0,
+      directRoas: parseFloat(directRoas.toFixed(2)),
+      directAcos: parseFloat(directAcos.toFixed(2)),
       costPerConv: parseFloat(costPerConv.toFixed(2)),
+      conversions: totalConversions,
+      directConversions: totalDirectConversions,
+      directGmv: effectiveDirectRevenue,
+      directItemsSold: effectiveDirectItemsSold,
     };
 
     return {
@@ -344,7 +357,6 @@ function parseGeneralFormatCSV(csvContent: string): ParsedAdsFile | null {
       const clicks = parseBRNumber(getCol(cols, map.clicks));
       const impressions = parseBRNumber(getCol(cols, map.impressions));
       const itemsSold = parseBRNumber(getCol(cols, map.itemsSold));
-      const convRate = parseBRNumber(getCol(cols, map.conversionRate));
       const productIdVal = getCol(cols, map.productId) || '-';
       const adName = getCol(cols, map.adName);
 
@@ -397,7 +409,7 @@ function parseGeneralFormatCSV(csvContent: string): ParsedAdsFile | null {
 
       metrics.push({
         shopeeProductId: data.id,
-        shopeeProductName: data.name,
+        shopeeProductName: data.name || `Produto ${data.id}`,
         periodStart: period.start,
         periodEnd: period.end,
         impressions: data.impressions,
@@ -416,7 +428,9 @@ function parseGeneralFormatCSV(csvContent: string): ParsedAdsFile | null {
         status: data.status,
         bidMethod: data.bidMethod,
         conversions: data.conversions,
+        directConversions: data.directConversions,
         directGmv: data.directRevenue,
+        directItemsSold: data.directItemsSold,
         productImpressions: data.productImpressions || null,
         productClicks: data.productClicks || null,
       });

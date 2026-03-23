@@ -15,16 +15,16 @@ export function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
     const atencao = data.filter(d => d.classificacao === 'MARGEM_APERTADA' || d.classificacao === 'ABAIXO_EMPATE').length;
     const prejuizo = data.filter(d => d.classificacao === 'PREJUIZO').length;
 
-    // Avg efficiency score
-    const scores = data.map(d => {
-      const rd = d.roas_direto || d.roas;
+    // Avg efficiency score — only for linked products
+    const linkedData = data.filter(d => !!d.product_id);
+    const scores = linkedData.map(d => {
+      const rd = d.roas_direto && d.roas_direto > 0 ? d.roas_direto : d.roas;
       return calcAdEfficiencyScore(rd, d.roas_empate, d.ctr, d.taxa_conversao, d.posicao_media);
     });
     const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, s) => a + s.score, 0) / scores.length) : 0;
 
     // Total halo
     const totalGmvDireto = data.reduce((a, d) => a + (d.gmv_direto || 0), 0);
-    const totalItemsDiretos = data.reduce((a, d) => a + ((d as any).itens_vendidos_diretos || 0), 0);
     const haloTotal = totalGmv - totalGmvDireto;
     const haloPct = totalGmv > 0 ? (haloTotal / totalGmv) * 100 : 0;
 
@@ -55,11 +55,15 @@ export function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
         <span className="text-xs font-bold text-success">✅ {s.lucrativos} lucrativos</span>
         <span className="text-xs font-bold text-warning">🟠 {s.atencao} atenção</span>
         <span className="text-xs font-bold text-destructive">🔴 {s.prejuizo} prejuízo</span>
-        <span className="text-text-3">·</span>
-        <span className={cn('text-xs font-bold font-mono tabular-nums', s.avgScore >= 60 ? 'text-primary' : 'text-warning')}>
-          Score Médio: {s.avgScore}/100
-        </span>
-        {s.haloTotal > 0 && (
+        {s.avgScore > 0 && (
+          <>
+            <span className="text-text-3">·</span>
+            <span className={cn('text-xs font-bold font-mono tabular-nums', s.avgScore >= 60 ? 'text-primary' : 'text-warning')}>
+              Score Médio: {s.avgScore}/100
+            </span>
+          </>
+        )}
+        {s.haloTotal > 0 && s.haloPct < 90 && (
           <>
             <span className="text-text-3">·</span>
             <span className="text-xs font-bold text-text-2 font-mono tabular-nums">
