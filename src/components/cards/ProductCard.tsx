@@ -198,7 +198,7 @@ export function ProductCard({ product, calculation, adsMetric, onEdit, onDuplica
               onClick={(e) => { e.stopPropagation(); setShowAdsImport(true); }}
               className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-dashed border-border text-xs font-semibold text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors active:scale-[0.98]"
             >
-              <BarChart3 className="w-3.5 h-3.5" /> Importar Ads CSV
+              <Upload className="w-3.5 h-3.5" /> Importar relatório de anúncios
             </button>
           ) : (
             /* Has ads data — show badges */
