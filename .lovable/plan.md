@@ -1,64 +1,76 @@
 
 
-## Redesign da Aba Análise de Ads — Estilo Shopee Seller Center
+## Destaque Automático da Posição ao Importar CSV de Produto
 
-### Visão Geral
-
-Redesenhar o layout da aba "Análise de Ads" para se parecer com o painel de Ads do Shopee Seller Center: toolbar no topo com ações, tabela/lista organizada com métricas em colunas, e opção de excluir dados. Layout mais profissional e denso no desktop, mantendo cards no mobile.
+### Problema
+O parser já extrai `avgPosition` (coluna "Posicionamento Médio", coluna 21) do CSV Por Produto e salva em `posicao_media`. Porém, quando o CSV de Produto é importado via botão unificado "Importar CSV", não há destaque visual informando que a posição foi detectada. O toast atual mostra `📍 Posição média: #X` mas é sutil e some rápido.
 
 ### Mudanças
 
-#### 1. `src/components/roas/AdsTab.tsx` — Layout principal redesenhado
+#### 1. `src/hooks/useAdsData.ts` — Toast mais rico ao detectar posição
 
-**Toolbar no topo** (estilo Shopee):
-- Row horizontal com: contagem de anúncios ("X anúncios"), botão "Importar CSV", botão "Excluir Tudo" (destructive, com confirmação via AlertDialog)
-- FilterChips movidos para abaixo da toolbar
-- No desktop, SummaryCards e toolbar ficam lado a lado ou empilhados de forma compacta
+Trocar o toast simples por um toast com duração maior e informação contextual quando posição é encontrada:
 
-**Botão Excluir Tudo**:
-- Ícone `Trash2`, variante `ghost` destructive
-- Ao clicar, abre AlertDialog: "Tem certeza? Isso removerá todos os dados de Ads importados."
-- Chama `deleteAll()` do `useAdsData`
+```typescript
+// Quando hasRealPosition = true:
+toast.success(`📍 Posição #${avgPos} na Pesquisa detectada!`, {
+  description: 'O Posicionamento Médio foi extraído automaticamente do CSV.',
+  duration: 5000,
+});
+// Quando false:
+toast.success('Dados do produto importados com sucesso');
+```
 
-**Desktop layout** (≥1024px):
-- Grid `lg:grid-cols-12`: conteúdo principal em `lg:col-span-9`, alertas em `lg:col-span-3`
-- Cards em grid `md:grid-cols-2 xl:grid-cols-3` no desktop
-- SummaryCards em row horizontal compacta
+Aplicar isso tanto no fluxo com `targetAdsDataId` quanto no fluxo sem target.
 
-**Mobile**: mantém stack vertical atual
+#### 2. `src/components/roas/AdsProductCard.tsx` — Destaque visual "NEW" na posição
 
-#### 2. `src/components/roas/AdsProductCard.tsx` — Adicionar botão excluir individual
+Quando a posição existe e o card acabou de ser atualizado (detectável via `posicao_importada === true`), dar destaque extra no box de posição:
+- Adicionar uma animação `animate-pulse` temporária (CSS) no box de posição quando `hasPosition` é true
+- Aumentar o contraste do badge de posição (TOPO/PÁG.1) com um ring de destaque
+- Mover o box de posição para o **primeiro** KPI box (antes do ROAS) quando posição existe, para dar mais destaque visual à informação mais valiosa
 
-- Adicionar prop `onDelete: () => void`
-- No canto superior direito do card (ao lado do score ou progress badge), adicionar um botão `Trash2` discreto (`text-text-3 hover:text-destructive`)
-- Click com `e.stopPropagation()` para não abrir o detalhe
-- Sem confirmação no card individual (ação rápida)
+#### 3. `src/components/roas/AdsTab.tsx` — Banner de destaque pós-import
 
-#### 3. `src/components/roas/AdsTab.tsx` — Passar deleteAdsData e deleteAll
+Após importação de CSV de produto com posição detectada, mostrar um banner temporário no topo da lista:
 
-- Desestruturar `deleteAdsData` e `deleteAll` do `useAdsData()`
-- Passar `onDelete={() => deleteAdsData(ad.id)}` para cada `AdsProductCard`
-- Botão "Excluir Tudo" na toolbar usa `deleteAll()`
-- Usar `AlertDialog` do shadcn para confirmação do "Excluir Tudo"
+```tsx
+{positionJustImported && (
+  <div className="rounded-xl border-2 border-success/40 bg-success/10 p-4 flex items-center gap-3 animate-fade-up">
+    <MapPin className="w-6 h-6 text-success flex-shrink-0" />
+    <div>
+      <p className="text-sm font-bold text-success">📍 Posição na Pesquisa Detectada!</p>
+      <p className="text-xs text-text-2 mt-0.5">
+        O Posicionamento Médio foi extraído automaticamente do CSV Por Produto.
+      </p>
+    </div>
+  </div>
+)}
+```
 
-#### 4. `src/components/roas/SummaryCards.tsx` — Layout mais compacto no desktop
+Usar um estado `positionJustImported` que fica `true` por 8 segundos após import com posição.
 
-- No desktop: cards menores, grid `grid-cols-4` com padding reduzido
-- Barra de status (lucrativos/atenção/prejuízo) mais inline e compacta
+Modificar `handleFileImport` para setar esse estado quando o CSV de produto é detectado e importado com sucesso:
 
-#### 5. `src/components/roas/AdsEmptyState.tsx` — Melhorar empty state
+```typescript
+if (hasProductMeta || hasPositionHeaders) {
+  await importProductCSV(text);
+  setPositionJustImported(true);
+  setTimeout(() => setPositionJustImported(false), 8000);
+}
+```
 
-- Adicionar instrução visual mais clara estilo Shopee: passo a passo com numeração (1. Acesse Shopee Seller → 2. Marketing → 3. Exportar CSV)
+#### 4. `src/components/roas/AdsProductCard.tsx` — Reordenar KPIs quando tem posição
+
+No grid de 3 KPI boxes (state 2/3), quando `hasPosition === true`, mostrar na ordem: **Posição → ROAS → Custo/Un** (posição primeiro, pois é o dado mais valioso extraído do CSV individual). Quando `hasPosition === false`, manter: **ROAS → Posição (com botão importar) → Custo/Un**.
 
 ### Arquivos alterados
-- `src/components/roas/AdsTab.tsx`
-- `src/components/roas/AdsProductCard.tsx`
-- `src/components/roas/SummaryCards.tsx`
-- `src/components/roas/AdsEmptyState.tsx`
+- `src/hooks/useAdsData.ts` — toast enriquecido
+- `src/components/roas/AdsTab.tsx` — banner pós-import + estado temporário
+- `src/components/roas/AdsProductCard.tsx` — reordenação de KPIs + destaque visual
 
 ### Não altera
-- `useAdsData.ts` (já tem `deleteAdsData` e `deleteAll`)
-- `adsLogic.ts`, `shopeeAdsParser.ts`
-- `AdsDetailView.tsx`
+- Parser (`shopeeAdsParser.ts`) — já extrai posição corretamente
+- `adsLogic.ts`, `AdsDetailView.tsx`
 - Nenhuma funcionalidade removida
 
