@@ -2,6 +2,8 @@ import { useState, useRef, useCallback } from 'react';
 import { Package, TrendingUp, TrendingDown, MoreVertical, Copy, Trash2, Edit, Boxes } from 'lucide-react';
 import { Product, ProductCalculation } from '@/types/store';
 import { cn, getMarginStatus } from '@/lib/utils';
+import { calcOutrosCanais, getBestChannel } from '@/lib/outrosCanaisUtils';
+import { useStore } from '@/contexts/StoreContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +22,10 @@ interface ProductCardProps {
 export function ProductCard({ product, calculation, onEdit, onDuplicate, onDelete }: ProductCardProps) {
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const isLongPress = useRef(false);
+  const [compareOpen, setCompareOpen] = useState(false);
+
+  const { currentStore } = useStore();
+  const taxesPercent = currentStore?.config.taxes ?? 0;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -49,6 +55,11 @@ export function ProductCard({ product, calculation, onEdit, onDuplicate, onDelet
       longPressTimer.current = null;
     }
   }, []);
+
+  const channelResults = product.outrosCanais && Object.keys(product.outrosCanais).length > 0
+    ? calcOutrosCanais(product.outrosCanais, taxesPercent)
+    : null;
+  const bestChannel = channelResults ? getBestChannel(channelResults) : null;
 
   return (
     <div
@@ -154,6 +165,42 @@ export function ProductCard({ product, calculation, onEdit, onDuplicate, onDelet
           </div>
         </div>
       </div>
+
+      {/* Outros Canais */}
+      {channelResults && channelResults.length > 0 && (
+        <div className="mt-3 space-y-2">
+          <button
+            onClick={(e) => { e.stopPropagation(); setCompareOpen(o => !o); }}
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-surface-2 border border-border text-xs font-semibold text-text-2 hover:border-primary/40 hover:text-primary transition-colors active:scale-[0.98]"
+          >
+            🌐 Comparar canais · {channelResults.map(r => r.label).join(' · ')}
+          </button>
+          {compareOpen && (
+            <div className="surface-card p-3 space-y-2 animate-fade-up">
+              <p className="section-label">Margem por canal</p>
+              <div className="space-y-1.5">
+                {channelResults.map((r) => (
+                  <div key={r.key} className="flex items-center justify-between text-xs">
+                    <span className="text-text-2">{r.label}</span>
+                    <span className={cn(
+                      'font-mono font-bold font-mono-num',
+                      r.margin >= 15 ? 'text-success' : r.margin >= 0 ? 'text-warning' : 'text-danger'
+                    )}>
+                      {r.margin.toFixed(1)}%
+                    </span>
+                    <span className="font-mono font-mono-num text-text-2">{formatCurrency(r.netProfit)}</span>
+                  </div>
+                ))}
+              </div>
+              {bestChannel && (
+                <p className="text-[10px] text-success font-semibold pt-1 border-t border-border/50">
+                  Melhor margem: {bestChannel.label}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
