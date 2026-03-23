@@ -18,6 +18,13 @@ export interface ParsedAdMetric {
   directRoas: number;
   directAcos: number;
   costPerConv: number;
+  // Extra fields from general CSV
+  status?: string;
+  bidMethod?: string;
+  conversions?: number;
+  directGmv?: number;
+  productImpressions?: number | null;
+  productClicks?: number | null;
 }
 
 export interface ParsedAdsFile {
@@ -358,6 +365,8 @@ function parseGeneralFormatCSV(csvContent: string): ParsedAdsFile | null {
       gmv: number; spend: number; directRevenue: number;
       conversions: number; directConversions: number;
       directItemsSold: number;
+      status: string; bidMethod: string;
+      productImpressions: number; productClicks: number;
     }>();
 
     const rawAds: ShopeeAdRow[] = [];
@@ -430,12 +439,16 @@ function parseGeneralFormatCSV(csvContent: string): ParsedAdsFile | null {
         existing.directConversions += ad.directConversions;
         existing.directItemsSold += ad.directItemsSold;
         existing.directRevenue += ad.directRevenue;
+        existing.productImpressions += ad.productImpressions;
+        existing.productClicks += ad.productClicks;
       } else {
         productMap.set(key, {
           name: adName, id: productIdVal,
           impressions, clicks, itemsSold, gmv, spend,
           conversions: ad.conversions, directConversions: ad.directConversions,
           directItemsSold: ad.directItemsSold, directRevenue: ad.directRevenue,
+          status: ad.status, bidMethod: ad.bidMethod,
+          productImpressions: ad.productImpressions, productClicks: ad.productClicks,
         });
       }
     }
@@ -469,6 +482,12 @@ function parseGeneralFormatCSV(csvContent: string): ParsedAdsFile | null {
         directRoas: parseFloat(directRoas.toFixed(2)),
         directAcos: parseFloat(directAcos.toFixed(2)),
         costPerConv: parseFloat(costPerConv.toFixed(2)),
+        status: data.status,
+        bidMethod: data.bidMethod,
+        conversions: data.conversions,
+        directGmv: data.directRevenue,
+        productImpressions: data.productImpressions || null,
+        productClicks: data.productClicks || null,
       });
     }
 

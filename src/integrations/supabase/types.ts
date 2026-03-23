@@ -14,6 +14,119 @@ export type Database = {
   }
   public: {
     Tables: {
+      ads_data: {
+        Row: {
+          acos: number | null
+          acos_direto: number | null
+          classificacao: string | null
+          cliques: number | null
+          cliques_produto: number | null
+          conversoes: number | null
+          created_at: string | null
+          ctr: number | null
+          custo_por_conversao: number | null
+          despesas: number | null
+          gmv: number | null
+          gmv_direto: number | null
+          id: string
+          importado_em: string | null
+          impressoes: number | null
+          impressoes_produto: number | null
+          itens_vendidos: number | null
+          margem_contribuicao: number | null
+          metodo_lance: string | null
+          nome_produto_csv: string
+          periodo_fim: string | null
+          periodo_inicio: string | null
+          posicao_importada: boolean | null
+          posicao_media: number | null
+          product_id: string | null
+          roas: number | null
+          roas_direto: number | null
+          roas_empate: number | null
+          shopee_product_id: string | null
+          status_anuncio: string | null
+          taxa_conversao: number | null
+          user_id: string
+        }
+        Insert: {
+          acos?: number | null
+          acos_direto?: number | null
+          classificacao?: string | null
+          cliques?: number | null
+          cliques_produto?: number | null
+          conversoes?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          custo_por_conversao?: number | null
+          despesas?: number | null
+          gmv?: number | null
+          gmv_direto?: number | null
+          id?: string
+          importado_em?: string | null
+          impressoes?: number | null
+          impressoes_produto?: number | null
+          itens_vendidos?: number | null
+          margem_contribuicao?: number | null
+          metodo_lance?: string | null
+          nome_produto_csv: string
+          periodo_fim?: string | null
+          periodo_inicio?: string | null
+          posicao_importada?: boolean | null
+          posicao_media?: number | null
+          product_id?: string | null
+          roas?: number | null
+          roas_direto?: number | null
+          roas_empate?: number | null
+          shopee_product_id?: string | null
+          status_anuncio?: string | null
+          taxa_conversao?: number | null
+          user_id: string
+        }
+        Update: {
+          acos?: number | null
+          acos_direto?: number | null
+          classificacao?: string | null
+          cliques?: number | null
+          cliques_produto?: number | null
+          conversoes?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          custo_por_conversao?: number | null
+          despesas?: number | null
+          gmv?: number | null
+          gmv_direto?: number | null
+          id?: string
+          importado_em?: string | null
+          impressoes?: number | null
+          impressoes_produto?: number | null
+          itens_vendidos?: number | null
+          margem_contribuicao?: number | null
+          metodo_lance?: string | null
+          nome_produto_csv?: string
+          periodo_fim?: string | null
+          periodo_inicio?: string | null
+          posicao_importada?: boolean | null
+          posicao_media?: number | null
+          product_id?: string | null
+          roas?: number | null
+          roas_direto?: number | null
+          roas_empate?: number | null
+          shopee_product_id?: string | null
+          status_anuncio?: string | null
+          taxa_conversao?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ads_data_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ads_reports: {
         Row: {
           ads_data: Json
