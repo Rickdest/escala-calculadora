@@ -194,3 +194,134 @@ export function generateAlerts(adsData: Array<{
 
   return alerts.sort((a, b) => a.priority - b.priority);
 }
+
+// ═══ Efficiency Score ═══
+
+export interface EfficiencyScore {
+  score: number;
+  label: string;
+  color: string;
+  breakdown: {
+    roasScore: number;
+    ctrScore: number;
+    convScore: number;
+    posScore: number;
+  };
+}
+
+export function calcAdEfficiencyScore(
+  roasDireto: number,
+  roasEmpate: number | null,
+  ctr: number,
+  taxaConversao: number,
+  posicaoMedia: number | null,
+): EfficiencyScore {
+  let roasScore = 0;
+  if (roasEmpate && roasEmpate > 0 && roasEmpate !== Infinity) {
+    const ratio = roasDireto / roasEmpate;
+    if (ratio >= 2.5) roasScore = 40;
+    else if (ratio >= 1.5) roasScore = 30;
+    else if (ratio >= 1.0) roasScore = 20;
+    else if (ratio >= 0.5) roasScore = 10;
+  } else {
+    if (roasDireto >= 8) roasScore = 35;
+    else if (roasDireto >= 5) roasScore = 25;
+    else if (roasDireto >= 2) roasScore = 15;
+    else roasScore = 5;
+  }
+
+  let ctrScore = 0;
+  if (ctr >= 4) ctrScore = 20;
+  else if (ctr >= 2.5) ctrScore = 15;
+  else if (ctr >= 1.5) ctrScore = 10;
+  else if (ctr >= 0.8) ctrScore = 5;
+
+  let convScore = 0;
+  if (taxaConversao >= 3) convScore = 20;
+  else if (taxaConversao >= 1.5) convScore = 15;
+  else if (taxaConversao >= 0.8) convScore = 10;
+  else if (taxaConversao >= 0.3) convScore = 5;
+
+  let posScore = 10;
+  if (posicaoMedia !== null) {
+    if (posicaoMedia <= 3) posScore = 20;
+    else if (posicaoMedia <= 8) posScore = 15;
+    else if (posicaoMedia <= 16) posScore = 8;
+    else posScore = 3;
+  }
+
+  const score = roasScore + ctrScore + convScore + posScore;
+  let label: string, color: string;
+  if (score >= 80) { label = 'Excelente'; color = 'text-success'; }
+  else if (score >= 60) { label = 'Bom'; color = 'text-primary'; }
+  else if (score >= 40) { label = 'Regular'; color = 'text-warning'; }
+  else { label = 'Ruim'; color = 'text-destructive'; }
+
+  return { score, label, color, breakdown: { roasScore, ctrScore, convScore, posScore } };
+}
+
+// ═══ Halo Effect ═══
+
+export interface HaloEffect {
+  haloGmv: number;
+  haloItems: number;
+  haloPct: number;
+  isSignificant: boolean;
+  message: string;
+}
+
+export function calcHaloEffect(
+  gmv: number,
+  gmvDireto: number,
+  itensVendidos: number,
+  itensVendidosDiretos: number,
+): HaloEffect | null {
+  if (gmv <= 0 || gmvDireto <= 0) return null;
+  const haloGmv = gmv - gmvDireto;
+  const haloItems = itensVendidos - itensVendidosDiretos;
+  const haloPct = (haloGmv / gmv) * 100;
+  if (haloGmv <= 0) return null;
+
+  const isSignificant = haloPct > 10;
+  const fmtBRL = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+  const message = isSignificant
+    ? `Este anúncio gerou ${fmtBRL(haloGmv)} em vendas de OUTROS produtos da loja (${haloPct.toFixed(1)}% do GMV). É um forte "puxador" de vendas!`
+    : `+${fmtBRL(haloGmv)} em vendas indiretas (${haloPct.toFixed(1)}% do GMV)`;
+
+  return { haloGmv, haloItems, haloPct, isSignificant, message };
+}
+
+// ═══ Cost vs Margin Alert ═══
+
+export interface CostMarginAlert {
+  custoPorUnidade: number;
+  lucroPorUnidade: number;
+  pctConsumo: number;
+  level: 'safe' | 'warning' | 'danger';
+  message: string;
+}
+
+export function calcCostVsMarginAlert(
+  despesas: number,
+  itensVendidos: number,
+  lucroPorUnidade: number,
+): CostMarginAlert | null {
+  if (itensVendidos <= 0 || lucroPorUnidade <= 0) return null;
+  const custoPorUnidade = despesas / itensVendidos;
+  const pctConsumo = (custoPorUnidade / lucroPorUnidade) * 100;
+
+  let level: 'safe' | 'warning' | 'danger';
+  let message: string;
+  if (pctConsumo <= 30) {
+    level = 'safe';
+    message = `Ads consome apenas ${pctConsumo.toFixed(0)}% do lucro por unidade. Margem saudável.`;
+  } else if (pctConsumo <= 60) {
+    level = 'warning';
+    message = `Ads consome ${pctConsumo.toFixed(0)}% do lucro por unidade. Monitore de perto.`;
+  } else {
+    level = 'danger';
+    message = `⚠️ Ads consome ${pctConsumo.toFixed(0)}% do lucro por unidade! Considere reduzir gastos.`;
+  }
+
+  return { custoPorUnidade, lucroPorUnidade, pctConsumo, level, message };
+}

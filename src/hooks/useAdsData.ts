@@ -27,6 +27,8 @@ export interface AdsDataRow {
   acos_direto: number;
   gmv_direto: number;
   custo_por_conversao: number;
+  itens_vendidos_diretos: number;
+  conversoes_diretas: number;
   metodo_lance: string | null;
   status_anuncio: string | null;
   impressoes_produto: number | null;
@@ -156,6 +158,8 @@ export function useAdsData() {
         acos_direto: m.directAcos,
         gmv_direto: (m as any).directGmv || 0,
         custo_por_conversao: m.costPerConv,
+        itens_vendidos_diretos: (m as any).directItemsSold || 0,
+        conversoes_diretas: (m as any).directConversions || (m as any).conversions || 0,
         metodo_lance: (m as any).bidMethod || null,
         status_anuncio: (m as any).status || null,
         impressoes_produto: (m as any).productImpressions ?? null,
@@ -254,6 +258,8 @@ export function useAdsData() {
         roas_direto: m.directRoas || 0, acos_direto: m.directAcos || 0,
         gmv_direto: (m as any).directGmv || 0,
         custo_por_conversao: m.costPerConv,
+        itens_vendidos_diretos: (m as any).directItemsSold || m.itemsSold,
+        conversoes_diretas: (m as any).directConversions || 0,
         posicao_media: avgPos, posicao_importada: true,
         periodo_inicio: m.periodStart, periodo_fim: m.periodEnd,
         ...derived,

@@ -22,6 +22,7 @@ export type Database = {
           cliques: number | null
           cliques_produto: number | null
           conversoes: number | null
+          conversoes_diretas: number | null
           created_at: string | null
           ctr: number | null
           custo_por_conversao: number | null
@@ -33,6 +34,7 @@ export type Database = {
           impressoes: number | null
           impressoes_produto: number | null
           itens_vendidos: number | null
+          itens_vendidos_diretos: number | null
           margem_contribuicao: number | null
           metodo_lance: string | null
           nome_produto_csv: string
@@ -56,6 +58,7 @@ export type Database = {
           cliques?: number | null
           cliques_produto?: number | null
           conversoes?: number | null
+          conversoes_diretas?: number | null
           created_at?: string | null
           ctr?: number | null
           custo_por_conversao?: number | null
@@ -67,6 +70,7 @@ export type Database = {
           impressoes?: number | null
           impressoes_produto?: number | null
           itens_vendidos?: number | null
+          itens_vendidos_diretos?: number | null
           margem_contribuicao?: number | null
           metodo_lance?: string | null
           nome_produto_csv: string
@@ -90,6 +94,7 @@ export type Database = {
           cliques?: number | null
           cliques_produto?: number | null
           conversoes?: number | null
+          conversoes_diretas?: number | null
           created_at?: string | null
           ctr?: number | null
           custo_por_conversao?: number | null
@@ -101,6 +106,7 @@ export type Database = {
           impressoes?: number | null
           impressoes_produto?: number | null
           itens_vendidos?: number | null
+          itens_vendidos_diretos?: number | null
           margem_contribuicao?: number | null
           metodo_lance?: string | null
           nome_produto_csv?: string
