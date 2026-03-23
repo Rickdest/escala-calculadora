@@ -209,12 +209,7 @@ export default function Home() {
         <div className="animate-fade-up">
           <p className="section-label mb-3">Outras plataformas</p>
           <div className="grid grid-cols-4 gap-2">
-            {[
-              { sigla: 'TK', name: 'TikTok Shop', rate: '12% + R$4', tab: 'tiktok', bg: '#010101', text: 'text-white' },
-              { sigla: 'SH', name: 'Shein', rate: 'Moda 20%', tab: 'shein', bg: '#E43D79', text: 'text-white' },
-              { sigla: 'AZ', name: 'Amazon', rate: '10–15%', tab: 'amazon', bg: '#232F3E', text: 'text-white' },
-              { sigla: 'ML', name: 'Mercado Livre', rate: '10–19%', tab: 'ml', bg: '#FFE600', text: 'text-black' },
-            ].map((mp) => (
+            {MARKETPLACE_SHORTCUTS.map((mp) => (
               <button
                 key={mp.tab}
                 onClick={() => navigate(`/calculadoras?tab=${mp.tab}`)}
