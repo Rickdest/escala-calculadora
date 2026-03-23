@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { Store, Product, StoreConfig, DEFAULT_STORE_CONFIG, ProductCalculation, ShopeeAceleraOption } from '@/types/store';
 import { calculateProduct as calculateProductFn, getStoreStats as getStoreStatsFn } from '@/lib/calculateProduct';
-import { Tables } from '@/integrations/supabase/types';
+import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -37,12 +37,16 @@ function getLocalImages(): Record<string, string> {
   try { return JSON.parse(localStorage.getItem(LOCAL_IMAGES_KEY) || '{}'); } catch { return {}; }
 }
 
+interface VariationRecord {
+  stockQuantity?: number;
+}
+
 function mapDbProduct(p: Tables<'products'>): Product {
   const variations = (p.variations ?? []) as unknown as Product['variations'];
   const attributes = (p.attributes ?? []) as unknown as Product['attributes'];
   const hasVariations = p.has_variations ?? false;
   const stockQuantity = hasVariations && variations.length > 0
-    ? variations.reduce((sum: number, v: any) => sum + (Number(v.stockQuantity) || 0), 0)
+    ? variations.reduce((sum: number, v: VariationRecord) => sum + (Number(v.stockQuantity) || 0), 0)
     : Number(p.stock_quantity ?? 0);
 
   const localImages = getLocalImages();
@@ -66,7 +70,7 @@ function mapDbProduct(p: Tables<'products'>): Product {
     attributes,
     variations,
     shopeeAcelera: (p.shopee_acelera as ShopeeAceleraOption) ?? 'none',
-    outrosCanais: (p as any).outros_canais ?? undefined,
+    outrosCanais: (p.outros_canais as unknown as Product['outrosCanais']) ?? undefined,
     createdAt: new Date(p.created_at),
     updatedAt: new Date(p.updated_at),
   };
@@ -112,7 +116,7 @@ async function fetchStoresAndProducts(userId: string): Promise<Store[]> {
   if (loaded.length > 0) return loaded;
 
   // Auto-create first store for new users
-  const { data, error: createErr } = await supabase.from('stores').insert({
+  const insertData: TablesInsert<'stores'> = {
     name: 'Minha Loja',
     user_id: userId,
     taxes: DEFAULT_STORE_CONFIG.taxes,
@@ -121,7 +125,8 @@ async function fetchStoresAndProducts(userId: string): Promise<Store[]> {
     enable_ads: DEFAULT_STORE_CONFIG.enableAds,
     affiliate_commission: DEFAULT_STORE_CONFIG.affiliateCommission,
     shopee_campaigns: DEFAULT_STORE_CONFIG.shopeeCampaigns,
-  } as any).select().single();
+  };
+  const { data, error: createErr } = await supabase.from('stores').insert(insertData).select().single();
 
   if (createErr || !data) throw createErr || new Error('Falha ao criar loja');
   return [mapDbStore(data, [])];
@@ -209,7 +214,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           if (!base64) continue;
           const url = await uploadProductImage(user.id, productId, base64);
           if (url) {
-            await supabase.from('products').update({ image_url: url } as any).eq('id', productId).eq('user_id', user.id);
+            await supabase.from('products').update({ image_url: url }).eq('id', productId).eq('user_id', user.id);
             delete localImages[productId];
             migrated++;
           }
@@ -241,7 +246,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const addStore = useCallback(async (name: string): Promise<Store> => {
     if (!user) throw new Error('Não autenticado');
-    const { data, error } = await supabase.from('stores').insert({
+    const insertData: TablesInsert<'stores'> = {
       name,
       user_id: user.id,
       taxes: DEFAULT_STORE_CONFIG.taxes,
@@ -250,7 +255,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       enable_ads: DEFAULT_STORE_CONFIG.enableAds,
       affiliate_commission: DEFAULT_STORE_CONFIG.affiliateCommission,
       shopee_campaigns: DEFAULT_STORE_CONFIG.shopeeCampaigns,
-    } as any).select().single();
+    };
+    const { data, error } = await supabase.from('stores').insert(insertData).select().single();
 
     if (error) { toast.error('Erro ao criar loja'); throw error; }
     const newStore = mapDbStore(data, []);
@@ -260,7 +266,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [user, currentStore, invalidate]);
 
   const updateStore = useCallback(async (storeId: string, updates: Partial<Store>) => {
-    const dbUpdates: any = {};
+    const dbUpdates: TablesUpdate<'stores'> = {};
     if (updates.name !== undefined) dbUpdates.name = updates.name;
     const { error } = await supabase.from('stores').update(dbUpdates).eq('id', storeId);
     if (error) { toast.error('Erro ao atualizar loja'); return; }
@@ -268,7 +274,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [invalidate]);
 
   const updateStoreConfig = useCallback(async (storeId: string, config: Partial<StoreConfig>) => {
-    const dbConfig: any = {};
+    const dbConfig: TablesUpdate<'stores'> = {};
     if (config.taxes !== undefined) dbConfig.taxes = config.taxes;
     if (config.desiredMargin !== undefined) dbConfig.desired_margin = config.desiredMargin;
     if (config.enablePackaging !== undefined) dbConfig.enable_packaging = config.enablePackaging;
@@ -303,7 +309,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       ? variations.reduce((sum, v) => sum + (v.stockQuantity || 0), 0)
       : productData.stockQuantity || 0;
 
-    const { data, error } = await supabase.from('products').insert({
+    const insertData: TablesInsert<'products'> = {
       store_id: productData.storeId,
       user_id: user.id,
       name: productData.name,
@@ -314,22 +320,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       ads_revenue: productData.adsRevenue || 0,
       stock_quantity: stockQty,
       has_variations: hasVars,
-      attributes: productData.attributes || [],
-      variations: variations,
+      attributes: (productData.attributes || []) as unknown as TablesInsert<'products'>['attributes'],
+      variations: variations as unknown as TablesInsert<'products'>['variations'],
       shopee_acelera: productData.shopeeAcelera || 'none',
       category: productData.category || null,
       description: productData.description || null,
       min_stock_quantity: productData.minStockQuantity ?? 5,
-      outros_canais: productData.outrosCanais ?? null,
-    } as any).select().single();
+      outros_canais: (productData.outrosCanais ?? null) as TablesInsert<'products'>['outros_canais'],
+    };
+    const { data, error } = await supabase.from('products').insert(insertData).select().single();
 
     if (error) { toast.error('Erro ao salvar produto'); throw error; }
 
     if (productData.imageUrl) {
       const url = await uploadProductImage(user.id, data.id, productData.imageUrl);
       if (url) {
-        await supabase.from('products').update({ image_url: url } as any).eq('id', data.id);
-        (data as any).image_url = url;
+        await supabase.from('products').update({ image_url: url }).eq('id', data.id);
+        data.image_url = url;
       } else {
         const localImages = getLocalImages();
         localImages[data.id] = productData.imageUrl;
@@ -343,7 +350,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [user, invalidate]);
 
   const updateProduct = useCallback(async (productId: string, updates: Partial<Product>) => {
-    const dbUpdates: any = {};
+    const dbUpdates: TablesUpdate<'products'> = {};
     if (updates.name !== undefined) dbUpdates.name = updates.name;
     if (updates.costPrice !== undefined) dbUpdates.cost_price = updates.costPrice;
     if (updates.salePrice !== undefined) dbUpdates.sale_price = updates.salePrice;
@@ -352,17 +359,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (updates.adsRevenue !== undefined) dbUpdates.ads_revenue = updates.adsRevenue;
     if (updates.stockQuantity !== undefined) dbUpdates.stock_quantity = updates.stockQuantity;
     if (updates.hasVariations !== undefined) dbUpdates.has_variations = updates.hasVariations;
-    if (updates.attributes !== undefined) dbUpdates.attributes = updates.attributes;
-    if (updates.variations !== undefined) dbUpdates.variations = updates.variations;
+    if (updates.attributes !== undefined) dbUpdates.attributes = updates.attributes as unknown as TablesUpdate<'products'>['attributes'];
+    if (updates.variations !== undefined) dbUpdates.variations = updates.variations as unknown as TablesUpdate<'products'>['variations'];
     if (updates.shopeeAcelera !== undefined) dbUpdates.shopee_acelera = updates.shopeeAcelera;
     if (updates.category !== undefined) dbUpdates.category = updates.category;
     if (updates.description !== undefined) dbUpdates.description = updates.description;
     if (updates.minStockQuantity !== undefined) dbUpdates.min_stock_quantity = updates.minStockQuantity;
-    if (updates.outrosCanais !== undefined) dbUpdates.outros_canais = updates.outrosCanais ?? null;
+    if (updates.outrosCanais !== undefined) dbUpdates.outros_canais = (updates.outrosCanais ?? null) as TablesUpdate<'products'>['outros_canais'];
     if (updates.variations !== undefined && updates.hasVariations !== false) {
       const vars = updates.variations || [];
       if (vars.length > 0) {
-        dbUpdates.stock_quantity = vars.reduce((sum: number, v: any) => sum + (v.stockQuantity || 0), 0);
+        dbUpdates.stock_quantity = vars.reduce((sum: number, v: VariationRecord) => sum + (v.stockQuantity || 0), 0);
       }
     }
 
@@ -375,11 +382,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (updates.imageUrl) {
         const url = await uploadProductImage(user.id, productId, updates.imageUrl);
         if (url) {
-          await supabase.from('products').update({ image_url: url } as any).eq('id', productId);
+          await supabase.from('products').update({ image_url: url }).eq('id', productId);
         }
       } else {
         await deleteProductImage(user.id, productId);
-        await supabase.from('products').update({ image_url: null } as any).eq('id', productId);
+        await supabase.from('products').update({ image_url: null }).eq('id', productId);
       }
     }
 
@@ -402,7 +409,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
     if (!original) return null;
 
-    const { data, error } = await supabase.from('products').insert({
+    const insertData: TablesInsert<'products'> = {
       store_id: original.storeId,
       user_id: user.id,
       name: `${original.name} (Cópia)`,
@@ -413,22 +420,23 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       ads_revenue: original.adsRevenue,
       stock_quantity: original.stockQuantity,
       has_variations: original.hasVariations,
-      attributes: original.attributes || [],
-      variations: original.variations,
+      attributes: (original.attributes || []) as unknown as TablesInsert<'products'>['attributes'],
+      variations: original.variations as unknown as TablesInsert<'products'>['variations'],
       shopee_acelera: original.shopeeAcelera || 'none',
       category: original.category || null,
       description: original.description || null,
       min_stock_quantity: original.minStockQuantity ?? 5,
-      outros_canais: original.outrosCanais ?? null,
-    } as any).select().single();
+      outros_canais: (original.outrosCanais ?? null) as TablesInsert<'products'>['outros_canais'],
+    };
+    const { data, error } = await supabase.from('products').insert(insertData).select().single();
 
     if (error) { toast.error('Erro ao duplicar produto'); return null; }
 
     if (original.imageUrl && user) {
       const url = await uploadProductImage(user.id, data.id, original.imageUrl);
       if (url) {
-        await supabase.from('products').update({ image_url: url } as any).eq('id', data.id);
-        (data as any).image_url = url;
+        await supabase.from('products').update({ image_url: url }).eq('id', data.id);
+        data.image_url = url;
       }
     }
 
