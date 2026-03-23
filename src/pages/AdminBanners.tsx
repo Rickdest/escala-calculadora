@@ -130,8 +130,8 @@ export default function AdminBanners() {
         ordem: formData.ordem,
         ativo: formData.ativo,
       });
-      if (error) toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
-      else toast({ title: 'Banner criado!' });
+      if (error) toast.error('Erro ao salvar', { description: error.message });
+      else toast.success('Banner criado!');
     } else {
       const { error } = await supabase.from('banners').update({
         image_url: formData.image_url,
