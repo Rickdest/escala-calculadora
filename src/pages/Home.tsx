@@ -72,7 +72,7 @@ export default function Home() {
 
   const stats = getStoreStats(currentStore);
 
-  const handleSaveProduct = async (productData: Partial<Product>) => {
+  const handleSaveProduct = async (productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => {
     await addProduct(productData);
     setShowProductForm(false);
   };
