@@ -83,8 +83,8 @@ export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) 
   );
 
   const halo = useMemo(() =>
-    calcHaloEffect(ad.gmv, ad.gmv_direto, ad.itens_vendidos, (ad as any).itens_vendidos_diretos || 0),
-    [ad.gmv, ad.gmv_direto, ad.itens_vendidos, (ad as any).itens_vendidos_diretos]
+    calcHaloEffect(ad.gmv, ad.gmv_direto, ad.itens_vendidos, ad.itens_vendidos_diretos || 0),
+    [ad.gmv, ad.gmv_direto, ad.itens_vendidos, ad.itens_vendidos_diretos]
   );
 
   const costMarginAlert = useMemo(() => {
