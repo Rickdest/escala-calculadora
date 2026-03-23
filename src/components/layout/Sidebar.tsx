@@ -20,6 +20,7 @@ import {
 const navItems = [
   { icon: Calculator, label: 'Início', path: '/' },
   { icon: ShoppingBag, label: 'Produtos', path: '/products' },
+  { icon: Calculator, label: 'Calculadoras', path: '/calculadoras' },
   { icon: TrendingUp, label: 'Ads', path: '/roas' },
   { icon: Boxes, label: 'Estoque', path: '/stock' },
   { icon: Store, label: 'Lojas', path: '/stores' },
