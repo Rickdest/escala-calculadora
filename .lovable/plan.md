@@ -1,73 +1,43 @@
 
 
-## Redesign da Aba Ads — Consistencia Visual com o Design System
+## Problemas Encontrados na Analise de Produto (AdsDetailView)
 
-### Problema
+### Diagnostico
 
-A aba Ads usa classes genéricas (`text-muted-foreground`, `bg-secondary`, `bg-card`) em vez dos design tokens padronizados do app (`text-text-2`, `text-text-3`, `bg-surface-2`, `.section-label`). Elementos estão comprimidos com `p-3` e `gap-2` onde o restante do app usa espaçamentos mais generosos. Falta hierarquia visual entre seções.
+Analisei o codigo, os dados do banco e os logs do console. Encontrei 4 problemas:
 
-### Alteracoes
+**1. `roas_direto` = 0 quebra a logica de classificacao**
+Na DB, os rows do "Cropped Corset" tem `roas_direto: 0.00`. No codigo, `row.roas_direto || row.roas` retorna `row.roas` (10.49) — isso funciona para display. Mas no `importProductCSV` (useAdsData.ts), novos inserts salvam `roas_direto: 0` sem calcular `roas_empate` nem `classificacao`. Resultado: o card aparece como "Nao vinculado" mesmo com produto vinculado, e o detalhe nao mostra status.
 
-#### Arquivo 1: `src/components/roas/AdsTab.tsx`
+**2. `importProductCSV` nao calcula metricas derivadas**
+Quando importa CSV individual, o codigo insere na DB sem calcular `roas_empate`, `margem_contribuicao`, `classificacao` — diferente do `importGeneralCSV` que faz esse calculo. O enrichment no `fetchData` corrige isso no front, mas so se `products` ja carregou — race condition.
 
-**SummaryCards** — Redesenhar os 3 cards de resumo:
-- Trocar `p-3` por `p-4`, `gap-2` por `gap-3`
-- Labels: usar classe `section-label` (`text-[9px] uppercase tracking-wider text-text-3 font-bold`)
-- Valores: `text-xl` em vez de `text-lg`
-- Adicionar um quarto card com o count total de anuncios
-- Linha de semaforo: mais padding (`px-2 py-1.5`), fundo sutil (`rounded-lg bg-surface-2 p-2`)
+**3. Duplicatas: cada import cria um novo row**
+A cada click em "Importar CSV do Produto", um novo row e criado sem deduplicar por `product_id` + periodo. O usuario ja tem 3 rows identicos para o mesmo produto.
 
-**FilterChips** — Mais espaco:
-- `gap-2` em vez de `gap-1.5`
-- `py-2 px-3.5` em vez de `py-1.5 px-3`
+**4. Warning de forwardRef no console**
+`ByProductContent` e usado como children de `TabsContent` (Radix) que tenta passar ref, mas e um function component sem forwardRef.
 
-**AdsProductCard** — Melhor hierarquia:
-- `p-4` em vez de `p-3.5`
-- `space-y-3` em vez de `space-y-2`
-- Imagem do produto `w-12 h-12` em vez de `w-10 h-10`
-- ROAS destacado com `text-xl` 
-- Barra de progresso ROAS `h-2.5` em vez de `h-2`
-- Metricas row com separadores visuais mais claros
-- Usar `text-text-2` e `text-text-3` em vez de `text-muted-foreground`
+### Plano de Correcao
 
-**AlertsSection** — Formato dashboard:
-- Titulo com `SectionLabel` pattern (icon + uppercase label) igual ao RoasAnalysis
-- Cards de alerta com `p-3` em vez de `p-2.5`, `gap-3` em vez de `gap-2`
+#### Arquivo: `src/hooks/useAdsData.ts`
 
-**Layout geral (TabsContent "overview")**:
-- `space-y-6` em vez de `space-y-4` entre secoes
-- Import button: estilo outline com borda dashed em vez de primary solid (menos agressivo)
-- Separar visualmente secoes com spacing consistente
+**Fix importProductCSV** (linhas ~130-170):
+- Antes de inserir, verificar se ja existe um row com mesmo `product_id` + periodo. Se existir, fazer `update` em vez de `insert`.
+- Calcular `roas_empate`, `margem_contribuicao`, `classificacao` quando o produto esta vinculado (mesmo padrao do `importGeneralCSV`).
 
-**EmptyState e ByProductContent**:
-- Usar `bg-surface-2` em vez de `bg-secondary`
-- Usar `text-text-2` e `text-text-3`
+**Fix fetchData enrichment** — adicionar fallback: se `products` esta vazio mas `row.roas_empate` ja existe no DB, usar o valor do DB para classificacao no front.
 
-#### Arquivo 2: `src/components/roas/AdsDetailView.tsx`
+#### Arquivo: `src/components/roas/AdsTab.tsx`
 
-**Modal container**:
-- `p-5` em vez de `p-4` no body
-- `space-y-5` em vez de `space-y-4` entre secoes
+**Fix forwardRef** — Wrap `ByProductContent` com `React.forwardRef` para eliminar o warning do console.
 
-**Stat grid items**:
-- `p-3` em vez de `p-2.5`
-- Labels com `text-text-3` e `section-label` style
-- Valores com `text-lg` em vez de `text-base`
+#### Arquivo: `src/components/roas/AdsDetailView.tsx`
 
-**Section cards** (Custo vs Lucro, ACOS vs Margem, Config, etc):
-- `p-4` em vez de `p-3`
-- Titulos com padrao `SectionLabel` (icon left-aligned + uppercase bold)
-- `space-y-3` em vez de `space-y-2`
-- Usar `bg-surface-2` como fundo alternativo em vez de `bg-secondary/30`
-- Consistencia: `text-text-2` para subtextos, `text-text-3` para labels
-
-**Posicionamento ruler**:
-- `h-10` em vez de `h-8`
-- Marcador `w-7 h-7` em vez de `w-6 h-6`
+**Fix dead code** — Remover o bloco "Lucro/und legacy" (linhas 514-530) que nunca renderiza e contem acesso a `empateResult!` que seria null.
 
 ### Nao altera
-
-- Nenhuma logica de calculo, importacao CSV, vinculacao ou alertas
-- Nenhum componente externo (ProductCard, hooks, adsLogic)
-- Funcionalidade identica — apenas visual
+- Logica de calculo em `adsLogic.ts`
+- Design/layout dos componentes
+- Nenhum componente externo
 
