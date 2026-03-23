@@ -87,10 +87,7 @@ export default function Profile() {
 
       if (error) throw error;
 
-      toast({
-        title: 'Senha alterada!',
-        description: 'Sua senha foi atualizada com sucesso.',
-      });
+      toast.success('Senha alterada!', { description: 'Sua senha foi atualizada com sucesso.' });
 
       setNewPassword('');
       setConfirmPassword('');
