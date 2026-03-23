@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, forwardRef } from 'react';
 import { useStore } from '@/contexts/StoreContext';
 import { useAdsData, EnrichedAdsData } from '@/hooks/useAdsData';
 import { generateAlerts, AlertItem } from '@/lib/adsLogic';
@@ -260,11 +260,11 @@ function EmptyState({ onImport }: { onImport: () => void }) {
 }
 
 // ─── By Product Tab ───
-function ByProductContent({ data, onImport, onDetail }: {
+const ByProductContent = forwardRef<HTMLDivElement, {
   data: EnrichedAdsData[];
   onImport: () => void;
   onDetail: (d: EnrichedAdsData) => void;
-}) {
+}>(function ByProductContent({ data, onImport, onDetail }, ref) {
   const withPosition = data.filter(d => d.posicao_importada && d.posicao_media !== null);
 
   if (withPosition.length === 0) {
@@ -335,7 +335,7 @@ function ByProductContent({ data, onImport, onDetail }: {
       </Button>
     </div>
   );
-}
+});
 
 // ─── Main AdsTab ───
 export function AdsTab() {

@@ -83,12 +83,23 @@ export function useAdsData() {
         const product = row.product_id ? products.find(p => p.id === row.product_id) : undefined;
         let classificacaoResult: ClassificacaoResult | undefined;
         let roasEmpateResult: RoasEmpateResult | undefined;
+
         if (product && config) {
           roasEmpateResult = calcularRoasEmpate(product, config);
           if (roasEmpateResult.roasEmpate !== Infinity) {
             classificacaoResult = classificarAnuncio(row.roas_direto || row.roas, roasEmpateResult.roasEmpate);
           }
+        } else if (row.roas_empate && row.roas_empate !== Infinity) {
+          // Fallback: use DB-stored values when products haven't loaded yet
+          roasEmpateResult = {
+            roasEmpate: row.roas_empate,
+            margemContribuicao: row.margem_contribuicao || 0,
+            lucroPorUnidade: 0,
+            acosMaximo: row.margem_contribuicao || 0,
+          };
+          classificacaoResult = classificarAnuncio(row.roas_direto || row.roas, row.roas_empate);
         }
+
         return { ...row, product, classificacaoResult, roasEmpateResult };
       });
       setData(enriched);
@@ -180,10 +191,35 @@ export function useAdsData() {
     const m = parsed.metrics[0];
     const avgPos = m.avgPosition;
 
+    // Helper to calculate derived metrics for a given product
+    const calcDerived = (productId: string | null) => {
+      const product = productId ? products.find(p => p.id === productId) : undefined;
+      let roasEmpate: number | null = null;
+      let margemContribuicao: number | null = null;
+      let classificacao: string | null = null;
+
+      if (product && config) {
+        const emp = calcularRoasEmpate(product, config);
+        if (emp.roasEmpate !== Infinity) {
+          roasEmpate = emp.roasEmpate;
+          margemContribuicao = emp.margemContribuicao;
+          const roasForClass = m.directRoas || m.roas;
+          const cls = classificarAnuncio(roasForClass, emp.roasEmpate);
+          classificacao = cls.classificacao;
+        }
+      }
+      return { roas_empate: roasEmpate, margem_contribuicao: margemContribuicao, classificacao };
+    };
+
     if (targetAdsDataId) {
+      // Get the existing row to find its product_id
+      const existingRow = data.find(d => d.id === targetAdsDataId);
+      const derived = calcDerived(existingRow?.product_id || null);
+
       await supabase.from('ads_data' as any).update({
         posicao_media: avgPos,
         posicao_importada: true,
+        ...derived,
         ...(m.impressions > 0 ? {
           impressoes: m.impressions, cliques: m.clicks, ctr: m.ctr,
           itens_vendidos: m.itemsSold, gmv: m.gmv, despesas: m.spend,
@@ -193,7 +229,20 @@ export function useAdsData() {
       }).eq('id', targetAdsDataId);
     } else {
       const matched = findMatch(m.shopeeProductName, products);
-      await supabase.from('ads_data' as any).insert({
+      const derived = calcDerived(matched?.id || null);
+
+      // Dedup: check if a row already exists for same product + period
+      const existingQuery = await supabase.from('ads_data' as any)
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('nome_produto_csv', m.shopeeProductName)
+        .eq('periodo_inicio', m.periodStart)
+        .eq('periodo_fim', m.periodEnd)
+        .limit(1);
+
+      const existingId = (existingQuery.data as any[])?.[0]?.id;
+
+      const rowData = {
         user_id: user.id,
         product_id: matched?.id || null,
         nome_produto_csv: m.shopeeProductName,
@@ -202,16 +251,24 @@ export function useAdsData() {
         conversoes: 0, taxa_conversao: m.convRate,
         itens_vendidos: m.itemsSold, gmv: m.gmv, despesas: m.spend,
         roas: m.roas, acos: m.acos,
-        roas_direto: 0, acos_direto: 0, gmv_direto: 0,
+        roas_direto: m.directRoas || 0, acos_direto: m.directAcos || 0,
+        gmv_direto: (m as any).directGmv || 0,
         custo_por_conversao: m.costPerConv,
         posicao_media: avgPos, posicao_importada: true,
         periodo_inicio: m.periodStart, periodo_fim: m.periodEnd,
-      });
+        ...derived,
+      };
+
+      if (existingId) {
+        await supabase.from('ads_data' as any).update(rowData).eq('id', existingId);
+      } else {
+        await supabase.from('ads_data' as any).insert(rowData);
+      }
     }
 
     toast.success('Dados de posição importados');
     await fetchData();
-  }, [user, products, fetchData]);
+  }, [user, products, config, data, fetchData]);
 
   const linkProduct = useCallback(async (adsDataId: string, productId: string) => {
     if (!user) return;

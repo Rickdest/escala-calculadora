@@ -511,23 +511,6 @@ export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) 
             </div>
           ) : null}
 
-          {/* Profit per sale (legacy kept) */}
-          {lucroPorVenda !== null && !empateResult && (
-            <div className="grid grid-cols-2 gap-2.5">
-              <div className="rounded-xl border border-border bg-card p-3">
-                <p className="section-label">Lucro/und</p>
-                <p className="text-lg font-extrabold font-mono tabular-nums text-foreground mt-1">{fmt(empateResult!.lucroPorUnidade)}</p>
-                <p className="text-[9px] text-text-3">antes de Ads</p>
-              </div>
-              <div className="rounded-xl border border-border bg-card p-3">
-                <p className="section-label">Lucro c/ Ads</p>
-                <p className={cn('text-lg font-extrabold font-mono tabular-nums mt-1', lucroPorVenda >= 0 ? 'text-success' : 'text-destructive')}>
-                  {fmt(lucroPorVenda)}
-                </p>
-                <p className="text-[9px] text-text-3">por venda</p>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
