@@ -25,7 +25,7 @@ function getProductStatus(p: EstoqueProduto) {
 }
 
 export default function Stock() {
-  const { produtos, loading, stats, reload } = useEstoque();
+  const { produtos, loading, loadError, retryLoad, stats, reload } = useEstoque();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<StockFilter>('all');
   const [showWizard, setShowWizard] = useState(false);
