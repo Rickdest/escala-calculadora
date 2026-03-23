@@ -63,6 +63,20 @@ export default function Settings() {
   const handleSave = async () => {
     if (!currentStore) return;
 
+    const taxValue = enableTaxes ? (parseFloat(taxes) || 0) : 0;
+    const validation = validateForm(storeSettingsSchema, {
+      desiredMargin: parseFloat(desiredMargin) || 0,
+      taxes: taxValue,
+      affiliateCommission: enableAffiliateCommission ? (parseFloat(affiliateCommission) || 0) : 0,
+      shopeeCampaigns: enableShopeeCampaigns ? (parseFloat(shopeeCampaigns) || 0) : 0,
+    });
+
+    if (!validation.success) {
+      const firstError = Object.values((validation as { success: false; errors: Record<string, string> }).errors)[0];
+      toast.error(firstError || 'Dados inválidos');
+      return;
+    }
+
     setIsSaving(true);
     await new Promise(resolve => setTimeout(resolve, 300));
 
