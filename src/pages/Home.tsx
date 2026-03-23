@@ -67,14 +67,7 @@ export default function Home() {
   }
 
   if (!currentStore) {
-    return (
-      <AppLayout>
-        <div className="flex flex-col items-center justify-center min-h-[85vh]">
-          <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mb-4" />
-          <p className="text-text-2 text-sm">Preparando sua loja...</p>
-        </div>
-      </AppLayout>
-    );
+    return <AppLayout><PageLoader message="Preparando sua loja..." minHeight="min-h-[85vh]" /></AppLayout>;
   }
 
   const stats = getStoreStats(currentStore);
