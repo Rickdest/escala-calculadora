@@ -284,7 +284,7 @@ function SheinTab() {
   const [salePrice, setSalePrice] = useState('');
   const [costPrice, setCostPrice] = useState('');
   const [category, setCategory] = useState<SheinCategory>('moda');
-  const [weight, setWeight] = useState('');
+  const [weightBand, setWeightBand] = useState('0.3');
   const [packaging, setPackaging] = useState('');
   const [taxes, setTaxes] = useState('');
 
@@ -294,8 +294,8 @@ function SheinTab() {
 
   const result = useMemo<SheinResult | null>(() => {
     if (!isReady) return null;
-    return calcShein(sp, cp, category, parseFloat(weight) || 0, parseFloat(packaging) || 0, parseFloat(taxes) || 0);
-  }, [sp, cp, category, weight, packaging, taxes, isReady]);
+    return calcShein(sp, cp, category, parseFloat(weightBand), parseFloat(packaging) || 0, parseFloat(taxes) || 0);
+  }, [sp, cp, category, weightBand, packaging, taxes, isReady]);
 
   const costs: CostLine[] = result ? [
     { label: 'Custo do produto', value: result.costPrice },
