@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel';
@@ -52,6 +52,8 @@ export function BannerCarousel() {
   const [hasBanners, setHasBanners] = useState<boolean | null>(null);
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
+  const autoplayDb = useRef(Autoplay({ delay: 4000, stopOnInteraction: true }));
+  const autoplayFallback = useRef(Autoplay({ delay: 5000, stopOnInteraction: true }));
 
   useEffect(() => {
     supabase
@@ -93,7 +95,7 @@ export function BannerCarousel() {
         <Carousel
           setApi={setApi}
           opts={{ loop: true }}
-          plugins={[Autoplay({ delay: 4000, stopOnInteraction: true })]}
+          plugins={[autoplayDb.current]}
           className="w-full"
         >
           <CarouselContent className="-ml-0">
@@ -139,7 +141,7 @@ export function BannerCarousel() {
       <Carousel
         setApi={setApi}
         opts={{ loop: true }}
-        plugins={[Autoplay({ delay: 5000, stopOnInteraction: true })]}
+        plugins={[autoplayFallback.current]}
         className="w-full"
       >
         <CarouselContent className="-ml-0">

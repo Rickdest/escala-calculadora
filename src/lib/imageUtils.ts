@@ -60,7 +60,7 @@ export async function uploadProductImage(
 
     const { data } = await supabase.storage
       .from(BUCKET)
-      .createSignedUrl(path, 31536000); // 1 year
+      .createSignedUrl(path, 604800); // 7 days
 
     return data?.signedUrl || null;
   } catch {
@@ -90,7 +90,7 @@ export async function getProductImageUrl(
   try {
     const { data } = await supabase.storage
       .from(BUCKET)
-      .createSignedUrl(`${userId}/${productId}.jpg`, 31536000);
+      .createSignedUrl(`${userId}/${productId}.jpg`, 604800); // 7 days
     return data?.signedUrl || null;
   } catch {
     return null;
