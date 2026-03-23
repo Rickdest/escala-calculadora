@@ -365,6 +365,8 @@ function parseGeneralFormatCSV(csvContent: string): ParsedAdsFile | null {
       gmv: number; spend: number; directRevenue: number;
       conversions: number; directConversions: number;
       directItemsSold: number;
+      status: string; bidMethod: string;
+      productImpressions: number; productClicks: number;
     }>();
 
     const rawAds: ShopeeAdRow[] = [];
