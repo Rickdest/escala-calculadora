@@ -84,7 +84,7 @@ export default function Education() {
       return;
     }
     if (contentData.button_link && !contentData.button_link.startsWith('https://')) {
-      toast({ title: 'Erro', description: 'Link deve começar com https://', variant: 'destructive' });
+      toast.error('Link deve começar com https://');
       setSaving(false);
       return;
     }
