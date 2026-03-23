@@ -41,9 +41,16 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
 
-    // Validate secret from body
-    const secret = body.secret || body.fields?.secret;
-    if (secret !== CAKTO_WEBHOOK_SECRET) {
+    // Validate secret from body (constant-time comparison to prevent timing attacks)
+    const secret = body.fields?.secret || body.secret || "";
+    const encoder = new TextEncoder();
+    const a = encoder.encode(secret);
+    const b = encoder.encode(CAKTO_WEBHOOK_SECRET);
+    let match = a.length === b.length;
+    for (let i = 0; i < Math.max(a.length, b.length); i++) {
+      if ((a[i] ?? 0) !== (b[i] ?? 0)) match = false;
+    }
+    if (!match) {
       console.error("Invalid webhook secret");
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
