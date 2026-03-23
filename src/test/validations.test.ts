@@ -21,7 +21,7 @@ describe('productSchema', () => {
     });
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.errors.name).toBeDefined();
+      expect((result as { success: false; errors: Record<string, string> }).errors.name).toBeDefined();
     }
   });
 

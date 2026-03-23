@@ -80,7 +80,6 @@ export default function Settings() {
     setIsSaving(true);
     await new Promise(resolve => setTimeout(resolve, 300));
 
-    const taxValue = enableTaxes ? (parseFloat(taxes) || 0) : 0;
     const aceleraValue = enableAcelera ? shopeeAcelera : 'none';
 
     await updateStoreConfig(currentStore.id, {
