@@ -100,7 +100,7 @@ export default function AdminBanners() {
         const filename = `banner_${Date.now()}.jpg`;
         const { error } = await supabase.storage.from('banners').upload(filename, blob, { contentType: 'image/jpeg', upsert: true });
         if (error) {
-          toast({ title: 'Erro no upload', description: error.message, variant: 'destructive' });
+          toast.error('Erro no upload', { description: error.message });
           setUploading(false);
           return;
         }
