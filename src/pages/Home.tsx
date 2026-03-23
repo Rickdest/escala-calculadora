@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { PageLoader, PageError } from '@/components/layout/PageStates';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
 
@@ -16,6 +17,8 @@ import { ProductThumbnail } from '@/components/ProductThumbnail';
 import { useEstoque } from '@/hooks/useEstoque';
 import { BannerCarousel } from '@/components/home/BannerCarousel';
 import { useAdmin } from '@/hooks/useAdmin';
+import { MARKETPLACE_SHORTCUTS } from '@/lib/marketplaceShortcuts';
+import type { Product } from '@/types/store';
 
 const toolItems = [
   { icon: Plus, label: 'Precificar', isAccent: true, action: 'addProduct' as const },
