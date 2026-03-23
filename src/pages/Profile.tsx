@@ -59,10 +59,7 @@ export default function Profile() {
 
       if (error) throw error;
 
-      toast({
-        title: 'Perfil atualizado!',
-        description: 'Suas informações foram salvas com sucesso.',
-      });
+      toast.success('Perfil atualizado!', { description: 'Suas informações foram salvas com sucesso.' });
     } catch (error: any) {
       toast({
         title: 'Erro ao salvar',
