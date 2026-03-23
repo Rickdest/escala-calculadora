@@ -85,7 +85,6 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 }
 
 const App = () => (
-  <ErrorBoundary>
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <TooltipProvider>
@@ -96,6 +95,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <ErrorBoundary>
               <Suspense fallback={<PageLoader />}>
                 <Routes>
                   <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
@@ -113,6 +113,7 @@ const App = () => (
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
+              </ErrorBoundary>
             </BrowserRouter>
           </StoreProvider>
           </SidebarProvider>
@@ -121,7 +122,6 @@ const App = () => (
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
-  </ErrorBoundary>
 );
 
 export default App;
