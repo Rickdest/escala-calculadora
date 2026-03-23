@@ -74,7 +74,7 @@ export default function Education() {
       return;
     }
     if (description && description.length > 1000) {
-      toast({ title: 'Erro', description: 'Descrição deve ter no máximo 1000 caracteres.', variant: 'destructive' });
+      toast.error('Descrição deve ter no máximo 1000 caracteres.');
       setSaving(false);
       return;
     }
