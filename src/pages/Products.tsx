@@ -4,7 +4,7 @@ import { useStore } from '@/contexts/StoreContext';
 import { Product, SortOption } from '@/types/store';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
-import { ProductCard } from '@/components/cards/ProductCard';
+import ProductCard from '@/components/cards/ProductCard';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { MarginDistributionChart, TopProductsChart, ProfitSummaryChart } from '@/components/charts/AnalyticsCharts';
 import { ProductThumbnail } from '@/components/ProductThumbnail';
