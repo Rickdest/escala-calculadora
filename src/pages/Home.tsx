@@ -63,14 +63,7 @@ export default function Home() {
   }
 
   if (loadError) {
-    return (
-      <AppLayout>
-        <div className="flex flex-col items-center justify-center min-h-[85vh] gap-4 px-6 text-center">
-          <p className="text-text-2 text-sm">Erro ao carregar seus dados.</p>
-          <button onClick={retryLoad} className="text-primary underline text-sm">Tentar novamente</button>
-        </div>
-      </AppLayout>
-    );
+    return <AppLayout><PageError onRetry={retryLoad} minHeight="min-h-[85vh]" /></AppLayout>;
   }
 
   if (!currentStore) {
