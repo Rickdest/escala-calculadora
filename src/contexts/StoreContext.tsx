@@ -65,6 +65,7 @@ function mapDbProduct(p: Tables<'products'>): Product {
     attributes,
     variations,
     shopeeAcelera: (p.shopee_acelera as ShopeeAceleraOption) ?? 'none',
+    outrosCanais: (p as any).outros_canais ?? undefined,
     createdAt: new Date(p.created_at),
     updatedAt: new Date(p.updated_at),
   };
@@ -318,6 +319,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       category: productData.category || null,
       description: productData.description || null,
       min_stock_quantity: productData.minStockQuantity ?? 5,
+      outros_canais: productData.outrosCanais ?? null,
     } as any).select().single();
 
     if (error) { toast.error('Erro ao salvar produto'); throw error; }
@@ -355,6 +357,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (updates.category !== undefined) dbUpdates.category = updates.category;
     if (updates.description !== undefined) dbUpdates.description = updates.description;
     if (updates.minStockQuantity !== undefined) dbUpdates.min_stock_quantity = updates.minStockQuantity;
+    if (updates.outrosCanais !== undefined) dbUpdates.outros_canais = updates.outrosCanais ?? null;
     if (updates.variations !== undefined && updates.hasVariations !== false) {
       const vars = updates.variations || [];
       if (vars.length > 0) {
@@ -415,6 +418,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       category: original.category || null,
       description: original.description || null,
       min_stock_quantity: original.minStockQuantity ?? 5,
+      outros_canais: original.outrosCanais ?? null,
     } as any).select().single();
 
     if (error) { toast.error('Erro ao duplicar produto'); return null; }

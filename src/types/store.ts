@@ -107,6 +107,20 @@ export function getVariationLabel(attrs: Record<string, string>): string {
   return Object.values(attrs).join(' / ');
 }
 
+// ══════════ OTHER CHANNELS ══════════
+
+export interface OtherChannelData {
+  costPrice: number;
+  salePrice: number;
+}
+
+export interface OutrosCanais {
+  tiktok?: OtherChannelData;
+  shein?: OtherChannelData;
+  amazon?: OtherChannelData;
+  ml?: OtherChannelData;
+}
+
 // ══════════ PRODUCT ══════════
 
 export interface Product {
@@ -127,6 +141,7 @@ export interface Product {
   attributes: ProductAttribute[];
   variations: ProductVariation[];
   shopeeAcelera: ShopeeAceleraOption;
+  outrosCanais?: OutrosCanais;
   createdAt: Date;
   updatedAt: Date;
 }
