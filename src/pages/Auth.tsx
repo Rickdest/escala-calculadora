@@ -4,7 +4,7 @@ import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { lovable } from '@/integrations/lovable/index';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 function traduzirErro(mensagem: string): string {
   if (mensagem.includes('already registered') || mensagem.includes('User already registered'))
