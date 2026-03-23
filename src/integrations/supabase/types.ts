@@ -432,6 +432,7 @@ export type Database = {
           image_url: string | null
           min_stock_quantity: number | null
           name: string
+          outros_canais: Json | null
           packaging_cost: number | null
           sale_price: number
           shopee_acelera: string | null
@@ -455,6 +456,7 @@ export type Database = {
           image_url?: string | null
           min_stock_quantity?: number | null
           name: string
+          outros_canais?: Json | null
           packaging_cost?: number | null
           sale_price: number
           shopee_acelera?: string | null
@@ -478,6 +480,7 @@ export type Database = {
           image_url?: string | null
           min_stock_quantity?: number | null
           name?: string
+          outros_canais?: Json | null
           packaging_cost?: number | null
           sale_price?: number
           shopee_acelera?: string | null
