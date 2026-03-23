@@ -5,11 +5,9 @@ import { generateAlerts, AlertItem } from '@/lib/adsLogic';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Upload, TrendingUp, TrendingDown, AlertTriangle, Zap, Package,
-  MapPin, ClipboardList, Search, RefreshCw, Link2, Unlink, Trash2,
-  Megaphone, Eye, MousePointerClick, ShoppingCart, FileText, Clock
+  MapPin, ClipboardList, Search, Link2, Megaphone, Clock, BarChart3
 } from 'lucide-react';
 import { AdsDetailView } from './AdsDetailView';
 import { AdsLinkModal } from './AdsLinkModal';
@@ -24,7 +22,7 @@ function getClassCor(cls: string | null) {
   if (cls === 'MARGEM_APERTADA') return { color: 'text-warning', bg: 'bg-warning/10 border-warning/30', icon: AlertTriangle, label: 'Margem Apertada' };
   if (cls === 'ABAIXO_EMPATE') return { color: 'text-warning', bg: 'bg-warning/10 border-warning/30', icon: AlertTriangle, label: 'Abaixo do Empate' };
   if (cls === 'PREJUIZO') return { color: 'text-destructive', bg: 'bg-destructive/10 border-destructive/30', icon: TrendingDown, label: 'Prejuízo' };
-  return { color: 'text-muted-foreground', bg: 'bg-secondary border-border', icon: Package, label: 'Não vinculado' };
+  return { color: 'text-text-3', bg: 'bg-surface-2 border-border', icon: Package, label: 'Não vinculado' };
 }
 
 function getRoasColor(roas: number) {
@@ -42,26 +40,30 @@ function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
     const lucrativos = data.filter(d => d.classificacao === 'LUCRATIVO').length;
     const atencao = data.filter(d => d.classificacao === 'MARGEM_APERTADA' || d.classificacao === 'ABAIXO_EMPATE').length;
     const prejuizo = data.filter(d => d.classificacao === 'PREJUIZO').length;
-    return { totalGmv, totalSpend, avgRoas, lucrativos, atencao, prejuizo };
+    return { totalGmv, totalSpend, avgRoas, lucrativos, atencao, prejuizo, total: data.length };
   }, [data]);
 
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-3 gap-2">
-        <div className="rounded-xl border border-border bg-card p-3">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">GMV Total</p>
-          <p className="text-lg font-extrabold font-mono tabular-nums text-foreground mt-1">{fmt(s.totalGmv)}</p>
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="section-label">GMV Total</p>
+          <p className="text-xl font-extrabold font-mono tabular-nums text-foreground mt-1.5">{fmt(s.totalGmv)}</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-3">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Gasto Total</p>
-          <p className="text-lg font-extrabold font-mono tabular-nums text-foreground mt-1">{fmt(s.totalSpend)}</p>
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="section-label">Gasto Total</p>
+          <p className="text-xl font-extrabold font-mono tabular-nums text-foreground mt-1.5">{fmt(s.totalSpend)}</p>
         </div>
-        <div className="rounded-xl border border-border bg-card p-3">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">ROAS Médio</p>
-          <p className={cn('text-lg font-extrabold font-mono tabular-nums mt-1', getRoasColor(s.avgRoas))}>{s.avgRoas.toFixed(2)}</p>
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="section-label">ROAS Médio</p>
+          <p className={cn('text-xl font-extrabold font-mono tabular-nums mt-1.5', getRoasColor(s.avgRoas))}>{s.avgRoas.toFixed(2)}</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-4">
+          <p className="section-label">Anúncios</p>
+          <p className="text-xl font-extrabold font-mono tabular-nums text-foreground mt-1.5">{s.total}</p>
         </div>
       </div>
-      <div className="flex items-center gap-3 px-1">
+      <div className="flex items-center gap-3 rounded-lg bg-surface-2 p-2.5 px-3">
         <span className="text-xs font-bold text-success">✅ {s.lucrativos} lucrativos</span>
         <span className="text-xs font-bold text-warning">🟠 {s.atencao} atenção</span>
         <span className="text-xs font-bold text-destructive">🔴 {s.prejuizo} prejuízo</span>
@@ -82,16 +84,16 @@ function FilterChips({ filter, setFilter, data }: { filter: FilterType; setFilte
   ];
 
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex flex-wrap gap-2">
       {chips.map(c => (
         <button
           key={c.key}
           onClick={() => setFilter(c.key)}
           className={cn(
-            'px-3 py-1.5 rounded-full text-xs font-bold transition-colors border',
+            'px-3.5 py-2 rounded-full text-xs font-bold transition-colors border',
             filter === c.key
               ? 'bg-primary text-primary-foreground border-primary'
-              : 'bg-card text-muted-foreground border-border hover:border-primary/30'
+              : 'bg-card text-text-2 border-border hover:border-primary/30'
           )}
         >
           {c.label}
@@ -127,15 +129,15 @@ function AdsProductCard({
 
   return (
     <div
-      className="rounded-xl border border-border bg-card p-3.5 space-y-2 cursor-pointer hover:border-primary/30 transition-colors active:scale-[0.99]"
+      className="rounded-xl border border-border bg-card p-4 space-y-3 cursor-pointer hover:border-primary/30 transition-colors active:scale-[0.99]"
       onClick={onClick}
     >
       <div className="flex items-start gap-3">
         {ad.product?.imageUrl ? (
-          <img src={ad.product.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
+          <img src={ad.product.imageUrl} alt="" className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
         ) : (
-          <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
-            <Package className="w-5 h-5 text-muted-foreground" />
+          <div className="w-12 h-12 rounded-xl bg-surface-2 flex items-center justify-center flex-shrink-0">
+            <Package className="w-5 h-5 text-text-3" />
           </div>
         )}
         <div className="flex-1 min-w-0">
@@ -149,31 +151,31 @@ function AdsProductCard({
               </span>
             )}
           </div>
-          <p className="text-sm font-bold text-foreground truncate mt-1">{ad.nome_produto_csv}</p>
-          <p className="text-[11px] text-muted-foreground font-mono tabular-nums">{periodLabel}</p>
+          <p className="text-sm font-bold text-foreground truncate mt-1.5">{ad.nome_produto_csv}</p>
+          <p className="text-[11px] text-text-3 font-mono tabular-nums">{periodLabel}</p>
         </div>
         <div className="text-right flex-shrink-0">
-          <p className={cn('text-lg font-extrabold font-mono tabular-nums', getRoasColor(roasDireto))}>
+          <p className={cn('text-xl font-extrabold font-mono tabular-nums', getRoasColor(roasDireto))}>
             {roasDireto.toFixed(2)}
           </p>
-          <p className="text-[10px] text-muted-foreground">ROAS</p>
+          <p className="text-[10px] text-text-3">ROAS</p>
         </div>
       </div>
 
-      <div className="flex items-center gap-3 text-[11px] text-muted-foreground font-mono tabular-nums">
+      <div className="flex items-center gap-3 text-[11px] text-text-2 font-mono tabular-nums">
         <span>GMV {fmt(ad.gmv)}</span>
-        <span>·</span>
+        <span className="text-text-3">·</span>
         <span>Gasto {fmt(ad.despesas)}</span>
         {ad.roas_empate && (
           <>
-            <span>·</span>
+            <span className="text-text-3">·</span>
             <span>vs Empate {ad.roas_empate.toFixed(2)}</span>
           </>
         )}
       </div>
 
       {ad.roas_empate && roasDireto > 0 && (
-        <div className="w-full h-2 rounded-full bg-secondary overflow-hidden">
+        <div className="w-full h-2.5 rounded-full bg-surface-2 overflow-hidden">
           <div
             className={cn('h-full rounded-full transition-all',
               roasDireto >= ad.roas_empate ? 'bg-success' : 'bg-destructive'
@@ -193,7 +195,7 @@ function AdsProductCard({
       )}
 
       {ad.posicao_media !== null && (
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold font-mono tabular-nums text-muted-foreground">
+        <span className="inline-flex items-center gap-1 text-[11px] font-bold font-mono tabular-nums text-text-2">
           <MapPin className="w-3 h-3 text-primary" /> Pos. #{ad.posicao_media}
         </span>
       )}
@@ -217,18 +219,18 @@ function AlertsSection({ data }: { data: EnrichedAdsData[] }) {
   };
 
   return (
-    <div className="space-y-2">
-      <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground flex items-center gap-1.5">
+    <div className="space-y-3">
+      <p className="section-label flex items-center gap-1.5">
         <Zap className="w-3.5 h-3.5 text-primary" /> Alertas Automáticos
       </p>
       {alerts.slice(0, 8).map((a, i) => {
         const Icon = icons[a.type] || AlertTriangle;
         return (
-          <div key={i} className={cn('flex items-start gap-2 p-2.5 rounded-lg border', colors[a.type])}>
+          <div key={i} className={cn('flex items-start gap-3 p-3 rounded-xl border', colors[a.type])}>
             <Icon className={cn('w-4 h-4 flex-shrink-0 mt-0.5', `text-${a.cor}`)} />
             <div className="min-w-0">
               <p className="text-xs font-bold text-foreground truncate">{a.productName}</p>
-              <p className="text-[11px] text-muted-foreground">{a.message}</p>
+              <p className="text-[11px] text-text-2 mt-0.5">{a.message}</p>
             </div>
           </div>
         );
@@ -241,12 +243,12 @@ function AlertsSection({ data }: { data: EnrichedAdsData[] }) {
 function EmptyState({ onImport }: { onImport: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
-      <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center">
-        <Megaphone className="w-8 h-8 text-muted-foreground" />
+      <div className="w-16 h-16 rounded-2xl bg-surface-2 flex items-center justify-center">
+        <Megaphone className="w-8 h-8 text-text-3" />
       </div>
       <div className="space-y-2">
         <p className="text-[15px] font-bold text-foreground">Importe seu relatório de Shopee Ads</p>
-        <p className="text-[13px] text-muted-foreground max-w-[300px] mx-auto">
+        <p className="text-[13px] text-text-2 max-w-[300px] mx-auto">
           Exporte o CSV em: Shopee Seller Center → Marketing → Shopee Ads → Relatórios → Todos os Anúncios → Exportar
         </p>
       </div>
@@ -268,17 +270,17 @@ function ByProductContent({ data, onImport, onDetail }: {
   if (withPosition.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center space-y-4">
-        <div className="w-16 h-16 rounded-2xl bg-secondary flex items-center justify-center">
-          <Search className="w-8 h-8 text-muted-foreground" />
+        <div className="w-16 h-16 rounded-2xl bg-surface-2 flex items-center justify-center">
+          <Search className="w-8 h-8 text-text-3" />
         </div>
         <div className="space-y-2">
           <p className="text-[15px] font-bold text-foreground">Análise Individual por Produto</p>
-          <p className="text-[13px] text-muted-foreground max-w-[300px] mx-auto">
+          <p className="text-[13px] text-text-2 max-w-[300px] mx-auto">
             Importe o relatório de um produto específico para análise completa com posicionamento.
           </p>
-          <div className="text-left bg-secondary/50 rounded-xl p-3 max-w-[300px] mx-auto mt-3">
+          <div className="text-left bg-surface-2 rounded-xl p-3 max-w-[300px] mx-auto mt-3">
             <p className="text-[11px] font-bold text-foreground mb-1">Como exportar na Shopee:</p>
-            <ol className="text-[11px] text-muted-foreground space-y-0.5 list-decimal list-inside">
+            <ol className="text-[11px] text-text-2 space-y-0.5 list-decimal list-inside">
               <li>Shopee Seller Center</li>
               <li>Marketing → Shopee Ads</li>
               <li>Clique no anúncio do produto</li>
@@ -302,7 +304,7 @@ function ByProductContent({ data, onImport, onDetail }: {
         return (
           <div
             key={ad.id}
-            className="rounded-xl border border-border bg-card p-3.5 cursor-pointer hover:border-primary/30 transition-colors active:scale-[0.99]"
+            className="rounded-xl border border-border bg-card p-4 cursor-pointer hover:border-primary/30 transition-colors active:scale-[0.99]"
             onClick={() => onDetail(ad)}
           >
             <div className="flex items-center gap-3">
@@ -313,7 +315,7 @@ function ByProductContent({ data, onImport, onDetail }: {
                     ROAS {(ad.roas_direto || ad.roas).toFixed(2)}
                   </span>
                   {ad.roas_empate && (
-                    <span className="text-[11px] text-muted-foreground font-mono">Empate {ad.roas_empate.toFixed(2)}</span>
+                    <span className="text-[11px] text-text-3 font-mono">Empate {ad.roas_empate.toFixed(2)}</span>
                   )}
                 </div>
               </div>
@@ -328,7 +330,7 @@ function ByProductContent({ data, onImport, onDetail }: {
           </div>
         );
       })}
-      <Button onClick={onImport} variant="outline" className="w-full h-10 rounded-xl text-sm font-bold gap-2">
+      <Button onClick={onImport} variant="outline" className="w-full h-10 rounded-xl text-sm font-bold gap-2 border-dashed">
         <Upload className="w-4 h-4" /> Importar novo CSV de produto
       </Button>
     </div>
@@ -393,7 +395,7 @@ export function AdsTab() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <input ref={generalFileRef} type="file" accept=".csv" onChange={handleGeneralFile} className="hidden" />
       <input ref={productFileRef} type="file" accept=".csv" onChange={handleProductFile} className="hidden" />
       <input ref={positionFileRef} type="file" accept=".csv" onChange={handlePositionFile} className="hidden" />
@@ -408,20 +410,24 @@ export function AdsTab() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="mt-4 space-y-4 animate-fade-in">
+        <TabsContent value="overview" className="mt-5 space-y-6 animate-fade-in">
           {data.length === 0 ? (
             <EmptyState onImport={() => generalFileRef.current?.click()} />
           ) : (
-            <div className="md:grid md:grid-cols-12 md:gap-6 space-y-4 md:space-y-0">
-              <div className="md:col-span-8 space-y-4">
+            <div className="md:grid md:grid-cols-12 md:gap-6 space-y-6 md:space-y-0">
+              <div className="md:col-span-8 space-y-6">
                 <SummaryCards data={data} />
                 <FilterChips filter={filter} setFilter={setFilter} data={data} />
 
-                <Button onClick={() => generalFileRef.current?.click()} className="w-full h-11 rounded-xl text-sm font-bold gap-2">
+                <Button
+                  onClick={() => generalFileRef.current?.click()}
+                  variant="outline"
+                  className="w-full h-11 rounded-xl text-sm font-bold gap-2 border-dashed"
+                >
                   <Upload className="w-4 h-4" /> Importar relatório de anúncios
                 </Button>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {filtered.map(ad => (
                     <AdsProductCard
                       key={ad.id}
@@ -432,19 +438,19 @@ export function AdsTab() {
                     />
                   ))}
                   {filtered.length === 0 && (
-                    <p className="text-center text-sm text-muted-foreground py-6">Nenhum produto neste filtro</p>
+                    <p className="text-center text-sm text-text-2 py-6">Nenhum produto neste filtro</p>
                   )}
                 </div>
               </div>
 
-              <div className="md:col-span-4 space-y-4">
+              <div className="md:col-span-4 space-y-6">
                 <AlertsSection data={data} />
               </div>
             </div>
           )}
         </TabsContent>
 
-        <TabsContent value="byProduct" className="mt-4 animate-fade-in">
+        <TabsContent value="byProduct" className="mt-5 animate-fade-in">
           <ByProductContent
             data={data}
             onImport={() => productFileRef.current?.click()}
