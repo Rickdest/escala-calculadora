@@ -11,6 +11,7 @@ import { EnrichedAdsData } from '@/hooks/useAdsData';
 import {
   calcularRoasEmpate, classificarAnuncio, sugerirMetaRoas,
   classificarPosicao, getDiagnostico, detectarCrossSell,
+  calcAdEfficiencyScore, calcHaloEffect, calcCostVsMarginAlert,
 } from '@/lib/adsLogic';
 
 interface Props {
@@ -76,9 +77,24 @@ export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) 
 
   const crossSell = useMemo(() => detectarCrossSell(ad.roas, ad.roas_direto), [ad.roas, ad.roas_direto]);
 
+  const efficiency = useMemo(() =>
+    calcAdEfficiencyScore(roasDireto, roasEmpate, ad.ctr, ad.taxa_conversao, ad.posicao_media),
+    [roasDireto, roasEmpate, ad.ctr, ad.taxa_conversao, ad.posicao_media]
+  );
+
+  const halo = useMemo(() =>
+    calcHaloEffect(ad.gmv, ad.gmv_direto, ad.itens_vendidos, (ad as any).itens_vendidos_diretos || 0),
+    [ad.gmv, ad.gmv_direto, ad.itens_vendidos, (ad as any).itens_vendidos_diretos]
+  );
+
+  const costMarginAlert = useMemo(() => {
+    const lucro = empateResult?.lucroPorUnidade;
+    if (!lucro || lucro <= 0) return null;
+    return calcCostVsMarginAlert(ad.despesas, ad.itens_vendidos, lucro);
+  }, [ad.despesas, ad.itens_vendidos, empateResult]);
+
   const cpc = ad.cliques > 0 ? ad.despesas / ad.cliques : 0;
   const custoVenda = ad.itens_vendidos > 0 ? ad.despesas / ad.itens_vendidos : 0;
-  const lucroPorVenda = empateResult ? empateResult.lucroPorUnidade - custoVenda : null;
 
   const dias = getDiasPeriodo(ad.periodo_inicio, ad.periodo_fim);
   const emAprendizado = dias < 7;
@@ -116,6 +132,9 @@ export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) 
 
   const statusColor = classification?.cor || 'text-3';
 
+  // Efficiency bar color
+  const effBarColor = efficiency.score >= 80 ? 'bg-success' : efficiency.score >= 60 ? 'bg-primary' : efficiency.score >= 40 ? 'bg-warning' : 'bg-destructive';
+
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-card border border-border rounded-2xl w-full max-w-lg max-h-[92vh] overflow-hidden flex flex-col animate-scale-up" onClick={e => e.stopPropagation()}>
@@ -138,7 +157,38 @@ export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) 
         </div>
 
         <div className="p-5 space-y-5 overflow-y-auto flex-1">
-          {/* 1. Learning Phase Warning */}
+          {/* Efficiency Score */}
+          <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-3 animate-fade-in">
+            <div className="flex items-center justify-between">
+              <p className="section-label">Score de Eficiência</p>
+              <span className={cn('text-xl font-extrabold font-mono tabular-nums', efficiency.color)}>
+                {efficiency.score}<span className="text-[10px] text-text-3 font-normal">/100</span>
+              </span>
+            </div>
+            <div className="w-full h-3 rounded-full bg-background overflow-hidden">
+              <div className={cn('h-full rounded-full transition-all', effBarColor)} style={{ width: `${efficiency.score}%` }} />
+            </div>
+            <div className="flex items-center gap-3 text-[10px] text-text-3 font-mono tabular-nums flex-wrap">
+              <span>ROAS: {efficiency.breakdown.roasScore}/40</span>
+              <span>CTR: {efficiency.breakdown.ctrScore}/20</span>
+              <span>Conv: {efficiency.breakdown.convScore}/20</span>
+              <span>Pos: {efficiency.breakdown.posScore}/20</span>
+            </div>
+          </div>
+
+          {/* Cost vs Margin Alert Banner */}
+          {costMarginAlert && (
+            <div className={cn('rounded-xl border p-3 flex items-center gap-2.5 text-xs font-bold animate-fade-in',
+              costMarginAlert.level === 'safe' ? 'border-success/30 bg-success/10 text-success' :
+              costMarginAlert.level === 'warning' ? 'border-warning/30 bg-warning/10 text-warning' :
+              'border-destructive/30 bg-destructive/10 text-destructive'
+            )}>
+              {costMarginAlert.level === 'safe' ? '✅' : costMarginAlert.level === 'warning' ? '⚠️' : '🚨'}
+              <span>{costMarginAlert.message}</span>
+            </div>
+          )}
+
+          {/* Learning Phase Warning */}
           {emAprendizado && (
             <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 flex items-start gap-3">
               <Clock className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
@@ -204,7 +254,7 @@ export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) 
             <Stat icon={Percent} label="ACOS" value={`${ad.acos.toFixed(1)}%`} sub={margemContrib ? `Margem: ${margemContrib.toFixed(1)}%` : undefined} />
           </div>
 
-          {/* 2. Custo vs Lucro por Venda */}
+          {/* Custo vs Lucro por Venda */}
           {empateResult && ad.itens_vendidos > 0 && (
             <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-3">
               <p className="section-label flex items-center gap-1.5">
@@ -215,11 +265,16 @@ export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) 
                   <span className="text-text-2">Custo por pedido:</span>
                   <span className="font-bold">{fmt(custoPorPedido)}</span>
                 </div>
-                {ad.itens_vendidos !== (ad.conversoes || 0) && (
-                  <div className="flex justify-between">
-                    <span className="text-text-2">Custo por unidade:</span>
-                    <span className="font-bold">{fmt(custoPorUnidade)} <span className="text-[10px] text-text-3">({ad.itens_vendidos} itens/{ad.conversoes || 0} ped.)</span></span>
-                  </div>
+                {ad.itens_vendidos !== (ad.conversoes || 0) && ad.conversoes > 0 && (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-text-2">Custo por unidade:</span>
+                      <span className="font-bold">{fmt(custoPorUnidade)}</span>
+                    </div>
+                    <div className="rounded-md bg-primary/10 border border-primary/20 px-2 py-1 text-[10px] text-primary font-bold">
+                      Cada pedido tem em média {(ad.itens_vendidos / ad.conversoes).toFixed(1)} unidades
+                    </div>
+                  </>
                 )}
                 <div className="flex justify-between">
                   <span className="text-text-2">Lucro por unidade:</span>
@@ -248,7 +303,7 @@ export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) 
             </div>
           )}
 
-          {/* 4. ACOS vs Margem */}
+          {/* ACOS vs Margem */}
           {margemContrib !== null && (
             <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-3">
               <p className="section-label">ACOS vs Margem</p>
@@ -279,7 +334,7 @@ export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) 
             </div>
           )}
 
-          {/* Section 3: Geral vs Direto */}
+          {/* Geral vs Direto */}
           {ad.roas_direto > 0 && (
             <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-3">
               <p className="section-label">Geral vs Direto</p>
@@ -297,10 +352,31 @@ export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) 
             </div>
           )}
 
-          {/* Section 4: Config + Meta ROAS + Bid diagnosis + Budget */}
+          {/* Halo Effect Section */}
+          {halo && (
+            <div className={cn('rounded-xl border p-4 space-y-2 animate-fade-in',
+              halo.isSignificant ? 'border-success/30 bg-success/5' : 'border-border bg-surface-2'
+            )}>
+              <p className="section-label flex items-center gap-1.5">
+                {halo.isSignificant ? '💎' : '🔗'} Efeito Halo — Vendas Indiretas
+              </p>
+              <p className="text-xs text-text-2">{halo.message}</p>
+              <div className="flex items-center gap-4 text-[11px] font-mono tabular-nums text-text-3">
+                <span>Itens do produto: {ad.itens_vendidos - halo.haloItems}</span>
+                <span>·</span>
+                <span>Itens de outros: {halo.haloItems}</span>
+              </div>
+              <div className="flex items-center gap-4 text-[11px] font-mono tabular-nums text-text-3">
+                <span>Receita direta: {fmt(ad.gmv_direto)}</span>
+                <span>·</span>
+                <span>Receita extra: {fmt(halo.haloGmv)}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Config + Meta ROAS + Bid diagnosis + Budget */}
           {(ad.metodo_lance || metaRoas) && (
             <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-              {/* Bid type diagnosis */}
               {ad.metodo_lance && (
                 <div className="space-y-2">
                   {isMetaRoas ? (
