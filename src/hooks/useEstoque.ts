@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -63,40 +64,45 @@ export function getLocalStockImage(productId: string): string | null {
   return getLocalStockImages()[productId] || null;
 }
 
+async function fetchEstoque(userId: string): Promise<EstoqueProduto[]> {
+  const [{ data: prods, error: e1 }, { data: vars, error: e2 }] = await Promise.all([
+    supabase.from('estoque_produtos' as any).select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+    supabase.from('estoque_variacoes' as any).select('*').eq('user_id', userId),
+  ]);
+  if (e1) throw e1;
+  if (e2) throw e2;
+  const varMap = new Map<string, EstoqueVariacao[]>();
+  for (const v of (vars || []) as any[]) {
+    const list = varMap.get(v.produto_id) || [];
+    list.push(v as EstoqueVariacao);
+    varMap.set(v.produto_id, list);
+  }
+  return ((prods || []) as any[]).map(p => ({
+    ...p,
+    variacoes: varMap.get(p.id) || [],
+  }));
+}
+
 export function useEstoque() {
   const { user } = useAuth();
-  const [produtos, setProdutos] = useState<EstoqueProduto[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const queryKey = ['estoque', user?.id];
 
-  const loadProdutos = useCallback(async () => {
-    if (!user) { setProdutos([]); setLoading(false); return; }
-    setLoading(true);
-    try {
-      const [{ data: prods, error: e1 }, { data: vars, error: e2 }] = await Promise.all([
-        supabase.from('estoque_produtos' as any).select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
-        supabase.from('estoque_variacoes' as any).select('*').eq('user_id', user.id),
-      ]);
-      if (e1) throw e1;
-      if (e2) throw e2;
-      const varMap = new Map<string, EstoqueVariacao[]>();
-      for (const v of (vars || []) as any[]) {
-        const list = varMap.get(v.produto_id) || [];
-        list.push(v as EstoqueVariacao);
-        varMap.set(v.produto_id, list);
-      }
-      const mapped: EstoqueProduto[] = ((prods || []) as any[]).map(p => ({
-        ...p,
-        variacoes: varMap.get(p.id) || [],
-      }));
-      setProdutos(mapped);
-    } catch (err) {
-      toast.error('Erro ao carregar estoque');
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
+  const { data: produtos = [], isLoading: loading, isError, refetch } = useQuery({
+    queryKey,
+    queryFn: () => fetchEstoque(user!.id),
+    enabled: !!user,
+    staleTime: 3 * 60 * 1000,
+    retry: 1,
+  });
 
-  useEffect(() => { loadProdutos(); }, [loadProdutos]);
+  useEffect(() => {
+    if (isError) toast.error('Erro ao carregar estoque');
+  }, [isError]);
+
+  const invalidate = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey });
+  }, [queryClient, queryKey]);
 
   const addProduto = useCallback(async (data: {
     nome: string;
@@ -123,7 +129,6 @@ export function useEstoque() {
       saveLocalStockImage(prod.id, compressed);
     }
 
-    // Insert variations
     if (data.variacoes.length > 0) {
       const rows = data.variacoes.map(v => ({
         produto_id: prod.id,
@@ -138,10 +143,10 @@ export function useEstoque() {
       if (ve) { toast.error('Erro ao salvar variações'); throw ve; }
     }
 
-    await loadProdutos();
+    invalidate();
     toast.success('Produto adicionado ao estoque!');
     return prod;
-  }, [user, loadProdutos]);
+  }, [user, invalidate]);
 
   const updateProduto = useCallback(async (id: string, data: Partial<{
     nome: string;
@@ -152,27 +157,26 @@ export function useEstoque() {
   }>) => {
     const { error } = await (supabase.from('estoque_produtos' as any) as any).update(data).eq('id', id);
     if (error) { toast.error('Erro ao atualizar produto'); return; }
-    await loadProdutos();
-  }, [loadProdutos]);
+    invalidate();
+  }, [invalidate]);
 
   const deleteProduto = useCallback(async (id: string) => {
     const { error } = await (supabase.from('estoque_produtos' as any) as any).delete().eq('id', id);
     if (error) { toast.error('Erro ao excluir produto'); return; }
     removeLocalStockImage(id);
-    await loadProdutos();
+    invalidate();
     toast.success('Produto excluído');
-  }, [loadProdutos]);
+  }, [invalidate]);
 
   const updateVariacao = useCallback(async (id: string, data: Partial<EstoqueVariacao>) => {
     const { error } = await (supabase.from('estoque_variacoes' as any) as any).update(data).eq('id', id);
     if (error) { toast.error('Erro ao atualizar variação'); return; }
-    await loadProdutos();
-  }, [loadProdutos]);
+    invalidate();
+  }, [invalidate]);
 
   const addMovimentacao = useCallback(async (variacaoId: string, tipo: 'entrada' | 'saida' | 'ajuste', quantidade: number, motivo?: string) => {
     if (!user) return;
 
-    // Get current variation
     const prod = produtos.find(p => p.variacoes.some(v => v.id === variacaoId));
     const variacao = prod?.variacoes.find(v => v.id === variacaoId);
     if (!variacao) return;
@@ -180,12 +184,10 @@ export function useEstoque() {
     let newQty = variacao.quantidade;
     if (tipo === 'entrada') newQty += quantidade;
     else if (tipo === 'saida') newQty = Math.max(0, newQty - quantidade);
-    else newQty = quantidade; // ajuste = set absolute
+    else newQty = quantidade;
 
-    // Update quantity
     await (supabase.from('estoque_variacoes' as any) as any).update({ quantidade: newQty }).eq('id', variacaoId);
 
-    // Record movement
     await (supabase.from('estoque_movimentacoes' as any) as any).insert({
       variacao_id: variacaoId,
       user_id: user.id,
@@ -194,9 +196,9 @@ export function useEstoque() {
       motivo: motivo || null,
     });
 
-    await loadProdutos();
+    invalidate();
     toast.success('Estoque atualizado');
-  }, [user, produtos, loadProdutos]);
+  }, [user, produtos, invalidate]);
 
   const getMovimentacoes = useCallback(async (variacaoIds: string[]): Promise<EstoqueMovimentacao[]> => {
     if (!user || variacaoIds.length === 0) return [];
@@ -210,8 +212,7 @@ export function useEstoque() {
     return (data || []) as EstoqueMovimentacao[];
   }, [user]);
 
-  // Stats
-  const stats = {
+  const stats = useMemo(() => ({
     total: produtos.length,
     ativo: produtos.filter(p => {
       const vars = p.variacoes;
@@ -228,11 +229,13 @@ export function useEstoque() {
     valorTotal: produtos.reduce((acc, p) => {
       return acc + p.variacoes.reduce((s, v) => s + v.preco_custo * v.quantidade, 0);
     }, 0),
-  };
+  }), [produtos]);
 
   return {
     produtos,
     loading,
+    loadError: isError,
+    retryLoad: refetch,
     stats,
     addProduto,
     updateProduto,
@@ -240,6 +243,6 @@ export function useEstoque() {
     updateVariacao,
     addMovimentacao,
     getMovimentacoes,
-    reload: loadProdutos,
+    reload: refetch,
   };
 }
