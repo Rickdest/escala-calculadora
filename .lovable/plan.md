@@ -1,76 +1,73 @@
 
 
-## Análise Completa do Precify — Melhorias Recomendadas
+## Redesign da Aba Ads — Consistencia Visual com o Design System
 
-### O que está BOM
+### Problema
 
-- Zero `console.log` em produção
-- Scan de segurança limpo (0 vulnerabilidades)
-- Lazy loading em todas as páginas
-- ErrorBoundary com reset por rota
-- 43 testes passando
-- Validação Zod em ProductForm e Settings
-- QueryClient com staleTime e retry configurados
-- RLS + filtro `user_id` em todas as queries
+A aba Ads usa classes genéricas (`text-muted-foreground`, `bg-secondary`, `bg-card`) em vez dos design tokens padronizados do app (`text-text-2`, `text-text-3`, `bg-surface-2`, `.section-label`). Elementos estão comprimidos com `p-3` e `gap-2` onde o restante do app usa espaçamentos mais generosos. Falta hierarquia visual entre seções.
 
----
+### Alteracoes
 
-### Problemas Encontrados (por prioridade)
+#### Arquivo 1: `src/components/roas/AdsTab.tsx`
 
-#### 1. `as any` espalhado (140 ocorrências em 7 arquivos) — ALTA
+**SummaryCards** — Redesenhar os 3 cards de resumo:
+- Trocar `p-3` por `p-4`, `gap-2` por `gap-3`
+- Labels: usar classe `section-label` (`text-[9px] uppercase tracking-wider text-text-3 font-bold`)
+- Valores: `text-xl` em vez de `text-lg`
+- Adicionar um quarto card com o count total de anuncios
+- Linha de semaforo: mais padding (`px-2 py-1.5`), fundo sutil (`rounded-lg bg-surface-2 p-2`)
 
-Tabelas `home_banners`, `estoque_produtos`, `estoque_variacoes` e `ad_metrics` não estão nos tipos gerados do banco. Código usa `supabase.from('tabela' as any)` como workaround.
+**FilterChips** — Mais espaco:
+- `gap-2` em vez de `gap-1.5`
+- `py-2 px-3.5` em vez de `py-1.5 px-3`
 
-**Solução**: Regenerar os tipos do banco (as tabelas já existem) para eliminar todos os casts. Isso resolve ~100 das 140 ocorrências. Os ~40 restantes são casts de JSON fields (`variations`, `outros_canais`) que precisam de type assertions explícitas em vez de `any`.
+**AdsProductCard** — Melhor hierarquia:
+- `p-4` em vez de `p-3.5`
+- `space-y-3` em vez de `space-y-2`
+- Imagem do produto `w-12 h-12` em vez de `w-10 h-10`
+- ROAS destacado com `text-xl` 
+- Barra de progresso ROAS `h-2.5` em vez de `h-2`
+- Metricas row com separadores visuais mais claros
+- Usar `text-text-2` e `text-text-3` em vez de `text-muted-foreground`
 
-#### 2. `/admin/banners` sem proteção de role — ALTA
+**AlertsSection** — Formato dashboard:
+- Titulo com `SectionLabel` pattern (icon + uppercase label) igual ao RoasAnalysis
+- Cards de alerta com `p-3` em vez de `p-2.5`, `gap-3` em vez de `gap-2`
 
-A rota `/admin/banners` usa `<ProtectedRoute>` (verifica autenticação + assinatura), mas NÃO verifica se o usuário é admin. Qualquer usuário autenticado pode acessar a URL diretamente. O `useAdmin` hook é chamado dentro da página mas só controla visibilidade de um botão na Home.
+**Layout geral (TabsContent "overview")**:
+- `space-y-6` em vez de `space-y-4` entre secoes
+- Import button: estilo outline com borda dashed em vez de primary solid (menos agressivo)
+- Separar visualmente secoes com spacing consistente
 
-**Solução**: Criar um `<AdminRoute>` wrapper que verifica `useAdmin()` e redireciona para `/` se não for admin.
+**EmptyState e ByProductContent**:
+- Usar `bg-surface-2` em vez de `bg-secondary`
+- Usar `text-text-2` e `text-text-3`
 
-#### 3. Marketplace badges duplicados na Home — MÉDIA
+#### Arquivo 2: `src/components/roas/AdsDetailView.tsx`
 
-O array de marketplaces (TikTok, Shein, Amazon, ML) está hardcoded duas vezes: uma para mobile (linha 230) e outra para desktop (linha 348). Se mudar uma taxa, precisa lembrar de mudar nos dois.
+**Modal container**:
+- `p-5` em vez de `p-4` no body
+- `space-y-5` em vez de `space-y-4` entre secoes
 
-**Solução**: Extrair para uma constante `MARKETPLACE_SHORTCUTS` no topo do arquivo.
+**Stat grid items**:
+- `p-3` em vez de `p-2.5`
+- Labels com `text-text-3` e `section-label` style
+- Valores com `text-lg` em vez de `text-base`
 
-#### 4. `handleSaveProduct` tipado como `any` — MÉDIA
+**Section cards** (Custo vs Lucro, ACOS vs Margem, Config, etc):
+- `p-4` em vez de `p-3`
+- Titulos com padrao `SectionLabel` (icon left-aligned + uppercase bold)
+- `space-y-3` em vez de `space-y-2`
+- Usar `bg-surface-2` como fundo alternativo em vez de `bg-secondary/30`
+- Consistencia: `text-text-2` para subtextos, `text-text-3` para labels
 
-Em `Home.tsx` linha 93 e `Products.tsx` linha 81, o callback `handleSaveProduct` recebe `productData: any`. Isso anula a validação Zod que foi adicionada no ProductForm.
+**Posicionamento ruler**:
+- `h-10` em vez de `h-8`
+- Marcador `w-7 h-7` em vez de `w-6 h-6`
 
-**Solução**: Tipar com o tipo correto de `Omit<Product, 'id' | 'createdAt' | 'updatedAt'> | Partial<Product>`.
+### Nao altera
 
-#### 5. `og:image` com caminho relativo — BAIXA
+- Nenhuma logica de calculo, importacao CSV, vinculacao ou alertas
+- Nenhum componente externo (ProductCard, hooks, adsLogic)
+- Funcionalidade identica — apenas visual
 
-O `og:image` usa `/og-image.png` (caminho relativo). Crawlers como WhatsApp e Facebook exigem URL absoluta. A imagem não vai aparecer ao compartilhar.
-
-**Solução**: Usar URL absoluta: `https://escala-calculadora.lovable.app/og-image.png`.
-
-#### 6. Falta `<meta name="theme-color">` — BAIXA
-
-Sem theme-color, a barra de status do navegador mobile fica genérica. Competidores como Olist/Bling usam isso para branding.
-
-**Solução**: Adicionar `<meta name="theme-color" content="#F97316">` no `index.html`.
-
-#### 7. Loading states repetidos — BAIXA
-
-O padrão de loading/error/empty é copiado identicamente em Home, Products, Settings, Stock (~15 linhas cada). Qualquer mudança de design precisa de 4+ edits.
-
-**Solução**: Criar componentes `<PageLoader>`, `<PageError>`, `<PageEmpty>` reutilizáveis.
-
----
-
-### Resumo de Ações
-
-| # | Melhoria | Impacto | Esforço |
-|---|----------|---------|---------|
-| 1 | Regenerar tipos do banco | Qualidade de código | Médio |
-| 2 | Proteger rota admin | Segurança | Baixo |
-| 3 | Extrair marketplace shortcuts | Manutenção | Baixo |
-| 4 | Tipar handleSaveProduct | Type safety | Baixo |
-| 5 | og:image URL absoluta | SEO/Social | Trivial |
-| 6 | theme-color meta tag | UX mobile | Trivial |
-| 7 | Componentes de loading | DRY | Médio |
-
-Qual dessas melhorias você quer que eu implemente?
