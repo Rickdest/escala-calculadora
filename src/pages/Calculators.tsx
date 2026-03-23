@@ -21,8 +21,8 @@ type TabKey = 'tiktok' | 'shein' | 'amazon' | 'ml';
 const TABS: { key: TabKey; label: string; icon: React.FC<{ className?: string }> }[] = [
   { key: 'tiktok', label: 'TikTok', icon: TikTokLogo },
   { key: 'shein', label: 'Shein', icon: SheinLogo },
-  { key: 'amazon', label: 'Amazon' },
-  { key: 'ml', label: 'Mercado Livre' },
+  { key: 'amazon', label: 'Amazon', icon: AmazonLogo },
+  { key: 'ml', label: 'Mercado Livre', icon: MLLogo },
 ];
 
 // ── Formatters ──
