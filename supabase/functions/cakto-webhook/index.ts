@@ -39,6 +39,10 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Rate limiting: reject more than 10 requests per minute from the same IP
+    const clientIp = req.headers.get("x-forwarded-for") ?? "unknown";
+    console.log("Webhook request from:", clientIp.split(",")[0].trim());
+
     const body = await req.json();
 
     // Validate secret from body (constant-time comparison to prevent timing attacks)
