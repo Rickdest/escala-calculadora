@@ -161,7 +161,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 pb-6 space-y-4">
           {/* Image Upload */}
           <div className="flex justify-center">
             <label className="cursor-pointer group">
