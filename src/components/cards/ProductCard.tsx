@@ -225,9 +225,6 @@ export function ProductCard({ product, calculation, adsMetric, onEdit, onDuplica
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-secondary border border-border text-[11px] font-mono tabular-nums text-muted-foreground">
-                  ACOS {adsMetric.acos.toFixed(2)}%
-                </span>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-secondary border border-border text-[11px] font-mono tabular-nums text-muted-foreground">
                   {adsMetric.itemsSold} vendidos
                 </span>
               </div>
