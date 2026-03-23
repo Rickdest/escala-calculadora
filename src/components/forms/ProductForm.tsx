@@ -94,6 +94,19 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
     return { roasEmpate, roasSaudavel: roasEmpate * 1.2, roasIdeal: roasEmpate * 1.5 };
   }, [localCalc]);
 
+  const channelComparison = useMemo(() => {
+    if (Object.keys(outrosCanais).length === 0) return null;
+    const valid: typeof outrosCanais = {};
+    for (const [key, val] of Object.entries(outrosCanais)) {
+      if (val && val.costPrice > 0 && val.salePrice > 0) {
+        valid[key as keyof typeof outrosCanais] = val;
+      }
+    }
+    if (Object.keys(valid).length === 0) return null;
+    const results = calcOutrosCanais(valid, config?.taxes ?? 0);
+    return { results, best: getBestChannel(results) };
+  }, [outrosCanais, config?.taxes]);
+
   const monthlyRevenue = localCalc ? localCalc.grossRevenue * monthlySales : 0;
   const monthlyCosts = localCalc ? localCalc.totalCosts * monthlySales : 0;
   const monthlyProfit = localCalc ? localCalc.netProfit * monthlySales : 0;
