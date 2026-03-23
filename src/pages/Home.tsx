@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { PageLoader, PageError } from '@/components/layout/PageStates';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
 
@@ -16,6 +17,8 @@ import { ProductThumbnail } from '@/components/ProductThumbnail';
 import { useEstoque } from '@/hooks/useEstoque';
 import { BannerCarousel } from '@/components/home/BannerCarousel';
 import { useAdmin } from '@/hooks/useAdmin';
+import { MARKETPLACE_SHORTCUTS } from '@/lib/marketplaceShortcuts';
+import type { Product } from '@/types/store';
 
 const toolItems = [
   { icon: Plus, label: 'Precificar', isAccent: true, action: 'addProduct' as const },
@@ -45,7 +48,7 @@ export default function Home() {
   const { isAdmin } = useAdmin();
   const [showProductForm, setShowProductForm] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
-  const [prefillProduct, setPrefillProduct] = useState<Partial<import('@/types/store').Product> | null>(null);
+  const [prefillProduct, setPrefillProduct] = useState<Partial<Product> | null>(null);
 
   useEffect(() => {
     if (searchParams.get('new') === '1') {
@@ -56,41 +59,20 @@ export default function Home() {
 
 
   if (isLoading) {
-    return (
-      <AppLayout>
-        <div className="flex flex-col items-center justify-center min-h-[85vh]">
-          <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mb-4" />
-          <p className="text-text-2 text-sm">Carregando...</p>
-        </div>
-      </AppLayout>
-    );
+    return <AppLayout><PageLoader message="Carregando..." minHeight="min-h-[85vh]" /></AppLayout>;
   }
 
   if (loadError) {
-    return (
-      <AppLayout>
-        <div className="flex flex-col items-center justify-center min-h-[85vh] gap-4 px-6 text-center">
-          <p className="text-text-2 text-sm">Erro ao carregar seus dados.</p>
-          <button onClick={retryLoad} className="text-primary underline text-sm">Tentar novamente</button>
-        </div>
-      </AppLayout>
-    );
+    return <AppLayout><PageError onRetry={retryLoad} minHeight="min-h-[85vh]" /></AppLayout>;
   }
 
   if (!currentStore) {
-    return (
-      <AppLayout>
-        <div className="flex flex-col items-center justify-center min-h-[85vh]">
-          <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mb-4" />
-          <p className="text-text-2 text-sm">Preparando sua loja...</p>
-        </div>
-      </AppLayout>
-    );
+    return <AppLayout><PageLoader message="Preparando sua loja..." minHeight="min-h-[85vh]" /></AppLayout>;
   }
 
   const stats = getStoreStats(currentStore);
 
-  const handleSaveProduct = async (productData: any) => {
+  const handleSaveProduct = async (productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => {
     await addProduct(productData);
     setShowProductForm(false);
   };
@@ -227,12 +209,7 @@ export default function Home() {
         <div className="animate-fade-up">
           <p className="section-label mb-3">Outras plataformas</p>
           <div className="grid grid-cols-4 gap-2">
-            {[
-              { sigla: 'TK', name: 'TikTok Shop', rate: '12% + R$4', tab: 'tiktok', bg: '#010101', text: 'text-white' },
-              { sigla: 'SH', name: 'Shein', rate: 'Moda 20%', tab: 'shein', bg: '#E43D79', text: 'text-white' },
-              { sigla: 'AZ', name: 'Amazon', rate: '10–15%', tab: 'amazon', bg: '#232F3E', text: 'text-white' },
-              { sigla: 'ML', name: 'Mercado Livre', rate: '10–19%', tab: 'ml', bg: '#FFE600', text: 'text-black' },
-            ].map((mp) => (
+            {MARKETPLACE_SHORTCUTS.map((mp) => (
               <button
                 key={mp.tab}
                 onClick={() => navigate(`/calculadoras?tab=${mp.tab}`)}
@@ -345,12 +322,7 @@ export default function Home() {
             <div className="surface-card p-4">
               <p className="section-label mb-3">Outras plataformas</p>
               <div className="grid grid-cols-4 gap-3">
-                {[
-                  { sigla: 'TK', name: 'TikTok Shop', rate: '12% + R$4 fixo', tab: 'tiktok', bg: '#010101', text: 'text-white' },
-                  { sigla: 'SH', name: 'Shein', rate: 'Moda 20% · Outros 18%', tab: 'shein', bg: '#E43D79', text: 'text-white' },
-                  { sigla: 'AZ', name: 'Amazon', rate: '10–15% por categoria', tab: 'amazon', bg: '#232F3E', text: 'text-white' },
-                  { sigla: 'ML', name: 'Mercado Livre', rate: 'Clássico / Premium', tab: 'ml', bg: '#FFE600', text: 'text-black' },
-                ].map((mp) => (
+                {MARKETPLACE_SHORTCUTS.map((mp) => (
                   <button
                     key={mp.tab}
                     onClick={() => navigate(`/calculadoras?tab=${mp.tab}`)}
@@ -363,7 +335,7 @@ export default function Home() {
                       {mp.sigla}
                     </div>
                     <span className="text-[11px] font-semibold text-text-2 text-center leading-tight">{mp.name}</span>
-                    <span className="text-[10px] text-text-3 text-center">{mp.rate}</span>
+                    <span className="text-[10px] text-text-3 text-center">{mp.rateDesktop || mp.rate}</span>
                   </button>
                 ))}
               </div>

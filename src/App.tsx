@@ -9,6 +9,7 @@ import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionCo
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import { TrialExpiredBlock } from "@/components/TrialExpiredBlock";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { useAdmin } from "@/hooks/useAdmin";
 import { lazy, Suspense } from "react";
 
 // Lazy-loaded pages
@@ -83,6 +84,21 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading: authLoading } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdmin();
+
+  if (authLoading || adminLoading) {
+    return <PageLoader />;
+  }
+
+  if (!user || !isAdmin) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
@@ -106,7 +122,7 @@ const App = () => (
                   <Route path="/stock" element={<ProtectedRoute><Stock /></ProtectedRoute>} />
                   <Route path="/roas" element={<ProtectedRoute><Roas /></ProtectedRoute>} />
                   <Route path="/paywall" element={<Paywall />} />
-                  <Route path="/admin/banners" element={<ProtectedRoute><AdminBanners /></ProtectedRoute>} />
+                  <Route path="/admin/banners" element={<AdminRoute><AdminBanners /></AdminRoute>} />
                   <Route path="/calculadoras" element={<ProtectedRoute><Calculators /></ProtectedRoute>} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
