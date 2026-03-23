@@ -40,22 +40,23 @@ export function useProductAdsMetrics() {
     if (!user) { setLoading(false); return; }
     setLoading(true);
     // Try ads_data first, fall back to product_ads_metrics
-    let result = await supabase
+    const adsResult = await supabase
       .from('ads_data' as any)
       .select('*')
       .eq('user_id', user.id)
       .not('product_id', 'is', null)
       .order('roas', { ascending: false });
 
-    if (!result.data || result.data.length === 0) {
-      result = await supabase
+    let data: any[] | null = adsResult.data as any[];
+
+    if (!data || data.length === 0) {
+      const fallback = await supabase
         .from('product_ads_metrics')
         .select('*')
         .eq('user_id', user.id)
         .order('roas', { ascending: false });
+      data = fallback.data;
     }
-
-    const data = result.data;
 
     if (data) {
       const derived = data.map(rowToMetric);
