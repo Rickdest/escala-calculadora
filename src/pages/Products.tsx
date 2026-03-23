@@ -211,28 +211,16 @@ export default function Products() {
 
             {/* Product List */}
             {products.length > 0 ? (
-              <div className="surface-card divide-y divide-border">
+              <div className="space-y-3">
                 {products.map(({ product, calc }) => (
-                  <button
+                  <ProductCard
                     key={product.id}
-                    className="w-full px-4 py-3 flex items-center gap-3 hover:bg-surface-2/50 transition-colors"
-                    onClick={() => handleEdit(product)}
-                  >
-                    <ProductThumbnail productId={product.id} productName={product.name} />
-                    <div className="flex-1 min-w-0 text-left">
-                      <p className="text-[15px] font-medium text-foreground truncate">{product.name}</p>
-                      <p className="text-[13px] text-text-2 font-mono font-mono-num">
-                        {formatCurrency(product.salePrice)} venda · {formatCurrency(calc.netProfit)} lucro
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0 ml-3">
-                      <span className={cn('w-2 h-2 rounded-full', getMarginStatus(calc.realMargin).color.replace('text-', 'bg-'))} />
-                      <span className={cn('font-mono text-[14px] font-bold font-mono-num', getMarginStatus(calc.realMargin).color)}>
-                        {calc.realMargin.toFixed(1)}%
-                      </span>
-                      <ChevronRight className="w-4 h-4 text-text-3" />
-                    </div>
-                  </button>
+                    product={product}
+                    calculation={calc}
+                    onEdit={handleEdit}
+                    onDuplicate={async (id) => { await duplicateProduct(id); }}
+                    onDelete={async (id) => { await deleteProduct(id); }}
+                  />
                 ))}
               </div>
             ) : (
