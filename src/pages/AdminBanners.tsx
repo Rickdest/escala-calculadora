@@ -113,7 +113,7 @@ export default function AdminBanners() {
       reader.readAsDataURL(file);
     } catch {
       setUploading(false);
-      toast({ title: 'Erro no upload', variant: 'destructive' });
+      toast.error('Erro no upload');
     }
   };
 
