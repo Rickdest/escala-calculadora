@@ -14,15 +14,13 @@ import { calcAmazon, type AmazonResult, type AmazonPlan, AMAZON_CATEGORIES } fro
 import { calcML, type MLResult, type MLAnuncio, ML_CATEGORIES } from '@/lib/mlUtils';
 import { TrendingUp, AlertTriangle, TrendingDown, ExternalLink, CalendarDays } from 'lucide-react';
 
-import { TikTokLogo, SheinLogo, AmazonLogo, MLLogo } from '@/components/icons/MarketplaceLogos';
-
 type TabKey = 'tiktok' | 'shein' | 'amazon' | 'ml';
 
-const TABS: { key: TabKey; label: string; icon: React.FC<{ className?: string }> }[] = [
-  { key: 'tiktok', label: 'TikTok', icon: TikTokLogo },
-  { key: 'shein', label: 'Shein', icon: SheinLogo },
-  { key: 'amazon', label: 'Amazon', icon: AmazonLogo },
-  { key: 'ml', label: 'Mercado Livre', icon: MLLogo },
+const TABS: { key: TabKey; label: string }[] = [
+  { key: 'tiktok', label: 'TikTok' },
+  { key: 'shein', label: 'Shein' },
+  { key: 'amazon', label: 'Amazon' },
+  { key: 'ml', label: 'Mercado Livre' },
 ];
 
 // ── Formatters ──
@@ -549,18 +547,17 @@ export default function Calculators() {
       <div className="py-4 space-y-5 max-w-4xl mx-auto">
         {/* Tab bar */}
         <div className="flex gap-1 rounded-[10px] bg-surface-2 border border-border p-1">
-          {TABS.map(({ key, label, icon: Icon }) => (
+          {TABS.map(({ key, label }) => (
             <button
               key={key}
               onClick={() => setTab(key)}
               className={cn(
-                'flex-1 flex items-center justify-center gap-1.5 px-2 py-2 text-[12px] font-semibold rounded-lg transition-all',
+                'flex-1 px-2 py-2 text-[12px] font-semibold rounded-lg transition-all text-center',
                 activeTab === key
                   ? 'bg-primary text-primary-foreground shadow-sm'
                   : 'text-text-2 hover:text-foreground hover:bg-background/50'
               )}
             >
-              <Icon className="w-4 h-4 shrink-0" />
               {label}
             </button>
           ))}
