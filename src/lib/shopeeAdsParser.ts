@@ -333,8 +333,6 @@ function parseGeneralFormatCSV(csvContent: string): ParsedAdsFile | null {
       productImpressions: number; productClicks: number;
     }>();
 
-    const rawAds: ShopeeAdRow[] = [];
-
     for (let i = headerIndex + 1; i < lines.length; i++) {
       const cols = parseCSVLine(lines[i]);
       if (cols.length < 20) continue;
@@ -343,52 +341,12 @@ function parseGeneralFormatCSV(csvContent: string): ParsedAdsFile | null {
 
       const spend = parseBRNumber(getCol(cols, map.spend));
       const gmv = parseBRNumber(getCol(cols, map.gmv));
-      const liquidReturn = gmv - spend;
-      const roi = spend > 0 ? ((gmv - spend) / spend) * 100 : 0;
-      const rentability = gmv > 0 ? ((gmv - spend) / gmv) * 100 : 0;
       const clicks = parseBRNumber(getCol(cols, map.clicks));
       const impressions = parseBRNumber(getCol(cols, map.impressions));
       const itemsSold = parseBRNumber(getCol(cols, map.itemsSold));
-      const roas = parseBRNumber(getCol(cols, map.roas));
-      const acos = parseBRNumber(getCol(cols, map.acos));
-      const ctr = parseBRNumber(getCol(cols, map.ctr));
       const convRate = parseBRNumber(getCol(cols, map.conversionRate));
       const productIdVal = getCol(cols, map.productId) || '-';
       const adName = getCol(cols, map.adName);
-
-      const ad: ShopeeAdRow = {
-        index, adName,
-        status: getCol(cols, map.status),
-        adType: getCol(cols, map.adType),
-        productId: productIdVal,
-        bidMethod: getCol(cols, map.bidMethod),
-        positioning: getCol(cols, map.positioning),
-        keyword: map.keyword >= 0 ? getCol(cols, map.keyword) : '',
-        matchType: map.matchType >= 0 ? getCol(cols, map.matchType) : '',
-        impressions, clicks, ctr,
-        conversions: parseBRNumber(getCol(cols, map.conversions)),
-        directConversions: parseBRNumber(getCol(cols, map.directConversions)),
-        conversionRate: convRate,
-        acos, directAcos: parseBRNumber(getCol(cols, map.directAcos)),
-        costPerConv: parseBRNumber(getCol(cols, map.costPerConversion)),
-        itemsSold,
-        directItemsSold: parseBRNumber(getCol(cols, map.directItemsSold)),
-        gmv, directRevenue: parseBRNumber(getCol(cols, map.directRevenue)),
-        spend, roas, directRoas: parseBRNumber(getCol(cols, map.directRoas)),
-        productImpressions: parseBRNumber(getCol(cols, map.productImpressions)),
-        productClicks: parseBRNumber(getCol(cols, map.productClicks)),
-        productCtr: parseBRNumber(getCol(cols, map.productCtr)),
-        liquidReturn, roi, rentability,
-        shopeeProductId: productIdVal,
-        shopeeProductName: adName,
-        periodStart: period.start,
-        periodEnd: period.end,
-        avgPosition: null,
-        convRate, cpc: clicks > 0 ? spend / clicks : 0,
-        costPerSale: itemsSold > 0 ? spend / itemsSold : 0,
-      };
-
-      rawAds.push(ad);
 
       // Aggregate per product
       const key = productIdVal !== '-' ? productIdVal : `name:${adName}`;
