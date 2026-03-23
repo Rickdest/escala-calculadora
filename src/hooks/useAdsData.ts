@@ -328,7 +328,8 @@ export function useAdsData() {
       }
     }
 
-    toast.success('Dados importados com sucesso');
+    const posMsg = hasRealPosition ? ` · 📍 Posição média: #${avgPos}` : '';
+    toast.success(`Dados importados com sucesso${posMsg}`);
     await fetchData();
   }, [user, products, config, data, fetchData]);
 
