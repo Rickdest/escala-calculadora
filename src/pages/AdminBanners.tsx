@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 interface Banner {
@@ -100,7 +100,7 @@ export default function AdminBanners() {
         const filename = `banner_${Date.now()}.jpg`;
         const { error } = await supabase.storage.from('banners').upload(filename, blob, { contentType: 'image/jpeg', upsert: true });
         if (error) {
-          toast({ title: 'Erro no upload', description: error.message, variant: 'destructive' });
+          toast.error('Erro no upload', { description: error.message });
           setUploading(false);
           return;
         }
@@ -113,13 +113,13 @@ export default function AdminBanners() {
       reader.readAsDataURL(file);
     } catch {
       setUploading(false);
-      toast({ title: 'Erro no upload', variant: 'destructive' });
+      toast.error('Erro no upload');
     }
   };
 
   const handleSave = async () => {
     if (!formData.image_url) {
-      toast({ title: 'Faça upload de uma imagem', variant: 'destructive' });
+      toast.error('Faça upload de uma imagem');
       return;
     }
     setSaving(true);
@@ -130,8 +130,8 @@ export default function AdminBanners() {
         ordem: formData.ordem,
         ativo: formData.ativo,
       });
-      if (error) toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
-      else toast({ title: 'Banner criado!' });
+      if (error) toast.error('Erro ao salvar', { description: error.message });
+      else toast.success('Banner criado!');
     } else {
       const { error } = await supabase.from('banners').update({
         image_url: formData.image_url,
@@ -139,8 +139,8 @@ export default function AdminBanners() {
         ordem: formData.ordem,
         ativo: formData.ativo,
       }).eq('id', editingId!);
-      if (error) toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
-      else toast({ title: 'Banner atualizado!' });
+      if (error) toast.error('Erro ao salvar', { description: error.message });
+      else toast.success('Banner atualizado!');
     }
     setSaving(false);
     setEditingId(null);
@@ -150,7 +150,7 @@ export default function AdminBanners() {
 
   const handleDelete = async (id: string) => {
     await supabase.from('banners').delete().eq('id', id);
-    toast({ title: 'Banner removido' });
+    toast.success('Banner removido');
     if (editingId === id) setEditingId(null);
     loadBanners();
   };

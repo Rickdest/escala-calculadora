@@ -595,7 +595,7 @@ export function StockWizard({ onClose, editProduct }: Props) {
 
                 {/* Bulk fill card */}
                 <div className="surface-card p-3 space-y-3">
-                  <p className="section-label">PREENCHER TODOS IGUAL</p>
+                  <p className="section-label">Preencher todos igual</p>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <p className="section-label mb-1">CUSTO (R$)</p>

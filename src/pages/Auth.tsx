@@ -4,7 +4,7 @@ import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { lovable } from '@/integrations/lovable/index';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 function traduzirErro(mensagem: string): string {
   if (mensagem.includes('already registered') || mensagem.includes('User already registered'))
@@ -34,7 +34,7 @@ export default function Auth() {
   const [activeTab, setActiveTab] = useState<'signup' | 'login'>('signup');
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  
 
   useEffect(() => {
     if (errorMessage) {
@@ -86,7 +86,7 @@ export default function Auth() {
           setErrorMessage('Este email já está cadastrado. Faça login.');
           setActiveTab('login');
         } else {
-          toast({ title: 'Conta criada!', description: 'Verifique seu email para confirmar o cadastro.' });
+          toast.success('Conta criada!', { description: 'Verifique seu email para confirmar o cadastro.' });
         }
       }
     } finally {

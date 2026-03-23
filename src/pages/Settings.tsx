@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 export default function Settings() {
@@ -86,8 +86,7 @@ export default function Settings() {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
 
-    toast({
-      title: "✓ Configurações salvas",
+    toast.success('✓ Configurações salvas', {
       description: `${productCount} produto${productCount !== 1 ? 's foram recalculados' : ' foi recalculado'}.`,
     });
   };

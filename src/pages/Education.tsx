@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useAdmin } from '@/hooks/useAdmin';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 interface EducationContent {
   id: string;
@@ -22,7 +22,7 @@ interface EducationContent {
 
 export default function Education() {
   const { isAdmin, loading: adminLoading } = useAdmin();
-  const { toast } = useToast();
+  
   const [content, setContent] = useState<EducationContent[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -69,22 +69,22 @@ export default function Education() {
 
     // Validate inputs
     if (title && title.length > 200) {
-      toast({ title: 'Erro', description: 'Título deve ter no máximo 200 caracteres.', variant: 'destructive' });
+      toast.error('Título deve ter no máximo 200 caracteres.');
       setSaving(false);
       return;
     }
     if (description && description.length > 1000) {
-      toast({ title: 'Erro', description: 'Descrição deve ter no máximo 1000 caracteres.', variant: 'destructive' });
+      toast.error('Descrição deve ter no máximo 1000 caracteres.');
       setSaving(false);
       return;
     }
     if (contentData.youtube_id && !/^[a-zA-Z0-9_-]{11}$/.test(contentData.youtube_id)) {
-      toast({ title: 'Erro', description: 'ID do YouTube inválido (deve ter 11 caracteres alfanuméricos).', variant: 'destructive' });
+      toast.error('ID do YouTube inválido (deve ter 11 caracteres alfanuméricos).');
       setSaving(false);
       return;
     }
     if (contentData.button_link && !contentData.button_link.startsWith('https://')) {
-      toast({ title: 'Erro', description: 'Link deve começar com https://', variant: 'destructive' });
+      toast.error('Link deve começar com https://');
       setSaving(false);
       return;
     }
@@ -99,16 +99,9 @@ export default function Education() {
       .eq('id', item.id);
 
     if (error) {
-      toast({
-        title: 'Erro ao salvar',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao salvar', { description: error.message });
     } else {
-      toast({
-        title: 'Salvo!',
-        description: 'Conteúdo atualizado com sucesso.',
-      });
+      toast.success('Salvo!', { description: 'Conteúdo atualizado com sucesso.' });
       await loadContent();
       cancelEditing();
     }

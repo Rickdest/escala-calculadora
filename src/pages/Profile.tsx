@@ -10,11 +10,11 @@ import { UserAvatar } from '@/components/UserAvatar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export default function Profile() {
   const { user } = useAuth();
-  const { toast } = useToast();
+  
 
   const [displayName, setDisplayName] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -59,16 +59,9 @@ export default function Profile() {
 
       if (error) throw error;
 
-      toast({
-        title: 'Perfil atualizado!',
-        description: 'Suas informações foram salvas com sucesso.',
-      });
+      toast.success('Perfil atualizado!', { description: 'Suas informações foram salvas com sucesso.' });
     } catch (error: any) {
-      toast({
-        title: 'Erro ao salvar',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao salvar', { description: error.message });
     } finally {
       setSaving(false);
     }
@@ -76,20 +69,12 @@ export default function Profile() {
 
   const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
-      toast({
-        title: 'Senhas não conferem',
-        description: 'Digite a mesma senha nos dois campos.',
-        variant: 'destructive',
-      });
+      toast.error('Senhas não conferem', { description: 'Digite a mesma senha nos dois campos.' });
       return;
     }
 
     if (newPassword.length < 6) {
-      toast({
-        title: 'Senha muito curta',
-        description: 'A senha deve ter pelo menos 6 caracteres.',
-        variant: 'destructive',
-      });
+      toast.error('Senha muito curta', { description: 'A senha deve ter pelo menos 6 caracteres.' });
       return;
     }
 
@@ -102,19 +87,12 @@ export default function Profile() {
 
       if (error) throw error;
 
-      toast({
-        title: 'Senha alterada!',
-        description: 'Sua senha foi atualizada com sucesso.',
-      });
+      toast.success('Senha alterada!', { description: 'Sua senha foi atualizada com sucesso.' });
 
       setNewPassword('');
       setConfirmPassword('');
     } catch (error: any) {
-      toast({
-        title: 'Erro ao alterar senha',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao alterar senha', { description: error.message });
     } finally {
       setSavingPassword(false);
     }
