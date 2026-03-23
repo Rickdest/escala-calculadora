@@ -482,6 +482,12 @@ function parseGeneralFormatCSV(csvContent: string): ParsedAdsFile | null {
         directRoas: parseFloat(directRoas.toFixed(2)),
         directAcos: parseFloat(directAcos.toFixed(2)),
         costPerConv: parseFloat(costPerConv.toFixed(2)),
+        status: data.status,
+        bidMethod: data.bidMethod,
+        conversions: data.conversions,
+        directGmv: data.directRevenue,
+        productImpressions: data.productImpressions || null,
+        productClicks: data.productClicks || null,
       });
     }
 
