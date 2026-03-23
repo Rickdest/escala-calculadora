@@ -1,9 +1,10 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Package, TrendingUp, TrendingDown, MoreVertical, Copy, Trash2, Edit, Boxes } from 'lucide-react';
+import { Package, TrendingUp, TrendingDown, MoreVertical, Copy, Trash2, Edit, MapPin } from 'lucide-react';
 import { Product, ProductCalculation } from '@/types/store';
 import { cn, getMarginStatus } from '@/lib/utils';
 import { calcOutrosCanais, getBestChannel } from '@/lib/outrosCanaisUtils';
 import { useStore } from '@/contexts/StoreContext';
+import { AdMetricDerived } from '@/lib/shopeeAdsParser';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,12 +15,25 @@ import {
 interface ProductCardProps {
   product: Product;
   calculation: ProductCalculation;
+  adsMetric?: AdMetricDerived;
   onEdit: (product: Product) => void;
   onDuplicate: (productId: string) => void;
   onDelete: (productId: string) => void;
 }
 
-export function ProductCard({ product, calculation, onEdit, onDuplicate, onDelete }: ProductCardProps) {
+function getRoasColor(roas: number) {
+  if (roas >= 5) return 'text-success';
+  if (roas >= 2) return 'text-warning';
+  return 'text-destructive';
+}
+
+function getAcosColor(acos: number) {
+  if (acos <= 20) return 'text-success';
+  if (acos <= 40) return 'text-warning';
+  return 'text-destructive';
+}
+
+export function ProductCard({ product, calculation, adsMetric, onEdit, onDuplicate, onDelete }: ProductCardProps) {
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const isLongPress = useRef(false);
   const [compareOpen, setCompareOpen] = useState(false);
@@ -166,22 +180,40 @@ export function ProductCard({ product, calculation, onEdit, onDuplicate, onDelet
         </div>
       </div>
 
+      {/* Ads Metrics Line */}
+      {adsMetric && (
+        <div className="mt-2 pt-2 border-t border-dashed border-border/40 flex items-center gap-3 text-xs font-mono tabular-nums">
+          {adsMetric.avgPosition !== null && (
+            <span className="flex items-center gap-1 text-muted-foreground">
+              <MapPin className="w-3 h-3" />
+              #{adsMetric.avgPosition}
+            </span>
+          )}
+          <span className={cn('font-bold', getRoasColor(adsMetric.roas))}>
+            ROAS {adsMetric.roas.toFixed(2)}
+          </span>
+          <span className={cn('font-bold', getAcosColor(adsMetric.acos))}>
+            ACOS {adsMetric.acos.toFixed(1)}%
+          </span>
+        </div>
+      )}
+
       {/* Outros Canais */}
       {channelResults && channelResults.length > 0 && (
         <div className="mt-3 space-y-1.5">
           <button
             onClick={(e) => { e.stopPropagation(); setCompareOpen(o => !o); }}
-            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-surface-2 border border-border text-xs font-semibold text-text-2 hover:border-primary/40 hover:text-primary transition-colors active:scale-[0.98]"
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-secondary border border-border text-xs font-semibold text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors active:scale-[0.98]"
           >
             🌐 Comparar canais
-            <span className="bg-white/8 rounded px-1.5 py-0.5 text-[10px] font-bold">
+            <span className="bg-secondary rounded px-1.5 py-0.5 text-[10px] font-bold">
               {channelResults.length} {channelResults.length === 1 ? 'canal' : 'canais'}
             </span>
             <span className={cn('text-[10px] transition-transform', compareOpen && 'rotate-180')}>▼</span>
           </button>
 
           {compareOpen && (
-            <div className="bg-surface-2 border border-border rounded-xl p-2.5 animate-fade-up">
+            <div className="bg-secondary border border-border rounded-xl p-2.5 animate-fade-up">
               <div className="grid grid-cols-4 gap-1.5">
                 {channelResults.map((r) => {
                   const isBest = r.key === bestChannel?.key;
@@ -204,16 +236,16 @@ export function ProductCard({ product, calculation, onEdit, onDuplicate, onDelet
                       {isBest && (
                         <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[11px] leading-none">👑</span>
                       )}
-                      <p className="text-[8px] font-bold uppercase tracking-wide text-text-3 leading-tight mb-1">
+                      <p className="text-[8px] font-bold uppercase tracking-wide text-muted-foreground leading-tight mb-1">
                         {shortLabel[r.key] ?? r.label}
                       </p>
                       <p className={cn(
                         'text-[13px] font-extrabold tabular-nums font-mono leading-none',
-                        r.margin >= 15 ? 'text-success' : r.margin >= 0 ? 'text-warning' : 'text-danger'
+                        r.margin >= 15 ? 'text-success' : r.margin >= 0 ? 'text-warning' : 'text-destructive'
                       )}>
                         {r.margin.toFixed(1)}%
                       </p>
-                      <p className="text-[9px] text-text-3 tabular-nums font-mono mt-0.5">
+                      <p className="text-[9px] text-muted-foreground tabular-nums font-mono mt-0.5">
                         {formatCurrency(r.netProfit)}
                       </p>
                     </div>

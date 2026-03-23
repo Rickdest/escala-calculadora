@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Plus, Search, SlidersHorizontal, Package, TrendingUp, TrendingDown, Percent, DollarSign, Download, FileSpreadsheet, FileText, ArrowUpDown, ChevronRight } from 'lucide-react';
+import { useProductAdsMetrics } from '@/hooks/useProductAdsMetrics';
 import { useStore } from '@/contexts/StoreContext';
 import { Product, SortOption } from '@/types/store';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -39,6 +40,7 @@ const analysisSortOptions: { value: SortOption; label: string }[] = [
 
 export default function Products() {
   const { currentStore, addProduct, updateProduct, deleteProduct, duplicateProduct, calculateProduct, getStoreStats, isLoading, loadError, retryLoad } = useStore();
+  const { metricsMap } = useProductAdsMetrics();
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -217,6 +219,7 @@ export default function Products() {
                     key={product.id}
                     product={product}
                     calculation={calc}
+                    adsMetric={metricsMap[product.id]}
                     onEdit={handleEdit}
                     onDuplicate={async (id) => { await duplicateProduct(id); }}
                     onDelete={async (id) => { await deleteProduct(id); }}
