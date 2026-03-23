@@ -10,7 +10,7 @@ import { UserAvatar } from '@/components/UserAvatar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export default function Profile() {
   const { user } = useAuth();
