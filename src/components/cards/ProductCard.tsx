@@ -227,3 +227,5 @@ export function ProductCard({ product, calculation, onEdit, onDuplicate, onDelet
     </div>
   );
 }
+
+export default React.memo(ProductCard);
