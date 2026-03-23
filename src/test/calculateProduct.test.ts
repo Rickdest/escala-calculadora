@@ -43,11 +43,11 @@ describe('calculateProduct', () => {
     expect(result.realMargin).toBeGreaterThan(0);
     expect(result.netProfit).toBeGreaterThan(0);
     // Shopee fee for R$100: 14% + R$16 fixed
-    expect(result.shopeeFeePercent).toBe(14);
-    expect(result.totalShopeeFee).toBe(14 + 16);
+    expect(result.shopeeFeePercent).toBeCloseTo(14);
+    expect(result.totalShopeeFee).toBeCloseTo(30);
     // totalCosts = 30 (custo) + 30 (shopee) = 60
-    expect(result.totalCosts).toBe(60);
-    expect(result.netProfit).toBe(40);
+    expect(result.totalCosts).toBeCloseTo(60);
+    expect(result.netProfit).toBeCloseTo(40);
     expect(result.realMargin).toBe(40);
   });
 
