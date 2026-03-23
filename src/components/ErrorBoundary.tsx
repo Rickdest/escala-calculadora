@@ -1,12 +1,22 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 
 interface State { hasError: boolean }
 
-export class ErrorBoundary extends React.Component<{ children: React.ReactNode }, State> {
+class ErrorBoundaryClass extends React.Component<
+  { children: React.ReactNode; resetKey: string },
+  State
+> {
   state: State = { hasError: false };
 
   static getDerivedStateFromError(): State {
     return { hasError: true };
+  }
+
+  componentDidUpdate(prevProps: { resetKey: string }) {
+    if (prevProps.resetKey !== this.props.resetKey && this.state.hasError) {
+      this.setState({ hasError: false });
+    }
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
@@ -33,4 +43,13 @@ export class ErrorBoundary extends React.Component<{ children: React.ReactNode }
     }
     return this.props.children;
   }
+}
+
+export function ErrorBoundary({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  return (
+    <ErrorBoundaryClass resetKey={location.pathname}>
+      {children}
+    </ErrorBoundaryClass>
+  );
 }
