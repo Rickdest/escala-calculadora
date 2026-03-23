@@ -158,6 +158,8 @@ export function useAdsData() {
         acos_direto: m.directAcos,
         gmv_direto: (m as any).directGmv || 0,
         custo_por_conversao: m.costPerConv,
+        itens_vendidos_diretos: (m as any).directItemsSold || 0,
+        conversoes_diretas: (m as any).directConversions || (m as any).conversions || 0,
         metodo_lance: (m as any).bidMethod || null,
         status_anuncio: (m as any).status || null,
         impressoes_produto: (m as any).productImpressions ?? null,
