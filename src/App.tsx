@@ -9,6 +9,7 @@ import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionCo
 import { SidebarProvider } from "@/contexts/SidebarContext";
 import { TrialExpiredBlock } from "@/components/TrialExpiredBlock";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { useAdmin } from "@/hooks/useAdmin";
 import { lazy, Suspense } from "react";
 
 // Lazy-loaded pages
