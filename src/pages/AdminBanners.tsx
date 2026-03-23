@@ -119,7 +119,7 @@ export default function AdminBanners() {
 
   const handleSave = async () => {
     if (!formData.image_url) {
-      toast({ title: 'Faça upload de uma imagem', variant: 'destructive' });
+      toast.error('Faça upload de uma imagem');
       return;
     }
     setSaving(true);
