@@ -83,12 +83,23 @@ export function useAdsData() {
         const product = row.product_id ? products.find(p => p.id === row.product_id) : undefined;
         let classificacaoResult: ClassificacaoResult | undefined;
         let roasEmpateResult: RoasEmpateResult | undefined;
+
         if (product && config) {
           roasEmpateResult = calcularRoasEmpate(product, config);
           if (roasEmpateResult.roasEmpate !== Infinity) {
             classificacaoResult = classificarAnuncio(row.roas_direto || row.roas, roasEmpateResult.roasEmpate);
           }
+        } else if (row.roas_empate && row.roas_empate !== Infinity) {
+          // Fallback: use DB-stored values when products haven't loaded yet
+          roasEmpateResult = {
+            roasEmpate: row.roas_empate,
+            margemContribuicao: row.margem_contribuicao || 0,
+            lucroPorUnidade: 0,
+            acosMaximo: row.margem_contribuicao || 0,
+          };
+          classificacaoResult = classificarAnuncio(row.roas_direto || row.roas, row.roas_empate);
         }
+
         return { ...row, product, classificacaoResult, roasEmpateResult };
       });
       setData(enriched);
