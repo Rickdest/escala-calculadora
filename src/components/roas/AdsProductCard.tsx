@@ -194,23 +194,17 @@ export function AdsProductCard({
         </div>
       </div>
 
-      {/* Row 2: 3 KPI boxes */}
+      {/* Row 2: 3 KPI boxes — Position first when available */}
       <div className="grid grid-cols-3 gap-2">
-        {/* ROAS */}
-        <div className="rounded-lg border border-border bg-surface-2 p-2.5 text-center">
-          <p className="section-label">ROAS</p>
-          <p className={cn('text-lg font-extrabold font-mono tabular-nums mt-0.5', getRoasColor(roasDireto))}>
-            {roasDireto.toFixed(2)}
-          </p>
-          {ad.roas_empate && ad.roas_empate > 0 ? (
-            <p className="text-[9px] text-text-3 font-mono">emp {ad.roas_empate.toFixed(2)}</p>
-          ) : (
-            <p className="text-[9px] text-text-3">—</p>
-          )}
-        </div>
-
-        {/* Posição — DESTAQUE */}
         {hasPosition ? (
+          <>
+            {/* POSIÇÃO primeiro quando disponível */}
+            <div className={cn(
+              'rounded-lg border-2 p-2.5 text-center relative overflow-hidden ring-2',
+              posInfo?.classe === 'TOPO' ? 'border-success/40 bg-success/10 ring-success/20' :
+              posInfo?.classe === 'PRIMEIRA_PAGINA' ? 'border-primary/40 bg-primary/10 ring-primary/20' :
+              'border-warning/40 bg-warning/10 ring-warning/20'
+            )}>
           <div className={cn(
             'rounded-lg border-2 p-2.5 text-center relative overflow-hidden',
             posInfo?.classe === 'TOPO' ? 'border-success/40 bg-success/10' :
