@@ -1,33 +1,37 @@
 
-## Integração Cakto — Concluída ✅
 
-### O que foi feito
+## Diagnosis
 
-1. **Edge Function `cakto-webhook`** criada em `supabase/functions/cakto-webhook/index.ts`
-   - Autenticação via campo `secret` no body
-   - Eventos mapeados: `purchase_approved`, `refund`, `chargeback`, `subscription_canceled`, `subscription_renewed`, `subscription_renewal_refused`
-   - Dados do comprador via `customer.email`
+All three fixes requested are **already present** in the current codebase:
 
-2. **Migration SQL** executada
-   - `subscriptions.hotmart_transaction_id` → `cakto_order_id`
-   - `subscriptions.hotmart_subscription_id` → `cakto_subscription_id`
-   - `profiles.hotmart_email` → `payment_email`
-   - `profiles.hotmart_status` → `payment_status`
-   - Funções `get_own_profile_protected()` e `update_subscription_status()` recriadas
-   - RLS policy de profiles atualizada
+1. **Footer z-index**: `z-[70]` on the modal overlay (line 153-154), `z-[60]` on the footer (line 476), and `pb-6` on the form (line 164) — all correct.
 
-3. **Checkout URL** atualizada para Cakto em `src/services/checkout.service.ts`
+2. **outros_canais persistence chain**: Complete and working:
+   - `handleSubmit` includes `outrosCanais` (line 125)
+   - `updateProduct` maps `outrosCanais → outros_canais` (line 360)
+   - `mapDbProduct` reads `(p as any).outros_canais` (line 68)
+   - `addProduct` and `duplicateProduct` also include it (lines 322, 421)
 
-4. **Config** atualizada: `supabase/config.toml` aponta para `cakto-webhook`
+3. **Form state initialization**: `outrosCanais` state initializes from `(product as any)?.outrosCanais ?? {}` (line 37), and the `Product` type includes `outrosCanais?: OutrosCanais` (line 144 of store.ts).
 
-5. **Edge Function antiga** `hotmart-webhook` deletada
+## One Subtle Bug Found
 
-6. **check-subscription** atualizado para usar `payment_status`/`payment_email`
+When the user **removes all channels** (deactivates all toggles), the form sends `outrosCanais: undefined` (line 125: `Object.keys(outrosCanais).length > 0 ? outrosCanais : undefined`). In `updateProduct`, the check `updates.outrosCanais !== undefined` then **skips** the DB update — so previously saved channel data can never be cleared.
 
-### Setup necessário no painel Cakto
+## Plan
 
-1. Ir em **Integrações > Webhooks > Adicionar**
-2. URL: `https://ymliqayraprjwdcesvqc.supabase.co/functions/v1/cakto-webhook`
-3. Selecionar eventos: `purchase_approved`, `refund`, `chargeback`, `subscription_canceled`, `subscription_renewed`, `subscription_renewal_refused`
-4. O `CAKTO_WEBHOOK_SECRET` já foi configurado ✅
-5. Configurar `VITE_CAKTO_URL` com a URL de checkout do produto na Cakto
+**Single fix** in `src/components/forms/ProductForm.tsx`, line 125:
+
+Change:
+```ts
+outrosCanais: Object.keys(outrosCanais).length > 0 ? outrosCanais : undefined,
+```
+To:
+```ts
+outrosCanais: Object.keys(outrosCanais).length > 0 ? outrosCanais : null,
+```
+
+And in `src/contexts/StoreContext.tsx`, line 360, the existing code `updates.outrosCanais !== undefined` will now correctly trigger when `null` is passed (since `null !== undefined`), writing `null` to the DB.
+
+No other changes needed — everything else is already correctly implemented.
+
