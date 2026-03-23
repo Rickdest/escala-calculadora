@@ -1,32 +1,34 @@
 
 
-## Diagnosis
+## Logos oficiais nos tabs das calculadoras
 
-**ProductCard.tsx** — Already correct. The comparison panel (lines 181-203) already uses `grid grid-cols-2 gap-2` with the proper card layout. No changes needed here.
+### O que muda
 
-**Products.tsx** — Lines 213-237 render a simple `<button>` with `ProductThumbnail` instead of using `ProductCard`. This is why "Comparar canais" never appears.
+Adicionar logos SVG inline dos 4 marketplaces (TikTok, Shein, Amazon, Mercado Livre) nas abas da página `/calculadoras`. Os logos ficam à esquerda do texto, com 16×16px.
 
-## Plan
+### Implementação
 
-**Single change in `src/pages/Products.tsx`** (lines 213-237):
+**1. Criar `src/components/icons/MarketplaceLogos.tsx`**
 
-Replace the `<div className="surface-card divide-y divide-border">` block containing the button-based product list with `ProductCard` components:
+Arquivo com 4 componentes SVG simples (TikTokLogo, SheinLogo, AmazonLogo, MLLogo), cada um recebendo `className` como prop. SVGs minimalistas monocromáticos que herdam `currentColor` para funcionar bem nos estados ativo/inativo das abas.
 
-```tsx
-// Replace lines 214-237
-<div className="space-y-3">
-  {products.map(({ product, calc }) => (
-    <ProductCard
-      key={product.id}
-      product={product}
-      calculation={calc}
-      onEdit={handleEdit}
-      onDuplicate={async (id) => { await duplicateProduct(id); }}
-      onDelete={async (id) => { await deleteProduct(id); }}
-    />
-  ))}
-</div>
-```
+**2. Atualizar `src/pages/Calculators.tsx`**
 
-`ProductCard` is already imported (line 7) and includes edit/duplicate/delete via its dropdown menu. No other files need changes.
+- Importar os 4 logos
+- Expandir o array `TABS` para incluir o componente do ícone:
+  ```ts
+  const TABS = [
+    { key: 'tiktok', label: 'TikTok', icon: TikTokLogo },
+    { key: 'shein', label: 'Shein', icon: SheinLogo },
+    ...
+  ];
+  ```
+- No `.map` dos tabs, renderizar `<tab.icon className="w-4 h-4 shrink-0" />` antes do label
+- Ajustar o botão para `flex items-center justify-center gap-1.5`
+
+### Detalhes técnicos
+
+- SVGs inline (não imagens externas) para controle de cor e zero latência
+- Usar `currentColor` nos paths para que a cor siga o estado ativo/inativo da aba automaticamente
+- No mobile (390px), com 4 abas + ícone + texto, o `text-[12px]` existente + `gap-1.5` cabe sem overflow
 
