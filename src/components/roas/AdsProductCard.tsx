@@ -293,8 +293,15 @@ export function AdsProductCard({
         </div>
       )}
 
-      {/* Progress badge */}
-      <div className="flex justify-end">
+      {/* Delete + Progress badge */}
+      <div className="flex items-center justify-end gap-2">
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          className="p-1.5 rounded-lg text-text-3 hover:text-destructive hover:bg-destructive/10 transition-colors"
+          title="Excluir"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
         <ProgressBadge level={level} />
       </div>
     </div>
