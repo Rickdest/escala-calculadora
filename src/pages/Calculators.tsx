@@ -159,6 +159,54 @@ function ResultPanel({ costs, netProfit, margin, salePrice, isReady, showRoas = 
           ))}
         </div>
       </div>
+
+      {showRoas && netProfit > 0 && (() => {
+        const roasEmpate   = parseFloat((salePrice / netProfit).toFixed(2));
+        const roasSaudavel = parseFloat((roasEmpate / 0.61).toFixed(2));
+        const roasIdeal    = parseFloat((roasEmpate / 0.40).toFixed(2));
+        return (
+          <div className="rounded-[10px] bg-surface-2 border border-border p-4 space-y-3">
+            <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider">ROAS</p>
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center">
+                <div>
+                  <span className="text-[13px] text-text-2">Empate</span>
+                  <span className="text-[10px] text-text-3 ml-1.5">abaixo disso = prejuízo</span>
+                </div>
+                <span className="font-mono text-[14px] font-bold tabular-nums text-foreground">{roasEmpate.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <div>
+                  <span className="text-[13px] text-text-2">Saudável</span>
+                  <span className="text-[10px] text-text-3 ml-1.5">lucro consistente</span>
+                </div>
+                <span className="font-mono text-[14px] font-bold tabular-nums text-foreground">{roasSaudavel.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <div>
+                  <span className="text-[13px] text-text-2">Ideal</span>
+                  <span className="text-[10px] text-text-3 ml-1.5">escalar com segurança</span>
+                </div>
+                <span className="font-mono text-[14px] font-bold tabular-nums text-primary">{roasIdeal.toFixed(2)}</span>
+              </div>
+            </div>
+            {/* Barra colorida */}
+            <div className="pt-1">
+              <div className="flex justify-between text-[10px] text-text-3 mb-1.5">
+                <span>Empate</span><span>Saudável</span><span>Ideal</span>
+              </div>
+              <div className="relative h-1 rounded-full overflow-hidden" style={{ backgroundColor: '#1F2433' }}>
+                <div className="absolute inset-0 rounded-full" style={{ background: 'linear-gradient(to right, #EF4444, #EAB308, #22C55E)' }} />
+              </div>
+              <div className="flex justify-between mt-1.5">
+                <span className="font-mono text-[10px] tabular-nums" style={{ color: '#EF4444' }}>{roasEmpate.toFixed(2)}</span>
+                <span className="font-mono text-[10px] tabular-nums" style={{ color: '#EAB308' }}>{roasSaudavel.toFixed(2)}</span>
+                <span className="font-mono text-[11px] font-bold tabular-nums" style={{ color: '#22C55E' }}>{roasIdeal.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }
