@@ -392,7 +392,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             <CollapsibleContent className="pt-2">
               <div className="surface-card p-3.5 space-y-3">
                 <p className="text-[11px] text-text-3 leading-relaxed">
-                  Preencha os canais onde também vende este produto. O imposto configurado em Configurações será aplicado automaticamente.
+                  Ative os canais onde também vende este produto e preencha custo e venda de cada um. Após salvar, um botão "Comparar canais" aparecerá no card do produto. O imposto de Configurações é aplicado automaticamente.
                 </p>
 
                 {(['tiktok', 'shein', 'amazon', 'ml'] as const).map((key) => {
