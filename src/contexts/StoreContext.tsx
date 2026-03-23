@@ -418,6 +418,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       category: original.category || null,
       description: original.description || null,
       min_stock_quantity: original.minStockQuantity ?? 5,
+      outros_canais: original.outrosCanais ?? null,
     } as any).select().single();
 
     if (error) { toast.error('Erro ao duplicar produto'); return null; }
