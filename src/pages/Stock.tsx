@@ -25,7 +25,7 @@ function getProductStatus(p: EstoqueProduto) {
 }
 
 export default function Stock() {
-  const { produtos, loading, stats, reload } = useEstoque();
+  const { produtos, loading, loadError, retryLoad, stats, reload } = useEstoque();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<StockFilter>('all');
   const [showWizard, setShowWizard] = useState(false);
@@ -64,6 +64,22 @@ export default function Stock() {
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
           <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mb-4" />
           <p className="text-text-2 text-sm">Carregando...</p>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 px-6 text-center">
+          <p className="text-text-2 text-sm">Erro ao carregar estoque.</p>
+          <button
+            onClick={() => retryLoad()}
+            className="text-primary underline text-sm"
+          >
+            Tentar novamente
+          </button>
         </div>
       </AppLayout>
     );
