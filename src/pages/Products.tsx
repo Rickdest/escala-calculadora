@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Plus, Search, SlidersHorizontal, Package, TrendingUp, TrendingDown, Percent, DollarSign, Download, FileSpreadsheet, FileText, ArrowUpDown, ChevronRight } from 'lucide-react';
+import { useProductAdsMetrics } from '@/hooks/useProductAdsMetrics';
 import { useStore } from '@/contexts/StoreContext';
 import { Product, SortOption } from '@/types/store';
 import { AppLayout } from '@/components/layout/AppLayout';
