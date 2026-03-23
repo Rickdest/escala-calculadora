@@ -72,8 +72,8 @@ function NumInput({ label, value, onChange, placeholder, suffix, required }: {
 
 interface CostLine { label: string; value: number }
 
-function ResultPanel({ costs, netProfit, margin, salePrice, isReady }: {
-  costs: CostLine[]; netProfit: number; margin: number; salePrice: number; isReady: boolean;
+function ResultPanel({ costs, netProfit, margin, salePrice, isReady, showRoas = false }: {
+  costs: CostLine[]; netProfit: number; margin: number; salePrice: number; isReady: boolean; showRoas?: boolean;
 }) {
   const [salesCount, setSalesCount] = useState(50);
   const status = getMarginStatus(margin, netProfit);
