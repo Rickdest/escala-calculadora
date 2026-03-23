@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { EnrichedAdsData } from '@/hooks/useAdsData';
 import { cn } from '@/lib/utils';
-import { Package, MapPin, Link2, Clock, Plus } from 'lucide-react';
+import { Package, MapPin, Link2, Clock, Plus, HelpCircle } from 'lucide-react';
 import { fmt, getClassCor, getRoasColor, getDiasPeriodo } from './adsHelpers';
 import { calcAdEfficiencyScore, calcHaloEffect, calcCostVsMarginAlert, classificarPosicao } from '@/lib/adsLogic';
 
@@ -49,24 +49,26 @@ export function AdsProductCard({
     return `${f(ad.periodo_inicio)} – ${f(ad.periodo_fim)}`;
   })();
 
-  const roasDireto = ad.roas_direto || ad.roas;
+  // Use roas as fallback when roas_direto is 0
+  const roasDireto = ad.roas_direto && ad.roas_direto > 0 ? ad.roas_direto : ad.roas;
   const dias = getDiasPeriodo(ad.periodo_inicio, ad.periodo_fim);
   const emAprendizado = dias < 7;
   const isLinked = !!ad.product_id;
-  const hasPosition = ad.posicao_importada && ad.posicao_media !== null;
+  const hasPosition = ad.posicao_importada && ad.posicao_media !== null && ad.posicao_media > 0;
   const level: 1 | 2 | 3 = !isLinked ? 1 : hasPosition ? 3 : 2;
 
   const cls = getClassCor(ad.classificacao);
   const ClsIcon = cls.icon;
 
+  // Only show efficiency score when product is linked
   const efficiency = useMemo(() =>
     isLinked ? calcAdEfficiencyScore(roasDireto, ad.roas_empate, ad.ctr, ad.taxa_conversao, ad.posicao_media) : null,
     [roasDireto, ad.roas_empate, ad.ctr, ad.taxa_conversao, ad.posicao_media, isLinked]
   );
 
   const halo = useMemo(() =>
-    calcHaloEffect(ad.gmv, ad.gmv_direto, ad.itens_vendidos, (ad as any).itens_vendidos_diretos || 0),
-    [ad.gmv, ad.gmv_direto, ad.itens_vendidos, (ad as any).itens_vendidos_diretos]
+    calcHaloEffect(ad.gmv, ad.gmv_direto, ad.itens_vendidos, ad.itens_vendidos_diretos || 0),
+    [ad.gmv, ad.gmv_direto, ad.itens_vendidos, ad.itens_vendidos_diretos]
   );
 
   const costAlert = useMemo(() => {
@@ -76,6 +78,10 @@ export function AdsProductCard({
   }, [ad.despesas, ad.itens_vendidos, ad.roasEmpateResult]);
 
   const posInfo = ad.posicao_media !== null ? classificarPosicao(ad.posicao_media) : null;
+
+  // Determine classification badge for linked products
+  const hasClassification = isLinked && ad.classificacao;
+  const classificationPending = isLinked && !ad.classificacao;
 
   // ═══ STATE 1: Unlinked ═══
   if (!isLinked) {
@@ -89,7 +95,7 @@ export function AdsProductCard({
             <Package className="w-5 h-5 text-text-3" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-foreground truncate">{ad.nome_produto_csv}</p>
+            <p className="text-sm font-bold text-foreground truncate">{ad.nome_produto_csv || 'Produto sem nome'}</p>
             <p className="text-[11px] text-text-3 mt-0.5">Não vinculado · {periodLabel}</p>
           </div>
           <ProgressBadge level={1} />
@@ -149,11 +155,17 @@ export function AdsProductCard({
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-foreground truncate">{ad.nome_produto_csv}</p>
+          <p className="text-sm font-bold text-foreground truncate">{ad.nome_produto_csv || 'Produto sem nome'}</p>
           <div className="flex items-center gap-2 flex-wrap mt-1">
-            <span className={cn('inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[10px] font-bold', cls.bg, cls.color)}>
-              <ClsIcon className="w-3 h-3" /> {cls.label}
-            </span>
+            {hasClassification ? (
+              <span className={cn('inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[10px] font-bold', cls.bg, cls.color)}>
+                <ClsIcon className="w-3 h-3" /> {cls.label}
+              </span>
+            ) : classificationPending ? (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-border bg-surface-2 text-[10px] font-bold text-text-3">
+                <HelpCircle className="w-3 h-3" /> Classificação pendente
+              </span>
+            ) : null}
             {emAprendizado && (
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-primary/30 bg-primary/10 text-[10px] font-bold text-primary">
                 <Clock className="w-3 h-3" /> Aprendizado
@@ -182,7 +194,7 @@ export function AdsProductCard({
           <p className={cn('text-lg font-extrabold font-mono tabular-nums mt-0.5', getRoasColor(roasDireto))}>
             {roasDireto.toFixed(2)}
           </p>
-          {ad.roas_empate ? (
+          {ad.roas_empate && ad.roas_empate > 0 ? (
             <p className="text-[9px] text-text-3 font-mono">emp {ad.roas_empate.toFixed(2)}</p>
           ) : (
             <p className="text-[9px] text-text-3">—</p>
@@ -262,7 +274,7 @@ export function AdsProductCard({
       )}
 
       {/* Row 5: ROAS bar */}
-      {ad.roas_empate && roasDireto > 0 && (
+      {ad.roas_empate && ad.roas_empate > 0 && roasDireto > 0 && (
         <div className="w-full h-2.5 rounded-full bg-surface-2 overflow-hidden">
           <div
             className={cn('h-full rounded-full transition-all',

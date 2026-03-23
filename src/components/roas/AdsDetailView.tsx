@@ -44,7 +44,7 @@ export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) 
   const { currentStore } = useStore();
   const config = currentStore?.config;
 
-  const roasDireto = ad.roas_direto || ad.roas;
+  const roasDireto = ad.roas_direto && ad.roas_direto > 0 ? ad.roas_direto : ad.roas;
   const product = ad.product;
 
   const empateResult = useMemo(() => {
@@ -83,8 +83,8 @@ export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) 
   );
 
   const halo = useMemo(() =>
-    calcHaloEffect(ad.gmv, ad.gmv_direto, ad.itens_vendidos, (ad as any).itens_vendidos_diretos || 0),
-    [ad.gmv, ad.gmv_direto, ad.itens_vendidos, (ad as any).itens_vendidos_diretos]
+    calcHaloEffect(ad.gmv, ad.gmv_direto, ad.itens_vendidos, ad.itens_vendidos_diretos || 0),
+    [ad.gmv, ad.gmv_direto, ad.itens_vendidos, ad.itens_vendidos_diretos]
   );
 
   const costMarginAlert = useMemo(() => {
@@ -335,7 +335,7 @@ export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) 
           )}
 
           {/* Geral vs Direto */}
-          {ad.roas_direto > 0 && (
+          {ad.roas_direto && ad.roas_direto > 0 && ad.gmv_direto > 0 && ad.gmv_direto !== ad.gmv && (
             <div className="rounded-xl border border-border bg-surface-2 p-4 space-y-3">
               <p className="section-label">Geral vs Direto</p>
               <div className="grid grid-cols-3 gap-3 text-xs font-mono tabular-nums">

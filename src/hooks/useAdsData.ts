@@ -86,20 +86,22 @@ export function useAdsData() {
         let classificacaoResult: ClassificacaoResult | undefined;
         let roasEmpateResult: RoasEmpateResult | undefined;
 
+        // Use roas as fallback when roas_direto is 0
+        const effectiveRoas = row.roas_direto && row.roas_direto > 0 ? row.roas_direto : row.roas;
+
         if (product && config) {
           roasEmpateResult = calcularRoasEmpate(product, config);
-          if (roasEmpateResult.roasEmpate !== Infinity) {
-            classificacaoResult = classificarAnuncio(row.roas_direto || row.roas, roasEmpateResult.roasEmpate);
+          if (roasEmpateResult.roasEmpate !== Infinity && roasEmpateResult.roasEmpate > 0) {
+            classificacaoResult = classificarAnuncio(effectiveRoas, roasEmpateResult.roasEmpate);
           }
-        } else if (row.roas_empate && row.roas_empate !== Infinity) {
-          // Fallback: use DB-stored values when products haven't loaded yet
+        } else if (row.roas_empate && row.roas_empate !== Infinity && row.roas_empate > 0) {
           roasEmpateResult = {
             roasEmpate: row.roas_empate,
             margemContribuicao: row.margem_contribuicao || 0,
             lucroPorUnidade: 0,
             acosMaximo: row.margem_contribuicao || 0,
           };
-          classificacaoResult = classificarAnuncio(row.roas_direto || row.roas, row.roas_empate);
+          classificacaoResult = classificarAnuncio(effectiveRoas, row.roas_empate);
         }
 
         return { ...row, product, classificacaoResult, roasEmpateResult };
@@ -119,9 +121,10 @@ export function useAdsData() {
       return;
     }
 
-    // Delete old general import data
+    // Delete old general import data (rows without real position data)
     await supabase.from('ads_data' as any).delete()
-      .eq('user_id', user.id).eq('posicao_importada', false);
+      .eq('user_id', user.id)
+      .is('posicao_media', null);
 
     const rows = parsed.metrics.map((m: ParsedAdMetric) => {
       const matched = findMatch(m.shopeeProductName, products);
@@ -129,12 +132,15 @@ export function useAdsData() {
       let margemContribuicao: number | null = null;
       let classificacao: string | null = null;
 
+      // Use roas as fallback when directRoas is 0
+      const effectiveRoas = m.directRoas && m.directRoas > 0 ? m.directRoas : m.roas;
+
       if (matched && config) {
         const emp = calcularRoasEmpate(matched, config);
-        if (emp.roasEmpate !== Infinity) {
+        if (emp.roasEmpate !== Infinity && emp.roasEmpate > 0) {
           roasEmpate = emp.roasEmpate;
           margemContribuicao = emp.margemContribuicao;
-          const cls = classificarAnuncio(m.directRoas || m.roas, emp.roasEmpate);
+          const cls = classificarAnuncio(effectiveRoas, emp.roasEmpate);
           classificacao = cls.classificacao;
         }
       }
@@ -142,12 +148,12 @@ export function useAdsData() {
       return {
         user_id: user.id,
         product_id: matched?.id || null,
-        nome_produto_csv: m.shopeeProductName,
+        nome_produto_csv: m.shopeeProductName || `Produto ${m.shopeeProductId || 'Desconhecido'}`,
         shopee_product_id: m.shopeeProductId || null,
         impressoes: m.impressions,
         cliques: m.clicks,
         ctr: m.ctr,
-        conversoes: (m as any).conversions || 0,
+        conversoes: m.conversions || 0,
         taxa_conversao: m.convRate,
         itens_vendidos: m.itemsSold,
         gmv: m.gmv,
@@ -156,14 +162,14 @@ export function useAdsData() {
         acos: m.acos,
         roas_direto: m.directRoas,
         acos_direto: m.directAcos,
-        gmv_direto: (m as any).directGmv || (m as any).directRevenue || m.gmv,
+        gmv_direto: m.directGmv || m.gmv,
         custo_por_conversao: m.costPerConv,
-        itens_vendidos_diretos: (m as any).directItemsSold || 0,
-        conversoes_diretas: (m as any).directConversions || (m as any).conversions || 0,
-        metodo_lance: (m as any).bidMethod || null,
-        status_anuncio: (m as any).status || null,
-        impressoes_produto: (m as any).productImpressions ?? null,
-        cliques_produto: (m as any).productClicks ?? null,
+        itens_vendidos_diretos: m.directItemsSold || m.itemsSold,
+        conversoes_diretas: m.directConversions || m.conversions || 0,
+        metodo_lance: m.bidMethod || null,
+        status_anuncio: m.status || null,
+        impressoes_produto: m.productImpressions ?? null,
+        cliques_produto: m.productClicks ?? null,
         posicao_media: null,
         posicao_importada: false,
         roas_empate: roasEmpate,
@@ -174,12 +180,42 @@ export function useAdsData() {
       };
     });
 
-    const { error } = await supabase.from('ads_data' as any).insert(rows);
+    // Deduplicate by shopee_product_id or nome_produto_csv
+    const uniqueRows = Object.values(
+      rows.reduce((acc, row) => {
+        const key = row.shopee_product_id || row.nome_produto_csv;
+        if (!acc[key]) {
+          acc[key] = row;
+        } else {
+          // Sum metrics
+          acc[key].impressoes += row.impressoes;
+          acc[key].cliques += row.cliques;
+          acc[key].itens_vendidos += row.itens_vendidos;
+          acc[key].gmv += row.gmv;
+          acc[key].despesas += row.despesas;
+          acc[key].gmv_direto += row.gmv_direto;
+          acc[key].itens_vendidos_diretos += row.itens_vendidos_diretos;
+          acc[key].conversoes += row.conversoes;
+          acc[key].conversoes_diretas += row.conversoes_diretas;
+          // Recalculate derived
+          acc[key].ctr = acc[key].impressoes > 0 ? (acc[key].cliques / acc[key].impressoes) * 100 : 0;
+          acc[key].roas = acc[key].despesas > 0 ? acc[key].gmv / acc[key].despesas : 0;
+          acc[key].acos = acc[key].gmv > 0 ? (acc[key].despesas / acc[key].gmv) * 100 : 0;
+          acc[key].taxa_conversao = acc[key].cliques > 0 ? (acc[key].conversoes / acc[key].cliques) * 100 : 0;
+          acc[key].custo_por_conversao = acc[key].conversoes > 0 ? acc[key].despesas / acc[key].conversoes : 0;
+          acc[key].roas_direto = acc[key].despesas > 0 ? acc[key].gmv_direto / acc[key].despesas : 0;
+          acc[key].acos_direto = acc[key].gmv_direto > 0 ? (acc[key].despesas / acc[key].gmv_direto) * 100 : 0;
+        }
+        return acc;
+      }, {} as Record<string, typeof rows[0]>)
+    );
+
+    const { error } = await supabase.from('ads_data' as any).insert(uniqueRows);
     if (error) {
       toast.error('Erro ao salvar dados');
       console.error(error);
     } else {
-      toast.success(`${rows.length} produtos importados com sucesso`);
+      toast.success(`${uniqueRows.length} produtos importados com sucesso`);
       await fetchData();
     }
   }, [user, products, config, fetchData]);
@@ -194,6 +230,7 @@ export function useAdsData() {
 
     const m = parsed.metrics[0];
     const avgPos = m.avgPosition;
+    const hasRealPosition = avgPos !== null && avgPos > 0;
 
     // Helper to calculate derived metrics for a given product
     const calcDerived = (productId: string | null) => {
@@ -202,13 +239,15 @@ export function useAdsData() {
       let margemContribuicao: number | null = null;
       let classificacao: string | null = null;
 
+      // Use roas as fallback when directRoas is 0
+      const effectiveRoas = m.directRoas && m.directRoas > 0 ? m.directRoas : m.roas;
+
       if (product && config) {
         const emp = calcularRoasEmpate(product, config);
-        if (emp.roasEmpate !== Infinity) {
+        if (emp.roasEmpate !== Infinity && emp.roasEmpate > 0) {
           roasEmpate = emp.roasEmpate;
           margemContribuicao = emp.margemContribuicao;
-          const roasForClass = m.directRoas || m.roas;
-          const cls = classificarAnuncio(roasForClass, emp.roasEmpate);
+          const cls = classificarAnuncio(effectiveRoas, emp.roasEmpate);
           classificacao = cls.classificacao;
         }
       }
@@ -222,13 +261,17 @@ export function useAdsData() {
 
       await supabase.from('ads_data' as any).update({
         posicao_media: avgPos,
-        posicao_importada: true,
+        posicao_importada: hasRealPosition,
         ...derived,
         ...(m.impressions > 0 ? {
           impressoes: m.impressions, cliques: m.clicks, ctr: m.ctr,
           itens_vendidos: m.itemsSold, gmv: m.gmv, despesas: m.spend,
           roas: m.roas, acos: m.acos, custo_por_conversao: m.costPerConv,
           taxa_conversao: m.convRate,
+          roas_direto: m.directRoas || m.roas,
+          gmv_direto: m.directGmv || m.gmv,
+          itens_vendidos_diretos: m.directItemsSold || m.itemsSold,
+          conversoes_diretas: m.directConversions || 0,
         } : {}),
       }).eq('id', targetAdsDataId);
     } else {
@@ -244,23 +287,36 @@ export function useAdsData() {
         .eq('periodo_fim', m.periodEnd)
         .limit(1);
 
-      const existingId = (existingQuery.data as any[])?.[0]?.id;
+      let existingId = (existingQuery.data as any[])?.[0]?.id;
+
+      // Also check by shopee_product_id if no match by name
+      if (!existingId && m.shopeeProductId) {
+        const byIdQuery = await supabase.from('ads_data' as any)
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('shopee_product_id', m.shopeeProductId)
+          .eq('periodo_inicio', m.periodStart)
+          .eq('periodo_fim', m.periodEnd)
+          .limit(1);
+        existingId = (byIdQuery.data as any[])?.[0]?.id;
+      }
 
       const rowData = {
         user_id: user.id,
         product_id: matched?.id || null,
-        nome_produto_csv: m.shopeeProductName,
+        nome_produto_csv: m.shopeeProductName || `Produto ${m.shopeeProductId || 'Desconhecido'}`,
         shopee_product_id: m.shopeeProductId || null,
         impressoes: m.impressions, cliques: m.clicks, ctr: m.ctr,
-        conversoes: 0, taxa_conversao: m.convRate,
+        conversoes: m.conversions || 0, taxa_conversao: m.convRate,
         itens_vendidos: m.itemsSold, gmv: m.gmv, despesas: m.spend,
         roas: m.roas, acos: m.acos,
-        roas_direto: m.directRoas || 0, acos_direto: m.directAcos || 0,
-        gmv_direto: (m as any).directGmv || 0,
+        roas_direto: m.directRoas || m.roas,
+        acos_direto: m.directAcos || m.acos,
+        gmv_direto: m.directGmv || m.gmv,
         custo_por_conversao: m.costPerConv,
-        itens_vendidos_diretos: (m as any).directItemsSold || m.itemsSold,
-        conversoes_diretas: (m as any).directConversions || 0,
-        posicao_media: avgPos, posicao_importada: true,
+        itens_vendidos_diretos: m.directItemsSold || m.itemsSold,
+        conversoes_diretas: m.directConversions || 0,
+        posicao_media: avgPos, posicao_importada: hasRealPosition,
         periodo_inicio: m.periodStart, periodo_fim: m.periodEnd,
         ...derived,
       };
@@ -272,7 +328,7 @@ export function useAdsData() {
       }
     }
 
-    toast.success('Dados de posição importados');
+    toast.success('Dados importados com sucesso');
     await fetchData();
   }, [user, products, config, data, fetchData]);
 
@@ -286,10 +342,11 @@ export function useAdsData() {
 
     if (product && config && row) {
       const emp = calcularRoasEmpate(product, config);
-      if (emp.roasEmpate !== Infinity) {
+      if (emp.roasEmpate !== Infinity && emp.roasEmpate > 0) {
         roasEmpate = emp.roasEmpate;
         margemContribuicao = emp.margemContribuicao;
-        const cls = classificarAnuncio(row.roas_direto || row.roas, emp.roasEmpate);
+        const effectiveRoas = row.roas_direto && row.roas_direto > 0 ? row.roas_direto : row.roas;
+        const cls = classificarAnuncio(effectiveRoas, emp.roasEmpate);
         classificacao = cls.classificacao;
       }
     }
