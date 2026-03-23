@@ -36,13 +36,14 @@ function ProgressBadge({ level }: { level: 1 | 2 | 3 }) {
 }
 
 export function AdsProductCard({
-  ad, onClick, onLink, onQuickRegister, onUpdatePosition,
+  ad, onClick, onLink, onQuickRegister, onUpdatePosition, onDelete,
 }: {
   ad: EnrichedAdsData;
   onClick: () => void;
   onLink: () => void;
   onQuickRegister: () => void;
   onUpdatePosition: () => void;
+  onDelete: () => void;
 }) {
   const periodLabel = (() => {
     const f = (d: string) => { const parts = d.split('-'); return `${parts[2]}/${parts[1]}`; };

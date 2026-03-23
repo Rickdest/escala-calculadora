@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { EnrichedAdsData } from '@/hooks/useAdsData';
 import { cn } from '@/lib/utils';
 import { fmt, getRoasColor } from './adsHelpers';
-import { calcAdEfficiencyScore, calcHaloEffect } from '@/lib/adsLogic';
+import { calcAdEfficiencyScore } from '@/lib/adsLogic';
 
 export function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
   const s = useMemo(() => {
@@ -15,7 +15,6 @@ export function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
     const atencao = data.filter(d => d.classificacao === 'MARGEM_APERTADA' || d.classificacao === 'ABAIXO_EMPATE').length;
     const prejuizo = data.filter(d => d.classificacao === 'PREJUIZO').length;
 
-    // Avg efficiency score — only for linked products
     const linkedData = data.filter(d => !!d.product_id);
     const scores = linkedData.map(d => {
       const rd = d.roas_direto && d.roas_direto > 0 ? d.roas_direto : d.roas;
@@ -23,7 +22,6 @@ export function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
     });
     const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, s) => a + s.score, 0) / scores.length) : 0;
 
-    // Total halo
     const totalGmvDireto = data.reduce((a, d) => a + (d.gmv_direto || 0), 0);
     const haloTotal = totalGmv - totalGmvDireto;
     const haloPct = totalGmv > 0 ? (haloTotal / totalGmv) * 100 : 0;
@@ -32,41 +30,36 @@ export function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
   }, [data]);
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="section-label">GMV Total</p>
-          <p className="text-xl font-extrabold font-mono tabular-nums text-foreground mt-1.5">{fmt(s.totalGmv)}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="section-label">Gasto Total</p>
-          <p className="text-xl font-extrabold font-mono tabular-nums text-foreground mt-1.5">{fmt(s.totalSpend)}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="section-label">ROAS Médio</p>
-          <p className={cn('text-xl font-extrabold font-mono tabular-nums mt-1.5', getRoasColor(s.avgRoas))}>{s.avgRoas.toFixed(2)}</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="section-label">Custo/Un Média</p>
-          <p className="text-xl font-extrabold font-mono tabular-nums text-foreground mt-1.5">{fmt(s.avgCostPerUnit)}</p>
-        </div>
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+        {[
+          { label: 'GMV Total', value: fmt(s.totalGmv), color: 'text-foreground' },
+          { label: 'Gasto Total', value: fmt(s.totalSpend), color: 'text-foreground' },
+          { label: 'ROAS Médio', value: s.avgRoas.toFixed(2), color: getRoasColor(s.avgRoas) },
+          { label: 'Custo/Un', value: fmt(s.avgCostPerUnit), color: 'text-foreground' },
+        ].map(({ label, value, color }) => (
+          <div key={label} className="rounded-lg border border-border bg-card p-3 md:p-3.5">
+            <p className="section-label">{label}</p>
+            <p className={cn('text-lg md:text-xl font-extrabold font-mono tabular-nums mt-1', color)}>{value}</p>
+          </div>
+        ))}
       </div>
-      <div className="flex items-center gap-3 flex-wrap rounded-lg bg-surface-2 p-2.5 px-3">
-        <span className="text-xs font-bold text-success">✅ {s.lucrativos} lucrativos</span>
-        <span className="text-xs font-bold text-warning">🟠 {s.atencao} atenção</span>
-        <span className="text-xs font-bold text-destructive">🔴 {s.prejuizo} prejuízo</span>
+      <div className="flex items-center gap-3 flex-wrap rounded-lg bg-surface-2 px-3 py-2">
+        <span className="text-[11px] font-bold text-success">✅ {s.lucrativos} lucrativos</span>
+        <span className="text-[11px] font-bold text-warning">🟠 {s.atencao} atenção</span>
+        <span className="text-[11px] font-bold text-destructive">🔴 {s.prejuizo} prejuízo</span>
         {s.avgScore > 0 && (
           <>
             <span className="text-text-3">·</span>
-            <span className={cn('text-xs font-bold font-mono tabular-nums', s.avgScore >= 60 ? 'text-primary' : 'text-warning')}>
-              Score Médio: {s.avgScore}/100
+            <span className={cn('text-[11px] font-bold font-mono tabular-nums', s.avgScore >= 60 ? 'text-primary' : 'text-warning')}>
+              Score: {s.avgScore}/100
             </span>
           </>
         )}
         {s.haloTotal > 0 && s.haloPct < 90 && (
           <>
             <span className="text-text-3">·</span>
-            <span className="text-xs font-bold text-text-2 font-mono tabular-nums">
+            <span className="text-[11px] font-bold text-text-2 font-mono tabular-nums">
               Halo: {fmt(s.haloTotal)} ({s.haloPct.toFixed(1)}%)
             </span>
           </>
