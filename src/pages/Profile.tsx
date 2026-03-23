@@ -69,11 +69,7 @@ export default function Profile() {
 
   const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
-      toast({
-        title: 'Senhas não conferem',
-        description: 'Digite a mesma senha nos dois campos.',
-        variant: 'destructive',
-      });
+      toast.error('Senhas não conferem', { description: 'Digite a mesma senha nos dois campos.' });
       return;
     }
 
