@@ -346,17 +346,22 @@ export default function Home() {
               <p className="section-label mb-3">Outras plataformas</p>
               <div className="grid grid-cols-4 gap-3">
                 {[
-                  { emoji: '🎵', name: 'TikTok Shop', rate: '12% + R$4 fixo', tab: 'tiktok' },
-                  { emoji: '👗', name: 'Shein', rate: 'Moda 20% · Outros 18%', tab: 'shein' },
-                  { emoji: '📦', name: 'Amazon', rate: '10–15% por categoria', tab: 'amazon' },
-                  { emoji: '🟡', name: 'Mercado Livre', rate: 'Clássico / Premium', tab: 'ml' },
+                  { sigla: 'TK', name: 'TikTok Shop', rate: '12% + R$4 fixo', tab: 'tiktok', bg: '#010101', text: 'text-white' },
+                  { sigla: 'SH', name: 'Shein', rate: 'Moda 20% · Outros 18%', tab: 'shein', bg: '#E43D79', text: 'text-white' },
+                  { sigla: 'AZ', name: 'Amazon', rate: '10–15% por categoria', tab: 'amazon', bg: '#FF9900', text: 'text-white' },
+                  { sigla: 'ML', name: 'Mercado Livre', rate: 'Clássico / Premium', tab: 'ml', bg: '#FFE600', text: 'text-black' },
                 ].map((mp) => (
                   <button
                     key={mp.tab}
                     onClick={() => navigate(`/calculadoras?tab=${mp.tab}`)}
                     className="flex flex-col items-center gap-2 py-3 px-2 bg-surface-2 rounded-xl border border-border transition-colors hover:border-primary/50 hover:bg-surface-2/80 active:scale-95"
                   >
-                    <span className="text-[26px]">{mp.emoji}</span>
+                    <div
+                      className={cn('w-10 h-10 rounded-lg flex items-center justify-center text-sm font-extrabold', mp.text)}
+                      style={{ backgroundColor: mp.bg }}
+                    >
+                      {mp.sigla}
+                    </div>
                     <span className="text-[11px] font-semibold text-text-2 text-center leading-tight">{mp.name}</span>
                     <span className="text-[10px] text-text-3 text-center">{mp.rate}</span>
                   </button>
