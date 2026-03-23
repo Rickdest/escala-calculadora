@@ -53,6 +53,8 @@ export function AdsTab() {
     );
     if (hasProductMeta || hasPositionHeaders) {
       await importProductCSV(text);
+      setPositionJustImported(true);
+      setTimeout(() => setPositionJustImported(false), 8000);
     } else {
       await importGeneralCSV(text);
     }
