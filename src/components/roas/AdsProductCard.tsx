@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { EnrichedAdsData } from '@/hooks/useAdsData';
 import { cn } from '@/lib/utils';
-import { Package, MapPin, Link2, Clock, Plus, HelpCircle } from 'lucide-react';
+import { Package, MapPin, Link2, Clock, Plus, HelpCircle, Trash2 } from 'lucide-react';
 import { fmt, getClassCor, getRoasColor, getDiasPeriodo } from './adsHelpers';
 import { calcAdEfficiencyScore, calcHaloEffect, calcCostVsMarginAlert, classificarPosicao } from '@/lib/adsLogic';
 
@@ -36,13 +36,14 @@ function ProgressBadge({ level }: { level: 1 | 2 | 3 }) {
 }
 
 export function AdsProductCard({
-  ad, onClick, onLink, onQuickRegister, onUpdatePosition,
+  ad, onClick, onLink, onQuickRegister, onUpdatePosition, onDelete,
 }: {
   ad: EnrichedAdsData;
   onClick: () => void;
   onLink: () => void;
   onQuickRegister: () => void;
   onUpdatePosition: () => void;
+  onDelete: () => void;
 }) {
   const periodLabel = (() => {
     const f = (d: string) => { const parts = d.split('-'); return `${parts[2]}/${parts[1]}`; };
@@ -98,6 +99,13 @@ export function AdsProductCard({
             <p className="text-sm font-bold text-foreground truncate">{ad.nome_produto_csv || 'Produto sem nome'}</p>
             <p className="text-[11px] text-text-3 mt-0.5">Não vinculado · {periodLabel}</p>
           </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="p-1.5 rounded-lg text-text-3 hover:text-destructive hover:bg-destructive/10 transition-colors flex-shrink-0"
+            title="Excluir"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
           <ProgressBadge level={1} />
         </div>
 
@@ -285,8 +293,15 @@ export function AdsProductCard({
         </div>
       )}
 
-      {/* Progress badge */}
-      <div className="flex justify-end">
+      {/* Delete + Progress badge */}
+      <div className="flex items-center justify-end gap-2">
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          className="p-1.5 rounded-lg text-text-3 hover:text-destructive hover:bg-destructive/10 transition-colors"
+          title="Excluir"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
         <ProgressBadge level={level} />
       </div>
     </div>
