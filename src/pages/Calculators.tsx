@@ -14,11 +14,13 @@ import { calcAmazon, type AmazonResult, type AmazonPlan, AMAZON_CATEGORIES } fro
 import { calcML, type MLResult, type MLAnuncio, ML_CATEGORIES } from '@/lib/mlUtils';
 import { TrendingUp, AlertTriangle, TrendingDown, ExternalLink, CalendarDays } from 'lucide-react';
 
+import { TikTokLogo, SheinLogo, AmazonLogo, MLLogo } from '@/components/icons/MarketplaceLogos';
+
 type TabKey = 'tiktok' | 'shein' | 'amazon' | 'ml';
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: 'tiktok', label: 'TikTok' },
-  { key: 'shein', label: 'Shein' },
+const TABS: { key: TabKey; label: string; icon: React.FC<{ className?: string }> }[] = [
+  { key: 'tiktok', label: 'TikTok', icon: TikTokLogo },
+  { key: 'shein', label: 'Shein', icon: SheinLogo },
   { key: 'amazon', label: 'Amazon' },
   { key: 'ml', label: 'Mercado Livre' },
 ];
