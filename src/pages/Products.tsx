@@ -223,6 +223,7 @@ export default function Products() {
                     onEdit={handleEdit}
                     onDuplicate={async (id) => { await duplicateProduct(id); }}
                     onDelete={async (id) => { await deleteProduct(id); }}
+                    onAdsUpdate={reloadAds}
                   />
                 ))}
               </div>
