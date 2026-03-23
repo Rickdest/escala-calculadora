@@ -161,7 +161,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 pb-6 space-y-4">
           {/* Image Upload */}
           <div className="flex justify-center">
             <label className="cursor-pointer group">
@@ -473,7 +473,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
         </form>
 
         {/* Footer */}
-        <div className="p-4 border-t border-border safe-bottom bg-surface">
+        <div className="p-4 border-t border-border safe-bottom bg-surface relative z-[60]">
           <Button type="submit" onClick={handleSubmit} className="w-full h-12 text-[15px] font-semibold bg-primary hover:bg-primary/90 rounded-[10px] transition-colors active:scale-[0.98]" disabled={!isValid || isSaving}>
             {isSaving ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Salvando...</>) : (<><Save className="w-4 h-4 mr-2" />{product ? 'Salvar Alterações' : 'Salvar Produto'}</>)}
           </Button>
