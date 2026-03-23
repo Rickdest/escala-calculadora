@@ -260,11 +260,11 @@ function EmptyState({ onImport }: { onImport: () => void }) {
 }
 
 // ─── By Product Tab ───
-function ByProductContent({ data, onImport, onDetail }: {
+const ByProductContent = forwardRef<HTMLDivElement, {
   data: EnrichedAdsData[];
   onImport: () => void;
   onDetail: (d: EnrichedAdsData) => void;
-}) {
+}>(function ByProductContent({ data, onImport, onDetail }, ref) {
   const withPosition = data.filter(d => d.posicao_importada && d.posicao_media !== null);
 
   if (withPosition.length === 0) {
