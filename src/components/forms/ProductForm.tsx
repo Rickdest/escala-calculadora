@@ -122,6 +122,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
         attributes: product?.attributes || [],
         variations: product?.variations || [],
         shopeeAcelera: 'none' as ShopeeAceleraOption,
+        outrosCanais: Object.keys(outrosCanais).length > 0 ? outrosCanais : undefined,
       };
       await Promise.resolve(onSave(productData));
     } catch {
