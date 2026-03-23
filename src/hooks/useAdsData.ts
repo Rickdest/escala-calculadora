@@ -280,28 +280,46 @@ export function useAdsData() {
       const matched = findMatch(m.shopeeProductName, products);
       const derived = calcDerived(matched?.id || null);
 
-      // Dedup: check if a row already exists for same product + period
-      const existingQuery = await supabase.from('ads_data' as any)
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('nome_produto_csv', m.shopeeProductName)
-        .eq('periodo_inicio', m.periodStart)
-        .eq('periodo_fim', m.periodEnd)
-        .limit(1);
+      // Dedup: search by shopee_product_id first (most reliable, without period restriction)
+      let existingId: string | undefined;
 
-      let existingId = (existingQuery.data as any[])?.[0]?.id;
-
-      // Also check by shopee_product_id if no match by name
-      if (!existingId && m.shopeeProductId) {
+      if (m.shopeeProductId) {
         const byIdQuery = await supabase.from('ads_data' as any)
           .select('id')
           .eq('user_id', user.id)
           .eq('shopee_product_id', m.shopeeProductId)
-          .eq('periodo_inicio', m.periodStart)
-          .eq('periodo_fim', m.periodEnd)
+          .order('importado_em', { ascending: false })
           .limit(1);
         existingId = (byIdQuery.data as any[])?.[0]?.id;
       }
+
+      // Fallback: search by name + period
+      if (!existingId) {
+        const byNameQuery = await supabase.from('ads_data' as any)
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('nome_produto_csv', m.shopeeProductName)
+          .eq('periodo_inicio', m.periodStart)
+          .eq('periodo_fim', m.periodEnd)
+          .limit(1);
+        existingId = (byNameQuery.data as any[])?.[0]?.id;
+      }
+
+      // Fallback: fuzzy match by normalized name
+      if (!existingId) {
+        const allRows = await supabase.from('ads_data' as any)
+          .select('id, nome_produto_csv, shopee_product_id')
+          .eq('user_id', user.id)
+          .limit(100);
+        const normalizedName = normalize(m.shopeeProductName);
+        const fuzzyMatch = (allRows.data as any[])?.find((r: any) => {
+          const rName = normalize(r.nome_produto_csv);
+          return rName.includes(normalizedName) || normalizedName.includes(rName);
+        });
+        existingId = fuzzyMatch?.id;
+      }
+
+      console.log('[AdsImport] Dedup result:', { existingId, productName: m.shopeeProductName });
 
       const rowData = {
         user_id: user.id,
