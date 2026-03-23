@@ -178,23 +178,33 @@ export function ProductCard({ product, calculation, onEdit, onDuplicate, onDelet
           {compareOpen && (
             <div className="surface-card p-3 space-y-2 animate-fade-up">
               <p className="section-label">Margem por canal</p>
-              <div className="space-y-1.5">
+              <div className="grid grid-cols-2 gap-2">
                 {channelResults.map((r) => (
-                  <div key={r.key} className="flex items-center justify-between text-xs">
-                    <span className="text-text-2">{r.label}</span>
-                    <span className={cn(
-                      'font-mono font-bold font-mono-num',
+                  <div
+                    key={r.key}
+                    className={cn(
+                      'rounded-lg border p-2.5 text-center',
+                      r.key === bestChannel?.key
+                        ? 'border-success/30 bg-success/5'
+                        : 'border-border bg-background/50'
+                    )}
+                  >
+                    <p className="section-label">{r.label}</p>
+                    <p className={cn(
+                      'text-base font-extrabold tabular-nums font-mono mt-0.5',
                       r.margin >= 15 ? 'text-success' : r.margin >= 0 ? 'text-warning' : 'text-danger'
                     )}>
                       {r.margin.toFixed(1)}%
-                    </span>
-                    <span className="font-mono font-mono-num text-text-2">{formatCurrency(r.netProfit)}</span>
+                    </p>
+                    <p className="text-[10px] text-text-3 tabular-nums mt-0.5">
+                      {formatCurrency(r.netProfit)}
+                    </p>
                   </div>
                 ))}
               </div>
               {bestChannel && (
-                <p className="text-[10px] text-success font-semibold pt-1 border-t border-border/50">
-                  Melhor margem: {bestChannel.label}
+                <p className="text-[10px] text-success font-semibold pt-1 border-t border-border/50 text-center">
+                  ✓ Melhor margem: {bestChannel.label}
                 </p>
               )}
             </div>
