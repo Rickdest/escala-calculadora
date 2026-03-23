@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { EnrichedAdsData } from '@/hooks/useAdsData';
 import { cn } from '@/lib/utils';
-import { Package, MapPin, Link2, Clock, Plus, HelpCircle } from 'lucide-react';
+import { Package, MapPin, Link2, Clock, Plus, HelpCircle, Trash2 } from 'lucide-react';
 import { fmt, getClassCor, getRoasColor, getDiasPeriodo } from './adsHelpers';
 import { calcAdEfficiencyScore, calcHaloEffect, calcCostVsMarginAlert, classificarPosicao } from '@/lib/adsLogic';
 
