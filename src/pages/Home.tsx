@@ -322,12 +322,7 @@ export default function Home() {
             <div className="surface-card p-4">
               <p className="section-label mb-3">Outras plataformas</p>
               <div className="grid grid-cols-4 gap-3">
-                {[
-                  { sigla: 'TK', name: 'TikTok Shop', rate: '12% + R$4 fixo', tab: 'tiktok', bg: '#010101', text: 'text-white' },
-                  { sigla: 'SH', name: 'Shein', rate: 'Moda 20% · Outros 18%', tab: 'shein', bg: '#E43D79', text: 'text-white' },
-                  { sigla: 'AZ', name: 'Amazon', rate: '10–15% por categoria', tab: 'amazon', bg: '#232F3E', text: 'text-white' },
-                  { sigla: 'ML', name: 'Mercado Livre', rate: 'Clássico / Premium', tab: 'ml', bg: '#FFE600', text: 'text-black' },
-                ].map((mp) => (
+                {MARKETPLACE_SHORTCUTS.map((mp) => (
                   <button
                     key={mp.tab}
                     onClick={() => navigate(`/calculadoras?tab=${mp.tab}`)}
@@ -340,7 +335,7 @@ export default function Home() {
                       {mp.sigla}
                     </div>
                     <span className="text-[11px] font-semibold text-text-2 text-center leading-tight">{mp.name}</span>
-                    <span className="text-[10px] text-text-3 text-center">{mp.rate}</span>
+                    <span className="text-[10px] text-text-3 text-center">{mp.rateDesktop || mp.rate}</span>
                   </button>
                 ))}
               </div>
