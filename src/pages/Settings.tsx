@@ -86,8 +86,7 @@ export default function Settings() {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
 
-    toast({
-      title: "✓ Configurações salvas",
+    toast.success('✓ Configurações salvas', {
       description: `${productCount} produto${productCount !== 1 ? 's foram recalculados' : ' foi recalculado'}.`,
     });
   };

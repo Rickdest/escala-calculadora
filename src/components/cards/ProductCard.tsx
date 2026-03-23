@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { Package, TrendingUp, TrendingDown, MoreVertical, Copy, Trash2, Edit, Boxes } from 'lucide-react';
 import { Product, ProductCalculation } from '@/types/store';
 import { cn, getMarginStatus } from '@/lib/utils';

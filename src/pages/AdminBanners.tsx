@@ -150,7 +150,7 @@ export default function AdminBanners() {
 
   const handleDelete = async (id: string) => {
     await supabase.from('banners').delete().eq('id', id);
-    toast({ title: 'Banner removido' });
+    toast.success('Banner removido');
     if (editingId === id) setEditingId(null);
     loadBanners();
   };

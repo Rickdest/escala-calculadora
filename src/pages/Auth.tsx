@@ -86,7 +86,7 @@ export default function Auth() {
           setErrorMessage('Este email já está cadastrado. Faça login.');
           setActiveTab('login');
         } else {
-          toast({ title: 'Conta criada!', description: 'Verifique seu email para confirmar o cadastro.' });
+          toast.success('Conta criada!', { description: 'Verifique seu email para confirmar o cadastro.' });
         }
       }
     } finally {
