@@ -99,16 +99,9 @@ export default function Education() {
       .eq('id', item.id);
 
     if (error) {
-      toast({
-        title: 'Erro ao salvar',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast.error('Erro ao salvar', { description: error.message });
     } else {
-      toast({
-        title: 'Salvo!',
-        description: 'Conteúdo atualizado com sucesso.',
-      });
+      toast.success('Salvo!', { description: 'Conteúdo atualizado com sucesso.' });
       await loadContent();
       cancelEditing();
     }
