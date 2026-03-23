@@ -52,44 +52,8 @@ export function deriveMetrics(m: ParsedAdMetric): AdMetricDerived {
   };
 }
 
-// Legacy re-exports for backward compatibility
-export type ShopeeAdRow = AdMetricDerived & {
-  index: number;
-  adName: string;
-  status: string;
-  adType: string;
-  productId: string;
-  positioning: string;
-  keyword: string;
-  matchType: string;
-  bidMethod: string;
-  conversions: number;
-  directConversions: number;
-  conversionRate: number;
-  directItemsSold: number;
-  directRevenue: number;
-  rentability: number;
-  productImpressions: number;
-  productClicks: number;
-  productCtr: number;
-};
 
-export interface ShopeeAdsReport {
-  shopName: string;
-  storeId: string;
-  period: string;
-  createdAt: string;
-  ads: ShopeeAdRow[];
-  totals: {
-    totalSpend: number;
-    totalGmv: number;
-    totalItemsSold: number;
-    avgRoas: number;
-    avgAcos: number;
-    totalLiquidReturn: number;
-    avgRoi: number;
-  };
-}
+
 
 // ─── Helpers ───
 
@@ -369,8 +333,6 @@ function parseGeneralFormatCSV(csvContent: string): ParsedAdsFile | null {
       productImpressions: number; productClicks: number;
     }>();
 
-    const rawAds: ShopeeAdRow[] = [];
-
     for (let i = headerIndex + 1; i < lines.length; i++) {
       const cols = parseCSVLine(lines[i]);
       if (cols.length < 20) continue;
@@ -379,52 +341,21 @@ function parseGeneralFormatCSV(csvContent: string): ParsedAdsFile | null {
 
       const spend = parseBRNumber(getCol(cols, map.spend));
       const gmv = parseBRNumber(getCol(cols, map.gmv));
-      const liquidReturn = gmv - spend;
-      const roi = spend > 0 ? ((gmv - spend) / spend) * 100 : 0;
-      const rentability = gmv > 0 ? ((gmv - spend) / gmv) * 100 : 0;
       const clicks = parseBRNumber(getCol(cols, map.clicks));
       const impressions = parseBRNumber(getCol(cols, map.impressions));
       const itemsSold = parseBRNumber(getCol(cols, map.itemsSold));
-      const roas = parseBRNumber(getCol(cols, map.roas));
-      const acos = parseBRNumber(getCol(cols, map.acos));
-      const ctr = parseBRNumber(getCol(cols, map.ctr));
       const convRate = parseBRNumber(getCol(cols, map.conversionRate));
       const productIdVal = getCol(cols, map.productId) || '-';
       const adName = getCol(cols, map.adName);
 
-      const ad: ShopeeAdRow = {
-        index, adName,
-        status: getCol(cols, map.status),
-        adType: getCol(cols, map.adType),
-        productId: productIdVal,
-        bidMethod: getCol(cols, map.bidMethod),
-        positioning: getCol(cols, map.positioning),
-        keyword: map.keyword >= 0 ? getCol(cols, map.keyword) : '',
-        matchType: map.matchType >= 0 ? getCol(cols, map.matchType) : '',
-        impressions, clicks, ctr,
-        conversions: parseBRNumber(getCol(cols, map.conversions)),
-        directConversions: parseBRNumber(getCol(cols, map.directConversions)),
-        conversionRate: convRate,
-        acos, directAcos: parseBRNumber(getCol(cols, map.directAcos)),
-        costPerConv: parseBRNumber(getCol(cols, map.costPerConversion)),
-        itemsSold,
-        directItemsSold: parseBRNumber(getCol(cols, map.directItemsSold)),
-        gmv, directRevenue: parseBRNumber(getCol(cols, map.directRevenue)),
-        spend, roas, directRoas: parseBRNumber(getCol(cols, map.directRoas)),
-        productImpressions: parseBRNumber(getCol(cols, map.productImpressions)),
-        productClicks: parseBRNumber(getCol(cols, map.productClicks)),
-        productCtr: parseBRNumber(getCol(cols, map.productCtr)),
-        liquidReturn, roi, rentability,
-        shopeeProductId: productIdVal,
-        shopeeProductName: adName,
-        periodStart: period.start,
-        periodEnd: period.end,
-        avgPosition: null,
-        convRate, cpc: clicks > 0 ? spend / clicks : 0,
-        costPerSale: itemsSold > 0 ? spend / itemsSold : 0,
-      };
-
-      rawAds.push(ad);
+      const conversions = parseBRNumber(getCol(cols, map.conversions));
+      const directConversions = parseBRNumber(getCol(cols, map.directConversions));
+      const directItemsSold = parseBRNumber(getCol(cols, map.directItemsSold));
+      const directRevenue = parseBRNumber(getCol(cols, map.directRevenue));
+      const status = getCol(cols, map.status);
+      const bidMethod = getCol(cols, map.bidMethod);
+      const productImpressions = parseBRNumber(getCol(cols, map.productImpressions));
+      const productClicks = parseBRNumber(getCol(cols, map.productClicks));
 
       // Aggregate per product
       const key = productIdVal !== '-' ? productIdVal : `name:${adName}`;
@@ -435,20 +366,20 @@ function parseGeneralFormatCSV(csvContent: string): ParsedAdsFile | null {
         existing.itemsSold += itemsSold;
         existing.gmv += gmv;
         existing.spend += spend;
-        existing.conversions += ad.conversions;
-        existing.directConversions += ad.directConversions;
-        existing.directItemsSold += ad.directItemsSold;
-        existing.directRevenue += ad.directRevenue;
-        existing.productImpressions += ad.productImpressions;
-        existing.productClicks += ad.productClicks;
+        existing.conversions += conversions;
+        existing.directConversions += directConversions;
+        existing.directItemsSold += directItemsSold;
+        existing.directRevenue += directRevenue;
+        existing.productImpressions += productImpressions;
+        existing.productClicks += productClicks;
       } else {
         productMap.set(key, {
           name: adName, id: productIdVal,
           impressions, clicks, itemsSold, gmv, spend,
-          conversions: ad.conversions, directConversions: ad.directConversions,
-          directItemsSold: ad.directItemsSold, directRevenue: ad.directRevenue,
-          status: ad.status, bidMethod: ad.bidMethod,
-          productImpressions: ad.productImpressions, productClicks: ad.productClicks,
+          conversions, directConversions,
+          directItemsSold, directRevenue,
+          status, bidMethod,
+          productImpressions, productClicks,
         });
       }
     }
@@ -509,94 +440,4 @@ export function parseShopeeAdsCSV(csvContent: string): ParsedAdsFile | null {
     return parseProductFormatCSV(csvContent);
   }
   return parseGeneralFormatCSV(csvContent);
-}
-
-// Legacy function for backward compatibility
-export function parseShopeeCSV(csvContent: string): ShopeeAdsReport | null {
-  try {
-    const lines = csvContent.split('\n').map(l => l.replace(/^\uFEFF/, '').trim()).filter(l => l.length > 0);
-    if (lines.length < 8) return null;
-
-    const shopName = lines[2]?.split(',')[1] || '';
-    const storeId = lines[3]?.split(',')[1] || '';
-    const createdAt = lines[4]?.split(',')[1] || '';
-    const period = lines[5]?.split(',')[1] || '';
-
-    const headerIndex = lines.findIndex(l => l.startsWith('#,'));
-    if (headerIndex === -1) return null;
-
-    const headerCols = parseCSVLine(lines[headerIndex]);
-    const map = detectGeneralColumnMap(headerCols);
-
-    const ads: ShopeeAdRow[] = [];
-
-    for (let i = headerIndex + 1; i < lines.length; i++) {
-      const cols = parseCSVLine(lines[i]);
-      if (cols.length < 20) continue;
-      const index = parseInt(cols[0]) || 0;
-      if (index === 0) continue;
-
-      const spend = parseBRNumber(getCol(cols, map.spend));
-      const gmv = parseBRNumber(getCol(cols, map.gmv));
-      const clicks = parseBRNumber(getCol(cols, map.clicks));
-      const itemsSold = parseBRNumber(getCol(cols, map.itemsSold));
-      const liquidReturn = gmv - spend;
-      const roi = spend > 0 ? ((gmv - spend) / spend) * 100 : 0;
-      const rentability = gmv > 0 ? ((gmv - spend) / gmv) * 100 : 0;
-
-      ads.push({
-        index,
-        adName: getCol(cols, map.adName),
-        status: getCol(cols, map.status),
-        adType: getCol(cols, map.adType),
-        productId: getCol(cols, map.productId) || '-',
-        bidMethod: getCol(cols, map.bidMethod),
-        positioning: getCol(cols, map.positioning),
-        keyword: map.keyword >= 0 ? getCol(cols, map.keyword) : '',
-        matchType: map.matchType >= 0 ? getCol(cols, map.matchType) : '',
-        impressions: parseBRNumber(getCol(cols, map.impressions)),
-        clicks,
-        ctr: parseBRNumber(getCol(cols, map.ctr)),
-        conversions: parseBRNumber(getCol(cols, map.conversions)),
-        directConversions: parseBRNumber(getCol(cols, map.directConversions)),
-        conversionRate: parseBRNumber(getCol(cols, map.conversionRate)),
-        acos: parseBRNumber(getCol(cols, map.acos)),
-        directAcos: parseBRNumber(getCol(cols, map.directAcos)),
-        costPerConv: parseBRNumber(getCol(cols, map.costPerConversion)),
-        itemsSold,
-        directItemsSold: parseBRNumber(getCol(cols, map.directItemsSold)),
-        gmv,
-        directRevenue: parseBRNumber(getCol(cols, map.directRevenue)),
-        spend,
-        roas: parseBRNumber(getCol(cols, map.roas)),
-        directRoas: parseBRNumber(getCol(cols, map.directRoas)),
-        productImpressions: parseBRNumber(getCol(cols, map.productImpressions)),
-        productClicks: parseBRNumber(getCol(cols, map.productClicks)),
-        productCtr: parseBRNumber(getCol(cols, map.productCtr)),
-        liquidReturn, roi, rentability,
-        shopeeProductId: getCol(cols, map.productId) || '-',
-        shopeeProductName: getCol(cols, map.adName),
-        periodStart: '', periodEnd: '',
-        avgPosition: null,
-        convRate: parseBRNumber(getCol(cols, map.conversionRate)),
-        cpc: clicks > 0 ? spend / clicks : 0,
-        costPerSale: itemsSold > 0 ? spend / itemsSold : 0,
-      });
-    }
-
-    const totalSpend = ads.reduce((s, a) => s + a.spend, 0);
-    const totalGmv = ads.reduce((s, a) => s + a.gmv, 0);
-    const totalItemsSold = ads.reduce((s, a) => s + a.itemsSold, 0);
-    const avgRoas = totalSpend > 0 ? totalGmv / totalSpend : 0;
-    const avgAcos = totalGmv > 0 ? (totalSpend / totalGmv) * 100 : 0;
-    const totalLiquidReturn = totalGmv - totalSpend;
-    const avgRoi = totalSpend > 0 ? ((totalGmv - totalSpend) / totalSpend) * 100 : 0;
-
-    return {
-      shopName, storeId, period, createdAt, ads,
-      totals: { totalSpend, totalGmv, totalItemsSold, avgRoas, avgAcos, totalLiquidReturn, avgRoi },
-    };
-  } catch {
-    return null;
-  }
 }

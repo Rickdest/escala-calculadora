@@ -1,12 +1,18 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Store, Product, StoreConfig, DEFAULT_STORE_CONFIG, ProductCalculation, ShopeeAceleraOption } from '@/types/store';
 import { calculateProduct as calculateProductFn, getStoreStats as getStoreStatsFn } from '@/lib/calculateProduct';
-import { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
+import { TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { uploadProductImage, deleteProductImage } from '@/lib/imageUtils';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  LOCAL_IMAGES_KEY, CURRENT_STORE_KEY,
+  getLocalImages, mapDbProduct, mapDbStore, fetchStoresAndProducts,
+  VariationRecord,
+} from '@/lib/storeMappers';
+import { useImageMigration } from '@/hooks/useImageMigration';
 
 interface StoreContextType {
   stores: Store[];
@@ -29,114 +35,10 @@ interface StoreContextType {
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
 
-const LOCAL_IMAGES_KEY = 'precify-local-images';
-const CURRENT_STORE_KEY = 'precify-current-store';
-const MIGRATION_DONE_KEY = 'precify-images-migrated';
-
-function getLocalImages(): Record<string, string> {
-  try { return JSON.parse(localStorage.getItem(LOCAL_IMAGES_KEY) || '{}'); } catch { return {}; }
-}
-
-interface VariationRecord {
-  stockQuantity?: number;
-}
-
-function mapDbProduct(p: Tables<'products'>): Product {
-  const variations = (p.variations ?? []) as unknown as Product['variations'];
-  const attributes = (p.attributes ?? []) as unknown as Product['attributes'];
-  const hasVariations = p.has_variations ?? false;
-  const stockQuantity = hasVariations && variations.length > 0
-    ? variations.reduce((sum: number, v: VariationRecord) => sum + (Number(v.stockQuantity) || 0), 0)
-    : Number(p.stock_quantity ?? 0);
-
-  const localImages = getLocalImages();
-  const imageUrl = p.image_url || localImages[p.id] || undefined;
-
-  return {
-    id: p.id,
-    storeId: p.store_id,
-    name: p.name,
-    category: p.category || undefined,
-    description: p.description || undefined,
-    costPrice: Number(p.cost_price),
-    salePrice: Number(p.sale_price),
-    packagingCost: Number(p.packaging_cost ?? 0),
-    adsCost: Number(p.ads_cost ?? 0),
-    adsRevenue: Number(p.ads_revenue ?? 0),
-    imageUrl,
-    stockQuantity,
-    minStockQuantity: Number(p.min_stock_quantity ?? 5),
-    hasVariations,
-    attributes,
-    variations,
-    shopeeAcelera: (p.shopee_acelera as ShopeeAceleraOption) ?? 'none',
-    outrosCanais: (p.outros_canais as unknown as Product['outrosCanais']) ?? undefined,
-    createdAt: new Date(p.created_at),
-    updatedAt: new Date(p.updated_at),
-  };
-}
-
-function mapDbStore(s: Tables<'stores'>, products: Product[]): Store {
-  return {
-    id: s.id,
-    name: s.name,
-    config: {
-      isCpfSeller: s.is_cpf_seller ?? false,
-      hasOver450Orders: s.has_over_450_orders ?? false,
-      taxes: Number(s.taxes ?? 0),
-      desiredMargin: Number(s.desired_margin ?? 17),
-      currency: 'BRL',
-      enablePackaging: s.enable_packaging ?? true,
-      enableAds: s.enable_ads ?? true,
-      enableAffiliateCommission: s.enable_affiliate_commission ?? false,
-      enableShopeeCampaigns: s.enable_shopee_campaigns ?? false,
-      affiliateCommission: Number(s.affiliate_commission ?? 0),
-      shopeeCampaigns: Number(s.shopee_campaigns ?? 0),
-      shopeeAcelera: (s.shopee_acelera as ShopeeAceleraOption) || 'none',
-    },
-    products: products.filter(p => p.storeId === s.id),
-    createdAt: new Date(s.created_at),
-    updatedAt: new Date(s.updated_at),
-  };
-}
-
-/** Fetches stores and products, auto-creates first store for new users */
-async function fetchStoresAndProducts(userId: string): Promise<Store[]> {
-  const [{ data: storesData, error: storesErr }, { data: productsData, error: productsErr }] = await Promise.all([
-    supabase.from('stores').select('*').eq('user_id', userId),
-    supabase.from('products').select('*').eq('user_id', userId),
-  ]);
-
-  if (storesErr) throw storesErr;
-  if (productsErr) throw productsErr;
-
-  const products = (productsData || []).map((p) => mapDbProduct(p));
-  const loaded = (storesData || []).map((s) => mapDbStore(s, products));
-
-  if (loaded.length > 0) return loaded;
-
-  // Auto-create first store for new users
-  const insertData: TablesInsert<'stores'> = {
-    name: 'Minha Loja',
-    user_id: userId,
-    taxes: DEFAULT_STORE_CONFIG.taxes,
-    desired_margin: DEFAULT_STORE_CONFIG.desiredMargin,
-    enable_packaging: DEFAULT_STORE_CONFIG.enablePackaging,
-    enable_ads: DEFAULT_STORE_CONFIG.enableAds,
-    affiliate_commission: DEFAULT_STORE_CONFIG.affiliateCommission,
-    shopee_campaigns: DEFAULT_STORE_CONFIG.shopeeCampaigns,
-  };
-  const { data, error: createErr } = await supabase.from('stores').insert(insertData).select().single();
-
-  if (createErr || !data) throw createErr || new Error('Falha ao criar loja');
-  return [mapDbStore(data, [])];
-}
-
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [currentStore, setCurrentStoreState] = useState<Store | null>(null);
-  const migrationStarted = useRef(false);
 
   const queryKey = ['stores-and-products', user?.id];
 
@@ -149,7 +51,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     queryKey,
     queryFn: () => fetchStoresAndProducts(user!.id),
     enabled: !!user,
-    staleTime: 5 * 60 * 1000, // 5 min cache
+    staleTime: 5 * 60 * 1000,
     retry: 1,
     meta: { errorMessage: 'Erro ao carregar dados da nuvem' },
   });
@@ -170,17 +72,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     const savedStoreId = localStorage.getItem(CURRENT_STORE_KEY);
 
-    // If we have a current store, sync it with fresh data
     if (currentStore) {
       const updated = stores.find(s => s.id === currentStore.id);
       if (updated) {
         setCurrentStoreState(updated);
       } else {
-        // Current store was deleted; pick first
         setCurrentStoreState(stores[0]);
       }
     } else {
-      // First load: pick saved or first
       const found = savedStoreId ? stores.find(s => s.id === savedStoreId) : null;
       setCurrentStoreState(found || stores[0]);
     }
@@ -193,50 +92,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   }, [currentStore?.id]);
 
-  // One-time migration of localStorage images to Storage
-  useEffect(() => {
-    if (!user || migrationStarted.current || localStorage.getItem(MIGRATION_DONE_KEY)) return;
-    if (stores.length === 0 || isLoading) return;
-
-    migrationStarted.current = true;
-    (async () => {
-      try {
-        const localImages = getLocalImages();
-        const productIds = Object.keys(localImages);
-        if (productIds.length === 0) {
-          localStorage.setItem(MIGRATION_DONE_KEY, '1');
-          return;
-        }
-
-        let migrated = 0;
-        for (const productId of productIds) {
-          const base64 = localImages[productId];
-          if (!base64) continue;
-          const url = await uploadProductImage(user.id, productId, base64);
-          if (url) {
-            await supabase.from('products').update({ image_url: url }).eq('id', productId).eq('user_id', user.id);
-            delete localImages[productId];
-            migrated++;
-          }
-        }
-
-        localStorage.setItem(LOCAL_IMAGES_KEY, JSON.stringify(localImages));
-        if (Object.keys(localImages).length === 0) localStorage.removeItem(LOCAL_IMAGES_KEY);
-        localStorage.setItem(MIGRATION_DONE_KEY, '1');
-
-        if (migrated > 0) {
-          toast.success(`${migrated} imagem(ns) migrada(s) para a nuvem`);
-          invalidate();
-        }
-      } catch {
-        // Silent — don't block the app
-      }
-    })();
-  }, [user?.id, stores, isLoading]);
-
   const invalidate = useCallback(() => {
     queryClient.invalidateQueries({ queryKey });
   }, [queryClient, queryKey]);
+
+  // One-time migration of localStorage images to Storage
+  useImageMigration(user, stores, isLoading, invalidate);
 
   const retryLoad = useCallback(() => { refetch(); }, [refetch]);
 
