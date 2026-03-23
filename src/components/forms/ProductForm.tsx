@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { X, Camera, Calculator, TrendingUp, TrendingDown, AlertTriangle, Save, Loader2, ChevronDown, CalendarDays, Settings2, Info, ExternalLink } from 'lucide-react';
 import { ProductAdsSection } from '@/components/forms/ProductAdsSection';
-import { Product, ShopeeAceleraOption, getShopeeFeeForPrice } from '@/types/store';
+import { Product, ShopeeAceleraOption, getShopeeFeeForPrice, OutrosCanais } from '@/types/store';
 import { useStore } from '@/contexts/StoreContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,6 +32,10 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
   const [enableAds, setEnableAds] = useState((product?.adsCost || 0) > 0);
   const [adsCostValue, setAdsCostValue] = useState(product?.adsCost?.toString() || '0');
   const [optionalCostsOpen, setOptionalCostsOpen] = useState(false);
+  const [outrosCanaisOpen, setOutrosCanaisOpen] = useState(false);
+  const [outrosCanais, setOutrosCanais] = useState<OutrosCanais>(
+    (product as any)?.outrosCanais ?? {}
+  );
   const [monthlySales, setMonthlySales] = useState(50);
 
   const formatCurrency = (value: number) =>
@@ -118,6 +122,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
         attributes: product?.attributes || [],
         variations: product?.variations || [],
         shopeeAcelera: 'none' as ShopeeAceleraOption,
+        outrosCanais: Object.keys(outrosCanais).length > 0 ? outrosCanais : undefined,
       };
       await Promise.resolve(onSave(productData));
     } catch {
@@ -371,6 +376,100 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
               </div>
             )}
           </div>
+
+          {/* Outros Canais */}
+          <Collapsible open={outrosCanaisOpen} onOpenChange={setOutrosCanaisOpen}>
+            <CollapsibleTrigger asChild>
+              <button type="button" className="w-full surface-card p-3.5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🌐</span>
+                  <span className="text-sm font-medium text-foreground">Outros canais</span>
+                  <span className="text-[10px] text-text-3">Opcional</span>
+                </div>
+                <ChevronDown className={cn("w-4 h-4 text-text-3 transition-transform duration-150", outrosCanaisOpen && "rotate-180")} />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2">
+              <div className="surface-card p-3.5 space-y-3">
+                <p className="text-[11px] text-text-3 leading-relaxed">
+                  Preencha os canais onde também vende este produto. O imposto configurado em Configurações será aplicado automaticamente.
+                </p>
+
+                {(['tiktok', 'shein', 'amazon', 'ml'] as const).map((key) => {
+                  const labels: Record<string, string> = {
+                    tiktok: 'TikTok Shop',
+                    shein: 'Shein',
+                    amazon: 'Amazon',
+                    ml: 'Mercado Livre',
+                  };
+                  const active = !!outrosCanais[key];
+                  return (
+                    <div key={key} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-foreground">{labels[key]}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (active) {
+                              const next = { ...outrosCanais };
+                              delete next[key];
+                              setOutrosCanais(next);
+                            } else {
+                              setOutrosCanais(prev => ({
+                                ...prev,
+                                [key]: {
+                                  costPrice: parseFloat(costPrice) || 0,
+                                  salePrice: parseFloat(salePrice) || 0,
+                                },
+                              }));
+                            }
+                          }}
+                          className={cn(
+                            'w-10 h-6 rounded-full transition-colors relative flex-shrink-0',
+                            active ? 'bg-primary' : 'bg-surface-2 border border-border'
+                          )}
+                        >
+                          <span className={cn(
+                            'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform',
+                            active ? 'translate-x-4' : 'translate-x-0.5'
+                          )} />
+                        </button>
+                      </div>
+
+                      {active && (
+                        <div className="grid grid-cols-2 gap-2 pl-1">
+                          <div className="space-y-1">
+                            <label className="section-label">Custo (R$)</label>
+                            <Input
+                              type="number" inputMode="decimal" step="0.01" min="0"
+                              value={outrosCanais[key]?.costPrice || ''}
+                              onChange={(e) => setOutrosCanais(prev => ({
+                                ...prev,
+                                [key]: { ...prev[key]!, costPrice: parseFloat(e.target.value) || 0 },
+                              }))}
+                              className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="section-label">Venda (R$)</label>
+                            <Input
+                              type="number" inputMode="decimal" step="0.01" min="0"
+                              value={outrosCanais[key]?.salePrice || ''}
+                              onChange={(e) => setOutrosCanais(prev => ({
+                                ...prev,
+                                [key]: { ...prev[key]!, salePrice: parseFloat(e.target.value) || 0 },
+                              }))}
+                              className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </form>
 
         {/* Footer */}
