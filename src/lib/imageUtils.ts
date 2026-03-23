@@ -96,3 +96,34 @@ export async function getProductImageUrl(
     return null;
   }
 }
+
+/** Upload estoque image to Supabase Storage */
+export async function uploadEstoqueImage(
+  userId: string,
+  productId: string,
+  dataUrl: string
+): Promise<string | null> {
+  try {
+    const compressed = await compressImage(dataUrl, 300, 0.5);
+    const res = await fetch(compressed);
+    const blob = await res.blob();
+    const path = `${userId}/estoque/${productId}.jpg`;
+    const { error } = await supabase.storage
+      .from(BUCKET)
+      .upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+    if (error) return null;
+    const { data } = await supabase.storage
+      .from(BUCKET)
+      .createSignedUrl(path, 604800);
+    return data?.signedUrl || null;
+  } catch {
+    return null;
+  }
+}
+
+/** Delete estoque image from Storage */
+export async function deleteEstoqueImage(userId: string, productId: string): Promise<void> {
+  try {
+    await supabase.storage.from(BUCKET).remove([`${userId}/estoque/${productId}.jpg`]);
+  } catch { /* silent */ }
+}

@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { compressImage } from '@/lib/imageUtils';
+import { compressImage, uploadEstoqueImage, deleteEstoqueImage } from '@/lib/imageUtils';
 
 export interface EstoqueProduto {
   id: string;
@@ -125,8 +125,14 @@ export function useEstoque() {
     if (error) { toast.error('Erro ao criar produto'); throw error; }
 
     if (data.imageDataUrl) {
-      const compressed = await compressImage(data.imageDataUrl);
-      saveLocalStockImage(prod.id, compressed);
+      const url = await uploadEstoqueImage(user.id, prod.id, data.imageDataUrl);
+      if (url) {
+        await (supabase.from('estoque_produtos' as any) as any)
+          .update({ image_url: url }).eq('id', prod.id);
+      } else {
+        const compressed = await compressImage(data.imageDataUrl);
+        saveLocalStockImage(prod.id, compressed); // fallback se upload falhar
+      }
     }
 
     if (data.variacoes.length > 0) {
@@ -161,12 +167,13 @@ export function useEstoque() {
   }, [invalidate]);
 
   const deleteProduto = useCallback(async (id: string) => {
+    if (user) await deleteEstoqueImage(user.id, id);
     const { error } = await (supabase.from('estoque_produtos' as any) as any).delete().eq('id', id);
     if (error) { toast.error('Erro ao excluir produto'); return; }
     removeLocalStockImage(id);
     invalidate();
     toast.success('Produto excluído');
-  }, [invalidate]);
+  }, [user, invalidate]);
 
   const updateVariacao = useCallback(async (id: string, data: Partial<EstoqueVariacao>) => {
     const { error } = await (supabase.from('estoque_variacoes' as any) as any).update(data).eq('id', id);
