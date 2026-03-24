@@ -250,8 +250,6 @@ function parseProductFormatCSV(csvContent: string): ParsedAdsFile | null {
       }
     }
 
-    console.log('[ShopeeParser] Position column detection:', { posCol, headerCount: headerCols.length, headers: headerCols.map((h, i) => `${i}:${h}`) });
-
     // Aggregate all data rows into one metric for this product
     let totalImpressions = 0, totalClicks = 0, totalConversions = 0;
     let totalItemsSold = 0, totalGmv = 0, totalSpend = 0;

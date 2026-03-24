@@ -67,6 +67,7 @@ export function useAdsData() {
   const { currentStore } = useStore();
   const [data, setData] = useState<EnrichedAdsData[]>([]);
   const [loading, setLoading] = useState(true);
+  const dataRef = useRef<EnrichedAdsData[]>([]);
 
   const products = currentStore?.products || [];
   const config = currentStore?.config;
