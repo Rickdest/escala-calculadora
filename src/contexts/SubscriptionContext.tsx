@@ -71,7 +71,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [user, session?.access_token]);
+  }, [user, session?.access_token, authLoading]);
 
   useEffect(() => {
     fetchSubscription();
