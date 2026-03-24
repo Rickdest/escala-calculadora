@@ -1,66 +1,82 @@
 
+## Correção do CSV Por Produto — posição não aparece
 
-## Fix: Posição não atualiza ao importar CSV de Produto
+### Diagnóstico
+O problema principal está no parser do CSV de produto.
 
-### Problema raiz
+No seu arquivo real existem **duas colunas parecidas**:
+- `Posicionamento`
+- `Posicionamento Médio`
 
-Há **2 bugs** impedindo a posição de funcionar:
+Hoje o parser procura o primeiro header que contenha `posicionamento`, então ele está pegando a coluna errada (`Posicionamento`) em vez de `Posicionamento Médio`.
 
-**Bug 1 — Import via botão principal:** Quando o CSV de produto é importado pelo botão "Importar CSV" (sem `targetAdsDataId`), o `importProductCSV` tenta encontrar o row existente por `nome_produto_csv` exato + período. Se o nome no CSV do produto difere do nome no CSV geral (ex: truncado, formato diferente), não encontra match → cria um **novo row** com posição, enquanto o row antigo continua sem. Resultado: dois rows do mesmo produto, o original sem posição.
+Resultado:
+- o parser lê o valor `Todos` em vez de `28`
+- `parseBRNumber('Todos')` vira `0`
+- `avgPosition` fica `null`
+- `posicao_media` não é salva
+- o card continua mostrando `—`
 
-**Bug 2 — Import via botão do card:** Quando clica "Importar CSV" no box de posição do card, chama `handlePositionFile` → `importProductCSV(text, positionTarget)`. Isso funciona corretamente SE o parser extrair a posição. Porém, após o update no DB, o `fetchData()` recarrega os dados mas o card pode não refletir porque `posicao_importada` depende de `hasRealPosition` que depende de `avgPos !== null`. Se o parser não encontra a coluna de posição (por variação no header), `avgPos = null` e nada muda.
+Isso explica:
+- importação automática não atualizar
+- importação manual também não atualizar
+- toast aparecer como sucesso simples, sem posição detectada
 
-### Correções
+### O que vou ajustar
 
-#### 1. `src/hooks/useAdsData.ts` — Dedup mais inteligente no `importProductCSV`
+#### 1. `src/lib/shopeeAdsParser.ts`
+Corrigir a detecção da coluna de posição para **priorizar somente o campo certo**:
+- buscar primeiro por `posicionamento médio`
+- aceitar variações como `posicionamento medio`, `avg position`, `média de posição`
+- **não usar** o header genérico `Posicionamento` como coluna de posição média
+- manter fallback por índice 20/21 apenas como segurança, não como regra principal
 
-Quando importado **sem target** (via botão principal), adicionar busca por `shopee_product_id` SEM restrição de período (o product ID é mais confiável que o nome):
-
-```typescript
-// Busca 1: por shopee_product_id (sem período)
-if (m.shopeeProductId) {
-  const byId = await supabase.from('ads_data').select('id')
-    .eq('user_id', user.id).eq('shopee_product_id', m.shopeeProductId).limit(1);
-  existingId = byId.data?.[0]?.id;
-}
-// Busca 2: por nome + período (existente)
-// Busca 3: fuzzy — normalize(nome) contains
+Também vou adicionar uma lógica mais explícita:
+```text
+1. procurar header exato de posição média
+2. se não achar, procurar aliases equivalentes
+3. só então usar fallback por índice
 ```
 
-Quando encontrar um row existente, fazer **UPDATE** com posição e métricas do product CSV em vez de criar novo row.
+#### 2. `src/hooks/useAdsData.ts`
+Melhorar o fluxo de importação do CSV de produto:
+- se `avgPosition` vier preenchido, sempre salvar `posicao_media` e `posicao_importada`
+- manter o update no row existente quando importar manualmente pelo card
+- manter a busca por `shopee_product_id` no import automático
+- trocar o toast genérico por um toast de sucesso com a posição quando detectada
+- se o CSV for do tipo produto mas não tiver posição válida, mostrar aviso mais claro para facilitar diagnóstico
 
-#### 2. `src/lib/shopeeAdsParser.ts` — Ampliar detecção da coluna de posição
+#### 3. `src/components/roas/AdsTab.tsx`
+Ajustar o banner visual pós-import:
+- só mostrar o banner “Posição detectada” quando a importação realmente retornar posição válida
+- evitar falso positivo visual quando o parser não extrair `avgPosition`
 
-O `posCol` atual busca termos normalizados. Adicionar fallback: se `posCol === -1`, tentar encontrar pelo **índice fixo** (coluna 20, 0-indexed) quando o CSV tem 21+ colunas, verificando se o header contém "posi" ou "média":
+### Resultado esperado
+Depois da correção, ao subir esse CSV:
 
-```typescript
-if (posCol === -1 && headerCols.length >= 21) {
-  // Fallback: checar coluna 20 diretamente
-  const col20 = (headerCols[20] || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  if (col20.includes('posi') || col20.includes('media') || col20.includes('medio')) {
-    posCol = 20;
-  }
-}
+```text
+Product-Ad-Data-100313224-23_02_2026-23_03_2026.csv
 ```
 
-#### 3. `src/hooks/useAdsData.ts` — Log de debug no import
+o sistema deverá:
+- identificar automaticamente que é CSV **Por Produto**
+- localizar a coluna `Posicionamento Médio`
+- extrair o valor `28`
+- salvar em `posicao_media`
+- marcar `posicao_importada = true`
+- atualizar o card para mostrar `#28`
+- destacar essa posição na área de análise
 
-Adicionar `console.log` temporário mostrando `avgPos` extraído e `existingId` encontrado para facilitar debug:
+### Arquivos envolvidos
+- `src/lib/shopeeAdsParser.ts`
+- `src/hooks/useAdsData.ts`
+- `src/components/roas/AdsTab.tsx`
 
-```typescript
-console.log('[AdsImport] Product CSV:', { avgPos, hasRealPosition, existingId, productName: m.shopeeProductName });
-```
+### Observação técnica
+Não parece ser problema do banco nem de RLS. O erro está na leitura do CSV antes de salvar.
 
-#### 4. `src/hooks/useAdsData.ts` — Garantir que update com target sempre salva posição
-
-No fluxo com `targetAdsDataId`, o update atual já salva `posicao_media` e `posicao_importada`. Mas precisa garantir que mesmo quando `avgPos === null`, o update não sobrescreva dados existentes de posição se o row já tinha posição de um import anterior. Adicionar guard:
-
-```typescript
-// Só sobrescrever posição se o novo CSV trouxer posição real
-...(hasRealPosition ? { posicao_media: avgPos, posicao_importada: true } : {}),
-```
-
-### Arquivos alterados
-- `src/hooks/useAdsData.ts` — dedup inteligente + guard de posição
-- `src/lib/shopeeAdsParser.ts` — fallback de coluna de posição
-
+### Validação após implementar
+Vou validar estes 3 cenários:
+1. importar o CSV de produto pelo botão principal
+2. importar manualmente pelo box de posição do card
+3. confirmar que o valor exibido vem de `Posicionamento Médio` e não de `Posicionamento`
