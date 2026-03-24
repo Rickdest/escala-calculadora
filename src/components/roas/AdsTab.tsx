@@ -2,6 +2,7 @@ import { useState, useMemo, useRef } from 'react';
 import { useStore } from '@/contexts/StoreContext';
 import { useAdsData, EnrichedAdsData } from '@/hooks/useAdsData';
 import { Upload, Trash2, Megaphone, MapPin } from 'lucide-react';
+import { parseShopeeAdsCSV } from '@/lib/shopeeAdsParser';
 import { AdsDetailView } from './AdsDetailView';
 import { AdsLinkModal } from './AdsLinkModal';
 import { QuickRegisterModal } from './QuickRegisterModal';
