@@ -1,52 +1,43 @@
 
 
-## 3 Corrections for Ads Detail View
+## Melhorar Filtro de Data na Aba Ads
 
-### Correction 1: "Atualizar CSV" Button in Detail Header
+### Problema Atual
+O seletor de período usa um `<select>` nativo HTML dentro da toolbar, que fica pequeno, difícil de ler e visualmente pobre — especialmente em mobile.
 
-**File: `src/components/roas/AdsDetailFullView.tsx`**
-- Add `onReimport: () => void` prop to the component
-- In the header section (line ~406, after the status badges), add an "Atualizar CSV" button with Upload icon
-- Style: `variant="outline" size="sm"` matching existing badge row
+### Solução
+Extrair o filtro de período para uma seção dedicada abaixo da toolbar, usando chips/botões estilizados (similar aos FilterChips de classificação) em vez de um dropdown nativo.
 
-**File: `src/components/roas/AdsTab.tsx`**
-- Add `onReimport` prop to `AdsDetailFullView` that:
-  1. Sets `positionTarget` to the current ad's ID
-  2. Opens the position file picker (`positionFileRef.current?.click()`)
-- In `handlePositionFile`, after successful import, reload data and reopen the detail with updated data (find the ad by ID in refreshed data)
+### Implementação
 
-### Correction 2: Swap Inverted conversoes/itens_vendidos
+**Arquivo: `src/components/roas/AdsTab.tsx`**
 
-**File: `src/lib/shopeeAdsParser.ts`**
-- In `parseGeneralFormatCSV`, after building each product's aggregated data, add validation before creating the metric:
-```typescript
-if (data.conversions > data.itemsSold && data.itemsSold > 0) {
-  const temp = data.conversions;
-  data.conversions = data.itemsSold;
-  data.itemsSold = temp;
-}
+1. Remover o `<select>` de dentro da toolbar (linhas 166-181)
+2. Adicionar uma nova seção de período logo abaixo da toolbar, antes do SummaryCards:
+
 ```
-- Same validation in `parseProductFormatCSV` after aggregation loop:
-```typescript
-if (totalConversions > totalItemsSold && totalItemsSold > 0) {
-  const temp = totalConversions;
-  totalConversions = totalItemsSold;
-  totalItemsSold = temp;
-}
+┌──────────────────────────────────────────────────────────────┐
+│ 📅 Período                                                   │
+│                                                              │
+│  [Todos]  [23/02 – 23/03]  [01/01 – 31/01]                 │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-### Correction 3: Always Show Both Cost Lines
+- Cada período é um chip/botão com estilo ativo (bg-primary, text-white) vs inativo (bg-surface-2, text-muted)
+- Mostrar ícone de Calendar no chip ativo
+- Se só tem 1 período, mostrar ele selecionado sem opção "Todos"
+- Se tem 2+, mostrar "Todos" como primeira opção
+- Formato do label: `dd/mm – dd/mm/aaaa` (incluir ano no último)
+- No mobile, chips fazem scroll horizontal com `overflow-x-auto`
 
-**File: `src/components/roas/AdsDetailFullView.tsx`**
-- Lines 200-210: Remove the conditional `ad.itens_vendidos !== (ad.conversoes || 0)` that hides "Custo por unidade"
-- Always show both lines:
-  - "Custo por pedido: R$ X,XX (N pedidos)"
-  - "Custo por unidade: R$ X,XX (N unidades · media X.X/pedido)"
-- Calculate `mediaPorPedido = ad.itens_vendidos / ad.conversoes`
-- If `mediaPorPedido > 1`, add highlight tip: "Cada pedido tem em media X.X unidades — custo real por unidade e menor."
+### Detalhes Técnicos
 
-### Files Changed
-- `src/components/roas/AdsDetailFullView.tsx` — add onReimport prop + button, fix cost card display
-- `src/components/roas/AdsTab.tsx` — pass onReimport handler, refresh detail after reimport
-- `src/lib/shopeeAdsParser.ts` — add swap validation in both parsers
+- Reusar a lógica existente de `periods` e `selectedPeriod` state
+- Trocar `formatPeriodLabel` para incluir o ano: `23/02 – 23/03/2026`
+- Estilização dos chips consistente com FilterChips (mesma linguagem visual)
+- Manter toda a lógica de filtragem por período inalterada
+
+### Arquivo Modificado
+- `src/components/roas/AdsTab.tsx` — remover select nativo, adicionar seção de chips de período
 
