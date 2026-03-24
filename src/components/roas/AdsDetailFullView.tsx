@@ -32,12 +32,12 @@ interface Props {
 function KpiCard({ label, value, sub, icon: Icon }: { label: string; value: string; sub?: string; icon: React.ElementType }) {
   return (
     <div className="p-4 rounded-xl border border-border bg-card text-center">
-      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider flex items-center justify-center gap-1">
-        <Icon className="w-3 h-3" />
+      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center justify-center gap-1">
+        <Icon className="w-3.5 h-3.5" />
         {label}
       </p>
-      <p className="text-xl font-bold mt-1 font-mono tabular-nums text-foreground">{value}</p>
-      {sub && <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>}
+      <p className="text-2xl font-bold mt-1 font-mono tabular-nums text-foreground">{value}</p>
+      {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
     </div>
   );
 }
@@ -149,21 +149,21 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         <div className="rounded-2xl border-2 border-dashed border-warning/30 bg-warning/5 p-6 space-y-4">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-warning" />
-            <span className="text-sm font-extrabold text-warning">PRODUTO NÃO VINCULADO</span>
+            <span className="text-base font-extrabold text-warning">PRODUTO NÃO VINCULADO</span>
           </div>
-          <p className="text-xs text-text-2">Vincule a um produto cadastrado para:</p>
-          <ul className="text-xs text-text-2 space-y-1.5 ml-1">
+          <p className="text-sm text-text-2">Vincule a um produto cadastrado para:</p>
+          <ul className="text-sm text-text-2 space-y-1.5 ml-1">
             <li>• Calcular ROAS Empate</li>
             <li>• Ver se é lucrativo</li>
             <li>• Receber meta ROAS ideal</li>
             <li>• Score de eficiência completo</li>
           </ul>
           <div className="flex flex-col gap-2 pt-2">
-            <Button onClick={onLink} variant="outline" className="gap-1.5 text-xs font-bold w-full">
-              <Link2 className="w-3.5 h-3.5" /> Vincular Produto
+            <Button onClick={onLink} variant="outline" className="gap-1.5 text-sm font-bold w-full">
+              <Link2 className="w-4 h-4" /> Vincular Produto
             </Button>
-            <Button onClick={onQuickRegister} className="gap-1.5 text-xs font-bold w-full">
-              <Plus className="w-3.5 h-3.5" /> Cadastro Rápido
+            <Button onClick={onQuickRegister} className="gap-1.5 text-sm font-bold w-full">
+              <Plus className="w-4 h-4" /> Cadastro Rápido
             </Button>
           </div>
         </div>
@@ -175,15 +175,15 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         {/* Card 1: Score de Eficiência (compacto) */}
         <div className="rounded-2xl border border-border bg-card p-5 space-y-3 shadow-sm">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Score</p>
-            <span className={cn('text-2xl font-extrabold font-mono tabular-nums', efficiency.color)}>
-              {efficiency.score}<span className="text-xs text-text-3 font-normal">/100</span>
+            <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Score</p>
+            <span className={cn('text-3xl font-extrabold font-mono tabular-nums', efficiency.color)}>
+              {efficiency.score}<span className="text-sm text-text-3 font-normal">/100</span>
             </span>
           </div>
-          <div className="w-full h-3 rounded-full bg-background overflow-hidden">
+          <div className="w-full h-3.5 rounded-full bg-background overflow-hidden">
             <div className={cn('h-full rounded-full transition-all', effBarColor)} style={{ width: `${efficiency.score}%` }} />
           </div>
-          <div className="grid grid-cols-2 gap-1.5 text-[10px] text-text-3 font-mono tabular-nums">
+          <div className="grid grid-cols-2 gap-1.5 text-xs text-text-3 font-mono tabular-nums">
             <span>ROAS {efficiency.breakdown.roasScore}/40</span>
             <span>CTR {efficiency.breakdown.ctrScore}/20</span>
             <span>Conv {efficiency.breakdown.convScore}/20</span>
@@ -194,10 +194,10 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         {/* Card 2: Custo vs Lucro por Venda */}
         {empateResult && ad.itens_vendidos > 0 && (
           <div className="rounded-2xl border border-border bg-card p-5 space-y-3 shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-              <Wallet className="w-3.5 h-3.5 text-primary" /> Custo vs Lucro por Venda
+            <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <Wallet className="w-4 h-4 text-primary" /> Custo vs Lucro por Venda
             </p>
-            <div className="space-y-2 text-xs font-mono tabular-nums">
+            <div className="space-y-2.5 text-sm font-mono tabular-nums">
               <div className="flex justify-between">
                 <span className="text-text-2">Custo por pedido:</span>
                 <span className="font-bold">{fmt(custoPorPedido)}</span>
@@ -205,7 +205,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
               {ad.itens_vendidos !== (ad.conversoes || 0) && ad.conversoes > 0 && (
                 <div className="flex justify-between">
                   <span className="text-text-2">Custo por unidade:</span>
-                  <span className="font-bold">{fmt(custoPorUnidade)} <span className="text-text-3 text-[10px]">({ad.itens_vendidos} un / {ad.conversoes} ped)</span></span>
+                  <span className="font-bold">{fmt(custoPorUnidade)} <span className="text-text-3 text-xs">({ad.itens_vendidos} un / {ad.conversoes} ped)</span></span>
                 </div>
               )}
               <div className="flex justify-between">
@@ -227,7 +227,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                 )}
               </div>
               {pctConsumo !== null && (
-                <p className="text-[11px] text-text-3 pt-1">O ads consome {pctConsumo.toFixed(1)}% do lucro por unidade.</p>
+                <p className="text-xs text-text-3 pt-1">O ads consome {pctConsumo.toFixed(1)}% do lucro por unidade.</p>
               )}
             </div>
           </div>
@@ -236,22 +236,22 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         {/* Card 3: Configuração e Meta ROAS */}
         {(ad.metodo_lance || metaRoas) && (
           <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">⚙️ Configuração</p>
+            <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">⚙️ Configuração</p>
 
             {ad.metodo_lance && (
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs">
+              <div className="space-y-2.5">
+                <div className="flex justify-between text-sm">
                   <span className="text-text-2">Tipo:</span>
                   <span className="font-bold text-foreground">{ad.metodo_lance}</span>
                 </div>
                 {ad.status_anuncio && (
-                  <div className="flex justify-between text-xs">
+                  <div className="flex justify-between text-sm">
                     <span className="text-text-2">Status:</span>
                     <span className="font-bold text-foreground">{ad.status_anuncio}</span>
                   </div>
                 )}
                 {isMetaRoas && (
-                  <div className="flex justify-between text-xs">
+                  <div className="flex justify-between text-sm">
                     <span className="text-text-2">Proteção:</span>
                     <span className={cn('font-bold', qualificaProtecao ? 'text-success' : 'text-warning')}>
                       {qualificaProtecao ? `✅ Ativa (${convPorDia.toFixed(1)} conv/dia)` : `⚠️ Inativa (${convPorDia.toFixed(1)} conv/dia)`}
@@ -260,10 +260,10 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                 )}
                 {isAutomatic && (
                   <div className="rounded-xl border border-warning/30 bg-warning/10 p-3 space-y-1.5">
-                    <p className="text-[11px] text-text-2">• Sem meta de ROAS definida</p>
-                    <p className="text-[11px] text-text-2">• Sem proteção</p>
+                    <p className="text-xs text-text-2">• Sem meta de ROAS definida</p>
+                    <p className="text-xs text-text-2">• Sem proteção</p>
                     {roasEmpate && (
-                      <p className={cn('text-[11px] font-bold', roasDireto >= roasEmpate ? 'text-primary' : 'text-destructive')}>
+                      <p className={cn('text-xs font-bold', roasDireto >= roasEmpate ? 'text-primary' : 'text-destructive')}>
                         {roasDireto >= roasEmpate
                           ? '💡 ROAS acima do empate. Migre para Meta de ROAS para ter controle.'
                           : '🔴 ROAS abaixo do empate e sem proteção. Pause ou migre para Meta de ROAS.'}
@@ -276,7 +276,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
 
             {metaRoas && (
               <div className="space-y-3 pt-3 border-t border-dashed border-border">
-                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Meta de ROAS Sugerida</p>
+                <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Meta de ROAS Sugerida</p>
                 <div className="grid grid-cols-3 gap-2.5">
                   {[
                     { label: 'Agressivo', value: metaRoas.agressivo, sub: '+volume' },
@@ -284,17 +284,17 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                     { label: 'Conservador', value: metaRoas.conservador, sub: '+lucro' },
                   ].map(m => (
                     <div key={m.label} className="rounded-xl border border-border bg-surface-2 p-3 text-center">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{m.label}</p>
-                      <p className="text-lg font-extrabold font-mono tabular-nums text-foreground mt-1">{m.value}</p>
-                      <p className="text-[9px] text-text-3">{m.sub}</p>
+                      <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{m.label}</p>
+                      <p className="text-xl font-extrabold font-mono tabular-nums text-foreground mt-1">{m.value}</p>
+                      <p className="text-[11px] text-text-3">{m.sub}</p>
                     </div>
                   ))}
                 </div>
-                <p className="text-[10px] text-warning flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3" /> Nunca abaixo de {roasEmpate?.toFixed(2)} (empate)
+                <p className="text-xs text-warning flex items-center gap-1">
+                  <AlertTriangle className="w-3.5 h-3.5" /> Nunca abaixo de {roasEmpate?.toFixed(2)} (empate)
                 </p>
-                <p className="text-[10px] text-text-3 flex items-start gap-1">
-                  <Info className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-text-3 flex items-start gap-1">
+                  <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                   Após alterar, aguarde 3-5 dias.
                 </p>
               </div>
@@ -305,8 +305,8 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         {/* Card 4: Orçamento Sugerido */}
         {custoConversao > 0 && (
           <div className="rounded-2xl border border-border bg-card p-5 space-y-3 shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">💵 Orçamento Sugerido</p>
-            <div className="text-xs font-mono tabular-nums space-y-2">
+            <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">💵 Orçamento Sugerido</p>
+            <div className="text-sm font-mono tabular-nums space-y-2.5">
               <div className="flex justify-between">
                 <span className="text-text-2">Custo por conversão:</span>
                 <span className="font-bold">{fmt(custoConversao)}</span>
@@ -320,7 +320,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                 <span className="font-bold">{fmt(orcamentoMinimo)}/dia</span>
               </div>
             </div>
-            <p className={cn('text-[11px] font-bold', qualificaProtecao ? 'text-success' : 'text-warning')}>
+            <p className={cn('text-xs font-bold', qualificaProtecao ? 'text-success' : 'text-warning')}>
               {qualificaProtecao
                 ? `✅ Você qualifica para proteção (${convPorDia.toFixed(1)} conv/dia)`
                 : `⚠️ Aumente budget para proteção (atual: ${convPorDia.toFixed(1)} conv/dia)`}
@@ -331,15 +331,15 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         {/* Card 5: Diagnóstico */}
         {diagnostico ? (
           <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 space-y-3 shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">🎯 Diagnóstico Completo</p>
+            <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">🎯 Diagnóstico Completo</p>
             <div className="flex items-start gap-3">
               <span className="text-2xl">{diagnostico.emoji}</span>
               <div className="space-y-1">
-                <p className="text-sm font-extrabold text-foreground">{diagnostico.titulo}</p>
-                <p className="text-xs text-text-2">{diagnostico.mensagem}</p>
+                <p className="text-base font-extrabold text-foreground">{diagnostico.titulo}</p>
+                <p className="text-sm text-text-2">{diagnostico.mensagem}</p>
               </div>
             </div>
-            <div className="space-y-1.5 text-xs pt-2">
+            <div className="space-y-2 text-sm pt-2">
               <p className={cn('flex items-center gap-1.5', roasEmpate && roasDireto >= roasEmpate ? 'text-success' : 'text-destructive')}>
                 {roasEmpate && roasDireto >= roasEmpate ? '✅' : '❌'} ROAS {roasEmpate ? `${(roasDireto / roasEmpate).toFixed(1)}x` : ''} {roasEmpate && roasDireto >= roasEmpate ? 'acima' : 'abaixo'} do empate
               </p>
@@ -357,12 +357,12 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                 {ad.taxa_conversao >= 3 ? '✅' : '⚠️'} Taxa conv. {ad.taxa_conversao.toFixed(2)}% — {ad.taxa_conversao >= 3 ? 'Bom' : 'pode melhorar'}
               </p>
             </div>
-            <p className={cn('text-xs font-bold font-mono tabular-nums pt-1', efficiency.color)}>Score: {efficiency.score}/100</p>
+            <p className={cn('text-sm font-bold font-mono tabular-nums pt-1', efficiency.color)}>Score: {efficiency.score}/100</p>
           </div>
         ) : roasEmpate && classification ? (
           <div className="rounded-2xl border border-border bg-card p-5 space-y-3 shadow-sm">
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">🎯 Diagnóstico</p>
-            <div className="space-y-1.5 text-xs">
+            <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">🎯 Diagnóstico</p>
+            <div className="space-y-2 text-sm">
               <p className={cn('flex items-center gap-1.5', roasDireto >= roasEmpate ? 'text-success' : 'text-destructive')}>
                 {roasDireto >= roasEmpate ? '✅' : '❌'} ROAS {(roasDireto / roasEmpate).toFixed(1)}x {roasDireto >= roasEmpate ? 'acima' : 'abaixo'} do empate
               </p>
@@ -380,7 +380,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                 </p>
               )}
             </div>
-            <p className={cn('text-xs font-bold font-mono tabular-nums pt-1', efficiency.color)}>Score: {efficiency.score}/100</p>
+            <p className={cn('text-sm font-bold font-mono tabular-nums pt-1', efficiency.color)}>Score: {efficiency.score}/100</p>
           </div>
         ) : null}
       </div>
@@ -401,22 +401,22 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <h2 className="text-base font-extrabold text-foreground leading-tight">{ad.nome_produto_csv}</h2>
-            <p className="text-xs text-text-3 font-mono tabular-nums mt-1">{periodLabel}</p>
+            <h2 className="text-lg font-extrabold text-foreground leading-tight">{ad.nome_produto_csv}</h2>
+            <p className="text-sm text-text-3 font-mono tabular-nums mt-1">{periodLabel}</p>
             <div className="flex items-center gap-2 flex-wrap mt-2">
               {ad.metodo_lance && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-surface-2 border border-border text-text-2">
+                <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-surface-2 border border-border text-text-2">
                   {ad.metodo_lance}
                 </span>
               )}
               {ad.status_anuncio && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-primary">
+                <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20 text-primary">
                   {ad.status_anuncio}
                 </span>
               )}
               {emAprendizado && (
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center gap-1">
-                  <Clock className="w-3 h-3" /> Fase de aprendizado
+                <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5" /> Fase de aprendizado
                 </span>
               )}
             </div>
@@ -446,12 +446,12 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
               ) : (
                 <AlertTriangle className={cn('w-5 h-5', `text-${statusColor}`)} />
               )}
-              <span className={cn('text-sm font-extrabold uppercase', `text-${statusColor}`)}>
+              <span className={cn('text-base font-extrabold uppercase', `text-${statusColor}`)}>
                 {classification.classificacao.replace('_', ' ')}
               </span>
             </div>
 
-            <div className="space-y-2 text-xs font-mono tabular-nums">
+            <div className="space-y-2.5 text-sm font-mono tabular-nums">
               <div className="flex justify-between">
                 <span className="text-text-2">ROAS Real:</span>
                 <span className={cn('font-extrabold', `text-${statusColor}`)}>{roasDireto.toFixed(2)}</span>
@@ -476,18 +476,18 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                   />
                   <div className="absolute top-0 h-full w-0.5 bg-warning/80" style={{ left: `${Math.min((roasEmpate / (roasEmpate * 2.5)) * 100, 100)}%` }} />
                 </div>
-                <div className="flex justify-between text-[9px] text-text-3">
+                <div className="flex justify-between text-xs text-text-3">
                   <span>↑ Empate</span>
                   <span>↑ Real</span>
                 </div>
               </div>
             )}
 
-            <p className="text-xs text-text-2">{classification.mensagem}</p>
+            <p className="text-sm text-text-2">{classification.mensagem}</p>
           </>
         ) : (
           <div className="space-y-3">
-            <p className="text-xs text-text-3">Dados insuficientes para classificação.</p>
+            <p className="text-sm text-text-3">Dados insuficientes para classificação.</p>
             {!product && (
               <Button onClick={onLink} variant="outline" size="sm" className="gap-1.5 text-xs">
                 <Link2 className="w-3.5 h-3.5" /> Vincular Produto
@@ -501,11 +501,11 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
       {ad.posicao_media !== null && posInfo ? (
         <div className="rounded-2xl border border-border bg-card p-6 space-y-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
               <MapPin className="w-4 h-4" />
               Posicionamento
             </h3>
-            <span className="text-3xl font-bold font-mono tabular-nums">#{ad.posicao_media}</span>
+            <span className="text-4xl font-bold font-mono tabular-nums">#{ad.posicao_media}</span>
           </div>
 
           {/* Régua visual melhorada */}
@@ -525,7 +525,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
           </div>
 
           {/* Labels das zonas */}
-          <div className="flex justify-between text-[10px] text-text-3 px-1">
+          <div className="flex justify-between text-xs text-text-3 px-1">
             <span>Top 3</span>
             <span>Pág 1</span>
             <span>Pág 2</span>
@@ -543,7 +543,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
             {posInfo.label}
           </p>
 
-          <div className="text-[11px] text-text-3 space-y-1">
+          <div className="text-sm text-text-3 space-y-1.5">
             <p className={ad.posicao_media <= 3 ? 'text-emerald-500 font-bold' : ''}>• 1-3: Topo {ad.posicao_media <= 3 ? '← VOCÊ' : ''}</p>
             <p className={ad.posicao_media > 3 && ad.posicao_media <= 8 ? 'text-blue-500 font-bold' : ''}>• 4-8: Primeira página {ad.posicao_media > 3 && ad.posicao_media <= 8 ? '← VOCÊ' : ''}</p>
             <p className={ad.posicao_media > 8 && ad.posicao_media <= 16 ? 'text-amber-500 font-bold' : ''}>• 9-16: Segunda página {ad.posicao_media > 8 && ad.posicao_media <= 16 ? '← VOCÊ' : ''}</p>
@@ -552,12 +552,12 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         </div>
       ) : (
         <div className="rounded-2xl border border-dashed border-border bg-card p-5 space-y-3 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-            <MapPin className="w-3.5 h-3.5 text-text-3" /> Posicionamento
+          <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <MapPin className="w-4 h-4 text-text-3" /> Posicionamento
           </p>
-          <p className="text-xs text-text-2">Importe o CSV individual para ver a posição nos resultados de busca.</p>
-          <Button onClick={onImportPosition} size="sm" variant="outline" className="gap-1.5 text-xs">
-            <Upload className="w-3.5 h-3.5" /> Importar CSV do Produto
+          <p className="text-sm text-text-2">Importe o CSV individual para ver a posição nos resultados de busca.</p>
+          <Button onClick={onImportPosition} size="sm" variant="outline" className="gap-1.5 text-sm">
+            <Upload className="w-4 h-4" /> Importar CSV do Produto
           </Button>
         </div>
       )}
@@ -565,10 +565,10 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
       {/* 5. ACOS vs Margem */}
       {margemContrib !== null && (
         <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">ACOS vs Margem</p>
+          <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">ACOS vs Margem</p>
           <div className="space-y-3">
             <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center justify-between text-sm">
                 <span className="text-text-2">ACOS</span>
                 <span className="font-bold font-mono tabular-nums">{acosDireto.toFixed(1)}%</span>
               </div>
@@ -580,7 +580,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
               </div>
             </div>
             <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center justify-between text-sm">
                 <span className="text-text-2">Margem</span>
                 <span className="font-bold font-mono tabular-nums">{margemContrib.toFixed(1)}%</span>
               </div>
@@ -590,7 +590,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
             </div>
           </div>
           {folgaAcosMargem !== null && (
-            <div className={cn('rounded-xl p-3 text-xs font-bold', folgaAcosMargem > 0 ? 'bg-emerald-500/10 text-success' : 'bg-red-500/10 text-destructive')}>
+            <div className={cn('rounded-xl p-3 text-sm font-bold', folgaAcosMargem > 0 ? 'bg-emerald-500/10 text-success' : 'bg-red-500/10 text-destructive')}>
               {folgaAcosMargem > 0
                 ? `Folga: ${folgaAcosMargem.toFixed(1)}% ✅ — O ads consome ${acosDireto.toFixed(1)}% do faturamento. Sua margem é ${margemContrib.toFixed(1)}%. Sobram ${folgaAcosMargem.toFixed(1)}% de lucro líquido.`
                 : `Excedente: ${folgaAcosMargem.toFixed(1)}% 🔴 — ACOS maior que margem. Cada venda via ads dá prejuízo.`}
@@ -602,15 +602,15 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
       {/* 6. Geral vs Direto */}
       {ad.roas_direto > 0 && ad.gmv_direto > 0 && ad.gmv_direto !== ad.gmv && (
         <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Geral vs Direto</p>
+          <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Geral vs Direto</p>
           <div className="overflow-x-auto">
-            <table className="w-full text-xs font-mono tabular-nums">
+            <table className="w-full text-sm font-mono tabular-nums">
               <thead>
                 <tr className="text-text-3">
-                  <th className="text-left py-1.5 font-normal text-[10px] uppercase tracking-wider"></th>
-                  <th className="text-right py-1.5 font-normal text-[10px] uppercase tracking-wider">Geral</th>
-                  <th className="text-right py-1.5 font-normal text-[10px] uppercase tracking-wider">Direto</th>
-                  <th className="text-right py-1.5 font-normal text-[10px] uppercase tracking-wider">Diferença</th>
+                  <th className="text-left py-2 font-normal text-xs uppercase tracking-wider"></th>
+                  <th className="text-right py-2 font-normal text-xs uppercase tracking-wider">Geral</th>
+                  <th className="text-right py-2 font-normal text-xs uppercase tracking-wider">Direto</th>
+                  <th className="text-right py-2 font-normal text-xs uppercase tracking-wider">Diferença</th>
                 </tr>
               </thead>
               <tbody>
@@ -644,7 +644,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
           {crossSell && (
             <div className="flex items-start gap-2.5 pt-2 border-t border-dashed border-border">
               <Info className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" />
-              <p className="text-[11px] text-text-2">{crossSell.mensagem}</p>
+              <p className="text-sm text-text-2">{crossSell.mensagem}</p>
             </div>
           )}
         </div>
@@ -653,20 +653,20 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
       {/* Halo Effect */}
       {halo && halo.isSignificant && (
         <div className="rounded-2xl border border-success/30 bg-success/5 p-5 space-y-2 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">💎 Efeito Halo — Vendas Indiretas</p>
-          <p className="text-xs text-text-2">{halo.message}</p>
+          <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">💎 Efeito Halo — Vendas Indiretas</p>
+          <p className="text-sm text-text-2">{halo.message}</p>
         </div>
       )}
 
       {/* 7. Evolução Temporal (placeholder) */}
       <div className="rounded-2xl border border-border bg-card p-5 space-y-3 shadow-sm">
-        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-          <LineChart className="w-3.5 h-3.5 text-text-3" /> Evolução Temporal
+        <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+          <LineChart className="w-4 h-4 text-text-3" /> Evolução Temporal
         </p>
         <div className="flex flex-col items-center justify-center py-8 text-center">
           <LineChart className="w-10 h-10 text-text-3 mb-3" />
-          <p className="text-sm font-bold text-text-2">Importe relatórios de períodos diferentes</p>
-          <p className="text-xs text-text-3 mt-1">para ver a evolução ao longo do tempo.</p>
+          <p className="text-base font-bold text-text-2">Importe relatórios de períodos diferentes</p>
+          <p className="text-sm text-text-3 mt-1">para ver a evolução ao longo do tempo.</p>
         </div>
       </div>
     </div>
@@ -676,7 +676,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
     <div className="animate-fade-in px-1 md:px-0">
       {/* Breadcrumb / Header */}
       <div className="flex items-center gap-3 mb-6 flex-wrap">
-        <Button variant="ghost" size="sm" onClick={onClose} className="gap-1.5 text-xs font-bold text-text-2 hover:text-foreground">
+        <Button variant="ghost" size="sm" onClick={onClose} className="gap-1.5 text-sm font-bold text-text-2 hover:text-foreground">
           <ArrowLeft className="w-4 h-4" /> Voltar para Ads
         </Button>
 
@@ -689,7 +689,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <span className="text-xs text-text-3 font-mono tabular-nums">
+          <span className="text-sm text-text-3 font-mono tabular-nums">
             {currentIndex + 1}/{allAds.length}
           </span>
           <Button
@@ -703,7 +703,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         </div>
 
         {ad.status_anuncio && (
-          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-primary hidden md:inline-flex">
+          <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20 text-primary hidden md:inline-flex">
             {ad.status_anuncio}
           </span>
         )}
