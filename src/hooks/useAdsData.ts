@@ -317,8 +317,6 @@ export function useAdsData() {
         existingId = fuzzyMatch?.id;
       }
 
-      console.log('[AdsImport] Dedup result:', { existingId, productName: m.shopeeProductName });
-
       const rowData = {
         user_id: user.id,
         product_id: matched?.id || null,
