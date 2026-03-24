@@ -10,7 +10,7 @@ export function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
     const totalSpend = data.reduce((a, d) => a + d.despesas, 0);
     const totalItems = data.reduce((a, d) => a + d.itens_vendidos, 0);
     const avgRoas = totalSpend > 0 ? totalGmv / totalSpend : 0;
-    const avgCostPerUnit = totalItems > 0 ? totalSpend / totalItems : 0;
+    const lucroEstimado = totalGmv - totalSpend;
     const linkedData = data.filter(d => !!d.product_id);
     const lucrativos = linkedData.filter(d => d.classificacao === 'LUCRATIVO').length;
     const atencao = linkedData.filter(d => d.classificacao === 'MARGEM_APERTADA' || d.classificacao === 'ABAIXO_EMPATE').length;
@@ -22,48 +22,47 @@ export function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
     });
     const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, s) => a + s.score, 0) / scores.length) : 0;
 
-    const totalGmvDireto = data.reduce((a, d) => a + (d.gmv_direto || 0), 0);
-    const haloTotal = totalGmv - totalGmvDireto;
-    const haloPct = totalGmv > 0 ? (haloTotal / totalGmv) * 100 : 0;
-
-    return { totalGmv, totalSpend, avgRoas, avgCostPerUnit, lucrativos, atencao, prejuizo, total: data.length, avgScore, haloTotal, haloPct };
+    return { totalGmv, totalSpend, avgRoas, lucroEstimado, lucrativos, atencao, prejuizo, total: data.length, avgScore };
   }, [data]);
 
   return (
     <div className="space-y-3">
+      {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
         {[
-          { label: 'GMV Total', value: fmt(s.totalGmv), color: 'text-foreground' },
-          { label: 'Gasto Total', value: fmt(s.totalSpend), color: 'text-foreground' },
-          { label: 'ROAS Médio', value: s.avgRoas.toFixed(2), color: getRoasColor(s.avgRoas) },
-          { label: 'Custo/Un', value: fmt(s.avgCostPerUnit), color: 'text-foreground' },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="rounded-lg border border-border bg-card p-3 md:p-3.5">
-            <p className="section-label">{label}</p>
+          { label: 'GMV TOTAL', value: fmt(s.totalGmv), color: 'text-foreground', sub: `${s.total} anúncios` },
+          { label: 'GASTO TOTAL', value: fmt(s.totalSpend), color: 'text-foreground', sub: 'Investido em ads' },
+          { label: 'ROAS MÉDIO', value: s.avgRoas.toFixed(2), color: getRoasColor(s.avgRoas), sub: s.avgRoas >= 3 ? '✅ Acima de 3.0' : s.avgRoas >= 1 ? '🟠 Abaixo de 3.0' : '🔴 Negativo' },
+          { label: 'LUCRO EST.', value: fmt(s.lucroEstimado), color: s.lucroEstimado >= 0 ? 'text-success' : 'text-destructive', sub: 'GMV − Gasto' },
+        ].map(({ label, value, color, sub }) => (
+          <div key={label} className="rounded-xl border border-border bg-card p-3 md:p-4">
+            <p className="text-[10px] uppercase tracking-wider font-bold text-text-3">{label}</p>
             <p className={cn('text-lg md:text-xl font-extrabold font-mono tabular-nums mt-1', color)}>{value}</p>
+            <p className="text-[11px] text-text-3 mt-0.5">{sub}</p>
           </div>
         ))}
       </div>
-      <div className="flex items-center gap-3 flex-wrap rounded-lg bg-surface-2 px-3 py-2">
-        <span className="text-[11px] font-bold text-success">✅ {s.lucrativos} lucrativos</span>
-        <span className="text-[11px] font-bold text-warning">🟠 {s.atencao} atenção</span>
-        <span className="text-[11px] font-bold text-destructive">🔴 {s.prejuizo} prejuízo</span>
-        {s.avgScore > 0 && (
-          <>
-            <span className="text-text-3">·</span>
-            <span className={cn('text-[11px] font-bold font-mono tabular-nums', s.avgScore >= 60 ? 'text-primary' : 'text-warning')}>
-              Score: {s.avgScore}/100
-            </span>
-          </>
-        )}
-        {s.haloTotal > 0 && s.haloPct < 90 && (
-          <>
-            <span className="text-text-3">·</span>
-            <span className="text-[11px] font-bold text-text-2 font-mono tabular-nums">
-              Halo: {fmt(s.haloTotal)} ({s.haloPct.toFixed(1)}%)
-            </span>
-          </>
-        )}
+
+      {/* Status mini cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <div className="rounded-xl border border-success/20 bg-success/5 p-3 text-center">
+          <p className="text-lg font-extrabold text-success">{s.lucrativos}</p>
+          <p className="text-[11px] font-bold text-success">✅ Lucrativos</p>
+        </div>
+        <div className="rounded-xl border border-warning/20 bg-warning/5 p-3 text-center">
+          <p className="text-lg font-extrabold text-warning">{s.atencao}</p>
+          <p className="text-[11px] font-bold text-warning">🟠 Atenção</p>
+        </div>
+        <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-center">
+          <p className="text-lg font-extrabold text-destructive">{s.prejuizo}</p>
+          <p className="text-[11px] font-bold text-destructive">🔴 Prejuízo</p>
+        </div>
+        <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-center">
+          <p className={cn('text-lg font-extrabold font-mono', s.avgScore >= 60 ? 'text-primary' : 'text-warning')}>
+            {s.avgScore > 0 ? `${s.avgScore}/100` : '—'}
+          </p>
+          <p className="text-[11px] font-bold text-primary">⚡ Score Médio</p>
+        </div>
       </div>
     </div>
   );

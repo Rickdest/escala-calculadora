@@ -19,6 +19,14 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
+// Sort priority map: lower = appears first
+const classOrder: Record<string, number> = {
+  'PREJUIZO': 0,
+  'ABAIXO_EMPATE': 1,
+  'MARGEM_APERTADA': 2,
+  'LUCRATIVO': 3,
+};
+
 export function AdsTab() {
   const { currentStore } = useStore();
   const { data, loading, importGeneralCSV, importProductCSV, linkProduct, reload, deleteAdsData, deleteAll } = useAdsData();
@@ -39,14 +47,19 @@ export function AdsTab() {
     else if (filter === 'ABAIXO_EMPATE') result = data.filter(d => d.classificacao === 'ABAIXO_EMPATE' || d.classificacao === 'MARGEM_APERTADA');
     else if (filter !== 'all') result = data.filter(d => d.classificacao === filter);
 
-    // Sort: products with position first, then linked, then unlinked
+    // Sort by urgency: Prejuízo → Atenção → Margem → Lucrativo → Não vinculados
     return [...result].sort((a, b) => {
-      const aPos = a.posicao_media !== null && a.posicao_media > 0 ? 1 : 0;
-      const bPos = b.posicao_media !== null && b.posicao_media > 0 ? 1 : 0;
-      if (bPos !== aPos) return bPos - aPos;
       const aLinked = a.product_id ? 1 : 0;
       const bLinked = b.product_id ? 1 : 0;
-      return bLinked - aLinked;
+      // Unlinked always last
+      if (aLinked !== bLinked) return bLinked - aLinked;
+      // Both linked: sort by classification urgency
+      if (aLinked && bLinked) {
+        const aOrder = classOrder[a.classificacao || ''] ?? 5;
+        const bOrder = classOrder[b.classificacao || ''] ?? 5;
+        return aOrder - bOrder;
+      }
+      return 0;
     });
   }, [data, filter]);
 
@@ -79,10 +92,8 @@ export function AdsTab() {
     await importProductCSV(text, targetId);
     setPositionTarget(undefined);
     if (positionFileRef.current) positionFileRef.current.value = '';
-    // If detail view is open, refresh with updated data
     if (selectedDetail && targetId) {
       await reload();
-      // The detail will auto-update via the data prop on next render
     }
   };
 
@@ -168,38 +179,31 @@ export function AdsTab() {
             </div>
           )}
 
-          {/* ═══ Summary + Filters ═══ */}
+          {/* ═══ Summary ═══ */}
           <SummaryCards data={data} />
+
+          {/* ═══ Alerts (collapsible banner) ═══ */}
+          <AlertsSection data={data} />
+
+          {/* ═══ Filters ═══ */}
           <FilterChips filter={filter} setFilter={setFilter} data={data} />
 
-          {/* ═══ Main content ═══ */}
-          <div className="lg:grid lg:grid-cols-12 lg:gap-6">
-            {/* Cards */}
-            <div className="lg:col-span-9">
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 md:gap-4">
-                {filtered.map(ad => (
-                  <AdsProductCard
-                    key={ad.id}
-                    ad={ad}
-                    onClick={() => setSelectedDetail(ad)}
-                    onLink={() => setLinkTarget(ad.id)}
-                    onQuickRegister={() => setQuickRegTarget(ad)}
-                    onUpdatePosition={() => { setPositionTarget(ad.id); positionFileRef.current?.click(); }}
-                    onDelete={() => deleteAdsData(ad.id)}
-                  />
-                ))}
-                {filtered.length === 0 && (
-                  <p className="text-center text-sm text-text-2 py-6 md:col-span-2 xl:col-span-3">Nenhum produto neste filtro</p>
-                )}
-              </div>
-            </div>
-
-            {/* Sidebar */}
-            <div className="lg:col-span-3 mt-6 lg:mt-0">
-              <div className="lg:sticky lg:top-4 space-y-6">
-                <AlertsSection data={data} />
-              </div>
-            </div>
+          {/* ═══ Product list (single column) ═══ */}
+          <div className="space-y-3">
+            {filtered.map(ad => (
+              <AdsProductCard
+                key={ad.id}
+                ad={ad}
+                onClick={() => setSelectedDetail(ad)}
+                onLink={() => setLinkTarget(ad.id)}
+                onQuickRegister={() => setQuickRegTarget(ad)}
+                onUpdatePosition={() => { setPositionTarget(ad.id); positionFileRef.current?.click(); }}
+                onDelete={() => deleteAdsData(ad.id)}
+              />
+            ))}
+            {filtered.length === 0 && (
+              <p className="text-center text-sm text-text-2 py-6">Nenhum produto neste filtro</p>
+            )}
           </div>
         </>
       )}
