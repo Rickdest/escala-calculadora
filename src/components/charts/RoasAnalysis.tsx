@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useStore } from '@/contexts/StoreContext';
 import { Product } from '@/types/store';
 import { cn } from '@/lib/utils';
