@@ -108,6 +108,7 @@ export function useAdsData() {
         return { ...row, product, classificacaoResult, roasEmpateResult };
       });
       setData(enriched);
+      dataRef.current = enriched;
     }
     setLoading(false);
   }, [user, products, config]);
