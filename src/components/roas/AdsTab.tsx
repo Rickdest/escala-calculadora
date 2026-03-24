@@ -45,17 +45,16 @@ export function AdsTab() {
     if (!file) return;
     if (!file.name.endsWith('.csv')) { toast.error('Selecione um arquivo CSV'); return; }
     const text = await file.text();
-    const lines = text.split('\n').slice(0, 15).map(l => l.toLowerCase());
-    const hasProductMeta = lines.some(l =>
-      l.includes('id do produto') || l.includes('nome do produto') || l.includes('consulta de pesquisa')
-    );
-    const hasPositionHeaders = lines.some(l =>
-      l.includes('palavra-chave/localização') || l.includes('posicionamento médio') || l.includes('posicionamento medio')
-    );
-    if (hasProductMeta || hasPositionHeaders) {
+    const parsed = parseShopeeAdsCSV(text);
+    if (!parsed) { toast.error('CSV inválido ou formato não reconhecido'); if (fileRef.current) fileRef.current.value = ''; return; }
+
+    if (parsed.format === 'product') {
       await importProductCSV(text);
-      setPositionJustImported(true);
-      setTimeout(() => setPositionJustImported(false), 8000);
+      const hasPosition = parsed.metrics.some(m => m.avgPosition !== null && m.avgPosition > 0);
+      if (hasPosition) {
+        setPositionJustImported(true);
+        setTimeout(() => setPositionJustImported(false), 8000);
+      }
     } else {
       await importGeneralCSV(text);
     }
