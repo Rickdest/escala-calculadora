@@ -8,6 +8,7 @@ import { AdsLinkModal } from './AdsLinkModal';
 import { QuickRegisterModal } from './QuickRegisterModal';
 import { toast } from 'sonner';
 import { FilterType } from './adsHelpers';
+import { cn } from '@/lib/utils';
 import { SummaryCards } from './SummaryCards';
 import { FilterChips } from './FilterChips';
 import { AdsProductCard } from './AdsProductCard';
