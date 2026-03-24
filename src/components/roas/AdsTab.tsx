@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef } from 'react';
 import { useStore } from '@/contexts/StoreContext';
 import { useAdsData, EnrichedAdsData } from '@/hooks/useAdsData';
-import { Upload, Trash2, Megaphone, MapPin } from 'lucide-react';
+import { Upload, Trash2, Megaphone, MapPin, Calendar } from 'lucide-react';
 import { parseShopeeAdsCSV } from '@/lib/shopeeAdsParser';
 import { AdsDetailFullView } from './AdsDetailFullView';
 import { AdsLinkModal } from './AdsLinkModal';
@@ -27,6 +27,11 @@ const classOrder: Record<string, number> = {
   'LUCRATIVO': 3,
 };
 
+function formatPeriodLabel(inicio: string, fim: string) {
+  const f = (d: string) => { const p = d.split('-'); return `${p[2]}/${p[1]}`; };
+  return `${f(inicio)} – ${f(fim)}`;
+}
+
 export function AdsTab() {
   const { currentStore } = useStore();
   const { data, loading, importGeneralCSV, importProductCSV, linkProduct, reload, deleteAdsData, deleteAll } = useAdsData();
@@ -34,6 +39,7 @@ export function AdsTab() {
   const [linkTarget, setLinkTarget] = useState<string | null>(null);
   const [quickRegTarget, setQuickRegTarget] = useState<EnrichedAdsData | null>(null);
   const [filter, setFilter] = useState<FilterType>('all');
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('all');
   const fileRef = useRef<HTMLInputElement>(null);
   const [positionTarget, setPositionTarget] = useState<string | undefined>();
   const positionFileRef = useRef<HTMLInputElement>(null);
@@ -41,19 +47,41 @@ export function AdsTab() {
 
   const products = currentStore?.products || [];
 
-  const filtered = useMemo(() => {
-    let result = data;
-    if (filter === 'unlinked') result = data.filter(d => !d.product_id);
-    else if (filter === 'ABAIXO_EMPATE') result = data.filter(d => d.classificacao === 'ABAIXO_EMPATE' || d.classificacao === 'MARGEM_APERTADA');
-    else if (filter !== 'all') result = data.filter(d => d.classificacao === filter);
+  // Extract unique periods
+  const periods = useMemo(() => {
+    const map = new Map<string, { inicio: string; fim: string; label: string }>();
+    data.forEach(d => {
+      if (d.periodo_inicio && d.periodo_fim) {
+        const key = `${d.periodo_inicio}|${d.periodo_fim}`;
+        if (!map.has(key)) {
+          map.set(key, {
+            inicio: d.periodo_inicio,
+            fim: d.periodo_fim,
+            label: formatPeriodLabel(d.periodo_inicio, d.periodo_fim),
+          });
+        }
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => b.inicio.localeCompare(a.inicio));
+  }, [data]);
 
-    // Sort by urgency: Prejuízo → Atenção → Margem → Lucrativo → Não vinculados
+  // Filter by period first, then by classification
+  const periodFiltered = useMemo(() => {
+    if (selectedPeriod === 'all') return data;
+    const [inicio, fim] = selectedPeriod.split('|');
+    return data.filter(d => d.periodo_inicio === inicio && d.periodo_fim === fim);
+  }, [data, selectedPeriod]);
+
+  const filtered = useMemo(() => {
+    let result = periodFiltered;
+    if (filter === 'unlinked') result = periodFiltered.filter(d => !d.product_id);
+    else if (filter === 'ABAIXO_EMPATE') result = periodFiltered.filter(d => d.classificacao === 'ABAIXO_EMPATE' || d.classificacao === 'MARGEM_APERTADA');
+    else if (filter !== 'all') result = periodFiltered.filter(d => d.classificacao === filter);
+
     return [...result].sort((a, b) => {
       const aLinked = a.product_id ? 1 : 0;
       const bLinked = b.product_id ? 1 : 0;
-      // Unlinked always last
       if (aLinked !== bLinked) return bLinked - aLinked;
-      // Both linked: sort by classification urgency
       if (aLinked && bLinked) {
         const aOrder = classOrder[a.classificacao || ''] ?? 5;
         const bOrder = classOrder[b.classificacao || ''] ?? 5;
@@ -61,7 +89,7 @@ export function AdsTab() {
       }
       return 0;
     });
-  }, [data, filter]);
+  }, [periodFiltered, filter]);
 
   const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -130,16 +158,35 @@ export function AdsTab() {
           <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-3 md:p-4">
             <div className="flex items-center gap-2">
               <Megaphone className="w-5 h-5 text-primary flex-shrink-0" />
-              <span className="text-sm font-bold text-foreground">{data.length} anúncio{data.length !== 1 ? 's' : ''}</span>
+              <span className="text-sm font-bold text-foreground">{periodFiltered.length} anúncio{periodFiltered.length !== 1 ? 's' : ''}</span>
               <span className="text-xs text-text-3 hidden md:inline">· {filtered.length} visíveis</span>
             </div>
             <div className="flex items-center gap-2">
+              {/* Period selector */}
+              {periods.length > 0 && (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-surface-2">
+                  <Calendar className="w-3.5 h-3.5 text-text-3 flex-shrink-0" />
+                  <select
+                    value={selectedPeriod}
+                    onChange={(e) => setSelectedPeriod(e.target.value)}
+                    className="bg-transparent text-xs font-medium border-none outline-none text-foreground cursor-pointer"
+                  >
+                    {periods.length > 1 && <option value="all">Todos os períodos</option>}
+                    {periods.map(p => (
+                      <option key={`${p.inicio}|${p.fim}`} value={`${p.inicio}|${p.fim}`}>
+                        {p.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <Button
                 size="sm"
                 onClick={() => fileRef.current?.click()}
                 className="gap-1.5 text-xs font-bold"
               >
-                <Upload className="w-3.5 h-3.5" /> Importar CSV
+                <Upload className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Importar CSV</span>
               </Button>
 
               <AlertDialog>
@@ -180,13 +227,13 @@ export function AdsTab() {
           )}
 
           {/* ═══ Summary ═══ */}
-          <SummaryCards data={data} />
+          <SummaryCards data={periodFiltered} />
 
           {/* ═══ Alerts (collapsible banner) ═══ */}
-          <AlertsSection data={data} />
+          <AlertsSection data={periodFiltered} />
 
           {/* ═══ Filters ═══ */}
-          <FilterChips filter={filter} setFilter={setFilter} data={data} />
+          <FilterChips filter={filter} setFilter={setFilter} data={periodFiltered} />
 
           {/* ═══ Product list (single column) ═══ */}
           <div className="space-y-3">
