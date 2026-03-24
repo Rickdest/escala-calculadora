@@ -123,14 +123,14 @@ export function useAdsData() {
       return;
     }
 
-    // Delete old general import data for the same period (rows without real position data)
     const periodStart = parsed.metrics[0].periodStart;
     const periodEnd = parsed.metrics[0].periodEnd;
-    await supabase.from('ads_data' as any).delete()
-      .eq('user_id', user.id)
-      .is('posicao_media', null)
-      .eq('periodo_inicio', periodStart)
-      .eq('periodo_fim', periodEnd);
+
+    // Fetch ALL existing ads_data for this user to check period overlap per product
+    const { data: allExisting } = await supabase.from('ads_data' as any)
+      .select('id, nome_produto_csv, shopee_product_id, periodo_inicio, periodo_fim, posicao_importada')
+      .eq('user_id', user.id);
+    const existingRows = (allExisting || []) as any[];
 
     const rows = parsed.metrics.map((m: ParsedAdMetric) => {
       const matched = findMatch(m.shopeeProductName, products);
@@ -138,7 +138,6 @@ export function useAdsData() {
       let margemContribuicao: number | null = null;
       let classificacao: string | null = null;
 
-      // Use roas as fallback when directRoas is 0
       const effectiveRoas = m.directRoas && m.directRoas > 0 ? m.directRoas : m.roas;
 
       if (matched && config) {
@@ -186,14 +185,13 @@ export function useAdsData() {
       };
     });
 
-    // Deduplicate by shopee_product_id or nome_produto_csv
+    // Deduplicate within the CSV by shopee_product_id or nome_produto_csv
     const uniqueRows = Object.values(
       rows.reduce((acc, row) => {
         const key = row.shopee_product_id || row.nome_produto_csv;
         if (!acc[key]) {
           acc[key] = row;
         } else {
-          // Sum metrics
           acc[key].impressoes += row.impressoes;
           acc[key].cliques += row.cliques;
           acc[key].itens_vendidos += row.itens_vendidos;
@@ -203,7 +201,6 @@ export function useAdsData() {
           acc[key].itens_vendidos_diretos += row.itens_vendidos_diretos;
           acc[key].conversoes += row.conversoes;
           acc[key].conversoes_diretas += row.conversoes_diretas;
-          // Recalculate derived
           acc[key].ctr = acc[key].impressoes > 0 ? (acc[key].cliques / acc[key].impressoes) * 100 : 0;
           acc[key].roas = acc[key].despesas > 0 ? acc[key].gmv / acc[key].despesas : 0;
           acc[key].acos = acc[key].gmv > 0 ? (acc[key].despesas / acc[key].gmv) * 100 : 0;
@@ -216,12 +213,40 @@ export function useAdsData() {
       }, {} as Record<string, typeof rows[0]>)
     );
 
+    // For each unique product, find overlapping existing records and delete them
+    const idsToDelete: string[] = [];
+    for (const row of uniqueRows) {
+      const matchingExisting = existingRows.filter(e => {
+        // Match by shopee_product_id or nome_produto_csv
+        const nameMatch = e.shopee_product_id && row.shopee_product_id
+          ? e.shopee_product_id === row.shopee_product_id
+          : normalize(e.nome_produto_csv) === normalize(row.nome_produto_csv);
+        if (!nameMatch) return false;
+        // Check period overlap: inicioA <= fimB && inicioB <= fimA
+        return e.periodo_inicio <= row.periodo_fim && row.periodo_inicio <= e.periodo_fim;
+      });
+      idsToDelete.push(...matchingExisting.map((e: any) => e.id));
+    }
+
+    // Delete overlapping records
+    if (idsToDelete.length > 0) {
+      const uniqueIds = [...new Set(idsToDelete)];
+      // Delete in batches of 50
+      for (let i = 0; i < uniqueIds.length; i += 50) {
+        await supabase.from('ads_data' as any).delete().in('id', uniqueIds.slice(i, i + 50));
+      }
+    }
+
     const { error } = await supabase.from('ads_data' as any).insert(uniqueRows);
     if (error) {
       toast.error('Erro ao salvar dados');
       console.error(error);
     } else {
-      toast.success(`${uniqueRows.length} produtos importados com sucesso`);
+      const updated = idsToDelete.length > 0;
+      toast.success(updated
+        ? `${uniqueRows.length} produtos atualizados com sucesso`
+        : `${uniqueRows.length} produtos importados com sucesso`
+      );
       await fetchData();
     }
   }, [user, products, config, fetchData]);
