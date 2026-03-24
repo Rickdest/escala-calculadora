@@ -355,7 +355,7 @@ export function useAdsData() {
       toast.success('Dados do produto importados com sucesso');
     }
     await fetchData();
-  }, [user, products, config, data, fetchData]);
+  }, [user, products, config, fetchData]);
 
   const linkProduct = useCallback(async (adsDataId: string, productId: string) => {
     if (!user) return;
