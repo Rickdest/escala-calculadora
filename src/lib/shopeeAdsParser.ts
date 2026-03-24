@@ -216,20 +216,25 @@ function parseProductFormatCSV(csvContent: string): ParsedAdsFile | null {
 
     const headerCols = parseCSVLine(lines[headerIndex]);
     
+    // Priority 1: exact match for "posicionamento médio" / "avg position" (NOT generic "posicionamento")
+    const normalizeHeader = (h: string) => h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
     let posCol = headerCols.findIndex(h => {
-      const hl = h.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-      return hl.includes('posicao') || hl.includes('posicionamento') || hl.includes('position')
-        || hl.includes('posicao media') || hl.includes('posicionamento medio')
-        || hl.includes('ranking') || hl.includes('avg position') || hl.includes('media de posicao');
+      const hl = normalizeHeader(h);
+      return hl.includes('posicionamento medio') || hl.includes('posicionamento médio')
+        || hl.includes('posicao media') || hl.includes('avg position')
+        || hl.includes('media de posicao') || hl.includes('média de posição')
+        || hl === 'posicao media' || hl === 'average position';
     });
 
-    // Fallback: check column 20 (0-indexed) directly for position data
+    // Priority 2: fallback by column index 20 when CSV has 21+ columns
     if (posCol === -1 && headerCols.length >= 21) {
-      const col20 = (headerCols[20] || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const col20 = normalizeHeader(headerCols[20] || '');
       if (col20.includes('posi') || col20.includes('media') || col20.includes('medio')) {
         posCol = 20;
       }
     }
+
+    console.log('[ShopeeParser] Position column detection:', { posCol, headerCount: headerCols.length, headers: headerCols.map((h, i) => `${i}:${h}`) });
 
     // Aggregate all data rows into one metric for this product
     let totalImpressions = 0, totalClicks = 0, totalConversions = 0;
