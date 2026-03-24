@@ -151,7 +151,7 @@ function detectGeneralColumnMap(headerCols: string[]): GeneralColumnMap {
       itemsSold: 21, directItemsSold: 22,
       gmv: 23, directRevenue: 24, spend: 25,
       roas: 26, directRoas: 27,
-      productImpressions: 29, productClicks: 30, productCtr: 31,
+      productImpressions: 30, productClicks: 31, productCtr: 32,
     };
   }
 
@@ -164,7 +164,7 @@ function detectGeneralColumnMap(headerCols: string[]): GeneralColumnMap {
     itemsSold: 19, directItemsSold: 20,
     gmv: 21, directRevenue: 22, spend: 23,
     roas: 24, directRoas: 25,
-    productImpressions: 27, productClicks: 28, productCtr: 29,
+    productImpressions: 28, productClicks: 29, productCtr: 30,
   };
 }
 
