@@ -26,7 +26,7 @@ const STATUS_MAP: Record<string, SubscriptionStatus> = {
 };
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
-  const { user, session } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const [status, setStatus] = useState<SubscriptionStatus>('loading');
   const [plan, setPlan] = useState('free');
   const [trialEnd, setTrialEnd] = useState<string | null>(null);
@@ -34,6 +34,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const lastKnownStatus = useRef<{ status: SubscriptionStatus; plan: string; trialEnd: string | null } | null>(null);
 
   const fetchSubscription = useCallback(async (noCache = false) => {
+    if (authLoading) return; // auth still resolving, don't decide yet
     if (!user || !session?.access_token) {
       setStatus('free');
       setPlan('free');
@@ -70,7 +71,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, [user, session?.access_token]);
+  }, [user, session?.access_token, authLoading]);
 
   useEffect(() => {
     fetchSubscription();
