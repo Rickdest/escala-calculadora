@@ -34,10 +34,20 @@ export function AdsTab() {
   const products = currentStore?.products || [];
 
   const filtered = useMemo(() => {
-    if (filter === 'all') return data;
-    if (filter === 'unlinked') return data.filter(d => !d.product_id);
-    if (filter === 'ABAIXO_EMPATE') return data.filter(d => d.classificacao === 'ABAIXO_EMPATE' || d.classificacao === 'MARGEM_APERTADA');
-    return data.filter(d => d.classificacao === filter);
+    let result = data;
+    if (filter === 'unlinked') result = data.filter(d => !d.product_id);
+    else if (filter === 'ABAIXO_EMPATE') result = data.filter(d => d.classificacao === 'ABAIXO_EMPATE' || d.classificacao === 'MARGEM_APERTADA');
+    else if (filter !== 'all') result = data.filter(d => d.classificacao === filter);
+
+    // Sort: products with position first, then linked, then unlinked
+    return [...result].sort((a, b) => {
+      const aPos = a.posicao_media !== null && a.posicao_media > 0 ? 1 : 0;
+      const bPos = b.posicao_media !== null && b.posicao_media > 0 ? 1 : 0;
+      if (bPos !== aPos) return bPos - aPos;
+      const aLinked = a.product_id ? 1 : 0;
+      const bLinked = b.product_id ? 1 : 0;
+      return bLinked - aLinked;
+    });
   }, [data, filter]);
 
   const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
