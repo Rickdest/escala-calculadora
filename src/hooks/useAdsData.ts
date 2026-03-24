@@ -254,8 +254,6 @@ export function useAdsData() {
       return { roas_empate: roasEmpate, margem_contribuicao: margemContribuicao, classificacao };
     };
 
-    console.log('[AdsImport] Product CSV:', { avgPos, hasRealPosition, targetAdsDataId, productName: m.shopeeProductName, shopeeProductId: m.shopeeProductId });
-
     if (targetAdsDataId) {
       // Get the existing row to find its product_id
       const existingRow = data.find(d => d.id === targetAdsDataId);
