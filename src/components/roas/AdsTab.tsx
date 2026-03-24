@@ -3,7 +3,7 @@ import { useStore } from '@/contexts/StoreContext';
 import { useAdsData, EnrichedAdsData } from '@/hooks/useAdsData';
 import { Upload, Trash2, Megaphone, MapPin } from 'lucide-react';
 import { parseShopeeAdsCSV } from '@/lib/shopeeAdsParser';
-import { AdsDetailView } from './AdsDetailView';
+import { AdsDetailFullView } from './AdsDetailFullView';
 import { AdsLinkModal } from './AdsLinkModal';
 import { QuickRegisterModal } from './QuickRegisterModal';
 import { toast } from 'sonner';
