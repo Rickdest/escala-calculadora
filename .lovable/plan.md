@@ -1,52 +1,52 @@
 
 
-## Ajustar Layout da Tela de Detalhe Ads
+## 3 Corrections for Ads Detail View
 
-### Resumo
-Reorganizar a ordem das secoes, mover Status de Lucratividade e Posicionamento para a coluna esquerda com destaque, mover Score para a direita, melhorar KPIs e header.
+### Correction 1: "Atualizar CSV" Button in Detail Header
 
-### Alteracoes em `src/components/roas/AdsDetailFullView.tsx`
+**File: `src/components/roas/AdsDetailFullView.tsx`**
+- Add `onReimport: () => void` prop to the component
+- In the header section (line ~406, after the status badges), add an "Atualizar CSV" button with Upload icon
+- Style: `variant="outline" size="sm"` matching existing badge row
 
-**1. Reorganizar `renderLeftColumn()`** — nova ordem:
-1. Header (ja existe, melhorar imagem nao vinculada com borda tracejada)
-2. KPIs (ja existe, adicionar `border border-border bg-card` e icones nos cards)
-3. Status de Lucratividade (MOVER da direita para ca, com fundo semaforo `bg-emerald-500/5` etc)
-4. Posicionamento (MOVER do final para ca, com regua melhorada gradiente + marcador circular)
-5. ACOS vs Margem (barras com `bg-orange-500/80` e `bg-emerald-500/80`, `h-3`)
-6. Geral vs Direto (manter)
-7. Halo Effect (manter)
-8. Evolucao Temporal placeholder (DESCER para o final)
+**File: `src/components/roas/AdsTab.tsx`**
+- Add `onReimport` prop to `AdsDetailFullView` that:
+  1. Sets `positionTarget` to the current ad's ID
+  2. Opens the position file picker (`positionFileRef.current?.click()`)
+- In `handlePositionFile`, after successful import, reload data and reopen the detail with updated data (find the ad by ID in refreshed data)
 
-**2. Reorganizar `renderRightColumn()`** — nova ordem (quando vinculado):
-1. Score de Eficiencia (MOVER da esquerda, compacto)
-2. Custo vs Lucro por Venda (manter)
-3. Configuracao + Meta ROAS (manter)
-4. Orcamento Sugerido (manter)
-5. Diagnostico checklist (manter)
+### Correction 2: Swap Inverted conversoes/itens_vendidos
 
-**3. KpiCard** — melhorar visual:
-- Adicionar `text-center`, icone centralizado com label
-- `text-[10px] uppercase tracking-wider` no label
+**File: `src/lib/shopeeAdsParser.ts`**
+- In `parseGeneralFormatCSV`, after building each product's aggregated data, add validation before creating the metric:
+```typescript
+if (data.conversions > data.itemsSold && data.itemsSold > 0) {
+  const temp = data.conversions;
+  data.conversions = data.itemsSold;
+  data.itemsSold = temp;
+}
+```
+- Same validation in `parseProductFormatCSV` after aggregation loop:
+```typescript
+if (totalConversions > totalItemsSold && totalItemsSold > 0) {
+  const temp = totalConversions;
+  totalConversions = totalItemsSold;
+  totalItemsSold = temp;
+}
+```
 
-**4. Header** — produto nao vinculado:
-- Trocar `bg-surface-2` por `border-2 border-dashed border-border` no placeholder de imagem
+### Correction 3: Always Show Both Cost Lines
 
-**5. Posicionamento melhorado:**
-- Regua com gradiente `from-emerald-500/20 via-amber-500/20 to-red-500/20`
-- Marcadores de zona tracejados em 15%, 40%, 80%
-- Labels de zona abaixo (Top 3, Pag 1, Pag 2, 17+)
-- Posicao grande `text-3xl` no header do card
-- Cores por faixa no label de classificacao
+**File: `src/components/roas/AdsDetailFullView.tsx`**
+- Lines 200-210: Remove the conditional `ad.itens_vendidos !== (ad.conversoes || 0)` that hides "Custo por unidade"
+- Always show both lines:
+  - "Custo por pedido: R$ X,XX (N pedidos)"
+  - "Custo por unidade: R$ X,XX (N unidades · media X.X/pedido)"
+- Calculate `mediaPorPedido = ad.itens_vendidos / ad.conversoes`
+- If `mediaPorPedido > 1`, add highlight tip: "Cada pedido tem em media X.X unidades — custo real por unidade e menor."
 
-**6. Mobile** — manter logica de 1 coluna mas agora:
-- Status Lucratividade ja esta na esquerda (nao precisa renderizar direita primeiro)
-- Ordem mobile: Header → KPIs → Status → Posicionamento → resto esquerda → direita
-
-**7. Espacamento:**
-- Cards: `rounded-2xl border border-border bg-card shadow-sm p-5`
-- Gap colunas: `gap-6`
-- `space-y-5` entre cards
-
-### Arquivo alterado
-- `src/components/roas/AdsDetailFullView.tsx` — reescrever completo (~700 linhas)
+### Files Changed
+- `src/components/roas/AdsDetailFullView.tsx` — add onReimport prop + button, fix cost card display
+- `src/components/roas/AdsTab.tsx` — pass onReimport handler, refresh detail after reimport
+- `src/lib/shopeeAdsParser.ts` — add swap validation in both parsers
 
