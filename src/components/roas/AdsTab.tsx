@@ -75,9 +75,15 @@ export function AdsTab() {
     const file = e.target.files?.[0];
     if (!file) return;
     const text = await file.text();
-    await importProductCSV(text, positionTarget);
+    const targetId = positionTarget;
+    await importProductCSV(text, targetId);
     setPositionTarget(undefined);
     if (positionFileRef.current) positionFileRef.current.value = '';
+    // If detail view is open, refresh with updated data
+    if (selectedDetail && targetId) {
+      await reload();
+      // The detail will auto-update via the data prop on next render
+    }
   };
 
   if (loading) {
