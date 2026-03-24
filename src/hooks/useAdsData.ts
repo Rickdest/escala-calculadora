@@ -123,10 +123,14 @@ export function useAdsData() {
       return;
     }
 
-    // Delete old general import data (rows without real position data)
+    // Delete old general import data for the same period (rows without real position data)
+    const periodStart = parsed.metrics[0].periodStart;
+    const periodEnd = parsed.metrics[0].periodEnd;
     await supabase.from('ads_data' as any).delete()
       .eq('user_id', user.id)
-      .is('posicao_media', null);
+      .is('posicao_media', null)
+      .eq('periodo_inicio', periodStart)
+      .eq('periodo_fim', periodEnd);
 
     const rows = parsed.metrics.map((m: ParsedAdMetric) => {
       const matched = findMatch(m.shopeeProductName, products);
