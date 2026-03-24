@@ -123,14 +123,14 @@ export function useAdsData() {
       return;
     }
 
-    // Delete old general import data for the same period (rows without real position data)
     const periodStart = parsed.metrics[0].periodStart;
     const periodEnd = parsed.metrics[0].periodEnd;
-    await supabase.from('ads_data' as any).delete()
-      .eq('user_id', user.id)
-      .is('posicao_media', null)
-      .eq('periodo_inicio', periodStart)
-      .eq('periodo_fim', periodEnd);
+
+    // Fetch ALL existing ads_data for this user to check period overlap per product
+    const { data: allExisting } = await supabase.from('ads_data' as any)
+      .select('id, nome_produto_csv, shopee_product_id, periodo_inicio, periodo_fim, posicao_importada')
+      .eq('user_id', user.id);
+    const existingRows = (allExisting || []) as any[];
 
     const rows = parsed.metrics.map((m: ParsedAdMetric) => {
       const matched = findMatch(m.shopeeProductName, products);
@@ -138,7 +138,6 @@ export function useAdsData() {
       let margemContribuicao: number | null = null;
       let classificacao: string | null = null;
 
-      // Use roas as fallback when directRoas is 0
       const effectiveRoas = m.directRoas && m.directRoas > 0 ? m.directRoas : m.roas;
 
       if (matched && config) {
@@ -186,14 +185,13 @@ export function useAdsData() {
       };
     });
 
-    // Deduplicate by shopee_product_id or nome_produto_csv
+    // Deduplicate within the CSV by shopee_product_id or nome_produto_csv
     const uniqueRows = Object.values(
       rows.reduce((acc, row) => {
         const key = row.shopee_product_id || row.nome_produto_csv;
         if (!acc[key]) {
           acc[key] = row;
         } else {
-          // Sum metrics
           acc[key].impressoes += row.impressoes;
           acc[key].cliques += row.cliques;
           acc[key].itens_vendidos += row.itens_vendidos;
@@ -203,7 +201,6 @@ export function useAdsData() {
           acc[key].itens_vendidos_diretos += row.itens_vendidos_diretos;
           acc[key].conversoes += row.conversoes;
           acc[key].conversoes_diretas += row.conversoes_diretas;
-          // Recalculate derived
           acc[key].ctr = acc[key].impressoes > 0 ? (acc[key].cliques / acc[key].impressoes) * 100 : 0;
           acc[key].roas = acc[key].despesas > 0 ? acc[key].gmv / acc[key].despesas : 0;
           acc[key].acos = acc[key].gmv > 0 ? (acc[key].despesas / acc[key].gmv) * 100 : 0;
@@ -216,12 +213,40 @@ export function useAdsData() {
       }, {} as Record<string, typeof rows[0]>)
     );
 
+    // For each unique product, find overlapping existing records and delete them
+    const idsToDelete: string[] = [];
+    for (const row of uniqueRows) {
+      const matchingExisting = existingRows.filter(e => {
+        // Match by shopee_product_id or nome_produto_csv
+        const nameMatch = e.shopee_product_id && row.shopee_product_id
+          ? e.shopee_product_id === row.shopee_product_id
+          : normalize(e.nome_produto_csv) === normalize(row.nome_produto_csv);
+        if (!nameMatch) return false;
+        // Check period overlap: inicioA <= fimB && inicioB <= fimA
+        return e.periodo_inicio <= row.periodo_fim && row.periodo_inicio <= e.periodo_fim;
+      });
+      idsToDelete.push(...matchingExisting.map((e: any) => e.id));
+    }
+
+    // Delete overlapping records
+    if (idsToDelete.length > 0) {
+      const uniqueIds = [...new Set(idsToDelete)];
+      // Delete in batches of 50
+      for (let i = 0; i < uniqueIds.length; i += 50) {
+        await supabase.from('ads_data' as any).delete().in('id', uniqueIds.slice(i, i + 50));
+      }
+    }
+
     const { error } = await supabase.from('ads_data' as any).insert(uniqueRows);
     if (error) {
       toast.error('Erro ao salvar dados');
       console.error(error);
     } else {
-      toast.success(`${uniqueRows.length} produtos importados com sucesso`);
+      const updated = idsToDelete.length > 0;
+      toast.success(updated
+        ? `${uniqueRows.length} produtos atualizados com sucesso`
+        : `${uniqueRows.length} produtos importados com sucesso`
+      );
       await fetchData();
     }
   }, [user, products, config, fetchData]);
@@ -266,7 +291,6 @@ export function useAdsData() {
       const derived = calcDerived(existingRow?.product_id || null);
 
       await supabase.from('ads_data' as any).update({
-        // Only overwrite position if new CSV has real position data
         ...(hasRealPosition ? { posicao_media: avgPos, posicao_importada: true } : {}),
         ...derived,
         ...(m.impressions > 0 ? {
@@ -284,44 +308,23 @@ export function useAdsData() {
       const matched = findMatch(m.shopeeProductName, products);
       const derived = calcDerived(matched?.id || null);
 
-      // Dedup: search by shopee_product_id first (most reliable, without period restriction)
-      let existingId: string | undefined;
+      // Fetch existing records for this user to find overlapping periods
+      const { data: allExisting } = await supabase.from('ads_data' as any)
+        .select('id, nome_produto_csv, shopee_product_id, periodo_inicio, periodo_fim, posicao_importada')
+        .eq('user_id', user.id);
+      const existingRows = (allExisting || []) as any[];
 
-      if (m.shopeeProductId) {
-        const byIdQuery = await supabase.from('ads_data' as any)
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('shopee_product_id', m.shopeeProductId)
-          .order('importado_em', { ascending: false })
-          .limit(1);
-        existingId = (byIdQuery.data as any[])?.[0]?.id;
-      }
-
-      // Fallback: search by name + period
-      if (!existingId) {
-        const byNameQuery = await supabase.from('ads_data' as any)
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('nome_produto_csv', m.shopeeProductName)
-          .eq('periodo_inicio', m.periodStart)
-          .eq('periodo_fim', m.periodEnd)
-          .limit(1);
-        existingId = (byNameQuery.data as any[])?.[0]?.id;
-      }
-
-      // Fallback: fuzzy match by normalized name
-      if (!existingId) {
-        const allRows = await supabase.from('ads_data' as any)
-          .select('id, nome_produto_csv, shopee_product_id')
-          .eq('user_id', user.id)
-          .limit(100);
-        const normalizedName = normalize(m.shopeeProductName);
-        const fuzzyMatch = (allRows.data as any[])?.find((r: any) => {
-          const rName = normalize(r.nome_produto_csv);
-          return rName.includes(normalizedName) || normalizedName.includes(rName);
-        });
-        existingId = fuzzyMatch?.id;
-      }
+      // Find overlapping records by product identity + period overlap
+      const overlapping = existingRows.filter(e => {
+        const nameMatch = e.shopee_product_id && m.shopeeProductId
+          ? e.shopee_product_id === m.shopeeProductId
+          : normalize(e.nome_produto_csv) === normalize(m.shopeeProductName)
+            || normalize(e.nome_produto_csv).includes(normalize(m.shopeeProductName))
+            || normalize(m.shopeeProductName).includes(normalize(e.nome_produto_csv));
+        if (!nameMatch) return false;
+        // Period overlap check: inicioA <= fimB && inicioB <= fimA
+        return e.periodo_inicio <= m.periodEnd && m.periodStart <= e.periodo_fim;
+      });
 
       const rowData = {
         user_id: user.id,
@@ -343,8 +346,25 @@ export function useAdsData() {
         ...derived,
       };
 
-      if (existingId) {
-        await supabase.from('ads_data' as any).update(rowData).eq('id', existingId);
+      if (overlapping.length > 0) {
+        // If importing position-only CSV, update existing record instead of replacing
+        if (hasRealPosition && !m.impressions) {
+          await supabase.from('ads_data' as any).update({
+            posicao_media: avgPos,
+            posicao_importada: true,
+            ...derived,
+          }).eq('id', overlapping[0].id);
+        } else {
+          // Preserve product_id from existing record if new doesn't have one
+          const existingWithProduct = overlapping.find((e: any) => e.product_id);
+          if (existingWithProduct && !rowData.product_id) {
+            rowData.product_id = existingWithProduct.product_id;
+          }
+          // Delete all overlapping and insert new
+          const idsToDelete = overlapping.map((e: any) => e.id);
+          await supabase.from('ads_data' as any).delete().in('id', idsToDelete);
+          await supabase.from('ads_data' as any).insert(rowData);
+        }
       } else {
         await supabase.from('ads_data' as any).insert(rowData);
       }
