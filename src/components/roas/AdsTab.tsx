@@ -28,8 +28,9 @@ const classOrder: Record<string, number> = {
 };
 
 function formatPeriodLabel(inicio: string, fim: string) {
-  const f = (d: string) => { const p = d.split('-'); return `${p[2]}/${p[1]}`; };
-  return `${f(inicio)} – ${f(fim)}`;
+  const fShort = (d: string) => { const p = d.split('-'); return `${p[2]}/${p[1]}`; };
+  const fFull = (d: string) => { const p = d.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
+  return `${fShort(inicio)} – ${fFull(fim)}`;
 }
 
 export function AdsTab() {
@@ -162,25 +163,6 @@ export function AdsTab() {
               <span className="text-xs text-text-3 hidden md:inline">· {filtered.length} visíveis</span>
             </div>
             <div className="flex items-center gap-2">
-              {/* Period selector */}
-              {periods.length > 0 && (
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-surface-2">
-                  <Calendar className="w-3.5 h-3.5 text-text-3 flex-shrink-0" />
-                  <select
-                    value={selectedPeriod}
-                    onChange={(e) => setSelectedPeriod(e.target.value)}
-                    className="bg-transparent text-xs font-medium border-none outline-none text-foreground cursor-pointer"
-                  >
-                    {periods.length > 1 && <option value="all">Todos os períodos</option>}
-                    {periods.map(p => (
-                      <option key={`${p.inicio}|${p.fim}`} value={`${p.inicio}|${p.fim}`}>
-                        {p.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
               <Button
                 size="sm"
                 onClick={() => fileRef.current?.click()}
@@ -212,6 +194,45 @@ export function AdsTab() {
               </AlertDialog>
             </div>
           </div>
+
+          {/* ═══ Period chips ═══ */}
+          {periods.length > 0 && (
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+              <Calendar className="w-4 h-4 text-text-3 flex-shrink-0" />
+              <span className="text-xs font-medium text-text-3 flex-shrink-0">Período</span>
+              {periods.length > 1 && (
+                <button
+                  onClick={() => setSelectedPeriod('all')}
+                  className={cn(
+                    'px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
+                    selectedPeriod === 'all'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'bg-surface-2 text-text-3 hover:text-foreground'
+                  )}
+                >
+                  Todos
+                </button>
+              )}
+              {periods.map(p => {
+                const key = `${p.inicio}|${p.fim}`;
+                const isActive = selectedPeriod === key || (periods.length === 1 && selectedPeriod === 'all');
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setSelectedPeriod(key)}
+                    className={cn(
+                      'px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap',
+                      isActive
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'bg-surface-2 text-text-3 hover:text-foreground'
+                    )}
+                  >
+                    {p.label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {/* ═══ Position banner ═══ */}
           {positionJustImported && (
