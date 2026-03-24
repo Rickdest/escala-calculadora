@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStore } from '@/contexts/StoreContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -67,6 +67,7 @@ export function useAdsData() {
   const { currentStore } = useStore();
   const [data, setData] = useState<EnrichedAdsData[]>([]);
   const [loading, setLoading] = useState(true);
+  const dataRef = useRef<EnrichedAdsData[]>([]);
 
   const products = currentStore?.products || [];
   const config = currentStore?.config;
@@ -107,6 +108,7 @@ export function useAdsData() {
         return { ...row, product, classificacaoResult, roasEmpateResult };
       });
       setData(enriched);
+      dataRef.current = enriched;
     }
     setLoading(false);
   }, [user, products, config]);
@@ -121,10 +123,14 @@ export function useAdsData() {
       return;
     }
 
-    // Delete old general import data (rows without real position data)
+    // Delete old general import data for the same period (rows without real position data)
+    const periodStart = parsed.metrics[0].periodStart;
+    const periodEnd = parsed.metrics[0].periodEnd;
     await supabase.from('ads_data' as any).delete()
       .eq('user_id', user.id)
-      .is('posicao_media', null);
+      .is('posicao_media', null)
+      .eq('periodo_inicio', periodStart)
+      .eq('periodo_fim', periodEnd);
 
     const rows = parsed.metrics.map((m: ParsedAdMetric) => {
       const matched = findMatch(m.shopeeProductName, products);
@@ -254,11 +260,9 @@ export function useAdsData() {
       return { roas_empate: roasEmpate, margem_contribuicao: margemContribuicao, classificacao };
     };
 
-    console.log('[AdsImport] Product CSV:', { avgPos, hasRealPosition, targetAdsDataId, productName: m.shopeeProductName, shopeeProductId: m.shopeeProductId });
-
     if (targetAdsDataId) {
       // Get the existing row to find its product_id
-      const existingRow = data.find(d => d.id === targetAdsDataId);
+      const existingRow = dataRef.current.find(d => d.id === targetAdsDataId);
       const derived = calcDerived(existingRow?.product_id || null);
 
       await supabase.from('ads_data' as any).update({
@@ -319,8 +323,6 @@ export function useAdsData() {
         existingId = fuzzyMatch?.id;
       }
 
-      console.log('[AdsImport] Dedup result:', { existingId, productName: m.shopeeProductName });
-
       const rowData = {
         user_id: user.id,
         product_id: matched?.id || null,
@@ -357,12 +359,12 @@ export function useAdsData() {
       toast.success('Dados do produto importados com sucesso');
     }
     await fetchData();
-  }, [user, products, config, data, fetchData]);
+  }, [user, products, config, fetchData]);
 
   const linkProduct = useCallback(async (adsDataId: string, productId: string) => {
     if (!user) return;
     const product = products.find(p => p.id === productId);
-    const row = data.find(d => d.id === adsDataId);
+    const row = dataRef.current.find(d => d.id === adsDataId);
     let roasEmpate: number | null = null;
     let margemContribuicao: number | null = null;
     let classificacao: string | null = null;
@@ -385,7 +387,7 @@ export function useAdsData() {
 
     toast.success('Produto vinculado');
     await fetchData();
-  }, [user, products, config, data, fetchData]);
+  }, [user, products, config, fetchData]);
 
   const unlinkProduct = useCallback(async (adsDataId: string) => {
     await supabase.from('ads_data' as any).update({

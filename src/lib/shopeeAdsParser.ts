@@ -57,11 +57,6 @@ export function deriveMetrics(m: ParsedAdMetric): AdMetricDerived {
 
 // ─── Helpers ───
 
-function parseNumber(val: string): number {
-  if (!val || val === '-' || val === '') return 0;
-  const cleaned = val.replace('%', '').replace(/\./g, '').replace(',', '.').trim();
-  return parseFloat(cleaned) || 0;
-}
 
 function parseBRNumber(val: string): number {
   if (!val || val === '-' || val === '') return 0;
@@ -249,8 +244,6 @@ function parseProductFormatCSV(csvContent: string): ParsedAdsFile | null {
         posCol = 20;
       }
     }
-
-    console.log('[ShopeeParser] Position column detection:', { posCol, headerCount: headerCols.length, headers: headerCols.map((h, i) => `${i}:${h}`) });
 
     // Aggregate all data rows into one metric for this product
     let totalImpressions = 0, totalClicks = 0, totalConversions = 0;
