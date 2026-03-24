@@ -25,6 +25,7 @@ interface Props {
   onImportPosition: () => void;
   onLink: () => void;
   onQuickRegister: () => void;
+  onReimport?: () => void;
 }
 
 // ═══ Small helper components ═══
@@ -44,7 +45,7 @@ function KpiCard({ label, value, sub, icon: Icon }: { label: string; value: stri
 
 // ═══ Main Component ═══
 
-export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPosition, onLink, onQuickRegister }: Props) {
+export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPosition, onLink, onQuickRegister, onReimport }: Props) {
   const { currentStore } = useStore();
   const isMobile = useIsMobile();
   const config = currentStore?.config;
@@ -200,13 +201,17 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
             <div className="space-y-2.5 text-sm font-mono tabular-nums">
               <div className="flex justify-between">
                 <span className="text-text-2">Custo por pedido:</span>
-                <span className="font-bold">{fmt(custoPorPedido)}</span>
+                <span className="font-bold">{fmt(custoPorPedido)} <span className="text-text-3 text-xs">({ad.conversoes} pedidos)</span></span>
               </div>
-              {ad.itens_vendidos !== (ad.conversoes || 0) && ad.conversoes > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-text-2">Custo por unidade:</span>
-                  <span className="font-bold">{fmt(custoPorUnidade)} <span className="text-text-3 text-xs">({ad.itens_vendidos} un / {ad.conversoes} ped)</span></span>
-                </div>
+              <div className="flex justify-between">
+                <span className="text-text-2">Custo por unidade:</span>
+                <span className="font-bold">{fmt(custoPorUnidade)} <span className="text-text-3 text-xs">({ad.itens_vendidos} un{ad.conversoes > 0 ? ` · média ${(ad.itens_vendidos / ad.conversoes).toFixed(1)}/ped` : ''})</span></span>
+              </div>
+              {ad.conversoes > 0 && ad.itens_vendidos / ad.conversoes > 1 && (
+                <p className="text-xs text-primary flex items-center gap-1">
+                  <Info className="w-3.5 h-3.5 flex-shrink-0" />
+                  Cada pedido tem em média {(ad.itens_vendidos / ad.conversoes).toFixed(1)} unidades — custo real por unidade é menor.
+                </p>
               )}
               <div className="flex justify-between">
                 <span className="text-text-2">Lucro por unidade:</span>
@@ -418,6 +423,11 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                 <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5" /> Fase de aprendizado
                 </span>
+              )}
+              {onReimport && (
+                <Button onClick={onReimport} variant="outline" size="sm" className="gap-1.5 text-xs font-bold">
+                  <Upload className="w-3.5 h-3.5" /> Atualizar CSV
+                </Button>
               )}
             </div>
           </div>

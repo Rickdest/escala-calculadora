@@ -293,6 +293,18 @@ function parseProductFormatCSV(csvContent: string): ParsedAdsFile | null {
 
     if (dataRowCount === 0) return null;
 
+    // Validate: conversions (orders) should never exceed items sold (units)
+    if (totalConversions > totalItemsSold && totalItemsSold > 0) {
+      const temp = totalConversions;
+      totalConversions = totalItemsSold;
+      totalItemsSold = temp;
+    }
+    if (totalDirectConversions > totalDirectItemsSold && totalDirectItemsSold > 0) {
+      const temp = totalDirectConversions;
+      totalDirectConversions = totalDirectItemsSold;
+      totalDirectItemsSold = temp;
+    }
+
     const period = parsePeriod(periodStr);
     const roas = totalSpend > 0 ? totalGmv / totalSpend : 0;
     const acos = totalGmv > 0 ? (totalSpend / totalGmv) * 100 : 0;
@@ -395,6 +407,7 @@ function parseGeneralFormatCSV(csvContent: string): ParsedAdsFile | null {
 
       // Aggregate per product
       const key = productIdVal !== '-' ? productIdVal : `name:${adName}`;
+      // Note: validation for conversions > itemsSold happens after aggregation
       const existing = productMap.get(key);
       if (existing) {
         existing.impressions += impressions;
@@ -423,6 +436,17 @@ function parseGeneralFormatCSV(csvContent: string): ParsedAdsFile | null {
     // Build metrics from aggregated products
     const metrics: ParsedAdMetric[] = [];
     for (const [, data] of productMap) {
+      // Validate: conversions (orders) should never exceed items sold (units)
+      if (data.conversions > data.itemsSold && data.itemsSold > 0) {
+        const temp = data.conversions;
+        data.conversions = data.itemsSold;
+        data.itemsSold = temp;
+      }
+      if (data.directConversions > data.directItemsSold && data.directItemsSold > 0) {
+        const temp = data.directConversions;
+        data.directConversions = data.directItemsSold;
+        data.directItemsSold = temp;
+      }
       const roas = data.spend > 0 ? data.gmv / data.spend : 0;
       const acos = data.gmv > 0 ? (data.spend / data.gmv) * 100 : 0;
       const ctr = data.impressions > 0 ? (data.clicks / data.impressions) * 100 : 0;
