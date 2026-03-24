@@ -258,7 +258,7 @@ export function useAdsData() {
 
     if (targetAdsDataId) {
       // Get the existing row to find its product_id
-      const existingRow = data.find(d => d.id === targetAdsDataId);
+      const existingRow = dataRef.current.find(d => d.id === targetAdsDataId);
       const derived = calcDerived(existingRow?.product_id || null);
 
       await supabase.from('ads_data' as any).update({
