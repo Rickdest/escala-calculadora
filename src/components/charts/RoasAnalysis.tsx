@@ -223,9 +223,19 @@ function ProductSelector({ products, selectedId, onSelect, config }: { products:
 function ProductAnalysis() {
   const { currentStore, updateProduct } = useStore();
   const config = currentStore?.config;
+  const isMobile = useIsMobile();
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [gastoAds, setGastoAds] = useState<string>('');
   const [receitaAds, setReceitaAds] = useState<string>('');
+  const hasAutoSelected = useRef(false);
+
+  // Auto-select first product on desktop
+  useEffect(() => {
+    if (!isMobile && !hasAutoSelected.current && !selectedProductId && currentStore?.products?.length) {
+      setSelectedProductId(currentStore.products[0].id);
+      hasAutoSelected.current = true;
+    }
+  }, [isMobile, currentStore?.products, selectedProductId]);
 
   const selectedProduct = useMemo(() => {
     if (!currentStore || !selectedProductId) return null;
