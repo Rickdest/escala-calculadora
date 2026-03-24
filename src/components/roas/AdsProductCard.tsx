@@ -24,14 +24,22 @@ function ScoreDots({ score }: { score: number }) {
   );
 }
 
-function ProgressBadge({ level }: { level: 1 | 2 | 3 }) {
+function ProgressDots({ level }: { level: 1 | 2 | 3 }) {
+  const dotColor = level === 1 ? 'bg-warning' : level === 2 ? 'bg-primary' : 'bg-success';
   return (
-    <span className={cn(
-      'inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold',
-      level === 3 ? 'bg-success/10 text-success' : 'bg-surface-2 text-text-3'
-    )}>
-      {level}/3{level === 3 && ' ✓'}
-    </span>
+    <div className="flex items-center gap-1.5">
+      {[1, 2, 3].map(i => (
+        <div
+          key={i}
+          className={cn(
+            'w-2 h-2 rounded-full transition-colors',
+            i <= level ? dotColor : 'bg-surface-2'
+          )}
+        />
+      ))}
+      <span className="text-[10px] font-bold text-text-3 ml-0.5">{level}/3</span>
+      {level === 3 && <span className="text-[10px]">✓</span>}
+    </div>
   );
 }
 
@@ -50,18 +58,19 @@ export function AdsProductCard({
     return `${f(ad.periodo_inicio)} – ${f(ad.periodo_fim)}`;
   })();
 
-  // Use roas as fallback when roas_direto is 0
   const roasDireto = ad.roas_direto && ad.roas_direto > 0 ? ad.roas_direto : ad.roas;
   const dias = getDiasPeriodo(ad.periodo_inicio, ad.periodo_fim);
   const emAprendizado = dias < 7;
   const isLinked = !!ad.product_id;
   const hasPosition = ad.posicao_importada && ad.posicao_media !== null && ad.posicao_media > 0;
+
+  // product_id is the PRIMARY criterion for level
   const level: 1 | 2 | 3 = !isLinked ? 1 : hasPosition ? 3 : 2;
 
-  const cls = getClassCor(ad.classificacao);
+  const cls = getClassCor(isLinked ? ad.classificacao : null);
   const ClsIcon = cls.icon;
 
-  // Only show efficiency score when product is linked
+  // Only compute efficiency when linked
   const efficiency = useMemo(() =>
     isLinked ? calcAdEfficiencyScore(roasDireto, ad.roas_empate, ad.ctr, ad.taxa_conversao, ad.posicao_media) : null,
     [roasDireto, ad.roas_empate, ad.ctr, ad.taxa_conversao, ad.posicao_media, isLinked]
@@ -80,15 +89,13 @@ export function AdsProductCard({
 
   const posInfo = ad.posicao_media !== null ? classificarPosicao(ad.posicao_media) : null;
 
-  // Determine classification badge for linked products
   const hasClassification = isLinked && ad.classificacao;
-  const classificationPending = isLinked && !ad.classificacao;
 
-  // ═══ STATE 1: Unlinked ═══
+  // ═══ STATE 1: Unlinked (even if has position) ═══
   if (!isLinked) {
     return (
       <div
-        className="rounded-xl border-2 border-dashed border-warning/30 bg-warning/5 p-4 space-y-3 cursor-pointer hover:border-warning/50 transition-colors active:scale-[0.99]"
+        className="rounded-xl border-2 border-dashed border-warning/30 bg-warning/5 p-4 space-y-3 cursor-pointer hover:border-warning/50 transition-colors active:scale-[0.99] relative"
         onClick={onClick}
       >
         <div className="flex items-start gap-3">
@@ -106,10 +113,9 @@ export function AdsProductCard({
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
-          <ProgressBadge level={1} />
         </div>
 
-        {/* Basic metrics in one line */}
+        {/* Basic metrics */}
         <div className="text-[11px] text-text-2 font-mono tabular-nums flex items-center gap-2 flex-wrap">
           <span className={cn('font-bold', getRoasColor(roasDireto))}>ROAS {roasDireto.toFixed(2)}</span>
           <span className="text-text-3">·</span>
@@ -119,6 +125,16 @@ export function AdsProductCard({
           <span className="text-text-3">·</span>
           <span>GMV {fmt(ad.gmv)}</span>
         </div>
+
+        {/* Show position as extra info if available but unlinked */}
+        {hasPosition && (
+          <div className="text-[11px] text-text-2 font-mono tabular-nums flex items-center gap-1.5">
+            <MapPin className="w-3 h-3 text-primary" />
+            <span>Posição #{ad.posicao_media}</span>
+            <span className="text-text-3">·</span>
+            <span className="text-[10px] text-text-3">{posInfo?.label}</span>
+          </div>
+        )}
 
         {/* Action buttons */}
         <div className="flex gap-2" onClick={e => e.stopPropagation()}>
@@ -137,8 +153,13 @@ export function AdsProductCard({
         </div>
 
         <p className="text-[10px] text-warning font-bold">
-          ⚠️ Vincule para desbloquear análise completa
+          ⚠️ Vincule um produto para desbloquear classificação e score
         </p>
+
+        {/* Progress dots bottom-right */}
+        <div className="absolute bottom-3 right-3">
+          <ProgressDots level={1} />
+        </div>
       </div>
     );
   }
@@ -150,7 +171,7 @@ export function AdsProductCard({
 
   return (
     <div
-      className={cn('rounded-xl border p-4 space-y-3 cursor-pointer hover:border-primary/30 transition-colors active:scale-[0.99]', borderClass)}
+      className={cn('rounded-xl border p-4 space-y-3 cursor-pointer hover:border-primary/30 transition-colors active:scale-[0.99] relative', borderClass)}
       onClick={onClick}
     >
       {/* Row 1: Product info + Score */}
@@ -169,11 +190,11 @@ export function AdsProductCard({
               <span className={cn('inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[10px] font-bold', cls.bg, cls.color)}>
                 <ClsIcon className="w-3 h-3" /> {cls.label}
               </span>
-            ) : classificationPending ? (
+            ) : (
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-border bg-surface-2 text-[10px] font-bold text-text-3">
-                <HelpCircle className="w-3 h-3" /> Classificação pendente
+                <HelpCircle className="w-3 h-3" /> Pendente
               </span>
-            ) : null}
+            )}
             {emAprendizado && (
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-primary/30 bg-primary/10 text-[10px] font-bold text-primary">
                 <Clock className="w-3 h-3" /> Aprendizado
@@ -183,7 +204,7 @@ export function AdsProductCard({
           </div>
         </div>
         <div className="text-right flex-shrink-0 space-y-1">
-          {efficiency && (
+          {efficiency && hasClassification && (
             <>
               <p className={cn('text-lg font-extrabold font-mono tabular-nums', efficiency.color)}>
                 {efficiency.score}<span className="text-[10px] text-text-3 font-normal">/100</span>
@@ -194,11 +215,10 @@ export function AdsProductCard({
         </div>
       </div>
 
-      {/* Row 2: 3 KPI boxes — Position first when available */}
+      {/* Row 2: 3 KPI boxes */}
       <div className="grid grid-cols-3 gap-2">
         {hasPosition ? (
           <>
-            {/* POSIÇÃO primeiro quando disponível */}
             <div className={cn(
               'rounded-lg border-2 p-2.5 text-center relative overflow-hidden ring-2',
               posInfo?.classe === 'TOPO' ? 'border-success/40 bg-success/10 ring-success/20' :
@@ -233,7 +253,6 @@ export function AdsProductCard({
               </p>
             </div>
 
-            {/* ROAS */}
             <div className="rounded-lg border border-border bg-surface-2 p-2.5 text-center">
               <p className="section-label">ROAS</p>
               <p className={cn('text-lg font-extrabold font-mono tabular-nums mt-0.5', getRoasColor(roasDireto))}>
@@ -248,7 +267,6 @@ export function AdsProductCard({
           </>
         ) : (
           <>
-            {/* ROAS primeiro quando sem posição */}
             <div className="rounded-lg border border-border bg-surface-2 p-2.5 text-center">
               <p className="section-label">ROAS</p>
               <p className={cn('text-lg font-extrabold font-mono tabular-nums mt-0.5', getRoasColor(roasDireto))}>
@@ -261,7 +279,6 @@ export function AdsProductCard({
               )}
             </div>
 
-            {/* Posição vazia — botão importar */}
             <div
               className="rounded-lg border-2 border-dashed border-primary/40 bg-primary/5 p-2.5 text-center cursor-pointer hover:bg-primary/15 hover:border-primary/60 transition-all group"
               onClick={(e) => { e.stopPropagation(); onUpdatePosition(); }}
@@ -277,7 +294,6 @@ export function AdsProductCard({
           </>
         )}
 
-        {/* Custo/Unidade */}
         <div className="rounded-lg border border-border bg-surface-2 p-2.5 text-center">
           <p className="section-label">Custo/Un</p>
           {costAlert ? (
@@ -300,7 +316,7 @@ export function AdsProductCard({
         </div>
       </div>
 
-      {/* Row 3: Key metrics line */}
+      {/* Row 3: Key metrics */}
       <div className="text-[11px] text-text-2 font-mono tabular-nums flex items-center gap-2 flex-wrap">
         <span>{ad.itens_vendidos} un</span>
         <span className="text-text-3">·</span>
@@ -309,23 +325,23 @@ export function AdsProductCard({
         <span>GMV {fmt(ad.gmv)}</span>
       </div>
 
-      {/* Row 4: Halo effect */}
+      {/* Halo effect */}
       {halo && (
         <p className={cn('text-[11px] font-mono tabular-nums', halo.isSignificant ? 'text-primary font-bold' : 'text-text-3')}>
           {halo.isSignificant ? '🔗 ' : ''}+{fmt(halo.haloGmv)} em vendas indiretas ({halo.haloPct.toFixed(1)}%)
         </p>
       )}
 
-      {/* Diagnostic line for complete cards */}
-      {level === 3 && ad.classificacao && (
+      {/* Diagnostic for complete cards */}
+      {level === 3 && hasClassification && (
         <p className={cn('text-[11px] font-bold', cls.color)}>
           {ad.classificacao === 'LUCRATIVO' ? '🚀' : '⚠️'} {cls.label}
           {ad.roas_empate ? ` · Meta: ${ad.roas_empate.toFixed(1)}` : ''}
         </p>
       )}
 
-      {/* Row 5: ROAS bar */}
-      {ad.roas_empate && ad.roas_empate > 0 && roasDireto > 0 && (
+      {/* ROAS bar — only when linked with classification data */}
+      {isLinked && ad.roas_empate && ad.roas_empate > 0 && roasDireto > 0 && (
         <div className="w-full h-2.5 rounded-full bg-surface-2 overflow-hidden">
           <div
             className={cn('h-full rounded-full transition-all',
@@ -336,7 +352,7 @@ export function AdsProductCard({
         </div>
       )}
 
-      {/* Delete + Progress badge */}
+      {/* Delete + Progress dots */}
       <div className="flex items-center justify-end gap-2">
         <button
           onClick={(e) => { e.stopPropagation(); onDelete(); }}
@@ -345,7 +361,7 @@ export function AdsProductCard({
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
-        <ProgressBadge level={level} />
+        <ProgressDots level={level} />
       </div>
     </div>
   );

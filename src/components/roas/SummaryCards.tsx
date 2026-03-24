@@ -11,11 +11,11 @@ export function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
     const totalItems = data.reduce((a, d) => a + d.itens_vendidos, 0);
     const avgRoas = totalSpend > 0 ? totalGmv / totalSpend : 0;
     const avgCostPerUnit = totalItems > 0 ? totalSpend / totalItems : 0;
-    const lucrativos = data.filter(d => d.classificacao === 'LUCRATIVO').length;
-    const atencao = data.filter(d => d.classificacao === 'MARGEM_APERTADA' || d.classificacao === 'ABAIXO_EMPATE').length;
-    const prejuizo = data.filter(d => d.classificacao === 'PREJUIZO').length;
-
     const linkedData = data.filter(d => !!d.product_id);
+    const lucrativos = linkedData.filter(d => d.classificacao === 'LUCRATIVO').length;
+    const atencao = linkedData.filter(d => d.classificacao === 'MARGEM_APERTADA' || d.classificacao === 'ABAIXO_EMPATE').length;
+    const prejuizo = linkedData.filter(d => d.classificacao === 'PREJUIZO').length;
+
     const scores = linkedData.map(d => {
       const rd = d.roas_direto && d.roas_direto > 0 ? d.roas_direto : d.roas;
       return calcAdEfficiencyScore(rd, d.roas_empate, d.ctr, d.taxa_conversao, d.posicao_media);
