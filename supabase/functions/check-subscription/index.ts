@@ -4,13 +4,14 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const ALLOWED_ORIGINS = [
   Deno.env.get("ALLOWED_ORIGIN") || "https://escala-calculadora.lovable.app",
   "https://id-preview--663ad348-e18a-4674-a7c5-186feeae7832.lovable.app",
+  "https://app.richardaragao.com.br",
 ];
 
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get("Origin") || req.headers.get("Referer") || "";
   const allowed = ALLOWED_ORIGINS.find((o) => origin.startsWith(o)) ||
     // Allow any *.lovableproject.com or *.lovable.app preview
-    (/\.lovableproject\.com$|\.lovable\.app$/.test(new URL(origin || "https://x.com").hostname)
+    (/\.lovableproject\.com$|\.lovable\.app$|\.richardaragao\.com\.br$/.test(new URL(origin || "https://x.com").hostname)
       ? origin
       : ALLOWED_ORIGINS[0]);
 
