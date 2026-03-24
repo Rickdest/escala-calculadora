@@ -383,7 +383,7 @@ export function useAdsData() {
 
     toast.success('Produto vinculado');
     await fetchData();
-  }, [user, products, config, data, fetchData]);
+  }, [user, products, config, fetchData]);
 
   const unlinkProduct = useCallback(async (adsDataId: string) => {
     await supabase.from('ads_data' as any).update({
