@@ -291,7 +291,6 @@ export function useAdsData() {
       const derived = calcDerived(existingRow?.product_id || null);
 
       await supabase.from('ads_data' as any).update({
-        // Only overwrite position if new CSV has real position data
         ...(hasRealPosition ? { posicao_media: avgPos, posicao_importada: true } : {}),
         ...derived,
         ...(m.impressions > 0 ? {
@@ -309,44 +308,23 @@ export function useAdsData() {
       const matched = findMatch(m.shopeeProductName, products);
       const derived = calcDerived(matched?.id || null);
 
-      // Dedup: search by shopee_product_id first (most reliable, without period restriction)
-      let existingId: string | undefined;
+      // Fetch existing records for this user to find overlapping periods
+      const { data: allExisting } = await supabase.from('ads_data' as any)
+        .select('id, nome_produto_csv, shopee_product_id, periodo_inicio, periodo_fim, posicao_importada')
+        .eq('user_id', user.id);
+      const existingRows = (allExisting || []) as any[];
 
-      if (m.shopeeProductId) {
-        const byIdQuery = await supabase.from('ads_data' as any)
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('shopee_product_id', m.shopeeProductId)
-          .order('importado_em', { ascending: false })
-          .limit(1);
-        existingId = (byIdQuery.data as any[])?.[0]?.id;
-      }
-
-      // Fallback: search by name + period
-      if (!existingId) {
-        const byNameQuery = await supabase.from('ads_data' as any)
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('nome_produto_csv', m.shopeeProductName)
-          .eq('periodo_inicio', m.periodStart)
-          .eq('periodo_fim', m.periodEnd)
-          .limit(1);
-        existingId = (byNameQuery.data as any[])?.[0]?.id;
-      }
-
-      // Fallback: fuzzy match by normalized name
-      if (!existingId) {
-        const allRows = await supabase.from('ads_data' as any)
-          .select('id, nome_produto_csv, shopee_product_id')
-          .eq('user_id', user.id)
-          .limit(100);
-        const normalizedName = normalize(m.shopeeProductName);
-        const fuzzyMatch = (allRows.data as any[])?.find((r: any) => {
-          const rName = normalize(r.nome_produto_csv);
-          return rName.includes(normalizedName) || normalizedName.includes(rName);
-        });
-        existingId = fuzzyMatch?.id;
-      }
+      // Find overlapping records by product identity + period overlap
+      const overlapping = existingRows.filter(e => {
+        const nameMatch = e.shopee_product_id && m.shopeeProductId
+          ? e.shopee_product_id === m.shopeeProductId
+          : normalize(e.nome_produto_csv) === normalize(m.shopeeProductName)
+            || normalize(e.nome_produto_csv).includes(normalize(m.shopeeProductName))
+            || normalize(m.shopeeProductName).includes(normalize(e.nome_produto_csv));
+        if (!nameMatch) return false;
+        // Period overlap check: inicioA <= fimB && inicioB <= fimA
+        return e.periodo_inicio <= m.periodEnd && m.periodStart <= e.periodo_fim;
+      });
 
       const rowData = {
         user_id: user.id,
@@ -368,8 +346,25 @@ export function useAdsData() {
         ...derived,
       };
 
-      if (existingId) {
-        await supabase.from('ads_data' as any).update(rowData).eq('id', existingId);
+      if (overlapping.length > 0) {
+        // If importing position-only CSV, update existing record instead of replacing
+        if (hasRealPosition && !m.impressions) {
+          await supabase.from('ads_data' as any).update({
+            posicao_media: avgPos,
+            posicao_importada: true,
+            ...derived,
+          }).eq('id', overlapping[0].id);
+        } else {
+          // Preserve product_id from existing record if new doesn't have one
+          const existingWithProduct = overlapping.find((e: any) => e.product_id);
+          if (existingWithProduct && !rowData.product_id) {
+            rowData.product_id = existingWithProduct.product_id;
+          }
+          // Delete all overlapping and insert new
+          const idsToDelete = overlapping.map((e: any) => e.id);
+          await supabase.from('ads_data' as any).delete().in('id', idsToDelete);
+          await supabase.from('ads_data' as any).insert(rowData);
+        }
       } else {
         await supabase.from('ads_data' as any).insert(rowData);
       }
