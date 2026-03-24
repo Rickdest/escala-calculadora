@@ -360,7 +360,7 @@ export function useAdsData() {
   const linkProduct = useCallback(async (adsDataId: string, productId: string) => {
     if (!user) return;
     const product = products.find(p => p.id === productId);
-    const row = data.find(d => d.id === adsDataId);
+    const row = dataRef.current.find(d => d.id === adsDataId);
     let roasEmpate: number | null = null;
     let margemContribuicao: number | null = null;
     let classificacao: string | null = null;
