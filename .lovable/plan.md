@@ -1,54 +1,49 @@
 
 
-## Fix: CSV Geral importa apenas 1 produto
+## Fix: Erro ao salvar CSV Geral — mapeamento de colunas errado
 
 ### Diagnóstico
 
-O CSV que você subiu é do formato **Geral** (10 produtos, um por linha). Porém o sistema está classificando errado como "CSV Por Produto" por causa desta detecção no `AdsTab.tsx`:
+O erro do banco é: `invalid input syntax for type integer: "9.27"`. O campo `impressoes_produto` (integer) está recebendo o valor de **ACOS Direto** (percentual como 9.27%) porque os índices de coluna estão errados em `detectGeneralColumnMap`.
 
-```typescript
-const hasPositionHeaders = lines.some(l =>
-  l.includes('palavra-chave/localização') || ...
-);
-```
+Comparando o CSV real com o mapa atual:
 
-O header do seu CSV Geral contém `Palavra-chave/Localização` (coluna 8), então `hasPositionHeaders = true` → chama `importProductCSV()` em vez de `importGeneralCSV()`.
+**CSV com Palavra-chave (33 colunas):**
+- Coluna 29 = "ACOS Direto" (percentual)
+- Coluna 30 = "Impressões do Produto" (inteiro)
+- Mapa atual diz `productImpressions: 29` — ERRADO, deveria ser 30
 
-`importProductCSV` só processa `parsed.metrics[0]` (1 produto). Por isso só aparece 1 registro.
+**CSV sem Palavra-chave (31 colunas):**
+- Coluna 27 = "ACOS Direto" (percentual)
+- Coluna 28 = "Impressões do Produto" (inteiro)
+- Mapa atual diz `productImpressions: 27` — ERRADO, deveria ser 28
+
+### Sobre os 2 arquivos CSV
+
+Ambos são "formato geral" e funcionam. A diferença:
+- **Dados Gerais** (sem palavra-chave): 31 colunas, mais limpo
+- **Palavra-chave/Localização**: 33 colunas, tem detalhes de keyword
+
+Ambos serão suportados. O sistema já agrega por produto, então o resultado final é o mesmo.
 
 ### Correção
 
-#### `src/components/roas/AdsTab.tsx` — Corrigir detecção de formato
+**`src/lib/shopeeAdsParser.ts`** — Corrigir os 3 índices em ambos os mapas:
 
-Remover `palavra-chave/localização` do check `hasPositionHeaders`. Essa coluna existe nos dois formatos. O que diferencia o CSV de Produto é:
-- Metadata com `nome do produto` / `id do produto`
-- Header com `posicionamento médio`
-- Header com `consulta de pesquisa`
-
-Mas `palavra-chave/localização` aparece no Geral também.
-
-A lógica corrigida confia no parser (`parseShopeeAdsCSV`) que já tem `isProductFormat()` e retorna `format: 'general'` ou `format: 'product'`. Em vez de tentar detectar o formato no `AdsTab`, passar o texto para o parser e usar o resultado:
-
-```typescript
-const handleFileImport = async (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-  const text = await file.text();
-  const parsed = parseShopeeAdsCSV(text);
-  if (!parsed) { toast.error('CSV inválido'); return; }
-  
-  if (parsed.format === 'product') {
-    await importProductCSV(text);
-    setPositionJustImported(true);
-    setTimeout(() => setPositionJustImported(false), 8000);
-  } else {
-    await importGeneralCSV(text);
-  }
-};
+Formato com keyword (33 colunas):
+```
+productImpressions: 29 → 30
+productClicks: 30 → 31
+productCtr: 31 → 32
 ```
 
-Isso elimina a detecção duplicada e incorreta no `AdsTab` — o parser já faz essa classificação corretamente.
+Formato sem keyword (31 colunas):
+```
+productImpressions: 27 → 28
+productClicks: 28 → 29
+productCtr: 29 → 30
+```
 
-### Arquivos alterados
-- `src/components/roas/AdsTab.tsx`
+### Arquivo alterado
+- `src/lib/shopeeAdsParser.ts` — 6 números corrigidos em `detectGeneralColumnMap`
 
