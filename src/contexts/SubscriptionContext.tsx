@@ -34,6 +34,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const lastKnownStatus = useRef<{ status: SubscriptionStatus; plan: string; trialEnd: string | null } | null>(null);
 
   const fetchSubscription = useCallback(async (noCache = false) => {
+    if (authLoading) return; // auth still resolving, don't decide yet
     if (!user || !session?.access_token) {
       setStatus('free');
       setPlan('free');
