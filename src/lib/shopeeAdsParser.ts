@@ -57,11 +57,6 @@ export function deriveMetrics(m: ParsedAdMetric): AdMetricDerived {
 
 // ─── Helpers ───
 
-function parseNumber(val: string): number {
-  if (!val || val === '-' || val === '') return 0;
-  const cleaned = val.replace('%', '').replace(/\./g, '').replace(',', '.').trim();
-  return parseFloat(cleaned) || 0;
-}
 
 function parseBRNumber(val: string): number {
   if (!val || val === '-' || val === '') return 0;
