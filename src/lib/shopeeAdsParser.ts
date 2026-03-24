@@ -176,13 +176,29 @@ function getCol(cols: string[], index: number): string {
 // ─── Format B: "Por Produto" (Product-level, ~25 cols) ───
 
 function isProductFormat(lines: string[]): boolean {
-  for (let i = 0; i < Math.min(10, lines.length); i++) {
-    const lower = lines[i].toLowerCase();
-    if (lower.includes('nome do produto') || lower.includes('id do produto') || lower.includes('consulta de pesquisa')) {
-      return true;
-    }
+  const normalizedLines = lines
+    .slice(0, Math.min(15, lines.length))
+    .map(line => line.replace(/^\uFEFF/, '').trim())
+    .filter(Boolean);
+
+  const reportTitle = (normalizedLines[0] || '').toLowerCase();
+  if (reportTitle.includes('relatório de anúncios de produto') || reportTitle.includes('relatorio de anuncios de produto')) {
+    return true;
   }
-  return false;
+
+  const labels = normalizedLines.map(line => (parseCSVLine(line)[0] || '').toLowerCase().trim());
+  const hasProductMetadata = labels.some(label =>
+    label === 'nome do produto / anúncio'
+    || label === 'nome do produto / anuncio'
+    || label === 'id do produto'
+  );
+
+  const hasProductSearchHeader = normalizedLines.some(line => {
+    const lower = line.toLowerCase();
+    return lower.startsWith('#,') && lower.includes('consulta de pesquisa');
+  });
+
+  return hasProductMetadata || hasProductSearchHeader;
 }
 
 function parseProductFormatCSV(csvContent: string): ParsedAdsFile | null {
