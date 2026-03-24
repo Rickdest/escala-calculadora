@@ -1,44 +1,33 @@
 
 
-## Fix: Flash de TrialExpiredBlock ao fazer login (race condition)
+## Fix: Login funciona no Lovable mas nao em outros dispositivos
 
 ### Diagnostico
 
-O usuario `richard.aragao@outlook.com` tem trial valido (ate 26/03) na tabela profiles. A Edge Function retorna `trialing` corretamente. Porem ha uma **race condition**:
+A Edge Function `check-subscription` tem uma lista de origens CORS permitidas que NAO inclui o dominio customizado `app.richardaragao.com.br`. 
 
-1. `onAuthStateChange` dispara com sessao nula (INITIAL_SESSION) → AuthContext seta `loading=false`, `user=null`
-2. SubscriptionContext ve `user=null` → seta `status='free'`, `loading=false`
-3. ProtectedRoute ve `!isActive && status !== 'loading'` → mostra **TrialExpiredBlock**
-4. Depois `getSession()` resolve com sessao real → busca subscription → `trialing` → tela correta
-
-O usuario ve o paywall por 1-2 segundos antes da tela correta carregar.
+Quando o usuario acessa pelo Lovable preview (`.lovable.app`), a regex aceita. Quando acessa pelo dominio customizado, o CORS bloqueia a resposta da Edge Function, o `checkSubscription` falha, e o fallback seta `status: 'expired'` → mostra o paywall.
 
 ### Correcao
 
-**`src/contexts/SubscriptionContext.tsx`** — Nao setar status quando auth ainda esta carregando
-
-- Importar `loading` do `useAuth()`
-- Quando `loading` do auth for true, manter status como `'loading'` e nao chamar fetchSubscription
-- Isso garante que o ProtectedRoute mostra o spinner ate auth + subscription resolverem
+**`supabase/functions/check-subscription/index.ts`** — Adicionar o dominio customizado na lista de origens E na regex de fallback:
 
 ```typescript
-const { user, session, loading: authLoading } = useAuth();
-
-const fetchSubscription = useCallback(async (noCache = false) => {
-  if (authLoading) return; // auth still loading, don't decide yet
-  if (!user || !session?.access_token) {
-    setStatus('free');
-    ...
-  }
-}, [user, session?.access_token, authLoading]);
+const ALLOWED_ORIGINS = [
+  Deno.env.get("ALLOWED_ORIGIN") || "https://escala-calculadora.lovable.app",
+  "https://id-preview--663ad348-e18a-4674-a7c5-186feeae7832.lovable.app",
+  "https://app.richardaragao.com.br",
+];
 ```
 
-**`src/contexts/AuthContext.tsx`** — Evitar que `onAuthStateChange` sete `loading=false` antes de `getSession`
+E atualizar a regex para tambem aceitar `richardaragao.com.br`:
 
-- Usar flag `initialSessionResolved` para garantir que `loading` so vira `false` apos `getSession()` resolver
-- `onAuthStateChange` atualiza user/session mas nao toca `loading` ate o getSession ter rodado
+```typescript
+(/\.lovableproject\.com$|\.lovable\.app$|\.richardaragao\.com\.br$/.test(...))
+```
 
-### Arquivos alterados
-- `src/contexts/AuthContext.tsx`
-- `src/contexts/SubscriptionContext.tsx`
+Tambem atualizar o secret `ALLOWED_ORIGIN` para o dominio principal atual.
+
+### Arquivo alterado
+- `supabase/functions/check-subscription/index.ts` — 2 linhas alteradas
 
