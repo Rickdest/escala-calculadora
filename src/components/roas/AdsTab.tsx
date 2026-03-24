@@ -83,7 +83,18 @@ export function AdsTab() {
       <input ref={fileRef} type="file" accept=".csv" onChange={handleFileImport} className="hidden" />
       <input ref={positionFileRef} type="file" accept=".csv" onChange={handlePositionFile} className="hidden" />
 
-      {data.length === 0 ? (
+      {/* ═══ Full-screen detail view ═══ */}
+      {selectedDetail ? (
+        <AdsDetailFullView
+          ad={selectedDetail}
+          allAds={filtered}
+          onClose={() => setSelectedDetail(null)}
+          onNavigate={(ad) => setSelectedDetail(ad)}
+          onImportPosition={() => { setPositionTarget(selectedDetail.id); setSelectedDetail(null); positionFileRef.current?.click(); }}
+          onLink={() => { setLinkTarget(selectedDetail.id); setSelectedDetail(null); }}
+          onQuickRegister={() => { setQuickRegTarget(selectedDetail); setSelectedDetail(null); }}
+        />
+      ) : data.length === 0 ? (
         <AdsEmptyState onImport={() => fileRef.current?.click()} />
       ) : (
         <>
@@ -174,16 +185,6 @@ export function AdsTab() {
             </div>
           </div>
         </>
-      )}
-
-      {/* Detail Modal */}
-      {selectedDetail && (
-        <AdsDetailView
-          ad={selectedDetail}
-          onClose={() => setSelectedDetail(null)}
-          onImportPosition={() => { setPositionTarget(selectedDetail.id); setSelectedDetail(null); positionFileRef.current?.click(); }}
-          onLink={() => { setLinkTarget(selectedDetail.id); setSelectedDetail(null); }}
-        />
       )}
 
       {/* Link Modal */}
