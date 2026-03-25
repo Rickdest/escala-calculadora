@@ -9,6 +9,7 @@ import { Info } from 'lucide-react';
 export function ShopeeTab() {
   const [salePrice, setSalePrice] = useState('');
   const [costPrice, setCostPrice] = useState('');
+  const [packagingCost, setPackagingCost] = useState('');
   const { taxes: taxesPercent, setTaxes: setTaxesPercent, configTax } = useTaxFromConfig();
 
   const [isCpf, setIsCpf] = useState(false);
@@ -59,7 +60,7 @@ export function ShopeeTab() {
           <NumInput label="Custo do produto" value={costPrice} onChange={setCostPrice} suffix="R$" required />
           <NumInput label="Preço de venda" value={salePrice} onChange={setSalePrice} suffix="R$" required />
           <NumInput label="Embalagem" value={packagingCost} onChange={setPackagingCost} suffix="R$" />
-          <NumInput label="Impostos" value={taxesPercent} onChange={setTaxesPercent} suffix="%" />
+          <TaxInput value={taxesPercent} onChange={setTaxesPercent} configValue={configTax} />
         </div>
 
         {/* Fee info */}
