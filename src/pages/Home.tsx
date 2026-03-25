@@ -259,11 +259,8 @@ export default function Home() {
           DESKTOP LAYOUT — redesigned
           ══════════════════════════════════════════════ */}
       <div className="hidden md:block py-8 space-y-6">
-        {/* Trial / CTA banners */}
-        <div className="space-y-2">
-          {subscriptionCta}
-          {expiredCta}
-        </div>
+        {/* CTA banners */}
+        {expiredCta && <div className="space-y-2">{expiredCta}</div>}
 
         {/* Hero Banner — inspired by Seller Bump */}
         <div className="rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 p-8 relative overflow-hidden animate-fade-up">
