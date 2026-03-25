@@ -1,55 +1,41 @@
 
 
-## Redesign dos Cards de Produto — Layout Moderno e Compacto
+## Redesign ProductCard — Estilo do Mockup
 
-### Problemas Atuais
-- Card muito vertical com espaçamento excessivo entre seções
-- Botão "Importar Ads CSV" ocupa linha inteira desnecessariamente
-- Badges de margem/lucro com estilo pesado (fundo colorido + borda)
-- Métricas de Ads e canais centralizadas sem hierarquia visual clara
-- Sem separação visual entre dados financeiros e dados de Ads
+Replicar o layout da imagem de referência com cards mais espaçados, badges coloridos para Margem/Lucro, botão "Importar Ads CSV" centralizado, e métricas de Ads em pills individuais.
 
-### Referência de Design
-Inspirado em apps financeiros modernos (Shopee Seller Center, Nubank Business, apps de trading): cards compactos com **grid de métricas**, dados financeiros em **layout horizontal denso**, e hierarquia por tamanho de fonte em vez de badges coloridos.
+### Mudanças no `src/components/cards/ProductCard.tsx`
 
-### Novo Layout do Card
+**Header (Row 1):**
+- Imagem maior: `w-14 h-14 rounded-xl`
+- Nome em `text-base font-bold`
+- Preço e Custo em linhas separadas: `Preço: R$ 49,90` (preço em laranja) e `Custo: R$ 18,00`
 
-```text
-┌─────────────────────────────────────────────┐
-│ [IMG] Nome do Produto              [⋮ menu]│
-│       R$ 35,00  ·  Custo R$ 16,00          │
-│─────────────────────────────────────────────│
-│  Margem          Lucro         [Importar ↗]│
-│  22.9%           R$ 8,00                   │
-│  ■■■■■■■□□□                                │
-│─────────────────────────────────────────────│
-│  Pos #14   ROAS 10.49   ACOS 9.5%   119 un│
-│─────────────────────────────────────────────│
-│  👑 Amazon 36.5%  Shein 26.7%  ML 24.7%   │
-└─────────────────────────────────────────────┘
-```
+**Métricas (Row 2):**
+- Remover labels separados e progress bar
+- Dois badges lado a lado, centralizados:
+  - `Margem: 22,4%` — pill com `bg-success/15 text-success rounded-lg px-3 py-1.5 font-bold`
+  - `Lucro: R$ 11,20` — pill com mesma cor semântica
+- Cores: success para margem boa, warning para atenção, destructive para prejuízo
 
-### Mudanças Específicas
+**Botão Importar Ads (Row 3):**
+- Botão centralizado com ícone BarChart3 + texto "Importar Ads CSV"
+- Estilo: `border border-border rounded-lg px-4 py-2 text-sm font-bold`
+- Aparece sempre (com ou sem ads) — se já tem ads, não mostra
 
-#### 1. Header do Card (Row 1)
-- Manter layout atual (imagem + nome + preços + menu)
-- Preço e custo na mesma linha com separador `·`
+**Métricas de Ads (Row 4):**
+- Pills individuais em wrap: `Pos. #14`, `ROAS 10,49`, `ACOS 9,53%`, `ACOS 10,39%`, `119 vendidos`
+- Cada pill: `bg-surface-2 rounded-lg px-2.5 py-1 text-xs font-bold`
+- Posição com ícone/dot colorido
 
-#### 2. Métricas Financeiras (Row 2) — **Principal mudança**
-- Layout em **grid de 2 colunas** com margem à esquerda e lucro à direita
-- Margem: número grande (text-lg font-bold) com cor semântica, sem badge/pill
-- Lucro: número grande com cor semântica
-- Barra de progresso fina abaixo da margem (relativa à meta)
-- Botão "Importar Ads" reduzido para ícone pequeno no canto superior direito desta seção, só aparece se não tem ads
+**Canais (Row 5):**
+- Manter chips existentes
 
-#### 3. Métricas de Ads (Row 3) — **Compacta**
-- Linha horizontal única com métricas separadas por espaço
-- Texto menor (text-[11px]), sem fundo em cada chip — usar separadores visuais sutis
-- Posição com dot colorido em vez de emoji
+### Espaçamento geral
+- Padding do card: `p-4`
+- Gaps maiores entre seções: `mt-3`
+- Conteúdo centralizado (métricas e botão)
 
-#### 4. Canais (Row 4) — **Inline**
-- Manter chips mas com estilo mais flat (sem borda, só fundo sutil)
-
-### Arquivo modificado
-- `src/components/cards/ProductCard.tsx` — redesign completo do layout interno
+### Arquivo
+- `src/components/cards/ProductCard.tsx`
 
