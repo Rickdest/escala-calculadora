@@ -1,36 +1,35 @@
 
 
-## Corrigir Botões Escondidos por Bottom Nav em Modais
+## Mostrar Canais Ativos Diretamente no ProductCard
 
 ### Problema
-O modal "Cadastro Rápido" (`QuickRegisterModal`) usa `z-50` — mesmo z-index da bottom nav — fazendo o botão "Cadastrar e Vincular" ficar escondido atrás da navegação inferior. Outros modais com `z-50` e posicionamento inferior também podem ter esse problema.
+Quando o produto tem canais configurados (`outrosCanais`), o card só mostra um botão discreto "Comparar Canais" que abre o formulário. O resultado das margens fica escondido.
 
-### Correções
+### Solução
+Substituir o botão "Comparar Canais" por uma **row inline** que mostra os canais ativos com suas margens, destacando o melhor canal com uma coroa 👑.
 
-**Arquivo: `src/components/roas/QuickRegisterModal.tsx`**
-1. Aumentar z-index do overlay de `z-50` para `z-[70]` (consistente com ProductForm)
-2. Adicionar `pb-[calc(1.5rem+env(safe-area-inset-bottom))]` no container do modal em mobile para garantir que o botão fique acima da safe area
+**Arquivo: `src/components/cards/ProductCard.tsx`**
 
-**Arquivo: `src/components/roas/AdsLinkModal.tsx`**
-3. Aumentar z-index de `z-50` para `z-[70]`
+1. Importar `calcOutrosCanais` e `getBestChannel` de `outrosCanaisUtils`
+2. Quando `hasOutrosCanais`, calcular os resultados dos canais usando `calcOutrosCanais(product.outrosCanais, currentStore?.config?.taxes || 0)`
+3. Substituir o botão "Comparar Canais" (linhas 171-178) por chips inline mostrando cada canal:
 
-**Arquivo: `src/components/roas/ImportAdsModal.tsx`**
-4. Aumentar z-index de `z-50` para `z-[70]`
+```text
+┌─────────────────────────────────────────────┐
+│ 👑 TikTok 18.2%  │ Shein 12.1%  │ ML -3.0% │
+└─────────────────────────────────────────────┘
+```
 
-**Arquivo: `src/components/roas/ProductAdsDetail.tsx`**
-5. Aumentar z-index de `z-50` para `z-[70]`
+Cada chip mostra:
+- Ícone 👑 no melhor canal
+- Nome curto do canal (TikTok, Shein, Amazon, ML)
+- Margem % com cor verde/vermelho baseada em positivo/negativo
+- Clicar na row inteira abre o `onEdit(product)` como antes
 
-**Arquivo: `src/components/roas/AdsDetailView.tsx`**
-6. Aumentar z-index de `z-50` para `z-[70]`
-
-**Arquivo: `src/components/stock/StockDetail.tsx`**
-7. Aumentar z-index de `z-50` para `z-[70]` (overlay e movement modal)
-
-**Arquivo: `src/components/stock/StockWizard.tsx`**
-8. Aumentar z-index de `z-50` para `z-[70]`
+4. Manter o cálculo com `useMemo` para evitar recalcular a cada render
 
 ### Resultado
-- Todos os modais ficam acima da bottom nav (z-50)
-- Botões de ação sempre visíveis e clicáveis
-- Safe area respeitada no QuickRegisterModal
+- Margens de cada canal visíveis diretamente no card sem precisar clicar
+- Melhor canal destacado com 👑
+- Um toque ainda abre o formulário completo para editar
 
