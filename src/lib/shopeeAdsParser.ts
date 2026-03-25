@@ -1,3 +1,60 @@
+// ─── Security Helpers ───
+
+export interface CSVValidationResult {
+  valid: boolean;
+  error?: string;
+}
+
+export function validateCSVSecurity(file: File, csvText: string): CSVValidationResult {
+  // 1. Max file size: 5MB
+  if (file.size > 5 * 1024 * 1024) {
+    return { valid: false, error: 'Arquivo muito grande. Máximo 5MB.' };
+  }
+  // 2. File extension
+  if (!file.name.toLowerCase().endsWith('.csv')) {
+    return { valid: false, error: 'Apenas arquivos .csv são aceitos.' };
+  }
+  // 3. Max lines: 502 (500 data + header + blank)
+  const lineCount = csvText.split('\n').length;
+  if (lineCount > 502) {
+    return { valid: false, error: 'CSV com muitas linhas. Máximo 500 produtos.' };
+  }
+  // 4. Max field length: 500 chars
+  const lines = csvText.split('\n');
+  for (const line of lines) {
+    const fields = line.split(',');
+    for (const field of fields) {
+      if (field.length > 500) {
+        return { valid: false, error: 'Campo com tamanho excessivo detectado.' };
+      }
+    }
+  }
+  return { valid: true };
+}
+
+export function sanitizeString(value: string): string {
+  return value
+    .replace(/<[^>]*>/g, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+\s*=/gi, '')
+    .trim();
+}
+
+function validateNumeric(value: number, fieldType: 'counter' | 'monetary' | 'percentage' | 'default' = 'default'): number {
+  if (isNaN(value) || !isFinite(value)) return 0;
+  switch (fieldType) {
+    case 'counter':
+      return Math.max(0, Math.floor(value));
+    case 'monetary':
+      if (value > 99999999) return 0;
+      return Math.max(0, Number(value.toFixed(2)));
+    case 'percentage':
+      return Math.max(0, Math.min(100, Number(value.toFixed(2))));
+    default:
+      return value;
+  }
+}
+
 // ─── Interfaces ───
 
 export interface ParsedAdMetric {
