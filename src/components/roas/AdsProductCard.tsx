@@ -89,29 +89,29 @@ export function AdsProductCard({
 
       {/* Row 2: KPIs — fixed-width grid columns */}
       <div className="mt-2.5 grid grid-cols-3 sm:grid-cols-6 gap-x-1 gap-y-1.5">
-        <div className="text-center">
+        <div className="text-center min-w-0 overflow-hidden">
           <p className="text-[10px] uppercase tracking-wider text-text-3 font-bold">ROAS</p>
           <p className={cn('text-sm font-extrabold font-mono tabular-nums', getRoasColor(roasDireto))}>{roasDireto.toFixed(2)}</p>
         </div>
-        <div className="text-center">
+        <div className="text-center min-w-0 overflow-hidden">
           <p className="text-[10px] uppercase tracking-wider text-text-3 font-bold">GMV</p>
           <p className="text-[13px] font-extrabold font-mono tabular-nums text-foreground truncate">{fmt(ad.gmv)}</p>
         </div>
-        <div className="text-center">
+        <div className="text-center min-w-0 overflow-hidden">
           <p className="text-[10px] uppercase tracking-wider text-text-3 font-bold">Gasto</p>
           <p className="text-[13px] font-extrabold font-mono tabular-nums text-foreground truncate">{fmt(ad.despesas)}</p>
         </div>
-        <div className="text-center">
+        <div className="text-center min-w-0 overflow-hidden">
           <p className="text-[10px] uppercase tracking-wider text-text-3 font-bold">Vendas</p>
           <p className="text-sm font-extrabold font-mono tabular-nums text-foreground">{ad.itens_vendidos} un</p>
         </div>
-        <div className="text-center">
+        <div className="text-center min-w-0 overflow-hidden">
           <p className="text-[10px] uppercase tracking-wider text-text-3 font-bold">Posição</p>
           <p className={cn('text-sm font-extrabold font-mono tabular-nums', hasPosition ? getPositionColor(ad.posicao_media!) : 'text-text-3')}>
             {hasPosition ? `#${ad.posicao_media}` : '—'}
           </p>
         </div>
-        <div className="text-center">
+        <div className="text-center min-w-0 overflow-hidden">
           <p className="text-[10px] uppercase tracking-wider text-text-3 font-bold">Custo/Un</p>
           <p className="text-[13px] font-extrabold font-mono tabular-nums text-foreground truncate">{custoUn > 0 ? fmt(custoUn) : '—'}</p>
         </div>
@@ -133,20 +133,22 @@ export function AdsProductCard({
           </span>
         </div>
       ) : !isLinked ? (
-        <div className="mt-2.5 flex items-center gap-2" onClick={e => e.stopPropagation()}>
-          <p className="text-xs text-warning flex-1">⚠️ Vincule para ver lucratividade</p>
-          <button
-            onClick={onLink}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card text-xs font-bold text-foreground hover:border-primary/30 transition-colors"
-          >
-            <Link2 className="w-3.5 h-3.5" /> Vincular
-          </button>
-          <button
-            onClick={onQuickRegister}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/30 bg-primary/10 text-xs font-bold text-primary hover:bg-primary/20 transition-colors"
-          >
-            <Plus className="w-3.5 h-3.5" /> Cadastrar
-          </button>
+        <div className="mt-2.5 flex flex-col gap-2" onClick={e => e.stopPropagation()}>
+          <p className="text-xs text-warning">⚠️ Vincule para ver lucratividade</p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onLink}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card text-xs font-bold text-foreground hover:border-primary/30 transition-colors"
+            >
+              <Link2 className="w-3.5 h-3.5" /> Vincular
+            </button>
+            <button
+              onClick={onQuickRegister}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-primary/30 bg-primary/10 text-xs font-bold text-primary hover:bg-primary/20 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" /> Cadastrar
+            </button>
+          </div>
         </div>
       ) : null}
     </div>
