@@ -1,27 +1,22 @@
 
 
-## Adicionar Shopee na aba Calculadoras
+## Melhorar distribuição dos atalhos "Outras plataformas"
 
-### Contexto
-A página `/calculadoras` tem 4 abas (TikTok, Shein, Amazon, ML), mas a Shopee — que é o marketplace principal do app — fica separada apenas no QuickCalculator da Home. Faz sentido unificar tudo na mesma página.
+### Problema
+5 itens em `grid-cols-4` — os 4 primeiros ficam na primeira linha e o Mercado Livre fica sozinho na segunda linha, desalinhado.
 
-### Mudanças
+### Solução
+Mudar de `grid-cols-4` para `grid-cols-5` no mobile, distribuindo todos os 5 marketplaces em uma única linha. Reduzir levemente o tamanho dos ícones e texto para caber bem em telas pequenas (390px).
 
-#### 1. Criar `src/components/calculators/ShopeeTab.tsx`
-- Campos: Preço de venda, Custo do produto, Embalagem, Impostos
-- Toggles: CPF seller + >450 pedidos, Afiliado, Campanhas Shopee, Shopee Acelera
-- Usar `getShopeeFeeForPrice()` e `SHOPEE_ACELERA_RATES` de `src/types/store.ts` para calcular taxas
-- Mostrar faixa de taxa aplicada automaticamente (ex: "20% + R$4 para vendas até R$79,99")
-- Usar `ResultPanel` com `showRoas` igual aos outros tabs
+Também aplicar a mesma lógica no desktop (seção "Outras plataformas" dentro do layout desktop usa `grid-cols-4` → mudar para `grid-cols-5`).
 
-#### 2. Atualizar `src/pages/Calculators.tsx`
-- Adicionar tab `shopee` como primeira aba (marketplace principal)
-- Tab padrão passa a ser `shopee` em vez de `tiktok`
-- Importar `ShopeeTab`
+### Detalhes
+- Mobile: `grid grid-cols-5 gap-2` — todos em 1 linha
+- Desktop: `grid grid-cols-5 gap-3` — todos em 1 linha
+- Ícone: manter `w-9 h-9` (cabe bem em 5 colunas a 390px)
+- Texto nome: `text-[10px]` → manter
+- Remover `px-1` do botão para ganhar espaço
 
-#### 3. Atualizar `src/lib/marketplaceShortcuts.ts`
-- Adicionar entrada Shopee: `{ sigla: 'SP', name: 'Shopee', rate: '14–20%', tab: 'shopee', bg: '#EE4D2D', text: 'text-white' }`
-
-### Ordem das abas
-Shopee > TikTok > Shein > Amazon > Mercado Livre
+### Arquivo
+- `src/pages/Home.tsx` — 2 alterações (mobile linha 192, desktop ~linha 280)
 
