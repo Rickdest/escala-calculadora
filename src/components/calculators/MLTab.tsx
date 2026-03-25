@@ -3,7 +3,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ExternalLink } from 'lucide-react';
 import { calcML, type MLResult, type MLAnuncio, ML_CATEGORIES } from '@/lib/mlUtils';
-import { NumInput, ResultPanel, type CostLine } from './shared';
+import { NumInput, ResultPanel, TaxInput, useTaxFromConfig, type CostLine } from './shared';
 
 export function MLTab() {
   const [salePrice, setSalePrice] = useState('');
@@ -12,7 +12,7 @@ export function MLTab() {
   const [anuncio, setAnuncio] = useState<MLAnuncio>('classico');
   const [freight, setFreight] = useState('');
   const [packaging, setPackaging] = useState('');
-  const [taxes, setTaxes] = useState('');
+  const { taxes, setTaxes, configTax } = useTaxFromConfig();
 
   const sp = parseFloat(salePrice) || 0;
   const cp = parseFloat(costPrice) || 0;
@@ -77,7 +77,7 @@ export function MLTab() {
         </div>
 
         <NumInput label="Embalagem" value={packaging} onChange={setPackaging} suffix="R$" />
-        <NumInput label="Impostos" value={taxes} onChange={setTaxes} suffix="%" />
+        <TaxInput value={taxes} onChange={setTaxes} configValue={configTax} />
       </div>
 
       <ResultPanel

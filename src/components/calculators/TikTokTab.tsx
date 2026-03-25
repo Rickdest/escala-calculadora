@@ -2,13 +2,13 @@ import { useState, useMemo } from 'react';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { calcTikTok, type TikTokResult } from '@/lib/tiktokUtils';
-import { NumInput, ResultPanel, type CostLine } from './shared';
+import { NumInput, ResultPanel, TaxInput, useTaxFromConfig, type CostLine } from './shared';
 
 export function TikTokTab() {
   const [salePrice, setSalePrice] = useState('');
   const [costPrice, setCostPrice] = useState('');
   const [packaging, setPackaging] = useState('');
-  const [taxes, setTaxes] = useState('');
+  const { taxes, setTaxes, configTax } = useTaxFromConfig();
   const [hasAffiliate, setHasAffiliate] = useState(false);
   const [affiliatePct, setAffiliatePct] = useState('');
 
@@ -37,7 +37,7 @@ export function TikTokTab() {
         <NumInput label="Custo do produto" value={costPrice} onChange={setCostPrice} suffix="R$" required />
         <NumInput label="Preço de venda" value={salePrice} onChange={setSalePrice} suffix="R$" required />
         <NumInput label="Embalagem" value={packaging} onChange={setPackaging} suffix="R$" />
-        <NumInput label="Impostos" value={taxes} onChange={setTaxes} suffix="%" />
+        <TaxInput value={taxes} onChange={setTaxes} configValue={configTax} />
 
         <div className="flex items-center justify-between rounded-[10px] bg-surface-2 border border-border p-3">
           <Label className="text-sm text-text-2">Tem afiliado?</Label>
