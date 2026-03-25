@@ -30,15 +30,15 @@ interface Props {
 
 // ═══ Small helper components ═══
 
-function KpiCard({ label, value, sub, icon: Icon }: { label: string; value: string; sub?: string; icon: React.ElementType }) {
+function KpiCard({ label, value, sub, subColor, icon: Icon }: { label: string; value: string; sub?: string; subColor?: string; icon: React.ElementType }) {
   return (
-    <div className="p-4 rounded-xl border border-border bg-card text-center">
-      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center justify-center gap-1">
-        <Icon className="w-3.5 h-3.5" />
+    <div className="p-3 rounded-xl bg-surface-2 text-center min-w-0 overflow-hidden">
+      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center justify-center gap-1">
+        <Icon className="w-3 h-3" />
         {label}
       </p>
-      <p className="text-2xl font-bold mt-1 font-mono tabular-nums text-foreground">{value}</p>
-      {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
+      <p className="text-2xl md:text-3xl font-extrabold mt-0.5 font-mono tabular-nums text-foreground truncate">{value}</p>
+      {sub && <p className={cn('text-[11px] font-medium mt-0.5 truncate', subColor || 'text-muted-foreground')}>{sub}</p>}
     </div>
   );
 }
@@ -395,53 +395,53 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
   // ═══ Left Column ═══
   const renderLeftColumn = () => (
     <div className="space-y-5">
-      {/* 1. Header do produto */}
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-        <div className="flex items-start gap-4">
+      {/* 1. Header do produto — compacto */}
+      <div className="rounded-2xl border border-border bg-card p-3.5 shadow-sm">
+        <div className="flex items-center gap-3">
           {product?.imageUrl ? (
-            <img src={product.imageUrl} alt="" className="w-16 h-16 rounded-xl object-cover flex-shrink-0" />
+            <img src={product.imageUrl} alt="" className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
           ) : (
-            <div className="w-16 h-16 rounded-xl border-2 border-dashed border-border flex items-center justify-center flex-shrink-0">
-              <Package className="w-7 h-7 text-muted-foreground" />
+            <div className="w-12 h-12 rounded-xl border-2 border-dashed border-border flex items-center justify-center flex-shrink-0">
+              <Package className="w-5 h-5 text-muted-foreground" />
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-extrabold text-foreground leading-tight">{ad.nome_produto_csv}</h2>
-            <p className="text-sm text-text-3 font-mono tabular-nums mt-1">{periodLabel}</p>
-            <div className="flex items-center gap-2 flex-wrap mt-2">
+            <h2 className="text-base font-extrabold text-foreground leading-tight line-clamp-2">{ad.nome_produto_csv}</h2>
+            <div className="flex items-center gap-2 flex-wrap mt-1">
+              <span className="text-[11px] text-text-3 font-mono tabular-nums">{periodLabel}</span>
               {ad.metodo_lance && (
-                <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-surface-2 border border-border text-text-2">
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-surface-2 border border-border text-text-2">
                   {ad.metodo_lance}
                 </span>
               )}
               {ad.status_anuncio && (
-                <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20 text-primary">
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20 text-primary">
                   {ad.status_anuncio}
                 </span>
               )}
               {emAprendizado && (
-                <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" /> Fase de aprendizado
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> Aprendizado
                 </span>
-              )}
-              {onReimport && (
-                <Button onClick={onReimport} variant="outline" size="sm" className="gap-1.5 text-xs font-bold">
-                  <Upload className="w-3.5 h-3.5" /> Atualizar CSV
-                </Button>
               )}
             </div>
           </div>
+          {onReimport && (
+            <Button onClick={onReimport} variant="outline" size="sm" className="gap-1 text-xs font-bold flex-shrink-0">
+              <Upload className="w-3.5 h-3.5" /> CSV
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* 2. KPIs em linha */}
-      <div className={cn('grid gap-3', isMobile ? 'grid-cols-3' : 'grid-cols-6')}>
+      {/* 2. KPIs em linha — destaque visual */}
+      <div className={cn('grid gap-2', isMobile ? 'grid-cols-3' : 'grid-cols-6')}>
         <KpiCard icon={Eye} label="Impressões" value={ad.impressoes >= 1000 ? `${(ad.impressoes / 1000).toFixed(1)}k` : String(ad.impressoes)} />
         <KpiCard icon={MousePointerClick} label="Cliques" value={ad.cliques >= 1000 ? `${(ad.cliques / 1000).toFixed(1)}k` : String(ad.cliques)} />
-        <KpiCard icon={Percent} label="CTR" value={`${ad.ctr.toFixed(2)}%`} sub={ad.ctr >= 2.5 ? 'Bom' : ad.ctr >= 1.5 ? 'Ok' : 'Baixo'} />
+        <KpiCard icon={Percent} label="CTR" value={`${ad.ctr.toFixed(2)}%`} sub={ad.ctr >= 2.5 ? 'Bom' : ad.ctr >= 1.5 ? 'Ok' : 'Baixo'} subColor={ad.ctr >= 2.5 ? 'text-success' : ad.ctr >= 1.5 ? 'text-warning' : 'text-destructive'} />
         <KpiCard icon={ShoppingCart} label="Vendas" value={String(ad.itens_vendidos)} />
         <KpiCard icon={DollarSign} label="GMV" value={fmt(ad.gmv)} />
-        <KpiCard icon={Target} label="ROAS" value={roasDireto.toFixed(2)} sub={roasEmpate ? `Emp: ${roasEmpate.toFixed(2)}` : undefined} />
+        <KpiCard icon={Target} label="ROAS" value={roasDireto.toFixed(2)} sub={roasEmpate ? `Emp: ${roasEmpate.toFixed(2)}` : undefined} subColor={roasEmpate ? (roasDireto >= roasEmpate ? 'text-success' : 'text-destructive') : undefined} />
       </div>
 
       {/* 3. Status de Lucratividade */}
