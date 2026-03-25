@@ -1,61 +1,45 @@
 
 
-## Redesign do ProductCard na Aba Produtos
+## Melhorar Distribuição do Layout no ProductCard
 
-### O que muda
+### Problema
+Os cards estão com informações empilhadas verticalmente sem estrutura visual clara — margem/lucro, ads e ações ficam em linhas soltas, ocupando espaço desnecessário e sem hierarquia visual.
 
-Baseado na referência enviada, o card do produto passa a mostrar:
-- Imagem + Nome + Preço/Custo (linha 1)
-- Margem + Lucro em badges coloridos (linha 2)
-- **Se tem dados de Ads**: badges compactos com Posição, ROAS, ACOS, unidades vendidas
-- **Se não tem Ads**: botão "Importar Ads CSV" compacto
-- Botão "Comparar Canais" se o produto tem `outrosCanais` configurado
-- **Remover** badges de estoque (Sem estoque / Estoque baixo) do card
-
-### Layout do Card (Mobile ~390px)
+### Solução
+Reorganizar o card em 2 zonas visuais compactas, mantendo todas as informações:
 
 ```text
-┌─────────────────────────────────────────┐
-│ 🖼️48px  Nome do Produto Truncado...    │
-│         Preço: R$ 49,90 · Custo: R$ 18 │
-│                                         │
-│  [Margem: 22,4%]  [Lucro: R$ 11,20]    │
-│                                         │
-│  Se tem ads:                            │
-│  🔥#14  ROAS 10,49  ACOS 9,53  119 un  │
-│                                         │
-│  Se não tem ads:                        │
-│  [📊 Importar Ads CSV]                  │
-│                                         │
-│  Se tem outrosCanais:                   │
-│  [🔄 Comparar Canais]                   │
-└─────────────────────────────────────────┘
+┌──────────────────────────────────────────┐
+│ 🖼️  Nome do Produto              ⋮      │
+│     Venda R$29,98 · Custo R$10           │
+│                                          │
+│  ╭─────────────────────────────────────╮ │
+│  │ ↗33.3%   R$9,98   #14  ROAS 10.49  │ │
+│  │                    ACOS 9.5%  119un │ │
+│  ╰─────────────────────────────────────╯ │
+│                                          │
+│  [↑ Importar Ads]  [⇄ Comparar Canais]  │
+└──────────────────────────────────────────┘
 ```
 
-### Implementação
+### Mudanças
 
 **Arquivo: `src/components/cards/ProductCard.tsx`**
 
-1. Remover toda lógica de `stockAlert` e badges de estoque
-2. Reestruturar layout: imagem + info em coluna (não mais row inline com lucro/margem separados)
-3. Adicionar linha de Margem + Lucro como badges coloridos (verde/vermelho)
-4. Adicionar linha de métricas Ads quando `adsMetric` existe:
-   - Posição com cor semântica (verde ≤3, azul ≤8, âmbar ≤16, vermelho >16)
-   - ROAS, ACOS, unidades vendidas — como chips compactos
-5. Quando não tem `adsMetric`, mostrar botão "Importar Ads CSV" que abre `ImportAdsModal`
-6. Adicionar botão "Comparar Canais" quando `product.outrosCanais` tem dados — abre o form de edição na seção de canais
-7. Manter menu dropdown (⋮) com Editar, Duplicar, Excluir
-8. Manter `onClick` → `onEdit(product)`
+1. **Unificar margem + lucro + ads numa faixa única** — Agrupar dentro de um `div` com `bg-surface-2 rounded-lg p-2` como uma "barra de métricas":
+   - Esquerda: badges de Margem% e Lucro (coloridos)
+   - Direita: métricas Ads (Posição, ROAS, ACOS, unidades) se disponíveis
+   - Layout: `flex items-center justify-between` no desktop, `flex flex-wrap gap-1.5` no mobile
 
-**Arquivo: `src/pages/Products.tsx`**
-- Sem mudanças necessárias, já passa `adsMetric={metricsMap[product.id]}` para o ProductCard
+2. **Ações numa linha horizontal** — "Importar Ads CSV" e "Comparar Canais" ficam lado a lado na mesma linha, ambos como botões compactos inline com `gap-2`
 
-### Cores de posição
-- `#1-3`: text-success (verde)
-- `#4-8`: text-primary (azul)
-- `#9-16`: text-warning (âmbar)
-- `#17+`: text-destructive (vermelho)
+3. **Remover separação mobile/desktop para margem** — Usar a mesma faixa de métricas em ambos, apenas ajustando tamanho do texto
 
-### Arquivos alterados
-- `src/components/cards/ProductCard.tsx` — redesign completo do layout
+4. **Posição com mais destaque** — Quando tem posição, mostrar com `text-base font-extrabold` em vez de `text-sm`
+
+### Resultado
+- Card mais denso visualmente
+- Métricas financeiras + ads numa zona única escaneável
+- Ações secundárias ocupam 1 linha em vez de 2
+- Menos "mt-2" empilhados = card mais curto
 
