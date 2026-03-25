@@ -1,45 +1,33 @@
 
 
-## Melhorar Distribuição do Layout no ProductCard
+## Corrigir Bugs de Layout Mobile na Aba Ads
 
-### Problema
-Os cards estão com informações empilhadas verticalmente sem estrutura visual clara — margem/lucro, ads e ações ficam em linhas soltas, ocupando espaço desnecessário e sem hierarquia visual.
+### Bugs Identificados
 
-### Solução
-Reorganizar o card em 2 zonas visuais compactas, mantendo todas as informações:
+1. **Botões de ação no card não vinculado (AdsProductCard)**: O texto "⚠️ Vincule para ver lucratividade" + botão "Vincular" + botão "Cadastrar" estão numa única linha flex, transbordando em telas de 390px
+2. **Grid de KPIs (AdsProductCard)**: As células do grid não têm `min-w-0` / `overflow-hidden`, fazendo valores monetários longos como "R$ 5.914,00" transbordarem da coluna
+3. **SummaryCards KPIs**: Valores monetários longos em `text-base` podem ultrapassar o container em `grid-cols-2`
 
-```text
-┌──────────────────────────────────────────┐
-│ 🖼️  Nome do Produto              ⋮      │
-│     Venda R$29,98 · Custo R$10           │
-│                                          │
-│  ╭─────────────────────────────────────╮ │
-│  │ ↗33.3%   R$9,98   #14  ROAS 10.49  │ │
-│  │                    ACOS 9.5%  119un │ │
-│  ╰─────────────────────────────────────╯ │
-│                                          │
-│  [↑ Importar Ads]  [⇄ Comparar Canais]  │
-└──────────────────────────────────────────┘
-```
+### Correções
 
-### Mudanças
+**Arquivo: `src/components/roas/AdsProductCard.tsx`**
+
+1. **Linha de ação dos não vinculados** (linhas 136-150): Mudar layout para empilhar em mobile — warning text em uma linha, botões em outra:
+   - Trocar `flex items-center` por `flex flex-col gap-2`
+   - Botões ficam numa sub-row `flex items-center gap-2`
+
+2. **Grid de KPIs** (linha 91): Adicionar `overflow-hidden` em cada célula do grid e garantir `min-w-0` para truncamento funcionar corretamente
+
+**Arquivo: `src/components/roas/SummaryCards.tsx`**
+
+3. **KPI cards**: Garantir que valores monetários longos não quebrem o layout — adicionar `overflow-hidden` no container de valor
 
 **Arquivo: `src/components/cards/ProductCard.tsx`**
 
-1. **Unificar margem + lucro + ads numa faixa única** — Agrupar dentro de um `div` com `bg-surface-2 rounded-lg p-2` como uma "barra de métricas":
-   - Esquerda: badges de Margem% e Lucro (coloridos)
-   - Direita: métricas Ads (Posição, ROAS, ACOS, unidades) se disponíveis
-   - Layout: `flex items-center justify-between` no desktop, `flex flex-wrap gap-1.5` no mobile
+4. **Metrics bar**: Sem bugs críticos — o `flex-wrap` já cuida do overflow. Apenas garantir que valores monetários longos no badge de lucro tenham `truncate`
 
-2. **Ações numa linha horizontal** — "Importar Ads CSV" e "Comparar Canais" ficam lado a lado na mesma linha, ambos como botões compactos inline com `gap-2`
-
-3. **Remover separação mobile/desktop para margem** — Usar a mesma faixa de métricas em ambos, apenas ajustando tamanho do texto
-
-4. **Posição com mais destaque** — Quando tem posição, mostrar com `text-base font-extrabold` em vez de `text-sm`
-
-### Resultado
-- Card mais denso visualmente
-- Métricas financeiras + ads numa zona única escaneável
-- Ações secundárias ocupam 1 linha em vez de 2
-- Menos "mt-2" empilhados = card mais curto
+### Arquivos Alterados
+- `src/components/roas/AdsProductCard.tsx`
+- `src/components/roas/SummaryCards.tsx`
+- `src/components/cards/ProductCard.tsx` (ajuste menor)
 
