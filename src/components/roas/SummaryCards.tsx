@@ -49,13 +49,9 @@ export function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
 
       {/* Status mini cards */}
       {allZeroClassification && s.naoVinculados > 0 ? (
-        <div className="rounded-xl border border-warning/20 bg-warning/5 p-4 text-center">
-          <p className="text-sm font-medium text-warning">
-            ⚠️ {s.naoVinculados} produto{s.naoVinculados !== 1 ? 's' : ''} não vinculado{s.naoVinculados !== 1 ? 's' : ''}
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Vincule aos produtos cadastrados para ver classificação de lucratividade
-          </p>
+        <div className="rounded-lg border border-warning/20 bg-warning/5 px-3 py-2 flex items-center gap-2">
+          <span className="text-xs font-bold text-warning whitespace-nowrap">⚠️ {s.naoVinculados} não vinculado{s.naoVinculados !== 1 ? 's' : ''}</span>
+          <span className="text-[11px] text-muted-foreground">· Vincule para ver lucratividade</span>
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
