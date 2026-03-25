@@ -57,8 +57,8 @@ export function ShopeeTab() {
       <div className="space-y-4">
         <div className="rounded-[10px] bg-surface-2 border border-border p-4 space-y-3">
           <p className="section-label">Valores do produto</p>
-          <NumInput label="Preço de venda" value={salePrice} onChange={setSalePrice} suffix="R$" required />
           <NumInput label="Custo do produto" value={costPrice} onChange={setCostPrice} suffix="R$" required />
+          <NumInput label="Preço de venda" value={salePrice} onChange={setSalePrice} suffix="R$" required />
           <NumInput label="Embalagem" value={packagingCost} onChange={setPackagingCost} suffix="R$" />
           <NumInput label="Impostos" value={taxesPercent} onChange={setTaxesPercent} suffix="%" />
         </div>
