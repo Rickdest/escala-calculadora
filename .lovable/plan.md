@@ -1,27 +1,27 @@
 
 
-## Fix — Botão "Salvar" sumido no formulário de produto
+## Adicionar Shopee na aba Calculadoras
 
-### Diagnóstico
-O formulário usa `flex flex-col` com `overflow-hidden` e `max-h-[92vh]`. O footer com o botão de salvar está fora do `<form>` scrollável, mas **não tem `flex-shrink-0`**, o que pode fazer o flexbox comprimir o footer quando o conteúdo é muito alto. Além disso, o `pb-6` no form pode não dar espaço suficiente para o último item ser visível acima do footer.
+### Contexto
+A página `/calculadoras` tem 4 abas (TikTok, Shein, Amazon, ML), mas a Shopee — que é o marketplace principal do app — fica separada apenas no QuickCalculator da Home. Faz sentido unificar tudo na mesma página.
 
-### Correções em `src/components/forms/ProductForm.tsx`
+### Mudanças
 
-1. **Footer**: Adicionar `flex-shrink-0` ao div do footer (linha 557) para garantir que nunca seja comprimido
-2. **Form padding**: Aumentar `pb-6` para `pb-20` no form scrollável para garantir que o último conteúdo não fique atrás do footer
-3. **z-index do footer**: Já está com `z-[60]`, manter
+#### 1. Criar `src/components/calculators/ShopeeTab.tsx`
+- Campos: Preço de venda, Custo do produto, Embalagem, Impostos
+- Toggles: CPF seller + >450 pedidos, Afiliado, Campanhas Shopee, Shopee Acelera
+- Usar `getShopeeFeeForPrice()` e `SHOPEE_ACELERA_RATES` de `src/types/store.ts` para calcular taxas
+- Mostrar faixa de taxa aplicada automaticamente (ex: "20% + R$4 para vendas até R$79,99")
+- Usar `ResultPanel` com `showRoas` igual aos outros tabs
 
-### Verificação de outros botões
+#### 2. Atualizar `src/pages/Calculators.tsx`
+- Adicionar tab `shopee` como primeira aba (marketplace principal)
+- Tab padrão passa a ser `shopee` em vez de `tiktok`
+- Importar `ShopeeTab`
 
-Também verificar:
-- **FAB "Novo Produto"** na página Products (linha 356-365): posição `bottom-[calc(96px+env(safe-area-inset-bottom))]` — pode ser ocultado pela bottom nav em algumas telas. Verificar se está visível.
-- **Botão "Calcular"** no QuickCalculator: parece OK, não está em modal.
+#### 3. Atualizar `src/lib/marketplaceShortcuts.ts`
+- Adicionar entrada Shopee: `{ sigla: 'SP', name: 'Shopee', rate: '14–20%', tab: 'shopee', bg: '#EE4D2D', text: 'text-white' }`
 
-### Mudança principal
-```tsx
-// Footer - adicionar flex-shrink-0
-<div className="p-4 border-t border-border safe-bottom bg-surface relative z-[60] flex-shrink-0">
-```
-
-Arquivo: `src/components/forms/ProductForm.tsx` — 1 linha alterada.
+### Ordem das abas
+Shopee > TikTok > Shein > Amazon > Mercado Livre
 
