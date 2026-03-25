@@ -39,10 +39,10 @@ export function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
           { label: 'ROAS MÉDIO', value: s.avgRoas.toFixed(2), color: getRoasColor(s.avgRoas), sub: s.avgRoas >= 3 ? '✅ Acima de 3.0' : s.avgRoas >= 1 ? '🟠 Abaixo de 3.0' : '🔴 Negativo' },
           { label: 'LUCRO EST.', value: fmt(s.lucroEstimado), color: s.lucroEstimado >= 0 ? 'text-success' : 'text-destructive', sub: 'GMV − Gasto' },
         ].map(({ label, value, color, sub }) => (
-          <div key={label} className="rounded-xl border border-border bg-card p-3 md:p-4">
+          <div key={label} className="rounded-xl border border-border bg-card p-3 md:p-4 min-w-0 overflow-hidden">
             <p className="text-[10px] uppercase tracking-wider font-bold text-text-3">{label}</p>
             <p className={cn('text-base md:text-xl font-extrabold font-mono tabular-nums mt-1 truncate', color)}>{value}</p>
-            <p className="text-[11px] text-text-3 mt-0.5">{sub}</p>
+            <p className="text-[11px] text-text-3 mt-0.5 truncate">{sub}</p>
           </div>
         ))}
       </div>

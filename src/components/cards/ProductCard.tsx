@@ -129,7 +129,7 @@ export function ProductCard({ product, calculation, adsMetric, onEdit, onDuplica
             <TrendIcon className="w-3 h-3" />
             {calculation.realMargin.toFixed(1)}%
           </span>
-          <span className={cn('px-2 py-0.5 rounded-md text-[11px] font-bold', status.bg, status.color)}>
+          <span className={cn('px-2 py-0.5 rounded-md text-[11px] font-bold truncate max-w-[120px]', status.bg, status.color)}>
             {fmt(calculation.netProfit)}
           </span>
 
