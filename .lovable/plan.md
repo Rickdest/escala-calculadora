@@ -1,41 +1,27 @@
 
 
-## Redesign ProductCard — Estilo do Mockup
+## Fix — Botão "Salvar" sumido no formulário de produto
 
-Replicar o layout da imagem de referência com cards mais espaçados, badges coloridos para Margem/Lucro, botão "Importar Ads CSV" centralizado, e métricas de Ads em pills individuais.
+### Diagnóstico
+O formulário usa `flex flex-col` com `overflow-hidden` e `max-h-[92vh]`. O footer com o botão de salvar está fora do `<form>` scrollável, mas **não tem `flex-shrink-0`**, o que pode fazer o flexbox comprimir o footer quando o conteúdo é muito alto. Além disso, o `pb-6` no form pode não dar espaço suficiente para o último item ser visível acima do footer.
 
-### Mudanças no `src/components/cards/ProductCard.tsx`
+### Correções em `src/components/forms/ProductForm.tsx`
 
-**Header (Row 1):**
-- Imagem maior: `w-14 h-14 rounded-xl`
-- Nome em `text-base font-bold`
-- Preço e Custo em linhas separadas: `Preço: R$ 49,90` (preço em laranja) e `Custo: R$ 18,00`
+1. **Footer**: Adicionar `flex-shrink-0` ao div do footer (linha 557) para garantir que nunca seja comprimido
+2. **Form padding**: Aumentar `pb-6` para `pb-20` no form scrollável para garantir que o último conteúdo não fique atrás do footer
+3. **z-index do footer**: Já está com `z-[60]`, manter
 
-**Métricas (Row 2):**
-- Remover labels separados e progress bar
-- Dois badges lado a lado, centralizados:
-  - `Margem: 22,4%` — pill com `bg-success/15 text-success rounded-lg px-3 py-1.5 font-bold`
-  - `Lucro: R$ 11,20` — pill com mesma cor semântica
-- Cores: success para margem boa, warning para atenção, destructive para prejuízo
+### Verificação de outros botões
 
-**Botão Importar Ads (Row 3):**
-- Botão centralizado com ícone BarChart3 + texto "Importar Ads CSV"
-- Estilo: `border border-border rounded-lg px-4 py-2 text-sm font-bold`
-- Aparece sempre (com ou sem ads) — se já tem ads, não mostra
+Também verificar:
+- **FAB "Novo Produto"** na página Products (linha 356-365): posição `bottom-[calc(96px+env(safe-area-inset-bottom))]` — pode ser ocultado pela bottom nav em algumas telas. Verificar se está visível.
+- **Botão "Calcular"** no QuickCalculator: parece OK, não está em modal.
 
-**Métricas de Ads (Row 4):**
-- Pills individuais em wrap: `Pos. #14`, `ROAS 10,49`, `ACOS 9,53%`, `ACOS 10,39%`, `119 vendidos`
-- Cada pill: `bg-surface-2 rounded-lg px-2.5 py-1 text-xs font-bold`
-- Posição com ícone/dot colorido
+### Mudança principal
+```tsx
+// Footer - adicionar flex-shrink-0
+<div className="p-4 border-t border-border safe-bottom bg-surface relative z-[60] flex-shrink-0">
+```
 
-**Canais (Row 5):**
-- Manter chips existentes
-
-### Espaçamento geral
-- Padding do card: `p-4`
-- Gaps maiores entre seções: `mt-3`
-- Conteúdo centralizado (métricas e botão)
-
-### Arquivo
-- `src/components/cards/ProductCard.tsx`
+Arquivo: `src/components/forms/ProductForm.tsx` — 1 linha alterada.
 
