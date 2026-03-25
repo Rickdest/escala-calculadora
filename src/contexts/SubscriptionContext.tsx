@@ -1,15 +1,14 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { checkSubscription, SubscriptionData } from '@/services/billing.service';
+import { checkSubscription } from '@/services/billing.service';
 import { toast } from 'sonner';
 
-type SubscriptionStatus = 'free' | 'trialing' | 'active' | 'canceled' | 'past_due' | 'expired' | 'loading';
+type SubscriptionStatus = 'free' | 'active' | 'canceled' | 'past_due' | 'expired' | 'loading';
 
 interface SubscriptionContextType {
   status: SubscriptionStatus;
   plan: string;
   isActive: boolean;
-  trialEnd: string | null;
   loading: boolean;
   refreshSubscription: () => Promise<void>;
 }
@@ -18,27 +17,26 @@ const SubscriptionContext = createContext<SubscriptionContextType | undefined>(u
 
 const STATUS_MAP: Record<string, SubscriptionStatus> = {
   active: 'active',
-  trialing: 'trialing',
   canceled: 'canceled',
   past_due: 'past_due',
   expired: 'expired',
   free: 'free',
+  // Map legacy trialing to expired
+  trialing: 'expired',
 };
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { user, session, loading: authLoading } = useAuth();
   const [status, setStatus] = useState<SubscriptionStatus>('loading');
   const [plan, setPlan] = useState('free');
-  const [trialEnd, setTrialEnd] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const lastKnownStatus = useRef<{ status: SubscriptionStatus; plan: string; trialEnd: string | null } | null>(null);
+  const lastKnownStatus = useRef<{ status: SubscriptionStatus; plan: string } | null>(null);
 
   const fetchSubscription = useCallback(async (noCache = false) => {
-    if (authLoading) return; // auth still resolving, don't decide yet
+    if (authLoading) return;
     if (!user || !session?.access_token) {
       setStatus('free');
       setPlan('free');
-      setTrialEnd(null);
       setLoading(false);
       return;
     }
@@ -53,20 +51,17 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         timeoutPromise,
       ]);
       const newStatus = STATUS_MAP[data.status] || 'expired';
-      lastKnownStatus.current = { status: newStatus, plan: data.plan, trialEnd: data.trialEnd };
+      lastKnownStatus.current = { status: newStatus, plan: data.plan };
       setStatus(newStatus);
       setPlan(data.plan);
-      setTrialEnd(data.trialEnd);
     } catch {
       if (lastKnownStatus.current) {
         setStatus(lastKnownStatus.current.status);
         setPlan(lastKnownStatus.current.plan);
-        setTrialEnd(lastKnownStatus.current.trialEnd);
         toast.warning('Não foi possível verificar sua assinatura. Usando dados anteriores.');
       } else {
         setStatus('expired');
         setPlan('free');
-        setTrialEnd(null);
       }
     } finally {
       setLoading(false);
@@ -77,7 +72,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     fetchSubscription();
   }, [fetchSubscription]);
 
-  const isActive = status === 'active' || status === 'trialing';
+  const isActive = status === 'active';
 
   const refreshSubscription = useCallback(async () => {
     await fetchSubscription(true);
@@ -85,7 +80,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   return (
     <SubscriptionContext.Provider
-      value={{ status, plan, isActive, trialEnd, loading, refreshSubscription }}
+      value={{ status, plan, isActive, loading, refreshSubscription }}
     >
       {children}
     </SubscriptionContext.Provider>

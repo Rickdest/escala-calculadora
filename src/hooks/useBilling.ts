@@ -7,14 +7,9 @@ import { openCheckout } from '@/services/checkout.service';
  * Centralizes subscription status checks and checkout actions.
  */
 export function useBilling() {
-  const { status, plan, isActive, trialEnd, loading, refreshSubscription } = useSubscription();
+  const { status, plan, isActive, loading, refreshSubscription } = useSubscription();
   const { user } = useAuth();
 
-  const daysLeft = trialEnd
-    ? Math.max(0, Math.ceil((new Date(trialEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-    : 0;
-
-  const isTrialing = status === 'trialing';
   const isExpired = status === 'canceled' || status === 'past_due' || status === 'expired';
 
   const handleCheckout = () => {
@@ -25,10 +20,7 @@ export function useBilling() {
     status,
     plan,
     isActive,
-    isTrialing,
     isExpired,
-    trialEnd,
-    daysLeft,
     loading,
     handleCheckout,
     refreshSubscription,

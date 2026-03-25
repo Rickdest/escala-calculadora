@@ -10,7 +10,6 @@ const ALLOWED_ORIGINS = [
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get("Origin") || req.headers.get("Referer") || "";
   const allowed = ALLOWED_ORIGINS.find((o) => origin.startsWith(o)) ||
-    // Allow any *.lovableproject.com or *.lovable.app preview
     (/\.lovableproject\.com$|\.lovable\.app$|\.richardaragao\.com\.br$/.test(new URL(origin || "https://x.com").hostname)
       ? origin
       : ALLOWED_ORIGINS[0]);
@@ -26,30 +25,25 @@ function getCorsHeaders(req: Request) {
 function resolveStatus(sub: {
   status: string;
   plan: string;
-  trial_end: string | null;
-}): { status: string; plan: string; trialEnd: string | null } {
+}): { status: string; plan: string } {
   if (sub.status === "active") {
-    return { status: "active", plan: sub.plan || "pro", trialEnd: null };
+    return { status: "active", plan: sub.plan || "pro" };
   }
 
-  if (sub.status === "trialing" && sub.trial_end) {
-    const isValid = new Date(sub.trial_end) > new Date();
-    return {
-      status: isValid ? "trialing" : "expired",
-      plan: isValid ? (sub.plan || "pro") : "free",
-      trialEnd: sub.trial_end,
-    };
+  // Trial is no longer supported — treat as expired
+  if (sub.status === "trialing") {
+    return { status: "expired", plan: "free" };
   }
 
   if (sub.status === "canceled" || sub.status === "past_due") {
-    return { status: sub.status, plan: "free", trialEnd: sub.trial_end };
+    return { status: sub.status, plan: "free" };
   }
 
-  return { status: "expired", plan: "free", trialEnd: sub.trial_end };
+  return { status: "expired", plan: "free" };
 }
 
 // --- Helper: JSON response with short cache ---
-function respond(data: { status: string; plan: string; trialEnd: string | null }, corsHeaders: Record<string, string>) {
+function respond(data: { status: string; plan: string }, corsHeaders: Record<string, string>) {
   return new Response(JSON.stringify(data), {
     status: 200,
     headers: {
@@ -105,7 +99,7 @@ Deno.serve(async (req) => {
     // Busca por user_id primeiro
     let { data: sub } = await adminClient
       .from("subscriptions")
-      .select("id, status, plan, trial_end, user_id")
+      .select("id, status, plan, user_id")
       .eq("user_id", userId)
       .order("updated_at", { ascending: false })
       .limit(1)
@@ -117,7 +111,7 @@ Deno.serve(async (req) => {
       if (userEmail) {
         const { data: subByEmail } = await adminClient
           .from("subscriptions")
-          .select("id, status, plan, trial_end, user_id")
+          .select("id, status, plan, user_id")
           .eq("email", userEmail.toLowerCase().trim())
           .order("updated_at", { ascending: false })
           .limit(1)
@@ -141,38 +135,19 @@ Deno.serve(async (req) => {
       return respond(resolveStatus(sub), corsHeaders);
     }
 
-    // Fallback: verificar trial em profiles
+    // Fallback: verificar status "ativo" em profiles (legacy)
     const { data: profile } = await adminClient
       .from("profiles")
-      .select("status, trial_fim, trial_inicio, payment_status, payment_email")
+      .select("status")
       .eq("user_id", userId)
       .maybeSingle();
 
-
-    if (profile) {
-      const agora = new Date();
-      const trialFim = profile.trial_fim ? new Date(profile.trial_fim) : null;
-      const trialInicio = profile.trial_inicio ? new Date(profile.trial_inicio) : null;
-
-      const trialLegitimo = trialInicio &&
-        (agora.getTime() - trialInicio.getTime()) < (8 * 24 * 60 * 60 * 1000);
-
-      if (
-        profile.status === "trial" &&
-        trialFim &&
-        trialFim > agora &&
-        trialLegitimo
-      ) {
-        return respond({ status: "trialing", plan: "pro", trialEnd: profile.trial_fim }, corsHeaders);
-      }
-
-      if (profile.status === "ativo") {
-        return respond({ status: "active", plan: "pro", trialEnd: null }, corsHeaders);
-      }
+    if (profile?.status === "ativo") {
+      return respond({ status: "active", plan: "pro" }, corsHeaders);
     }
 
     // Nada encontrado — expirado
-    return respond({ status: "expired", plan: "free", trialEnd: null }, corsHeaders);
+    return respond({ status: "expired", plan: "free" }, corsHeaders);
   } catch (error) {
     console.error("check-subscription error:", error instanceof Error ? error.message : "Unknown");
     return errorResponse("Internal server error", 500, corsHeaders);
