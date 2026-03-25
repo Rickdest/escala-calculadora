@@ -1,68 +1,57 @@
 
 
-## Auditoria de Segurança — Plano de Implementação
+## Desabilitar Trial — Acesso Apenas por Assinatura
 
-### Estado Atual
+### Resumo
+Remover toda lógica de trial do sistema. Usuários sem assinatura ativa (`status === 'active'`) veem tela de bloqueio. Sem período gratuito.
 
-**RLS**: Todas as tabelas já possuem RLS habilitado com policies para SELECT/INSERT/UPDATE/DELETE filtrando por `auth.uid() = user_id`. INSERT em tabelas críticas já exige `has_active_subscription()`. O estado atual é **sólido** — não há tabelas sem RLS nem policies faltantes.
+### Mudanças
 
-**Secrets**: Nenhuma chave hardcoded encontrada no código. O `.env` não está no `.gitignore` (precisa adicionar). O client.ts usa `import.meta.env` corretamente.
+#### 1. Edge Function `check-subscription/index.ts`
+- Remover bloco de trial na função `resolveStatus` (linhas 35-42): status `trialing` passa a retornar `expired`
+- Remover fallback de trial em `profiles` (linhas 144-172): não verificar mais `trial_fim`/`trial_inicio`
+- Manter reconciliação por email (compra antes do cadastro) intacta
 
-**IDOR**: As operações em `useAdsData` (link, unlink, delete, update) não filtram por `user_id` no `.eq()` — dependem apenas do RLS. Funciona, mas é defesa em camada única.
+#### 2. `src/contexts/SubscriptionContext.tsx`
+- Remover `trialing` do tipo `SubscriptionStatus`
+- Remover `trialEnd` do state e do contexto
+- Alterar `isActive` para apenas `status === 'active'`
 
-**CSV**: Sem validação de tamanho de arquivo, limite de linhas, ou sanitização de strings.
+#### 3. `src/hooks/useBilling.ts`
+- Remover `isTrialing`, `trialEnd`, `daysLeft`
+- Simplificar retorno
 
-**Race conditions**: Sem proteção contra double-click em importações/vinculações.
+#### 4. `src/services/billing.service.ts`
+- Remover `trialEnd` do `SubscriptionData`
 
----
+#### 5. `src/pages/Home.tsx`
+- Remover import e uso de `trialEnd` (linha 46)
+- Remover bloco `subscriptionCta` (linhas 105-118) — banner de trial
+- Remover `<DailyOfferModal />` (linha 395) e import (linha 11)
+- Manter `expiredCta` mas sem check de `trialing`
 
-### Correções por Prioridade
+#### 6. `src/components/DailyOfferModal.tsx`
+- Deletar arquivo inteiro (só aparecia durante trial)
 
-#### 1. `.gitignore` — Adicionar `.env`
-Adicionar `.env` ao `.gitignore`.
+#### 7. `src/pages/Profile.tsx` — `SubscriptionSection`
+- Remover bloco `trialing` (linhas 271-276)
+- Manter apenas `active` e `canceled/past_due/expired`
 
-#### 2. IDOR — Filtrar por `user_id` nas operações (useAdsData.ts)
-Em `linkProduct`, `unlinkProduct`, `deleteAdsData`, e `importProductCSV` (quando faz update por ID), adicionar `.eq('user_id', user.id)` ao lado de `.eq('id', adsDataId)`.
+#### 8. `src/components/TrialExpiredBlock.tsx`
+- Atualizar texto: remover "período de teste" → "Assine o Precify para acessar"
+- Manter botão checkout e "Já assinei → Verificar acesso"
 
-#### 3. CSV — Validação de segurança (shopeeAdsParser.ts)
-Criar função `validateCSVSecurity(file, text)` que verifica:
-- Tamanho máximo: 5MB
-- Extensão: `.csv`
-- Máximo 502 linhas
-- Campo máximo: 500 caracteres
+#### 9. `src/App.tsx` — `ProtectedRoute`
+- Simplificar: se `status !== 'active'` e não `loading`, mostra `TrialExpiredBlock`
 
-Criar função `sanitizeString(value)` que remove tags HTML, `javascript:`, e event handlers. Aplicar em campos de texto extraídos (productName, status, bidMethod, etc).
-
-#### 4. Race conditions — Flag de operação em andamento (useAdsData.ts)
-Adicionar ref `operationInProgress` para bloquear execução simultânea em `importGeneralCSV`, `importProductCSV`, `linkProduct`, `unlinkProduct`, `deleteAdsData`, `deleteAll`.
-
-#### 5. Validação numérica (shopeeAdsParser.ts)
-Criar `validateNumeric(value, fieldName)` que:
-- Retorna 0 para NaN/Infinity
-- Clamp negativo para contadores (impressões, cliques)
-- Limita monetários a R$99M
-- Aplica nos valores parseados antes de retornar métricas
-
-#### 6. Rate limiting client-side (useAdsData.ts)
-Limitar importações a 5 por minuto com contador + timer.
-
-#### 7. Validação nos modais de importação
-Aplicar `validateCSVSecurity` em `ImportAdsModal.tsx`, `ProductAdsSection.tsx`, e `AdsTab.tsx` (onde `handleFileSelect` é chamado) antes de processar o CSV.
-
-#### 8. Desabilitar botões durante operações
-Expor `importing` do hook `useAdsData` para desabilitar botões na UI durante operações.
-
----
-
-### Detalhes Técnicos
-
-**Arquivos modificados:**
-- `.gitignore` — adicionar `.env`
-- `src/lib/shopeeAdsParser.ts` — `validateCSVSecurity`, `sanitizeString`, `validateNumeric`
-- `src/hooks/useAdsData.ts` — filtro IDOR, race condition flag, rate limiting, expor `importing`
-- `src/components/roas/ImportAdsModal.tsx` — validação CSV antes de processar
-- `src/components/forms/ProductAdsSection.tsx` — validação CSV
-- `src/components/roas/AdsTab.tsx` — validação CSV, desabilitar botões
-
-**Não são necessárias migrações SQL** — as policies existentes já cobrem todos os cenários. A constraint única de deduplicação (índice único) seria uma melhoria, mas o sistema atual já faz deduplicação por período no código e o risco de race condition real é baixo dado que é single-user.
+### Arquivos modificados
+- `supabase/functions/check-subscription/index.ts`
+- `src/contexts/SubscriptionContext.tsx`
+- `src/hooks/useBilling.ts`
+- `src/services/billing.service.ts`
+- `src/pages/Home.tsx`
+- `src/pages/Profile.tsx`
+- `src/components/TrialExpiredBlock.tsx`
+- `src/App.tsx`
+- `src/components/DailyOfferModal.tsx` (deletar)
 
