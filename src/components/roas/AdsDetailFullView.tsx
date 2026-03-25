@@ -14,6 +14,7 @@ import {
   calcularRoasEmpate, classificarAnuncio, sugerirMetaRoas,
   classificarPosicao, getDiagnostico, detectarCrossSell,
   calcAdEfficiencyScore, calcHaloEffect, calcCostVsMarginAlert,
+  type Classificacao,
 } from '@/lib/adsLogic';
 import { fmt, fmtShort, getClassCor, getRoasColor, getDiasPeriodo } from './adsHelpers';
 
@@ -63,9 +64,23 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
   const margemContrib = empateResult?.margemContribuicao ?? (ad.margem_contribuicao || null);
 
   const classification = useMemo(() => {
-    if (!roasEmpate || roasEmpate === Infinity) return null;
-    return classificarAnuncio(roasDireto, roasEmpate);
-  }, [roasDireto, roasEmpate]);
+    // Try calculated classification first
+    if (roasEmpate && roasEmpate !== Infinity) {
+      return classificarAnuncio(roasDireto, roasEmpate);
+    }
+    // Fallback to imported classification from CSV
+    if (ad.classificacao) {
+      const fallbackMap: Record<string, { cor: string; mensagem: string; acao: string }> = {
+        'LUCRATIVO': { cor: 'emerald-500', mensagem: 'Anúncio lucrativo com base na classificação importada.', acao: 'Manter' },
+        'MARGEM_APERTADA': { cor: 'amber-500', mensagem: 'Margem apertada — monitore de perto.', acao: 'Otimizar' },
+        'ABAIXO_EMPATE': { cor: 'orange-500', mensagem: 'ROAS abaixo do empate — considere ajustes.', acao: 'Ajustar' },
+        'PREJUIZO': { cor: 'red-500', mensagem: 'Anúncio em prejuízo — avalie pausar.', acao: 'Pausar' },
+      };
+      const info = fallbackMap[ad.classificacao];
+      if (info) return { classificacao: ad.classificacao as Classificacao, ...info };
+    }
+    return null;
+  }, [roasDireto, roasEmpate, ad.classificacao]);
 
   const metaRoas = useMemo(() => {
     if (!roasEmpate || roasEmpate === Infinity) return null;
