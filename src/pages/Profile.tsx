@@ -14,7 +14,6 @@ import { toast } from 'sonner';
 
 export default function Profile() {
   const { user } = useAuth();
-  
 
   const [displayName, setDisplayName] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -32,14 +31,12 @@ export default function Profile() {
 
   const loadProfile = async () => {
     if (!user) return;
-
     setLoading(true);
     const { data } = await supabase
       .from('profiles')
       .select('display_name')
       .eq('user_id', user.id)
       .single();
-
     if (data) {
       setDisplayName(data.display_name || '');
     }
@@ -48,17 +45,13 @@ export default function Profile() {
 
   const handleSaveProfile = async () => {
     if (!user) return;
-
     setSaving(true);
-
     try {
       const { error } = await supabase
         .from('profiles')
         .update({ display_name: displayName })
         .eq('user_id', user.id);
-
       if (error) throw error;
-
       toast.success('Perfil atualizado!', { description: 'Suas informações foram salvas com sucesso.' });
     } catch (error: any) {
       toast.error('Erro ao salvar', { description: error.message });
@@ -72,23 +65,15 @@ export default function Profile() {
       toast.error('Senhas não conferem', { description: 'Digite a mesma senha nos dois campos.' });
       return;
     }
-
     if (newPassword.length < 6) {
       toast.error('Senha muito curta', { description: 'A senha deve ter pelo menos 6 caracteres.' });
       return;
     }
-
     setSavingPassword(true);
-
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword,
-      });
-
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
-
       toast.success('Senha alterada!', { description: 'Sua senha foi atualizada com sucesso.' });
-
       setNewPassword('');
       setConfirmPassword('');
     } catch (error: any) {
@@ -258,7 +243,7 @@ export default function Profile() {
 }
 
 function SubscriptionSection() {
-  const { status, trialEnd, isActive } = useSubscription();
+  const { status, isActive } = useSubscription();
   const { user } = useAuth();
 
   const handleCheckout = () => openCheckout(user?.email || undefined);
@@ -268,20 +253,14 @@ function SubscriptionSection() {
   let showButton = false;
   let buttonText = '';
 
-  if (status === 'trialing' && trialEnd) {
-    const daysLeft = Math.max(0, Math.ceil((new Date(trialEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
-    statusEmoji = '⏳';
-    statusText = `Teste gratuito — ${daysLeft} ${daysLeft === 1 ? 'dia restante' : 'dias restantes'}`;
-    showButton = true;
-    buttonText = 'Garantir plano anual · R$49,90';
-  } else if (status === 'active') {
+  if (status === 'active') {
     statusEmoji = '✅';
     statusText = 'Plano ativo';
-  } else if (status === 'canceled' || status === 'past_due') {
+  } else if (status === 'canceled' || status === 'past_due' || status === 'expired') {
     statusEmoji = '❌';
-    statusText = 'Acesso expirado';
+    statusText = 'Sem assinatura ativa';
     showButton = true;
-    buttonText = 'Renovar acesso · R$49,90/ano';
+    buttonText = 'Assinar agora · R$49,90/ano';
   }
 
   if (!statusText) return null;

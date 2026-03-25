@@ -8,7 +8,6 @@ import { PageLoader, PageError } from '@/components/layout/PageStates';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { SubscriptionModal } from '@/components/SubscriptionModal';
 
-import { DailyOfferModal } from '@/components/DailyOfferModal';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { cn } from '@/lib/utils';
 import { QuickCalculator } from '@/components/home/QuickCalculator';
@@ -43,7 +42,7 @@ export default function Home() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { currentStore, stores, addStore, addProduct, getStoreStats, calculateProduct, isLoading, loadError, retryLoad } = useStore();
-  const { isActive, status, trialEnd } = useSubscription();
+  const { isActive, status } = useSubscription();
   const { stats: estoqueStats } = useEstoque();
   const { isAdmin } = useAdmin();
   const [showProductForm, setShowProductForm] = useState(false);
@@ -102,22 +101,7 @@ export default function Home() {
 
   
 
-  const subscriptionCta = status === 'trialing' && trialEnd && (() => {
-    const dLeft = Math.max(0, Math.ceil((new Date(trialEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
-    return dLeft > 0 ? (
-      <button
-        onClick={() => setShowPaywall(true)}
-        className="w-full h-9 flex items-center gap-2 px-3 rounded-[8px] border-l-[3px] border-l-primary bg-surface-2 transition-colors hover:bg-surface-2/80 active:scale-[0.98] animate-fade-up"
-      >
-        <span className="text-xs">⏳</span>
-        <span className="text-[13px] text-text-2 flex-1 text-left">
-          {dLeft} {dLeft === 1 ? 'dia restante' : 'dias restantes'} · <span className="text-primary font-semibold">Garantir acesso →</span>
-        </span>
-      </button>
-    ) : null;
-  })();
-
-  const expiredCta = !isActive && status !== 'trialing' ? (
+  const expiredCta = !isActive ? (
     <button
       onClick={() => setShowPaywall(true)}
       className="w-full h-9 flex items-center gap-2 px-3 rounded-[8px] border-l-[3px] border-l-primary bg-surface-2 transition-colors hover:bg-surface-2/80 active:scale-[0.98] animate-fade-up"
@@ -180,11 +164,8 @@ export default function Home() {
           MOBILE LAYOUT — identical to before
           ══════════════════════════════════════════════ */}
       <div className="md:hidden py-3 space-y-3">
-        {/* Trial / CTA banners */}
-        <div className="space-y-2">
-          {subscriptionCta}
-          {expiredCta}
-        </div>
+        {/* CTA banners */}
+        {expiredCta && <div className="space-y-2">{expiredCta}</div>}
 
         {/* Banner Carousel from DB */}
         <BannerCarousel />
@@ -392,7 +373,6 @@ export default function Home() {
 
       {showProductForm && <ProductForm product={prefillProduct as any} onClose={() => { setShowProductForm(false); setPrefillProduct(null); }} onSave={handleSaveProduct} />}
       <SubscriptionModal open={showPaywall} onClose={() => setShowPaywall(false)} />
-      <DailyOfferModal />
     </AppLayout>
   );
 }

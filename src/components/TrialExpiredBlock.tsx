@@ -48,11 +48,10 @@ export function TrialExpiredBlock() {
         {/* Headline */}
         <div className="text-center space-y-2">
           <h1 className="text-foreground font-bold leading-tight" style={{ fontSize: '24px' }}>
-            Continue precificando{'\n'}com inteligência
+            Assine o Precify
           </h1>
           <p className="text-muted-foreground leading-relaxed" style={{ fontSize: '14px' }}>
-            Você usou o período de teste.{' '}
-            Garanta seu acesso por menos de R$4,16 por mês.
+            Para acessar todas as ferramentas de precificação, análise de Ads e gestão da sua loja, assine agora.
           </p>
         </div>
 
@@ -95,7 +94,7 @@ export function TrialExpiredBlock() {
           className="w-full rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold transition-colors active:scale-[0.98]"
           style={{ height: '56px', fontSize: '17px', borderRadius: '12px' }}
         >
-          ⚡ Garantir acesso agora
+          ⚡ Assinar agora
         </button>
 
         {/* Microcopy */}

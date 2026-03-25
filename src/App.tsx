@@ -30,8 +30,8 @@ const Calculators = lazy(() => import("./pages/Calculators"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
       retry: 1,
       refetchOnWindowFocus: false,
     },
@@ -48,7 +48,7 @@ function PageLoader() {
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  const { status, loading: subLoading, isActive } = useSubscription();
+  const { status, loading: subLoading } = useSubscription();
 
   if (loading || subLoading) {
     return <PageLoader />;
@@ -58,12 +58,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/auth" replace />;
   }
 
-  // Block app completely when trial expired or canceled
-  if (status === 'canceled' || status === 'past_due' || status === 'expired') {
-    return <TrialExpiredBlock />;
-  }
-
-  if (!isActive && status !== 'loading') {
+  // Only active subscribers can access the app
+  if (status !== 'active') {
     return <TrialExpiredBlock />;
   }
 

@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 export interface SubscriptionData {
   status: string;
   plan: string;
-  trialEnd: string | null;
 }
 
 /**
@@ -26,6 +25,5 @@ export async function checkSubscription(accessToken: string, noCache = false): P
   return {
     status: data?.status || 'expired',
     plan: data?.plan || 'free',
-    trialEnd: data?.trialEnd || null,
   };
 }
