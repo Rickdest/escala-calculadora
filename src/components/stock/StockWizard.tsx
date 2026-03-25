@@ -345,7 +345,7 @@ export function StockWizard({ onClose, editProduct }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-foreground/30 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[70] bg-foreground/30 backdrop-blur-sm">
       <div className="fixed inset-0 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 md:max-w-lg md:my-4 bg-surface md:rounded-2xl shadow-2xl flex flex-col overflow-hidden">
         {/* ═══ HEADER ═══ */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
