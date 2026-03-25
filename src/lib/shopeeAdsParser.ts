@@ -1,3 +1,60 @@
+// ─── Security Helpers ───
+
+export interface CSVValidationResult {
+  valid: boolean;
+  error?: string;
+}
+
+export function validateCSVSecurity(file: File, csvText: string): CSVValidationResult {
+  // 1. Max file size: 5MB
+  if (file.size > 5 * 1024 * 1024) {
+    return { valid: false, error: 'Arquivo muito grande. Máximo 5MB.' };
+  }
+  // 2. File extension
+  if (!file.name.toLowerCase().endsWith('.csv')) {
+    return { valid: false, error: 'Apenas arquivos .csv são aceitos.' };
+  }
+  // 3. Max lines: 502 (500 data + header + blank)
+  const lineCount = csvText.split('\n').length;
+  if (lineCount > 502) {
+    return { valid: false, error: 'CSV com muitas linhas. Máximo 500 produtos.' };
+  }
+  // 4. Max field length: 500 chars
+  const lines = csvText.split('\n');
+  for (const line of lines) {
+    const fields = line.split(',');
+    for (const field of fields) {
+      if (field.length > 500) {
+        return { valid: false, error: 'Campo com tamanho excessivo detectado.' };
+      }
+    }
+  }
+  return { valid: true };
+}
+
+export function sanitizeString(value: string): string {
+  return value
+    .replace(/<[^>]*>/g, '')
+    .replace(/javascript:/gi, '')
+    .replace(/on\w+\s*=/gi, '')
+    .trim();
+}
+
+function validateNumeric(value: number, fieldType: 'counter' | 'monetary' | 'percentage' | 'default' = 'default'): number {
+  if (isNaN(value) || !isFinite(value)) return 0;
+  switch (fieldType) {
+    case 'counter':
+      return Math.max(0, Math.floor(value));
+    case 'monetary':
+      if (value > 99999999) return 0;
+      return Math.max(0, Number(value.toFixed(2)));
+    case 'percentage':
+      return Math.max(0, Math.min(100, Number(value.toFixed(2))));
+    default:
+      return value;
+  }
+}
+
 // ─── Interfaces ───
 
 export interface ParsedAdMetric {
@@ -320,27 +377,27 @@ function parseProductFormatCSV(csvContent: string): ParsedAdsFile | null {
     const directAcos = effectiveDirectRevenue > 0 ? (totalSpend / effectiveDirectRevenue) * 100 : 0;
 
     const metric: ParsedAdMetric = {
-      shopeeProductId: productId,
-      shopeeProductName: productName,
+      shopeeProductId: sanitizeString(productId),
+      shopeeProductName: sanitizeString(productName),
       periodStart: period.start,
       periodEnd: period.end,
-      impressions: totalImpressions,
-      clicks: totalClicks,
-      itemsSold: totalItemsSold,
-      gmv: totalGmv,
-      spend: totalSpend,
-      roas: parseFloat(roas.toFixed(2)),
-      acos: parseFloat(acos.toFixed(2)),
+      impressions: validateNumeric(totalImpressions, 'counter'),
+      clicks: validateNumeric(totalClicks, 'counter'),
+      itemsSold: validateNumeric(totalItemsSold, 'counter'),
+      gmv: validateNumeric(totalGmv, 'monetary'),
+      spend: validateNumeric(totalSpend, 'monetary'),
+      roas: validateNumeric(parseFloat(roas.toFixed(2))),
+      acos: validateNumeric(parseFloat(acos.toFixed(2)), 'percentage'),
       avgPosition: avgPos,
-      ctr: parseFloat(ctr.toFixed(2)),
-      convRate: parseFloat(convRate.toFixed(2)),
-      directRoas: parseFloat(directRoas.toFixed(2)),
-      directAcos: parseFloat(directAcos.toFixed(2)),
-      costPerConv: parseFloat(costPerConv.toFixed(2)),
-      conversions: totalConversions,
-      directConversions: totalDirectConversions,
-      directGmv: effectiveDirectRevenue,
-      directItemsSold: effectiveDirectItemsSold,
+      ctr: validateNumeric(parseFloat(ctr.toFixed(2)), 'percentage'),
+      convRate: validateNumeric(parseFloat(convRate.toFixed(2)), 'percentage'),
+      directRoas: validateNumeric(parseFloat(directRoas.toFixed(2))),
+      directAcos: validateNumeric(parseFloat(directAcos.toFixed(2)), 'percentage'),
+      costPerConv: validateNumeric(parseFloat(costPerConv.toFixed(2)), 'monetary'),
+      conversions: validateNumeric(totalConversions, 'counter'),
+      directConversions: validateNumeric(totalDirectConversions, 'counter'),
+      directGmv: validateNumeric(effectiveDirectRevenue, 'monetary'),
+      directItemsSold: validateNumeric(effectiveDirectItemsSold, 'counter'),
     };
 
     return {
@@ -456,31 +513,31 @@ function parseGeneralFormatCSV(csvContent: string): ParsedAdsFile | null {
       const directAcos = data.directRevenue > 0 ? (data.spend / data.directRevenue) * 100 : 0;
 
       metrics.push({
-        shopeeProductId: data.id,
-        shopeeProductName: data.name || `Produto ${data.id}`,
+        shopeeProductId: sanitizeString(data.id),
+        shopeeProductName: sanitizeString(data.name || `Produto ${data.id}`),
         periodStart: period.start,
         periodEnd: period.end,
-        impressions: data.impressions,
-        clicks: data.clicks,
-        itemsSold: data.itemsSold,
-        gmv: data.gmv,
-        spend: data.spend,
-        roas: parseFloat(roas.toFixed(2)),
-        acos: parseFloat(acos.toFixed(2)),
+        impressions: validateNumeric(data.impressions, 'counter'),
+        clicks: validateNumeric(data.clicks, 'counter'),
+        itemsSold: validateNumeric(data.itemsSold, 'counter'),
+        gmv: validateNumeric(data.gmv, 'monetary'),
+        spend: validateNumeric(data.spend, 'monetary'),
+        roas: validateNumeric(parseFloat(roas.toFixed(2))),
+        acos: validateNumeric(parseFloat(acos.toFixed(2)), 'percentage'),
         avgPosition: null,
-        ctr: parseFloat(ctr.toFixed(2)),
-        convRate: parseFloat(convRate.toFixed(2)),
-        directRoas: parseFloat(directRoas.toFixed(2)),
-        directAcos: parseFloat(directAcos.toFixed(2)),
-        costPerConv: parseFloat(costPerConv.toFixed(2)),
-        status: data.status,
-        bidMethod: data.bidMethod,
-        conversions: data.conversions,
-        directConversions: data.directConversions,
-        directGmv: data.directRevenue,
-        directItemsSold: data.directItemsSold,
-        productImpressions: data.productImpressions || null,
-        productClicks: data.productClicks || null,
+        ctr: validateNumeric(parseFloat(ctr.toFixed(2)), 'percentage'),
+        convRate: validateNumeric(parseFloat(convRate.toFixed(2)), 'percentage'),
+        directRoas: validateNumeric(parseFloat(directRoas.toFixed(2))),
+        directAcos: validateNumeric(parseFloat(directAcos.toFixed(2)), 'percentage'),
+        costPerConv: validateNumeric(parseFloat(costPerConv.toFixed(2)), 'monetary'),
+        status: sanitizeString(data.status),
+        bidMethod: sanitizeString(data.bidMethod),
+        conversions: validateNumeric(data.conversions, 'counter'),
+        directConversions: validateNumeric(data.directConversions, 'counter'),
+        directGmv: validateNumeric(data.directRevenue, 'monetary'),
+        directItemsSold: validateNumeric(data.directItemsSold, 'counter'),
+        productImpressions: data.productImpressions ? validateNumeric(data.productImpressions, 'counter') : null,
+        productClicks: data.productClicks ? validateNumeric(data.productClicks, 'counter') : null,
       });
     }
 

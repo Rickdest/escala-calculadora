@@ -3,7 +3,7 @@ import { X, Upload, Search, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Product } from '@/types/store';
-import { parseShopeeAdsCSV, ParsedAdMetric } from '@/lib/shopeeAdsParser';
+import { parseShopeeAdsCSV, ParsedAdMetric, validateCSVSecurity } from '@/lib/shopeeAdsParser';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -35,8 +35,10 @@ export function ImportAdsModal({ products, preselectedProductId, onClose, onSucc
     const file = e.target.files?.[0];
     if (!file || !user || !selectedProductId) return;
 
-    if (!file.name.endsWith('.csv')) {
-      toast.error('Selecione um arquivo CSV');
+    const text = await file.text();
+    const validation = validateCSVSecurity(file, text);
+    if (!validation.valid) {
+      toast.error(validation.error || 'Arquivo inválido');
       return;
     }
 

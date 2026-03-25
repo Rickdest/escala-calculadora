@@ -2,7 +2,7 @@ import { useState, useMemo, useRef } from 'react';
 import { useStore } from '@/contexts/StoreContext';
 import { useAdsData, EnrichedAdsData } from '@/hooks/useAdsData';
 import { Upload, Trash2, Megaphone, MapPin, Calendar } from 'lucide-react';
-import { parseShopeeAdsCSV } from '@/lib/shopeeAdsParser';
+import { parseShopeeAdsCSV, validateCSVSecurity } from '@/lib/shopeeAdsParser';
 import { AdsDetailFullView } from './AdsDetailFullView';
 import { AdsLinkModal } from './AdsLinkModal';
 import { QuickRegisterModal } from './QuickRegisterModal';
@@ -36,7 +36,7 @@ function formatPeriodLabel(inicio: string, fim: string) {
 
 export function AdsTab() {
   const { currentStore } = useStore();
-  const { data, loading, importGeneralCSV, importProductCSV, linkProduct, reload, deleteAdsData, deleteAll } = useAdsData();
+  const { data, loading, operating, importGeneralCSV, importProductCSV, linkProduct, reload, deleteAdsData, deleteAll } = useAdsData();
   const [selectedDetail, setSelectedDetail] = useState<EnrichedAdsData | null>(null);
   const [linkTarget, setLinkTarget] = useState<string | null>(null);
   const [quickRegTarget, setQuickRegTarget] = useState<EnrichedAdsData | null>(null);
@@ -96,8 +96,9 @@ export function AdsTab() {
   const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.name.endsWith('.csv')) { toast.error('Selecione um arquivo CSV'); return; }
     const text = await file.text();
+    const validation = validateCSVSecurity(file, text);
+    if (!validation.valid) { toast.error(validation.error || 'Arquivo inválido'); if (fileRef.current) fileRef.current.value = ''; return; }
     const parsed = parseShopeeAdsCSV(text);
     if (!parsed) { toast.error('CSV inválido ou formato não reconhecido'); if (fileRef.current) fileRef.current.value = ''; return; }
 
@@ -167,9 +168,10 @@ export function AdsTab() {
               <Button
                 size="sm"
                 onClick={() => fileRef.current?.click()}
+                disabled={operating}
                 className="gap-1.5 text-xs font-bold"
               >
-                <Upload className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Importar CSV</span>
+                <Upload className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{operating ? 'Importando...' : 'Importar CSV'}</span>
               </Button>
 
               <AlertDialog>
