@@ -88,18 +88,18 @@ export function AdsProductCard({
       </div>
 
       {/* Row 2: KPIs — fixed-width grid columns */}
-      <div className="mt-2.5 grid grid-cols-3 sm:grid-cols-6 gap-y-1">
+      <div className="mt-2.5 grid grid-cols-3 sm:grid-cols-6 gap-x-1 gap-y-1.5">
         <div className="text-center">
           <p className="text-[10px] uppercase tracking-wider text-text-3 font-bold">ROAS</p>
           <p className={cn('text-sm font-extrabold font-mono tabular-nums', getRoasColor(roasDireto))}>{roasDireto.toFixed(2)}</p>
         </div>
         <div className="text-center">
           <p className="text-[10px] uppercase tracking-wider text-text-3 font-bold">GMV</p>
-          <p className="text-sm font-extrabold font-mono tabular-nums text-foreground">{fmt(ad.gmv)}</p>
+          <p className="text-[13px] font-extrabold font-mono tabular-nums text-foreground truncate">{fmt(ad.gmv)}</p>
         </div>
         <div className="text-center">
           <p className="text-[10px] uppercase tracking-wider text-text-3 font-bold">Gasto</p>
-          <p className="text-sm font-extrabold font-mono tabular-nums text-foreground">{fmt(ad.despesas)}</p>
+          <p className="text-[13px] font-extrabold font-mono tabular-nums text-foreground truncate">{fmt(ad.despesas)}</p>
         </div>
         <div className="text-center">
           <p className="text-[10px] uppercase tracking-wider text-text-3 font-bold">Vendas</p>
@@ -113,7 +113,7 @@ export function AdsProductCard({
         </div>
         <div className="text-center">
           <p className="text-[10px] uppercase tracking-wider text-text-3 font-bold">Custo/Un</p>
-          <p className="text-sm font-extrabold font-mono tabular-nums text-foreground">{custoUn > 0 ? fmt(custoUn) : '—'}</p>
+          <p className="text-[13px] font-extrabold font-mono tabular-nums text-foreground truncate">{custoUn > 0 ? fmt(custoUn) : '—'}</p>
         </div>
       </div>
 
