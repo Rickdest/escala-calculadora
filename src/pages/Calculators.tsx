@@ -3,14 +3,16 @@ import { useSearchParams } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { cn } from '@/lib/utils';
+import { ShopeeTab } from '@/components/calculators/ShopeeTab';
 import { TikTokTab } from '@/components/calculators/TikTokTab';
 import { SheinTab } from '@/components/calculators/SheinTab';
 import { AmazonTab } from '@/components/calculators/AmazonTab';
 import { MLTab } from '@/components/calculators/MLTab';
 
-type TabKey = 'tiktok' | 'shein' | 'amazon' | 'ml';
+type TabKey = 'shopee' | 'tiktok' | 'shein' | 'amazon' | 'ml';
 
 const TABS: { key: TabKey; label: string }[] = [
+  { key: 'shopee', label: 'Shopee' },
   { key: 'tiktok', label: 'TikTok' },
   { key: 'shein', label: 'Shein' },
   { key: 'amazon', label: 'Amazon' },
@@ -18,6 +20,7 @@ const TABS: { key: TabKey; label: string }[] = [
 ];
 
 const TAB_COMPONENTS: Record<TabKey, () => JSX.Element> = {
+  shopee: ShopeeTab,
   tiktok: TikTokTab,
   shein: SheinTab,
   amazon: AmazonTab,
@@ -27,7 +30,7 @@ const TAB_COMPONENTS: Record<TabKey, () => JSX.Element> = {
 export default function Calculators() {
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get('tab') as TabKey | null;
-  const activeTab: TabKey = rawTab && TAB_COMPONENTS[rawTab] ? rawTab : 'tiktok';
+  const activeTab: TabKey = rawTab && TAB_COMPONENTS[rawTab] ? rawTab : 'shopee';
 
   const setTab = useCallback((tab: TabKey) => {
     setSearchParams({ tab }, { replace: true });
