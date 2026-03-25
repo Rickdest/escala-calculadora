@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { calcShein, type SheinResult, type SheinCategory } from '@/lib/sheinUtils';
-import { NumInput, ResultPanel, type CostLine } from './shared';
+import { NumInput, ResultPanel, TaxInput, useTaxFromConfig, type CostLine } from './shared';
 
 export function SheinTab() {
   const [salePrice, setSalePrice] = useState('');
@@ -10,7 +10,7 @@ export function SheinTab() {
   const [category, setCategory] = useState<SheinCategory>('moda');
   const [weightBand, setWeightBand] = useState('0.3');
   const [packaging, setPackaging] = useState('');
-  const [taxes, setTaxes] = useState('');
+  const { taxes, setTaxes, configTax } = useTaxFromConfig();
 
   const sp = parseFloat(salePrice) || 0;
   const cp = parseFloat(costPrice) || 0;
@@ -60,7 +60,7 @@ export function SheinTab() {
           </Select>
         </div>
         <NumInput label="Embalagem" value={packaging} onChange={setPackaging} suffix="R$" />
-        <NumInput label="Impostos" value={taxes} onChange={setTaxes} suffix="%" />
+        <TaxInput value={taxes} onChange={setTaxes} configValue={configTax} />
       </div>
 
       <ResultPanel

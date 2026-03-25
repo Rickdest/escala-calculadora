@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { calcAmazon, type AmazonResult, type AmazonPlan, AMAZON_CATEGORIES } from '@/lib/amazonUtils';
-import { NumInput, ResultPanel, type CostLine } from './shared';
+import { NumInput, ResultPanel, TaxInput, useTaxFromConfig, type CostLine } from './shared';
 
 export function AmazonTab() {
   const [salePrice, setSalePrice] = useState('');
@@ -10,7 +10,7 @@ export function AmazonTab() {
   const [categoryIdx, setCategoryIdx] = useState('35');
   const [plan, setPlan] = useState<AmazonPlan>('profissional');
   const [packaging, setPackaging] = useState('');
-  const [taxes, setTaxes] = useState('');
+  const { taxes, setTaxes, configTax } = useTaxFromConfig();
 
   const sp = parseFloat(salePrice) || 0;
   const cp = parseFloat(costPrice) || 0;
@@ -63,7 +63,7 @@ export function AmazonTab() {
         </div>
 
         <NumInput label="Embalagem" value={packaging} onChange={setPackaging} suffix="R$" />
-        <NumInput label="Impostos" value={taxes} onChange={setTaxes} suffix="%" />
+        <TaxInput value={taxes} onChange={setTaxes} configValue={configTax} />
       </div>
 
       <ResultPanel

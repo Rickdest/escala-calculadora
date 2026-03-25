@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NumInput, ResultPanel, CostLine, fmt } from './shared';
+import { NumInput, ResultPanel, TaxInput, useTaxFromConfig, CostLine, fmt } from './shared';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -9,8 +9,7 @@ import { Info } from 'lucide-react';
 export function ShopeeTab() {
   const [salePrice, setSalePrice] = useState('');
   const [costPrice, setCostPrice] = useState('');
-  const [packagingCost, setPackagingCost] = useState('');
-  const [taxesPercent, setTaxesPercent] = useState('');
+  const { taxes: taxesPercent, setTaxes: setTaxesPercent, configTax } = useTaxFromConfig();
 
   const [isCpf, setIsCpf] = useState(false);
   const [hasOver450, setHasOver450] = useState(false);

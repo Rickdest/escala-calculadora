@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
-import { TrendingUp, AlertTriangle, TrendingDown, CalendarDays } from 'lucide-react';
+import { TrendingUp, AlertTriangle, TrendingDown, CalendarDays, Settings, Info } from 'lucide-react';
+import { useStore } from '@/contexts/StoreContext';
 
 // ── Formatters ──
 
