@@ -34,8 +34,8 @@ export function TikTokTab() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="space-y-4">
-        <NumInput label="Preço de venda" value={salePrice} onChange={setSalePrice} suffix="R$" required />
         <NumInput label="Custo do produto" value={costPrice} onChange={setCostPrice} suffix="R$" required />
+        <NumInput label="Preço de venda" value={salePrice} onChange={setSalePrice} suffix="R$" required />
         <NumInput label="Embalagem" value={packaging} onChange={setPackaging} suffix="R$" />
         <NumInput label="Impostos" value={taxes} onChange={setTaxes} suffix="%" />
 

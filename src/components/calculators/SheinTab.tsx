@@ -32,8 +32,8 @@ export function SheinTab() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="space-y-4">
-        <NumInput label="Preço de venda" value={salePrice} onChange={setSalePrice} suffix="R$" required />
         <NumInput label="Custo do produto" value={costPrice} onChange={setCostPrice} suffix="R$" required />
+        <NumInput label="Preço de venda" value={salePrice} onChange={setSalePrice} suffix="R$" required />
 
         <div className="space-y-1.5">
           <Label className="text-xs text-text-2 font-medium">Categoria</Label>
