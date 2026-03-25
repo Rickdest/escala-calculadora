@@ -114,7 +114,7 @@ export function ProductAdsDetail({ metric, product, onClose }: ProductAdsDetailP
   const breakEvenRoas = roasResult && !roasResult.margemInsuficiente && roasResult.roasEmpate ? roasResult.roasEmpate : null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
       <div
         className="bg-card border border-border rounded-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col animate-scale-up"
         onClick={e => e.stopPropagation()}

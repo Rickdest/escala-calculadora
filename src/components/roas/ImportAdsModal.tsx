@@ -93,7 +93,7 @@ export function ImportAdsModal({ products, preselectedProductId, onClose, onSucc
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-card border border-border rounded-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col animate-scale-up">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
