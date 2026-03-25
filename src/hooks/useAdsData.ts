@@ -7,6 +7,8 @@ import { calcularRoasEmpate, classificarAnuncio, ClassificacaoResult, RoasEmpate
 import { Product } from '@/types/store';
 import { toast } from 'sonner';
 
+const MAX_IMPORTS_PER_MINUTE = 5;
+
 export interface AdsDataRow {
   id: string;
   user_id: string;
@@ -67,7 +69,38 @@ export function useAdsData() {
   const { currentStore } = useStore();
   const [data, setData] = useState<EnrichedAdsData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [operating, setOperating] = useState(false);
   const dataRef = useRef<EnrichedAdsData[]>([]);
+  const operationLock = useRef(false);
+  const importCount = useRef(0);
+  const importResetTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  const acquireLock = useCallback(() => {
+    if (operationLock.current) return false;
+    operationLock.current = true;
+    setOperating(true);
+    return true;
+  }, []);
+
+  const releaseLock = useCallback(() => {
+    operationLock.current = false;
+    setOperating(false);
+  }, []);
+
+  const checkRateLimit = useCallback(() => {
+    if (importCount.current >= MAX_IMPORTS_PER_MINUTE) {
+      toast.error('Muitas importações seguidas. Aguarde 1 minuto.');
+      return false;
+    }
+    importCount.current++;
+    if (!importResetTimer.current) {
+      importResetTimer.current = setTimeout(() => {
+        importCount.current = 0;
+        importResetTimer.current = undefined;
+      }, 60000);
+    }
+    return true;
+  }, []);
 
   const products = currentStore?.products || [];
   const config = currentStore?.config;
@@ -117,6 +150,9 @@ export function useAdsData() {
 
   const importGeneralCSV = useCallback(async (csvText: string) => {
     if (!user) return;
+    if (!acquireLock()) { toast.error('Operação em andamento...'); return; }
+    if (!checkRateLimit()) { releaseLock(); return; }
+    try {
     const parsed = parseShopeeAdsCSV(csvText);
     if (!parsed || parsed.metrics.length === 0) {
       toast.error('CSV inválido ou sem dados');
@@ -249,10 +285,14 @@ export function useAdsData() {
       );
       await fetchData();
     }
-  }, [user, products, config, fetchData]);
+    } finally { releaseLock(); }
+  }, [user, products, config, fetchData, acquireLock, releaseLock, checkRateLimit]);
 
   const importProductCSV = useCallback(async (csvText: string, targetAdsDataId?: string) => {
     if (!user) return;
+    if (!acquireLock()) { toast.error('Operação em andamento...'); return; }
+    if (!checkRateLimit()) { releaseLock(); return; }
+    try {
     const parsed = parseShopeeAdsCSV(csvText);
     if (!parsed || parsed.metrics.length === 0 || parsed.format !== 'product') {
       toast.error('CSV inválido. Use o relatório "Por Produto" da Shopee.');
@@ -303,7 +343,7 @@ export function useAdsData() {
           itens_vendidos_diretos: m.directItemsSold || m.itemsSold,
           conversoes_diretas: m.directConversions || 0,
         } : {}),
-      }).eq('id', targetAdsDataId);
+      }).eq('id', targetAdsDataId).eq('user_id', user.id);
     } else {
       const matched = findMatch(m.shopeeProductName, products);
       const derived = calcDerived(matched?.id || null);
@@ -379,10 +419,13 @@ export function useAdsData() {
       toast.success('Dados do produto importados com sucesso');
     }
     await fetchData();
-  }, [user, products, config, fetchData]);
+    } finally { releaseLock(); }
+  }, [user, products, config, fetchData, acquireLock, releaseLock, checkRateLimit]);
 
   const linkProduct = useCallback(async (adsDataId: string, productId: string) => {
     if (!user) return;
+    if (!acquireLock()) return;
+    try {
     const product = products.find(p => p.id === productId);
     const row = dataRef.current.find(d => d.id === adsDataId);
     let roasEmpate: number | null = null;
@@ -403,26 +446,29 @@ export function useAdsData() {
     await supabase.from('ads_data' as any).update({
       product_id: productId, roas_empate: roasEmpate,
       margem_contribuicao: margemContribuicao, classificacao,
-    }).eq('id', adsDataId);
+    }).eq('id', adsDataId).eq('user_id', user.id);
 
     toast.success('Produto vinculado');
     await fetchData();
-  }, [user, products, config, fetchData]);
+    } finally { releaseLock(); }
+  }, [user, products, config, fetchData, acquireLock, releaseLock]);
 
   const unlinkProduct = useCallback(async (adsDataId: string) => {
+    if (!user) return;
     await supabase.from('ads_data' as any).update({
       product_id: null, roas_empate: null,
       margem_contribuicao: null, classificacao: null,
-    }).eq('id', adsDataId);
+    }).eq('id', adsDataId).eq('user_id', user.id);
     toast.info('Produto desvinculado');
     await fetchData();
-  }, [fetchData]);
+  }, [user, fetchData]);
 
   const deleteAdsData = useCallback(async (id: string) => {
-    await supabase.from('ads_data' as any).delete().eq('id', id);
+    if (!user) return;
+    await supabase.from('ads_data' as any).delete().eq('id', id).eq('user_id', user.id);
     setData(prev => prev.filter(d => d.id !== id));
     toast.info('Dados removidos');
-  }, []);
+  }, [user]);
 
   const deleteAll = useCallback(async () => {
     if (!user) return;
@@ -432,7 +478,7 @@ export function useAdsData() {
   }, [user]);
 
   return {
-    data, loading, reload: fetchData,
+    data, loading, operating, reload: fetchData,
     importGeneralCSV, importProductCSV,
     linkProduct, unlinkProduct,
     deleteAdsData, deleteAll,
