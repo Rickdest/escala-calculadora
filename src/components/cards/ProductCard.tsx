@@ -40,6 +40,12 @@ function getPositionDot(pos: number) {
   return 'bg-destructive';
 }
 
+function getMetricStyle(margin: number) {
+  if (margin < 0) return 'bg-destructive/15 text-destructive';
+  if (margin < 10) return 'bg-warning/15 text-warning';
+  return 'bg-success/15 text-success';
+}
+
 export function ProductCard({ product, calculation, adsMetric, onEdit, onDuplicate, onDelete, onAdsUpdate }: ProductCardProps) {
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const isLongPress = useRef(false);
@@ -52,6 +58,7 @@ export function ProductCard({ product, calculation, adsMetric, onEdit, onDuplica
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
   const status = getMarginStatus(calculation.realMargin);
+  const metricStyle = getMetricStyle(calculation.realMargin);
 
   const handleTouchStart = useCallback(() => {
     isLongPress.current = false;
@@ -78,15 +85,12 @@ export function ProductCard({ product, calculation, adsMetric, onEdit, onDuplica
 
   const bestChannel = useMemo(() => getBestChannel(channelResults), [channelResults]);
 
-  // Margin bar: clamp between 0 and target (e.g. 40%)
-  const marginBarPercent = Math.max(0, Math.min(calculation.realMargin / 40 * 100, 100));
-
   const hasAds = !!adsMetric;
 
   return (
     <>
       <div
-        className="p-3 rounded-xl border border-border bg-card hover:border-primary/30 transition-all cursor-pointer select-none active:scale-[0.995]"
+        className="p-4 rounded-xl border border-border bg-card hover:border-primary/30 transition-all cursor-pointer select-none active:scale-[0.995]"
         onClick={() => onEdit(product)}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
@@ -95,19 +99,20 @@ export function ProductCard({ product, calculation, adsMetric, onEdit, onDuplica
         {/* Row 1: Image + Name + Prices + Menu */}
         <div className="flex items-start gap-3">
           {product.imageUrl ? (
-            <img src={product.imageUrl} alt={product.name} className="w-11 h-11 rounded-lg object-cover shrink-0" />
+            <img src={product.imageUrl} alt={product.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />
           ) : (
-            <div className="w-11 h-11 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-              <Package className="w-5 h-5 text-muted-foreground" />
+            <div className="w-14 h-14 rounded-xl bg-secondary flex items-center justify-center shrink-0">
+              <Package className="w-6 h-6 text-muted-foreground" />
             </div>
           )}
 
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-sm text-foreground truncate">{product.name}</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              <span className="text-primary font-bold">{fmt(product.salePrice)}</span>
-              <span className="mx-1.5 text-border">·</span>
-              <span>Custo {fmt(product.costPrice)}</span>
+            <h3 className="font-bold text-base text-foreground truncate">{product.name}</h3>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Preço: <span className="text-primary font-bold">{fmt(product.salePrice)}</span>
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Custo: <span className="font-medium text-foreground">{fmt(product.costPrice)}</span>
             </p>
           </div>
 
@@ -139,71 +144,65 @@ export function ProductCard({ product, calculation, adsMetric, onEdit, onDuplica
           </DropdownMenu>
         </div>
 
-        {/* Row 2: Financial metrics — Margin + Profit + Import button */}
-        <div className="mt-2.5 pt-2.5 border-t border-border/50">
-          <div className="flex items-start justify-between">
-            <div className="flex items-baseline gap-4">
-              <div>
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Margem</p>
-                <p className={cn('text-lg font-extrabold font-mono tabular-nums leading-tight', status.color)}>
-                  {calculation.realMargin.toFixed(1)}%
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Lucro</p>
-                <p className={cn('text-lg font-extrabold font-mono tabular-nums leading-tight', status.color)}>
-                  {fmt(calculation.netProfit)}
-                </p>
-              </div>
-            </div>
-            {!hasAds && (
-              <button
-                onClick={(e) => { e.stopPropagation(); setShowAdsImport(true); }}
-                className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                title="Importar Ads CSV"
-              >
-                <BarChart3 className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-          {/* Margin progress bar */}
-          <div className="mt-1.5 h-1.5 rounded-full bg-secondary overflow-hidden">
-            <div
-              className={cn('h-full rounded-full transition-all', 
-                calculation.realMargin >= 20 ? 'bg-success' : 
-                calculation.realMargin >= 10 ? 'bg-warning' : 
-                calculation.realMargin >= 0 ? 'bg-warning' : 'bg-destructive'
-              )}
-              style={{ width: `${marginBarPercent}%` }}
-            />
-          </div>
+        {/* Row 2: Margin + Profit badges */}
+        <div className="mt-3 flex items-center justify-center gap-2">
+          <span className={cn('rounded-lg px-3 py-1.5 text-sm font-bold', metricStyle)}>
+            Margem: {calculation.realMargin.toFixed(1)}%
+          </span>
+          <span className={cn('rounded-lg px-3 py-1.5 text-sm font-bold', metricStyle)}>
+            Lucro: {fmt(calculation.netProfit)}
+          </span>
         </div>
 
-        {/* Row 3: Ads metrics — compact horizontal */}
+        {/* Row 3: Import Ads button (only when no ads) */}
+        {!hasAds && (
+          <div className="mt-3 flex justify-center">
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowAdsImport(true); }}
+              className="inline-flex items-center gap-2 border border-border rounded-lg px-4 py-2 text-sm font-bold text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
+            >
+              <BarChart3 className="w-4 h-4" />
+              Importar Ads CSV
+            </button>
+          </div>
+        )}
+
+        {/* Row 4: Ads metrics pills */}
         {adsMetric && (
-          <div className="mt-2 pt-2 border-t border-border/50 flex items-center gap-3 text-[11px] font-mono tabular-nums">
+          <div className="mt-3 flex items-center gap-1.5 flex-wrap justify-center">
             {adsMetric.avgPosition != null && adsMetric.avgPosition > 0 && (
-              <span className={cn('flex items-center gap-1 font-bold', getPositionColor(adsMetric.avgPosition))}>
+              <span className={cn('inline-flex items-center gap-1 bg-secondary rounded-lg px-2.5 py-1 text-xs font-bold', getPositionColor(adsMetric.avgPosition))}>
                 <span className={cn('w-1.5 h-1.5 rounded-full', getPositionDot(adsMetric.avgPosition))} />
-                #{adsMetric.avgPosition}
+                Pos. #{adsMetric.avgPosition}
               </span>
             )}
-            <span className="font-bold text-foreground">ROAS {adsMetric.roas.toFixed(2)}</span>
-            <span className="text-muted-foreground">ACOS {adsMetric.acos.toFixed(1)}%</span>
+            <span className="bg-secondary rounded-lg px-2.5 py-1 text-xs font-bold text-foreground">
+              ROAS {adsMetric.roas.toFixed(2)}
+            </span>
+            <span className="bg-secondary rounded-lg px-2.5 py-1 text-xs font-bold text-muted-foreground">
+              ACOS {adsMetric.acos.toFixed(1)}%
+            </span>
+            {adsMetric.directAcos != null && adsMetric.directAcos > 0 && (
+              <span className="bg-secondary rounded-lg px-2.5 py-1 text-xs font-bold text-muted-foreground">
+                ACOS direto {adsMetric.directAcos.toFixed(1)}%
+              </span>
+            )}
             {adsMetric.itemsSold > 0 && (
-              <span className="text-muted-foreground">{adsMetric.itemsSold} un</span>
+              <span className="bg-secondary rounded-lg px-2.5 py-1 text-xs font-bold text-muted-foreground">
+                {adsMetric.itemsSold} vendidos
+              </span>
             )}
           </div>
         )}
 
-        {/* Row 4: Other channels — flat chips */}
+        {/* Row 5: Other channels chips */}
         {hasOutrosCanais && channelResults.length > 0 && (
-          <div className="mt-2 pt-2 border-t border-border/50 flex items-center gap-1.5 flex-wrap">
+          <div className="mt-3 flex items-center gap-1.5 flex-wrap justify-center">
             {channelResults.map(ch => (
               <span
                 key={ch.key}
                 className={cn(
-                  'inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold',
+                  'inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold',
                   ch.margin >= 0 ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
                 )}
               >
