@@ -302,24 +302,6 @@ function ProductAnalysis() {
             <ProductSelector products={currentStore.products} selectedId={selectedProductId} onSelect={setSelectedProductId} config={config} />
           </div>
 
-          {selectedProduct && (
-            <div className="rounded-xl border border-border bg-card p-4 space-y-4 animate-fade-in">
-              <SectionLabel icon={DollarSign}>Dados de Ads</SectionLabel>
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <TooltipLabel label="Gasto em Ads (R$)" tooltip={getTooltipText('gasto_ads')} />
-                  <Input type="number" inputMode="decimal" min="0" step="0.01" value={gastoAds} onChange={e => setGastoAds(e.target.value)} placeholder="0,00" className="input-modern h-11 text-sm font-semibold" />
-                </div>
-                <div className="space-y-1.5">
-                  <TooltipLabel label="Receita Ads (R$)" tooltip={getTooltipText('receita_ads')} />
-                  <Input type="number" inputMode="decimal" min="0" step="0.01" value={receitaAds} onChange={e => setReceitaAds(e.target.value)} placeholder="0,00" className="input-modern h-11 text-sm font-semibold" />
-                </div>
-              </div>
-              <p className="text-[10px] text-text-2 flex items-center gap-1">
-                <Zap className="w-3 h-3 text-primary" /> Valores salvos automaticamente
-              </p>
-            </div>
-          )}
         </div>
 
         <div className="md:col-span-8 space-y-4">
