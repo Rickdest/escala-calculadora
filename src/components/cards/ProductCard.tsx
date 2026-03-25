@@ -1,10 +1,12 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { Package, MoreVertical, Copy, Trash2, Edit, Upload, ArrowLeftRight, TrendingUp, TrendingDown } from 'lucide-react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
+import { Package, MoreVertical, Copy, Trash2, Edit, Upload, TrendingUp, TrendingDown } from 'lucide-react';
 import { Product, ProductCalculation } from '@/types/store';
 import { cn, getMarginStatus } from '@/lib/utils';
 import { useStore } from '@/contexts/StoreContext';
 import { AdMetricDerived } from '@/lib/shopeeAdsParser';
 import { ImportAdsModal } from '@/components/roas/ImportAdsModal';
+import { calcOutrosCanais, getBestChannel } from '@/lib/outrosCanaisUtils';
+import { OutrosCanais } from '@/types/store';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -62,6 +64,13 @@ export function ProductCard({ product, calculation, adsMetric, onEdit, onDuplica
   }, []);
 
   const hasOutrosCanais = product.outrosCanais && typeof product.outrosCanais === 'object' && Object.keys(product.outrosCanais).length > 0;
+
+  const channelResults = useMemo(() => {
+    if (!hasOutrosCanais) return [];
+    return calcOutrosCanais(product.outrosCanais as OutrosCanais, currentStore?.config?.taxes || 0);
+  }, [product.outrosCanais, hasOutrosCanais, currentStore?.config?.taxes]);
+
+  const bestChannel = useMemo(() => getBestChannel(channelResults), [channelResults]);
 
   return (
     <>
@@ -168,13 +177,20 @@ export function ProductCard({ product, calculation, adsMetric, onEdit, onDuplica
                 <Upload className="w-3 h-3" /> Importar Ads
               </button>
             )}
-            {hasOutrosCanais && (
-              <button
-                onClick={() => onEdit(product)}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-secondary text-[11px] font-medium text-foreground hover:bg-secondary/80 transition-colors"
-              >
-                <ArrowLeftRight className="w-3 h-3" /> Comparar Canais
-              </button>
+            {hasOutrosCanais && channelResults.length > 0 && (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {channelResults.map(ch => (
+                  <span
+                    key={ch.key}
+                    className={cn(
+                      'inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold',
+                      ch.margin >= 0 ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
+                    )}
+                  >
+                    {bestChannel?.key === ch.key && '👑'} {ch.label} {ch.margin.toFixed(1)}%
+                  </span>
+                ))}
+              </div>
             )}
           </div>
         )}
