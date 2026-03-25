@@ -15,7 +15,7 @@ import {
   classificarPosicao, getDiagnostico, detectarCrossSell,
   calcAdEfficiencyScore, calcHaloEffect, calcCostVsMarginAlert,
 } from '@/lib/adsLogic';
-import { fmt, getClassCor, getRoasColor, getDiasPeriodo } from './adsHelpers';
+import { fmt, fmtShort, getClassCor, getRoasColor, getDiasPeriodo } from './adsHelpers';
 
 interface Props {
   ad: EnrichedAdsData;
@@ -439,8 +439,8 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         <KpiCard icon={Eye} label="Impressões" value={ad.impressoes >= 1000 ? `${(ad.impressoes / 1000).toFixed(1)}k` : String(ad.impressoes)} />
         <KpiCard icon={MousePointerClick} label="Cliques" value={ad.cliques >= 1000 ? `${(ad.cliques / 1000).toFixed(1)}k` : String(ad.cliques)} />
         <KpiCard icon={Percent} label="CTR" value={`${ad.ctr.toFixed(2)}%`} sub={ad.ctr >= 2.5 ? 'Bom' : ad.ctr >= 1.5 ? 'Ok' : 'Baixo'} subColor={ad.ctr >= 2.5 ? 'text-success' : ad.ctr >= 1.5 ? 'text-warning' : 'text-destructive'} />
-        <KpiCard icon={ShoppingCart} label="Vendas" value={String(ad.itens_vendidos)} />
-        <KpiCard icon={DollarSign} label="GMV" value={fmt(ad.gmv)} />
+        <KpiCard icon={ShoppingCart} label="Vendas" value={ad.itens_vendidos >= 1000 ? `${(ad.itens_vendidos / 1000).toFixed(1)}k` : String(ad.itens_vendidos)} />
+        <KpiCard icon={DollarSign} label="GMV" value={fmtShort(ad.gmv)} />
         <KpiCard icon={Target} label="ROAS" value={roasDireto.toFixed(2)} sub={roasEmpate ? `Emp: ${roasEmpate.toFixed(2)}` : undefined} subColor={roasEmpate ? (roasDireto >= roasEmpate ? 'text-success' : 'text-destructive') : undefined} />
       </div>
 
