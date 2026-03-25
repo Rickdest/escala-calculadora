@@ -162,12 +162,6 @@ export function useAdsData() {
     const periodStart = parsed.metrics[0].periodStart;
     const periodEnd = parsed.metrics[0].periodEnd;
 
-    // Fetch ALL existing ads_data for this user to check period overlap per product
-    const { data: allExisting } = await supabase.from('ads_data' as any)
-      .select('id, nome_produto_csv, shopee_product_id, periodo_inicio, periodo_fim, posicao_importada')
-      .eq('user_id', user.id);
-    const existingRows = (allExisting || []) as any[];
-
     const rows = parsed.metrics.map((m: ParsedAdMetric) => {
       const matched = findMatch(m.shopeeProductName, products);
       let roasEmpate: number | null = null;
@@ -249,40 +243,17 @@ export function useAdsData() {
       }, {} as Record<string, typeof rows[0]>)
     );
 
-    // For each unique product, find overlapping existing records and delete them
-    const idsToDelete: string[] = [];
-    for (const row of uniqueRows) {
-      const matchingExisting = existingRows.filter(e => {
-        // Match by shopee_product_id or nome_produto_csv
-        const nameMatch = e.shopee_product_id && row.shopee_product_id
-          ? e.shopee_product_id === row.shopee_product_id
-          : normalize(e.nome_produto_csv) === normalize(row.nome_produto_csv);
-        if (!nameMatch) return false;
-        // Check period overlap: inicioA <= fimB && inicioB <= fimA
-        return e.periodo_inicio <= row.periodo_fim && row.periodo_inicio <= e.periodo_fim;
-      });
-      idsToDelete.push(...matchingExisting.map((e: any) => e.id));
-    }
+    // Upsert using unique constraint (user_id, nome_produto_csv, periodo_inicio, periodo_fim)
+    const { error } = await supabase.from('ads_data' as any).upsert(uniqueRows, {
+      onConflict: 'user_id,nome_produto_csv,periodo_inicio,periodo_fim',
+      ignoreDuplicates: false,
+    });
 
-    // Delete overlapping records
-    if (idsToDelete.length > 0) {
-      const uniqueIds = [...new Set(idsToDelete)];
-      // Delete in batches of 50
-      for (let i = 0; i < uniqueIds.length; i += 50) {
-        await supabase.from('ads_data' as any).delete().in('id', uniqueIds.slice(i, i + 50));
-      }
-    }
-
-    const { error } = await supabase.from('ads_data' as any).insert(uniqueRows);
     if (error) {
       toast.error('Erro ao salvar dados');
       console.error(error);
     } else {
-      const updated = idsToDelete.length > 0;
-      toast.success(updated
-        ? `${uniqueRows.length} produtos atualizados com sucesso`
-        : `${uniqueRows.length} produtos importados com sucesso`
-      );
+      toast.success(`${uniqueRows.length} produtos processados com sucesso`);
       await fetchData();
     }
     } finally { releaseLock(); }
