@@ -162,12 +162,6 @@ export function useAdsData() {
     const periodStart = parsed.metrics[0].periodStart;
     const periodEnd = parsed.metrics[0].periodEnd;
 
-    // Fetch ALL existing ads_data for this user to check period overlap per product
-    const { data: allExisting } = await supabase.from('ads_data' as any)
-      .select('id, nome_produto_csv, shopee_product_id, periodo_inicio, periodo_fim, posicao_importada')
-      .eq('user_id', user.id);
-    const existingRows = (allExisting || []) as any[];
-
     const rows = parsed.metrics.map((m: ParsedAdMetric) => {
       const matched = findMatch(m.shopeeProductName, products);
       let roasEmpate: number | null = null;
