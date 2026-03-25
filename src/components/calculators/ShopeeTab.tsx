@@ -170,8 +170,7 @@ export function ShopeeTab() {
           <div className="pt-2 border-t border-border">
             <Button
               onClick={() => setShowSaveModal(true)}
-              className="w-full rounded-xl gap-2"
-              variant="outline"
+              className="w-full rounded-xl gap-2 h-11 text-sm font-semibold shadow-sm"
             >
               <Save className="w-4 h-4" />
               Salvar como produto
