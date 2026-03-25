@@ -14,6 +14,7 @@ import {
   calcularRoasEmpate, classificarAnuncio, sugerirMetaRoas,
   classificarPosicao, getDiagnostico, detectarCrossSell,
   calcAdEfficiencyScore, calcHaloEffect, calcCostVsMarginAlert,
+  type Classificacao,
 } from '@/lib/adsLogic';
 import { fmt, fmtShort, getClassCor, getRoasColor, getDiasPeriodo } from './adsHelpers';
 
