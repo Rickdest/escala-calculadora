@@ -51,6 +51,68 @@ export function NumInput({ label, value, onChange, placeholder, suffix, required
   );
 }
 
+// ── Tax input with config default ──
+
+export function useTaxFromConfig() {
+  const { currentStore } = useStore();
+  const configTax = currentStore?.config?.taxes ?? 0;
+  const [taxes, setTaxes] = useState(configTax > 0 ? String(configTax) : '');
+
+  useEffect(() => {
+    setTaxes(configTax > 0 ? String(configTax) : '');
+  }, [configTax]);
+
+  return { taxes, setTaxes, configTax };
+}
+
+export function TaxInput({ value, onChange, configValue }: {
+  value: string; onChange: (v: string) => void; configValue: number;
+}) {
+  const numValue = parseFloat(value) || 0;
+  const isFromConfig = configValue > 0 && numValue === configValue;
+  const isModified = configValue > 0 && numValue !== configValue && value !== '';
+
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs text-text-2 font-medium">Impostos</Label>
+      <div className="relative">
+        <Input
+          type="number"
+          inputMode="decimal"
+          min="0"
+          step="0.01"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="0"
+          className="input-modern pr-10"
+        />
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-text-3">%</span>
+      </div>
+      {isFromConfig ? (
+        <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+          <Settings className="w-3 h-3" />
+          Valor das configurações
+        </p>
+      ) : isModified ? (
+        <p className="text-[11px] text-warning flex items-center gap-1">
+          <Info className="w-3 h-3" />
+          Alterado só para este cálculo
+          <button
+            onClick={() => onChange(String(configValue))}
+            className="text-primary ml-1 underline"
+          >
+            Restaurar ({configValue}%)
+          </button>
+        </p>
+      ) : configValue === 0 ? (
+        <p className="text-[11px] text-muted-foreground">
+          💡 Defina o imposto padrão em Configurações
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 // ── Result panel ──
 
 export interface CostLine { label: string; value: number }
