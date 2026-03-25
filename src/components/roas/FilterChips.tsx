@@ -15,13 +15,13 @@ export function FilterChips({ filter, setFilter, data }: { filter: FilterType; s
   ];
 
   return (
-    <div className="flex gap-1.5 p-1.5 bg-surface-2/50 rounded-xl">
+    <div className="flex gap-1.5 p-1.5 bg-surface-2/50 rounded-xl overflow-x-auto scrollbar-none">
       {chips.map(c => (
         <button
           key={c.key}
           onClick={() => setFilter(c.key)}
           className={cn(
-            'px-3.5 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5',
+            'px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-1 whitespace-nowrap flex-shrink-0',
             filter === c.key
               ? 'bg-card shadow-sm text-foreground border border-border'
               : 'text-text-3 hover:text-foreground'
