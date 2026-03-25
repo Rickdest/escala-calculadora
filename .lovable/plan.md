@@ -1,33 +1,36 @@
 
 
-## Corrigir Bugs de Layout Mobile na Aba Ads
+## Compactar Header e Destacar KPIs na Tela de Detalhe do Ads
 
-### Bugs Identificados
+### Problema
+O card do produto (header) ocupa muito espaço vertical com nome longo quebrando múltiplas linhas, e os KPIs ficam dentro de cards bordados que parecem "presos" — sem destaque visual.
 
-1. **Botões de ação no card não vinculado (AdsProductCard)**: O texto "⚠️ Vincule para ver lucratividade" + botão "Vincular" + botão "Cadastrar" estão numa única linha flex, transbordando em telas de 390px
-2. **Grid de KPIs (AdsProductCard)**: As células do grid não têm `min-w-0` / `overflow-hidden`, fazendo valores monetários longos como "R$ 5.914,00" transbordarem da coluna
-3. **SummaryCards KPIs**: Valores monetários longos em `text-base` podem ultrapassar o container em `grid-cols-2`
+### Mudanças
 
-### Correções
+**Arquivo: `src/components/roas/AdsDetailFullView.tsx`**
 
-**Arquivo: `src/components/roas/AdsProductCard.tsx`**
+#### 1. Header do produto mais compacto
+- Reduzir imagem de `w-16 h-16` para `w-12 h-12`
+- Nome do produto: `text-base` com `line-clamp-2` (máx 2 linhas) em vez de `text-lg` sem limite
+- Período + status + botão "Atualizar CSV" na mesma linha horizontal
+- Padding reduzido de `p-5` para `p-3.5`
 
-1. **Linha de ação dos não vinculados** (linhas 136-150): Mudar layout para empilhar em mobile — warning text em uma linha, botões em outra:
-   - Trocar `flex items-center` por `flex flex-col gap-2`
-   - Botões ficam numa sub-row `flex items-center gap-2`
+#### 2. KPIs com mais destaque visual
+- Remover `border` e `bg-card` dos KpiCards individuais
+- Usar fundo sólido colorido sutil: `bg-surface-2` com valores maiores (`text-2xl` → `text-3xl` no mobile)
+- Reduzir padding dos KPI cards de `p-4` para `p-3`
+- Labels menores: `text-[10px]` em vez de `text-xs`
+- Sub-labels (como "Bom", "Emp: X") com cor semântica em vez de muted
 
-2. **Grid de KPIs** (linha 91): Adicionar `overflow-hidden` em cada célula do grid e garantir `min-w-0` para truncamento funcionar corretamente
+#### 3. Layout mobile do grid de KPIs
+- Manter `grid-cols-3` no mobile mas com `gap-2` em vez de `gap-3`
+- Valores monetários com `truncate` para não quebrar
 
-**Arquivo: `src/components/roas/SummaryCards.tsx`**
+### Resultado esperado
+- Header ~30% mais curto verticalmente
+- KPIs visualmente mais proeminentes com valores grandes e fundo contrastante
+- Mais espaço para o conteúdo analítico abaixo
 
-3. **KPI cards**: Garantir que valores monetários longos não quebrem o layout — adicionar `overflow-hidden` no container de valor
-
-**Arquivo: `src/components/cards/ProductCard.tsx`**
-
-4. **Metrics bar**: Sem bugs críticos — o `flex-wrap` já cuida do overflow. Apenas garantir que valores monetários longos no badge de lucro tenham `truncate`
-
-### Arquivos Alterados
-- `src/components/roas/AdsProductCard.tsx`
-- `src/components/roas/SummaryCards.tsx`
-- `src/components/cards/ProductCard.tsx` (ajuste menor)
+### Arquivo alterado
+- `src/components/roas/AdsDetailFullView.tsx`
 
