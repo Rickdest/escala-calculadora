@@ -38,7 +38,7 @@ function KpiCard({ label, value, sub, subColor, icon: Icon }: { label: string; v
         <Icon className="w-3 h-3" />
         {label}
       </p>
-      <p className="text-2xl md:text-3xl font-extrabold mt-0.5 font-mono tabular-nums text-foreground truncate">{value}</p>
+      <p className="text-xl md:text-2xl font-extrabold mt-0.5 font-mono tabular-nums text-foreground">{value}</p>
       {sub && <p className={cn('text-[11px] font-medium mt-0.5 truncate', subColor || 'text-muted-foreground')}>{sub}</p>}
     </div>
   );
