@@ -7,7 +7,7 @@ import {
   XCircle, RefreshCw, Megaphone, Info
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { parseShopeeAdsCSV, ParsedAdMetric, deriveMetrics, AdMetricDerived } from '@/lib/shopeeAdsParser';
+import { parseShopeeAdsCSV, ParsedAdMetric, deriveMetrics, AdMetricDerived, validateCSVSecurity } from '@/lib/shopeeAdsParser';
 import { toast } from 'sonner';
 
 const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
@@ -73,6 +73,8 @@ export function ProductAdsSection({ productId, shopeeProductId }: ProductAdsSect
     if (!file || !user || !productId) return;
     try {
       const text = await file.text();
+      const validation = validateCSVSecurity(file, text);
+      if (!validation.valid) { toast.error(validation.error || 'Arquivo inválido'); return; }
       const parsed = parseShopeeAdsCSV(text);
       if (!parsed || parsed.metrics.length === 0) { toast.error('CSV inválido'); return; }
       const m = parsed.metrics[0];
