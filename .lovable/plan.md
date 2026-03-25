@@ -1,35 +1,68 @@
 
 
-## Mostrar Canais Ativos Diretamente no ProductCard
+## Auditoria de Segurança — Plano de Implementação
 
-### Problema
-Quando o produto tem canais configurados (`outrosCanais`), o card só mostra um botão discreto "Comparar Canais" que abre o formulário. O resultado das margens fica escondido.
+### Estado Atual
 
-### Solução
-Substituir o botão "Comparar Canais" por uma **row inline** que mostra os canais ativos com suas margens, destacando o melhor canal com uma coroa 👑.
+**RLS**: Todas as tabelas já possuem RLS habilitado com policies para SELECT/INSERT/UPDATE/DELETE filtrando por `auth.uid() = user_id`. INSERT em tabelas críticas já exige `has_active_subscription()`. O estado atual é **sólido** — não há tabelas sem RLS nem policies faltantes.
 
-**Arquivo: `src/components/cards/ProductCard.tsx`**
+**Secrets**: Nenhuma chave hardcoded encontrada no código. O `.env` não está no `.gitignore` (precisa adicionar). O client.ts usa `import.meta.env` corretamente.
 
-1. Importar `calcOutrosCanais` e `getBestChannel` de `outrosCanaisUtils`
-2. Quando `hasOutrosCanais`, calcular os resultados dos canais usando `calcOutrosCanais(product.outrosCanais, currentStore?.config?.taxes || 0)`
-3. Substituir o botão "Comparar Canais" (linhas 171-178) por chips inline mostrando cada canal:
+**IDOR**: As operações em `useAdsData` (link, unlink, delete, update) não filtram por `user_id` no `.eq()` — dependem apenas do RLS. Funciona, mas é defesa em camada única.
 
-```text
-┌─────────────────────────────────────────────┐
-│ 👑 TikTok 18.2%  │ Shein 12.1%  │ ML -3.0% │
-└─────────────────────────────────────────────┘
-```
+**CSV**: Sem validação de tamanho de arquivo, limite de linhas, ou sanitização de strings.
 
-Cada chip mostra:
-- Ícone 👑 no melhor canal
-- Nome curto do canal (TikTok, Shein, Amazon, ML)
-- Margem % com cor verde/vermelho baseada em positivo/negativo
-- Clicar na row inteira abre o `onEdit(product)` como antes
+**Race conditions**: Sem proteção contra double-click em importações/vinculações.
 
-4. Manter o cálculo com `useMemo` para evitar recalcular a cada render
+---
 
-### Resultado
-- Margens de cada canal visíveis diretamente no card sem precisar clicar
-- Melhor canal destacado com 👑
-- Um toque ainda abre o formulário completo para editar
+### Correções por Prioridade
+
+#### 1. `.gitignore` — Adicionar `.env`
+Adicionar `.env` ao `.gitignore`.
+
+#### 2. IDOR — Filtrar por `user_id` nas operações (useAdsData.ts)
+Em `linkProduct`, `unlinkProduct`, `deleteAdsData`, e `importProductCSV` (quando faz update por ID), adicionar `.eq('user_id', user.id)` ao lado de `.eq('id', adsDataId)`.
+
+#### 3. CSV — Validação de segurança (shopeeAdsParser.ts)
+Criar função `validateCSVSecurity(file, text)` que verifica:
+- Tamanho máximo: 5MB
+- Extensão: `.csv`
+- Máximo 502 linhas
+- Campo máximo: 500 caracteres
+
+Criar função `sanitizeString(value)` que remove tags HTML, `javascript:`, e event handlers. Aplicar em campos de texto extraídos (productName, status, bidMethod, etc).
+
+#### 4. Race conditions — Flag de operação em andamento (useAdsData.ts)
+Adicionar ref `operationInProgress` para bloquear execução simultânea em `importGeneralCSV`, `importProductCSV`, `linkProduct`, `unlinkProduct`, `deleteAdsData`, `deleteAll`.
+
+#### 5. Validação numérica (shopeeAdsParser.ts)
+Criar `validateNumeric(value, fieldName)` que:
+- Retorna 0 para NaN/Infinity
+- Clamp negativo para contadores (impressões, cliques)
+- Limita monetários a R$99M
+- Aplica nos valores parseados antes de retornar métricas
+
+#### 6. Rate limiting client-side (useAdsData.ts)
+Limitar importações a 5 por minuto com contador + timer.
+
+#### 7. Validação nos modais de importação
+Aplicar `validateCSVSecurity` em `ImportAdsModal.tsx`, `ProductAdsSection.tsx`, e `AdsTab.tsx` (onde `handleFileSelect` é chamado) antes de processar o CSV.
+
+#### 8. Desabilitar botões durante operações
+Expor `importing` do hook `useAdsData` para desabilitar botões na UI durante operações.
+
+---
+
+### Detalhes Técnicos
+
+**Arquivos modificados:**
+- `.gitignore` — adicionar `.env`
+- `src/lib/shopeeAdsParser.ts` — `validateCSVSecurity`, `sanitizeString`, `validateNumeric`
+- `src/hooks/useAdsData.ts` — filtro IDOR, race condition flag, rate limiting, expor `importing`
+- `src/components/roas/ImportAdsModal.tsx` — validação CSV antes de processar
+- `src/components/forms/ProductAdsSection.tsx` — validação CSV
+- `src/components/roas/AdsTab.tsx` — validação CSV, desabilitar botões
+
+**Não são necessárias migrações SQL** — as policies existentes já cobrem todos os cenários. A constraint única de deduplicação (índice único) seria uma melhoria, mas o sistema atual já faz deduplicação por período no código e o risco de race condition real é baixo dado que é single-user.
 
