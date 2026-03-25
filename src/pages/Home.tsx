@@ -189,12 +189,12 @@ export default function Home() {
         {/* Outras plataformas */}
         <div className="animate-fade-up">
           <p className="section-label mb-3">Outras plataformas</p>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-5 gap-2">
             {MARKETPLACE_SHORTCUTS.map((mp) => (
               <button
                 key={mp.tab}
                 onClick={() => navigate(`/calculadoras?tab=${mp.tab}`)}
-                className="flex flex-col items-center gap-1.5 py-2.5 px-1 bg-surface-2 rounded-xl border border-border transition-colors active:scale-95 hover:border-primary/50"
+                className="flex flex-col items-center gap-1.5 py-2.5 bg-surface-2 rounded-xl border border-border transition-colors active:scale-95 hover:border-primary/50"
               >
                 <div
                   className={cn('w-9 h-9 rounded-lg flex items-center justify-center text-[13px] font-extrabold', mp.text)}
@@ -299,12 +299,12 @@ export default function Home() {
             {/* Outras plataformas */}
             <div className="surface-card p-4">
               <p className="section-label mb-3">Outras plataformas</p>
-              <div className="grid grid-cols-4 gap-3">
+              <div className="grid grid-cols-5 gap-3">
                 {MARKETPLACE_SHORTCUTS.map((mp) => (
                   <button
                     key={mp.tab}
                     onClick={() => navigate(`/calculadoras?tab=${mp.tab}`)}
-                    className="flex flex-col items-center gap-2 py-3 px-2 bg-surface-2 rounded-xl border border-border transition-colors hover:border-primary/50 hover:bg-surface-2/80 active:scale-95"
+                    className="flex flex-col items-center gap-2 py-3 bg-surface-2 rounded-xl border border-border transition-colors hover:border-primary/50 hover:bg-surface-2/80 active:scale-95"
                   >
                     <div
                       className={cn('w-10 h-10 rounded-lg flex items-center justify-center text-sm font-extrabold', mp.text)}
