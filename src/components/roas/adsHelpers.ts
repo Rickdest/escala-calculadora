@@ -2,6 +2,12 @@ import { TrendingUp, TrendingDown, AlertTriangle, Package } from 'lucide-react';
 
 export const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
+export function fmtShort(v: number): string {
+  if (v >= 1_000_000) return `R$ ${(v / 1_000_000).toFixed(1)}M`;
+  if (v >= 1_000) return `R$ ${(v / 1_000).toFixed(1)}k`;
+  return fmt(v);
+}
+
 export type FilterType = 'all' | 'LUCRATIVO' | 'MARGEM_APERTADA' | 'ABAIXO_EMPATE' | 'PREJUIZO' | 'unlinked';
 
 export function getClassCor(cls: string | null) {
