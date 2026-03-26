@@ -20,6 +20,7 @@ interface ProductCardProps {
   product: Product;
   calculation: ProductCalculation;
   adsMetric?: AdMetricDerived;
+  onTap?: () => void;
   onEdit: (product: Product) => void;
   onDuplicate: (productId: string) => void;
   onDelete: (productId: string) => void;
