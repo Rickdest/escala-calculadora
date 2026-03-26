@@ -47,6 +47,7 @@ export default function Products() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [analysisSortBy, setAnalysisSortBy] = useState<SortOption>('margin-high');
+  const [detailProduct, setDetailProduct] = useState<{ product: Product; calc: ProductCalculation } | null>(null);
 
   const products = useMemo(() => {
     if (!currentStore) return [];
