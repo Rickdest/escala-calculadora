@@ -370,6 +370,28 @@ export default function Products() {
       {showProductForm && (
         <ProductForm product={editingProduct} onClose={handleCloseForm} onSave={handleSaveProduct} />
       )}
+
+      {detailProduct && currentStore && (
+        <ProductDetailDrawer
+          product={detailProduct.product}
+          calculation={detailProduct.calc}
+          config={currentStore.config}
+          open={!!detailProduct}
+          onClose={() => setDetailProduct(null)}
+          onEdit={(p) => {
+            setDetailProduct(null);
+            handleEdit(p);
+          }}
+          onDuplicate={async (id) => {
+            setDetailProduct(null);
+            await duplicateProduct(id);
+          }}
+          onDelete={async (id) => {
+            setDetailProduct(null);
+            await deleteProduct(id);
+          }}
+        />
+      )}
     </AppLayout>
   );
 }
