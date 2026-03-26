@@ -1,28 +1,24 @@
 
 
-## Correção de 6 bugs
+## Dropdown no avatar do DesktopHeader
 
-### 1. `shopeeAcelera` hardcoded em `handleSubmit` (ProductForm.tsx ~linha 155)
-Trocar `shopeeAcelera: 'none' as ShopeeAceleraOption` por `shopeeAcelera: (product?.shopeeAcelera ?? 'none') as ShopeeAceleraOption`.
-Também preservar `adsRevenue` do produto: `adsRevenue: product?.adsRevenue ?? 0`.
+### Mudança
+Ao clicar no avatar (canto superior direito do header desktop), abrir um dropdown com duas opções:
+1. **Perfil** — navega para `/profile`
+2. **Sair** — executa `signOut()` do AuthContext
 
-### 2. Preview `localCalc` diverge do cálculo real (ProductForm.tsx ~linhas 59-80)
-Substituir o cálculo manual por chamada a `calculateProductFn` importado de `@/lib/calculateProduct`, montando um `Product` draft e usando o `config` da loja. Isso inclui `shopeeAcelera` do produto e `adsRevenue`.
+### Arquivo: `src/components/layout/DesktopHeader.tsx`
 
-### 3. Lock no CSV inválido (useAdsData.ts)
-Na verdade o código já está dentro do `try` (linha 155), então o `finally` já executa. Porém `importProductCSV` (linha 268-270) tem o mesmo padrão. Vou manter ambos claramente dentro do `try` sem mudança estrutural — o bug descrito não existe no código atual, mas vou garantir consistência de indentação.
+- Importar `DropdownMenu`, `DropdownMenuItem`, etc. de `@/components/ui/dropdown-menu`
+- Importar `useNavigate` de `react-router-dom`
+- Importar `useAuth` de `@/contexts/AuthContext`
+- Importar ícones `UserCircle` e `LogOut` do lucide-react
+- Envolver o avatar existente em `DropdownMenuTrigger` dentro de um `DropdownMenu`
+- Conteúdo do dropdown:
+  - Item "Perfil" com ícone `UserCircle` → `navigate('/profile')`
+  - Separador
+  - Item "Sair" com ícone `LogOut` e texto vermelho → `signOut()`
 
-### 4. `deleteStore` sem verificação de erro (StoreContext.tsx)
-Capturar erro do `supabase.from('products').delete()` e retornar com toast se falhar, antes de deletar a loja.
-
-### 5. `queryKey` recriada a cada render (StoreContext.tsx)
-Envolver com `useMemo(() => [...], [user?.id])`.
-
-### 6. `useEffect` de seleção de loja — dependência faltando (StoreContext.tsx)
-Refatorar para usar `setCurrentStoreState(prev => ...)` eliminando a leitura direta de `currentStore`.
-
-### Arquivos
-- `src/components/forms/ProductForm.tsx` — bugs 1 e 2
-- `src/hooks/useAdsData.ts` — bug 3 (confirmação de que está OK)
-- `src/contexts/StoreContext.tsx` — bugs 4, 5 e 6
+### Resultado
+Avatar vira botão clicável com menu compacto. Sem mudança no mobile.
 
