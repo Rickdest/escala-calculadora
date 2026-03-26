@@ -265,7 +265,7 @@ export default function Home() {
         {/* Hero + Avisos grid */}
         <div className="grid grid-cols-[1fr_320px] gap-4 animate-fade-up">
           {/* Hero Banner */}
-          <div className="rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 p-8 relative overflow-hidden">
+          <div className="rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 px-8 pt-7 pb-5 relative overflow-hidden">
             <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'radial-gradient(circle at 70% 30%, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
             <div className="relative z-10 max-w-2xl">
               <h1 className="text-2xl font-bold text-primary-foreground mb-2 leading-tight">
