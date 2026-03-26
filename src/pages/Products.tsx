@@ -213,7 +213,7 @@ export default function Products() {
 
             {/* Product List */}
             {products.length > 0 ? (
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {products.map(({ product, calc }) => (
                   <ProductCard
                     key={product.id}
