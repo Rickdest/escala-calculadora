@@ -26,7 +26,7 @@ export const SubscriptionModal = React.forwardRef<HTMLDivElement, SubscriptionMo
   const handleCheckout = () => openCheckout(user?.email || undefined);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center">
+    <div ref={ref} className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/70" onClick={onClose} />
       <div className="relative bg-surface w-full max-w-md rounded-t-2xl sm:rounded-2xl p-6 pb-8 space-y-5 animate-fade-up max-h-[90vh] overflow-y-auto border border-border">
         <button onClick={onClose} className="absolute top-4 right-4 p-1.5 rounded-lg hover:bg-surface-2 transition-colors">

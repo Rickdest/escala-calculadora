@@ -16,7 +16,7 @@ export const BottomNavigation = React.forwardRef<HTMLElement, Record<string, nev
   const navigate = useNavigate();
 
   return (
-    <nav className="bottom-nav md:hidden pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+    <nav ref={ref} className="bottom-nav md:hidden pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
       <div className="flex items-center justify-around max-w-lg mx-auto">
         {navItems.map(({ icon: Icon, label, path }) => {
           const isActive = location.pathname === path;
