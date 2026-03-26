@@ -236,9 +236,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     if (updates.imageUrl !== undefined && user) {
       if (updates.imageUrl) {
-        const url = await uploadProductImage(user.id, productId, updates.imageUrl);
-        if (url) {
-          await supabase.from('products').update({ image_url: url }).eq('id', productId);
+        // Only upload if it's a new dataUrl, not an existing Storage URL
+        if (updates.imageUrl.startsWith('data:')) {
+          const url = await uploadProductImage(user.id, productId, updates.imageUrl);
+          if (url) {
+            await supabase.from('products').update({ image_url: url }).eq('id', productId);
+          }
         }
       } else {
         await deleteProductImage(user.id, productId);
