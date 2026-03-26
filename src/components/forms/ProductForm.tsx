@@ -200,7 +200,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
 
   return (
     <div className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm animate-fade-up">
-      <div className="fixed inset-x-0 bottom-0 z-[70] bg-surface rounded-t-2xl animate-slide-up max-h-[92vh] overflow-hidden flex flex-col border-t border-border">
+      <div className="fixed inset-0 z-[70] bg-surface animate-slide-up overflow-hidden flex flex-col md:inset-x-0 md:bottom-0 md:top-auto md:max-h-[92vh] md:rounded-t-2xl md:border-t md:border-border">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="text-base font-bold text-foreground">{product ? 'Editar Produto' : 'Novo Produto'}</h2>
@@ -714,7 +714,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
         </form>
 
         {/* Footer */}
-        <div className="p-4 border-t border-border safe-bottom bg-surface relative z-[60] flex-shrink-0">
+        <div className="p-4 border-t border-border pb-[calc(1.5rem+env(safe-area-inset-bottom))] bg-surface relative z-[60] flex-shrink-0">
           <Button type="submit" onClick={handleSubmit} className="w-full h-12 text-[15px] font-semibold bg-primary hover:bg-primary/90 rounded-[10px] transition-colors active:scale-[0.98]" disabled={!isValid || isSaving}>
             {isSaving ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Salvando...</>) : (<><Save className="w-4 h-4 mr-2" />{product ? 'Salvar Alterações' : 'Salvar Produto'}</>)}
           </Button>
