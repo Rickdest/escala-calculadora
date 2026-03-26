@@ -1,20 +1,35 @@
 
 
-## Subir Novidades e Atalhos no desktop
+## Redesign da Calculadora Rápida Shopee
 
-### Problema
-A coluna direita (Novidades + Atalhos) tem `sticky top-20` que a mantém fixa a 80px do topo. Esse `top-20` está empurrando o conteúdo para baixo demais.
+Baseado na imagem de referência "Proposta", vou aplicar estas mudanças no `src/components/home/QuickCalculator.tsx`:
 
-### Alteração
-No arquivo `src/pages/Home.tsx`, linha 332:
+### 1. Borda laranja no card
+- Trocar `surface-card` por card com `border-primary/40` (borda laranja sutil)
 
-- De: `sticky top-20 self-start`
-- Para: `sticky top-4 self-start`
+### 2. Header com badge "Shopee"
+- Título: "CALCULADORA RÁPIDA" (sem "Shopee" no texto)
+- Badge laranja "Shopee" alinhado à direita no header
 
-Isso muda o offset de 80px para 16px, subindo toda a coluna direita.
+### 3. Labels dos inputs
+- "PREÇO DE CUSTO" → "CUSTO"
+- "EMBALAGEM" → "EMBALAGEM (OPCIONAL)"
 
-### Escopo
-- Apenas desktop
-- Mobile intacto
-- Conteúdo dos cards não muda
+### 4. Cálculo reativo (sem botão "Calcular")
+- Remover o botão "Calcular" e o estado `showResult`/`isCalculating`
+- Mostrar resultados automaticamente quando custo e preço de venda estiverem preenchidos
+- Os 3 cards de resultado (Margem, Lucro, Taxa Shopee) aparecem inline conforme o usuário digita
+
+### 5. Cards de resultado com cores semânticas
+- Card "Margem real" com borda/fundo baseado no `getMarginStatus` (verde/amarelo/vermelho)
+- Card "Lucro líquido" com borda verde ou vermelha
+- Card "Taxa Shopee" com borda vermelha (sempre custo)
+
+### 6. Botão "Salvar produto"
+- Substituir os dois botões ("Ver análise" + "Salvar produto") por um único botão laranja grande "Salvar produto" com ícone ⚡
+- Aparece apenas quando há resultado válido
+- "Ver análise" vira um link discreto abaixo
+
+### Arquivo modificado
+- `src/components/home/QuickCalculator.tsx`
 
