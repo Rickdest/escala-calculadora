@@ -329,7 +329,7 @@ export default function Home() {
           </div>
 
           {/* Right column — sticky sidebar */}
-          <div className="space-y-2.5 sticky top-20 self-start">
+          <div className="space-y-2.5 sticky top-4 self-start">
             {/* Card de Avisos */}
             <div className="rounded-2xl border border-border bg-card p-5 flex flex-col animate-fade-up">
               <div className="flex items-center gap-2 mb-4">
