@@ -16,6 +16,8 @@ export function DesktopHeader() {
   const { collapsed, toggle } = useSidebarState();
   const { currentStore } = useStore();
   const { theme, toggleTheme } = useTheme();
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <header className="hidden md:flex items-center h-14 border-b border-border bg-background/90 backdrop-blur-md px-6 gap-4 sticky top-0 z-40">
