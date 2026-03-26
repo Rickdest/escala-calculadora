@@ -1,7 +1,16 @@
-import { PanelLeftClose, PanelLeft, Sun, Moon } from 'lucide-react';
+import { PanelLeftClose, PanelLeft, Sun, Moon, UserCircle, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useSidebarState } from '@/contexts/SidebarContext';
 import { useStore } from '@/contexts/StoreContext';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export function DesktopHeader() {
   const { collapsed, toggle } = useSidebarState();
