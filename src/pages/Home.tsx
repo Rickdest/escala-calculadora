@@ -125,7 +125,7 @@ export default function Home() {
       <div className="divide-y divide-border">
         {topProducts.map(({ product, calc }) => (
           <button key={product.id} className="w-full py-3 flex items-center gap-3 text-left" onClick={() => navigate('/products')}>
-            <ProductThumbnail productId={product.id} productName={product.name} />
+            <ProductThumbnail productId={product.id} productName={product.name} imageUrl={product.imageUrl} />
             <div className="flex-1 min-w-0">
               <p className="text-[15px] font-medium text-foreground truncate">{product.name}</p>
               <div className="flex items-center gap-1.5 mt-1">

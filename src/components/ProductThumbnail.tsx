@@ -1,26 +1,12 @@
 import { useMemo } from 'react';
 
-const LOCAL_IMAGES_KEY = 'precify-local-images';
-
-function getLocalImages(): Record<string, string> {
-  try {
-    return JSON.parse(localStorage.getItem(LOCAL_IMAGES_KEY) || '{}');
-  } catch {
-    return {};
-  }
-}
-
 interface ProductThumbnailProps {
   productId: string;
   productName: string;
+  imageUrl?: string;
 }
 
-export function ProductThumbnail({ productId, productName }: ProductThumbnailProps) {
-  const imageUrl = useMemo(() => {
-    const images = getLocalImages();
-    return images[productId] || null;
-  }, [productId]);
-
+export function ProductThumbnail({ productName, imageUrl }: ProductThumbnailProps) {
   const initial = (productName || '?').charAt(0).toUpperCase();
 
   if (imageUrl) {

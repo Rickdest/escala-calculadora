@@ -8,11 +8,10 @@ import { toast } from 'sonner';
 import { uploadProductImage, deleteProductImage } from '@/lib/imageUtils';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  LOCAL_IMAGES_KEY, CURRENT_STORE_KEY,
-  getLocalImages, mapDbProduct, mapDbStore, fetchStoresAndProducts,
+  CURRENT_STORE_KEY,
+  mapDbProduct, mapDbStore, fetchStoresAndProducts,
   VariationRecord,
 } from '@/lib/storeMappers';
-import { useImageMigration } from '@/hooks/useImageMigration';
 
 interface StoreContextType {
   stores: Store[];
@@ -93,8 +92,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     queryClient.invalidateQueries({ queryKey });
   }, [queryClient, queryKey]);
 
-  // One-time migration of localStorage images to Storage
-  useImageMigration(user, stores, isLoading, invalidate);
+  // Clean up old localStorage images (one-time migration)
+  useEffect(() => {
+    try { localStorage.removeItem('precify-local-images'); localStorage.removeItem('precify-images-migrated'); } catch {}
+  }, []);
 
   const retryLoad = useCallback(() => { refetch(); }, [refetch]);
 
@@ -196,10 +197,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (url) {
         await supabase.from('products').update({ image_url: url }).eq('id', data.id);
         data.image_url = url;
-      } else {
-        const localImages = getLocalImages();
-        localImages[data.id] = productData.imageUrl;
-        localStorage.setItem(LOCAL_IMAGES_KEY, JSON.stringify(localImages));
       }
     }
 
@@ -239,9 +236,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     if (updates.imageUrl !== undefined && user) {
       if (updates.imageUrl) {
-        const url = await uploadProductImage(user.id, productId, updates.imageUrl);
-        if (url) {
-          await supabase.from('products').update({ image_url: url }).eq('id', productId);
+        // Only upload if it's a new dataUrl, not an existing Storage URL
+        if (updates.imageUrl.startsWith('data:')) {
+          const url = await uploadProductImage(user.id, productId, updates.imageUrl);
+          if (url) {
+            await supabase.from('products').update({ image_url: url }).eq('id', productId);
+          }
         }
       } else {
         await deleteProductImage(user.id, productId);
