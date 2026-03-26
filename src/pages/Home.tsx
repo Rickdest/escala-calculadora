@@ -266,26 +266,31 @@ export default function Home() {
         <div className="rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 p-8 relative overflow-hidden animate-fade-up">
           <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'radial-gradient(circle at 70% 30%, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
           <div className="relative z-10 max-w-2xl">
-            <p className="text-primary-foreground/70 text-sm font-medium mb-1">Precify · Central do Vendedor</p>
             <h1 className="text-2xl font-bold text-primary-foreground mb-2 leading-tight">
-              Precifique, analise e controle tudo em um só lugar
+              Pare de vender no prejuízo.
             </h1>
             <p className="text-primary-foreground/80 text-sm mb-5 max-w-lg">
-              Calcule margens reais, importe relatórios de anúncios e gerencie seu estoque com alertas inteligentes.
+              Descubra sua margem real em segundos e saiba se seus Ads estão dando lucro de verdade.
             </p>
             <div className="flex flex-wrap gap-3">
-              <button
-                onClick={() => setShowProductForm(true)}
-                className="h-10 px-5 bg-white text-primary rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-white/90 transition-colors shadow-sm"
-              >
-                <Plus className="w-4 h-4" /> Precificar produto
-              </button>
-              <button
-                onClick={() => navigate('/roas')}
-                className="h-10 px-5 bg-white/15 text-primary-foreground border border-white/20 rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-white/25 transition-colors backdrop-blur-sm"
-              >
-                <TrendingUp className="w-4 h-4" /> Análise de Ads
-              </button>
+              <div className="flex flex-col items-center">
+                <button
+                  onClick={() => setShowProductForm(true)}
+                  className="h-10 px-5 bg-white text-primary rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-white/90 transition-colors shadow-sm"
+                >
+                  <Plus className="w-4 h-4" /> Precificar produto
+                </button>
+                <span className="text-[12px] text-white/60 mt-1.5 text-center">Calcule em segundos</span>
+              </div>
+              <div className="flex flex-col items-center">
+                <button
+                  onClick={() => navigate('/roas')}
+                  className="h-10 px-5 bg-white/15 text-primary-foreground border border-white/20 rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-white/25 transition-colors backdrop-blur-sm"
+                >
+                  <TrendingUp className="w-4 h-4" /> Análise de Ads
+                </button>
+                <span className="text-[12px] text-white/60 mt-1.5 text-center">Importe seu relatório</span>
+              </div>
             </div>
           </div>
         </div>
