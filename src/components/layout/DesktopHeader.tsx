@@ -51,10 +51,25 @@ export function DesktopHeader() {
         <Moon className="w-3.5 h-3.5 relative z-10 ml-[9px] text-text-3" />
       </button>
 
-      {/* Avatar */}
-      <div className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold ring-2 ring-primary/20 select-none shrink-0">
-        {currentStore?.name?.[0]?.toUpperCase() || 'P'}
-      </div>
+      {/* Avatar dropdown */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold ring-2 ring-primary/20 select-none shrink-0 cursor-pointer hover:ring-primary/40 transition-all">
+            {currentStore?.name?.[0]?.toUpperCase() || 'P'}
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer">
+            <UserCircle className="w-4 h-4 mr-2" />
+            Perfil
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer text-destructive focus:text-destructive">
+            <LogOut className="w-4 h-4 mr-2" />
+            Sair
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </header>
   );
 }
