@@ -1,132 +1,79 @@
-import React, { useState, useRef, useCallback, useMemo } from 'react';
-import { Package, MoreVertical, Copy, Trash2, Edit, Upload, BarChart3 } from 'lucide-react';
-import { Product, ProductCalculation } from '@/types/store';
+import React, { useRef, useCallback } from 'react';
+import { Package, MoreVertical, Copy, Trash2, Edit, Upload } from 'lucide-react';
+import { Product, ProductCalculation, StoreConfig } from '@/types/store';
 import { cn, getMarginStatus } from '@/lib/utils';
-import { useStore } from '@/contexts/StoreContext';
-import { AdMetricDerived } from '@/lib/shopeeAdsParser';
-import { ImportAdsModal } from '@/components/roas/ImportAdsModal';
-import { calcOutrosCanais, getBestChannel } from '@/lib/outrosCanaisUtils';
-import { OutrosCanais } from '@/types/store';
-import { useIsMobile } from '@/hooks/use-mobile';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+
+// ── Taxas por plataforma (faixa única simplificada para comparação rápida) ──
+const PLATFORM_FEES: { id: string; name: string; feePercent: number; feeFixed: number }[] = [
+  { id: 'shopee',  name: 'Shopee',        feePercent: 20,  feeFixed: 4   },
+  { id: 'amazon',  name: 'Amazon',         feePercent: 15,  feeFixed: 0   },
+  { id: 'shein',   name: 'Shein',          feePercent: 20,  feeFixed: 0   },
+  { id: 'ml',      name: 'Mercado Livre',  feePercent: 14,  feeFixed: 0   },
+  { id: 'tiktok',  name: 'TikTok Shop',    feePercent: 12,  feeFixed: 4   },
+];
+
+function calcPlatformMargin(
+  salePrice: number,
+  costPrice: number,
+  packagingCost: number,
+  feePercent: number,
+  feeFixed: number,
+  taxes: number
+): number {
+  const fee = salePrice * (feePercent / 100) + feeFixed;
+  const tax = salePrice * (taxes / 100);
+  const net = salePrice - costPrice - packagingCost - fee - tax;
+  return salePrice > 0 ? (net / salePrice) * 100 : 0;
+}
 
 interface ProductCardProps {
   product: Product;
   calculation: ProductCalculation;
-  adsMetric?: AdMetricDerived;
-  onTap?: () => void;
+  config?: StoreConfig;
+  adsMetric?: {
+    roas: number;
+    acos: number;
+    directAcos?: number | null;
+    itemsSold: number;
+    avgPosition?: number | null;
+    directRoas?: number | null;
+  } | null;
   onEdit: (product: Product) => void;
   onDuplicate: (productId: string) => void;
   onDelete: (productId: string) => void;
+  onImportAds?: (productId: string) => void;
+  onCardClick?: (product: Product) => void;
+  /** @deprecated use onCardClick */
+  onTap?: () => void;
   onAdsUpdate?: () => void;
 }
 
-function getPositionColor(pos: number | null | undefined) {
-  if (!pos || pos <= 0) return 'text-muted-foreground';
-  if (pos <= 3) return 'text-success';
-  if (pos <= 8) return 'text-primary';
-  if (pos <= 16) return 'text-warning';
-  return 'text-destructive';
-}
+const fmt = (v: number) =>
+  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
-function getPositionDot(pos: number) {
-  if (pos <= 3) return 'bg-success';
-  if (pos <= 8) return 'bg-primary';
-  if (pos <= 16) return 'bg-warning';
-  return 'bg-destructive';
-}
-
-function getMetricStyle(margin: number) {
-  if (margin < 0) return 'bg-destructive/15 text-destructive';
-  if (margin < 10) return 'bg-warning/15 text-warning';
-  return 'bg-success/15 text-success';
-}
-
-function ProductCardMenu({ product, onEdit, onDuplicate, onDelete, onImportAds }: {
-  product: Product;
-  onEdit: () => void;
-  onDuplicate: () => void;
-  onDelete: () => void;
-  onImportAds: () => void;
-}) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          onClick={(e) => e.stopPropagation()}
-          className="p-1.5 hover:bg-secondary rounded-lg transition-colors shrink-0"
-        >
-          <MoreVertical className="w-4 h-4 text-muted-foreground" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-        <DropdownMenuItem onClick={onEdit}>
-          <Edit className="w-4 h-4 mr-2" />Editar
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={onDuplicate}>
-          <Copy className="w-4 h-4 mr-2" />Duplicar
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onImportAds}>
-          <Upload className="w-4 h-4 mr-2" />Importar anúncios
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
-          <Trash2 className="w-4 h-4 mr-2" />Excluir
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-function AdsMetricsPills({ adsMetric }: { adsMetric: AdMetricDerived }) {
-  return (
-    <div className="flex items-center gap-1.5 flex-wrap">
-      {adsMetric.avgPosition != null && adsMetric.avgPosition > 0 && (
-        <span className={cn('inline-flex items-center gap-1 bg-secondary rounded-lg px-2.5 py-1 text-xs font-bold', getPositionColor(adsMetric.avgPosition))}>
-          <span className={cn('w-1.5 h-1.5 rounded-full', getPositionDot(adsMetric.avgPosition))} />
-          Pos. #{adsMetric.avgPosition}
-        </span>
-      )}
-      <span className="bg-secondary rounded-lg px-2.5 py-1 text-xs font-bold text-foreground">
-        ROAS {adsMetric.roas.toFixed(2)}
-      </span>
-      <span className="bg-secondary rounded-lg px-2.5 py-1 text-xs font-bold text-muted-foreground">
-        ACOS {adsMetric.acos.toFixed(1)}%
-      </span>
-      {adsMetric.directAcos != null && adsMetric.directAcos > 0 && (
-        <span className="bg-secondary rounded-lg px-2.5 py-1 text-xs font-bold text-muted-foreground">
-          ACOS direto {adsMetric.directAcos.toFixed(1)}%
-        </span>
-      )}
-      {adsMetric.itemsSold > 0 && (
-        <span className="bg-secondary rounded-lg px-2.5 py-1 text-xs font-bold text-muted-foreground">
-          {adsMetric.itemsSold} vendidos
-        </span>
-      )}
-    </div>
-  );
-}
-
-export function ProductCard({ product, calculation, adsMetric, onTap, onEdit, onDuplicate, onDelete, onAdsUpdate }: ProductCardProps) {
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
+export function ProductCard({
+  product,
+  calculation,
+  config,
+  adsMetric,
+  onEdit,
+  onDuplicate,
+  onDelete,
+  onImportAds,
+  onCardClick,
+  onTap,
+  onAdsUpdate,
+}: ProductCardProps) {
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isLongPress = useRef(false);
-  const [showAdsImport, setShowAdsImport] = useState(false);
-  const isMobile = useIsMobile();
 
-  const { currentStore } = useStore();
-  const products = currentStore?.products || [];
-
-  const fmt = (v: number) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
-
-  const metricStyle = getMetricStyle(calculation.realMargin);
+  const status = getMarginStatus(calculation.realMargin);
 
   const handleTouchStart = useCallback(() => {
     isLongPress.current = false;
@@ -137,214 +84,189 @@ export function ProductCard({ product, calculation, adsMetric, onTap, onEdit, on
   }, [onEdit, product]);
 
   const handleTouchEnd = useCallback(() => {
-    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
   }, []);
 
   const handleTouchMove = useCallback(() => {
-    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
   }, []);
 
-  const hasOutrosCanais = product.outrosCanais && typeof product.outrosCanais === 'object' && Object.keys(product.outrosCanais).length > 0;
+  const handleClick = useCallback(() => {
+    if (!isLongPress.current) {
+      if (onCardClick) onCardClick(product);
+      else if (onTap) onTap();
+      else onEdit(product);
+    }
+  }, [onCardClick, onTap, onEdit, product]);
 
-  const channelResults = useMemo(() => {
-    if (!hasOutrosCanais) return [];
-    return calcOutrosCanais(product.outrosCanais as OutrosCanais, currentStore?.config?.taxes || 0);
-  }, [product.outrosCanais, hasOutrosCanais, currentStore?.config?.taxes]);
+  // ── Platform margins (excluding Shopee which is the main card)
+  const taxes = config?.taxes ?? 0;
+  const desiredMargin = config?.desiredMargin ?? 15;
 
-  const bestChannel = useMemo(() => getBestChannel(channelResults), [channelResults]);
+  const platformMargins = PLATFORM_FEES
+    .filter(p => p.id !== 'shopee')
+    .map(p => ({
+      ...p,
+      margin: calcPlatformMargin(
+        product.salePrice,
+        product.costPrice,
+        product.packagingCost,
+        p.feePercent,
+        p.feeFixed,
+        taxes
+      ),
+    }))
+    .sort((a, b) => b.margin - a.margin);
 
-  const hasAds = !!adsMetric;
+  const bestPlatform = platformMargins[0];
 
-  // Desktop layout (md+)
-  if (!isMobile) {
-    return (
-      <>
-        <div
-          className="p-4 rounded-2xl border border-border bg-card hover:border-primary/30 transition-all cursor-pointer select-none group"
-          onClick={() => onTap ? onTap() : onEdit(product)}
-        >
-          {/* Header: Image + Name + Price + Menu */}
-          <div className="flex items-start gap-3">
-            {product.imageUrl ? (
-              <img src={product.imageUrl} alt={product.name} className="w-12 h-12 rounded-xl object-cover shrink-0" />
-            ) : (
-              <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center shrink-0">
-                <Package className="w-5 h-5 text-muted-foreground" />
-              </div>
-            )}
+  // ── Stock color
+  const stockColor =
+    product.stockQuantity === 0
+      ? 'text-destructive'
+      : product.stockQuantity <= (product.minStockQuantity ?? 5)
+      ? 'text-warning'
+      : 'text-muted-foreground';
 
-            <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-sm text-foreground truncate">{product.name}</h3>
-              <div className="flex items-center gap-3 mt-1">
-                <span className="text-xs text-muted-foreground">
-                  Preço: <span className="font-semibold text-primary">{fmt(product.salePrice)}</span>
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  Custo: <span className="font-semibold text-foreground">{fmt(product.costPrice)}</span>
-                </span>
-              </div>
-            </div>
-
-            <ProductCardMenu
-              product={product}
-              onEdit={() => onEdit(product)}
-              onDuplicate={() => onDuplicate(product.id)}
-              onDelete={() => onDelete(product.id)}
-              onImportAds={() => setShowAdsImport(true)}
-            />
-          </div>
-
-          {/* Margin + Profit chips */}
-          <div className="mt-3 flex items-center gap-2">
-            <span className={cn('px-3 py-1 rounded-full text-xs font-bold', metricStyle)}>
-              Margem: {calculation.realMargin.toFixed(1)}%
-            </span>
-            <span className={cn('px-3 py-1 rounded-full text-xs font-bold', metricStyle)}>
-              Lucro: {fmt(calculation.netProfit)}
-            </span>
-          </div>
-
-          {/* Other channels */}
-          {hasOutrosCanais && channelResults.length > 0 && (
-            <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
-              {channelResults.map(ch => (
-                <span
-                  key={ch.key}
-                  className={cn(
-                    'inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold',
-                    ch.margin >= 0 ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
-                  )}
-                >
-                  {bestChannel?.key === ch.key && '👑'} {ch.label} {ch.margin.toFixed(1)}%
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Ads metrics */}
-          {adsMetric && (
-            <div className="mt-2.5">
-              <AdsMetricsPills adsMetric={adsMetric} />
-            </div>
-          )}
-
-          {/* Import Ads link */}
-          {!hasAds && (
-            <div className="mt-2.5">
-              <button
-                onClick={(e) => { e.stopPropagation(); setShowAdsImport(true); }}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors opacity-0 group-hover:opacity-100"
-              >
-                <BarChart3 className="w-3.5 h-3.5" />
-                Importar Ads CSV
-              </button>
-            </div>
-          )}
-        </div>
-
-        {showAdsImport && (
-          <ImportAdsModal
-            products={products}
-            preselectedProductId={product.id}
-            onClose={() => setShowAdsImport(false)}
-            onSuccess={() => { setShowAdsImport(false); onAdsUpdate?.(); }}
-          />
-        )}
-      </>
-    );
-  }
-
-  // Mobile layout (unchanged)
   return (
-    <>
-      <div
-        className="p-4 rounded-xl border border-border bg-card hover:border-primary/30 transition-all cursor-pointer select-none active:scale-[0.995]"
-        onClick={() => { if (!isLongPress.current) { onTap ? onTap() : onEdit(product); } }}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        onTouchMove={handleTouchMove}
-      >
-        <div className="flex items-start gap-3">
-          {product.imageUrl ? (
-            <img src={product.imageUrl} alt={product.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />
-          ) : (
-            <div className="w-14 h-14 rounded-xl bg-secondary flex items-center justify-center shrink-0">
-              <Package className="w-6 h-6 text-muted-foreground" />
-            </div>
-          )}
-
-          <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-base text-foreground truncate">{product.name}</h3>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Preço: <span className="text-primary font-bold">{fmt(product.salePrice)}</span>
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Custo: <span className="font-medium text-foreground">{fmt(product.costPrice)}</span>
-            </p>
+    <div
+      className="rounded-2xl border border-border bg-card p-4 cursor-pointer select-none active:scale-[0.995] transition-all hover:border-primary/30"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchMove}
+      onClick={handleClick}
+    >
+      {/* ── HEADER: image + name + menu ── */}
+      <div className="flex items-start gap-3">
+        {product.imageUrl ? (
+          <img src={product.imageUrl} alt={product.name} className="w-12 h-12 rounded-xl object-cover shrink-0" />
+        ) : (
+          <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center shrink-0">
+            <Package className="w-5 h-5 text-muted-foreground" />
           </div>
+        )}
 
-          <ProductCardMenu
-            product={product}
-            onEdit={() => onEdit(product)}
-            onDuplicate={() => onDuplicate(product.id)}
-            onDelete={() => onDelete(product.id)}
-            onImportAds={() => setShowAdsImport(true)}
-          />
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-sm text-foreground truncate">{product.name}</h3>
+          <p className="text-xs text-muted-foreground mt-0.5 truncate">
+            <span className="font-semibold text-primary">{fmt(product.salePrice)}</span>
+            <span className="mx-1">venda · custo</span>
+            <span className="font-semibold text-foreground">{fmt(product.costPrice)}</span>
+          </p>
         </div>
 
-        <div className="mt-3 flex items-center justify-center gap-2">
-          <span className={cn('rounded-lg px-3 py-1.5 text-sm font-bold', metricStyle)}>
-            Margem: {calculation.realMargin.toFixed(1)}%
-          </span>
-          <span className={cn('rounded-lg px-3 py-1.5 text-sm font-bold', metricStyle)}>
-            Lucro: {fmt(calculation.netProfit)}
-          </span>
-        </div>
-
-        {!hasAds && (
-          <div className="mt-3 flex justify-center">
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowAdsImport(true); }}
-              className="inline-flex items-center gap-2 border border-border rounded-lg px-4 py-2 text-sm font-bold text-muted-foreground hover:text-foreground hover:border-primary/30 transition-colors"
-            >
-              <BarChart3 className="w-4 h-4" />
-              Importar Ads CSV
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button onClick={(e) => e.stopPropagation()} className="p-1.5 hover:bg-secondary rounded-lg transition-colors shrink-0">
+              <MoreVertical className="w-4 h-4 text-muted-foreground" />
             </button>
-          </div>
-        )}
-
-        {adsMetric && (
-          <div className="mt-3">
-            <AdsMetricsPills adsMetric={adsMetric} />
-          </div>
-        )}
-
-        {hasOutrosCanais && channelResults.length > 0 && (
-          <div className="mt-3 flex items-center gap-1.5 flex-wrap justify-center">
-            {channelResults.map(ch => (
-              <span
-                key={ch.key}
-                className={cn(
-                  'inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold',
-                  ch.margin >= 0 ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
-                )}
-              >
-                {bestChannel?.key === ch.key && '👑'} {ch.label} {ch.margin.toFixed(1)}%
-              </span>
-            ))}
-          </div>
-        )}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem onClick={() => { onEdit(product); }}>
+              <Edit className="w-4 h-4 mr-2" /> Editar
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { onDuplicate(product.id); }}>
+              <Copy className="w-4 h-4 mr-2" /> Duplicar
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => { onDelete(product.id); }} className="text-destructive focus:text-destructive">
+              <Trash2 className="w-4 h-4 mr-2" /> Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      {showAdsImport && (
-        <ImportAdsModal
-          products={products}
-          preselectedProductId={product.id}
-          onClose={() => setShowAdsImport(false)}
-          onSuccess={() => { setShowAdsImport(false); onAdsUpdate?.(); }}
-        />
+      {/* ── METRICS: margin · profit · stock in 3-column grid ── */}
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        <div className={cn('rounded-xl p-2.5 flex flex-col items-start border', status.bg, status.border)}>
+          <p className={cn('font-mono text-base font-extrabold leading-tight', status.color)}>
+            {calculation.realMargin.toFixed(1)}%
+          </p>
+          <p className="text-[10px] font-medium text-muted-foreground mt-0.5">Margem</p>
+        </div>
+
+        <div className={cn('rounded-xl p-2.5 flex flex-col items-start border', status.bg, status.border)}>
+          <p className={cn('font-mono text-sm font-extrabold leading-tight truncate w-full', status.color)}>
+            {fmt(calculation.netProfit)}
+          </p>
+          <p className="text-[10px] font-medium text-muted-foreground mt-0.5">Lucro</p>
+        </div>
+
+        <div className="rounded-xl p-2.5 flex flex-col items-start border border-border bg-secondary/50">
+          <p className={cn('font-mono text-base font-extrabold leading-tight', stockColor)}>
+            {product.stockQuantity} un.
+          </p>
+          <p className="text-[10px] font-medium text-muted-foreground mt-0.5">Estoque</p>
+        </div>
+      </div>
+
+      {/* ── PLATFORMS: 2×2 grid with best highlighted ── */}
+      {product.salePrice > 0 && product.costPrice > 0 && config && (
+        <div className="mt-3">
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+            Margem em outras plataformas
+          </p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {platformMargins.map(p => (
+              <div key={p.id} className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-secondary/50">
+                <span className="text-[11px] font-medium text-foreground truncate">
+                  {p.id === bestPlatform.id && (
+                    <span className="text-warning mr-0.5">★</span>
+                  )}
+                  {p.name}
+                </span>
+                <span className={cn('text-[11px] font-bold font-mono', 
+                  p.margin >= desiredMargin ? 'text-success' :
+                  p.margin >= 0 ? 'text-foreground' : 'text-destructive'
+                )}>
+                  {p.margin.toFixed(1)}%
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
-    </>
+
+      {/* ── ADS: imported data or import button ── */}
+      {adsMetric ? (
+        <div className="mt-3 flex items-center gap-1.5 flex-wrap">
+          {adsMetric.avgPosition != null && adsMetric.avgPosition > 0 && (
+            <span className="inline-flex items-center gap-1 bg-secondary rounded-lg px-2.5 py-1 text-xs font-bold text-foreground">
+              Pos. #{adsMetric.avgPosition}
+            </span>
+          )}
+          <span className="bg-secondary rounded-lg px-2.5 py-1 text-xs font-bold text-foreground">
+            ROAS {adsMetric.roas.toFixed(2)}
+          </span>
+          <span className="bg-secondary rounded-lg px-2.5 py-1 text-xs font-bold text-muted-foreground">
+            ACOS {adsMetric.acos.toFixed(1)}%
+          </span>
+          {adsMetric.directAcos != null && adsMetric.directAcos > 0 && (
+            <span className="bg-secondary rounded-lg px-2.5 py-1 text-xs font-bold text-muted-foreground">
+              ACOS direto {adsMetric.directAcos.toFixed(1)}%
+            </span>
+          )}
+          {adsMetric.itemsSold > 0 && (
+            <span className="bg-secondary rounded-lg px-2.5 py-1 text-xs font-bold text-muted-foreground">
+              {adsMetric.itemsSold} vendidos
+            </span>
+          )}
+        </div>
+      ) : (
+        <button
+          onClick={(e) => { e.stopPropagation(); onImportAds?.(product.id); }}
+          className="mt-3 w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-border/40 bg-transparent hover:bg-secondary transition-colors text-[11px] text-muted-foreground hover:text-foreground"
+        >
+          <Upload className="w-3.5 h-3.5" />
+          Importar relatório de Ads
+        </button>
+      )}
+    </div>
   );
 }
 
