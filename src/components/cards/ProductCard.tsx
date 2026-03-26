@@ -44,6 +44,7 @@ interface ProductCardProps {
     itemsSold: number;
     avgPosition?: number | null;
     directRoas?: number | null;
+    spend?: number;
   } | null;
   onEdit: (product: Product) => void;
   onDuplicate: (productId: string) => void;
@@ -241,28 +242,40 @@ export function ProductCard({
 
       {/* ── ADS: imported data or import button ── */}
       {adsMetric ? (
-        <div className="mt-3 flex items-center gap-1.5 flex-wrap">
-          {adsMetric.avgPosition != null && adsMetric.avgPosition > 0 && (
-            <span className="inline-flex items-center gap-1 bg-secondary rounded-lg px-2.5 py-1 text-xs font-bold text-foreground">
-              Pos. #{adsMetric.avgPosition}
-            </span>
-          )}
-          <span className="bg-secondary rounded-lg px-2.5 py-1 text-xs font-bold text-foreground">
-            ROAS {adsMetric.roas.toFixed(2)}
-          </span>
-          <span className="bg-secondary rounded-lg px-2.5 py-1 text-xs font-bold text-muted-foreground">
-            ACOS {adsMetric.acos.toFixed(1)}%
-          </span>
-          {adsMetric.directAcos != null && adsMetric.directAcos > 0 && (
-            <span className="bg-secondary rounded-lg px-2.5 py-1 text-xs font-bold text-muted-foreground">
-              ACOS direto {adsMetric.directAcos.toFixed(1)}%
-            </span>
-          )}
-          {adsMetric.itemsSold > 0 && (
-            <span className="bg-secondary rounded-lg px-2.5 py-1 text-xs font-bold text-muted-foreground">
-              {adsMetric.itemsSold} vendidos
-            </span>
-          )}
+        <div className="mt-3">
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="w-2 h-2 rounded-full bg-success" />
+            <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Ads Shopee</span>
+          </div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {/* Posição */}
+            <div className="rounded-xl border border-border/60 bg-secondary/30 p-2.5 flex flex-col">
+              <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Posição</p>
+              <p className="font-mono text-base font-extrabold leading-tight text-foreground mt-0.5">
+                {adsMetric.avgPosition != null && adsMetric.avgPosition > 0 ? `#${adsMetric.avgPosition}` : '—'}
+              </p>
+            </div>
+            {/* ROAS */}
+            <div className="rounded-xl border border-border/60 bg-secondary/30 p-2.5 flex flex-col">
+              <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">ROAS</p>
+              <p className={cn('font-mono text-base font-extrabold leading-tight mt-0.5', getRoasColor(adsMetric.roas))}>
+                {adsMetric.roas.toFixed(2)}
+              </p>
+              {adsMetric.directRoas != null && adsMetric.directRoas > 0 && (
+                <p className="text-[9px] text-muted-foreground mt-0.5">direto {adsMetric.directRoas.toFixed(2)}</p>
+              )}
+            </div>
+            {/* Custo/Un */}
+            <div className="rounded-xl border border-border/60 bg-secondary/30 p-2.5 flex flex-col">
+              <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Custo/un</p>
+              <p className="font-mono text-sm font-extrabold leading-tight text-foreground mt-0.5">
+                {adsMetric.spend && adsMetric.itemsSold > 0 ? fmt(adsMetric.spend / adsMetric.itemsSold) : '—'}
+              </p>
+              {adsMetric.itemsSold > 0 && (
+                <p className="text-[9px] text-muted-foreground mt-0.5">{adsMetric.itemsSold} vendidos</p>
+              )}
+            </div>
+          </div>
         </div>
       ) : (
         <button
