@@ -324,7 +324,7 @@ export default function Home() {
         {/* Main grid: left (calculator + products) + right (quick links + alerts) */}
         <div className="grid grid-cols-[1fr_320px] gap-3">
           {/* Left column */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <QuickCalculator onSaveProduct={onSaveFromCalc} />
 
             {/* Outras plataformas */}
