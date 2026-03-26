@@ -114,7 +114,7 @@ function AdsMetricsPills({ adsMetric }: { adsMetric: AdMetricDerived }) {
   );
 }
 
-export function ProductCard({ product, calculation, adsMetric, onEdit, onDuplicate, onDelete, onAdsUpdate }: ProductCardProps) {
+export function ProductCard({ product, calculation, adsMetric, onTap, onEdit, onDuplicate, onDelete, onAdsUpdate }: ProductCardProps) {
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const isLongPress = useRef(false);
   const [showAdsImport, setShowAdsImport] = useState(false);
