@@ -1,35 +1,27 @@
 
 
-## Redesign da Calculadora Rápida Shopee
+## Ajustar Calculadora Rápida para match com referência
 
-Baseado na imagem de referência "Proposta", vou aplicar estas mudanças no `src/components/home/QuickCalculator.tsx`:
+### Arquivo: `src/components/home/QuickCalculator.tsx`
 
-### 1. Borda laranja no card
-- Trocar `surface-card` por card com `border-primary/40` (borda laranja sutil)
+### 1. Layout dos inputs: 3 colunas → 2 colunas + 1 full-width
+- Mudar grid de `grid-cols-3` para `grid-cols-2`
+- Mover "EMBALAGEM (OPCIONAL)" para fora do grid, como input full-width abaixo
+- Label: manter "EMBALAGEM (OPCIONAL)" (não "OPC.")
 
-### 2. Header com badge "Shopee"
-- Título: "CALCULADORA RÁPIDA" (sem "Shopee" no texto)
-- Badge laranja "Shopee" alinhado à direita no header
+### 2. Tamanho dos inputs
+- Aumentar altura dos inputs de `h-11` para `h-12`
+- Aumentar texto do input de `text-sm` para `text-base` (16px)
+- Texto do "R$" prefix de `text-[11px]` para `text-sm`
 
-### 3. Labels dos inputs
-- "PREÇO DE CUSTO" → "CUSTO"
-- "EMBALAGEM" → "EMBALAGEM (OPCIONAL)"
+### 3. Cards de resultado: centralizado → left-aligned
+- Trocar `items-center justify-center` por `items-start`
+- Valor em cima, label embaixo (já está assim, mas alinhar à esquerda)
+- Aumentar texto do valor de `text-[18px]` para `text-[22px]`
 
-### 4. Cálculo reativo (sem botão "Calcular")
-- Remover o botão "Calcular" e o estado `showResult`/`isCalculating`
-- Mostrar resultados automaticamente quando custo e preço de venda estiverem preenchidos
-- Os 3 cards de resultado (Margem, Lucro, Taxa Shopee) aparecem inline conforme o usuário digita
+### 4. Sem mudanças no ProductDetailDrawer
+- O drawer já está conforme a segunda imagem de referência
 
-### 5. Cards de resultado com cores semânticas
-- Card "Margem real" com borda/fundo baseado no `getMarginStatus` (verde/amarelo/vermelho)
-- Card "Lucro líquido" com borda verde ou vermelha
-- Card "Taxa Shopee" com borda vermelha (sempre custo)
-
-### 6. Botão "Salvar produto"
-- Substituir os dois botões ("Ver análise" + "Salvar produto") por um único botão laranja grande "Salvar produto" com ícone ⚡
-- Aparece apenas quando há resultado válido
-- "Ver análise" vira um link discreto abaixo
-
-### Arquivo modificado
+### Arquivos modificados
 - `src/components/home/QuickCalculator.tsx`
 
