@@ -3,6 +3,7 @@ import { Package, MoreVertical, Copy, Trash2, Edit, Upload } from 'lucide-react'
 import { Product, ProductCalculation, StoreConfig } from '@/types/store';
 import { cn, getMarginStatus } from '@/lib/utils';
 import { calcFullRoas } from '@/lib/roasUtils';
+import { getRoasColor } from '@/components/roas/adsHelpers';
 import {
   DropdownMenu,
   DropdownMenuContent,
