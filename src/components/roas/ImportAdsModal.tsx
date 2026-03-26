@@ -95,8 +95,8 @@ export function ImportAdsModal({ products, preselectedProductId, onClose, onSucc
   };
 
   return (
-    <div className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-card border border-border rounded-2xl w-full max-w-md max-h-[80vh] overflow-hidden flex flex-col animate-scale-up">
+    <div className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm flex flex-col md:flex-row md:items-center md:justify-center md:p-4" onClick={onClose}>
+      <div className="bg-card border border-border w-full h-full md:h-auto md:max-w-md md:max-h-[80vh] md:rounded-2xl overflow-hidden flex flex-col animate-scale-up" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h3 className="font-bold text-foreground text-sm">

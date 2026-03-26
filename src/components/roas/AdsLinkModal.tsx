@@ -14,8 +14,8 @@ export function AdsLinkModal({ products, onClose, onLink }: Props) {
   const filtered = products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-card border border-border rounded-2xl w-full max-w-md max-h-[70vh] overflow-hidden flex flex-col animate-scale-up" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm flex flex-col md:flex-row md:items-center md:justify-center md:p-4" onClick={onClose}>
+      <div className="bg-card border border-border w-full h-full md:h-auto md:max-w-md md:max-h-[70vh] md:rounded-2xl overflow-hidden flex flex-col animate-scale-up" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h3 className="font-bold text-foreground text-sm">Vincular ao produto cadastrado</h3>
           <button onClick={onClose} className="p-1 hover:bg-secondary rounded-lg">
