@@ -1,52 +1,20 @@
 
-## Corrigir o espaço “falso” entre hero e calculadora no desktop
 
-### Diagnóstico
-O gap não está vindo só de `gap`/`space-y`. O problema principal é estrutural:
+## Subir Novidades e Atalhos no desktop
 
-- Hoje o desktop está em **2 grids separados**:
-  1. `Hero + Novidades`
-  2. `Calculadora + Atalhos`
-- Como `Hero` e `Novidades` estão na **mesma row**, a altura dessa row passa a ser a do card mais alto (`Novidades`).
-- Resultado: mesmo com `items-start`, a **calculadora só começa depois do fim da row inteira**, criando aquele vazio embaixo do hero.
+### Problema
+A coluna direita (Novidades + Atalhos) tem `sticky top-20` que a mantém fixa a 80px do topo. Esse `top-20` está empurrando o conteúdo para baixo demais.
 
-### O que vou alterar
-No arquivo `src/pages/Home.tsx`, apenas no bloco desktop (`md:block`):
+### Alteração
+No arquivo `src/pages/Home.tsx`, linha 332:
 
-1. **Trocar a estrutura de 2 grids empilhados por 1 grid principal de 2 colunas**
-   - Coluna esquerda:
-     - Hero
-     - QuickCalculator
-     - Outras plataformas
-     - Produtos / empty state
-   - Coluna direita:
-     - Novidades
-     - Atalhos
-     - alerta de estoque
-     - Education
+- De: `sticky top-20 self-start`
+- Para: `sticky top-4 self-start`
 
-2. **Manter somente desktop**
-   - O bloco mobile (`md:hidden`) fica intacto.
-   - Nada muda em textos, botões, cores ou sidebar.
+Isso muda o offset de 80px para 16px, subindo toda a coluna direita.
 
-3. **Aplicar espaçamento vertical real de 12px dentro de cada coluna**
-   - esquerda: hero → calculadora = 12px
-   - direita: novidades → atalhos = 12px
-   - demais blocos desktop também seguem 12px
+### Escopo
+- Apenas desktop
+- Mobile intacto
+- Conteúdo dos cards não muda
 
-4. **Preservar a proporção atual**
-   - grid externo continua com algo como `grid-cols-[1fr_320px]`
-   - `items-start` continua no grid externo
-
-### Resultado esperado
-```text
-┌──────────────────────────────┬─────────────────┐
-│ HERO                         │ NOVIDADES       │
-│                              │ ATALHOS         │
-│ CALCULADORA                  │ ALERTA ESTOQUE  │
-│ OUTRAS PLATAFORMAS           │ EDUCAÇÃO        │
-│ PRODUTOS                     │                 │
-└──────────────────────────────┴─────────────────┘
-```
-
-Assim a calculadora sobe imediatamente para baixo do hero,
