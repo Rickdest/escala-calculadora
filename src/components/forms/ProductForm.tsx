@@ -4,6 +4,8 @@ import { calcOutrosCanais, getBestChannel } from '@/lib/outrosCanaisUtils';
 import { X, Camera, Calculator, TrendingUp, TrendingDown, AlertTriangle, Save, Loader2, ChevronDown, CalendarDays, Settings2, Info, ExternalLink } from 'lucide-react';
 import { ProductAdsSection } from '@/components/forms/ProductAdsSection';
 import { Product, ShopeeAceleraOption, getShopeeFeeForPrice, OutrosCanais } from '@/types/store';
+import { AMAZON_CATEGORIES } from '@/lib/amazonUtils';
+import { ML_CATEGORIES } from '@/lib/mlUtils';
 import { useStore } from '@/contexts/StoreContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

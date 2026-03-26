@@ -114,11 +114,43 @@ export interface OtherChannelData {
   salePrice: number;
 }
 
+export interface TikTokChannelData {
+  costPrice: number;
+  salePrice: number;
+  packagingCost?: number;
+  affiliatePercent?: number;
+}
+
+export interface SheinChannelData {
+  costPrice: number;
+  salePrice: number;
+  category?: 'moda' | 'outros';
+  weightKg?: number;
+  packagingCost?: number;
+}
+
+export interface AmazonChannelData {
+  costPrice: number;
+  salePrice: number;
+  categoryRate?: number;
+  plan?: 'individual' | 'profissional';
+  packagingCost?: number;
+}
+
+export interface MLChannelData {
+  costPrice: number;
+  salePrice: number;
+  categoryIndex?: number;
+  anuncio?: 'classico' | 'premium';
+  freightCost?: number;
+  packagingCost?: number;
+}
+
 export interface OutrosCanais {
-  tiktok?: OtherChannelData;
-  shein?: OtherChannelData;
-  amazon?: OtherChannelData;
-  ml?: OtherChannelData;
+  tiktok?: TikTokChannelData;
+  shein?: SheinChannelData;
+  amazon?: AmazonChannelData;
+  ml?: MLChannelData;
 }
 
 // ══════════ PRODUCT ══════════
