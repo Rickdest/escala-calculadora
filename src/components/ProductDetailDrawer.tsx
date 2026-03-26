@@ -80,7 +80,7 @@ export function ProductDetailDrawer({
 
       {/* Drawer */}
       <div
-        className="relative w-full md:max-w-lg md:rounded-2xl rounded-t-2xl bg-card border border-border max-h-[90vh] flex flex-col animate-slide-up overflow-hidden"
+        className="relative w-full bg-card border border-border flex flex-col animate-slide-up overflow-hidden fixed inset-0 md:relative md:inset-auto md:max-w-lg md:max-h-[90vh] md:rounded-2xl rounded-t-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Handle (mobile) */}
@@ -231,7 +231,7 @@ export function ProductDetailDrawer({
         </div>
 
         {/* Actions */}
-        <div className="border-t border-border p-4 grid grid-cols-2 gap-2 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        <div className="border-t border-border p-4 grid grid-cols-2 gap-2 mobile-sheet-footer md:pb-4 flex-shrink-0">
           <button
             onClick={() => { onEdit(product); onClose(); }}
             className="flex items-center justify-center gap-2 h-11 rounded-xl bg-primary text-primary-foreground font-semibold text-[13px] active:scale-[0.98] transition-transform"

@@ -407,6 +407,17 @@
     padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
   }
 
+  /* Standard footer padding for mobile sheets/drawers above bottom nav */
+  .mobile-sheet-footer {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+  }
+
+  @media (min-width: 768px) {
+    .mobile-sheet-footer {
+      padding-bottom: 1rem;
+    }
+  }
+
   .safe-top {
     padding-top: max(1rem, env(safe-area-inset-top));
   }

@@ -85,7 +85,7 @@ export function QuickRegisterModal({ adData, onClose, onRegistered }: QuickRegis
   return (
     <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center" onClick={onClose}>
       <div
-        className="bg-card border border-border rounded-t-2xl md:rounded-2xl w-full max-w-md p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] md:pb-6 space-y-5 animate-slide-up"
+        className="bg-card border border-border rounded-t-2xl md:rounded-2xl w-full max-w-md p-6 mobile-sheet-footer md:pb-6 space-y-5 animate-slide-up"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">

@@ -714,7 +714,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
         </form>
 
         {/* Footer */}
-        <div className="p-4 border-t border-border pb-[calc(1.5rem+env(safe-area-inset-bottom))] bg-surface relative z-[60] flex-shrink-0">
+        <div className="p-4 border-t border-border mobile-sheet-footer md:pb-4 bg-surface relative z-[60] flex-shrink-0">
           <Button type="submit" onClick={handleSubmit} className="w-full h-12 text-[15px] font-semibold bg-primary hover:bg-primary/90 rounded-[10px] transition-colors active:scale-[0.98]" disabled={!isValid || isSaving}>
             {isSaving ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Salvando...</>) : (<><Save className="w-4 h-4 mr-2" />{product ? 'Salvar Alterações' : 'Salvar Produto'}</>)}
           </Button>
