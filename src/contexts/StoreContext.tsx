@@ -92,8 +92,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     queryClient.invalidateQueries({ queryKey });
   }, [queryClient, queryKey]);
 
-  // One-time migration of localStorage images to Storage
-  useImageMigration(user, stores, isLoading, invalidate);
+  // Clean up old localStorage images (one-time migration)
+  useEffect(() => {
+    try { localStorage.removeItem('precify-local-images'); localStorage.removeItem('precify-images-migrated'); } catch {}
+  }, []);
 
   const retryLoad = useCallback(() => { refetch(); }, [refetch]);
 
@@ -195,10 +197,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (url) {
         await supabase.from('products').update({ image_url: url }).eq('id', data.id);
         data.image_url = url;
-      } else {
-        const localImages = getLocalImages();
-        localImages[data.id] = productData.imageUrl;
-        localStorage.setItem(LOCAL_IMAGES_KEY, JSON.stringify(localImages));
       }
     }
 

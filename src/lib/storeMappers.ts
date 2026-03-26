@@ -16,8 +16,7 @@ export function mapDbProduct(p: Tables<'products'>): Product {
     ? variations.reduce((sum: number, v: VariationRecord) => sum + (Number(v.stockQuantity) || 0), 0)
     : Number(p.stock_quantity ?? 0);
 
-  const localImages = getLocalImages();
-  const imageUrl = p.image_url || localImages[p.id] || undefined;
+  const imageUrl = p.image_url || undefined;
 
   return {
     id: p.id,
