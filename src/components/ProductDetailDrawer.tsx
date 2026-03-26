@@ -1,4 +1,4 @@
-import { X, Edit, Copy, Trash2, Share2, Package } from 'lucide-react';
+import { X, Sparkles, Copy, Trash2, Share2, Package } from 'lucide-react';
 import { Product, ProductCalculation, StoreConfig, getShopeeFeeForPrice } from '@/types/store';
 import { calcProductRoas } from '@/lib/roasUtils';
 import { cn, getMarginStatus } from '@/lib/utils';
@@ -38,19 +38,11 @@ export function ProductDetailDrawer({
   const costItems = [
     { label: 'Custo do produto', value: product.costPrice, dot: 'bg-primary' },
     { label: `Taxa Shopee (${fee.percent}% + R$${fee.fixed})`, value: calculation.totalShopeeFee, dot: 'bg-warning' },
-    ...(config.enablePackaging && product.packagingCost > 0
-      ? [{ label: 'Embalagem', value: product.packagingCost, dot: 'bg-foreground' }]
-      : []),
+    { label: 'Embalagem', value: product.packagingCost, dot: 'bg-foreground' },
     { label: `Impostos (${config.taxes}%)`, value: calculation.taxes, dot: 'bg-primary' },
-    ...(config.enableAffiliateCommission && calculation.affiliateCommission > 0
-      ? [{ label: `Comissão afiliados (${config.affiliateCommission}%)`, value: calculation.affiliateCommission, dot: 'bg-muted-foreground' }]
-      : []),
-    ...(config.enableShopeeCampaigns && calculation.shopeeCampaigns > 0
-      ? [{ label: `Campanhas Shopee (${config.shopeeCampaigns}%)`, value: calculation.shopeeCampaigns, dot: 'bg-muted-foreground' }]
-      : []),
-    ...(calculation.shopeeAcelera > 0
-      ? [{ label: 'Shopee Acelera', value: calculation.shopeeAcelera, dot: 'bg-muted-foreground' }]
-      : []),
+    { label: `Comissão afiliados (${config.affiliateCommission}%)`, value: calculation.affiliateCommission, dot: 'bg-muted-foreground' },
+    { label: `Campanhas Shopee (${config.shopeeCampaigns}%)`, value: calculation.shopeeCampaigns, dot: 'bg-muted-foreground' },
+    { label: 'Shopee Acelera', value: calculation.shopeeAcelera, dot: 'bg-muted-foreground' },
   ];
 
   const handleShare = async () => {
@@ -244,7 +236,7 @@ export function ProductDetailDrawer({
             onClick={() => { onEdit(product); onClose(); }}
             className="flex items-center justify-center gap-2 h-11 rounded-xl bg-primary text-primary-foreground font-semibold text-[13px] active:scale-[0.98] transition-transform"
           >
-            <Edit className="w-4 h-4" />
+            <Sparkles className="w-4 h-4" />
             Editar produto
           </button>
           <button
