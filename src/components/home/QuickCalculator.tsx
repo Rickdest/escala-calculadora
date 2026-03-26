@@ -96,11 +96,11 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
       </div>
 
       {/* Inputs */}
-      <div className="grid grid-cols-3 gap-2 mb-3">
+      <div className="grid grid-cols-2 gap-3 mb-3">
         <div>
           <label className="section-label mb-1.5 block text-[10px]">CUSTO</label>
           <div className="relative">
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-3 text-[11px] border-r border-border pr-1.5">R$</span>
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-1.5">R$</span>
             <input
               type="number"
               inputMode="decimal"
@@ -109,14 +109,14 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               value={costPrice}
               onChange={(e) => setCostPrice(e.target.value)}
               placeholder="0,00"
-              className="w-full h-11 pl-10 pr-2 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num text-sm focus:border-primary focus:outline-none transition-colors"
+              className="w-full h-12 pl-10 pr-2 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num text-base focus:border-primary focus:outline-none transition-colors"
             />
           </div>
         </div>
         <div>
           <label className="section-label mb-1.5 block text-[10px]">PREÇO DE VENDA</label>
           <div className="relative">
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-3 text-[11px] border-r border-border pr-1.5">R$</span>
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-1.5">R$</span>
             <input
               type="number"
               inputMode="decimal"
@@ -125,25 +125,25 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               value={salePrice}
               onChange={(e) => setSalePrice(e.target.value)}
               placeholder="0,00"
-              className="w-full h-11 pl-10 pr-2 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num text-sm focus:border-primary focus:outline-none transition-colors"
+              className="w-full h-12 pl-10 pr-2 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num text-base focus:border-primary focus:outline-none transition-colors"
             />
           </div>
         </div>
-        <div>
-          <label className="section-label mb-1.5 block text-[10px]">EMBALAGEM (OPC.)</label>
-          <div className="relative">
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-3 text-[11px] border-r border-border pr-1.5">R$</span>
-            <input
-              type="number"
-              inputMode="decimal"
-              step="0.01"
-              min="0"
-              value={packaging}
-              onChange={(e) => setPackaging(e.target.value)}
-              placeholder="0,00"
-              className="w-full h-11 pl-10 pr-2 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num text-sm focus:border-primary focus:outline-none transition-colors"
-            />
-          </div>
+      </div>
+      <div className="mb-3">
+        <label className="section-label mb-1.5 block text-[10px]">EMBALAGEM (OPCIONAL)</label>
+        <div className="relative">
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-1.5">R$</span>
+          <input
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            min="0"
+            value={packaging}
+            onChange={(e) => setPackaging(e.target.value)}
+            placeholder="0,00"
+            className="w-full h-12 pl-10 pr-2 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num text-base focus:border-primary focus:outline-none transition-colors"
+          />
         </div>
       </div>
 
@@ -157,37 +157,37 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               const status = getMarginStatus(result.realMargin);
               return (
                 <div className={cn(
-                  'rounded-xl p-2.5 flex flex-col items-center justify-center border',
+                  'rounded-xl p-2.5 flex flex-col items-start border',
                   status.bg, status.border
                 )}>
-                  <p className="text-[10px] font-medium text-text-3 tracking-wider mb-0.5">Margem real</p>
-                  <p className={cn('font-mono text-[18px] font-extrabold font-mono-num leading-tight', status.color)}>
+                  <p className={cn('font-mono text-[22px] font-extrabold font-mono-num leading-tight', status.color)}>
                     {result.realMargin.toFixed(1)}%
                   </p>
+                  <p className="text-[10px] font-medium text-text-3 tracking-wider mt-0.5">Margem real</p>
                 </div>
               );
             })()}
 
             {/* Lucro líquido */}
             <div className={cn(
-              'rounded-xl p-2.5 flex flex-col items-center justify-center border',
+              'rounded-xl p-2.5 flex flex-col items-start border',
               result.netProfit >= 0 ? 'bg-success/10 border-success/20' : 'bg-danger/10 border-danger/20'
             )}>
-              <p className="text-[10px] font-medium text-text-3 tracking-wider mb-0.5">Lucro líquido</p>
               <p className={cn(
-                'font-mono text-[18px] font-extrabold font-mono-num leading-tight',
+                'font-mono text-[22px] font-extrabold font-mono-num leading-tight',
                 result.netProfit >= 0 ? 'text-success' : 'text-danger'
               )}>
                 {formatCurrency(result.netProfit)}
               </p>
+              <p className="text-[10px] font-medium text-text-3 tracking-wider mt-0.5">Lucro líquido</p>
             </div>
 
             {/* Taxa Shopee */}
-            <div className="rounded-xl p-2.5 flex flex-col items-center justify-center border bg-danger/10 border-danger/20">
-              <p className="text-[10px] font-medium text-text-3 tracking-wider mb-0.5">Taxa Shopee</p>
-              <p className="font-mono text-[18px] font-extrabold font-mono-num leading-tight text-danger">
+            <div className="rounded-xl p-2.5 flex flex-col items-start border bg-danger/10 border-danger/20">
+              <p className="font-mono text-[22px] font-extrabold font-mono-num leading-tight text-danger">
                 {formatCurrency(result.totalShopeeFee)}
               </p>
+              <p className="text-[10px] font-medium text-text-3 tracking-wider mt-0.5">Taxa Shopee</p>
             </div>
           </div>
 
