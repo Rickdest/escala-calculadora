@@ -1,21 +1,23 @@
 
 
-## Aplicar grid responsivo na lista de produtos da aba Ads
+## Corrigir conteúdo escondido atrás do menu inferior (bottom navigation)
 
-### Arquivo: `src/components/roas/AdsTab.tsx`
+O menu inferior tem ~80px de altura total (`60px` + paddings com `box-sizing: content-box`). O `AppLayout` tem `pb-20` (80px) que deveria cobrir, mas com `safe-area-inset-bottom` em iPhones pode não ser suficiente. Além disso, algumas páginas não têm padding extra para mobile.
 
-### Mudança (linhas 262-278)
+### Mudanças
 
-Trocar o container `<div className="space-y-3">` da lista de `AdsProductCard` por um grid responsivo igual ao da aba Produtos:
+**1. `src/components/layout/AppLayout.tsx` (linha 44)**
+- Aumentar padding bottom de `pb-20` para `pb-24` (96px) no mobile, mantendo `md:pb-0`
 
-- Mobile: 1 coluna (`grid-cols-1`)
-- Desktop: 2 colunas (`md:grid-cols-2`)
-- Gap consistente (`gap-3`)
+**2. `src/pages/Home.tsx` (linha 166)**
+- Mobile wrapper: trocar `py-3` por `pt-3 pb-6` (o AppLayout já cuida do espaço do nav)
 
-```text
-Antes:  <div className="space-y-3">
-Depois: <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-```
+**3. `src/pages/Settings.tsx` (linha 126)**
+- Trocar `py-6 md:py-8` por `pt-6 pb-8 md:py-8` para dar mais folga no final
 
-Nenhuma outra alteração necessária — o `AdsProductCard` já é flex/block e se adapta à largura disponível.
+**4. `src/components/charts/RoasAnalysis.tsx` (linha 569)**
+- Trocar `pb-20 md:pb-4` por `pb-6 md:pb-4` (o AppLayout já cuida do padding do nav, evitar duplicação)
+
+### Resultado
+Todas as páginas terão espaço suficiente entre o último conteúdo e o menu inferior, sem sobreposição.
 
