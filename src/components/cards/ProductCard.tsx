@@ -248,16 +248,16 @@ export function ProductCard({
             <span className="w-2 h-2 rounded-full bg-success" />
             <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Ads Shopee</span>
           </div>
-          <div className="grid grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-3 gap-1.5">
             {/* Posição */}
-            <div className="rounded-xl border border-border/60 bg-secondary/30 p-2.5 flex flex-col">
+            <div className="rounded-xl border border-border/60 bg-secondary/30 p-2.5 flex flex-col items-center text-center">
               <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Posição</p>
-              <p className="font-mono text-base font-extrabold leading-tight text-foreground mt-0.5">
+              <p className="font-mono text-base font-extrabold leading-tight text-warning mt-0.5">
                 {adsMetric.avgPosition != null && adsMetric.avgPosition > 0 ? `#${adsMetric.avgPosition}` : '—'}
               </p>
             </div>
             {/* ROAS */}
-            <div className="rounded-xl border border-border/60 bg-secondary/30 p-2.5 flex flex-col">
+            <div className="rounded-xl border border-border/60 bg-secondary/30 p-2.5 flex flex-col items-center text-center">
               <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">ROAS</p>
               <p className={cn('font-mono text-base font-extrabold leading-tight mt-0.5', getRoasColor(adsMetric.roas))}>
                 {adsMetric.roas.toFixed(2)}
@@ -267,7 +267,7 @@ export function ProductCard({
               )}
             </div>
             {/* Custo/Un */}
-            <div className="rounded-xl border border-border/60 bg-secondary/30 p-2.5 flex flex-col">
+            <div className="rounded-xl border border-border/60 bg-secondary/30 p-2.5 flex flex-col items-center text-center">
               <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">Custo/un</p>
               <p className="font-mono text-sm font-extrabold leading-tight text-foreground mt-0.5">
                 {adsMetric.spend && adsMetric.itemsSold > 0 ? fmt(adsMetric.spend / adsMetric.itemsSold) : '—'}
