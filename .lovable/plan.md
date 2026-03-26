@@ -1,17 +1,20 @@
 
 
-## Compactar hero laranja no desktop
+## Reduzir gaps entre seções no desktop
 
 ### Arquivo: `src/pages/Home.tsx`
 
-Linha 268 — reduzir padding inferior do container:
-- De: `px-8 pt-5 pb-4` → Para: `px-8 pt-5 pb-3`
+**Linha 261** — Container principal desktop:
+- De: `space-y-4` → Para: `space-y-3` (12px entre seções)
 
-Linha 271 — reduzir margem do título:
-- De: `mb-2` → Para: `mb-1`
+**Linha 266** — Grid hero + novidades:
+- De: `gap-4` → Para: `gap-3` (12px)
 
-Linha 274 — reduzir espaço entre subtítulo e botões:
-- De: `mb-5` → Para: `mb-3`
+**Linha 325** — Grid calculadora + atalhos:
+- De: `gap-4` → Para: `gap-3` (12px)
 
-Isso remove ~24px de espaço vertical desnecessário na parte inferior do hero.
+**Linha 327** — Coluna esquerda:
+- De: `space-y-4` → Para: `space-y-3` (12px)
+
+Isso reduz todos os espaçamentos de 16px para 12px, incluindo o gap entre o banner hero e a calculadora.
 
