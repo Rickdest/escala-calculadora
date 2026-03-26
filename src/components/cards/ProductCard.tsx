@@ -86,7 +86,7 @@ function ProductCardMenu({ product, onEdit, onDuplicate, onDelete, onImportAds }
 
 function AdsMetricsPills({ adsMetric }: { adsMetric: AdMetricDerived }) {
   return (
-    <div className="flex items-center gap-1.5 flex-wrap md:justify-end justify-center">
+    <div className="flex items-center gap-1.5 flex-wrap">
       {adsMetric.avgPosition != null && adsMetric.avgPosition > 0 && (
         <span className={cn('inline-flex items-center gap-1 bg-secondary rounded-lg px-2.5 py-1 text-xs font-bold', getPositionColor(adsMetric.avgPosition))}>
           <span className={cn('w-1.5 h-1.5 rounded-full', getPositionDot(adsMetric.avgPosition))} />
