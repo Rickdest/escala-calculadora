@@ -74,13 +74,13 @@ export function ProductDetailDrawer({
   };
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-end md:items-center md:justify-center" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] flex flex-col md:flex-row md:items-center md:justify-center" onClick={onClose}>
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
       {/* Drawer */}
       <div
-        className="relative w-full max-h-full bg-card border border-border flex flex-col animate-slide-up overflow-hidden md:max-w-lg md:max-h-[90vh] md:rounded-2xl rounded-t-none"
+        className="relative w-full h-full md:h-auto bg-card border border-border flex flex-col animate-slide-up overflow-hidden md:max-w-lg md:max-h-[90vh] md:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Handle (mobile) */}

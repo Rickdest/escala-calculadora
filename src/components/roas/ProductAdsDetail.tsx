@@ -114,9 +114,9 @@ export function ProductAdsDetail({ metric, product, onClose }: ProductAdsDetailP
   const breakEvenRoas = roasResult && !roasResult.margemInsuficiente && roasResult.roasEmpate ? roasResult.roasEmpate : null;
 
   return (
-    <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-0 md:p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex flex-col md:flex-row md:items-center md:justify-center" onClick={onClose}>
       <div
-        className="bg-card border border-border w-full flex flex-col animate-scale-up overflow-hidden fixed inset-0 md:relative md:inset-auto md:max-w-lg md:max-h-[90vh] md:rounded-2xl"
+        className="bg-card border border-border w-full h-full md:h-auto flex flex-col animate-scale-up overflow-hidden md:max-w-lg md:max-h-[90vh] md:rounded-2xl"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
