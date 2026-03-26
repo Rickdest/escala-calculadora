@@ -41,7 +41,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       )}>
         <DesktopHeader />
 
-        <div className="flex-1 overflow-y-auto pb-20 md:pb-0">
+        <div className="flex-1 overflow-y-auto pb-24 md:pb-0">
           <main className="w-full px-4 md:px-8 xl:px-12">
             <ErrorBoundary>
               {children}

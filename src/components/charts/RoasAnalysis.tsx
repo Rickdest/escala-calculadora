@@ -566,7 +566,7 @@ function RoasRanking() {
 
 export function RoasAnalysis() {
   return (
-    <div className="space-y-4 pb-20 md:pb-4">
+    <div className="space-y-4 pb-6 md:pb-4">
       <Tabs defaultValue="product" className="w-full">
         <TabsList className="w-full grid grid-cols-2 md:w-auto md:inline-flex h-11 md:h-12 rounded-full bg-card p-1 border border-border sticky top-0 z-10">
           <TabsTrigger value="product" className="text-[13px] md:text-sm md:px-6 font-bold rounded-full gap-1.5 transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-none">

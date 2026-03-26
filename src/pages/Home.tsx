@@ -163,7 +163,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════
           MOBILE LAYOUT — identical to before
           ══════════════════════════════════════════════ */}
-      <div className="md:hidden py-3 space-y-3">
+      <div className="md:hidden pt-3 pb-6 space-y-3">
         {/* CTA banners */}
         {expiredCta && <div className="space-y-2">{expiredCta}</div>}
 
