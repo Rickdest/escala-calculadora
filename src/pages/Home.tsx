@@ -262,35 +262,61 @@ export default function Home() {
         {/* CTA banners */}
         {expiredCta && <div className="space-y-2">{expiredCta}</div>}
 
-        {/* Hero Banner — inspired by Seller Bump */}
-        <div className="rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 p-8 relative overflow-hidden animate-fade-up">
-          <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'radial-gradient(circle at 70% 30%, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-          <div className="relative z-10 max-w-2xl">
-            <h1 className="text-2xl font-bold text-primary-foreground mb-2 leading-tight">
-              Pare de vender no prejuízo.
-            </h1>
-            <p className="text-primary-foreground/80 text-sm mb-5 max-w-lg">
-              Descubra sua margem real em segundos e saiba se seus Ads estão dando lucro de verdade.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <div className="flex flex-col items-center">
-                <button
-                  onClick={() => setShowProductForm(true)}
-                  className="h-10 px-5 bg-white text-primary rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-white/90 transition-colors shadow-sm"
-                >
-                  <Plus className="w-4 h-4" /> Precificar produto
-                </button>
-                <span className="text-[12px] text-white/60 mt-1.5 text-center">Calcule em segundos</span>
+        {/* Hero + Avisos grid */}
+        <div className="grid grid-cols-[1fr_320px] gap-4 animate-fade-up">
+          {/* Hero Banner */}
+          <div className="rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 p-8 relative overflow-hidden">
+            <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'radial-gradient(circle at 70% 30%, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+            <div className="relative z-10 max-w-2xl">
+              <h1 className="text-2xl font-bold text-primary-foreground mb-2 leading-tight">
+                Pare de vender no prejuízo.
+              </h1>
+              <p className="text-primary-foreground/80 text-sm mb-5 max-w-lg">
+                Descubra sua margem real em segundos e saiba se seus Ads estão dando lucro de verdade.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <div className="flex flex-col items-center">
+                  <button
+                    onClick={() => setShowProductForm(true)}
+                    className="h-10 px-5 bg-white text-primary rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-white/90 transition-colors shadow-sm"
+                  >
+                    <Plus className="w-4 h-4" /> Precificar produto
+                  </button>
+                  <span className="text-[12px] text-white/60 mt-1.5 text-center">Calcule em segundos</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <button
+                    onClick={() => navigate('/roas')}
+                    className="h-10 px-5 bg-white/15 text-primary-foreground border border-white/20 rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-white/25 transition-colors backdrop-blur-sm"
+                  >
+                    <TrendingUp className="w-4 h-4" /> Análise de Ads
+                  </button>
+                  <span className="text-[12px] text-white/60 mt-1.5 text-center">Importe seu relatório</span>
+                </div>
               </div>
-              <div className="flex flex-col items-center">
-                <button
-                  onClick={() => navigate('/roas')}
-                  className="h-10 px-5 bg-white/15 text-primary-foreground border border-white/20 rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-white/25 transition-colors backdrop-blur-sm"
-                >
-                  <TrendingUp className="w-4 h-4" /> Análise de Ads
-                </button>
-                <span className="text-[12px] text-white/60 mt-1.5 text-center">Importe seu relatório</span>
+            </div>
+          </div>
+
+          {/* Card de Avisos */}
+          <div className="rounded-2xl border border-border bg-card p-5 flex flex-col">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Bell className="w-4 h-4 text-primary" />
               </div>
+              <h2 className="text-sm font-semibold text-foreground">Novidades</h2>
+            </div>
+            <div className="space-y-3 flex-1">
+              {[
+                { emoji: '🚀', text: 'Calculadoras TikTok, Shein, Amazon e ML atualizadas' },
+                { emoji: '📊', text: 'Importe CSV de Ads e veja ROAS real por produto' },
+                { emoji: '📦', text: 'Controle de estoque com alertas de reposição' },
+                { emoji: '💡', text: 'Dica: configure taxas da loja para margens precisas' },
+              ].map((item, i) => (
+                <div key={i} className="flex items-start gap-2.5">
+                  <span className="text-sm mt-0.5 flex-shrink-0">{item.emoji}</span>
+                  <p className="text-[13px] text-muted-foreground leading-snug">{item.text}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
