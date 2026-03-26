@@ -1,13 +1,14 @@
 import { useState, useMemo } from 'react';
-import { Zap, Loader2, ChevronDown, ChevronUp, Info, AlertTriangle } from 'lucide-react';
+import { Zap, ChevronDown, ChevronUp, Info, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { getShopeeFeeForPrice, DEFAULT_STORE_CONFIG } from '@/types/store';
 import { cn, getMarginStatus } from '@/lib/utils';
 import { calcFullRoas } from '@/lib/roasUtils';
+import { Badge } from '@/components/ui/badge';
 
 interface QuickCalculatorProps {
-  onSaveProduct: (prefill: {costPrice: string;salePrice: string;packaging: string;}) => void;
+  onSaveProduct: (prefill: {costPrice: string; salePrice: string; packaging: string;}) => void;
 }
 
 export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
@@ -17,18 +18,18 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
   const [costPrice, setCostPrice] = useState('');
   const [salePrice, setSalePrice] = useState('');
   const [packaging, setPackaging] = useState('');
-  const [showResult, setShowResult] = useState(false);
-  const [isCalculating, setIsCalculating] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [monthlySales, setMonthlySales] = useState(1000);
 
   const hasGlobalTaxes = !!(
-  config?.taxes && config.taxes > 0 ||
-  config?.enableAffiliateCommission ||
-  config?.enableShopeeCampaigns ||
-  config?.shopeeAcelera && config.shopeeAcelera !== 'none' ||
-  config?.isCpfSeller && config?.hasOver450Orders);
+    config?.taxes && config.taxes > 0 ||
+    config?.enableAffiliateCommission ||
+    config?.enableShopeeCampaigns ||
+    config?.shopeeAcelera && config.shopeeAcelera !== 'none' ||
+    config?.isCpfSeller && config?.hasOver450Orders
+  );
 
+  const hasValidInputs = (parseFloat(salePrice) || 0) > 0 && (parseFloat(costPrice) || 0) > 0;
 
   const result = useMemo(() => {
     const sp = parseFloat(salePrice) || 0;
@@ -38,7 +39,6 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
     const activeConfig = config || DEFAULT_STORE_CONFIG;
     const packagingCost = parseFloat(packaging) || 0;
 
-    // Use unified ROAS calculation
     const roasResult = calcFullRoas(sp, cp, activeConfig, packagingCost, 0, 0);
 
     const range = getShopeeFeeForPrice(sp);
@@ -82,187 +82,157 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
     };
   }, [result, monthlySales]);
 
-  const handleCalculate = () => {
-    if (!result) return;
-    setIsCalculating(true);
-    setShowAnalysis(false);
-    setTimeout(() => {
-      setShowResult(true);
-      setIsCalculating(false);
-    }, 200);
-  };
-
   const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-
-  const roasProgress = useMemo(() => {
-    if (!result || result.roasEmpate <= 0 || result.roasIdeal <= 0) return 0;
-    const range = result.roasIdeal - result.roasEmpate;
-    if (range <= 0) return 0;
-    const saudavelPos = (result.roasSaudavel - result.roasEmpate) / range;
-    return Math.min(Math.max(saudavelPos * 100, 0), 100);
-  }, [result]);
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
   return (
-    <div className="surface-card p-4 animate-fade-up">
-      <p className="section-label mb-3">Calculadora Rápida Shopee</p>
+    <div className="bg-surface-1 border border-primary/40 rounded-2xl p-4 animate-fade-up">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <p className="section-label">CALCULADORA RÁPIDA</p>
+        <Badge className="bg-primary/15 text-primary border-primary/30 text-[10px] font-semibold px-2 py-0.5">
+          Shopee
+        </Badge>
+      </div>
 
-      <div className="grid grid-cols-2 gap-3 mb-3">
+      {/* Inputs */}
+      <div className="grid grid-cols-3 gap-2 mb-3">
         <div>
-          <label className="section-label mb-1.5 block">PREÇO DE CUSTO</label>
+          <label className="section-label mb-1.5 block text-[10px]">CUSTO</label>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-2">R$</span>
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-3 text-[11px] border-r border-border pr-1.5">R$</span>
             <input
               type="number"
               inputMode="decimal"
               step="0.01"
               min="0"
               value={costPrice}
-              onChange={(e) => {setCostPrice(e.target.value);setShowResult(false);}}
+              onChange={(e) => setCostPrice(e.target.value)}
               placeholder="0,00"
-              className="w-full h-12 pl-12 pr-3 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num focus:border-primary focus:outline-none transition-colors" />
-            
+              className="w-full h-11 pl-10 pr-2 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num text-sm focus:border-primary focus:outline-none transition-colors"
+            />
           </div>
         </div>
         <div>
-          <label className="section-label mb-1.5 block">PREÇO DE VENDA</label>
+          <label className="section-label mb-1.5 block text-[10px]">PREÇO DE VENDA</label>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-2">R$</span>
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-3 text-[11px] border-r border-border pr-1.5">R$</span>
             <input
               type="number"
               inputMode="decimal"
               step="0.01"
               min="0"
               value={salePrice}
-              onChange={(e) => {setSalePrice(e.target.value);setShowResult(false);}}
+              onChange={(e) => setSalePrice(e.target.value)}
               placeholder="0,00"
-              className="w-full h-12 pl-12 pr-3 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num focus:border-primary focus:outline-none transition-colors" />
-            
+              className="w-full h-11 pl-10 pr-2 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num text-sm focus:border-primary focus:outline-none transition-colors"
+            />
           </div>
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 mb-3">
         <div>
-          <label className="section-label mb-1.5 block">EMBALAGEM</label>
+          <label className="section-label mb-1.5 block text-[10px]">EMBALAGEM (OPC.)</label>
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-2">R$</span>
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-3 text-[11px] border-r border-border pr-1.5">R$</span>
             <input
               type="number"
               inputMode="decimal"
               step="0.01"
               min="0"
               value={packaging}
-              onChange={(e) => {setPackaging(e.target.value);setShowResult(false);}}
+              onChange={(e) => setPackaging(e.target.value)}
               placeholder="0,00"
-              className="w-full h-12 pl-12 pr-3 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num focus:border-primary focus:outline-none transition-colors" />
-            
+              className="w-full h-11 pl-10 pr-2 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num text-sm focus:border-primary focus:outline-none transition-colors"
+            />
           </div>
         </div>
       </div>
 
-      <button
-        onClick={handleCalculate}
-        disabled={!result || isCalculating}
-        className="w-full h-12 text-primary-foreground font-semibold text-[15px] rounded-[10px] flex items-center justify-center gap-2 transition-colors active:scale-[0.98] disabled:opacity-40 bg-orange-600 hover:bg-orange-500">
-        
-        {isCalculating ?
-        <Loader2 className="w-4 h-4 animate-spin" /> :
-
-        <>
-            <Zap className="w-4 h-4" />
-            Calcular
-          </>
-        }
-      </button>
-
-      {showResult && result && projection &&
-      <div className="mt-4 animate-fade-up">
-          {/* Result Card */}
-          <div className="mt-2 space-y-4">
-            {/* Métricas — 3 cards */}
-            <div className="grid grid-cols-3 gap-2">
-              <div className="bg-surface-2 rounded-xl p-3 flex flex-col items-center justify-center border border-border/40">
-                <p className="text-[10px] font-medium text-text-3 tracking-wider mb-1">Lucro</p>
-                <p className={cn(
-                  'font-mono text-[18px] font-extrabold font-mono-num leading-tight',
-                  result.netProfit >= 0 ? 'text-success' : 'text-danger'
+      {/* Resultados reativos */}
+      {hasValidInputs && result && (
+        <div className="animate-fade-up space-y-3">
+          {/* 3 cards de métricas */}
+          <div className="grid grid-cols-3 gap-2">
+            {/* Margem real */}
+            {(() => {
+              const status = getMarginStatus(result.realMargin);
+              return (
+                <div className={cn(
+                  'rounded-xl p-2.5 flex flex-col items-center justify-center border',
+                  status.bg, status.border
                 )}>
-                  {formatCurrency(result.netProfit)}
-                </p>
-              </div>
-              <div className="bg-surface-2 rounded-xl p-3 flex flex-col items-center justify-center border border-border/40">
-                <p className="text-[10px] font-medium text-text-3 tracking-wider mb-1">Margem</p>
-                <p className={cn(
-                  'font-mono text-[18px] font-extrabold font-mono-num leading-tight',
-                  getMarginStatus(result.realMargin).color
-                )}>
-                  {result.realMargin.toFixed(1)}%
-                </p>
-              </div>
-              <div className="bg-surface-2 rounded-xl p-3 flex flex-col items-center justify-center border border-border/40">
-                <p className="text-[10px] font-medium text-text-3 tracking-wider mb-1">ROAS Empate</p>
-                {result.roasEmpate > 0 ? (
-                  <p className="font-mono text-[18px] font-extrabold font-mono-num leading-tight text-warning">
-                    {result.roasEmpate.toFixed(2)}
+                  <p className="text-[10px] font-medium text-text-3 tracking-wider mb-0.5">Margem real</p>
+                  <p className={cn('font-mono text-[18px] font-extrabold font-mono-num leading-tight', status.color)}>
+                    {result.realMargin.toFixed(1)}%
                   </p>
-                ) : (
-                  <p className="text-[12px] font-semibold text-danger mt-1">Prejuízo</p>
-                )}
-              </div>
+                </div>
+              );
+            })()}
+
+            {/* Lucro líquido */}
+            <div className={cn(
+              'rounded-xl p-2.5 flex flex-col items-center justify-center border',
+              result.netProfit >= 0 ? 'bg-success/10 border-success/20' : 'bg-danger/10 border-danger/20'
+            )}>
+              <p className="text-[10px] font-medium text-text-3 tracking-wider mb-0.5">Lucro líquido</p>
+              <p className={cn(
+                'font-mono text-[18px] font-extrabold font-mono-num leading-tight',
+                result.netProfit >= 0 ? 'text-success' : 'text-danger'
+              )}>
+                {formatCurrency(result.netProfit)}
+              </p>
             </div>
 
-            {/* Alerta de prejuízo */}
-            {result.netProfit < 0 &&
-          <div className="flex items-center gap-2.5 p-3 rounded-xl bg-danger/10 border border-danger/30 animate-fade-up">
-                <AlertTriangle className="w-4 h-4 text-danger flex-shrink-0" />
-                <p className="text-[12px] font-semibold text-danger">Preço de venda abaixo do custo total. Você está vendendo no prejuízo.</p>
-              </div>
-          }
-
-            {/* Ações */}
-            <div className="flex items-center gap-2">
-              <button
-              onClick={() => setShowAnalysis(!showAnalysis)}
-               className={`flex-1 h-11 rounded-lg text-[13px] font-semibold transition-all active:scale-[0.98] ${showAnalysis ? 'bg-primary text-primary-foreground' : 'bg-surface-2 text-text-2 hover:bg-primary hover:text-primary-foreground'}`}>
-               
-                {showAnalysis ? '↑ Fechar' : '↓ Ver análise'}
-              </button>
-              <button
-              onClick={() => onSaveProduct({ costPrice, salePrice, packaging })}
-              className="flex-1 h-11 bg-surface-2 text-text-2 hover:bg-primary hover:text-primary-foreground rounded-lg text-[13px] font-semibold transition-all active:scale-[0.98]">
-              
-                Salvar produto
-              </button>
+            {/* Taxa Shopee */}
+            <div className="rounded-xl p-2.5 flex flex-col items-center justify-center border bg-danger/10 border-danger/20">
+              <p className="text-[10px] font-medium text-text-3 tracking-wider mb-0.5">Taxa Shopee</p>
+              <p className="font-mono text-[18px] font-extrabold font-mono-num leading-tight text-danger">
+                {formatCurrency(result.totalShopeeFee)}
+              </p>
             </div>
           </div>
 
+          {/* Alerta de prejuízo */}
+          {result.netProfit < 0 && (
+            <div className="flex items-center gap-2.5 p-3 rounded-xl bg-danger/10 border border-danger/30 animate-fade-up">
+              <AlertTriangle className="w-4 h-4 text-danger flex-shrink-0" />
+              <p className="text-[12px] font-semibold text-danger">Preço de venda abaixo do custo total. Você está vendendo no prejuízo.</p>
+            </div>
+          )}
+
+          {/* Botão salvar + link análise */}
+          <button
+            onClick={() => onSaveProduct({ costPrice, salePrice, packaging })}
+            className="w-full h-12 text-primary-foreground font-semibold text-[15px] rounded-[10px] flex items-center justify-center gap-2 transition-colors active:scale-[0.98] bg-primary hover:bg-primary/90"
+          >
+            <Zap className="w-4 h-4" />
+            Salvar produto
+          </button>
+
+          <button
+            onClick={() => setShowAnalysis(!showAnalysis)}
+            className="w-full flex items-center justify-center gap-1.5 text-[12px] text-text-3 hover:text-primary transition-colors py-1"
+          >
+            {showAnalysis ? (
+              <>Fechar análise <ChevronUp className="w-3.5 h-3.5" /></>
+            ) : (
+              <>Ver análise completa <ChevronDown className="w-3.5 h-3.5" /></>
+            )}
+          </button>
+
           {/* ANÁLISE COMPLETA */}
-          {showAnalysis &&
-        <div className="mt-3 bg-surface-2 rounded-[10px] p-3 animate-fade-up space-y-0">
+          {showAnalysis && projection && (
+            <div className="bg-surface-2 rounded-[10px] p-3 animate-fade-up space-y-0">
               {/* Custos */}
               <div className="pb-3">
                 <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-2">Custos</p>
                 <div className="space-y-1.5">
                   <CostRow label="Taxa Shopee" value={result.totalShopeeFee} format={formatCurrency} />
-                  {result.packagingCost > 0 &&
-              <CostRow label="Embalagem e Insumos" value={result.packagingCost} format={formatCurrency} />
-              }
-                  {result.taxesCost > 0 &&
-              <CostRow label={`Impostos (${result.taxesPercent}%)`} value={result.taxesCost} format={formatCurrency} />
-              }
-                  {result.affiliateCost > 0 &&
-              <CostRow label={`Comissão Afiliados (${result.affiliatePercent}%)`} value={result.affiliateCost} format={formatCurrency} />
-              }
-                  {result.campaignsCost > 0 &&
-              <CostRow label={`Campanhas Destaque (${result.campaignsPercent}%)`} value={result.campaignsCost} format={formatCurrency} />
-              }
-                  {result.aceleraCost > 0 &&
-              <CostRow label={`Shopee Acelera (${result.aceleraPercent}%)`} value={result.aceleraCost} format={formatCurrency} />
-              }
-                  {result.cpfExtra > 0 &&
-              <CostRow label="Adicional CPF" value={result.cpfExtra} format={formatCurrency} />
-              }
+                  {result.packagingCost > 0 && <CostRow label="Embalagem e Insumos" value={result.packagingCost} format={formatCurrency} />}
+                  {result.taxesCost > 0 && <CostRow label={`Impostos (${result.taxesPercent}%)`} value={result.taxesCost} format={formatCurrency} />}
+                  {result.affiliateCost > 0 && <CostRow label={`Comissão Afiliados (${result.affiliatePercent}%)`} value={result.affiliateCost} format={formatCurrency} />}
+                  {result.campaignsCost > 0 && <CostRow label={`Campanhas Destaque (${result.campaignsPercent}%)`} value={result.campaignsCost} format={formatCurrency} />}
+                  {result.aceleraCost > 0 && <CostRow label={`Shopee Acelera (${result.aceleraPercent}%)`} value={result.aceleraCost} format={formatCurrency} />}
+                  {result.cpfExtra > 0 && <CostRow label="Adicional CPF" value={result.cpfExtra} format={formatCurrency} />}
                   <div className="border-t border-border pt-1.5 mt-1.5">
                     <CostRow label="Total de custos" value={result.totalCosts} format={formatCurrency} bold />
                     <div className="mt-1.5" />
@@ -270,16 +240,16 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                   </div>
                 </div>
 
-                {!hasGlobalTaxes &&
-            <button
-              onClick={() => navigate('/settings')}
-              className="mt-3 w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg border border-border/40 bg-background/30 hover:bg-background/60 transition-colors group">
-              
+                {!hasGlobalTaxes && (
+                  <button
+                    onClick={() => navigate('/settings')}
+                    className="mt-3 w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg border border-border/40 bg-background/30 hover:bg-background/60 transition-colors group"
+                  >
                     <Info className="w-3.5 h-3.5 text-text-3 shrink-0" />
                     <span className="text-[11px] text-text-3 flex-1 text-left">Configure impostos e taxas para cálculo mais preciso.</span>
                     <span className="text-[11px] text-primary font-medium group-hover:underline shrink-0">Configurar →</span>
                   </button>
-            }
+                )}
               </div>
 
               <div className="border-t border-border" />
@@ -310,35 +280,28 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                     <span className="font-mono text-[14px] font-bold font-mono-num text-primary">{result.roasIdeal > 0 ? result.roasIdeal.toFixed(2) : '--'}</span>
                   </div>
 
-                  {result.roasEmpate > 0 && result.roasIdeal > 0 &&
-              <div className="pt-3 px-0">
-                      {/* Labels topo */}
+                  {result.roasEmpate > 0 && result.roasIdeal > 0 && (
+                    <div className="pt-3 px-0">
                       <div className="flex justify-between text-[10px] text-text-3 mb-1.5">
                         <span>Empate</span>
                         <span>Saudável</span>
                         <span>Ideal</span>
                       </div>
-                      {/* Barra */}
                       <div className="relative h-1 rounded-[4px] overflow-hidden" style={{ backgroundColor: '#1F2433' }}>
-                        <div
-                    className="absolute inset-0 rounded-[4px]"
-                    style={{ background: 'linear-gradient(to right, #EF4444, #EAB308, #22C55E)' }} />
-                  
+                        <div className="absolute inset-0 rounded-[4px]" style={{ background: 'linear-gradient(to right, #EF4444, #EAB308, #22C55E)' }} />
                       </div>
-                      {/* Marcadores */}
                       <div className="relative h-3 mt-[-6px]">
                         <div className="absolute top-0 left-0 w-2 h-2 rounded-full" style={{ backgroundColor: '#EF4444', transform: 'translateX(-50%)' }} />
                         <div className="absolute top-0 left-1/2 w-2 h-2 rounded-full" style={{ backgroundColor: '#EAB308', transform: 'translateX(-50%)' }} />
                         <div className="absolute top-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white" style={{ backgroundColor: '#F97316', transform: 'translateX(50%)' }} />
                       </div>
-                      {/* Valores abaixo */}
                       <div className="flex justify-between mt-0.5">
                         <span className="font-mono text-[10px] font-mono-num" style={{ color: '#EF4444' }}>{result.roasEmpate.toFixed(2)}</span>
                         <span className="font-mono text-[10px] font-mono-num" style={{ color: '#EAB308' }}>{result.roasSaudavel.toFixed(2)}</span>
                         <span className="font-mono text-[12px] font-bold font-mono-num" style={{ color: '#F97316' }}>{result.roasIdeal.toFixed(2)}</span>
                       </div>
                     </div>
-              }
+                  )}
                 </div>
               </div>
 
@@ -352,25 +315,25 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                 </div>
                 <div className="flex items-center justify-center gap-3 mb-4">
                   <button
-                onClick={() => setMonthlySales((prev) => Math.max(prev - 10, 10))}
-                className="w-11 h-11 rounded-xl bg-background border border-border flex items-center justify-center text-[18px] font-bold text-foreground active:scale-95 transition-transform">
-                −</button>
+                    onClick={() => setMonthlySales((prev) => Math.max(prev - 10, 10))}
+                    className="w-11 h-11 rounded-xl bg-background border border-border flex items-center justify-center text-[18px] font-bold text-foreground active:scale-95 transition-transform"
+                  >−</button>
                   <input
-                type="number"
-                inputMode="numeric"
-                min="10"
-                max="10000"
-                value={monthlySales}
-                onChange={(e) => {
-                  const v = parseInt(e.target.value) || 10;
-                  setMonthlySales(Math.min(Math.max(v, 10), 10000));
-                }}
-                className="w-24 h-11 text-[16px] font-mono font-bold font-mono-num text-center bg-background border border-border rounded-xl text-foreground focus:border-accent focus:outline-none transition-colors" />
-              
+                    type="number"
+                    inputMode="numeric"
+                    min="10"
+                    max="10000"
+                    value={monthlySales}
+                    onChange={(e) => {
+                      const v = parseInt(e.target.value) || 10;
+                      setMonthlySales(Math.min(Math.max(v, 10), 10000));
+                    }}
+                    className="w-24 h-11 text-[16px] font-mono font-bold font-mono-num text-center bg-background border border-border rounded-xl text-foreground focus:border-accent focus:outline-none transition-colors"
+                  />
                   <button
-                onClick={() => setMonthlySales((prev) => Math.min(prev + 10, 10000))}
-                className="w-11 h-11 rounded-xl bg-background border border-border flex items-center justify-center text-[18px] font-bold text-foreground active:scale-95 transition-transform">
-                +</button>
+                    onClick={() => setMonthlySales((prev) => Math.min(prev + 10, 10000))}
+                    className="w-11 h-11 rounded-xl bg-background border border-border flex items-center justify-center text-[18px] font-bold text-foreground active:scale-95 transition-transform"
+                  >+</button>
                 </div>
                 <div className="space-y-2 bg-background/50 rounded-xl p-3 border border-border/30">
                   <CostRow label="Receita bruta" value={projection.revenue} format={formatCurrency} />
@@ -379,9 +342,9 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                     <div className="flex justify-between">
                       <span className="text-[13px] font-semibold text-foreground">Lucro mensal</span>
                       <span className={cn(
-                    'font-mono text-[15px] font-extrabold font-mono-num',
-                    projection.profit >= 0 ? 'text-success' : 'text-danger'
-                  )}>{formatCurrency(projection.profit)}</span>
+                        'font-mono text-[15px] font-extrabold font-mono-num',
+                        projection.profit >= 0 ? 'text-success' : 'text-danger'
+                      )}>{formatCurrency(projection.profit)}</span>
                     </div>
                   </div>
                   <div className="flex justify-between items-center pt-1">
@@ -393,18 +356,18 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                 </div>
               </div>
             </div>
-        }
+          )}
         </div>
-      }
-    </div>);
-
+      )}
+    </div>
+  );
 }
 
-function CostRow({ label, value, format, bold }: {label: string;value: number;format: (v: number) => string;bold?: boolean;}) {
+function CostRow({ label, value, format, bold }: {label: string; value: number; format: (v: number) => string; bold?: boolean;}) {
   return (
     <div className="flex justify-between">
       <span className={cn('text-[13px] text-text-2', bold && 'font-semibold')}>{label}</span>
       <span className={cn('font-mono text-[14px] font-mono-num text-foreground', bold ? 'font-bold' : 'font-bold')}>{format(value)}</span>
-    </div>);
-
+    </div>
+  );
 }
