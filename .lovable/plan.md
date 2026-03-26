@@ -1,14 +1,21 @@
 
 
-## Centralizar e ajustar cores na seção ADS do ProductCard
+## Aplicar grid responsivo na lista de produtos da aba Ads
 
-### Arquivo: `src/components/cards/ProductCard.tsx`
+### Arquivo: `src/components/roas/AdsTab.tsx`
 
-### Mudanças (linhas 251-278)
+### Mudança (linhas 262-278)
 
-1. **Centralizar conteúdo** dos 3 cards de Ads — trocar `flex flex-col` por `flex flex-col items-center text-center`
-2. **Posição em amarelo** — trocar `text-foreground` por `text-warning` no valor da posição
-3. **Centralizar labels e valores** — labels e sub-textos ficam centralizados dentro de cada card
+Trocar o container `<div className="space-y-3">` da lista de `AdsProductCard` por um grid responsivo igual ao da aba Produtos:
 
-Resultado visual: cada card (Posição, ROAS, Custo/Un) com label, valor e sub-texto centralizados, posição em amarelo.
+- Mobile: 1 coluna (`grid-cols-1`)
+- Desktop: 2 colunas (`md:grid-cols-2`)
+- Gap consistente (`gap-3`)
+
+```text
+Antes:  <div className="space-y-3">
+Depois: <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+```
+
+Nenhuma outra alteração necessária — o `AdsProductCard` já é flex/block e se adapta à largura disponível.
 
