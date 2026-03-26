@@ -1,28 +1,34 @@
 
 
-## Ajustar ProductDetailDrawer para mostrar todas as taxas detalhadas
+## Redesign da seção ADS no ProductCard — apenas linha 1
 
-### Arquivo: `src/components/ProductDetailDrawer.tsx`
+### Arquivo: `src/components/cards/ProductCard.tsx`
 
-### Mudanças
+### 1. Adicionar `spend` à interface `adsMetric`
+Adicionar campo `spend?: number` na interface para calcular custo/unidade.
 
-**1. Mostrar TODOS os itens de custo, mesmo quando zero/desativados**
+### 2. Substituir seção de chips (linhas 243-266) por grid estruturado
 
-Atualmente, itens como Embalagem, Comissão afiliados, Campanhas e Acelera são condicionalmente ocultados. A referência mostra todos os itens sempre, com "—" quando o valor é zero.
+Layout:
+```text
+● ADS SHOPEE
+┌──────────┬──────────┬──────────────────┐
+│ POSIÇÃO  │  ROAS    │   CUSTO/UN       │
+│  #14     │  10.49   │   R$4,86         │
+│          │direto 10.│   119 vendidos   │
+└──────────┴──────────┴──────────────────┘
+```
 
-Alterar o array `costItems` (linhas 38-54) para incluir sempre todos os itens:
-- Custo do produto (sempre)
-- Taxa Shopee (sempre)
-- Embalagem (sempre, mesmo se 0)
-- Impostos (sempre, mesmo se 0%)
-- Comissão afiliados (sempre, mesmo se desativado)
-- Campanhas Shopee (sempre, mesmo se desativado)
-- Shopee Acelera (sempre, mesmo se 0)
+- Header: dot verde + "ADS SHOPEE" em uppercase
+- Grid `grid-cols-3` com 3 cards (`rounded-xl border bg-secondary/30 p-2.5`):
+  - **Posição**: label "POSIÇÃO", valor `#XX` com cor dinâmica
+  - **ROAS**: label "ROAS", valor principal, sub-texto "direto X.XX" se disponível
+  - **Custo/Un**: label "CUSTO/UN", valor `spend/itemsSold`, sub-texto "XX vendidos"
 
-**2. Ícone do botão "Editar produto"**
+### 3. Passar `spend` em `Products.tsx`
+O `metricsMap[id]` já contém `spend` do `AdMetricDerived`. Apenas adicionar ao spread ou mapear explicitamente.
 
-Trocar o ícone `Edit` (lápis) por `Sparkles` (lucide-react) para match com a referência (✨).
-
-### Resultado
-Drawer mostra breakdown completo de todas as taxas e custos, independente de estarem ativos ou não, com "—" para valores zerados.
+### Arquivos modificados
+- `src/components/cards/ProductCard.tsx`
+- `src/pages/Products.tsx` (passar `spend`)
 
