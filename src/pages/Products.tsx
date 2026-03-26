@@ -222,6 +222,7 @@ export default function Products() {
                     product={product}
                     calculation={calc}
                     adsMetric={metricsMap[product.id]}
+                    onTap={() => setDetailProduct({ product, calc })}
                     onEdit={handleEdit}
                     onDuplicate={async (id) => { await duplicateProduct(id); }}
                     onDelete={async (id) => { await deleteProduct(id); }}
