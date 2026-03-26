@@ -86,7 +86,7 @@ function ProductCardMenu({ product, onEdit, onDuplicate, onDelete, onImportAds }
 
 function AdsMetricsPills({ adsMetric }: { adsMetric: AdMetricDerived }) {
   return (
-    <div className="flex items-center gap-1.5 flex-wrap md:justify-end justify-center">
+    <div className="flex items-center gap-1.5 flex-wrap">
       {adsMetric.avgPosition != null && adsMetric.avgPosition > 0 && (
         <span className={cn('inline-flex items-center gap-1 bg-secondary rounded-lg px-2.5 py-1 text-xs font-bold', getPositionColor(adsMetric.avgPosition))}>
           <span className={cn('w-1.5 h-1.5 rounded-full', getPositionDot(adsMetric.avgPosition))} />
@@ -159,87 +159,86 @@ export function ProductCard({ product, calculation, adsMetric, onEdit, onDuplica
     return (
       <>
         <div
-          className="p-5 rounded-2xl border border-border bg-card hover:border-primary/30 transition-all cursor-pointer select-none"
+          className="p-4 rounded-2xl border border-border bg-card hover:border-primary/30 transition-all cursor-pointer select-none group"
           onClick={() => onEdit(product)}
         >
-          <div className="grid grid-cols-[1fr,auto] gap-4">
-            {/* LEFT PANEL — Product identity */}
-            <div className="flex items-start gap-4">
-              {product.imageUrl ? (
-                <img src={product.imageUrl} alt={product.name} className="w-14 h-14 rounded-xl object-cover shrink-0" />
-              ) : (
-                <div className="w-14 h-14 rounded-xl bg-secondary flex items-center justify-center shrink-0">
-                  <Package className="w-6 h-6 text-muted-foreground" />
-                </div>
-              )}
+          {/* Header: Image + Name + Price + Menu */}
+          <div className="flex items-start gap-3">
+            {product.imageUrl ? (
+              <img src={product.imageUrl} alt={product.name} className="w-12 h-12 rounded-xl object-cover shrink-0" />
+            ) : (
+              <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center shrink-0">
+                <Package className="w-5 h-5 text-muted-foreground" />
+              </div>
+            )}
 
-              <div className="min-w-0">
-                <h3 className="font-bold text-sm text-foreground truncate max-w-[400px]">{product.name}</h3>
-                <div className="flex items-center gap-4 mt-1.5">
-                  <span className="text-sm">
-                    <span className="text-muted-foreground text-xs">Preço: </span>
-                    <span className="font-medium text-primary">{fmt(product.salePrice)}</span>
-                  </span>
-                  <span className="text-sm">
-                    <span className="text-muted-foreground text-xs">Custo: </span>
-                    <span className="font-medium text-foreground">{fmt(product.costPrice)}</span>
-                  </span>
-                </div>
-
-                {/* Other channels chips */}
-                {hasOutrosCanais && channelResults.length > 0 && (
-                  <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-                    {channelResults.map(ch => (
-                      <span
-                        key={ch.key}
-                        className={cn(
-                          'inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold',
-                          ch.margin >= 0 ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
-                        )}
-                      >
-                        {bestChannel?.key === ch.key && '👑'} {ch.label} {ch.margin.toFixed(1)}%
-                      </span>
-                    ))}
-                  </div>
-                )}
+            <div className="flex-1 min-w-0">
+              <h3 className="font-bold text-sm text-foreground truncate">{product.name}</h3>
+              <div className="flex items-center gap-3 mt-1">
+                <span className="text-xs text-muted-foreground">
+                  Preço: <span className="font-semibold text-primary">{fmt(product.salePrice)}</span>
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  Custo: <span className="font-semibold text-foreground">{fmt(product.costPrice)}</span>
+                </span>
               </div>
             </div>
 
-            {/* RIGHT PANEL — Results + Actions */}
-            <div className="flex flex-col items-end justify-between gap-2 min-w-[240px]">
-              <ProductCardMenu
-                product={product}
-                onEdit={() => onEdit(product)}
-                onDuplicate={() => onDuplicate(product.id)}
-                onDelete={() => onDelete(product.id)}
-                onImportAds={() => setShowAdsImport(true)}
-              />
-
-              {/* Margin + Profit chips */}
-              <div className="flex items-center gap-2">
-                <span className={cn('px-3 py-1 rounded-full text-xs font-bold', metricStyle)}>
-                  Margem: {calculation.realMargin.toFixed(1)}%
-                </span>
-                <span className={cn('px-3 py-1 rounded-full text-xs font-bold', metricStyle)}>
-                  Lucro: {fmt(calculation.netProfit)}
-                </span>
-              </div>
-
-              {/* Ads metrics */}
-              {adsMetric && <AdsMetricsPills adsMetric={adsMetric} />}
-
-              {/* Import Ads button (when no ads) */}
-              {!hasAds && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); setShowAdsImport(true); }}
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
-                >
-                  <BarChart3 className="w-3.5 h-3.5" />
-                  Importar Ads CSV
-                </button>
-              )}
-            </div>
+            <ProductCardMenu
+              product={product}
+              onEdit={() => onEdit(product)}
+              onDuplicate={() => onDuplicate(product.id)}
+              onDelete={() => onDelete(product.id)}
+              onImportAds={() => setShowAdsImport(true)}
+            />
           </div>
+
+          {/* Margin + Profit chips */}
+          <div className="mt-3 flex items-center gap-2">
+            <span className={cn('px-3 py-1 rounded-full text-xs font-bold', metricStyle)}>
+              Margem: {calculation.realMargin.toFixed(1)}%
+            </span>
+            <span className={cn('px-3 py-1 rounded-full text-xs font-bold', metricStyle)}>
+              Lucro: {fmt(calculation.netProfit)}
+            </span>
+          </div>
+
+          {/* Other channels */}
+          {hasOutrosCanais && channelResults.length > 0 && (
+            <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
+              {channelResults.map(ch => (
+                <span
+                  key={ch.key}
+                  className={cn(
+                    'inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold',
+                    ch.margin >= 0 ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'
+                  )}
+                >
+                  {bestChannel?.key === ch.key && '👑'} {ch.label} {ch.margin.toFixed(1)}%
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Ads metrics */}
+          {adsMetric && (
+            <div className="mt-2.5">
+              <AdsMetricsPills adsMetric={adsMetric} />
+            </div>
+          )}
+
+          {/* Import Ads link */}
+          {!hasAds && (
+            <div className="mt-2.5">
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowAdsImport(true); }}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors opacity-0 group-hover:opacity-100"
+              >
+                <BarChart3 className="w-3.5 h-3.5" />
+                Importar Ads CSV
+              </button>
+            </div>
+          )}
         </div>
 
         {showAdsImport && (
