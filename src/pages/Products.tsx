@@ -2,13 +2,14 @@ import { useState, useMemo } from 'react';
 import { Plus, Search, SlidersHorizontal, Package, TrendingUp, TrendingDown, Percent, DollarSign, Download, FileSpreadsheet, FileText, ArrowUpDown, ChevronRight } from 'lucide-react';
 import { useProductAdsMetrics } from '@/hooks/useProductAdsMetrics';
 import { useStore } from '@/contexts/StoreContext';
-import { Product, SortOption } from '@/types/store';
+import { Product, ProductCalculation, SortOption } from '@/types/store';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import ProductCard from '@/components/cards/ProductCard';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { MarginDistributionChart, TopProductsChart, ProfitSummaryChart } from '@/components/charts/AnalyticsCharts';
 import { ProductThumbnail } from '@/components/ProductThumbnail';
+import { ProductDetailDrawer } from '@/components/ProductDetailDrawer';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
