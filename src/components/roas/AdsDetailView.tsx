@@ -137,7 +137,7 @@ export function AdsDetailView({ ad, onClose, onImportPosition, onLink }: Props) 
 
   return (
     <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-card border border-border rounded-2xl w-full max-w-lg max-h-[92vh] overflow-hidden flex flex-col animate-scale-up" onClick={e => e.stopPropagation()}>
+      <div className="bg-card border border-border w-full flex flex-col animate-scale-up overflow-hidden fixed inset-0 md:relative md:inset-auto md:max-w-lg md:max-h-[92vh] md:rounded-2xl" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center gap-3 p-5 pb-4 border-b border-border">
           {product?.imageUrl ? (
