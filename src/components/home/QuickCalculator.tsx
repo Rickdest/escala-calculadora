@@ -105,7 +105,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
 
   return (
     <div className="surface-card p-4 animate-fade-up">
-      <p className="section-label mb-3">Calculadora Rápida</p>
+      <p className="section-label mb-3">Calculadora Rápida Shopee</p>
 
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div>
