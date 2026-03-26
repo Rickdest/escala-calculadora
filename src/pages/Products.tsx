@@ -2,13 +2,14 @@ import { useState, useMemo } from 'react';
 import { Plus, Search, SlidersHorizontal, Package, TrendingUp, TrendingDown, Percent, DollarSign, Download, FileSpreadsheet, FileText, ArrowUpDown, ChevronRight } from 'lucide-react';
 import { useProductAdsMetrics } from '@/hooks/useProductAdsMetrics';
 import { useStore } from '@/contexts/StoreContext';
-import { Product, SortOption } from '@/types/store';
+import { Product, ProductCalculation, SortOption } from '@/types/store';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import ProductCard from '@/components/cards/ProductCard';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { MarginDistributionChart, TopProductsChart, ProfitSummaryChart } from '@/components/charts/AnalyticsCharts';
 import { ProductThumbnail } from '@/components/ProductThumbnail';
+import { ProductDetailDrawer } from '@/components/ProductDetailDrawer';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,6 +47,7 @@ export default function Products() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [analysisSortBy, setAnalysisSortBy] = useState<SortOption>('margin-high');
+  const [detailProduct, setDetailProduct] = useState<{ product: Product; calc: ProductCalculation } | null>(null);
 
   const products = useMemo(() => {
     if (!currentStore) return [];
@@ -220,6 +222,7 @@ export default function Products() {
                     product={product}
                     calculation={calc}
                     adsMetric={metricsMap[product.id]}
+                    onTap={() => setDetailProduct({ product, calc })}
                     onEdit={handleEdit}
                     onDuplicate={async (id) => { await duplicateProduct(id); }}
                     onDelete={async (id) => { await deleteProduct(id); }}
@@ -366,6 +369,28 @@ export default function Products() {
 
       {showProductForm && (
         <ProductForm product={editingProduct} onClose={handleCloseForm} onSave={handleSaveProduct} />
+      )}
+
+      {detailProduct && currentStore && (
+        <ProductDetailDrawer
+          product={detailProduct.product}
+          calculation={detailProduct.calc}
+          config={currentStore.config}
+          open={!!detailProduct}
+          onClose={() => setDetailProduct(null)}
+          onEdit={(p) => {
+            setDetailProduct(null);
+            handleEdit(p);
+          }}
+          onDuplicate={async (id) => {
+            setDetailProduct(null);
+            await duplicateProduct(id);
+          }}
+          onDelete={async (id) => {
+            setDetailProduct(null);
+            await deleteProduct(id);
+          }}
+        />
       )}
     </AppLayout>
   );

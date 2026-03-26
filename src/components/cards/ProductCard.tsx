@@ -20,6 +20,7 @@ interface ProductCardProps {
   product: Product;
   calculation: ProductCalculation;
   adsMetric?: AdMetricDerived;
+  onTap?: () => void;
   onEdit: (product: Product) => void;
   onDuplicate: (productId: string) => void;
   onDelete: (productId: string) => void;
@@ -113,7 +114,7 @@ function AdsMetricsPills({ adsMetric }: { adsMetric: AdMetricDerived }) {
   );
 }
 
-export function ProductCard({ product, calculation, adsMetric, onEdit, onDuplicate, onDelete, onAdsUpdate }: ProductCardProps) {
+export function ProductCard({ product, calculation, adsMetric, onTap, onEdit, onDuplicate, onDelete, onAdsUpdate }: ProductCardProps) {
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
   const isLongPress = useRef(false);
   const [showAdsImport, setShowAdsImport] = useState(false);
@@ -160,7 +161,7 @@ export function ProductCard({ product, calculation, adsMetric, onEdit, onDuplica
       <>
         <div
           className="p-4 rounded-2xl border border-border bg-card hover:border-primary/30 transition-all cursor-pointer select-none group"
-          onClick={() => onEdit(product)}
+          onClick={() => onTap ? onTap() : onEdit(product)}
         >
           {/* Header: Image + Name + Price + Menu */}
           <div className="flex items-start gap-3">
@@ -258,7 +259,7 @@ export function ProductCard({ product, calculation, adsMetric, onEdit, onDuplica
     <>
       <div
         className="p-4 rounded-xl border border-border bg-card hover:border-primary/30 transition-all cursor-pointer select-none active:scale-[0.995]"
-        onClick={() => onEdit(product)}
+        onClick={() => { if (!isLongPress.current) { onTap ? onTap() : onEdit(product); } }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         onTouchMove={handleTouchMove}
