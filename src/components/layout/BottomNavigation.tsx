@@ -1,3 +1,4 @@
+import React from 'react';
 import { Calculator, ShoppingBag, TrendingUp, Boxes, Settings2 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -47,4 +48,4 @@ export const BottomNavigation = React.forwardRef<HTMLElement, Record<string, nev
       </div>
     </nav>
   );
-}
+});

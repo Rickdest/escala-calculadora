@@ -1,3 +1,4 @@
+import React from 'react';
 import { ArrowRight, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { openCheckout } from '@/services/checkout.service';
@@ -66,4 +67,4 @@ export const SubscriptionModal = React.forwardRef<HTMLDivElement, SubscriptionMo
       </div>
     </div>
   );
-}
+});
