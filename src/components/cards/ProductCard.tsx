@@ -2,6 +2,7 @@ import React, { useRef, useCallback } from 'react';
 import { Package, MoreVertical, Copy, Trash2, Edit, Upload } from 'lucide-react';
 import { Product, ProductCalculation, StoreConfig } from '@/types/store';
 import { cn, getMarginStatus } from '@/lib/utils';
+import { calcFullRoas } from '@/lib/roasUtils';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -197,12 +198,18 @@ export function ProductCard({
           <p className="text-[10px] font-medium text-muted-foreground mt-0.5">Lucro</p>
         </div>
 
-        <div className="rounded-xl p-2.5 flex flex-col items-start border border-border bg-secondary/50">
-          <p className={cn('font-mono text-base font-extrabold leading-tight', stockColor)}>
-            {product.stockQuantity} un.
-          </p>
-          <p className="text-[10px] font-medium text-muted-foreground mt-0.5">Estoque</p>
-        </div>
+        {(() => {
+          const roasResult = config ? calcFullRoas(product.salePrice, product.costPrice, config, product.packagingCost) : null;
+          const roasEmpate = roasResult?.roasEmpate;
+          return (
+            <div className="rounded-xl p-2.5 flex flex-col items-start border bg-warning/10 border-warning/20">
+              <p className="font-mono text-base font-extrabold leading-tight text-warning">
+                {roasEmpate && roasEmpate > 0 ? `${roasEmpate.toFixed(2)}x` : '—'}
+              </p>
+              <p className="text-[10px] font-medium text-muted-foreground mt-0.5">ROAS empate</p>
+            </div>
+          );
+        })()}
       </div>
 
       {/* ── PLATFORMS: 2×2 grid with best highlighted ── */}
