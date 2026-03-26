@@ -258,12 +258,12 @@ export default function Home() {
       {/* ══════════════════════════════════════════════
           DESKTOP LAYOUT — redesigned
           ══════════════════════════════════════════════ */}
-      <div className="hidden md:block py-8 space-y-4">
+      <div className="hidden md:block py-8 space-y-3">
         {/* CTA banners */}
         {expiredCta && <div className="space-y-2">{expiredCta}</div>}
 
         {/* Hero + Avisos grid */}
-        <div className="grid grid-cols-[1fr_320px] gap-4 items-start animate-fade-up">
+        <div className="grid grid-cols-[1fr_320px] gap-3 items-start animate-fade-up">
           {/* Hero Banner */}
           <div className="rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 px-8 py-6 relative overflow-hidden">
             <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'radial-gradient(circle at 70% 30%, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
@@ -322,9 +322,9 @@ export default function Home() {
         </div>
 
         {/* Main grid: left (calculator + products) + right (quick links + alerts) */}
-        <div className="grid grid-cols-[1fr_320px] gap-4">
+        <div className="grid grid-cols-[1fr_320px] gap-3">
           {/* Left column */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <QuickCalculator onSaveProduct={onSaveFromCalc} />
 
             {/* Outras plataformas */}
