@@ -10,7 +10,7 @@ const navItems = [
   { icon: Settings2, label: 'Config', path: '/settings' },
 ];
 
-export function BottomNavigation() {
+export const BottomNavigation = React.forwardRef<HTMLElement, Record<string, never>>(function BottomNavigation(_props, ref) {
   const location = useLocation();
   const navigate = useNavigate();
 

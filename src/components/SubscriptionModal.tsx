@@ -17,7 +17,7 @@ interface SubscriptionModalProps {
   onClose: () => void;
 }
 
-export function SubscriptionModal({ open, onClose }: SubscriptionModalProps) {
+export const SubscriptionModal = React.forwardRef<HTMLDivElement, SubscriptionModalProps>(function SubscriptionModal({ open, onClose }, ref) {
   const { user } = useAuth();
 
   if (!open) return null;
