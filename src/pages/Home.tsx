@@ -258,7 +258,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════
           DESKTOP LAYOUT — redesigned
           ══════════════════════════════════════════════ */}
-      <div className="hidden md:block py-8 space-y-6">
+      <div className="hidden md:block py-8 space-y-4">
         {/* CTA banners */}
         {expiredCta && <div className="space-y-2">{expiredCta}</div>}
 
