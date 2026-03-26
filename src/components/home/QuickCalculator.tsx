@@ -157,10 +157,10 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               const status = getMarginStatus(result.realMargin);
               return (
                 <div className={cn(
-                  'rounded-xl p-2.5 flex flex-col items-start border',
+                  'rounded-xl p-2.5 flex flex-col items-start border min-w-0',
                   status.bg, status.border
                 )}>
-                  <p className={cn('font-mono text-[22px] font-extrabold font-mono-num leading-tight', status.color)}>
+                  <p className={cn('font-mono text-[18px] font-extrabold font-mono-num leading-tight truncate w-full', status.color)}>
                     {result.realMargin.toFixed(1)}%
                   </p>
                   <p className="text-[10px] font-medium text-text-3 tracking-wider mt-0.5">Margem real</p>
@@ -170,11 +170,11 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
 
             {/* Lucro líquido */}
             <div className={cn(
-              'rounded-xl p-2.5 flex flex-col items-start border',
+              'rounded-xl p-2.5 flex flex-col items-start border min-w-0',
               result.netProfit >= 0 ? 'bg-success/10 border-success/20' : 'bg-danger/10 border-danger/20'
             )}>
               <p className={cn(
-                'font-mono text-[22px] font-extrabold font-mono-num leading-tight',
+                'font-mono text-[15px] font-extrabold font-mono-num leading-tight truncate w-full',
                 result.netProfit >= 0 ? 'text-success' : 'text-danger'
               )}>
                 {formatCurrency(result.netProfit)}
@@ -182,12 +182,12 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               <p className="text-[10px] font-medium text-text-3 tracking-wider mt-0.5">Lucro líquido</p>
             </div>
 
-            {/* Taxa Shopee */}
-            <div className="rounded-xl p-2.5 flex flex-col items-start border bg-danger/10 border-danger/20">
-              <p className="font-mono text-[22px] font-extrabold font-mono-num leading-tight text-danger">
-                {formatCurrency(result.totalShopeeFee)}
+            {/* ROAS Empate */}
+            <div className="rounded-xl p-2.5 flex flex-col items-start border bg-warning/10 border-warning/20 min-w-0">
+              <p className="font-mono text-[18px] font-extrabold font-mono-num leading-tight truncate w-full text-warning">
+                {result.roasEmpate > 0 ? `${result.roasEmpate.toFixed(2)}x` : '—'}
               </p>
-              <p className="text-[10px] font-medium text-text-3 tracking-wider mt-0.5">Taxa Shopee</p>
+              <p className="text-[10px] font-medium text-text-3 tracking-wider mt-0.5">ROAS empate</p>
             </div>
           </div>
 
