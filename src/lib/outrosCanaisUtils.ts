@@ -25,27 +25,26 @@ export function calcOutrosCanais(
   const results: ChannelResult[] = [];
 
   if (outrosCanais.tiktok) {
-    const { costPrice, salePrice } = outrosCanais.tiktok;
-    const r = calcTikTok(salePrice, costPrice, 0, taxesPercent, 0);
+    const { costPrice, salePrice, packagingCost = 0, affiliatePercent = 0 } = outrosCanais.tiktok;
+    const r = calcTikTok(salePrice, costPrice, packagingCost, taxesPercent, affiliatePercent);
     results.push({ key: 'tiktok', label: 'TikTok Shop', margin: r.margin, netProfit: r.netProfit, salePrice, isViable: r.isViable });
   }
 
   if (outrosCanais.shein) {
-    const { costPrice, salePrice } = outrosCanais.shein;
-    const r = calcShein(salePrice, costPrice, 'moda', 0, 0, taxesPercent);
+    const { costPrice, salePrice, category = 'moda', weightKg = 0, packagingCost = 0 } = outrosCanais.shein;
+    const r = calcShein(salePrice, costPrice, category, weightKg, packagingCost, taxesPercent);
     results.push({ key: 'shein', label: 'Shein', margin: r.margin, netProfit: r.netProfit, salePrice, isViable: r.isViable });
   }
 
   if (outrosCanais.amazon) {
-    const { costPrice, salePrice } = outrosCanais.amazon;
-    const defaultCat = AMAZON_CATEGORIES[AMAZON_CATEGORIES.length - 1]; // Demais Categorias 15%
-    const r = calcAmazon(salePrice, costPrice, defaultCat.rate, 'profissional', 0, taxesPercent);
+    const { costPrice, salePrice, categoryRate = 0.15, plan = 'profissional', packagingCost = 0 } = outrosCanais.amazon;
+    const r = calcAmazon(salePrice, costPrice, categoryRate, plan, packagingCost, taxesPercent);
     results.push({ key: 'amazon', label: 'Amazon', margin: r.margin, netProfit: r.netProfit, salePrice, isViable: r.isViable });
   }
 
   if (outrosCanais.ml) {
-    const { costPrice, salePrice } = outrosCanais.ml;
-    const r = calcML(salePrice, costPrice, 0, 'classico', 0, 0, taxesPercent);
+    const { costPrice, salePrice, categoryIndex = 0, anuncio = 'classico', freightCost = 0, packagingCost = 0 } = outrosCanais.ml;
+    const r = calcML(salePrice, costPrice, categoryIndex, anuncio, freightCost, packagingCost, taxesPercent);
     results.push({ key: 'ml', label: 'Mercado Livre', margin: r.margin, netProfit: r.netProfit, salePrice, isViable: r.isViable });
   }
 

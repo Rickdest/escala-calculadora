@@ -4,6 +4,8 @@ import { calcOutrosCanais, getBestChannel } from '@/lib/outrosCanaisUtils';
 import { X, Camera, Calculator, TrendingUp, TrendingDown, AlertTriangle, Save, Loader2, ChevronDown, CalendarDays, Settings2, Info, ExternalLink } from 'lucide-react';
 import { ProductAdsSection } from '@/components/forms/ProductAdsSection';
 import { Product, ShopeeAceleraOption, getShopeeFeeForPrice, OutrosCanais } from '@/types/store';
+import { AMAZON_CATEGORIES } from '@/lib/amazonUtils';
+import { ML_CATEGORIES } from '@/lib/mlUtils';
 import { useStore } from '@/contexts/StoreContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -309,68 +311,210 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                 <p className="text-[11px] text-text-3">
                   Preencha os canais onde também vende. O imposto de Configurações é aplicado automaticamente.
                 </p>
-                {(['tiktok', 'shein', 'amazon', 'ml'] as const).map((key) => {
-                  const labels: Record<string, string> = {
-                    tiktok: 'TikTok Shop',
-                    shein: 'Shein',
-                    amazon: 'Amazon',
-                    ml: 'Mercado Livre',
-                  };
-                  const active = !!outrosCanais[key];
-                  return (
-                    <div key={key} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-foreground">{labels[key]}</span>
-                        <Switch
-                          checked={active}
-                          onCheckedChange={(checked) => {
-                            if (!checked) {
-                              const next = { ...outrosCanais };
-                              delete next[key];
-                              setOutrosCanais(next);
-                            } else {
-                              setOutrosCanais(prev => ({
-                                ...prev,
-                                [key]: {
-                                  costPrice: parseFloat(costPrice) || 0,
-                                  salePrice: parseFloat(salePrice) || 0,
-                                },
-                              }));
-                            }
-                          }}
-                        />
-                      </div>
-                      {active && (
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="space-y-1">
-                            <label className="section-label">Custo (R$)</label>
-                            <Input
-                              type="number" inputMode="decimal" step="0.01" min="0"
-                              value={outrosCanais[key]?.costPrice || ''}
-                              onChange={(e) => setOutrosCanais(prev => ({
-                                ...prev,
-                                [key]: { ...prev[key]!, costPrice: parseFloat(e.target.value) || 0 },
-                              }))}
-                              className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num"
-                            />
-                          </div>
-                          <div className="space-y-1">
-                            <label className="section-label">Venda (R$)</label>
-                            <Input
-                              type="number" inputMode="decimal" step="0.01" min="0"
-                              value={outrosCanais[key]?.salePrice || ''}
-                              onChange={(e) => setOutrosCanais(prev => ({
-                                ...prev,
-                                [key]: { ...prev[key]!, salePrice: parseFloat(e.target.value) || 0 },
-                              }))}
-                              className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num"
-                            />
-                          </div>
+                {/* TikTok */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-foreground">TikTok Shop</span>
+                    <Switch
+                      checked={!!outrosCanais.tiktok}
+                      onCheckedChange={(checked) => {
+                        if (!checked) {
+                          const next = { ...outrosCanais };
+                          delete next.tiktok;
+                          setOutrosCanais(next);
+                        } else {
+                          setOutrosCanais(prev => ({ ...prev, tiktok: { costPrice: parseFloat(costPrice) || 0, salePrice: parseFloat(salePrice) || 0 } }));
+                        }
+                      }}
+                    />
+                  </div>
+                  {outrosCanais.tiktok && (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <label className="section-label">Custo (R$)</label>
+                          <Input type="number" inputMode="decimal" step="0.01" min="0" value={outrosCanais.tiktok.costPrice || ''} onChange={(e) => setOutrosCanais(prev => ({ ...prev, tiktok: { ...prev.tiktok!, costPrice: parseFloat(e.target.value) || 0 } }))} className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num" />
                         </div>
-                      )}
+                        <div className="space-y-1">
+                          <label className="section-label">Venda (R$)</label>
+                          <Input type="number" inputMode="decimal" step="0.01" min="0" value={outrosCanais.tiktok.salePrice || ''} onChange={(e) => setOutrosCanais(prev => ({ ...prev, tiktok: { ...prev.tiktok!, salePrice: parseFloat(e.target.value) || 0 } }))} className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num" />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <label className="section-label">Embalagem (R$)</label>
+                          <Input type="number" inputMode="decimal" step="0.01" min="0" value={outrosCanais.tiktok.packagingCost || ''} onChange={(e) => setOutrosCanais(prev => ({ ...prev, tiktok: { ...prev.tiktok!, packagingCost: parseFloat(e.target.value) || 0 } }))} className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="section-label">Afiliados (%)</label>
+                          <Input type="number" inputMode="decimal" step="0.1" min="0" value={outrosCanais.tiktok.affiliatePercent || ''} onChange={(e) => setOutrosCanais(prev => ({ ...prev, tiktok: { ...prev.tiktok!, affiliatePercent: parseFloat(e.target.value) || 0 } }))} className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num" />
+                        </div>
+                      </div>
                     </div>
-                  );
-                })}
+                  )}
+                </div>
+
+                {/* Shein */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-foreground">Shein</span>
+                    <Switch
+                      checked={!!outrosCanais.shein}
+                      onCheckedChange={(checked) => {
+                        if (!checked) {
+                          const next = { ...outrosCanais };
+                          delete next.shein;
+                          setOutrosCanais(next);
+                        } else {
+                          setOutrosCanais(prev => ({ ...prev, shein: { costPrice: parseFloat(costPrice) || 0, salePrice: parseFloat(salePrice) || 0 } }));
+                        }
+                      }}
+                    />
+                  </div>
+                  {outrosCanais.shein && (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <label className="section-label">Custo (R$)</label>
+                          <Input type="number" inputMode="decimal" step="0.01" min="0" value={outrosCanais.shein.costPrice || ''} onChange={(e) => setOutrosCanais(prev => ({ ...prev, shein: { ...prev.shein!, costPrice: parseFloat(e.target.value) || 0 } }))} className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="section-label">Venda (R$)</label>
+                          <Input type="number" inputMode="decimal" step="0.01" min="0" value={outrosCanais.shein.salePrice || ''} onChange={(e) => setOutrosCanais(prev => ({ ...prev, shein: { ...prev.shein!, salePrice: parseFloat(e.target.value) || 0 } }))} className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num" />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="space-y-1">
+                          <label className="section-label">Categoria</label>
+                          <select value={outrosCanais.shein.category || 'moda'} onChange={(e) => setOutrosCanais(prev => ({ ...prev, shein: { ...prev.shein!, category: e.target.value as 'moda' | 'outros' } }))} className="h-10 w-full bg-surface-2 border border-border rounded-lg text-xs px-2 text-foreground">
+                            <option value="moda">Moda (20%)</option>
+                            <option value="outros">Outros (18%)</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="section-label">Peso (kg)</label>
+                          <Input type="number" inputMode="decimal" step="0.1" min="0" value={outrosCanais.shein.weightKg || ''} onChange={(e) => setOutrosCanais(prev => ({ ...prev, shein: { ...prev.shein!, weightKg: parseFloat(e.target.value) || 0 } }))} className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="section-label">Embalagem</label>
+                          <Input type="number" inputMode="decimal" step="0.01" min="0" value={outrosCanais.shein.packagingCost || ''} onChange={(e) => setOutrosCanais(prev => ({ ...prev, shein: { ...prev.shein!, packagingCost: parseFloat(e.target.value) || 0 } }))} className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Amazon */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-foreground">Amazon</span>
+                    <Switch
+                      checked={!!outrosCanais.amazon}
+                      onCheckedChange={(checked) => {
+                        if (!checked) {
+                          const next = { ...outrosCanais };
+                          delete next.amazon;
+                          setOutrosCanais(next);
+                        } else {
+                          setOutrosCanais(prev => ({ ...prev, amazon: { costPrice: parseFloat(costPrice) || 0, salePrice: parseFloat(salePrice) || 0 } }));
+                        }
+                      }}
+                    />
+                  </div>
+                  {outrosCanais.amazon && (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <label className="section-label">Custo (R$)</label>
+                          <Input type="number" inputMode="decimal" step="0.01" min="0" value={outrosCanais.amazon.costPrice || ''} onChange={(e) => setOutrosCanais(prev => ({ ...prev, amazon: { ...prev.amazon!, costPrice: parseFloat(e.target.value) || 0 } }))} className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="section-label">Venda (R$)</label>
+                          <Input type="number" inputMode="decimal" step="0.01" min="0" value={outrosCanais.amazon.salePrice || ''} onChange={(e) => setOutrosCanais(prev => ({ ...prev, amazon: { ...prev.amazon!, salePrice: parseFloat(e.target.value) || 0 } }))} className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num" />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="section-label">Categoria</label>
+                        <select value={outrosCanais.amazon.categoryRate ?? 0.15} onChange={(e) => setOutrosCanais(prev => ({ ...prev, amazon: { ...prev.amazon!, categoryRate: parseFloat(e.target.value) } }))} className="h-10 w-full bg-surface-2 border border-border rounded-lg text-xs px-2 text-foreground">
+                          {AMAZON_CATEGORIES.map((cat) => (
+                            <option key={cat.label} value={cat.rate}>{cat.label} ({(cat.rate * 100).toFixed(0)}%)</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <label className="section-label">Plano</label>
+                          <select value={outrosCanais.amazon.plan || 'profissional'} onChange={(e) => setOutrosCanais(prev => ({ ...prev, amazon: { ...prev.amazon!, plan: e.target.value as 'individual' | 'profissional' } }))} className="h-10 w-full bg-surface-2 border border-border rounded-lg text-xs px-2 text-foreground">
+                            <option value="profissional">Profissional</option>
+                            <option value="individual">Individual (+R$2)</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="section-label">Embalagem (R$)</label>
+                          <Input type="number" inputMode="decimal" step="0.01" min="0" value={outrosCanais.amazon.packagingCost || ''} onChange={(e) => setOutrosCanais(prev => ({ ...prev, amazon: { ...prev.amazon!, packagingCost: parseFloat(e.target.value) || 0 } }))} className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Mercado Livre */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-foreground">Mercado Livre</span>
+                    <Switch
+                      checked={!!outrosCanais.ml}
+                      onCheckedChange={(checked) => {
+                        if (!checked) {
+                          const next = { ...outrosCanais };
+                          delete next.ml;
+                          setOutrosCanais(next);
+                        } else {
+                          setOutrosCanais(prev => ({ ...prev, ml: { costPrice: parseFloat(costPrice) || 0, salePrice: parseFloat(salePrice) || 0 } }));
+                        }
+                      }}
+                    />
+                  </div>
+                  {outrosCanais.ml && (
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <label className="section-label">Custo (R$)</label>
+                          <Input type="number" inputMode="decimal" step="0.01" min="0" value={outrosCanais.ml.costPrice || ''} onChange={(e) => setOutrosCanais(prev => ({ ...prev, ml: { ...prev.ml!, costPrice: parseFloat(e.target.value) || 0 } }))} className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="section-label">Venda (R$)</label>
+                          <Input type="number" inputMode="decimal" step="0.01" min="0" value={outrosCanais.ml.salePrice || ''} onChange={(e) => setOutrosCanais(prev => ({ ...prev, ml: { ...prev.ml!, salePrice: parseFloat(e.target.value) || 0 } }))} className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num" />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="section-label">Categoria</label>
+                        <select value={outrosCanais.ml.categoryIndex ?? 0} onChange={(e) => setOutrosCanais(prev => ({ ...prev, ml: { ...prev.ml!, categoryIndex: parseInt(e.target.value) } }))} className="h-10 w-full bg-surface-2 border border-border rounded-lg text-xs px-2 text-foreground">
+                          {ML_CATEGORIES.map((cat, i) => (
+                            <option key={cat.label} value={i}>{cat.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="space-y-1">
+                          <label className="section-label">Anúncio</label>
+                          <select value={outrosCanais.ml.anuncio || 'classico'} onChange={(e) => setOutrosCanais(prev => ({ ...prev, ml: { ...prev.ml!, anuncio: e.target.value as 'classico' | 'premium' } }))} className="h-10 w-full bg-surface-2 border border-border rounded-lg text-xs px-2 text-foreground">
+                            <option value="classico">Clássico</option>
+                            <option value="premium">Premium</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="section-label">Frete (R$)</label>
+                          <Input type="number" inputMode="decimal" step="0.01" min="0" value={outrosCanais.ml.freightCost || ''} onChange={(e) => setOutrosCanais(prev => ({ ...prev, ml: { ...prev.ml!, freightCost: parseFloat(e.target.value) || 0 } }))} className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="section-label">Embalagem</label>
+                          <Input type="number" inputMode="decimal" step="0.01" min="0" value={outrosCanais.ml.packagingCost || ''} onChange={(e) => setOutrosCanais(prev => ({ ...prev, ml: { ...prev.ml!, packagingCost: parseFloat(e.target.value) || 0 } }))} className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </CollapsibleContent>
           </Collapsible>
