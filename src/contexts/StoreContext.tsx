@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { Store, Product, StoreConfig, DEFAULT_STORE_CONFIG, ProductCalculation, ShopeeAceleraOption } from '@/types/store';
 import { calculateProduct as calculateProductFn, getStoreStats as getStoreStatsFn } from '@/lib/calculateProduct';
 import { TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
@@ -40,7 +40,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
   const [currentStore, setCurrentStoreState] = useState<Store | null>(null);
 
-  const queryKey = ['stores-and-products', user?.id];
+  const queryKey = useMemo(() => ['stores-and-products', user?.id], [user?.id]);
 
   const {
     data: stores = [],
@@ -72,18 +72,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     const savedStoreId = localStorage.getItem(CURRENT_STORE_KEY);
 
-    if (currentStore) {
-      const updated = stores.find(s => s.id === currentStore.id);
-      if (updated) {
-        setCurrentStoreState(updated);
-      } else {
-        setCurrentStoreState(stores[0]);
+    setCurrentStoreState(prev => {
+      if (prev) {
+        const updated = stores.find(s => s.id === prev.id);
+        return updated || stores[0];
       }
-    } else {
       const found = savedStoreId ? stores.find(s => s.id === savedStoreId) : null;
-      setCurrentStoreState(found || stores[0]);
-    }
-  }, [stores]);
+      return found || stores[0];
+    });
+  }, [stores, isLoading, user]);
 
   // Persist current store selection
   useEffect(() => {
@@ -154,7 +151,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [invalidate]);
 
   const deleteStore = useCallback(async (storeId: string) => {
-    await supabase.from('products').delete().eq('store_id', storeId);
+    const { error: prodError } = await supabase.from('products').delete().eq('store_id', storeId);
+    if (prodError) { toast.error('Erro ao excluir produtos da loja'); return; }
     const { error } = await supabase.from('stores').delete().eq('id', storeId);
     if (error) { toast.error('Erro ao excluir loja'); return; }
     if (currentStore?.id === storeId) setCurrentStoreState(null);

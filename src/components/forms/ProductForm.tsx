@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { calculateProduct as calculateProductFn } from '@/lib/calculateProduct';
 import { calcOutrosCanais, getBestChannel } from '@/lib/outrosCanaisUtils';
 import { X, Camera, Calculator, TrendingUp, TrendingDown, AlertTriangle, Save, Loader2, ChevronDown, CalendarDays, Settings2, Info, ExternalLink } from 'lucide-react';
 import { ProductAdsSection } from '@/components/forms/ProductAdsSection';
@@ -60,32 +61,47 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
     const sp = parseFloat(salePrice) || 0;
     const cp = parseFloat(costPrice) || 0;
     const pkg = parseFloat(packagingCost) || 0;
-    if (sp <= 0 || cp <= 0) return null;
+    if (sp <= 0 || cp <= 0 || !config) return null;
 
-    const range = getShopeeFeeForPrice(sp);
-    const shopeeFeePercent = sp * (range.percent / 100);
-    const shopeeFeeFixed = range.fixed;
-    const cpfExtra = config?.isCpfSeller && config?.hasOver450Orders ? 3 : 0;
-    const totalShopeeFee = shopeeFeePercent + shopeeFeeFixed + cpfExtra;
     const adsCost = enableAds ? (parseFloat(adsCostValue) || 0) : 0;
-    const taxesCost = (config?.taxes || 0) > 0 ? sp * ((config?.taxes || 0) / 100) : 0;
-    const affiliateCost = config?.enableAffiliateCommission ? sp * ((config?.affiliateCommission || 0) / 100) : 0;
-    const campaignsCost = config?.enableShopeeCampaigns ? sp * ((config?.shopeeCampaigns || 0) / 100) : 0;
-    const aceleraVal = config?.shopeeAcelera || 'none';
-    const aceleraCost = aceleraVal === 'indicado' ? sp * 0.025 : aceleraVal === 'nao_indicado' ? sp * 0.035 : 0;
-
-    const totalCosts = cp + pkg + totalShopeeFee + adsCost + taxesCost + affiliateCost + campaignsCost + aceleraCost;
-    const netProfit = sp - totalCosts;
-    const realMargin = sp > 0 ? (netProfit / sp) * 100 : 0;
-
-    return {
-      grossRevenue: sp, totalShopeeFee, shopeeFeePercent,
-      shopeeFeeFixed: shopeeFeeFixed + cpfExtra, adsCost, taxesCost,
-      affiliateCost, campaignsCost, aceleraCost, totalCosts, netProfit, realMargin,
-      isAboveTarget: realMargin >= (config?.desiredMargin || 17),
-      marginDifference: realMargin - (config?.desiredMargin || 17),
+    const draftProduct = {
+      id: product?.id || '',
+      storeId: currentStore?.id || '',
+      name: name || '',
+      costPrice: cp,
+      salePrice: sp,
+      packagingCost: pkg,
+      adsCost,
+      adsRevenue: product?.adsRevenue ?? 0,
+      imageUrl: '',
+      stockQuantity: 0,
+      minStockQuantity: 5,
+      hasVariations: false,
+      attributes: [] as any[],
+      variations: [] as any[],
+      shopeeAcelera: (product?.shopeeAcelera ?? 'none') as ShopeeAceleraOption,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     };
-  }, [salePrice, costPrice, packagingCost, enableAds, adsCostValue, config]);
+
+    const calc = calculateProductFn(draftProduct, config);
+    return {
+      grossRevenue: calc.grossRevenue,
+      totalShopeeFee: calc.totalShopeeFee,
+      shopeeFeePercent: calc.shopeeFeePercent,
+      shopeeFeeFixed: calc.shopeeFeeFixed,
+      adsCost,
+      taxesCost: calc.taxes,
+      affiliateCost: calc.affiliateCommission,
+      campaignsCost: calc.shopeeCampaigns,
+      aceleraCost: calc.shopeeAcelera,
+      totalCosts: calc.totalCosts,
+      netProfit: calc.netProfit,
+      realMargin: calc.realMargin,
+      isAboveTarget: calc.isAboveTarget,
+      marginDifference: calc.marginDifference,
+    };
+  }, [salePrice, costPrice, packagingCost, enableAds, adsCostValue, config, product?.shopeeAcelera, product?.adsRevenue]);
 
   const roasValues = useMemo(() => {
     if (!localCalc || localCalc.grossRevenue <= 0) return null;
@@ -146,13 +162,13 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
         salePrice: parseFloat(salePrice) || 0,
         packagingCost: parseFloat(packagingCost) || 0,
         adsCost: enableAds ? (parseFloat(adsCostValue) || 0) : 0,
-        adsRevenue: 0,
+        adsRevenue: product?.adsRevenue ?? 0,
         imageUrl: imageUrl || undefined,
         stockQuantity: product?.stockQuantity || 0,
         hasVariations: product?.hasVariations || false,
         attributes: product?.attributes || [],
         variations: product?.variations || [],
-        shopeeAcelera: 'none' as ShopeeAceleraOption,
+        shopeeAcelera: (product?.shopeeAcelera ?? 'none') as ShopeeAceleraOption,
         outrosCanais: Object.keys(outrosCanais).length > 0 ? outrosCanais : null,
       };
       await Promise.resolve(onSave(productData));
