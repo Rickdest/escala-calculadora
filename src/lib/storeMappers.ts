@@ -2,13 +2,7 @@ import { Store, Product, StoreConfig, DEFAULT_STORE_CONFIG, ShopeeAceleraOption 
 import { Tables, TablesInsert } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
 
-export const LOCAL_IMAGES_KEY = 'precify-local-images';
 export const CURRENT_STORE_KEY = 'precify-current-store';
-export const MIGRATION_DONE_KEY = 'precify-images-migrated';
-
-export function getLocalImages(): Record<string, string> {
-  try { return JSON.parse(localStorage.getItem(LOCAL_IMAGES_KEY) || '{}'); } catch { return {}; }
-}
 
 export interface VariationRecord {
   stockQuantity?: number;

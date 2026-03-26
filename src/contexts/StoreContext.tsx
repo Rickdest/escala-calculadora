@@ -8,11 +8,10 @@ import { toast } from 'sonner';
 import { uploadProductImage, deleteProductImage } from '@/lib/imageUtils';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  LOCAL_IMAGES_KEY, CURRENT_STORE_KEY,
-  getLocalImages, mapDbProduct, mapDbStore, fetchStoresAndProducts,
+  CURRENT_STORE_KEY,
+  mapDbProduct, mapDbStore, fetchStoresAndProducts,
   VariationRecord,
 } from '@/lib/storeMappers';
-import { useImageMigration } from '@/hooks/useImageMigration';
 
 interface StoreContextType {
   stores: Store[];
