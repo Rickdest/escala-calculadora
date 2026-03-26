@@ -263,15 +263,15 @@ export default function Home() {
         {expiredCta && <div className="space-y-2">{expiredCta}</div>}
 
         {/* Hero + Avisos grid */}
-        <div className="grid grid-cols-[1fr_320px] gap-4 animate-fade-up">
+        <div className="grid grid-cols-[1fr_320px] gap-4 items-start animate-fade-up">
           {/* Hero Banner */}
-          <div className="rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 px-8 pt-5 pb-3 relative overflow-hidden">
+          <div className="rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 px-8 py-6 relative overflow-hidden">
             <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: 'radial-gradient(circle at 70% 30%, white 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
             <div className="relative z-10 max-w-2xl">
-              <h1 className="text-2xl font-bold text-primary-foreground mb-1 leading-tight">
+              <h1 className="text-2xl font-bold text-primary-foreground mb-2 leading-tight">
                 Pare de vender no prejuízo.
               </h1>
-              <p className="text-primary-foreground/80 text-sm mb-3 max-w-lg">
+              <p className="text-primary-foreground/80 text-sm mb-4 max-w-lg">
                 Descubra sua margem real em segundos e saiba se seus Ads estão dando lucro de verdade.
               </p>
               <div className="flex flex-wrap gap-3">
@@ -282,7 +282,7 @@ export default function Home() {
                   >
                     <Plus className="w-4 h-4" /> Precificar produto
                   </button>
-                  <span className="text-[12px] text-white/60 mt-1.5 text-center">Calcule em segundos</span>
+                  <span className="text-[12px] text-white/60 mt-1 text-center">Calcule em segundos</span>
                 </div>
                 <div className="flex flex-col items-center">
                   <button
@@ -291,7 +291,7 @@ export default function Home() {
                   >
                     <TrendingUp className="w-4 h-4" /> Análise de Ads
                   </button>
-                  <span className="text-[12px] text-white/60 mt-1.5 text-center">Importe seu relatório</span>
+                  <span className="text-[12px] text-white/60 mt-1 text-center">Importe seu relatório</span>
                 </div>
               </div>
             </div>
