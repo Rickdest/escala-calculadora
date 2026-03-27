@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { EnrichedAdsData } from '@/hooks/useAdsData';
 import { cn } from '@/lib/utils';
-import { Package, Link2, Plus, Trash2 } from 'lucide-react';
+import { Package, Link2, Plus, Trash2, ArrowLeftRight } from 'lucide-react';
 import { fmt, fmtShort, getClassCor, getRoasColor } from './adsHelpers';
 import { calcAdEfficiencyScore } from '@/lib/adsLogic';
 
@@ -73,7 +73,7 @@ export function AdsProductCard({
                 {cls.label}
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-primary/30 bg-primary/15 text-[10px] font-bold text-primary">
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-warning/30 bg-warning/15 text-[10px] font-bold text-warning">
                 🔗 Não vinculado
               </span>
             )}
@@ -82,15 +82,6 @@ export function AdsProductCard({
         </div>
 
         <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
-          {isLinked && (
-            <button
-              onClick={onLink}
-              className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-primary hover:bg-primary/10 transition-colors"
-              title="Trocar vínculo"
-            >
-              <Link2 className="w-3.5 h-3.5" />
-            </button>
-          )}
           <button
             onClick={onDelete}
             className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
@@ -154,20 +145,32 @@ export function AdsProductCard({
         </div>
       </div>
 
-      {/* ── ACTION AREA: unlinked ── */}
+      {/* ── ACTION AREA: linked — show "Trocar vínculo" ── */}
+      {isLinked && (
+        <div className="mt-3 pt-2 border-t border-border/40" onClick={e => e.stopPropagation()}>
+          <button
+            onClick={onLink}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold text-text-3 hover:text-primary hover:bg-primary/5 transition-colors"
+          >
+            <ArrowLeftRight className="w-3 h-3" /> Trocar vínculo
+          </button>
+        </div>
+      )}
+
+      {/* ── ACTION AREA: unlinked — "Vincular" and "Cadastrar" equal weight ── */}
       {!isLinked && (
         <div className="mt-3 pt-3 border-t border-border/40" onClick={e => e.stopPropagation()}>
           <p className="text-[11px] text-warning mb-2 flex items-center gap-1">⚠️ Vincule para ver lucratividade</p>
-          <div className="flex items-center gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <button
               onClick={onLink}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-border bg-card text-xs font-bold text-foreground hover:border-primary/30 transition-colors"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-primary bg-primary/10 text-xs font-bold text-primary hover:bg-primary/20 transition-colors"
             >
               <Link2 className="w-3.5 h-3.5" /> Vincular
             </button>
             <button
               onClick={onQuickRegister}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-primary bg-transparent text-xs font-bold text-primary hover:bg-primary/10 transition-colors"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-primary bg-primary/10 text-xs font-bold text-primary hover:bg-primary/20 transition-colors"
             >
               <Plus className="w-3.5 h-3.5" /> Cadastrar
             </button>

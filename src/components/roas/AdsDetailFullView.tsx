@@ -150,14 +150,25 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
   const prevAd = currentIndex > 0 ? allAds[currentIndex - 1] : null;
   const nextAd = currentIndex < allAds.length - 1 ? allAds[currentIndex + 1] : null;
 
-  const statusColor = classification?.cor || 'text-3';
+  const statusColorClass = classification
+    ? classification.classificacao === 'LUCRATIVO' ? 'text-success'
+    : classification.classificacao === 'MARGEM_APERTADA' ? 'text-warning'
+    : classification.classificacao === 'ABAIXO_EMPATE' ? 'text-warning'
+    : 'text-destructive'
+    : 'text-text-3';
 
-  // Semaphore bg classes
+  const statusBgClass = classification
+    ? classification.classificacao === 'LUCRATIVO' ? 'bg-success'
+    : classification.classificacao === 'MARGEM_APERTADA' ? 'bg-warning'
+    : classification.classificacao === 'ABAIXO_EMPATE' ? 'bg-warning'
+    : 'bg-destructive'
+    : 'bg-text-3';
+
   const semaphoreBg = classification
-    ? classification.classificacao === 'LUCRATIVO' ? 'bg-emerald-500/5 border-emerald-500/20'
-    : classification.classificacao === 'MARGEM_APERTADA' ? 'bg-amber-500/5 border-amber-500/20'
-    : classification.classificacao === 'ABAIXO_EMPATE' ? 'bg-orange-500/5 border-orange-500/20'
-    : 'bg-red-500/5 border-red-500/20'
+    ? classification.classificacao === 'LUCRATIVO' ? 'bg-success/5 border-success/20'
+    : classification.classificacao === 'MARGEM_APERTADA' ? 'bg-warning/5 border-warning/20'
+    : classification.classificacao === 'ABAIXO_EMPATE' ? 'bg-warning/5 border-warning/20'
+    : 'bg-destructive/5 border-destructive/20'
     : 'bg-surface-2 border-border';
 
   // ═══ Right Column ═══
@@ -427,7 +438,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
             <div className="flex items-center gap-2 flex-wrap mt-1">
               <span className="text-[11px] text-text-3 font-mono tabular-nums">{periodLabel}</span>
               {emAprendizado && (
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center gap-1">
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-warning/10 border border-warning/20 text-warning flex items-center gap-1">
                   <Clock className="w-3 h-3" /> Aprendizado
                 </span>
               )}
@@ -475,13 +486,13 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
           <>
             <div className="flex items-center gap-2">
               {classification.classificacao === 'LUCRATIVO' ? (
-                <TrendingUp className={cn('w-5 h-5', `text-${statusColor}`)} />
+                <TrendingUp className={cn('w-5 h-5', statusColorClass)} />
               ) : classification.classificacao === 'PREJUIZO' ? (
-                <TrendingDown className={cn('w-5 h-5', `text-${statusColor}`)} />
+                <TrendingDown className={cn('w-5 h-5', statusColorClass)} />
               ) : (
-                <AlertTriangle className={cn('w-5 h-5', `text-${statusColor}`)} />
+                <AlertTriangle className={cn('w-5 h-5', statusColorClass)} />
               )}
-              <span className={cn('text-base font-extrabold uppercase', `text-${statusColor}`)}>
+              <span className={cn('text-base font-extrabold uppercase', statusColorClass)}>
                 {classification.classificacao.replace('_', ' ')}
               </span>
             </div>
@@ -489,7 +500,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
             <div className="space-y-2.5 text-sm font-mono tabular-nums">
               <div className="flex justify-between">
                 <span className="text-text-2">ROAS Real:</span>
-                <span className={cn('font-extrabold', `text-${statusColor}`)}>{roasDireto.toFixed(2)}</span>
+                <span className={cn('font-extrabold', statusColorClass)}>{roasDireto.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-text-2">ROAS Empate:</span>
@@ -506,7 +517,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
               <div className="space-y-1">
                 <div className="w-full h-4 rounded-full bg-background/50 overflow-hidden relative">
                   <div
-                    className={cn('h-full rounded-full transition-all', `bg-${statusColor}`)}
+                    className={cn('h-full rounded-full transition-all', statusBgClass)}
                     style={{ width: `${Math.min((roasDireto / (roasEmpate * 2.5)) * 100, 100)}%` }}
                   />
                   <div className="absolute top-0 h-full w-0.5 bg-warning/80" style={{ left: `${Math.min((roasEmpate / (roasEmpate * 2.5)) * 100, 100)}%` }} />
@@ -544,7 +555,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
           </div>
 
           {/* Régua visual melhorada */}
-          <div className="relative h-12 bg-gradient-to-r from-emerald-500/20 via-amber-500/20 to-red-500/20 rounded-xl mb-3">
+          <div className="relative h-12 bg-gradient-to-r from-success/20 via-warning/20 to-destructive/20 rounded-xl mb-3">
             {/* Marcadores de zona */}
             <div className="absolute top-0 left-[15%] h-full border-l border-dashed border-border" />
             <div className="absolute top-0 left-[40%] h-full border-l border-dashed border-border" />
@@ -570,19 +581,19 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
           {/* Classificação */}
           <p className={cn(
             'text-sm font-bold mt-2',
-            ad.posicao_media <= 3 && 'text-emerald-500',
-            ad.posicao_media > 3 && ad.posicao_media <= 8 && 'text-blue-500',
-            ad.posicao_media > 8 && ad.posicao_media <= 16 && 'text-amber-500',
-            ad.posicao_media > 16 && 'text-red-500',
+            ad.posicao_media <= 3 && 'text-success',
+            ad.posicao_media > 3 && ad.posicao_media <= 8 && 'text-primary',
+            ad.posicao_media > 8 && ad.posicao_media <= 16 && 'text-warning',
+            ad.posicao_media > 16 && 'text-destructive',
           )}>
             {posInfo.label}
           </p>
 
           <div className="text-sm text-text-3 space-y-1.5">
-            <p className={ad.posicao_media <= 3 ? 'text-emerald-500 font-bold' : ''}>• 1-3: Topo {ad.posicao_media <= 3 ? '← VOCÊ' : ''}</p>
-            <p className={ad.posicao_media > 3 && ad.posicao_media <= 8 ? 'text-blue-500 font-bold' : ''}>• 4-8: Primeira página {ad.posicao_media > 3 && ad.posicao_media <= 8 ? '← VOCÊ' : ''}</p>
-            <p className={ad.posicao_media > 8 && ad.posicao_media <= 16 ? 'text-amber-500 font-bold' : ''}>• 9-16: Segunda página {ad.posicao_media > 8 && ad.posicao_media <= 16 ? '← VOCÊ' : ''}</p>
-            <p className={ad.posicao_media > 16 ? 'text-red-500 font-bold' : ''}>• 17+: Baixa visibilidade {ad.posicao_media > 16 ? '← VOCÊ' : ''}</p>
+            <p className={ad.posicao_media <= 3 ? 'text-success font-bold' : ''}>• 1-3: Topo {ad.posicao_media <= 3 ? '← VOCÊ' : ''}</p>
+            <p className={ad.posicao_media > 3 && ad.posicao_media <= 8 ? 'text-primary font-bold' : ''}>• 4-8: Primeira página {ad.posicao_media > 3 && ad.posicao_media <= 8 ? '← VOCÊ' : ''}</p>
+            <p className={ad.posicao_media > 8 && ad.posicao_media <= 16 ? 'text-warning font-bold' : ''}>• 9-16: Segunda página {ad.posicao_media > 8 && ad.posicao_media <= 16 ? '← VOCÊ' : ''}</p>
+            <p className={ad.posicao_media > 16 ? 'text-destructive font-bold' : ''}>• 17+: Baixa visibilidade {ad.posicao_media > 16 ? '← VOCÊ' : ''}</p>
           </div>
         </div>
       ) : (
@@ -609,7 +620,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
               </div>
               <div className="w-full h-3 rounded-full bg-background overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-orange-500/80"
+                  className="h-full rounded-full bg-warning/80"
                   style={{ width: `${Math.min((acosDireto / Math.max(margemContrib, acosDireto, 1)) * 100, 100)}%` }}
                 />
               </div>
@@ -620,12 +631,12 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                 <span className="font-bold font-mono tabular-nums">{margemContrib.toFixed(1)}%</span>
               </div>
               <div className="w-full h-3 rounded-full bg-background overflow-hidden">
-                <div className="h-full rounded-full bg-emerald-500/80" style={{ width: `${Math.min((margemContrib / Math.max(margemContrib, acosDireto, 1)) * 100, 100)}%` }} />
+                <div className="h-full rounded-full bg-success/80" style={{ width: `${Math.min((margemContrib / Math.max(margemContrib, acosDireto, 1)) * 100, 100)}%` }} />
               </div>
             </div>
           </div>
           {folgaAcosMargem !== null && (
-            <div className={cn('rounded-xl p-3 text-sm font-bold', folgaAcosMargem > 0 ? 'bg-emerald-500/10 text-success' : 'bg-red-500/10 text-destructive')}>
+            <div className={cn('rounded-xl p-3 text-sm font-bold', folgaAcosMargem > 0 ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive')}>
               {folgaAcosMargem > 0
                 ? `Folga: ${folgaAcosMargem.toFixed(1)}% ✅ — O ads consome ${acosDireto.toFixed(1)}% do faturamento. Sua margem é ${margemContrib.toFixed(1)}%. Sobram ${folgaAcosMargem.toFixed(1)}% de lucro líquido.`
                 : `Excedente: ${folgaAcosMargem.toFixed(1)}% 🔴 — ACOS maior que margem. Cada venda via ads dá prejuízo.`}
