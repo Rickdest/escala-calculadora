@@ -1,28 +1,25 @@
 
 
-## Fix: Tabs Overflow + Reduzir Margem Superior
+## Reduzir Margem Entre Cabeçalho e Conteúdo do Detalhe
 
-### Arquivo: `src/components/roas/AdsDetailFullView.tsx`
+### Causa
 
-**1. Tabs saindo da tela (linhas 667-681)**
+1. **`src/pages/Roas.tsx` linha 9**: `py-4` adiciona 16px de padding-top entre o PageHeader e o conteúdo
+2. **`src/components/roas/AdsDetailFullView.tsx` linha 537**: O container tem `bg-background min-h-screen` mas não elimina o padding herdado do pai
+3. **Breadcrumb (linha 539)**: `mb-2` adiciona espaço extra abaixo do "Voltar"
 
-O texto "Diagnóstico & Ação" e "Métricas & Histórico" é longo demais para 390px. Solução:
-- Reduzir font para `text-xs` nos TabsTrigger
-- Esconder ícones no mobile (apenas texto)
-- Ou abreviar: "Diagnóstico" e "Métricas"
+### Mudanças
 
-Mudança concreta:
-- `TabsTrigger`: adicionar `text-xs sm:text-sm` e esconder ícones com `hidden sm:inline`
-- Reduzir `h-11` → `h-10` e `h-9` → `h-8`
+**Arquivo 1: `src/pages/Roas.tsx`**
+- Reduzir `py-4` para `py-2` no mobile: `py-2 md:py-8`
 
-**2. Margem grande entre header e Voltar (linha 537-539)**
+**Arquivo 2: `src/components/roas/AdsDetailFullView.tsx`**
+- Linha 537: Adicionar `-mt-2` ao container principal para compensar o padding do pai quando o detalhe está aberto
+- Linha 539 (breadcrumb): Reduzir `mb-2` para `mb-1`
+- Linha 556 (header card): Reduzir `mb-2` para `mb-1.5`
 
-- Linha 537: remover `pt-1` → sem padding top no breadcrumb
-- O container principal tem espaços desnecessários. Reduzir `mb-3` do breadcrumb para `mb-2`, e `mb-3` do header card para `mb-2`
+Resultado: o "Voltar" fica praticamente colado ao PageHeader, sem espaço desperdiçado.
 
-### Resumo das mudanças
-- Linha 539: `pt-1` → remover, `mb-3` → `mb-2`
-- Linha 556: `mb-3` → `mb-2`
-- Linha 667: `h-11` → `h-10`
-- Linhas 668-680: TabsTrigger `text-sm` → `text-xs sm:text-sm`, ícones com `hidden sm:inline`, `h-9` → `h-8`
+### O que NÃO muda
+- Nenhuma lógica, cálculos, ou outros componentes
 
