@@ -63,8 +63,8 @@ function TipIcon({ text }: { text: string }) {
   );
 }
 
-// ─── Donut de composição de custos ───
-function CostBreakdownChart({ product, roasData }: { product: Product; roasData: RoasResult }) {
+// ─── Donut de composição de custos (coluna direita) ───
+function CostBreakdownCard({ product, roasData }: { product: Product; roasData: RoasResult }) {
   const data = useMemo(() => {
     const costs = roasData.costs;
     const items: Array<{ name: string; value: number; color: string }> = [];
@@ -79,30 +79,66 @@ function CostBreakdownChart({ product, roasData }: { product: Product; roasData:
     add('Afiliados', costs.affiliateCommission);
     add('Campanhas', costs.campaigns);
     add('Acelera', costs.acelera);
-    items.push({ name: 'Lucro', value: Math.max(0, roasData.lucroBruto), color: 'hsl(152, 70%, 42%)' });
+    items.push({ name: 'Lucro Bruto', value: Math.max(0, roasData.lucroBruto), color: 'hsl(152, 70%, 42%)' });
     return items;
   }, [roasData]);
 
+  const lucroItem = data.find(d => d.name === 'Lucro Bruto');
+
   return (
-    <div className="flex items-center gap-4 md:gap-5">
-      <div className="w-[110px] h-[110px] md:w-[130px] md:h-[130px] flex-shrink-0">
-        <ResponsiveContainer width="100%" height="100%">
-          <RechartsPie>
-            <Pie data={data} cx="50%" cy="50%" innerRadius={30} outerRadius={48} paddingAngle={3} dataKey="value" strokeWidth={0}>
-              {data.map((entry, idx) => <Cell key={idx} fill={entry.color} />)}
-            </Pie>
-            <Tooltip formatter={(v: number) => formatCurrency(v)} />
-          </RechartsPie>
-        </ResponsiveContainer>
+    <div className="rounded-xl border border-border bg-card p-4 md:p-5 space-y-4 h-full">
+      <div className="flex items-center gap-2">
+        <PieChart className="w-4 h-4 text-primary" />
+        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Composição do Preço</p>
       </div>
-      <div className="flex-1 space-y-1.5">
-        {data.map((item, idx) => (
-          <div key={idx} className="flex items-center gap-2 text-xs">
+
+      {/* Donut com preço no centro */}
+      <div className="flex justify-center">
+        <div className="relative w-[160px] h-[160px] md:w-[180px] md:h-[180px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <RechartsPie>
+              <Pie data={data} cx="50%" cy="50%" innerRadius="55%" outerRadius="85%" paddingAngle={2} dataKey="value" strokeWidth={0}>
+                {data.map((entry, idx) => <Cell key={idx} fill={entry.color} />)}
+              </Pie>
+              <Tooltip formatter={(v: number) => formatCurrency(v)} />
+            </RechartsPie>
+          </ResponsiveContainer>
+          {/* Label central */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+            <span className="text-[10px] text-muted-foreground font-medium">Venda</span>
+            <span className="text-base md:text-lg font-black font-mono text-foreground">{formatCurrency(product.salePrice)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Lista de custos */}
+      <div className="space-y-2 pt-1">
+        {data.filter(d => d.name !== 'Lucro Bruto').map((item, idx) => (
+          <div key={idx} className="flex items-center gap-2.5 text-xs">
             <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
-            <span className="text-text-2 flex-1 text-[11px]">{item.name}</span>
-            <span className="font-bold tabular-nums text-[11px] font-mono">{formatCurrency(item.value)}</span>
+            <span className="text-muted-foreground flex-1">{item.name}</span>
+            <span className="font-bold tabular-nums font-mono text-foreground">{formatCurrency(item.value)}</span>
           </div>
         ))}
+
+        {/* Lucro bruto destacado */}
+        {lucroItem && (
+          <div className={cn(
+            'flex items-center gap-2.5 text-xs rounded-lg p-2 mt-1',
+            roasData.lucroBruto > 0 ? 'bg-success/8 border border-success/20' : 'bg-destructive/8 border border-destructive/20'
+          )}>
+            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-success" />
+            <span className={cn('flex-1 font-semibold', roasData.lucroBruto > 0 ? 'text-success' : 'text-destructive')}>Lucro Bruto</span>
+            <span className={cn('font-black tabular-nums font-mono', roasData.lucroBruto > 0 ? 'text-success' : 'text-destructive')}>
+              {formatCurrency(roasData.lucroBruto)}
+            </span>
+          </div>
+        )}
+
+        {/* Percentual Shopee */}
+        <p className="text-[10px] text-muted-foreground text-right tabular-nums font-mono">
+          Taxa Shopee: {((roasData.taxaShopee / product.salePrice) * 100).toFixed(1)}% do preço
+        </p>
       </div>
     </div>
   );
