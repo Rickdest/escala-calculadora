@@ -190,45 +190,81 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate }: { 
     other: () => '•',
   };
 
+  // Group events by date for combined labels
+  const eventsByDate: Record<string, OperationLogEntry[]> = {};
+  for (const ev of sortedEvents) {
+    const dateKey = ev.timestamp.slice(0, 10);
+    if (!eventsByDate[dateKey]) eventsByDate[dateKey] = [];
+    eventsByDate[dateKey].push(ev);
+  }
+
+  // Build unique markers per date with combined labels
+  const dateMarkers = Object.entries(eventsByDate).map(([dateKey, evts]) => {
+    const label = evts.map(ev => {
+      const fn = EVENT_SHORT_LABEL[ev.field] || EVENT_SHORT_LABEL.other;
+      return fn(ev);
+    }).join(' · ');
+    // Use first event's color, or primary if mixed
+    const color = evts.length === 1
+      ? (EVENT_COLORS[evts[0].field] || EVENT_COLORS.other)
+      : 'hsl(var(--primary))';
+    const fullDate = evts[0].timestamp;
+    return { dateKey, fullDate, label, color };
+  });
+
   return (
     <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
-      <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground flex items-center gap-1.5">
-        <History className="w-3.5 h-3.5 text-primary" /> Histórico de Ajustes
-      </p>
+      <input ref={fileInputRef} type="file" accept=".csv" onChange={handleImportLog} className="hidden" />
+      <div className="flex items-center justify-between">
+        <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground flex items-center gap-1.5">
+          <History className="w-3.5 h-3.5 text-primary" /> Histórico de Ajustes
+        </p>
+        <Button onClick={() => fileInputRef.current?.click()} size="sm" variant="outline" className="h-7 text-[10px] gap-1">
+          <Upload className="w-3 h-3" /> Atualizar CSV
+        </Button>
+      </div>
 
       {showChart && (
-        <div className="h-[150px] w-full">
+        <div className="h-[170px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <ReLineChart data={chartData} margin={{ top: 18, right: 10, bottom: 0, left: 0 }}>
-              <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+            <ReLineChart data={chartData} margin={{ top: 22, right: 10, bottom: 0, left: 0 }}>
+              <XAxis
+                dataKey="fullDate"
+                tick={{ fontSize: 10 }}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(ts: string) => {
+                  const d = new Date(ts);
+                  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+                }}
+              />
               <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={30} domain={['auto', 'auto']} />
               <ReTooltip
                 contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid hsl(var(--border))' }}
+                labelFormatter={(ts: string) => {
+                  const d = new Date(ts);
+                  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                }}
                 formatter={(v: number | null) => [v !== null ? `${v}` : '–', 'ROAS meta']}
               />
               {roasEmpate && roasEmpate > 0 && roasEmpate !== Infinity && (
                 <ReferenceLine y={roasEmpate} stroke="hsl(var(--warning))" strokeDasharray="4 4" label={{ value: 'Empate', fontSize: 9, fill: 'hsl(var(--warning))' }} />
               )}
-              {/* Vertical markers for each event */}
-              {sortedEvents.map((ev, i) => {
-                const dateLabel = ev.timestamp.slice(5, 10).replace('-', '/');
-                const color = EVENT_COLORS[ev.field] || EVENT_COLORS.other;
-                const labelFn = EVENT_SHORT_LABEL[ev.field] || EVENT_SHORT_LABEL.other;
-                return (
-                  <ReferenceLine
-                    key={`evt-${i}`}
-                    x={dateLabel}
-                    stroke={color}
-                    strokeDasharray="3 3"
-                    strokeWidth={1}
-                    label={{ value: labelFn(ev), position: 'top', fontSize: 8, fill: color, fontWeight: 600 }}
-                  />
-                );
-              })}
+              {/* Vertical markers for each date with events */}
+              {dateMarkers.map((m, i) => (
+                <ReferenceLine
+                  key={`evt-${i}`}
+                  x={m.fullDate}
+                  stroke={m.color}
+                  strokeDasharray="3 3"
+                  strokeWidth={1.5}
+                  label={{ value: m.label, position: 'top', fontSize: 8, fill: m.color, fontWeight: 700 }}
+                />
+              ))}
               <Line type="monotone" dataKey="roas" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: 'hsl(var(--primary))' }} connectNulls />
               {/* Highlight dots on ROAS change points */}
-              {chartData.filter(d => d.roas !== null && sortedEvents.some(e => (e.field === 'roas_target' || e.field === 'campaign_created') && e.timestamp.slice(5, 10).replace('-', '/') === d.date)).map((d, i) => (
-                <ReferenceDot key={`dot-${i}`} x={d.date} y={d.roas!} r={6} fill="hsl(var(--primary))" stroke="hsl(var(--background))" strokeWidth={2} />
+              {chartData.filter(d => d.roas !== null && sortedEvents.some(e => (e.field === 'roas_target' || e.field === 'campaign_created') && e.timestamp === d.fullDate)).map((d, i) => (
+                <ReferenceDot key={`dot-${i}`} x={d.fullDate} y={d.roas!} r={6} fill="hsl(var(--primary))" stroke="hsl(var(--background))" strokeWidth={2} />
               ))}
             </ReLineChart>
           </ResponsiveContainer>
