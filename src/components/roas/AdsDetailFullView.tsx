@@ -993,7 +993,31 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         <TabsContent value="metricas">
           <div className="space-y-4">
             {/* Histórico de Performance */}
-            <OperationLogTimeline adProductId={ad.product_id} adShopeeProductId={ad.shopee_product_id} roasEmpate={roasEmpate} />
+            <OperationLogTimeline adProductId={ad.product_id} adShopeeProductId={ad.shopee_product_id} roasEmpate={roasEmpate} onLogLoaded={setOpLog} />
+
+            {/* Excel Performance Analysis */}
+            <input ref={excelInputRef} type="file" accept=".xlsx" onChange={handleExcelUpload} className="hidden" />
+            {!excelData ? (
+              <div className="rounded-2xl border border-dashed border-border bg-card p-5 shadow-lg space-y-3">
+                <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
+                  <BarChart3 className="w-3.5 h-3.5" /> Análise de Performance Diária
+                </p>
+                <p className="text-sm text-text-2">Importe o Excel do Shopee Analytics para análise detalhada com gráficos, fontes de tráfego e correlação com ajustes.</p>
+                <Button onClick={() => excelInputRef.current?.click()} size="sm" variant="outline" className="gap-1.5 border-border text-text-2 hover:bg-surface-2">
+                  <Upload className="w-3.5 h-3.5" /> Importar Excel (.xlsx)
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] uppercase tracking-wider font-bold text-text-3">Análise de Performance ({excelData.totalDias} dias)</p>
+                  <Button onClick={() => excelInputRef.current?.click()} size="sm" variant="ghost" className="h-7 text-[11px] text-text-2 gap-1">
+                    <Upload className="w-3 h-3" /> Reimportar
+                  </Button>
+                </div>
+                <ExcelAnalysis data={excelData} operationLog={opLog.length > 0 ? opLog : undefined} />
+              </>
+            )}
 
             {/* Linha 2: Posicionamento + Geral vs Direto */}
             <div className="grid md:grid-cols-2 gap-4">
