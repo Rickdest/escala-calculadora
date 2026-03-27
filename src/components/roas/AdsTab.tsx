@@ -166,6 +166,14 @@ export function AdsTab() {
             </div>
             <div className="flex items-center gap-2">
               <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5 text-xs font-bold"
+                onClick={() => toast.info('Em breve: criação de campanhas')}
+              >
+                <Megaphone className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Nova Campanha</span>
+              </Button>
+              <Button
                 size="sm"
                 onClick={() => fileRef.current?.click()}
                 disabled={operating}
