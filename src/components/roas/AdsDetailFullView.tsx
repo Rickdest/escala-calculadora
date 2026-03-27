@@ -190,7 +190,7 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate }: { 
     other: () => '•',
   };
 
-  // Group events by date for combined labels
+  // Group events by date for icon markers
   const eventsByDate: Record<string, OperationLogEntry[]> = {};
   for (const ev of sortedEvents) {
     const dateKey = ev.timestamp.slice(0, 10);
@@ -198,19 +198,24 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate }: { 
     eventsByDate[dateKey].push(ev);
   }
 
-  // Build unique markers per date with combined labels
   const dateMarkers = Object.entries(eventsByDate).map(([dateKey, evts]) => {
-    const label = evts.map(ev => {
-      const fn = EVENT_SHORT_LABEL[ev.field] || EVENT_SHORT_LABEL.other;
-      return fn(ev);
-    }).join(' · ');
-    // Use first event's color, or primary if mixed
     const color = evts.length === 1
       ? (EVENT_COLORS[evts[0].field] || EVENT_COLORS.other)
       : 'hsl(var(--primary))';
     const fullDate = evts[0].timestamp;
-    return { dateKey, fullDate, label, color };
+    const fields = evts.map(e => e.field);
+    return { dateKey, fullDate, color, fields, events: evts };
   });
+
+  // Legend items for event types present
+  const presentTypes = new Set(sortedEvents.map(e => e.field));
+  const LEGEND_MAP: Record<string, { label: string; color: string }> = {
+    roas_target: { label: 'ROAS', color: 'bg-primary' },
+    budget: { label: 'Orçamento', color: 'bg-blue-500' },
+    quick_boost: { label: 'Boost', color: 'bg-warning' },
+    campaign_created: { label: 'Campanha', color: 'bg-success' },
+    other: { label: 'Outro', color: 'bg-muted-foreground' },
+  };
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
@@ -225,52 +230,77 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate }: { 
       </div>
 
       {showChart && (
-        <div className="h-[170px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <ReLineChart data={chartData} margin={{ top: 22, right: 10, bottom: 0, left: 0 }}>
-              <XAxis
-                dataKey="fullDate"
-                tick={{ fontSize: 10 }}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(ts: string) => {
-                  const d = new Date(ts);
-                  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
-                }}
-              />
-              <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={30} domain={['auto', 'auto']} />
-              <ReTooltip
-                contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid hsl(var(--border))' }}
-                labelFormatter={(ts: string) => {
-                  const d = new Date(ts);
-                  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-                }}
-                formatter={(v: number | null) => [v !== null ? `${v}` : '–', 'ROAS meta']}
-              />
-              {roasEmpate && roasEmpate > 0 && roasEmpate !== Infinity && (
-                <ReferenceLine y={roasEmpate} stroke="hsl(var(--warning))" strokeDasharray="4 4" label={{ value: 'Empate', fontSize: 9, fill: 'hsl(var(--warning))' }} />
-              )}
-              {/* Vertical markers for each date with events */}
-              {dateMarkers.map((m, i) => (
-                <ReferenceLine
-                  key={`evt-${i}`}
-                  x={m.fullDate}
-                  stroke={m.color}
-                  strokeDasharray="3 3"
-                  strokeWidth={1.5}
-                  label={{ value: m.label, position: 'top', fontSize: 8, fill: m.color, fontWeight: 700 }}
+        <>
+          <div className="h-[160px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <ReLineChart data={chartData} margin={{ top: 8, right: 10, bottom: 0, left: 0 }}>
+                <XAxis
+                  dataKey="fullDate"
+                  tick={{ fontSize: 10 }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(ts: string) => {
+                    const d = new Date(ts);
+                    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
+                  }}
                 />
-              ))}
-              <Line type="monotone" dataKey="roas" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: 'hsl(var(--primary))' }} connectNulls />
-              {/* Highlight dots on ROAS change points */}
-              {chartData.filter(d => d.roas !== null && sortedEvents.some(e => (e.field === 'roas_target' || e.field === 'campaign_created') && e.timestamp === d.fullDate)).map((d, i) => (
-                <ReferenceDot key={`dot-${i}`} x={d.fullDate} y={d.roas!} r={6} fill="hsl(var(--primary))" stroke="hsl(var(--background))" strokeWidth={2} />
-              ))}
-            </ReLineChart>
-          </ResponsiveContainer>
-        </div>
+                <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={30} domain={['auto', 'auto']} />
+                <ReTooltip
+                  contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid hsl(var(--border))' }}
+                  labelFormatter={(ts: string) => {
+                    const d = new Date(ts);
+                    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+                  }}
+                  formatter={(v: number | null) => [v !== null ? `${v}` : '–', 'ROAS meta']}
+                />
+                {roasEmpate && roasEmpate > 0 && roasEmpate !== Infinity && (
+                  <ReferenceLine y={roasEmpate} stroke="hsl(var(--warning))" strokeDasharray="4 4" label={{ value: 'Empate', fontSize: 9, fill: 'hsl(var(--warning))' }} />
+                )}
+                {/* Clean vertical markers — no text labels, just colored lines */}
+                {dateMarkers.map((m, i) => (
+                  <ReferenceLine
+                    key={`evt-${i}`}
+                    x={m.fullDate}
+                    stroke={m.color}
+                    strokeDasharray="3 3"
+                    strokeWidth={1.5}
+                    strokeOpacity={0.6}
+                  />
+                ))}
+                <Line type="monotone" dataKey="roas" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3, fill: 'hsl(var(--primary))' }} connectNulls />
+                {/* Colored dots per event type at the data point */}
+                {dateMarkers.map((m, i) => {
+                  const point = chartData.find(d => d.fullDate === m.fullDate);
+                  if (!point || point.roas === null) return null;
+                  return (
+                    <ReferenceDot
+                      key={`mdot-${i}`}
+                      x={m.fullDate}
+                      y={point.roas}
+                      r={5}
+                      fill={m.color}
+                      stroke="hsl(var(--background))"
+                      strokeWidth={2}
+                    />
+                  );
+                })}
+              </ReLineChart>
+            </ResponsiveContainer>
+          </div>
+          {/* Legend */}
+          <div className="flex flex-wrap gap-3">
+            {Array.from(presentTypes).map(t => {
+              const leg = LEGEND_MAP[t] || LEGEND_MAP.other;
+              return (
+                <div key={t} className="flex items-center gap-1.5">
+                  <span className={cn('w-2.5 h-2.5 rounded-full', leg.color)} />
+                  <span className="text-[10px] text-muted-foreground">{leg.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
-
       <div className="space-y-1.5 max-h-[240px] overflow-y-auto">
         {displayEvents.map((entry, i) => {
           const fi = FIELD_ICONS[entry.field] || FIELD_ICONS.other;
