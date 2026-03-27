@@ -373,7 +373,7 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate }: { 
 
 function KpiCard({ label, value, sub, subColor, icon: Icon }: { label: string; value: string; sub?: string; subColor?: string; icon: React.ElementType }) {
   return (
-    <div className="p-3 rounded-xl bg-surface-2 text-center min-w-0 overflow-hidden">
+    <div className="p-2.5 text-center min-w-0 overflow-hidden">
       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center justify-center gap-1">
         <Icon className="w-3 h-3" />
         {label}
