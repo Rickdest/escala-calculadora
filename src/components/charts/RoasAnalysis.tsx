@@ -108,7 +108,7 @@ function CostBreakdownChart({ product, roasData }: { product: Product; roasData:
   );
 }
 
-// ─── Seletor de produto como dropdown card ───
+// ─── Seletor de produto — chips horizontais ───
 function ProductPicker({
   products,
   selectedId,
@@ -120,150 +120,100 @@ function ProductPicker({
   onSelect: (id: string) => void;
   config: any;
 }) {
-  const [open, setOpen] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
   const [search, setSearch] = useState('');
 
-  const selected = products.find(p => p.id === selectedId);
-  const filtered = useMemo(() => {
-    if (!search.trim()) return products;
-    return products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
-  }, [products, search]);
-
-  // Mobile: show product list directly when nothing selected
-  if (!selected) {
-    return (
-      <div className="rounded-xl border border-border bg-card overflow-hidden animate-fade-in">
-        <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border bg-surface-2/50">
-          <Search className="w-4 h-4 text-text-3 flex-shrink-0" />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar produto..."
-            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-text-3 outline-none"
-          />
-          <span className="text-[10px] text-text-3 bg-card px-2 py-0.5 rounded-md font-medium">{products.length} produtos</span>
-        </div>
-        <div className="max-h-[220px] overflow-y-auto scrollbar-none divide-y divide-border/50">
-          {filtered.map(p => {
-            const roasData = calcProductRoas(p, config);
-            return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => { onSelect(p.id); setSearch(''); }}
-                className="w-full flex items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-surface-2 active:bg-primary/5"
-              >
-                <div className="w-10 h-10 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0 overflow-hidden ring-1 ring-border">
-                  {p.imageUrl ? (
-                    <img src={p.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover" />
-                  ) : (
-                    <Package className="w-4 h-4 text-text-3" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate">{p.name}</p>
-                  <p className="text-xs text-text-3 tabular-nums font-mono">{formatCurrency(p.salePrice)}</p>
-                </div>
-                {roasData.roasAtual !== null && !roasData.margemInsuficiente && (
-                  <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full tabular-nums font-mono',
-                    roasData.roasAtual >= (roasData.roasIdeal || 0) ? 'bg-success/15 text-success' :
-                    roasData.roasAtual >= (roasData.roasEmpate || 0) ? 'bg-warning/15 text-warning' :
-                    'bg-destructive/15 text-destructive'
-                  )}>
-                    {roasData.roasAtual.toFixed(1)}x
-                  </span>
-                )}
-              </button>
-            );
-          })}
-          {filtered.length === 0 && (
-            <p className="text-center text-xs text-text-3 py-6">Nenhum produto encontrado</p>
-          )}
-        </div>
-      </div>
+  const sorted = useMemo(() => {
+    return [...products].sort((a, b) =>
+      new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime()
     );
-  }
+  }, [products]);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return sorted;
+    return sorted.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
+  }, [sorted, search]);
+
+  const selected = products.find(p => p.id === selectedId);
 
   return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className={cn(
-          'w-full flex items-center gap-3 rounded-xl border-2 p-3.5 text-left transition-all group',
-          'border-border bg-card hover:border-primary/40 hover:bg-surface-2 active:scale-[0.995]',
-          open && 'border-primary/40'
+    <div className="space-y-2">
+      {/* Horizontal scrollable chips */}
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
+        {sorted.map(p => {
+          const isActive = p.id === selectedId;
+          const roasData = calcProductRoas(p, config);
+          return (
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => onSelect(p.id)}
+              className={cn(
+                'flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border-2 whitespace-nowrap transition-all flex-shrink-0',
+                isActive
+                  ? 'border-primary bg-primary/10 ring-2 ring-primary/20 shadow-sm'
+                  : 'border-border bg-card opacity-70 hover:opacity-100 hover:border-primary/30'
+              )}
+            >
+              <div className="w-6 h-6 rounded-full bg-surface-2 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                {p.imageUrl ? (
+                  <img src={p.imageUrl} alt="" className="w-6 h-6 rounded-full object-cover" />
+                ) : (
+                  <span className="text-[10px] font-bold text-text-3">{(p.name || '?').charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              <span className={cn('text-xs font-semibold max-w-[80px] truncate', isActive ? 'text-foreground' : 'text-text-2')}>
+                {p.name}
+              </span>
+              {roasData.roasAtual !== null && !roasData.margemInsuficiente && (
+                <span className={cn('text-[9px] font-bold px-1.5 py-0.5 rounded-full tabular-nums font-mono',
+                  roasData.roasAtual >= (roasData.roasIdeal || 0) ? 'bg-success/15 text-success' :
+                  roasData.roasAtual >= (roasData.roasEmpate || 0) ? 'bg-warning/15 text-warning' :
+                  'bg-destructive/15 text-destructive'
+                )}>
+                  {roasData.roasAtual.toFixed(1)}x
+                </span>
+              )}
+            </button>
+          );
+        })}
+        {/* Search button when >8 products */}
+        {products.length > 8 && (
+          <button
+            type="button"
+            onClick={() => setShowSearch(true)}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-full border-2 border-dashed border-border text-text-3 hover:text-foreground hover:border-primary/30 transition-all flex-shrink-0"
+          >
+            <Search className="w-3.5 h-3.5" />
+            <span className="text-[11px] font-semibold">Buscar</span>
+          </button>
         )}
-      >
-        <div className="w-12 h-12 rounded-xl bg-surface-2 flex items-center justify-center flex-shrink-0 overflow-hidden ring-1 ring-border">
-          {selected?.imageUrl ? (
-            <img src={selected.imageUrl} alt="" className="w-12 h-12 rounded-xl object-cover" />
-          ) : (
-            <Package className="w-5 h-5 text-text-3" />
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-foreground truncate">{selected.name}</p>
-          <p className="text-xs text-text-3 tabular-nums font-mono mt-0.5">
-            {formatCurrency(selected.salePrice)} · Custo {formatCurrency(selected.costPrice)}
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5 text-text-3 flex-shrink-0 bg-surface-2 group-hover:bg-card px-2.5 py-1.5 rounded-lg border border-border transition-colors">
-          <span className="text-[11px] font-semibold">Trocar</span>
-          <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', open && 'rotate-180')} />
-        </div>
-      </button>
+      </div>
 
-      {/* Mini-cards de outros produtos para indicar troca */}
-      {products.length > 1 && (() => {
-        const others = products
-          .filter(p => p.id !== selectedId)
-          .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime())
-          .slice(0, 2);
-        if (others.length === 0) return null;
-        return (
-          <div className="mt-2 space-y-1.5">
-            <p className="text-[10px] font-semibold text-text-3 px-1">Outros produtos</p>
-            {others.map(p => {
-              const roasData = calcProductRoas(p, config);
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => onSelect(p.id)}
-                  className="w-full flex items-center gap-2.5 p-2 rounded-lg border border-border/40 bg-secondary/10 opacity-60 hover:opacity-100 hover:bg-surface-2 transition-all text-left"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    {p.imageUrl ? (
-                      <img src={p.imageUrl} alt="" className="w-8 h-8 rounded-lg object-cover" />
-                    ) : (
-                      <Package className="w-3.5 h-3.5 text-text-3" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold truncate">{p.name}</p>
-                    <p className="text-[10px] text-text-3 tabular-nums font-mono">{formatCurrency(p.salePrice)}</p>
-                  </div>
-                  {roasData.roasAtual !== null && !roasData.margemInsuficiente && (
-                    <span className={cn('text-[9px] font-bold px-1.5 py-0.5 rounded-full tabular-nums font-mono flex-shrink-0',
-                      roasData.roasAtual >= (roasData.roasIdeal || 0) ? 'bg-success/15 text-success' :
-                      roasData.roasAtual >= (roasData.roasEmpate || 0) ? 'bg-warning/15 text-warning' :
-                      'bg-destructive/15 text-destructive'
-                    )}>
-                      {roasData.roasAtual.toFixed(1)}x
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+      {/* Selected product info bar */}
+      {selected && (
+        <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-surface-2/50 border border-border">
+          <div className="w-9 h-9 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0 overflow-hidden ring-1 ring-border">
+            {selected.imageUrl ? (
+              <img src={selected.imageUrl} alt="" className="w-9 h-9 rounded-lg object-cover" />
+            ) : (
+              <Package className="w-4 h-4 text-text-3" />
+            )}
           </div>
-        );
-      })()}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold truncate">{selected.name}</p>
+            <p className="text-[11px] text-text-3 tabular-nums font-mono">
+              Venda {formatCurrency(selected.salePrice)} · Custo {formatCurrency(selected.costPrice)}
+            </p>
+          </div>
+        </div>
+      )}
 
-      {open && (
+      {/* Search modal for >8 products */}
+      {showSearch && (
         <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-xl border border-border bg-card shadow-2xl overflow-hidden animate-fade-in">
+          <div className="fixed inset-0 z-40 bg-black/30" onClick={() => { setShowSearch(false); setSearch(''); }} />
+          <div className="fixed inset-x-4 top-[20%] z-50 rounded-xl border border-border bg-card shadow-2xl overflow-hidden animate-fade-in max-w-md mx-auto">
             <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border bg-surface-2/50">
               <Search className="w-4 h-4 text-text-3 flex-shrink-0" />
               <input
@@ -273,19 +223,18 @@ function ProductPicker({
                 placeholder="Buscar produto..."
                 className="flex-1 bg-transparent text-sm text-foreground placeholder:text-text-3 outline-none"
               />
-              <button onClick={() => setOpen(false)} className="text-text-3 hover:text-foreground p-1 rounded-lg hover:bg-surface-2 transition-colors">
+              <button onClick={() => { setShowSearch(false); setSearch(''); }} className="text-text-3 hover:text-foreground p-1 rounded-lg hover:bg-surface-2 transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="max-h-[280px] overflow-y-auto scrollbar-none divide-y divide-border/50">
+            <div className="max-h-[300px] overflow-y-auto scrollbar-none divide-y divide-border/50">
               {filtered.map(p => {
-                const roasData = calcProductRoas(p, config);
                 const isActive = p.id === selectedId;
                 return (
                   <button
                     key={p.id}
                     type="button"
-                    onClick={() => { onSelect(p.id); setOpen(false); setSearch(''); }}
+                    onClick={() => { onSelect(p.id); setShowSearch(false); setSearch(''); }}
                     className={cn(
                       'w-full flex items-center gap-3 px-3 py-3 text-left transition-colors',
                       isActive ? 'bg-primary/8' : 'hover:bg-surface-2'
@@ -302,15 +251,6 @@ function ProductPicker({
                       <p className="text-sm font-semibold truncate">{p.name}</p>
                       <p className="text-xs text-text-3 tabular-nums font-mono">{formatCurrency(p.salePrice)}</p>
                     </div>
-                    {roasData.roasAtual !== null && !roasData.margemInsuficiente && (
-                      <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full tabular-nums font-mono',
-                        roasData.roasAtual >= (roasData.roasIdeal || 0) ? 'bg-success/15 text-success' :
-                        roasData.roasAtual >= (roasData.roasEmpate || 0) ? 'bg-warning/15 text-warning' :
-                        'bg-destructive/15 text-destructive'
-                      )}>
-                        {roasData.roasAtual.toFixed(1)}x
-                      </span>
-                    )}
                   </button>
                 );
               })}
