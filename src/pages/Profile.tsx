@@ -260,7 +260,7 @@ function SubscriptionSection() {
     statusEmoji = '❌';
     statusText = 'Sem assinatura ativa';
     showButton = true;
-    buttonText = 'Assinar agora · R$49,90/ano';
+    buttonText = 'Assinar agora · R$39,90/mês';
   }
 
   if (!statusText) return null;
