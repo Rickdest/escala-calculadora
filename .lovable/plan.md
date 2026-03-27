@@ -1,40 +1,24 @@
 
 
-## Redesign dos cards da aba Análise de Ads — alinhar ao estilo do ProductCard
+## Compactar filtros e status no mobile — aba Análise de Ads
 
-### Objetivo
-Aplicar o mesmo padrão visual do `ProductCard` (aba Produtos) nos cards da aba Análise de Ads, mantendo todas as informações existentes mas melhor organizadas.
+### Mudanças (apenas mobile, desktop inalterado)
 
-### Mudanças em `src/components/roas/AdsProductCard.tsx`
+**1. `src/components/roas/SummaryCards.tsx` — Status mini cards compactos no mobile**
+- Trocar o grid 2x2 de cards altos por uma **row horizontal única** (`flex overflow-x-auto md:grid md:grid-cols-4`) no mobile
+- Reduzir padding de `p-3` para `p-2` e texto de `text-xl` para `text-base` no mobile
+- Resultado: 4 items numa linha scrollável em vez de 2x2
 
-**1. Header — alinhar ao ProductCard**
-- Imagem: `w-12 h-12 rounded-xl` (igual ProductCard, hoje é `w-10 h-10 rounded-lg`)
-- Placeholder: `bg-secondary` em vez de `bg-surface-2`
-- Subtítulo: exibir período + badge na segunda linha com texto mais legível
-- Container: `rounded-2xl` em vez de `rounded-xl`, padding `p-4`
+**2. `src/components/roas/FilterChips.tsx` — Chips menores no mobile**
+- Reduzir padding de `px-3 py-1.5` para `px-2.5 py-1`
+- Reduzir fonte de `text-xs` para `text-[10px]`
+- Reduzir gap de `gap-2` para `gap-1.5`
 
-**2. Métricas principais — grid 3 colunas com cards internos (igual ProductCard)**
-Substituir o grid de 6 colunas plano por 3 cards com borda semântica:
-- **ROAS**: valor grande com cor semântica (success/warning/destructive) + label
-- **GMV**: valor formatado + label
-- **Gasto**: valor formatado + label
+**3. `src/components/roas/SummaryCards.tsx` — KPI cards compactos no mobile**
+- Reduzir padding de `p-3` para `p-2.5` no mobile
+- Reduzir valor de `text-lg` para `text-base` no mobile
 
-Cada um em `rounded-xl p-2.5 border` com fundo sutil baseado na cor.
-
-**3. Métricas secundárias — grid 3 colunas estilo secundário**
-Row adicional com cards menores (`bg-secondary/50 rounded-lg`):
-- **Posição**: `#N` com cor semântica
-- **Vendas**: `N un`
-- **Custo/Un**: valor formatado
-
-**4. Botões e ações — manter lógica atual**
-- Não vinculado: warning + botões Vincular/Cadastrar (sem mudança de estilo)
-- Vinculado: ícone link no header + warning se sem preço
-- Delete: ícone no header (sem mudança)
-
-**5. Score de eficiência — mover para junto do ROAS**
-Se vinculado e com score, mostrar como subtexto no card de ROAS.
-
-### Arquivo modificado
-- `src/components/roas/AdsProductCard.tsx`
+### Arquivos modificados
+- `src/components/roas/SummaryCards.tsx`
+- `src/components/roas/FilterChips.tsx`
 
