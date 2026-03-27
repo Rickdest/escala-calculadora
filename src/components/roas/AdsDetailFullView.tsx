@@ -555,7 +555,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
           </div>
 
           {/* Régua visual melhorada */}
-          <div className="relative h-12 bg-gradient-to-r from-emerald-500/20 via-amber-500/20 to-red-500/20 rounded-xl mb-3">
+          <div className="relative h-12 bg-gradient-to-r from-success/20 via-warning/20 to-destructive/20 rounded-xl mb-3">
             {/* Marcadores de zona */}
             <div className="absolute top-0 left-[15%] h-full border-l border-dashed border-border" />
             <div className="absolute top-0 left-[40%] h-full border-l border-dashed border-border" />
@@ -581,19 +581,19 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
           {/* Classificação */}
           <p className={cn(
             'text-sm font-bold mt-2',
-            ad.posicao_media <= 3 && 'text-emerald-500',
-            ad.posicao_media > 3 && ad.posicao_media <= 8 && 'text-blue-500',
-            ad.posicao_media > 8 && ad.posicao_media <= 16 && 'text-amber-500',
-            ad.posicao_media > 16 && 'text-red-500',
+            ad.posicao_media <= 3 && 'text-success',
+            ad.posicao_media > 3 && ad.posicao_media <= 8 && 'text-primary',
+            ad.posicao_media > 8 && ad.posicao_media <= 16 && 'text-warning',
+            ad.posicao_media > 16 && 'text-destructive',
           )}>
             {posInfo.label}
           </p>
 
           <div className="text-sm text-text-3 space-y-1.5">
-            <p className={ad.posicao_media <= 3 ? 'text-emerald-500 font-bold' : ''}>• 1-3: Topo {ad.posicao_media <= 3 ? '← VOCÊ' : ''}</p>
-            <p className={ad.posicao_media > 3 && ad.posicao_media <= 8 ? 'text-blue-500 font-bold' : ''}>• 4-8: Primeira página {ad.posicao_media > 3 && ad.posicao_media <= 8 ? '← VOCÊ' : ''}</p>
-            <p className={ad.posicao_media > 8 && ad.posicao_media <= 16 ? 'text-amber-500 font-bold' : ''}>• 9-16: Segunda página {ad.posicao_media > 8 && ad.posicao_media <= 16 ? '← VOCÊ' : ''}</p>
-            <p className={ad.posicao_media > 16 ? 'text-red-500 font-bold' : ''}>• 17+: Baixa visibilidade {ad.posicao_media > 16 ? '← VOCÊ' : ''}</p>
+            <p className={ad.posicao_media <= 3 ? 'text-success font-bold' : ''}>• 1-3: Topo {ad.posicao_media <= 3 ? '← VOCÊ' : ''}</p>
+            <p className={ad.posicao_media > 3 && ad.posicao_media <= 8 ? 'text-primary font-bold' : ''}>• 4-8: Primeira página {ad.posicao_media > 3 && ad.posicao_media <= 8 ? '← VOCÊ' : ''}</p>
+            <p className={ad.posicao_media > 8 && ad.posicao_media <= 16 ? 'text-warning font-bold' : ''}>• 9-16: Segunda página {ad.posicao_media > 8 && ad.posicao_media <= 16 ? '← VOCÊ' : ''}</p>
+            <p className={ad.posicao_media > 16 ? 'text-destructive font-bold' : ''}>• 17+: Baixa visibilidade {ad.posicao_media > 16 ? '← VOCÊ' : ''}</p>
           </div>
         </div>
       ) : (
