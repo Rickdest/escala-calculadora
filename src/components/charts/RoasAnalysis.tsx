@@ -149,25 +149,25 @@ function ProductPicker({
                 type="button"
                 onClick={() => onSelect(p.id)}
                 className={cn(
-                  'w-full flex items-center gap-2.5 px-3 py-2 transition-all text-left',
+                  'w-full flex items-center gap-3 px-3 py-2.5 transition-all text-left',
                   isActive
                     ? 'bg-primary/10 border-l-2 border-l-primary'
                     : 'border-l-2 border-l-transparent hover:bg-surface-2/50'
                 )}
               >
-                <div className="w-8 h-8 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                <div className="w-10 h-10 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0 overflow-hidden">
                   {p.imageUrl ? (
-                    <img src={p.imageUrl} alt="" className="w-8 h-8 rounded-lg object-cover" />
+                    <img src={p.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover" />
                   ) : (
-                    <span className="text-[10px] font-bold text-text-3">{(p.name || '?').charAt(0).toUpperCase()}</span>
+                    <span className="text-xs font-bold text-text-3">{(p.name || '?').charAt(0).toUpperCase()}</span>
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={cn('text-xs font-semibold truncate', isActive ? 'text-foreground' : 'text-text-2')}>{p.name}</p>
-                  <p className="text-[10px] text-text-3 tabular-nums font-mono">{formatCurrency(p.salePrice)}</p>
+                  <p className={cn('text-sm font-semibold truncate', isActive ? 'text-foreground' : 'text-text-2')}>{p.name}</p>
+                  <p className="text-xs text-text-3 tabular-nums font-mono">{formatCurrency(p.salePrice)}</p>
                 </div>
                 {roasData.roasAtual !== null && !roasData.margemInsuficiente && (
-                  <span className={cn('text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums font-mono flex-shrink-0',
+                  <span className={cn('text-xs font-bold px-2 py-0.5 rounded-full tabular-nums font-mono flex-shrink-0',
                     roasData.roasAtual >= (roasData.roasIdeal || 0) ? 'bg-success/15 text-success' :
                     roasData.roasAtual >= (roasData.roasEmpate || 0) ? 'bg-warning/15 text-warning' :
                     'bg-destructive/15 text-destructive'
