@@ -143,7 +143,7 @@ function ProductPicker({
           />
           <span className="text-[10px] text-text-3 bg-card px-2 py-0.5 rounded-md font-medium">{products.length} produtos</span>
         </div>
-        <div className="max-h-[300px] overflow-y-auto scrollbar-none divide-y divide-border/50">
+        <div className="max-h-[220px] overflow-y-auto scrollbar-none divide-y divide-border/50">
           {filtered.map(p => {
             const roasData = calcProductRoas(p, config);
             return (
@@ -283,7 +283,22 @@ function ProductPicker({
 function ProductAnalysis() {
   const { currentStore, updateProduct } = useStore();
   const config = currentStore?.config;
+  // Pre-select first product sorted by updatedAt desc
+  const initialProductId = useMemo(() => {
+    if (!currentStore || currentStore.products.length === 0) return '';
+    const sorted = [...currentStore.products].sort((a, b) => 
+      new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime()
+    );
+    return sorted[0].id;
+  }, [currentStore?.products]);
+
   const [selectedProductId, setSelectedProductId] = useState<string>('');
+
+  useEffect(() => {
+    if (!selectedProductId && initialProductId) {
+      setSelectedProductId(initialProductId);
+    }
+  }, [initialProductId]);
   const [gastoAds, setGastoAds] = useState<string>('');
   const [receitaAds, setReceitaAds] = useState<string>('');
 
