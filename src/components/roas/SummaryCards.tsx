@@ -29,42 +29,42 @@ export function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
 
   const allZeroClassification = s.lucrativos === 0 && s.atencao === 0 && s.prejuizo === 0;
 
+  // ROAS thermometer bar
+  const roasBarWidth = Math.min((s.avgRoas / 10) * 100, 100);
+  const roasBarColor = s.avgRoas >= 5 ? 'bg-success' : s.avgRoas >= 3 ? 'bg-primary' : s.avgRoas >= 1 ? 'bg-warning' : 'bg-destructive';
+
   const kpis = [
     {
       label: 'GMV TOTAL',
       value: fmt(s.totalGmv),
       color: 'text-foreground',
-      sub: `${s.total} anúncios`,
+      sub: `${s.total} anúncios ativos`,
       icon: DollarSign,
-      accentColor: 'border-t-primary',
-      iconBg: 'text-primary/20',
+      iconColor: 'text-primary/30',
     },
     {
       label: 'GASTO TOTAL',
       value: fmt(s.totalSpend),
       color: 'text-foreground',
-      sub: 'Investido em ads',
+      sub: 'Investido em ads no período',
       icon: BarChart3,
-      accentColor: 'border-t-warning',
-      iconBg: 'text-warning/20',
+      iconColor: 'text-warning/30',
     },
     {
       label: 'ROAS MÉDIO',
       value: s.avgRoas.toFixed(2),
       color: getRoasColor(s.avgRoas),
-      sub: s.avgRoas >= 3 ? '✅ Acima de 3.0' : s.avgRoas >= 1 ? '🟠 Abaixo de 3.0' : '🔴 Negativo',
+      sub: null, // We'll use the thermometer instead
       icon: TrendingUp,
-      accentColor: s.avgRoas >= 3 ? 'border-t-success' : s.avgRoas >= 1 ? 'border-t-warning' : 'border-t-destructive',
-      iconBg: s.avgRoas >= 3 ? 'text-success/20' : s.avgRoas >= 1 ? 'text-warning/20' : 'text-destructive/20',
+      iconColor: s.avgRoas >= 3 ? 'text-success/30' : 'text-warning/30',
     },
     {
       label: 'LUCRO EST.',
       value: fmt(s.lucroEstimado),
       color: s.lucroEstimado >= 0 ? 'text-success' : 'text-destructive',
       sub: 'GMV − Gasto',
-      icon: Zap,
-      accentColor: s.lucroEstimado >= 0 ? 'border-t-success' : 'border-t-destructive',
-      iconBg: s.lucroEstimado >= 0 ? 'text-success/20' : 'text-destructive/20',
+      icon: DollarSign,
+      iconColor: s.lucroEstimado >= 0 ? 'text-success/30' : 'text-destructive/30',
     },
   ];
 
@@ -72,21 +72,36 @@ export function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
     <div className="space-y-3">
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-        {kpis.map(({ label, value, color, sub, icon: Icon, accentColor, iconBg }) => (
-          <div key={label} className={cn('rounded-xl border border-border bg-card p-2.5 md:p-4 min-w-0 overflow-hidden relative border-t-2', accentColor)}>
-            <Icon className={cn('absolute top-2.5 right-2.5 w-6 h-6 md:w-8 md:h-8', iconBg)} />
-            <p className="section-label text-[9px] md:text-[10px]">{label}</p>
-            <p className={cn('text-base md:text-2xl font-black font-mono tabular-nums mt-0.5 truncate', color)}>{value}</p>
-            <p className="text-[10px] md:text-[11px] text-text-3 mt-0.5 truncate">{sub}</p>
+        {kpis.map(({ label, value, color, sub, icon: Icon, iconColor }, idx) => (
+          <div key={label} className="rounded-2xl border border-border bg-card p-3 md:p-5 min-w-0 overflow-hidden relative">
+            <Icon className={cn('absolute top-3 right-3 w-7 h-7 md:w-9 md:h-9', iconColor)} />
+            <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
+            <p className={cn('text-xl md:text-3xl font-black font-mono tabular-nums mt-1 truncate', color)}>{value}</p>
+            {/* ROAS card gets a thermometer bar instead of sub text */}
+            {idx === 2 ? (
+              <div className="mt-2 space-y-1">
+                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-success inline-block" />
+                    Acima da meta (3.0)
+                  </span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-secondary/80 overflow-hidden">
+                  <div className={cn('h-full rounded-full transition-all', roasBarColor)} style={{ width: `${roasBarWidth}%` }} />
+                </div>
+              </div>
+            ) : sub ? (
+              <p className="text-[10px] md:text-[11px] text-muted-foreground mt-1 truncate">{sub}</p>
+            ) : null}
           </div>
         ))}
       </div>
 
       {/* Status mini cards */}
       {allZeroClassification && s.naoVinculados > 0 ? (
-        <div className="rounded-lg border border-warning/20 bg-warning/5 px-3 py-2 flex items-center gap-2">
+        <div className="rounded-xl border border-warning/20 bg-warning/5 px-3 py-2 flex items-center gap-2">
           <span className="text-xs font-bold text-warning whitespace-nowrap">⚠️ {s.naoVinculados} não vinculado{s.naoVinculados !== 1 ? 's' : ''}</span>
-          <span className="text-[11px] text-text-3">· Vincule para ver lucratividade</span>
+          <span className="text-[11px] text-muted-foreground">· Vincule para ver lucratividade</span>
         </div>
       ) : (
         <div className="flex overflow-x-auto scrollbar-hide gap-2 md:grid md:grid-cols-4 pb-1 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0">
@@ -110,7 +125,7 @@ export function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
                     {s.avgScore > 0 ? `${s.avgScore}/100` : '—'}
                   </p>
                   <p className="text-[10px] md:text-[11px] font-bold text-primary flex items-center justify-center gap-1">
-                    ⚡ Score <Info className="w-3 h-3 text-text-3" />
+                    ⚡ Score <Info className="w-3 h-3 text-muted-foreground" />
                   </p>
                 </div>
               </TooltipTrigger>
