@@ -399,6 +399,9 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
   const { currentStore } = useStore();
   const isMobile = useIsMobile();
   const config = currentStore?.config;
+  const [excelData, setExcelData] = useState<ExcelPerformanceData | null>(null);
+  const [opLog, setOpLog] = useState<OperationLogEntry[]>([]);
+  const excelInputRef = useRef<HTMLInputElement>(null);
 
   const roasDireto = ad.roas_direto && ad.roas_direto > 0 ? ad.roas_direto : ad.roas;
   const product = ad.product;
