@@ -882,7 +882,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
       )}
 
       {/* 7. Evolução Temporal — Operation Log Timeline */}
-      <OperationLogTimeline adProductId={ad.product_id} roasEmpate={roasEmpate} />
+      <OperationLogTimeline adProductId={ad.product_id} adShopeeProductId={ad.shopee_product_id} roasEmpate={roasEmpate} />
     </div>
   );
 
