@@ -455,13 +455,26 @@ function ProductAnalysis() {
         </>
       )}
 
-      {selectedProduct && roasData?.margemInsuficiente && (
+      {selectedProduct && roasData?.precoIncompleto && (
+        <div className="rounded-xl border border-warning/30 bg-warning/5 p-5 flex items-start gap-3 animate-fade-in">
+          <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-bold text-warning text-sm">Preços não configurados</p>
+            <p className="text-xs text-text-2 mt-1">Vá até a aba Produtos e defina o Custo e Preço de Venda deste item para ver a análise de ROAS.</p>
+          </div>
+        </div>
+      )}
+
+      {selectedProduct && roasData?.margemInsuficiente && !roasData.precoIncompleto && (
         <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-5 flex items-start gap-3 animate-fade-in">
           <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
           <div>
             <p className="font-bold text-destructive text-sm">Margem insuficiente para anunciar</p>
             <p className="text-xs text-text-2 mt-1">Lucro antes de Ads: {formatCurrency(roasData.lucroBruto)}</p>
-            <p className="text-xs text-text-2 mt-1">Aumente o preço de venda ou reduza o custo do produto.</p>
+            <p className="text-xs text-text-2 mt-1 flex items-center gap-1.5">
+              <Zap className="w-3 h-3 text-primary" />
+              Use a <span className="font-semibold text-primary">Calculadora Rápida</span> na Home para encontrar o preço ideal de empate.
+            </p>
           </div>
         </div>
       )}
@@ -495,6 +508,10 @@ function RoasRanking() {
         return { product: p, ...data, status };
       })
       .sort((a, b) => {
+        // Push precoIncompleto and margemInsuficiente to the end
+        const aPenalty = a.precoIncompleto ? 2 : a.margemInsuficiente ? 1 : 0;
+        const bPenalty = b.precoIncompleto ? 2 : b.margemInsuficiente ? 1 : 0;
+        if (aPenalty !== bPenalty) return aPenalty - bPenalty;
         if (a.roasAtual !== null && b.roasAtual !== null) return b.roasAtual - a.roasAtual;
         if (a.roasAtual !== null) return -1;
         if (b.roasAtual !== null) return 1;
@@ -564,7 +581,9 @@ function RoasRanking() {
                 <p className="text-[10px] text-text-3 tabular-nums font-mono">{formatCurrency(r.product.salePrice)}</p>
               </div>
               <div className="text-right flex-shrink-0">
-                {r.margemInsuficiente ? (
+               {r.precoIncompleto ? (
+                  <span className="text-[10px] text-warning font-medium">Sem preço</span>
+                ) : r.margemInsuficiente ? (
                   <span className="text-[10px] text-destructive font-medium">Margem insuficiente</span>
                 ) : (
                   <>
