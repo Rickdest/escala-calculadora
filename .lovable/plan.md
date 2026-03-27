@@ -1,74 +1,76 @@
 
 
-## Aplicar Design "Deep Dark" na aba ROAS (RoasAnalysis.tsx)
+## Corrigir Tema Claro nos Componentes de Ads e ROAS
 
-Refatoração puramente visual — toda lógica, estados, cálculos e props mantidos intactos.
+### Problema
+Os arquivos `RoasAnalysis.tsx` e `AdsDetailFullView.tsx` usam centenas de cores hardcoded do tema dark (`bg-[#0a0a0a]`, `bg-[#121212]`, `text-white`, `text-slate-400/500/600/700/800`, `bg-slate-800`, `bg-emerald-900/20`, etc.) que ficam ilegíveis ou visualmente quebrados no tema claro.
 
----
+### Estratégia
+Substituir todas as cores hardcoded por tokens semânticos do design system (CSS variables via Tailwind), que já possuem variantes light/dark definidas em `index.css`. Para cores semânticas (emerald, orange, red, amber, blue) que não têm token equivalente, usar a sintaxe `dark:` do Tailwind para dupla definição.
 
-### Mudanças no arquivo `src/components/charts/RoasAnalysis.tsx`
+### Mapa de substituições (ambos arquivos)
 
-**1. Wrapper principal e Tabs**
-- Wrapper: adicionar `bg-[#0a0a0a] rounded-2xl p-4 md:p-6`
-- TabsList: `bg-[#121212] border border-slate-800 p-1 rounded-lg h-12`
-- Triggers ativos: `data-[state=active]:bg-slate-800 data-[state=active]:text-white`
-- Triggers inativos: `text-slate-500`
+| Hardcoded | Token Light/Dark |
+|---|---|
+| `bg-[#0a0a0a]` | `bg-background` |
+| `bg-[#121212]` | `bg-card` |
+| `bg-[#1a1a1a]` | `bg-card` |
+| `border-slate-800` | `border-border` |
+| `border-slate-700` | `border-border` |
+| `text-white` | `text-foreground` |
+| `text-slate-300` | `text-foreground/80` ou `text-text-2` |
+| `text-slate-400` | `text-text-2` |
+| `text-slate-500` | `text-text-3` |
+| `text-slate-600` | `text-text-3` |
+| `bg-slate-800/50` | `bg-surface-2` |
+| `bg-slate-800` | `bg-surface-2` |
+| `hover:bg-slate-800` | `hover:bg-surface-2` |
+| `divide-slate-800/50` | `divide-border` |
+| `text-emerald-400` | `text-success` |
+| `text-emerald-300` | `text-success` |
+| `bg-emerald-900/20` | `bg-success/10 dark:bg-success/20` |
+| `bg-emerald-500` | `bg-success` |
+| `border-emerald-500/50` | `border-success/50` |
+| `border-emerald-500/30` | `border-success/30` |
+| `border-emerald-500/20` | `border-success/20` |
+| `text-orange-400` | `text-warning` |
+| `bg-orange-900/20` | `bg-warning/10 dark:bg-warning/20` |
+| `border-orange-500/20` | `border-warning/20` |
+| `text-red-400` | `text-destructive` |
+| `bg-red-900/20` | `bg-destructive/10 dark:bg-destructive/20` |
+| `border-red-500/20` | `border-destructive/20` |
+| `text-amber-400` | `text-warning` |
+| `bg-amber-900/10` | `bg-warning/10` |
+| `border-amber-500/30` | `border-warning/30` |
+| `text-blue-400` | `text-primary dark:text-blue-400` (ou manter blue para info) |
 
-**2. ProductDropdown (seletor de produto)**
-- Botão: `bg-[#121212] border-slate-800 hover:border-emerald-500/30`
-- Dropdown aberto: `bg-[#121212] border-slate-800 shadow-2xl`
-- Search bar: `bg-slate-800/50 border-slate-700`
-- Hover item: `hover:bg-slate-800/50`
+### Arquivos modificados
 
-**3. Inputs de Gasto/Receita**
-- Cards: `bg-[#121212] border-slate-800 rounded-2xl`
-- Labels: `text-slate-500 uppercase text-[9px] tracking-wider`
-- Inputs: `bg-slate-800/50 border-slate-700 text-white`
+1. **`src/components/charts/RoasAnalysis.tsx`** (~641 linhas)
+   - `statusColors` object: trocar valores para tokens
+   - `TipIcon`: tooltip bg/border/text
+   - `CostBreakdownCard`: card bg, borders, text colors, donut tooltip contentStyle
+   - `ProductDropdown`: button, dropdown, search, items
+   - `ProductAnalysis`: inputs, result card, gauge bar, alerts, empty states
+   - `RoasRanking`: cards, badges, text
+   - `RoasAnalysis` (export): wrapper bg, tabs
 
-**4. Card de Resultado ROAS**
-- Container: `bg-[#121212] border-slate-800 rounded-2xl shadow-lg`
-- Label "ROAS ATUAL SIMULADO": `text-slate-500 uppercase text-[9px]`
-- Valor ROAS grande: manter cores semânticas (emerald/orange/destructive)
-- Lucro Estimado: emerald quando positivo, destructive quando negativo
-- Barra gauge: manter lógica, ajustar fundo para `bg-slate-800`
-- Labels gauge: manter grid-cols-4
+2. **`src/components/roas/AdsDetailFullView.tsx`** (~1048 linhas)
+   - `OperationLogTimeline`: card bg, borders, text, chart tooltip contentStyle, axis tick fills
+   - `KpiCard`: bg, borders, text colors
+   - Main component: page bg, header card, KPIs, unlinked warning, tabs, all diagnostic cards, all metric cards
+   - Recharts inline styles (tooltip contentStyle, axis tick fills): usar CSS vars com fallback
 
-**5. CostBreakdownCard (coluna direita)**
-- Card: `bg-[#121212] border-slate-800 rounded-2xl shadow-lg`
-- Ícone PieChart: `text-emerald-400`
-- Título: `text-slate-400 uppercase`
-- Label central do Donut: `text-slate-500` + valor `text-white`
-- Itens de custo: dots coloridos, nomes `text-slate-400`, valores `text-white font-mono`
-- Lucro Bruto destaque: `bg-emerald-900/20 border-emerald-500/20` ou `bg-red-900/20 border-red-500/20`
+3. **`src/components/roas/adsHelpers.ts`** — trocar `text-destructive` e tokens já usados (menor impacto)
 
-**6. RoasRanking**
-- Título: ícone `text-emerald-400`
-- Cards: `bg-[#121212] border-slate-800 hover:border-emerald-500/20`
-- Badge posição #1: `bg-emerald-900/20 text-emerald-400`
-- Badge posição #2: `bg-blue-900/20 text-blue-400`
-- Demais: `bg-slate-800 text-slate-400`
-- Textos secundários: `text-slate-500`
-
-**7. Alertas (preço incompleto / margem insuficiente)**
-- Warning: `bg-amber-900/10 border-amber-500/20`
-- Error: `bg-red-900/10 border-red-500/20`
-
-**8. Estado vazio**
-- Card: `bg-[#121212] border-slate-800 border-dashed`
-- Ícone: `bg-emerald-900/20 text-emerald-400`
-
----
-
-### Padrão de referência (AdsDetailFullView)
-- `bg-[#0a0a0a]` fundo geral
-- `bg-[#121212] border-slate-800 shadow-lg rounded-2xl` cards
-- Títulos `text-white`, labels `text-slate-400/500`
-- Emerald para sucesso, orange para atenção, blue para info
-
-### Arquivo modificado
-- `src/components/charts/RoasAnalysis.tsx`
+### Notas de implementação
+- Gradientes inline (gauge bar, ROAS status bar) precisam de abordagem `dark:` ou classes condicionais
+- Recharts `contentStyle` e `tick.fill` são inline — usar variáveis CSS com `getComputedStyle` ou hardcoded com `dark:` wrapper
+- Para o Recharts, manter as cores hex para strokes/fills dos gráficos (emerald `#10b981`, blue `#3b82f6`) pois são decorativas e funcionam em ambos temas
+- O efeito glow (`bg-emerald-500/5 blur-3xl`) → `bg-success/5` funciona em ambos temas
 
 ### O que NÃO muda
-- Nenhum cálculo, variável, estado, hook ou lógica
-- Donut, gauge bar, ranking — mesmos dados, apenas cores/espaçamentos
+- Nenhuma lógica, cálculo, estado ou hook
+- Estrutura de layout (grids, flex, spacing)
+- Funcionalidade de importação, navegação, tabs
 
