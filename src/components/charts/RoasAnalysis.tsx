@@ -63,8 +63,8 @@ function TipIcon({ text }: { text: string }) {
   );
 }
 
-// ─── Donut de composição de custos ───
-function CostBreakdownChart({ product, roasData }: { product: Product; roasData: RoasResult }) {
+// ─── Donut de composição de custos (coluna direita) ───
+function CostBreakdownCard({ product, roasData }: { product: Product; roasData: RoasResult }) {
   const data = useMemo(() => {
     const costs = roasData.costs;
     const items: Array<{ name: string; value: number; color: string }> = [];
@@ -79,37 +79,73 @@ function CostBreakdownChart({ product, roasData }: { product: Product; roasData:
     add('Afiliados', costs.affiliateCommission);
     add('Campanhas', costs.campaigns);
     add('Acelera', costs.acelera);
-    items.push({ name: 'Lucro', value: Math.max(0, roasData.lucroBruto), color: 'hsl(152, 70%, 42%)' });
+    items.push({ name: 'Lucro Bruto', value: Math.max(0, roasData.lucroBruto), color: 'hsl(152, 70%, 42%)' });
     return items;
   }, [roasData]);
 
+  const lucroItem = data.find(d => d.name === 'Lucro Bruto');
+
   return (
-    <div className="flex items-center gap-4 md:gap-5">
-      <div className="w-[110px] h-[110px] md:w-[130px] md:h-[130px] flex-shrink-0">
-        <ResponsiveContainer width="100%" height="100%">
-          <RechartsPie>
-            <Pie data={data} cx="50%" cy="50%" innerRadius={30} outerRadius={48} paddingAngle={3} dataKey="value" strokeWidth={0}>
-              {data.map((entry, idx) => <Cell key={idx} fill={entry.color} />)}
-            </Pie>
-            <Tooltip formatter={(v: number) => formatCurrency(v)} />
-          </RechartsPie>
-        </ResponsiveContainer>
+    <div className="rounded-xl border border-border bg-card p-4 md:p-5 space-y-4 h-full">
+      <div className="flex items-center gap-2">
+        <PieChart className="w-4 h-4 text-primary" />
+        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Composição do Preço</p>
       </div>
-      <div className="flex-1 space-y-1.5">
-        {data.map((item, idx) => (
-          <div key={idx} className="flex items-center gap-2 text-xs">
+
+      {/* Donut com preço no centro */}
+      <div className="flex justify-center">
+        <div className="relative w-[160px] h-[160px] md:w-[180px] md:h-[180px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <RechartsPie>
+              <Pie data={data} cx="50%" cy="50%" innerRadius="55%" outerRadius="85%" paddingAngle={2} dataKey="value" strokeWidth={0}>
+                {data.map((entry, idx) => <Cell key={idx} fill={entry.color} />)}
+              </Pie>
+              <Tooltip formatter={(v: number) => formatCurrency(v)} />
+            </RechartsPie>
+          </ResponsiveContainer>
+          {/* Label central */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+            <span className="text-[10px] text-muted-foreground font-medium">Venda</span>
+            <span className="text-base md:text-lg font-black font-mono text-foreground">{formatCurrency(product.salePrice)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Lista de custos */}
+      <div className="space-y-2 pt-1">
+        {data.filter(d => d.name !== 'Lucro Bruto').map((item, idx) => (
+          <div key={idx} className="flex items-center gap-2.5 text-xs">
             <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
-            <span className="text-text-2 flex-1 text-[11px]">{item.name}</span>
-            <span className="font-bold tabular-nums text-[11px] font-mono">{formatCurrency(item.value)}</span>
+            <span className="text-muted-foreground flex-1">{item.name}</span>
+            <span className="font-bold tabular-nums font-mono text-foreground">{formatCurrency(item.value)}</span>
           </div>
         ))}
+
+        {/* Lucro bruto destacado */}
+        {lucroItem && (
+          <div className={cn(
+            'flex items-center gap-2.5 text-xs rounded-lg p-2 mt-1',
+            roasData.lucroBruto > 0 ? 'bg-success/8 border border-success/20' : 'bg-destructive/8 border border-destructive/20'
+          )}>
+            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0 bg-success" />
+            <span className={cn('flex-1 font-semibold', roasData.lucroBruto > 0 ? 'text-success' : 'text-destructive')}>Lucro Bruto</span>
+            <span className={cn('font-black tabular-nums font-mono', roasData.lucroBruto > 0 ? 'text-success' : 'text-destructive')}>
+              {formatCurrency(roasData.lucroBruto)}
+            </span>
+          </div>
+        )}
+
+        {/* Percentual Shopee */}
+        <p className="text-[10px] text-muted-foreground text-right tabular-nums font-mono">
+          Taxa Shopee: {((roasData.taxaShopee / product.salePrice) * 100).toFixed(1)}% do preço
+        </p>
       </div>
     </div>
   );
 }
 
-// ─── Seletor de produto — lista vertical compacta ───
-function ProductPicker({
+// ─── Seletor de produto — dropdown compacto ───
+function ProductDropdown({
   products,
   selectedId,
   onSelect,
@@ -120,7 +156,7 @@ function ProductPicker({
   onSelect: (id: string) => void;
   config: any;
 }) {
-  const [showSearch, setShowSearch] = useState(false);
+  const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
 
   const sorted = useMemo(() => {
@@ -134,109 +170,84 @@ function ProductPicker({
     return sorted.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
   }, [sorted, search]);
 
-  const visible = sorted.slice(0, 4);
+  const selected = products.find(p => p.id === selectedId);
 
   return (
-    <div className="space-y-2">
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
-        <div className="divide-y divide-border/50">
-          {visible.map(p => {
-            const isActive = p.id === selectedId;
-            const roasData = calcProductRoas(p, config);
-            return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => onSelect(p.id)}
-                className={cn(
-                  'w-full flex items-center gap-3 px-3 py-2.5 transition-all text-left',
-                  isActive
-                    ? 'bg-primary/10 border-l-2 border-l-primary'
-                    : 'border-l-2 border-l-transparent hover:bg-surface-2/50'
-                )}
-              >
-                <div className="w-10 h-10 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                  {p.imageUrl ? (
-                    <img src={p.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover" />
-                  ) : (
-                    <span className="text-xs font-bold text-text-3">{(p.name || '?').charAt(0).toUpperCase()}</span>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={cn('text-sm font-semibold truncate', isActive ? 'text-foreground' : 'text-text-2')}>{p.name}</p>
-                  <p className="text-xs text-text-3 tabular-nums font-mono">{formatCurrency(p.salePrice)}</p>
-                </div>
-                {roasData.roasAtual !== null && !roasData.margemInsuficiente && (
-                  <span className={cn('text-xs font-bold px-2 py-0.5 rounded-full tabular-nums font-mono flex-shrink-0',
-                    roasData.roasAtual >= (roasData.roasIdeal || 0) ? 'bg-success/15 text-success' :
-                    roasData.roasAtual >= (roasData.roasEmpate || 0) ? 'bg-warning/15 text-warning' :
-                    'bg-destructive/15 text-destructive'
-                  )}>
-                    {roasData.roasAtual.toFixed(1)}x
-                  </span>
-                )}
-              </button>
-            );
-          })}
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:border-primary/30 transition-colors"
+      >
+        <div className="w-10 h-10 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0 overflow-hidden">
+          {selected?.imageUrl ? (
+            <img src={selected.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover" />
+          ) : (
+            <span className="text-xs font-bold text-muted-foreground">IMG</span>
+          )}
         </div>
-        {sorted.length > 4 && (
-          <button
-            type="button"
-            onClick={() => setShowSearch(true)}
-            className="w-full py-2.5 text-xs font-bold text-primary border-t border-border/50 bg-surface-2/30 hover:bg-surface-2/60 transition-colors"
-          >
-            Ver todos ({sorted.length} produtos)
-          </button>
-        )}
-      </div>
+        <div className="flex-1 min-w-0 text-left">
+          <p className="text-sm font-semibold truncate text-foreground">{selected?.name || 'Selecione um produto'}</p>
+          {selected && <p className="text-xs text-muted-foreground tabular-nums font-mono">Preço de Venda: {formatCurrency(selected.salePrice)}</p>}
+        </div>
+        <ChevronDown className={cn('w-4 h-4 text-muted-foreground transition-transform', open && 'rotate-180')} />
+      </button>
 
-      {/* Search modal for >4 products */}
-      {showSearch && (
+      {open && (
         <>
-          <div className="fixed inset-0 z-40 bg-black/30" onClick={() => { setShowSearch(false); setSearch(''); }} />
-          <div className="fixed inset-x-4 top-[20%] z-50 rounded-xl border border-border bg-card shadow-2xl overflow-hidden animate-fade-in max-w-md mx-auto">
-            <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border bg-surface-2/50">
-              <Search className="w-4 h-4 text-text-3 flex-shrink-0" />
-              <input
-                autoFocus
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Buscar produto..."
-                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-text-3 outline-none"
-              />
-              <button onClick={() => { setShowSearch(false); setSearch(''); }} className="text-text-3 hover:text-foreground p-1 rounded-lg hover:bg-surface-2 transition-colors">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="max-h-[300px] overflow-y-auto scrollbar-none divide-y divide-border/50">
+          <div className="fixed inset-0 z-40" onClick={() => { setOpen(false); setSearch(''); }} />
+          <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-border bg-card shadow-2xl overflow-hidden animate-fade-in">
+            {sorted.length > 4 && (
+              <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border bg-surface-2/50">
+                <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <input
+                  autoFocus
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Buscar produto..."
+                  className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+                />
+              </div>
+            )}
+            <div className="max-h-[260px] overflow-y-auto scrollbar-none divide-y divide-border/50">
               {filtered.map(p => {
                 const isActive = p.id === selectedId;
+                const roasData = calcProductRoas(p, config);
                 return (
                   <button
                     key={p.id}
                     type="button"
-                    onClick={() => { onSelect(p.id); setShowSearch(false); setSearch(''); }}
+                    onClick={() => { onSelect(p.id); setOpen(false); setSearch(''); }}
                     className={cn(
-                      'w-full flex items-center gap-3 px-3 py-3 text-left transition-colors',
-                      isActive ? 'bg-primary/8' : 'hover:bg-surface-2'
+                      'w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors',
+                      isActive ? 'bg-primary/10' : 'hover:bg-surface-2/50'
                     )}
                   >
                     <div className="w-9 h-9 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0 overflow-hidden">
                       {p.imageUrl ? (
                         <img src={p.imageUrl} alt="" className="w-9 h-9 rounded-lg object-cover" />
                       ) : (
-                        <Package className="w-3.5 h-3.5 text-text-3" />
+                        <Package className="w-3.5 h-3.5 text-muted-foreground" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold truncate">{p.name}</p>
-                      <p className="text-xs text-text-3 tabular-nums font-mono">{formatCurrency(p.salePrice)}</p>
+                      <p className="text-xs text-muted-foreground tabular-nums font-mono">{formatCurrency(p.salePrice)}</p>
                     </div>
+                    {roasData.roasAtual !== null && !roasData.margemInsuficiente && (
+                      <span className={cn('text-xs font-bold px-2 py-0.5 rounded-full tabular-nums font-mono flex-shrink-0',
+                        roasData.roasAtual >= (roasData.roasIdeal || 0) ? 'bg-success/15 text-success' :
+                        roasData.roasAtual >= (roasData.roasEmpate || 0) ? 'bg-warning/15 text-warning' :
+                        'bg-destructive/15 text-destructive'
+                      )}>
+                        {roasData.roasAtual.toFixed(1)}x
+                      </span>
+                    )}
                   </button>
                 );
               })}
               {filtered.length === 0 && (
-                <p className="text-center text-xs text-text-3 py-6">Nenhum produto encontrado</p>
+                <p className="text-center text-xs text-muted-foreground py-6">Nenhum produto encontrado</p>
               )}
             </div>
           </div>
@@ -245,41 +256,6 @@ function ProductPicker({
     </div>
   );
 }
-
-// ─── Análise principal ───
-function ProductAnalysis() {
-  const { currentStore, updateProduct } = useStore();
-  const config = currentStore?.config;
-  // Pre-select first product sorted by updatedAt desc
-  const initialProductId = useMemo(() => {
-    if (!currentStore || currentStore.products.length === 0) return '';
-    const sorted = [...currentStore.products].sort((a, b) => 
-      new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime()
-    );
-    return sorted[0].id;
-  }, [currentStore?.products]);
-
-  const [selectedProductId, setSelectedProductId] = useState<string>('');
-
-  useEffect(() => {
-    if (!selectedProductId && initialProductId) {
-      setSelectedProductId(initialProductId);
-    }
-  }, [initialProductId]);
-  const [gastoAds, setGastoAds] = useState<string>('');
-  const [receitaAds, setReceitaAds] = useState<string>('');
-
-  const selectedProduct = useMemo(() => {
-    if (!currentStore || !selectedProductId) return null;
-    return currentStore.products.find(p => p.id === selectedProductId) || null;
-  }, [currentStore, selectedProductId]);
-
-  useEffect(() => {
-    if (selectedProduct) {
-      setGastoAds(selectedProduct.adsCost > 0 ? String(selectedProduct.adsCost) : '');
-      setReceitaAds(selectedProduct.adsRevenue > 0 ? String(selectedProduct.adsRevenue) : '');
-    }
-  }, [selectedProduct?.id]);
 
   useEffect(() => {
     if (!selectedProduct) return;
@@ -338,187 +314,161 @@ function ProductAnalysis() {
 
   return (
     <div className="space-y-4">
-      <ProductPicker
-        products={currentStore.products}
-        selectedId={selectedProductId}
-        onSelect={setSelectedProductId}
-        config={config}
-      />
+      {/* ── Layout 2 colunas: Calculadora (esq) + Composição (dir) ── */}
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_340px] gap-4 items-start">
+        {/* ── Coluna esquerda ── */}
+        <div className="space-y-4">
+          {/* Seletor dropdown */}
+          <ProductDropdown
+            products={currentStore.products}
+            selectedId={selectedProductId}
+            onSelect={setSelectedProductId}
+            config={config}
+          />
 
-      {selectedProduct && roasData && !roasData.margemInsuficiente && (
-        <>
-          {/* ── Unified ROAS gauge ── */}
-          <div className="rounded-xl border border-border bg-card p-4 space-y-4 animate-fade-in">
-            <div className="flex items-center justify-between">
-              <span className={cn('text-xs font-bold px-2.5 py-1 rounded-full inline-flex items-center gap-1', marginStatus.bg, marginStatus.color)}>
-                <Zap className="w-3 h-3" />
-                {marginStatus.label} · {marginPercent.toFixed(1)}%
-              </span>
-              <span className="text-[10px] text-text-3 font-medium bg-surface-2 px-2 py-0.5 rounded-md">Shopee</span>
-            </div>
+          {selectedProduct && roasData && !roasData.margemInsuficiente && (
+            <>
+              {/* Inputs lado a lado */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+                  <TooltipLabel label="GASTO EM ADS (R$)" tooltip={getTooltipText('gasto_ads')} />
+                  <Input type="number" min="0" step="0.01" value={gastoAds} onChange={e => setGastoAds(e.target.value)} placeholder="R$ 0,00" className="input-modern h-11 text-base font-bold font-mono" />
+                </div>
+                <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+                  <TooltipLabel label="RECEITA DE ADS (R$)" tooltip={getTooltipText('receita_ads')} />
+                  <Input type="number" min="0" step="0.01" value={receitaAds} onChange={e => setReceitaAds(e.target.value)} placeholder="R$ 0,00" className="input-modern h-11 text-base font-bold font-mono" />
+                </div>
+              </div>
 
-            {/* Single gauge bar with ticks */}
-            {roasData.roasEmpate && roasData.roasSaudavel && roasData.roasIdeal && (
-              <div className="space-y-2">
-                <div className="relative h-3 rounded-full bg-surface-2 overflow-hidden">
-                  {/* Gradient fill */}
-                  {roasData.roasAtual !== null && roasData.roasAtual > 0 && (
-                    <div
-                      className={cn(
-                        'absolute inset-y-0 left-0 rounded-full transition-all duration-700',
-                        roasData.roasAtual >= roasData.roasIdeal ? 'bg-gradient-to-r from-destructive via-warning to-success' :
-                        roasData.roasAtual >= roasData.roasSaudavel ? 'bg-gradient-to-r from-destructive via-warning to-warning' :
-                        roasData.roasAtual >= roasData.roasEmpate ? 'bg-gradient-to-r from-destructive to-destructive' :
-                        'bg-destructive/60'
+              {/* Card resultado ROAS */}
+              <div className="rounded-xl border border-border bg-card p-5 space-y-5 animate-fade-in">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mb-1">ROAS ATUAL SIMULADO</p>
+                    <div className="flex items-center gap-3">
+                      {roasData.roasAtual !== null ? (
+                        <>
+                          <span className={cn('text-4xl md:text-5xl font-black tabular-nums font-mono', statusColors[roasStatus || ''] || 'text-foreground')}>
+                            {roasData.roasAtual.toFixed(2)}x
+                          </span>
+                          {roasAtualLabel && (
+                            <span className={cn('text-xs font-bold px-2.5 py-1 rounded-full inline-flex items-center gap-1',
+                              roasAtualLabel.color,
+                              roasAtualLabel.color === 'text-success' ? 'bg-success/10' :
+                              roasAtualLabel.color === 'text-primary' ? 'bg-primary/10' :
+                              roasAtualLabel.color === 'text-warning' ? 'bg-warning/10' :
+                              'bg-destructive/10'
+                            )}>
+                              {roasAtualLabel.color === 'text-success' && '✓ '}{roasAtualLabel.text}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="text-2xl font-bold text-muted-foreground">—</span>
                       )}
-                      style={{ width: `${Math.min((roasData.roasAtual / (roasData.roasIdeal * 1.3)) * 100, 100)}%` }}
-                    />
+                    </div>
+                  </div>
+
+                  {/* Lucro estimado (Ads) */}
+                  {roasData.roasAtual !== null && (parseFloat(receitaAds) || 0) > 0 && (
+                    <div className="text-right">
+                      <p className="text-[10px] text-muted-foreground font-medium">Lucro Estimado (Ads)</p>
+                      <p className={cn('text-2xl md:text-3xl font-black tabular-nums font-mono',
+                        (parseFloat(receitaAds) || 0) - (parseFloat(gastoAds) || 0) > 0 ? 'text-success' : 'text-destructive'
+                      )}>
+                        {(parseFloat(receitaAds) || 0) - (parseFloat(gastoAds) || 0) > 0 ? '+ ' : ''}{formatCurrency((parseFloat(receitaAds) || 0) - (parseFloat(gastoAds) || 0))}
+                      </p>
+                    </div>
                   )}
-                  {/* Tick marks */}
-                  {[
-                    { value: roasData.roasEmpate, color: 'bg-destructive' },
-                    { value: roasData.roasSaudavel, color: 'bg-warning' },
-                    { value: roasData.roasIdeal, color: 'bg-success' },
-                  ].map((tick, i) => (
-                    <div
-                      key={i}
-                      className={cn('absolute top-0 bottom-0 w-0.5', tick.color)}
-                      style={{ left: `${Math.min((tick.value / (roasData.roasIdeal! * 1.3)) * 100, 100)}%` }}
-                    />
-                  ))}
                 </div>
-                {/* Labels under gauge */}
-                <div className="flex justify-between text-[10px] font-mono tabular-nums">
-                  <span className="text-destructive font-bold">Emp {roasData.roasEmpate.toFixed(1)}</span>
-                  <span className="text-warning font-bold">Saud {roasData.roasSaudavel.toFixed(1)}</span>
-                  <span className="text-success font-bold">Ideal {roasData.roasIdeal.toFixed(1)}</span>
-                </div>
-              </div>
-            )}
-          </div>
 
-          {/* ── Inputs de Ads + resultado inline ── */}
-          <div className="rounded-xl border border-border bg-card p-4 space-y-4 animate-fade-in">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Megaphone className="w-3.5 h-3.5 text-primary" />
-                <p className="section-label !mb-0">Dados de Ads</p>
-                <span className="text-[10px] text-text-3 bg-surface-2 px-1.5 py-0.5 rounded">opcional</span>
+                {/* Gauge bar */}
+                {roasData.roasEmpate && roasData.roasSaudavel && roasData.roasIdeal && (
+                  <div className="space-y-1.5">
+                    {/* Labels acima da barra */}
+                    <div className="relative flex text-[10px] font-mono tabular-nums font-bold">
+                      <span className="text-destructive" style={{ position: 'absolute', left: 0 }}>PREJUÍZO</span>
+                      <span className="text-destructive" style={{ position: 'absolute', left: `${(roasData.roasEmpate / (roasData.roasIdeal * 1.3)) * 100}%`, transform: 'translateX(-50%)' }}>
+                        EMPATE ({roasData.roasEmpate.toFixed(1)})
+                      </span>
+                      <span className="text-warning" style={{ position: 'absolute', left: `${(roasData.roasSaudavel / (roasData.roasIdeal * 1.3)) * 100}%`, transform: 'translateX(-50%)' }}>
+                        SAUDÁVEL ({roasData.roasSaudavel.toFixed(1)})
+                      </span>
+                      <span className="text-success" style={{ position: 'absolute', right: 0 }}>
+                        IDEAL ({roasData.roasIdeal.toFixed(1)}+)
+                      </span>
+                    </div>
+
+                    {/* Barra de gradiente */}
+                    <div className="relative h-4 rounded-full overflow-hidden mt-5"
+                      style={{ background: 'linear-gradient(to right, hsl(0 70% 50%), hsl(40 95% 50%) 40%, hsl(100 60% 45%) 70%, hsl(152 70% 42%))' }}
+                    >
+                      {/* Indicador (ponteiro) */}
+                      {roasData.roasAtual !== null && roasData.roasAtual > 0 && (
+                        <div
+                          className="absolute top-0 bottom-0 w-1 bg-foreground rounded-full shadow-lg transition-all duration-700"
+                          style={{ left: `${Math.min(Math.max((roasData.roasAtual / (roasData.roasIdeal * 1.3)) * 100, 1), 99)}%` }}
+                        />
+                      )}
+                    </div>
+
+                    {/* Tick marks */}
+                    <div className="relative h-3">
+                      {[roasData.roasEmpate, roasData.roasSaudavel, roasData.roasIdeal].map((v, i) => (
+                        <div
+                          key={i}
+                          className="absolute top-0 w-px h-2.5 bg-muted-foreground/50"
+                          style={{ left: `${(v / (roasData.roasIdeal! * 1.3)) * 100}%` }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-              <span className="text-[10px] text-text-3">Salvo auto</span>
+            </>
+          )}
+
+          {/* Alertas */}
+          {selectedProduct && roasData?.precoIncompleto && (
+            <div className="rounded-xl border border-warning/30 bg-warning/5 p-5 flex items-start gap-3 animate-fade-in">
+              <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-warning text-sm">Preços não configurados</p>
+                <p className="text-xs text-muted-foreground mt-1">Vá até a aba Produtos e defina o Custo e Preço de Venda deste item para ver a análise de ROAS.</p>
+              </div>
             </div>
+          )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <TooltipLabel label="Gasto em Ads" tooltip={getTooltipText('gasto_ads')} />
-                <Input type="number" min="0" step="0.01" value={gastoAds} onChange={e => setGastoAds(e.target.value)} placeholder="R$ 0,00" className="input-modern h-10 text-sm font-semibold" />
-              </div>
-              <div className="space-y-1">
-                <TooltipLabel label="Receita de Ads" tooltip={getTooltipText('receita_ads')} />
-                <Input type="number" min="0" step="0.01" value={receitaAds} onChange={e => setReceitaAds(e.target.value)} placeholder="R$ 0,00" className="input-modern h-10 text-sm font-semibold" />
-              </div>
-            </div>
-
-            {roasData.roasAtual !== null && roasAtualLabel ? (
-              <div className="flex items-center justify-between pt-3 border-t border-border">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-text-2 font-medium">ROAS atual</span>
-                  <TipIcon text="Retorno sobre o investimento em anúncio. Ex: ROAS 3 significa que para cada R$1 investido, você vendeu R$3." />
-                </div>
-                <div className="flex items-center gap-2.5">
-                  <span className={cn('text-2xl font-black tabular-nums font-mono', statusColors[roasStatus || ''] || 'text-foreground')}>
-                    {roasData.roasAtual.toFixed(2)}x
-                  </span>
-                  <span className={cn('text-[11px] font-bold px-2 py-0.5 rounded-full',
-                    roasAtualLabel.color,
-                    roasAtualLabel.color === 'text-success' ? 'bg-success/10' :
-                    roasAtualLabel.color === 'text-primary' ? 'bg-primary/10' :
-                    roasAtualLabel.color === 'text-warning' ? 'bg-warning/10' :
-                    'bg-destructive/10'
-                  )}>
-                    {roasAtualLabel.text}
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 pt-3 border-t border-border text-text-3">
-                <Info className="w-3.5 h-3.5 flex-shrink-0" />
-                <p className="text-xs">Preencha gasto e receita para ver o ROAS atual</p>
-              </div>
-            )}
-          </div>
-
-          {/* ── Breakdown + Resumo ── */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-              <p className="section-label">Composição do preço</p>
-              <CostBreakdownChart product={selectedProduct} roasData={roasData} />
-            </div>
-            <div className="rounded-xl border border-border bg-card p-4 space-y-4">
-              <p className="section-label">Resumo financeiro</p>
-              <div className={cn(
-                'rounded-xl p-3.5 space-y-1',
-                roasData.lucroBruto > 0 ? 'bg-success/5 border border-success/15' : 'bg-destructive/5 border border-destructive/15'
-              )}>
-                <div className="flex items-center gap-1">
-                  <p className="text-[10px] text-text-3 font-medium">Lucro bruto</p>
-                  <TipIcon text={getTooltipText('lucro_bruto')} />
-                </div>
-                <p className={cn('text-2xl font-black tabular-nums font-mono', roasData.lucroBruto > 0 ? 'text-success' : 'text-destructive')}>
-                  {formatCurrency(roasData.lucroBruto)}
-                </p>
-                <p className="text-[10px] text-text-3">Antes de Ads</p>
-              </div>
-              <div className="space-y-1">
-                <div className="flex items-center gap-1">
-                  <p className="text-[10px] text-text-3 font-medium">Taxa Shopee</p>
-                  <TipIcon text={getTooltipText('taxa_shopee')} />
-                </div>
-                <p className="text-lg font-extrabold tabular-nums font-mono text-foreground">
-                  {formatCurrency(roasData.taxaShopee)}
-                </p>
-                <p className="text-[10px] text-text-3">
-                  {((roasData.taxaShopee / selectedProduct.salePrice) * 100).toFixed(1)}% do preço
+          {selectedProduct && roasData?.margemInsuficiente && !roasData.precoIncompleto && (
+            <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-5 flex items-start gap-3 animate-fade-in">
+              <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold text-destructive text-sm">Margem insuficiente para anunciar</p>
+                <p className="text-xs text-muted-foreground mt-1">Lucro antes de Ads: {formatCurrency(roasData.lucroBruto)}</p>
+                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
+                  <Zap className="w-3 h-3 text-primary" />
+                  Use a <span className="font-semibold text-primary">Calculadora Rápida</span> na Home para encontrar o preço ideal de empate.
                 </p>
               </div>
             </div>
-          </div>
-        </>
-      )}
+          )}
 
-      {selectedProduct && roasData?.precoIncompleto && (
-        <div className="rounded-xl border border-warning/30 bg-warning/5 p-5 flex items-start gap-3 animate-fade-in">
-          <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-bold text-warning text-sm">Preços não configurados</p>
-            <p className="text-xs text-text-2 mt-1">Vá até a aba Produtos e defina o Custo e Preço de Venda deste item para ver a análise de ROAS.</p>
-          </div>
+          {!selectedProduct && (
+            <div className="flex flex-col items-center justify-center py-14 text-center rounded-xl border border-dashed border-border/60 bg-card/50">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
+                <Target className="w-6 h-6 text-primary/60" />
+              </div>
+              <p className="text-sm font-semibold text-muted-foreground">Selecione um produto acima</p>
+              <p className="text-xs text-muted-foreground mt-1">Escolha o produto para ver a análise de ROAS</p>
+            </div>
+          )}
         </div>
-      )}
 
-      {selectedProduct && roasData?.margemInsuficiente && !roasData.precoIncompleto && (
-        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-5 flex items-start gap-3 animate-fade-in">
-          <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="font-bold text-destructive text-sm">Margem insuficiente para anunciar</p>
-            <p className="text-xs text-text-2 mt-1">Lucro antes de Ads: {formatCurrency(roasData.lucroBruto)}</p>
-            <p className="text-xs text-text-2 mt-1 flex items-center gap-1.5">
-              <Zap className="w-3 h-3 text-primary" />
-              Use a <span className="font-semibold text-primary">Calculadora Rápida</span> na Home para encontrar o preço ideal de empate.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {!selectedProduct && (
-        <div className="flex flex-col items-center justify-center py-14 text-center rounded-xl border border-dashed border-border/60 bg-card/50">
-          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
-            <Target className="w-6 h-6 text-primary/60" />
-          </div>
-          <p className="text-sm font-semibold text-text-2">Selecione um produto acima</p>
-          <p className="text-xs text-text-3 mt-1">Escolha o produto para ver a análise de ROAS</p>
-        </div>
-      )}
+        {/* ── Coluna direita — Composição do Preço ── */}
+        {selectedProduct && roasData && !roasData.margemInsuficiente && (
+          <CostBreakdownCard product={selectedProduct} roasData={roasData} />
+        )}
+      </div>
     </div>
   );
 }
