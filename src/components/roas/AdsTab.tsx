@@ -36,7 +36,7 @@ function formatPeriodLabel(inicio: string, fim: string) {
 
 export function AdsTab() {
   const { currentStore } = useStore();
-  const { data, loading, operating, importGeneralCSV, importProductCSV, linkProduct, reload, deleteAdsData, deleteAll } = useAdsData();
+  const { data, loading, operating, importGeneralCSV, importProductCSV, linkProduct, unlinkProduct, reload, deleteAdsData, deleteAll } = useAdsData();
   const [selectedDetail, setSelectedDetail] = useState<EnrichedAdsData | null>(null);
   const [linkTarget, setLinkTarget] = useState<string | null>(null);
   const [quickRegTarget, setQuickRegTarget] = useState<EnrichedAdsData | null>(null);
@@ -152,6 +152,8 @@ export function AdsTab() {
           onLink={() => { setLinkTarget(selectedDetail.id); setSelectedDetail(null); }}
           onQuickRegister={() => { setQuickRegTarget(selectedDetail); setSelectedDetail(null); }}
           onReimport={() => { setPositionTarget(selectedDetail.id); positionFileRef.current?.click(); }}
+          onUnlink={() => { unlinkProduct(selectedDetail.id); setSelectedDetail(null); }}
+          onChangeLink={() => { setLinkTarget(selectedDetail.id); }}
         />
       ) : data.length === 0 ? (
         <AdsEmptyState onImport={() => fileRef.current?.click()} />

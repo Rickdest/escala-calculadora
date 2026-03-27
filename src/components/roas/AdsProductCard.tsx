@@ -87,13 +87,24 @@ export function AdsProductCard({
             )}
           </div>
         </div>
-        <button
-          onClick={e => { e.stopPropagation(); onDelete(); }}
-          className="p-1.5 rounded-lg text-text-3/40 hover:text-destructive hover:bg-destructive/10 transition-colors flex-shrink-0"
-          title="Excluir"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
+        <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
+          {isLinked && (
+            <button
+              onClick={onLink}
+              className="p-1.5 rounded-lg text-text-3/40 hover:text-primary hover:bg-primary/10 transition-colors"
+              title="Trocar vínculo"
+            >
+              <Link2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+          <button
+            onClick={onDelete}
+            className="p-1.5 rounded-lg text-text-3/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
+            title="Excluir"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
       {/* Metrics: 6 columns */}
@@ -108,8 +119,8 @@ export function AdsProductCard({
         ))}
       </div>
 
-      {/* Action area for unlinked products */}
-      {!isLinked && (
+      {/* Action area */}
+      {!isLinked ? (
         <div className="mt-3 pt-3 border-t border-border/40" onClick={e => e.stopPropagation()}>
           <p className="text-[11px] text-text-3 mb-2">Vincule a um produto para ver lucratividade</p>
           <div className="flex items-center gap-2">
@@ -127,7 +138,11 @@ export function AdsProductCard({
             </button>
           </div>
         </div>
-      )}
+      ) : isLinked && (!ad.roas_empate || ad.roas_empate <= 0) ? (
+        <div className="mt-3 pt-3 border-t border-border/40">
+          <p className="text-xs text-warning">⚠️ Produto sem custo/preço configurado.</p>
+        </div>
+      ) : null}
     </div>
   );
 }
