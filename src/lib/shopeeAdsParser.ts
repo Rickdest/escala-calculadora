@@ -14,20 +14,14 @@ export function validateCSVSecurity(file: File, csvText: string): CSVValidationR
   if (!file.name.toLowerCase().endsWith('.csv')) {
     return { valid: false, error: 'Apenas arquivos .csv são aceitos.' };
   }
-  // 3. Max lines: 502 (500 data + header + blank)
-  const lineCount = csvText.split('\n').length;
-  if (lineCount > 502) {
+  // 3. Max logical lines: 502 (merging multi-line quoted fields)
+  const logicalLines = mergeMultiLineQuotedFields(csvText.split('\n'));
+  if (logicalLines.length > 502) {
     return { valid: false, error: 'CSV com muitas linhas. Máximo 500 produtos.' };
   }
-  // 4. Max field length: 500 chars
-  const lines = csvText.split('\n');
-  for (const line of lines) {
-    const fields = line.split(',');
-    for (const field of fields) {
-      if (field.length > 500) {
-        return { valid: false, error: 'Campo com tamanho excessivo detectado.' };
-      }
-    }
+  // 4. XSS check on raw content (no per-field length — operation logs have large quoted fields)
+  if (/<script/i.test(csvText) || /javascript:/i.test(csvText)) {
+    return { valid: false, error: 'Conteúdo suspeito detectado.' };
   }
   return { valid: true };
 }
@@ -590,9 +584,45 @@ function extractFromTo(details: string): { fromValue?: string; toValue?: string 
   return {};
 }
 
+/**
+ * Merge lines that are inside open quotes back into a single logical line.
+ * Handles CSV fields that span multiple lines (e.g. "Create Campaign" details).
+ */
+function mergeMultiLineQuotedFields(rawLines: string[]): string[] {
+  const merged: string[] = [];
+  let buffer = '';
+  let inQuote = false;
+
+  for (const line of rawLines) {
+    const cleanLine = line.replace(/\r$/, '');
+    if (inQuote) {
+      buffer += ' ' + cleanLine;
+      // Count quotes — if odd total, we closed the quote
+      const quoteCount = (cleanLine.match(/"/g) || []).length;
+      if (quoteCount % 2 === 1) {
+        inQuote = false;
+        merged.push(buffer);
+        buffer = '';
+      }
+    } else {
+      const quoteCount = (cleanLine.match(/"/g) || []).length;
+      if (quoteCount % 2 === 1) {
+        // Odd quotes means a quote opened but didn't close on this line
+        inQuote = true;
+        buffer = cleanLine;
+      } else {
+        merged.push(cleanLine);
+      }
+    }
+  }
+  if (buffer) merged.push(buffer);
+  return merged;
+}
+
 export function parseOperationLogCSV(csvContent: string): OperationLogEntry[] {
   try {
-    const lines = csvContent.split('\n').map(l => l.replace(/^\uFEFF/, '').trim());
+    const rawLines = csvContent.split('\n').map(l => l.replace(/^\uFEFF/, '').replace(/\r$/, ''));
+    const lines = mergeMultiLineQuotedFields(rawLines).map(l => l.trim());
     const entries: OperationLogEntry[] = [];
 
     // Extract shopee product ID from metadata
@@ -631,7 +661,7 @@ export function parseOperationLogCSV(csvContent: string): OperationLogEntry[] {
       // For campaign_created, extract initial ROAS from multi-line details
       let campaignToValue = toValue;
       if (field === 'campaign_created' && !campaignToValue) {
-        const roasMatch = details.match(/(?:Lance automático.*?|ROAS de destino:)\s*([\d.]+)/i);
+        const roasMatch = details.match(/(?:Lance autom[áa]tico.*?|ROAS de destino:)\s*([\d.]+)/i);
         if (roasMatch) campaignToValue = roasMatch[1];
       }
 
