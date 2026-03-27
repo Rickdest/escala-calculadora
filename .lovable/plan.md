@@ -1,25 +1,31 @@
 
 
-## Ajustes Visuais no Detalhe de Ads
+## Posição como KpiCard no Grid + Fix Mobile Overflow
 
 ### Arquivo: `src/components/roas/AdsDetailFullView.tsx`
 
-**1. Card de Posição — mais impacto visual (linhas 584-609)**
+**1. Transformar Posição em KpiCard dentro do grid (linhas 574-619)**
 
-Substituir o card atual por o layout proposto pelo usuário com:
-- Ícone `MapPin` no label "Posicionamento"
-- Badge inline com `pageLabel` e cor semântica
-- Número da posição em `text-6xl` com `#` em `text-xl`
-- Usar `bg-success/5`, `bg-warning/5`, `bg-destructive/5` (em vez de `/8`)
-- Adicionar `border-success/25`, `border-warning/25`, `border-destructive/25` separados
+- Remover o bloco separado do card de posição (linhas 584-619)
+- Adicionar a Posição como primeiro item do grid de KPIs, antes de Impressões
+- Usar o mesmo estilo de `KpiCard` mas com cor semântica (success/warning/destructive) como já faz o ROAS highlight
+- O grid passa de 6 para 7 KPIs quando há posição
 
-**2. Tabs — mais destaque visual (linhas 637-645)**
+Novo layout do grid:
+```
+Posição | Impressões | Cliques | CTR | Vendas | GMV | ROAS
+```
 
-Atualizar `TabsList` e `TabsTrigger`:
-- `TabsList`: `w-full h-11 bg-secondary border border-border rounded-xl p-1`
-- `TabsTrigger`: `flex-1 h-9 rounded-lg text-sm font-bold gap-2` com `data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground`
+A Posição usará as mesmas cores semânticas (success ≤8, warning ≤20, destructive >20) e mostrará o `pageLabel` como `sub`.
+
+**2. Fix mobile overflow no grid de KPIs (linha 575)**
+
+- Mudar de `grid-cols-3 md:grid-cols-6` para `grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7`
+- Adicionar `overflow-hidden` ao container para evitar que cards saiam da tela
+- Reduzir padding interno dos KpiCards no mobile: `p-2 md:p-3`
 
 ### O que NÃO muda
-- Nenhuma lógica de cálculo
-- Outros componentes intactos
+- Lógica de cálculo, hints, cores semânticas
+- Tabs, diagnóstico, métricas
+- Outros componentes
 
