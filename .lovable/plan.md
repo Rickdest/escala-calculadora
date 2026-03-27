@@ -1,76 +1,92 @@
 
 
-## Corrigir Tema Claro nos Componentes de Ads e ROAS
+## Reorganização da Análise de Ads — 4 Mudanças
 
-### Problema
-Os arquivos `RoasAnalysis.tsx` e `AdsDetailFullView.tsx` usam centenas de cores hardcoded do tema dark (`bg-[#0a0a0a]`, `bg-[#121212]`, `text-white`, `text-slate-400/500/600/700/800`, `bg-slate-800`, `bg-emerald-900/20`, etc.) que ficam ilegíveis ou visualmente quebrados no tema claro.
+Após investigar o código atual, adapto as instruções ao que realmente existe no codebase (não existe `ProductAdsDetail.tsx`, não existe `onUpdateCSV`, não existe botão grande "Importar relatório de anúncios" separado).
 
-### Estratégia
-Substituir todas as cores hardcoded por tokens semânticos do design system (CSS variables via Tailwind), que já possuem variantes light/dark definidas em `index.css`. Para cores semânticas (emerald, orange, red, amber, blue) que não têm token equivalente, usar a sintaxe `dark:` do Tailwind para dupla definição.
+---
 
-### Mapa de substituições (ambos arquivos)
+### Mudança 1 — Botão "Novo CSV" discreto no título da lista
 
-| Hardcoded | Token Light/Dark |
-|---|---|
-| `bg-[#0a0a0a]` | `bg-background` |
-| `bg-[#121212]` | `bg-card` |
-| `bg-[#1a1a1a]` | `bg-card` |
-| `border-slate-800` | `border-border` |
-| `border-slate-700` | `border-border` |
-| `text-white` | `text-foreground` |
-| `text-slate-300` | `text-foreground/80` ou `text-text-2` |
-| `text-slate-400` | `text-text-2` |
-| `text-slate-500` | `text-text-3` |
-| `text-slate-600` | `text-text-3` |
-| `bg-slate-800/50` | `bg-surface-2` |
-| `bg-slate-800` | `bg-surface-2` |
-| `hover:bg-slate-800` | `hover:bg-surface-2` |
-| `divide-slate-800/50` | `divide-border` |
-| `text-emerald-400` | `text-success` |
-| `text-emerald-300` | `text-success` |
-| `bg-emerald-900/20` | `bg-success/10 dark:bg-success/20` |
-| `bg-emerald-500` | `bg-success` |
-| `border-emerald-500/50` | `border-success/50` |
-| `border-emerald-500/30` | `border-success/30` |
-| `border-emerald-500/20` | `border-success/20` |
-| `text-orange-400` | `text-warning` |
-| `bg-orange-900/20` | `bg-warning/10 dark:bg-warning/20` |
-| `border-orange-500/20` | `border-warning/20` |
-| `text-red-400` | `text-destructive` |
-| `bg-red-900/20` | `bg-destructive/10 dark:bg-destructive/20` |
-| `border-red-500/20` | `border-destructive/20` |
-| `text-amber-400` | `text-warning` |
-| `bg-amber-900/10` | `bg-warning/10` |
-| `border-amber-500/30` | `border-warning/30` |
-| `text-blue-400` | `text-primary dark:text-blue-400` (ou manter blue para info) |
+**Arquivo:** `src/components/roas/AdsTab.tsx`
+
+**Atual (linhas 478-501):** O título "Anúncios" com AlertDialog "Excluir Tudo" ao lado.
+
+**Novo:** Adicionar botão `Novo CSV` ao lado do título, antes do "Excluir Tudo":
+
+```
+<div className="flex items-center justify-between gap-2">
+  <h2 className="text-lg font-bold text-foreground">Anúncios</h2>
+  <div className="flex items-center gap-2">
+    <button onClick={() => fileRef.current?.click()} className="flex items-center gap-1.5 text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors">
+      <Upload className="w-3.5 h-3.5" /> Novo CSV
+    </button>
+    {/* AlertDialog Excluir Tudo — mantido como está */}
+  </div>
+</div>
+```
+
+---
+
+### Mudança 2 — Posição em destaque no topo do AdsDetailFullView
+
+**Arquivo:** `src/components/roas/AdsDetailFullView.tsx`
+
+**a)** Após o grid de KPIs (linha 582), antes do bloco "Unlinked product warning" (linha 584), inserir o card de posição:
+
+```tsx
+{ad.posicao_media !== null && (() => {
+  const pos = ad.posicao_media!;
+  const isTop = pos <= 8;
+  const isMid = pos > 8 && pos <= 20;
+  const pageLabel = pos <= 3 ? 'Top 3' : pos <= 8 ? '1ª Página' : pos <= 20 ? '2ª Página' : '3ª Página ou mais';
+  const posColor = isTop ? 'text-success' : isMid ? 'text-warning' : 'text-destructive';
+  const posBg = isTop ? 'bg-success/8 border-success/25' : isMid ? 'bg-warning/8 border-warning/25' : 'bg-destructive/8 border-destructive/25';
+  const posHint = isTop ? 'Excelente visibilidade — considere escalar orçamento'
+    : isMid ? 'Visibilidade média — reduza a meta de ROAS para subir'
+    : 'Visibilidade baixa — reduza a meta de ROAS com urgência';
+  return (
+    <div className={cn('rounded-xl border p-4 flex items-center justify-between gap-4 mb-5', posBg)}>
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Posicionamento</p>
+        <p className={cn('text-xs font-medium', posColor)}>{posHint}</p>
+      </div>
+      <div className="text-right flex-shrink-0">
+        <p className={cn('font-black font-mono tabular-nums leading-none', posColor)}>
+          <span className="text-lg">#</span><span className="text-5xl">{pos}</span>
+        </p>
+        <p className={cn('text-[11px] font-bold mt-1', posColor)}>{pageLabel}</p>
+      </div>
+    </div>
+  );
+})()}
+```
+
+This gives position maximum visual prominence right after the KPIs.
+
+---
+
+### Mudança 3 — Botão CSV no header do AdsDetailFullView
+
+**Arquivo:** `src/components/roas/AdsDetailFullView.tsx`
+
+O botão `CSV` já existe na linha 550-552 (`onReimport`). Nenhuma mudança necessária — já está implementado.
+
+---
+
+### Mudança 4 — Remover bloco duplicado de Posicionamento na aba Métricas (opcional cleanup)
+
+O card de "Posicionamento" na aba "Métricas & Histórico" (linhas 942-985) pode ser mantido com informação complementar (barras de distribuição Top 3 / Pág 1 / Pág 2+) já que o novo card no topo é um resumo rápido e o da aba tem detalhes visuais diferentes.
+
+---
 
 ### Arquivos modificados
-
-1. **`src/components/charts/RoasAnalysis.tsx`** (~641 linhas)
-   - `statusColors` object: trocar valores para tokens
-   - `TipIcon`: tooltip bg/border/text
-   - `CostBreakdownCard`: card bg, borders, text colors, donut tooltip contentStyle
-   - `ProductDropdown`: button, dropdown, search, items
-   - `ProductAnalysis`: inputs, result card, gauge bar, alerts, empty states
-   - `RoasRanking`: cards, badges, text
-   - `RoasAnalysis` (export): wrapper bg, tabs
-
-2. **`src/components/roas/AdsDetailFullView.tsx`** (~1048 linhas)
-   - `OperationLogTimeline`: card bg, borders, text, chart tooltip contentStyle, axis tick fills
-   - `KpiCard`: bg, borders, text colors
-   - Main component: page bg, header card, KPIs, unlinked warning, tabs, all diagnostic cards, all metric cards
-   - Recharts inline styles (tooltip contentStyle, axis tick fills): usar CSS vars com fallback
-
-3. **`src/components/roas/adsHelpers.ts`** — trocar `text-destructive` e tokens já usados (menor impacto)
-
-### Notas de implementação
-- Gradientes inline (gauge bar, ROAS status bar) precisam de abordagem `dark:` ou classes condicionais
-- Recharts `contentStyle` e `tick.fill` são inline — usar variáveis CSS com `getComputedStyle` ou hardcoded com `dark:` wrapper
-- Para o Recharts, manter as cores hex para strokes/fills dos gráficos (emerald `#10b981`, blue `#3b82f6`) pois são decorativas e funcionam em ambos temas
-- O efeito glow (`bg-emerald-500/5 blur-3xl`) → `bg-success/5` funciona em ambos temas
+- `src/components/roas/AdsTab.tsx` — adicionar botão "Novo CSV" discreto no título da lista
+- `src/components/roas/AdsDetailFullView.tsx` — card de posição em destaque após KPIs
 
 ### O que NÃO muda
-- Nenhuma lógica, cálculo, estado ou hook
-- Estrutura de layout (grids, flex, spacing)
-- Funcionalidade de importação, navegação, tabs
+- Nenhum cálculo, hook, parser ou lógica
+- ImportPanel, SummaryCards, FilterChips, AlertsSection
+- AdsProductCard (não tem `onUpdateCSV`)
+- Aba ROAS
 
