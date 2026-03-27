@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 import { fmt, getRoasColor } from './adsHelpers';
 import { calcAdEfficiencyScore } from '@/lib/adsLogic';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info, DollarSign, TrendingUp, BarChart3, Zap, MapPin, AlertTriangle } from 'lucide-react';
+import { Info, DollarSign, TrendingUp, BarChart3, Zap } from 'lucide-react';
 
 export function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
   const s = useMemo(() => {
