@@ -28,7 +28,7 @@ export function FilterChips({ filter, setFilter, data }: { filter: FilterType; s
   return (
     <>
       {/* Mobile: scroll horizontal */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide md:hidden -mx-4 px-4 pb-1">
+      <div className="flex gap-1.5 overflow-x-auto scrollbar-hide md:hidden -mx-4 px-4 pb-1">
         {mobileFilters.map(f => {
           const style = filterStyles[f.key];
           const isActive = filter === f.key;
@@ -37,7 +37,7 @@ export function FilterChips({ filter, setFilter, data }: { filter: FilterType; s
               key={f.key}
               onClick={() => setFilter(f.key)}
               className={cn(
-                'shrink-0 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all border',
+                'shrink-0 px-2.5 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all border',
                 isActive
                   ? style.activeBg
                   : 'bg-card border-border text-text-3 hover:text-foreground'
