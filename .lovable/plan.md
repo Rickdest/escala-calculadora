@@ -1,32 +1,32 @@
 
 
-## Adicionar botão "Atualizar CSV" + melhorar marcações no gráfico
+## Ícones acima dos dias no gráfico de Histórico de Ajustes
 
 ### Problema
-1. Após importar o log, não há botão para atualizar/reimportar — o usuário fica preso
-2. As marcações no gráfico não estão aparecendo corretamente por dia
+As marcações atuais (linhas verticais tracejadas + dots coloridos) ficam confusas. O usuário quer ícones visuais (Target, DollarSign, Zap, Plus) posicionados acima de cada dia no gráfico.
 
-### Mudanças em `src/components/roas/AdsDetailFullView.tsx` — `OperationLogTimeline`
+### Mudança em `src/components/roas/AdsDetailFullView.tsx`
 
-**1. Botão "Atualizar" quando já tem dados (linhas ~194-197)**
+**Substituir ReferenceDot por CustomizedLayer com ícones SVG no topo do gráfico:**
 
-Adicionar no header (ao lado de "Histórico de Ajustes") um botão compacto "Atualizar CSV" com ícone `Upload`. Manter o `<input type="file">` já existente e reutilizar `handleImportLog`. Layout: `flex items-center justify-between` no header.
+1. **Remover** as `ReferenceLine` verticais tracejadas e os `ReferenceDot` coloridos (linhas ~259-286)
 
-**2. Corrigir marcações no gráfico — usar data completa como chave**
+2. **Adicionar um componente `Customized`** do recharts que renderiza ícones SVG no topo do gráfico para cada `dateMarker`:
+   - Usar `xAxisMap` e `yAxisMap` do payload para converter o `fullDate` em coordenada X pixel
+   - Posicionar o ícone no topo do gráfico (Y fixo, ~2px do top)
+   - Renderizar o ícone SVG correspondente ao tipo do evento (Target para roas_target, DollarSign para budget, Zap para quick_boost, Plus para campaign_created)
+   - Se múltiplos eventos no mesmo dia, empilhar ícones verticalmente ou mostrar o ícone do tipo mais relevante (roas_target > budget > quick_boost)
 
-O problema atual: eventos no mesmo dia geram o mesmo `dateLabel` (ex: "03/18"), causando sobreposição e confusão. Corrigir:
+3. **Aumentar `margin.top`** do chart de 8 para ~28px para dar espaço aos ícones
 
-- Usar `fullDate` (timestamp completo) como `dataKey` do eixo X, mas formatar o tick para mostrar só "dd/MM"
-- Garantir que cada evento tenha um ponto único no eixo X
-- As `ReferenceLine` verticais usam o `fullDate` como `x` (não o dateLabel truncado)
-- Cada tipo de evento (roas_target, budget, quick_boost, campaign_created) gera uma linha vertical tracejada com cor e label curto
-- Agrupar eventos do mesmo dia com labels empilhados (se necessário, concatenar: "ROAS 14 · Orç R$30")
+4. **Manter a linha vertical fina** (sem tracejado pesado) apenas como guia sutil ligando o ícone ao ponto no gráfico — `strokeWidth: 0.5`, `strokeOpacity: 0.3`
 
-**3. Melhorar visibilidade das marcações**
+5. **Manter a legenda** abaixo do gráfico (já funciona bem)
 
-- Aumentar `strokeWidth` das ReferenceLine para 1.5
-- Labels com fundo semi-transparente para não sobrepor a linha do gráfico
-- Se não tem pontos ROAS suficientes para o chart (< 2), mostrar apenas a lista de eventos com um mini indicador visual por tipo
+### Resultado
+- Ícones claros e reconhecíveis no topo de cada dia com alteração
+- Visual limpo sem texto bagunçado
+- Fácil identificar o tipo de alteração de relance
 
 ### Arquivo modificado
 - `src/components/roas/AdsDetailFullView.tsx`
