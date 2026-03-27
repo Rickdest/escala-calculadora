@@ -939,10 +939,6 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         <TabsContent value="performance">
           <div className="space-y-5">
             {/* Histórico de Ajustes & ROAS */}
-            <div className="rounded-2xl border border-border bg-card p-5 space-y-2 shadow-sm">
-              <h3 className="text-base font-bold text-foreground">Histórico de Ajustes & ROAS</h3>
-              <p className="text-sm text-text-3">Evolução do ROAS em relação às mudanças na campanha</p>
-            </div>
             <OperationLogTimeline adProductId={ad.product_id} adShopeeProductId={ad.shopee_product_id} roasEmpate={roasEmpate} />
 
             {/* Posicionamento */}

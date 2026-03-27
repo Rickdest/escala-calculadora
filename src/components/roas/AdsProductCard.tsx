@@ -50,7 +50,7 @@ export function AdsProductCard({
 
   return (
     <div
-      className="rounded-2xl border border-border bg-card cursor-pointer transition-all hover:border-primary/30 hover:shadow-md hover:shadow-primary/5 active:scale-[0.995] overflow-hidden"
+      className="rounded-2xl border border-border bg-card cursor-pointer transition-all hover:border-primary/30 hover:shadow-md hover:shadow-primary/5 hover:-translate-y-0.5 active:scale-[0.995] overflow-hidden"
       onClick={onClick}
     >
       {/* Top accent bar */}
