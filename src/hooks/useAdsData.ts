@@ -243,11 +243,15 @@ export function useAdsData() {
       }, {} as Record<string, typeof rows[0]>)
     );
 
-    // Upsert using unique constraint (user_id, nome_produto_csv, periodo_inicio, periodo_fim)
-    const { error } = await supabase.from('ads_data' as any).upsert(uniqueRows, {
-      onConflict: 'user_id,nome_produto_csv,periodo_inicio,periodo_fim',
-      ignoreDuplicates: false,
-    });
+    // Delete existing data for this period, then insert fresh
+    if (uniqueRows.length > 0) {
+      await supabase.from('ads_data' as any).delete()
+        .eq('user_id', user.id)
+        .eq('periodo_inicio', uniqueRows[0].periodo_inicio)
+        .eq('periodo_fim', uniqueRows[0].periodo_fim);
+    }
+
+    const { error } = await supabase.from('ads_data' as any).insert(uniqueRows);
 
     if (error) {
       toast.error('Erro ao salvar dados');
