@@ -86,10 +86,10 @@ export function TrialExpiredBlock() {
             Oferta de lançamento
           </span>
           <p className="text-foreground font-bold font-mono" style={{ fontSize: '36px', lineHeight: '1.1' }}>
-            R$ 49,90 <span className="text-muted-foreground font-normal" style={{ fontSize: '16px' }}>/ano</span>
+            R$ 39,90 <span className="text-muted-foreground font-normal" style={{ fontSize: '16px' }}>/mês</span>
           </p>
           <p className="text-muted-foreground/60" style={{ fontSize: '13px' }}>
-            menos de R$ 4,16 por mês
+            ou R$ 197,00/ano (economize 59%)
           </p>
         </div>
 

@@ -49,9 +49,9 @@ export const SubscriptionModal = React.forwardRef<HTMLDivElement, SubscriptionMo
 
         <div className="text-center space-y-1">
           <p className="text-2xl font-bold font-mono font-mono-num text-foreground">
-            R$ 49,90 <span className="text-sm font-normal font-sans text-text-2">/ano</span>
+            R$ 39,90 <span className="text-sm font-normal font-sans text-text-2">/mês</span>
           </p>
-          <p className="text-xs text-text-3">menos de R$ 4,16 por mês</p>
+          <p className="text-xs text-text-3">ou R$ 197,00/ano (economize 59%)</p>
         </div>
 
         <button

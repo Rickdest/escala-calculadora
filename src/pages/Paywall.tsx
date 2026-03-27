@@ -49,9 +49,9 @@ export default function Paywall() {
 
         <div className="text-center space-y-1">
           <p className="text-3xl font-bold text-foreground">
-            R$ 49,90 <span className="text-base font-normal text-muted-foreground">/ano</span>
+            R$ 39,90 <span className="text-base font-normal text-muted-foreground">/mês</span>
           </p>
-          <p className="text-sm text-muted-foreground">menos de R$ 4,16 por mês</p>
+          <p className="text-sm text-muted-foreground">ou R$ 197,00/ano (economize 59%)</p>
         </div>
 
         <button

@@ -108,7 +108,7 @@ export default function Home() {
     >
       <span className="text-xs">⚡</span>
       <span className="text-[13px] text-text-2 flex-1 text-left">
-        Acesso expirou · <span className="text-primary font-semibold">Assinar R$49,90/ano →</span>
+        Acesso expirou · <span className="text-primary font-semibold">Assinar R$39,90/mês →</span>
       </span>
     </button>
   ) : null;
