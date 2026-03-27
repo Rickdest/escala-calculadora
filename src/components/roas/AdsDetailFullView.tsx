@@ -150,14 +150,18 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
   const prevAd = currentIndex > 0 ? allAds[currentIndex - 1] : null;
   const nextAd = currentIndex < allAds.length - 1 ? allAds[currentIndex + 1] : null;
 
-  const statusColor = classification?.cor || 'text-3';
+  const statusColorClass = classification
+    ? classification.classificacao === 'LUCRATIVO' ? 'text-success'
+    : classification.classificacao === 'MARGEM_APERTADA' ? 'text-warning'
+    : classification.classificacao === 'ABAIXO_EMPATE' ? 'text-warning'
+    : 'text-destructive'
+    : 'text-text-3';
 
-  // Semaphore bg classes
   const semaphoreBg = classification
-    ? classification.classificacao === 'LUCRATIVO' ? 'bg-emerald-500/5 border-emerald-500/20'
-    : classification.classificacao === 'MARGEM_APERTADA' ? 'bg-amber-500/5 border-amber-500/20'
-    : classification.classificacao === 'ABAIXO_EMPATE' ? 'bg-orange-500/5 border-orange-500/20'
-    : 'bg-red-500/5 border-red-500/20'
+    ? classification.classificacao === 'LUCRATIVO' ? 'bg-success/5 border-success/20'
+    : classification.classificacao === 'MARGEM_APERTADA' ? 'bg-warning/5 border-warning/20'
+    : classification.classificacao === 'ABAIXO_EMPATE' ? 'bg-warning/5 border-warning/20'
+    : 'bg-destructive/5 border-destructive/20'
     : 'bg-surface-2 border-border';
 
   // ═══ Right Column ═══
