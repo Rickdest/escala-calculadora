@@ -1,26 +1,23 @@
 
 
-## Melhorar seletor de produto na aba ROAS — mostrar lista visível no mobile
+## Mostrar 2 produtos extras abaixo do selecionado no picker ROAS
 
 ### Problema
-O `ProductPicker` atual mostra apenas um botão/card com "Selecione um produto..." e um botão "Trocar". No mobile, não fica claro que é preciso clicar ali. O usuário prefere ver uma lista/container de produtos diretamente.
+Com o produto pré-selecionado, o picker mostra apenas 1 card com botão "Trocar". No mobile o usuário não percebe que pode trocar.
 
-### Mudanças em `src/components/charts/RoasAnalysis.tsx`
+### Mudança em `src/components/charts/RoasAnalysis.tsx` — `ProductPicker`
 
-**Quando nenhum produto está selecionado (`!selectedProductId`):**
-- Em vez do picker fechado, mostrar uma **lista scrollável de produtos** como cards clicáveis (estilo similar ao dropdown já existente mas sempre visível)
-- Título "Selecione um produto" acima da lista
-- Cada item: imagem + nome + preço + badge ROAS (reaproveitando o layout do dropdown)
-- Max-height com scroll no mobile (~300px)
+**No estado com produto selecionado (linhas ~187-270):**
 
-**Quando um produto já está selecionado:**
-- Manter o picker compacto atual com botão "Trocar" (funciona bem nesse estado)
+Abaixo do card selecionado (e fora do dropdown), mostrar até **2 outros produtos** como mini-cards clicáveis semi-transparentes (`opacity-60 hover:opacity-100`), com estilo compacto:
+- Imagem menor (`w-8 h-8`), nome truncado, preço
+- Ao clicar, seleciona aquele produto diretamente
+- Se houver ≤1 produto total, não mostrar nada extra
+- Ordenar os outros produtos por `updatedAt` desc (mesma lógica do initial)
+- Separar com um label discreto tipo `"Outros produtos"` em `text-[10px] text-text-3`
 
-### Resultado
-- Usuário vê todos os produtos ao entrar na aba, sem precisar adivinhar que deve clicar
-- Após selecionar, o layout compacto com "Trocar" continua funcionando normalmente
-- Apenas mobile — desktop pode manter o mesmo comportamento
+Isso fica **sempre visível** (não dentro do dropdown), logo abaixo do card principal.
 
 ### Arquivo modificado
-- `src/components/charts/RoasAnalysis.tsx` (componente `ProductPicker`)
+- `src/components/charts/RoasAnalysis.tsx`
 
