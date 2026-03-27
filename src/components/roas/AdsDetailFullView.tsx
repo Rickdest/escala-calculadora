@@ -491,6 +491,23 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
     return `${f(ad.periodo_inicio)} – ${f(ad.periodo_fim)} (${dias} dias)`;
   })();
 
+  const handleExcelUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const validation = validateExcelFile(file);
+      if (!validation.valid) { toast.error(validation.error!); return; }
+      const buffer = await file.arrayBuffer();
+      const parsed = parseShopeeExcel(buffer);
+      setExcelData(parsed);
+      toast.success(`${parsed.totalDias} dias importados`);
+    } catch (err: any) {
+      toast.error(err?.message || 'Erro ao processar arquivo');
+    } finally {
+      if (excelInputRef.current) excelInputRef.current.value = '';
+    }
+  }, []);
+
   const effBarColor = efficiency.score >= 80 ? 'bg-success' : efficiency.score >= 60 ? 'bg-success/80' : efficiency.score >= 40 ? 'bg-warning' : 'bg-destructive';
 
   const currentIndex = allAds.findIndex(a => a.id === ad.id);
