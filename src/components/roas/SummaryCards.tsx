@@ -32,25 +32,6 @@ export function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
   // ROAS thermometer bar
   const roasBarWidth = Math.min((s.avgRoas / 10) * 100, 100);
 
-  // Position color/label
-  const positionColor = s.avgPosition === null
-    ? 'text-text-2'
-    : s.avgPosition <= 3
-    ? 'text-success'
-    : s.avgPosition <= 8
-    ? 'text-foreground'
-    : 'text-warning';
-
-  const positionLabel = s.avgPosition === null
-    ? '—'
-    : s.avgPosition <= 3
-    ? 'Top 3'
-    : s.avgPosition <= 8
-    ? '1ª página'
-    : '2ª+ página';
-
-  const showPositionWarning = s.avgPosition !== null && s.avgPosition > 8;
-
   const kpis = [
     {
       label: 'GMV TOTAL',
