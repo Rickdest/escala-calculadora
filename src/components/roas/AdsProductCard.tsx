@@ -12,6 +12,12 @@ function getPositionColor(pos: number) {
   return 'text-destructive';
 }
 
+function getRoasBg(roas: number) {
+  if (roas >= 5) return 'bg-success/10 border-success/20';
+  if (roas >= 2) return 'bg-warning/10 border-warning/20';
+  return 'bg-destructive/10 border-destructive/20';
+}
+
 export function AdsProductCard({
   ad, onClick, onLink, onQuickRegister, onUpdatePosition, onDelete,
 }: {
@@ -39,36 +45,28 @@ export function AdsProductCard({
 
   const custoUn = ad.itens_vendidos > 0 ? ad.despesas / ad.itens_vendidos : 0;
 
-  const metrics = [
-    { label: 'ROAS', value: roasDireto.toFixed(2), color: getRoasColor(roasDireto) },
-    { label: 'GMV', value: fmt(ad.gmv) },
-    { label: 'Gasto', value: fmt(ad.despesas) },
-    { label: 'Vendas', value: `${ad.itens_vendidos} un` },
-    { label: 'Posição', value: hasPosition ? `#${ad.posicao_media}` : '—', color: hasPosition ? getPositionColor(ad.posicao_media!) : 'text-text-3' },
-    { label: 'Custo/Un', value: custoUn > 0 ? fmt(custoUn) : '—' },
-  ];
-
   return (
     <div
       className={cn(
-        'rounded-xl border p-4 cursor-pointer transition-all active:scale-[0.995]',
+        'rounded-2xl border p-4 cursor-pointer transition-all active:scale-[0.995]',
         isLinked
           ? 'border-border bg-card hover:border-primary/30 hover:shadow-md hover:shadow-primary/5'
           : 'border-dashed border-border/60 bg-card/50 hover:border-primary/30'
       )}
       onClick={onClick}
     >
-      {/* Header: image + name + badge + period + delete */}
+      {/* ── HEADER: image + name + badge + actions ── */}
       <div className="flex items-start gap-3">
         {ad.product?.imageUrl ? (
-          <img src={ad.product.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0 ring-1 ring-border" />
+          <img src={ad.product.imageUrl} alt="" className="w-12 h-12 rounded-xl object-cover shrink-0" />
         ) : (
-          <div className="w-10 h-10 rounded-lg border border-border/60 bg-surface-2 flex items-center justify-center flex-shrink-0">
-            <Package className="w-4 h-4 text-text-3" />
+          <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center shrink-0">
+            <Package className="w-5 h-5 text-muted-foreground" />
           </div>
         )}
+
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-foreground truncate">{ad.nome_produto_csv || 'Produto sem nome'}</p>
+          <h3 className="font-bold text-sm text-foreground truncate">{ad.nome_produto_csv || 'Produto sem nome'}</h3>
           <div className="flex items-center gap-2 flex-wrap mt-0.5">
             {isLinked ? (
               <span className={cn('inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[10px] font-bold', cls.bg, cls.color)}>
@@ -79,19 +77,15 @@ export function AdsProductCard({
                 🔗 Não vinculado
               </span>
             )}
-            <span className="text-[10px] text-text-3 font-mono">{periodLabel}</span>
-            {efficiency && isLinked && ad.classificacao && (
-              <span className={cn('text-[10px] font-bold font-mono px-1.5 py-0.5 rounded-md bg-surface-2', efficiency.color)}>
-                {efficiency.score}/100
-              </span>
-            )}
+            <span className="text-[10px] text-muted-foreground font-mono">{periodLabel}</span>
           </div>
         </div>
-        <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
+
+        <div className="flex items-center gap-1 shrink-0" onClick={e => e.stopPropagation()}>
           {isLinked && (
             <button
               onClick={onLink}
-              className="p-1.5 rounded-lg text-text-3/40 hover:text-primary hover:bg-primary/10 transition-colors"
+              className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-primary hover:bg-primary/10 transition-colors"
               title="Trocar vínculo"
             >
               <Link2 className="w-3.5 h-3.5" />
@@ -99,7 +93,7 @@ export function AdsProductCard({
           )}
           <button
             onClick={onDelete}
-            className="p-1.5 rounded-lg text-text-3/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
+            className="p-1.5 rounded-lg text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
             title="Excluir"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -107,19 +101,64 @@ export function AdsProductCard({
         </div>
       </div>
 
-      {/* Metrics: 6 columns */}
-      <div className="mt-3 grid grid-cols-6 gap-1 py-3 border-t border-border/40">
-        {metrics.map(m => (
-          <div key={m.label} className="text-center min-w-0">
-            <p className="text-[9px] uppercase tracking-wider text-text-3 font-bold">{m.label}</p>
-            <p className={cn('text-xs font-bold font-mono tabular-nums truncate mt-0.5', m.color || 'text-text-2')}>
-              {m.value}
+      {/* ── PRIMARY METRICS: 3-column cards (like ProductCard) ── */}
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        {/* ROAS */}
+        <div className={cn('rounded-xl p-2.5 flex flex-col items-start border', getRoasBg(roasDireto))}>
+          <p className={cn('font-mono text-base font-extrabold leading-tight', getRoasColor(roasDireto))}>
+            {roasDireto.toFixed(2)}
+          </p>
+          <p className="text-[10px] font-medium text-muted-foreground mt-0.5">ROAS</p>
+          {efficiency && isLinked && ad.classificacao && (
+            <p className={cn('text-[9px] font-bold font-mono mt-0.5', efficiency.color)}>
+              Score {efficiency.score}/100
             </p>
-          </div>
-        ))}
+          )}
+        </div>
+
+        {/* GMV */}
+        <div className="rounded-xl p-2.5 flex flex-col items-start border border-border/60 bg-secondary/30">
+          <p className="font-mono text-sm font-extrabold leading-tight text-foreground truncate w-full">
+            {fmt(ad.gmv)}
+          </p>
+          <p className="text-[10px] font-medium text-muted-foreground mt-0.5">GMV</p>
+        </div>
+
+        {/* Gasto */}
+        <div className="rounded-xl p-2.5 flex flex-col items-start border border-border/60 bg-secondary/30">
+          <p className="font-mono text-sm font-extrabold leading-tight text-foreground truncate w-full">
+            {fmt(ad.despesas)}
+          </p>
+          <p className="text-[10px] font-medium text-muted-foreground mt-0.5">Gasto</p>
+        </div>
       </div>
 
-      {/* Action area — only for unlinked */}
+      {/* ── SECONDARY METRICS: 3-column smaller row ── */}
+      <div className="mt-2 grid grid-cols-3 gap-1.5">
+        {/* Posição */}
+        <div className="rounded-lg bg-secondary/50 px-2.5 py-1.5 flex items-center justify-between">
+          <span className="text-[10px] font-medium text-muted-foreground">Posição</span>
+          <span className={cn('text-xs font-bold font-mono', hasPosition ? getPositionColor(ad.posicao_media!) : 'text-muted-foreground')}>
+            {hasPosition ? `#${ad.posicao_media}` : '—'}
+          </span>
+        </div>
+
+        {/* Vendas */}
+        <div className="rounded-lg bg-secondary/50 px-2.5 py-1.5 flex items-center justify-between">
+          <span className="text-[10px] font-medium text-muted-foreground">Vendas</span>
+          <span className="text-xs font-bold font-mono text-foreground">{ad.itens_vendidos} un</span>
+        </div>
+
+        {/* Custo/Un */}
+        <div className="rounded-lg bg-secondary/50 px-2.5 py-1.5 flex items-center justify-between">
+          <span className="text-[10px] font-medium text-muted-foreground">Custo/Un</span>
+          <span className="text-xs font-bold font-mono text-foreground">
+            {custoUn > 0 ? fmt(custoUn) : '—'}
+          </span>
+        </div>
+      </div>
+
+      {/* ── ACTION AREA: unlinked ── */}
       {!isLinked && (
         <div className="mt-3 pt-3 border-t border-border/40" onClick={e => e.stopPropagation()}>
           <p className="text-[11px] text-warning mb-2 flex items-center gap-1">⚠️ Vincule para ver lucratividade</p>
@@ -139,6 +178,8 @@ export function AdsProductCard({
           </div>
         </div>
       )}
+
+      {/* ── WARNING: linked but no price ── */}
       {isLinked && (!ad.roas_empate || ad.roas_empate <= 0) && (
         <div className="mt-3 pt-3 border-t border-border/40">
           <p className="text-xs text-warning">⚠️ Produto sem custo/preço configurado.</p>
