@@ -56,12 +56,40 @@ function normalize(s: string): string {
   return s.toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
+/** Calculates similarity ratio between two strings (0-1) using longest common subsequence */
+function similarity(a: string, b: string): number {
+  if (a === b) return 1;
+  if (!a || !b) return 0;
+  const lenA = a.length;
+  const lenB = b.length;
+  // LCS-based similarity
+  const dp: number[][] = Array.from({ length: lenA + 1 }, () => Array(lenB + 1).fill(0));
+  for (let i = 1; i <= lenA; i++) {
+    for (let j = 1; j <= lenB; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1] ? dp[i - 1][j - 1] + 1 : Math.max(dp[i - 1][j], dp[i][j - 1]);
+    }
+  }
+  return (2 * dp[lenA][lenB]) / (lenA + lenB);
+}
+
+const MATCH_THRESHOLD = 0.75;
+
 function findMatch(csvName: string, products: Product[]): Product | undefined {
   const n = normalize(csvName);
-  let match = products.find(p => normalize(p.name) === n);
-  if (match) return match;
-  match = products.find(p => n.includes(normalize(p.name)) || normalize(p.name).includes(n));
-  return match;
+  // 1) Exact match
+  const exact = products.find(p => normalize(p.name) === n);
+  if (exact) return exact;
+  // 2) Similarity-based match (must exceed threshold)
+  let best: Product | undefined;
+  let bestScore = 0;
+  for (const p of products) {
+    const score = similarity(n, normalize(p.name));
+    if (score > bestScore) {
+      bestScore = score;
+      best = p;
+    }
+  }
+  return bestScore >= MATCH_THRESHOLD ? best : undefined;
 }
 
 export function useAdsData() {
