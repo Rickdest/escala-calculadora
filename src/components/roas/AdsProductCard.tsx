@@ -116,19 +116,25 @@ export function AdsProductCard({
           </div>
         </div>
 
-        {/* ── SECONDARY METRICS: subtle bottom row ── */}
-        <div className="grid grid-cols-3 gap-2 border-t border-border/40 pt-2.5">
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
-            <MapPin className="w-3.5 h-3.5 shrink-0" />
-            {hasPosition ? <span className={cn('font-bold text-sm', getPositionColor(ad.posicao_media!))}>#{ad.posicao_media}</span> : <span>—</span>}
+        {/* ── SECONDARY METRICS ── */}
+        <div className="grid grid-cols-3 gap-3 border-t border-border/40 pt-2.5">
+          <div className="text-center">
+            <p className={cn('font-mono text-lg font-extrabold leading-tight', hasPosition ? getPositionColor(ad.posicao_media!) : 'text-muted-foreground')}>
+              {hasPosition ? `#${ad.posicao_media}` : '—'}
+            </p>
+            <p className="text-[10px] font-medium text-muted-foreground mt-0.5">POSIÇÃO</p>
           </div>
-          <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground font-mono">
-            <ShoppingCart className="w-3.5 h-3.5 shrink-0" />
-            <span className="font-bold text-foreground">{ad.itens_vendidos}</span> un
+          <div className="text-center">
+            <p className="font-mono text-lg font-extrabold leading-tight text-foreground">
+              {ad.itens_vendidos}
+            </p>
+            <p className="text-[10px] font-medium text-muted-foreground mt-0.5">VENDAS</p>
           </div>
-          <div className="flex items-center justify-end gap-1.5 text-xs text-muted-foreground font-mono">
-            <DollarSign className="w-3.5 h-3.5 shrink-0" />
-            <span className="font-bold text-foreground">{custoUn > 0 ? fmtShort(custoUn) : '—'}</span>
+          <div className="text-center">
+            <p className="font-mono text-lg font-extrabold leading-tight text-foreground">
+              {custoUn > 0 ? fmtShort(custoUn) : '—'}
+            </p>
+            <p className="text-[10px] font-medium text-muted-foreground mt-0.5">CUSTO/UN</p>
           </div>
         </div>
 
