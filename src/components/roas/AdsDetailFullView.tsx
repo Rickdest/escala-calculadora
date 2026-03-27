@@ -18,9 +18,6 @@ import {
   LineChart as ReLineChart, Line, XAxis, YAxis, Tooltip as ReTooltip,
   ReferenceLine, ResponsiveContainer,
 } from 'recharts';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { EnrichedAdsData } from '@/hooks/useAdsData';
 import {
   calcularRoasEmpate, classificarAnuncio, sugerirMetaRoas,
   classificarPosicao, getDiagnostico, detectarCrossSell,
