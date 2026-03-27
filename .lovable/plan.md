@@ -1,35 +1,32 @@
 
 
-## Subir Histórico de Ajustes + Marcações no gráfico
+## Adicionar botão "Atualizar CSV" + melhorar marcações no gráfico
 
 ### Problema
-A seção "Histórico de Ajustes" está no final da página (seção 7), muito escondida. Além disso, o gráfico de ROAS meta não mostra marcações visuais de cada alteração feita.
+1. Após importar o log, não há botão para atualizar/reimportar — o usuário fica preso
+2. As marcações no gráfico não estão aparecendo corretamente por dia
 
-### Mudanças em `src/components/roas/AdsDetailFullView.tsx`
+### Mudanças em `src/components/roas/AdsDetailFullView.tsx` — `OperationLogTimeline`
 
-**1. Mover timeline para cima — após "Posicionamento" (seção 4)**
+**1. Botão "Atualizar" quando já tem dados (linhas ~194-197)**
 
-Na função `renderRightColumn()` (~linha 884-885), mover o `<OperationLogTimeline>` de depois do Halo Effect para logo após a seção de Posicionamento (~linha 786). Isso coloca a timeline como seção 5, empurrando ACOS vs Margem e as demais para baixo.
+Adicionar no header (ao lado de "Histórico de Ajustes") um botão compacto "Atualizar CSV" com ícone `Upload`. Manter o `<input type="file">` já existente e reutilizar `handleImportLog`. Layout: `flex items-center justify-between` no header.
 
-**2. Adicionar marcações no gráfico para cada evento**
+**2. Corrigir marcações no gráfico — usar data completa como chave**
 
-No `ReLineChart` dentro do `OperationLogTimeline`:
-- Para cada entrada do `sortedEvents` (não apenas roas_target, mas budget, quick_boost, etc.), adicionar um `<ReferenceLine x={date}>` vertical com:
-  - Cor do ícone correspondente ao tipo (laranja roas_target, azul budget, amarelo quick_boost, verde campaign_created)
-  - Stroke tracejado fino
-  - Label no topo com texto curto (ex: "ROAS 14.0", "Orç R$30", "Boost", "Criou")
-- Usar `<ReferenceDot>` nos pontos de mudança de ROAS para destacar com dot maior
-- Importar `ReferenceDot` do recharts (já disponível)
+O problema atual: eventos no mesmo dia geram o mesmo `dateLabel` (ex: "03/18"), causando sobreposição e confusão. Corrigir:
 
-**3. Ajustar dados do gráfico para incluir eventos não-ROAS**
+- Usar `fullDate` (timestamp completo) como `dataKey` do eixo X, mas formatar o tick para mostrar só "dd/MM"
+- Garantir que cada evento tenha um ponto único no eixo X
+- As `ReferenceLine` verticais usam o `fullDate` como `x` (não o dateLabel truncado)
+- Cada tipo de evento (roas_target, budget, quick_boost, campaign_created) gera uma linha vertical tracejada com cor e label curto
+- Agrupar eventos do mesmo dia com labels empilhados (se necessário, concatenar: "ROAS 14 · Orç R$30")
 
-Atualmente o eixo X só tem pontos de `roas_target` e `campaign_created`. Para que as `ReferenceLine` verticais dos outros eventos (budget, boost) apareçam corretamente:
-- Incluir TODOS os eventos no eixo X como pontos de dados (com valor ROAS repetido do ponto anterior, ou null)
-- Ou usar `ReferenceLine` com valor de x baseado no label de data correspondente
+**3. Melhorar visibilidade das marcações**
 
-### Resultado
-- Timeline visível mais cedo ao rolar a página
-- Cada ajuste marcado visualmente no gráfico com linha vertical colorida e label
+- Aumentar `strokeWidth` das ReferenceLine para 1.5
+- Labels com fundo semi-transparente para não sobrepor a linha do gráfico
+- Se não tem pontos ROAS suficientes para o chart (< 2), mostrar apenas a lista de eventos com um mini indicador visual por tipo
 
 ### Arquivo modificado
 - `src/components/roas/AdsDetailFullView.tsx`
