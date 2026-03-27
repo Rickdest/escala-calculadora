@@ -1,23 +1,35 @@
 
 
-## Mostrar 2 produtos extras abaixo do selecionado no picker ROAS
+## Redesign do ProductPicker na aba ROAS — navegação estilo select nativo
 
 ### Problema
-Com o produto pré-selecionado, o picker mostra apenas 1 card com botão "Trocar". No mobile o usuário não percebe que pode trocar.
+O picker atual ocupa muito espaço vertical com card grande + 2 mini-cards + dropdown separado. No mobile (390px), fica confuso e pesado.
 
-### Mudança em `src/components/charts/RoasAnalysis.tsx` — `ProductPicker`
+### Nova abordagem — Select compacto com horizontal scroll
 
-**No estado com produto selecionado (linhas ~187-270):**
+Substituir o layout atual por um **carrossel horizontal de chips/cards compactos** (padrão comum em apps de finanças e analytics):
 
-Abaixo do card selecionado (e fora do dropdown), mostrar até **2 outros produtos** como mini-cards clicáveis semi-transparentes (`opacity-60 hover:opacity-100`), com estilo compacto:
-- Imagem menor (`w-8 h-8`), nome truncado, preço
-- Ao clicar, seleciona aquele produto diretamente
-- Se houver ≤1 produto total, não mostrar nada extra
-- Ordenar os outros produtos por `updatedAt` desc (mesma lógica do initial)
-- Separar com um label discreto tipo `"Outros produtos"` em `text-[10px] text-text-3`
+**`src/components/charts/RoasAnalysis.tsx` — refatorar `ProductPicker`**
 
-Isso fica **sempre visível** (não dentro do dropdown), logo abaixo do card principal.
+1. **Layout horizontal scrollável** (sempre visível, sem dropdown):
+   - Row com `flex overflow-x-auto gap-2 scrollbar-none pb-1`
+   - Cada produto = chip compacto com imagem pequena (`w-6 h-6`), nome truncado (max ~80px), badge ROAS
+   - Produto selecionado: `border-primary bg-primary/10 ring-2 ring-primary/30`
+   - Não selecionado: `border-border bg-card opacity-70`
+
+2. **Chip selecionado com info expandida** abaixo do carrossel:
+   - Uma linha compacta mostrando: imagem + nome + preço venda + preço custo
+   - Altura total: ~80px (vs ~200px+ atual)
+
+3. **Remover**: dropdown overlay, mini-cards "Outros produtos", busca inline
+   - Se >8 produtos, manter um botão "..." no final do scroll que abre modal de busca
+
+### Resultado
+- Todos os produtos visíveis de uma vez (scroll horizontal)
+- Seleção com 1 toque
+- ~60% menos espaço vertical
+- Padrão familiar (tabs/chips de seleção)
 
 ### Arquivo modificado
-- `src/components/charts/RoasAnalysis.tsx`
+- `src/components/charts/RoasAnalysis.tsx` (apenas o componente `ProductPicker`)
 
