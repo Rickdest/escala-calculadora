@@ -586,23 +586,33 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         const pos = ad.posicao_media!;
         const isTop = pos <= 8;
         const isMid = pos > 8 && pos <= 20;
-        const pageLabel = pos <= 3 ? 'Top 3' : pos <= 8 ? '1ª Página' : pos <= 20 ? '2ª Página' : '3ª Página ou mais';
+        const pageLabel = pos <= 3 ? 'Top 3' : pos <= 8 ? '1ª Página' : pos <= 20 ? '2ª Página' : '3ª Página+';
         const posColor = isTop ? 'text-success' : isMid ? 'text-warning' : 'text-destructive';
-        const posBg = isTop ? 'bg-success/8 border-success/25' : isMid ? 'bg-warning/8 border-warning/25' : 'bg-destructive/8 border-destructive/25';
-        const posHint = isTop ? 'Excelente visibilidade — considere escalar orçamento'
-          : isMid ? 'Visibilidade média — reduza a meta de ROAS para subir'
+        const posBorder = isTop ? 'border-success/25' : isMid ? 'border-warning/25' : 'border-destructive/25';
+        const posBg = isTop ? 'bg-success/5' : isMid ? 'bg-warning/5' : 'bg-destructive/5';
+        const posHint = isTop
+          ? 'Ótima visibilidade — considere escalar orçamento'
+          : isMid
+          ? 'Visibilidade média — reduza a meta de ROAS para subir'
           : 'Visibilidade baixa — reduza a meta de ROAS com urgência';
         return (
-          <div className={cn('rounded-xl border p-4 flex items-center justify-between gap-4 mb-5', posBg)}>
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Posicionamento</p>
-              <p className={cn('text-xs font-medium', posColor)}>{posHint}</p>
-            </div>
-            <div className="text-right flex-shrink-0">
-              <p className={cn('font-black font-mono tabular-nums leading-none', posColor)}>
-                <span className="text-lg">#</span><span className="text-5xl">{pos}</span>
+          <div className={cn('rounded-xl border p-4 flex items-center justify-between gap-4 mb-5', posBg, posBorder)}>
+            <div className="flex-1">
+              <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1 flex items-center gap-1.5">
+                <MapPin className="w-3 h-3" /> Posicionamento
               </p>
-              <p className={cn('text-[11px] font-bold mt-1', posColor)}>{pageLabel}</p>
+              <p className={cn('text-xs font-semibold leading-snug', posColor)}>{posHint}</p>
+              <p className={cn('text-[11px] font-bold mt-2 px-2 py-0.5 rounded-md inline-block', posColor,
+                isTop ? 'bg-success/10' : isMid ? 'bg-warning/10' : 'bg-destructive/10'
+              )}>
+                {pageLabel}
+              </p>
+            </div>
+            <div className="flex-shrink-0 text-right">
+              <p className={cn('leading-none font-black font-mono tabular-nums', posColor)}>
+                <span className="text-xl">#</span>
+                <span className="text-6xl">{pos}</span>
+              </p>
             </div>
           </div>
         );
@@ -635,12 +645,20 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
 
       {/* Tabs */}
       <Tabs defaultValue="diagnostico" className="w-full">
-        <TabsList className="w-full md:w-auto mb-5 bg-card border border-border p-1 rounded-lg h-12">
-          <TabsTrigger value="diagnostico" className="flex-1 md:flex-none text-xs font-bold gap-1.5 data-[state=active]:bg-surface-2 data-[state=active]:text-foreground text-text-3 rounded-md h-9">
-            <Target className="w-3.5 h-3.5" /> Diagnóstico & Ação
+        <TabsList className="w-full h-11 bg-secondary border border-border rounded-xl p-1 mb-5">
+          <TabsTrigger
+            value="diagnostico"
+            className="flex-1 h-9 rounded-lg text-sm font-bold gap-2 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground"
+          >
+            <Target className="w-3.5 h-3.5" />
+            Diagnóstico & Ação
           </TabsTrigger>
-          <TabsTrigger value="metricas" className="flex-1 md:flex-none text-xs font-bold gap-1.5 data-[state=active]:bg-surface-2 data-[state=active]:text-foreground text-text-3 rounded-md h-9">
-            <TrendingUp className="w-3.5 h-3.5" /> Métricas & Histórico
+          <TabsTrigger
+            value="metricas"
+            className="flex-1 h-9 rounded-lg text-sm font-bold gap-2 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground"
+          >
+            <TrendingUp className="w-3.5 h-3.5" />
+            Métricas & Histórico
           </TabsTrigger>
         </TabsList>
 
