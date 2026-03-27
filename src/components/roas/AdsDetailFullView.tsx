@@ -17,7 +17,7 @@ import { OperationLogEntry, detectAndParseCSV, validateCSVSecurity } from '@/lib
 import { toast } from 'sonner';
 import {
   LineChart as ReLineChart, Line, XAxis, YAxis, Tooltip as ReTooltip,
-  ReferenceLine, ResponsiveContainer,
+  ReferenceLine, ReferenceDot, ResponsiveContainer,
 } from 'recharts';
 import {
   calcularRoasEmpate, classificarAnuncio, sugerirMetaRoas,
@@ -155,14 +155,40 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate }: { 
     );
   }
 
-  const roasEntries = operationLog.filter(e => e.field === 'roas_target' || e.field === 'campaign_created');
-  const roasTimeline = roasEntries.map(e => ({
-    date: e.timestamp.slice(5, 10).replace('-', '/'),
-    roas: parseFloat(e.toValue ?? '0'),
-  }));
+  const sortedEvents = [...operationLog].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
-  const showChart = roasTimeline.length >= 2;
-  const sortedEvents = [...operationLog].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+  // Build unified timeline: all events on X axis, ROAS values carried forward
+  const chartData: { date: string; roas: number | null; fullDate: string }[] = [];
+  let lastRoas: number | null = null;
+  for (const ev of sortedEvents) {
+    const dateLabel = ev.timestamp.slice(5, 10).replace('-', '/');
+    if (ev.field === 'roas_target' || ev.field === 'campaign_created') {
+      lastRoas = parseFloat(ev.toValue ?? '0');
+      chartData.push({ date: dateLabel, roas: lastRoas, fullDate: ev.timestamp });
+    } else {
+      chartData.push({ date: dateLabel, roas: lastRoas, fullDate: ev.timestamp });
+    }
+  }
+
+  const roasPoints = chartData.filter(d => d.roas !== null);
+  const showChart = roasPoints.length >= 2;
+  const displayEvents = [...operationLog].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+
+  // Event markers colors
+  const EVENT_COLORS: Record<string, string> = {
+    roas_target: 'hsl(var(--primary))',
+    budget: 'hsl(210, 80%, 55%)',
+    quick_boost: 'hsl(var(--warning))',
+    campaign_created: 'hsl(var(--success))',
+    other: 'hsl(var(--muted-foreground))',
+  };
+  const EVENT_SHORT_LABEL: Record<string, (e: OperationLogEntry) => string> = {
+    roas_target: (e) => `ROAS ${e.toValue ?? '?'}`,
+    budget: (e) => `Orç ${e.toValue ?? '?'}`,
+    quick_boost: () => 'Boost',
+    campaign_created: () => 'Criou',
+    other: () => '•',
+  };
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
@@ -171,26 +197,46 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate }: { 
       </p>
 
       {showChart && (
-        <div className="h-[120px] w-full">
+        <div className="h-[150px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <ReLineChart data={roasTimeline} margin={{ top: 5, right: 10, bottom: 0, left: 0 }}>
+            <ReLineChart data={chartData} margin={{ top: 18, right: 10, bottom: 0, left: 0 }}>
               <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
               <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={30} domain={['auto', 'auto']} />
               <ReTooltip
                 contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid hsl(var(--border))' }}
-                formatter={(v: number) => [`${v}`, 'ROAS meta']}
+                formatter={(v: number | null) => [v !== null ? `${v}` : '–', 'ROAS meta']}
               />
               {roasEmpate && roasEmpate > 0 && roasEmpate !== Infinity && (
                 <ReferenceLine y={roasEmpate} stroke="hsl(var(--warning))" strokeDasharray="4 4" label={{ value: 'Empate', fontSize: 9, fill: 'hsl(var(--warning))' }} />
               )}
-              <Line type="monotone" dataKey="roas" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: 'hsl(var(--primary))' }} />
+              {/* Vertical markers for each event */}
+              {sortedEvents.map((ev, i) => {
+                const dateLabel = ev.timestamp.slice(5, 10).replace('-', '/');
+                const color = EVENT_COLORS[ev.field] || EVENT_COLORS.other;
+                const labelFn = EVENT_SHORT_LABEL[ev.field] || EVENT_SHORT_LABEL.other;
+                return (
+                  <ReferenceLine
+                    key={`evt-${i}`}
+                    x={dateLabel}
+                    stroke={color}
+                    strokeDasharray="3 3"
+                    strokeWidth={1}
+                    label={{ value: labelFn(ev), position: 'top', fontSize: 8, fill: color, fontWeight: 600 }}
+                  />
+                );
+              })}
+              <Line type="monotone" dataKey="roas" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: 'hsl(var(--primary))' }} connectNulls />
+              {/* Highlight dots on ROAS change points */}
+              {chartData.filter(d => d.roas !== null && sortedEvents.some(e => (e.field === 'roas_target' || e.field === 'campaign_created') && e.timestamp.slice(5, 10).replace('-', '/') === d.date)).map((d, i) => (
+                <ReferenceDot key={`dot-${i}`} x={d.date} y={d.roas!} r={6} fill="hsl(var(--primary))" stroke="hsl(var(--background))" strokeWidth={2} />
+              ))}
             </ReLineChart>
           </ResponsiveContainer>
         </div>
       )}
 
       <div className="space-y-1.5 max-h-[240px] overflow-y-auto">
-        {sortedEvents.map((entry, i) => {
+        {displayEvents.map((entry, i) => {
           const fi = FIELD_ICONS[entry.field] || FIELD_ICONS.other;
           const Icon = fi.icon;
           return (
@@ -785,7 +831,10 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         </div>
       )}
 
-      {/* 5. ACOS vs Margem */}
+      {/* 5. Evolução Temporal — Operation Log Timeline (moved up) */}
+      <OperationLogTimeline adProductId={ad.product_id} adShopeeProductId={ad.shopee_product_id} roasEmpate={roasEmpate} />
+
+      {/* 6. ACOS vs Margem */}
       {margemContrib !== null && (
         <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
           <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">ACOS vs Margem</p>
@@ -822,7 +871,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         </div>
       )}
 
-      {/* 6. Geral vs Direto */}
+      {/* 7. Geral vs Direto */}
       {ad.roas_direto > 0 && ad.gmv_direto > 0 && ad.gmv_direto !== ad.gmv && (
         <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
           <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Geral vs Direto</p>
@@ -880,9 +929,6 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
           <p className="text-sm text-text-2">{halo.message}</p>
         </div>
       )}
-
-      {/* 7. Evolução Temporal — Operation Log Timeline */}
-      <OperationLogTimeline adProductId={ad.product_id} adShopeeProductId={ad.shopee_product_id} roasEmpate={roasEmpate} />
     </div>
   );
 
