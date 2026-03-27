@@ -1,89 +1,32 @@
 
+## Corrigir importação do CSV de Operation Log + garantir gráfico funcional
 
-## Implementar Operation Log Parser + Timeline + Card Compacto de Ads
+### Problemas identificados
 
-### Visão Geral
-3 melhorias paralelas: parser de log de operações da Shopee, armazenamento no banco, timeline visual no detalhe de Ads, e card compacto de Ads no ProductCard.
+1. **Security validation quebra em CSV com campos quoted multi-line**: O "Create Campaign" no CSV tem detalhes entre aspas com quebras de linha internas. A validação de segurança faz `line.split(',')` sem respeitar aspas — campos internos com vírgulas são tratados como campos separados, podendo falhar na checagem de `field.length > 500`.
 
----
+2. **Parser não lida com campos multi-line**: `parseOperationLogCSV` faz `split('\n')` e processa linha a linha. O "Create Campaign" tem um campo com `\n` dentro de aspas — isso quebra a linha em múltiplas, e o parser não reconhece como uma entrada válida.
 
-### 1. Parser do Operation Log — `src/lib/shopeeAdsParser.ts`
+3. **Sem botão de importação do log na tela de detalhe de Ads**: O `OperationLogTimeline` mostra "Importe o log de operações" mas não tem botão de importação. O usuário precisa ir até o produto para importar.
 
-**Adicionar ao final do arquivo:**
-- Interface `OperationField` (union type) e `OperationLogEntry`
-- Função `parseOperationLogCSV(content)`:
-  - Detecta pelo header "Registro de operações"
-  - Extrai metadata (ID do Produto) das linhas iniciais
-  - Encontra header "Atualizar horário" e parseia cada linha de dados
-  - Mapeia eventType → field (`roas_target`, `budget`, `quick_boost`, `campaign_created`, `other`)
-  - Extrai fromValue/toValue via regex nos details
-  - Retorna ordenado por timestamp ASC
-- Função `detectAndParseCSV(content)` que retorna `{ type, performanceData?, operationLog? }`
-  - "Relatório de Anúncios de Produto" → performance (chama `parseShopeeAdsCSV`)
-  - "Registro de operações" → operation_log (chama `parseOperationLogCSV`)
-  - Else → unknown
+### Correções
 
-### 2. Migration — coluna `operation_log` em `product_ads_metrics`
+**1. `src/lib/shopeeAdsParser.ts` — Security validation e parser**
 
-```sql
-ALTER TABLE public.product_ads_metrics
-  ADD COLUMN IF NOT EXISTS operation_log JSONB DEFAULT NULL;
-```
+- `validateCSVSecurity`: substituir o loop naive `line.split(',')` por um check que respeita campos entre aspas, ou simplesmente remover a checagem de campo individual e manter apenas o check de tamanho total do arquivo (5MB) e extensão — que já são suficientes.
 
-### 3. Fluxo de importação — `src/components/forms/ProductAdsSection.tsx`
+- `parseOperationLogCSV`: reescrever para lidar com campos quoted multi-line. Antes de fazer `split('\n')`, pré-processar o conteúdo para juntar linhas que estão dentro de aspas abertas. Isso garante que "Create Campaign" com detalhes multi-line vire uma única linha lógica.
 
-- Substituir `parseShopeeAdsCSV` por `detectAndParseCSV`
-- Se `type === 'operation_log'`: salvar no campo `operation_log` da linha existente (match por `shopee_product_id` ou `product_id`)
-- Se `type === 'performance'`: fluxo atual inalterado
-- Se `type === 'unknown'`: toast de erro
+**2. `src/components/roas/AdsDetailFullView.tsx` — Botão de importação no timeline**
 
-### 4. Hook `useProductAdsMetrics.ts`
+- Adicionar um `<input type="file" ref>` e botão "Importar Log" no empty state do `OperationLogTimeline`
+- Ao selecionar arquivo, usar `detectAndParseCSV`, validar, e salvar no `product_ads_metrics.operation_log` via `product_id` do ad
+- Após salvar, recarregar o log
 
-- Adicionar `operationLog?: OperationLogEntry[]` ao retorno de `rowToMetric`
-- Ler `r.operation_log` e passar adiante
+**3. `src/components/roas/AdsDetailFullView.tsx` — Busca do log também por `shopee_product_id`**
 
-### 5. Timeline no `AdsDetailFullView.tsx`
-
-Substituir o placeholder "Evolução Temporal" (linhas ~707-717) por conteúdo real quando `operationLog` existir:
-
-**Bloco A — Mini gráfico ROAS meta:**
-- `LineChart` do recharts (já instalado), 120px de altura
-- Eixo X: datas dos eventos `roas_target` e `campaign_created`
-- Eixo Y: valor ROAS meta
-- Linha laranja (primary), dots com tooltip
-- Linha tracejada horizontal amarela no ROAS Empate (se disponível)
-- Só aparece se ≥2 pontos de `roas_target`
-
-**Bloco B — Lista de eventos:**
-- Todos os eventos do log, mais recente primeiro
-- Ícone por tipo (Target/DollarSign/Zap/Plus/Settings)
-- Label formatado: "ROAS meta: 11.1 → 14.0", "Orçamento: R$30 → R$40", etc.
-- Data formato "dd/MM HH:mm"
-- Header: "Histórico de Ajustes" com ícone History
-
-**Props:** O `ad` (`EnrichedAdsData`) já vem do `useAdsData` — precisa propagar `operation_log` do banco para o `EnrichedAdsData` ou buscar separadamente. Buscar via `product_ads_metrics` se `ad.product_id` existir.
-
-### 6. Card Compacto de Ads no `ProductCard.tsx`
-
-Substituir a seção de Ads atual (linhas ~244-289) pelo layout com cores por faixa:
-- **Posição**: fundo verde (≤10), amarelo (11-20), vermelho (>20) com `#N` grande
-- **ROAS**: fundo colorido por faixa com valor grande + "direto X.XX" abaixo
-- **Custo/un**: fundo neutro com valor + "N vendidos" abaixo
-- Header com dot de status + "Ads Shopee" + período
-- Footer hint "↗ Ver detalhes · ACOS, GMV, Gasto"
+- O `OperationLogTimeline` busca por `product_id`, mas o operation log pode estar vinculado via `shopee_product_id` (que vem do CSV). Adicionar fallback de busca.
 
 ### Arquivos modificados
-1. `src/lib/shopeeAdsParser.ts` — novas interfaces e funções
-2. `src/components/forms/ProductAdsSection.tsx` — usar `detectAndParseCSV`
-3. `src/hooks/useProductAdsMetrics.ts` — propagar `operationLog`
-4. `src/components/roas/AdsDetailFullView.tsx` — timeline real
-5. `src/components/cards/ProductCard.tsx` — card compacto de Ads
-6. Migration SQL — adicionar coluna `operation_log`
-
-### Restrições respeitadas
-- Nenhum cálculo de ROAS alterado
-- `calcProductRoas` e `roasUtils.ts` intocados
-- Migration aditiva (DEFAULT NULL)
-- Gráfico só aparece com ≥2 entradas de `roas_target`
-- Importação de Operation Log opcional
-
+1. `src/lib/shopeeAdsParser.ts` — fix security validation + multi-line CSV handling
+2. `src/components/roas/AdsDetailFullView.tsx` — botão import no timeline + busca por shopee_product_id
