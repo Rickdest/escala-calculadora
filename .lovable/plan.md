@@ -1,22 +1,21 @@
 
 
-## Ajustar layout dos cards de Ads: 3 colunas desktop + métricas horizontais
+## Análise: Cards da aba Ads no mobile
 
-### Mudanças
+### Resultado da verificação
 
-**1. `src/components/roas/AdsTab.tsx` (linha 263)**
-- Trocar `grid-cols-1 md:grid-cols-2` por `grid-cols-1 md:grid-cols-2 lg:grid-cols-3` para 3 colunas no desktop
+Após analisar o código atual do `AdsProductCard.tsx` e comparar com o screenshot fornecido, o layout **já está idêntico** ao que você deseja:
 
-**2. `src/components/roas/AdsProductCard.tsx`**
-- Reorganizar o layout para mostrar as 6 métricas (ROAS, GMV, Gasto, Vendas, Posição, Custo/Un) em uma linha horizontal, como na imagem de referência
-- Mover o ROAS de volta para o grid junto com as outras métricas (em destaque com cor)
-- Header: imagem + nome + badge "Não vinculado" + período + delete icon no canto superior direito
-- Métricas: grid de 6 colunas com labels em cima e valores embaixo
-- Para não vinculados: mensagem "Vincule para ver lucratividade" + botões Vincular (sólido) e Cadastrar (outline)
-- Remover o ROAS destacado no canto superior direito (volta ao grid)
-- Remover a barra de progresso ROAS vs empate para simplificar
+- Header: imagem do produto + nome truncado + badge "Não vinculado" + período
+- Ícone de lixeira no canto superior direito
+- Grid de 6 métricas (ROAS, GMV, GASTO, VENDAS, POSIÇÃO, CUSTO/UN) em layout 3×2 no mobile
+- Botões "Vincular" e "Cadastrar" visíveis para produtos não vinculados
+- Aviso "⚠️ Produto sem custo/preço configurado" para vinculados sem preço
+- Grid de 1 coluna no mobile, 2 no tablet, 3 no desktop
 
-### Arquivos modificados
-- `src/components/roas/AdsTab.tsx`
-- `src/components/roas/AdsProductCard.tsx`
+### Nenhuma mudança necessária
+
+O código atual já produz exatamente o layout mostrado no screenshot. Se você está vendo algo diferente no preview, pode ser cache — tente recarregar a página (pull-to-refresh ou F5).
+
+Se há algo específico que está diferente do que você vê no seu dispositivo, por favor tire um screenshot do estado atual para que eu possa comparar e identificar a diferença.
 
