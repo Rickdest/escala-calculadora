@@ -99,6 +99,7 @@ export function useAdsData() {
   const [loading, setLoading] = useState(true);
   const [operating, setOperating] = useState(false);
   const dataRef = useRef<EnrichedAdsData[]>([]);
+  const hasResolved = useRef(false);
   const operationLock = useRef(false);
   const importCount = useRef(0);
   const importResetTimer = useRef<ReturnType<typeof setTimeout>>();
@@ -135,7 +136,7 @@ export function useAdsData() {
 
   const fetchData = useCallback(async () => {
     if (!user) { setLoading(false); return; }
-    setLoading(true);
+    if (!hasResolved.current) setLoading(true);
     const { data: rows } = await supabase
       .from('ads_data' as any)
       .select('*')
@@ -171,8 +172,9 @@ export function useAdsData() {
       setData(enriched);
       dataRef.current = enriched;
     }
+    hasResolved.current = true;
     setLoading(false);
-  }, [user, products, config]);
+  }, [user?.id, products, config]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
