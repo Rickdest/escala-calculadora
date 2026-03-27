@@ -21,6 +21,7 @@ export interface RoasResult {
   valorRecebido: number;
   totalCosts: number;
   margemInsuficiente: boolean;
+  precoIncompleto: boolean;
   costs: RoasCostBreakdown;
 }
 
@@ -64,11 +65,19 @@ export function calcFullRoas(
     cpfAdditional,
   };
 
+  if (salePrice === 0 || costPrice === 0) {
+    return {
+      roasAtual: null, roasEmpate: null, roasSaudavel: null, roasIdeal: null,
+      lucroBruto: 0, taxaShopee: totalShopeeFee, valorRecebido, totalCosts,
+      margemInsuficiente: false, precoIncompleto: true, costs: costsBreakdown,
+    };
+  }
+
   if (netProfit <= 0) {
     return {
       roasAtual: null, roasEmpate: null, roasSaudavel: null, roasIdeal: null,
       lucroBruto: netProfit, taxaShopee: totalShopeeFee, valorRecebido, totalCosts,
-      margemInsuficiente: true, costs: costsBreakdown,
+      margemInsuficiente: true, precoIncompleto: false, costs: costsBreakdown,
     };
   }
 
@@ -80,7 +89,7 @@ export function calcFullRoas(
   return {
     roasAtual, roasEmpate, roasSaudavel, roasIdeal,
     lucroBruto: netProfit, taxaShopee: totalShopeeFee, valorRecebido, totalCosts,
-    margemInsuficiente: false, costs: costsBreakdown,
+    margemInsuficiente: false, precoIncompleto: false, costs: costsBreakdown,
   };
 }
 
