@@ -172,6 +172,28 @@ export function AdsTab() {
         />
       ) : (
         <>
+          {/* ═══ Empty State ═══ */}
+          {!hasData && (
+            <div className="flex flex-col items-center justify-center py-16 space-y-4">
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Upload className="w-7 h-7 text-primary" />
+              </div>
+              <div className="text-center space-y-1">
+                <p className="text-sm font-bold text-foreground">Importe seu relatório de Ads</p>
+                <p className="text-xs text-muted-foreground max-w-xs">
+                  Exporte o CSV de anúncios da Shopee e importe aqui para analisar ROAS, ACOS e performance.
+                </p>
+              </div>
+              <button
+                onClick={() => fileRef.current?.click()}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+              >
+                <Upload className="w-4 h-4" />
+                Importar CSV
+              </button>
+            </div>
+          )}
+
           {/* ═══ Header com botão discreto ═══ */}
           {hasData && (
             <div className="flex items-center justify-between">
