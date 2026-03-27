@@ -129,6 +129,61 @@ function ProductPicker({
     return products.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
   }, [products, search]);
 
+  // Mobile: show product list directly when nothing selected
+  if (!selected) {
+    return (
+      <div className="rounded-xl border border-border bg-card overflow-hidden animate-fade-in">
+        <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border bg-surface-2/50">
+          <Search className="w-4 h-4 text-text-3 flex-shrink-0" />
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Buscar produto..."
+            className="flex-1 bg-transparent text-sm text-foreground placeholder:text-text-3 outline-none"
+          />
+          <span className="text-[10px] text-text-3 bg-card px-2 py-0.5 rounded-md font-medium">{products.length} produtos</span>
+        </div>
+        <div className="max-h-[300px] overflow-y-auto scrollbar-none divide-y divide-border/50">
+          {filtered.map(p => {
+            const roasData = calcProductRoas(p, config);
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => { onSelect(p.id); setSearch(''); }}
+                className="w-full flex items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-surface-2 active:bg-primary/5"
+              >
+                <div className="w-10 h-10 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0 overflow-hidden ring-1 ring-border">
+                  {p.imageUrl ? (
+                    <img src={p.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover" />
+                  ) : (
+                    <Package className="w-4 h-4 text-text-3" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate">{p.name}</p>
+                  <p className="text-xs text-text-3 tabular-nums font-mono">{formatCurrency(p.salePrice)}</p>
+                </div>
+                {roasData.roasAtual !== null && !roasData.margemInsuficiente && (
+                  <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full tabular-nums font-mono',
+                    roasData.roasAtual >= (roasData.roasIdeal || 0) ? 'bg-success/15 text-success' :
+                    roasData.roasAtual >= (roasData.roasEmpate || 0) ? 'bg-warning/15 text-warning' :
+                    'bg-destructive/15 text-destructive'
+                  )}>
+                    {roasData.roasAtual.toFixed(1)}x
+                  </span>
+                )}
+              </button>
+            );
+          })}
+          {filtered.length === 0 && (
+            <p className="text-center text-xs text-text-3 py-6">Nenhum produto encontrado</p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative">
       <button
@@ -148,16 +203,10 @@ function ProductPicker({
           )}
         </div>
         <div className="flex-1 min-w-0">
-          {selected ? (
-            <>
-              <p className="text-sm font-bold text-foreground truncate">{selected.name}</p>
-              <p className="text-xs text-text-3 tabular-nums font-mono mt-0.5">
-                {formatCurrency(selected.salePrice)} · Custo {formatCurrency(selected.costPrice)}
-              </p>
-            </>
-          ) : (
-            <p className="text-sm text-text-3">Selecione um produto...</p>
-          )}
+          <p className="text-sm font-bold text-foreground truncate">{selected.name}</p>
+          <p className="text-xs text-text-3 tabular-nums font-mono mt-0.5">
+            {formatCurrency(selected.salePrice)} · Custo {formatCurrency(selected.costPrice)}
+          </p>
         </div>
         <div className="flex items-center gap-1.5 text-text-3 flex-shrink-0 bg-surface-2 group-hover:bg-card px-2.5 py-1.5 rounded-lg border border-border transition-colors">
           <span className="text-[11px] font-semibold">Trocar</span>
