@@ -29,16 +29,21 @@ interface Correlation {
   resultado: 'positivo' | 'negativo' | 'neutro';
 }
 
+function entryToDate(entry: OperationLogEntry): string {
+  // timestamp format: "YYYY-MM-DD HH:mm" or similar
+  return entry.timestamp.split(' ')[0].split('T')[0];
+}
+
 function computeCorrelations(data: ExcelPerformanceData, log: OperationLogEntry[]): Correlation[] {
   const byDate: Record<string, DailyMetric> = {};
   data.dadosDiarios.forEach(d => { byDate[d.data] = d; });
 
   return log.map(entry => {
-    const dia = byDate[entry.data];
+    const entryDate = entryToDate(entry);
+    const dia = byDate[entryDate];
     if (!dia) return null;
 
-    // Find previous day
-    const idx = data.dadosDiarios.findIndex(d => d.data === entry.data);
+    const idx = data.dadosDiarios.findIndex(d => d.data === entryDate);
     const anterior = idx > 0 ? data.dadosDiarios[idx - 1] : null;
 
     const impDelta = anterior ? dia.impressoes - anterior.impressoes : dia.impressoes;
@@ -49,29 +54,30 @@ function computeCorrelations(data: ExcelPerformanceData, log: OperationLogEntry[
     let obs = '';
     let resultado: 'positivo' | 'negativo' | 'neutro' = 'neutro';
 
-    if (entry.tipo === 'roas_target' || entry.tipo === 'roas') {
-      const antes = entry.valor_antes ?? 0;
-      const depois = entry.valor_depois ?? 0;
-      if (depois > antes) {
-        obs = `⚠️ Meta aumentada ${antes}→${depois}: algoritmo tende a reduzir volume`;
+    const from = parseFloat(entry.fromValue?.replace(/[^\d.,]/g, '').replace(',', '.') ?? '0') || 0;
+    const to = parseFloat(entry.toValue?.replace(/[^\d.,]/g, '').replace(',', '.') ?? '0') || 0;
+
+    if (entry.field === 'roas_target') {
+      if (to > from) {
+        obs = `⚠️ Meta aumentada ${entry.fromValue}→${entry.toValue}: algoritmo tende a reduzir volume`;
         resultado = impDelta < 0 ? 'negativo' : 'neutro';
       } else {
-        obs = `✓ Meta reduzida ${antes}→${depois}: menos restritivo, libera volume`;
+        obs = `✓ Meta reduzida ${entry.fromValue}→${entry.toValue}: menos restritivo, libera volume`;
         resultado = impDelta > 0 ? 'positivo' : 'neutro';
       }
-    } else if (entry.tipo === 'budget') {
-      obs = `Orçamento alterado: ${entry.valor_antes}→${entry.valor_depois}`;
+    } else if (entry.field === 'budget') {
+      obs = `Orçamento: ${entry.fromValue}→${entry.toValue}`;
       resultado = impDelta > 0 ? 'positivo' : impDelta < 0 ? 'negativo' : 'neutro';
     } else {
-      obs = `${entry.tipo}: ${entry.valor_antes ?? ''}→${entry.valor_depois ?? ''}`;
+      obs = `${entry.eventType}: ${entry.details}`;
     }
 
-    const [, m, d] = entry.data.split('-');
+    const [, m, d] = entryDate.split('-');
 
     return {
-      data: entry.data,
+      data: entryDate,
       dataLabel: `${d}/${m}`,
-      mudanca: `${(entry.tipo ?? '').replace('_', ' ').toUpperCase()} ${entry.valor_antes ?? ''} → ${entry.valor_depois ?? ''}`,
+      mudanca: `${entry.field.replace('_', ' ').toUpperCase()} ${entry.fromValue ?? ''} → ${entry.toValue ?? ''}`,
       diaAnterior: anterior,
       diaMudanca: dia,
       impacto: { impressoesDelta: impDelta, impressoesPct: impPct, vendasDelta: venDelta, vendasPct: venPct, observacao: obs },
@@ -104,17 +110,13 @@ function AntesVsDepois({ data }: { data: ExcelPerformanceData }) {
         <BarChart3 className="w-3.5 h-3.5" /> Antes vs Depois dos Ads
       </p>
       <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-center">
-        {/* Antes */}
         <div className="text-center space-y-1">
           <p className="text-[10px] uppercase font-bold text-text-3">Orgânico</p>
           <p className="text-xs text-text-2">{antes.length} dias</p>
           <p className="text-xl font-black font-mono tabular-nums text-text-2">{fmt(totalAntes)}</p>
           <p className="text-xs text-text-2">{mediaCompAntes.toFixed(1)} vendas/dia</p>
         </div>
-
         <ArrowRight className="w-5 h-5 text-text-3" />
-
-        {/* Depois */}
         <div className="text-center space-y-1">
           <p className="text-[10px] uppercase font-bold text-success">Com Ads</p>
           <p className="text-xs text-text-2">{depois.length} dias</p>
@@ -122,7 +124,6 @@ function AntesVsDepois({ data }: { data: ExcelPerformanceData }) {
           <p className="text-xs text-text-2">{mediaCompDepois.toFixed(1)} vendas/dia</p>
         </div>
       </div>
-
       <div className="pt-3 border-t border-border flex items-center justify-center gap-2 text-sm">
         <TrendingUp className="w-4 h-4 text-success" />
         <span className="text-text-2">Incremento:</span>
@@ -224,8 +225,9 @@ function GraficoTendencia({ data, operationLog }: { data: ExcelPerformanceData; 
   }));
 
   const logDates = (operationLog ?? []).map(e => {
-    const [, m, d] = e.data.split('-');
-    return { label: `${d}/${m}`, mudanca: `${(e.tipo ?? '').replace('_', ' ')} ${e.valor_antes ?? ''}→${e.valor_depois ?? ''}`, data: e.data };
+    const date = entryToDate(e);
+    const [, m, d] = date.split('-');
+    return { label: `${d}/${m}`, mudanca: `${e.field.replace('_', ' ')} ${e.fromValue ?? ''}→${e.toValue ?? ''}`, data: date };
   }).filter(e => data.dadosDiarios.some(d => d.data === e.data));
 
   return (
