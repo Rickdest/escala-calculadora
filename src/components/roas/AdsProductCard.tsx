@@ -75,7 +75,7 @@ export function AdsProductCard({
                 {cls.label}
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-border/60 bg-surface-2 text-[10px] font-medium text-text-3">
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-primary/30 bg-primary/15 text-[10px] font-bold text-primary">
                 🔗 Não vinculado
               </span>
             )}
