@@ -479,13 +479,13 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
           <>
             <div className="flex items-center gap-2">
               {classification.classificacao === 'LUCRATIVO' ? (
-                <TrendingUp className={cn('w-5 h-5', `text-${statusColor}`)} />
+                <TrendingUp className={cn('w-5 h-5', statusColorClass)} />
               ) : classification.classificacao === 'PREJUIZO' ? (
-                <TrendingDown className={cn('w-5 h-5', `text-${statusColor}`)} />
+                <TrendingDown className={cn('w-5 h-5', statusColorClass)} />
               ) : (
-                <AlertTriangle className={cn('w-5 h-5', `text-${statusColor}`)} />
+                <AlertTriangle className={cn('w-5 h-5', statusColorClass)} />
               )}
-              <span className={cn('text-base font-extrabold uppercase', `text-${statusColor}`)}>
+              <span className={cn('text-base font-extrabold uppercase', statusColorClass)}>
                 {classification.classificacao.replace('_', ' ')}
               </span>
             </div>
@@ -493,7 +493,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
             <div className="space-y-2.5 text-sm font-mono tabular-nums">
               <div className="flex justify-between">
                 <span className="text-text-2">ROAS Real:</span>
-                <span className={cn('font-extrabold', `text-${statusColor}`)}>{roasDireto.toFixed(2)}</span>
+                <span className={cn('font-extrabold', statusColorClass)}>{roasDireto.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-text-2">ROAS Empate:</span>
@@ -510,7 +510,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
               <div className="space-y-1">
                 <div className="w-full h-4 rounded-full bg-background/50 overflow-hidden relative">
                   <div
-                    className={cn('h-full rounded-full transition-all', `bg-${statusColor}`)}
+                    className={cn('h-full rounded-full transition-all', statusColorClass.replace("text-", "bg-"))}
                     style={{ width: `${Math.min((roasDireto / (roasEmpate * 2.5)) * 100, 100)}%` }}
                   />
                   <div className="absolute top-0 h-full w-0.5 bg-warning/80" style={{ left: `${Math.min((roasEmpate / (roasEmpate * 2.5)) * 100, 100)}%` }} />
