@@ -517,7 +517,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
               <div className="space-y-1">
                 <div className="w-full h-4 rounded-full bg-background/50 overflow-hidden relative">
                   <div
-                    className={cn('h-full rounded-full transition-all', statusColorClass.replace("text-", "bg-"))}
+                    className={cn('h-full rounded-full transition-all', statusBgClass)}
                     style={{ width: `${Math.min((roasDireto / (roasEmpate * 2.5)) * 100, 100)}%` }}
                   />
                   <div className="absolute top-0 h-full w-0.5 bg-warning/80" style={{ left: `${Math.min((roasEmpate / (roasEmpate * 2.5)) * 100, 100)}%` }} />
