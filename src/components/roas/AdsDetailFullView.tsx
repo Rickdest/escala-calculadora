@@ -69,29 +69,77 @@ function formatLogDate(ts: string): string {
   return `${dd}/${mm} ${hh}:${min}`;
 }
 
-function OperationLogTimeline({ adProductId, roasEmpate }: { adProductId: string | null; roasEmpate: number | null }) {
+function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate }: { adProductId: string | null; adShopeeProductId: string | null; roasEmpate: number | null }) {
   const { user } = useAuth();
   const [operationLog, setOperationLog] = useState<OperationLogEntry[] | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (!user || !adProductId) return;
-    supabase
-      .from('product_ads_metrics')
-      .select('operation_log')
-      .eq('user_id', user.id)
-      .eq('product_id', adProductId)
-      .order('imported_at', { ascending: false })
-      .limit(1)
-      .then(({ data }) => {
-        if (data && data.length > 0 && data[0].operation_log) {
-          setOperationLog(data[0].operation_log as unknown as OperationLogEntry[]);
-        }
-      });
-  }, [user, adProductId]);
+  const loadLog = useCallback(async () => {
+    if (!user) return;
+    // Try by product_id first
+    if (adProductId) {
+      const { data } = await supabase
+        .from('product_ads_metrics')
+        .select('operation_log')
+        .eq('user_id', user.id)
+        .eq('product_id', adProductId)
+        .order('imported_at', { ascending: false })
+        .limit(1);
+      if (data && data.length > 0 && data[0].operation_log) {
+        setOperationLog(data[0].operation_log as unknown as OperationLogEntry[]);
+        return;
+      }
+    }
+    // Fallback by shopee_product_id
+    if (adShopeeProductId) {
+      const { data } = await supabase
+        .from('product_ads_metrics')
+        .select('operation_log')
+        .eq('user_id', user.id)
+        .eq('shopee_product_id', adShopeeProductId)
+        .order('imported_at', { ascending: false })
+        .limit(1);
+      if (data && data.length > 0 && data[0].operation_log) {
+        setOperationLog(data[0].operation_log as unknown as OperationLogEntry[]);
+      }
+    }
+  }, [user, adProductId, adShopeeProductId]);
+
+  useEffect(() => { loadLog(); }, [loadLog]);
+
+  const handleImportLog = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    try {
+      const text = await file.text();
+      const validation = validateCSVSecurity(file, text);
+      if (!validation.valid) { toast.error(validation.error || 'Arquivo inválido'); return; }
+      const detected = detectAndParseCSV(text);
+      if (detected.type !== 'operation_log' || !detected.operationLog?.length) {
+        toast.error('Este CSV não é um log de operações válido');
+        return;
+      }
+      // Save to product_ads_metrics — match by product_id or shopee_product_id
+      let updateFilter = supabase.from('product_ads_metrics').update({ operation_log: detected.operationLog as any }).eq('user_id', user.id);
+      if (adProductId) {
+        updateFilter = updateFilter.eq('product_id', adProductId);
+      } else if (adShopeeProductId) {
+        updateFilter = updateFilter.eq('shopee_product_id', adShopeeProductId);
+      } else {
+        toast.error('Produto não vinculado'); return;
+      }
+      const { error } = await updateFilter;
+      if (error) { toast.error('Erro ao salvar log'); return; }
+      toast.success('Log de operações importado');
+      loadLog();
+    } catch { toast.error('Erro ao importar'); }
+    finally { if (fileInputRef.current) fileInputRef.current.value = ''; }
+  };
 
   if (!operationLog || operationLog.length === 0) {
     return (
       <div className="rounded-2xl border border-border bg-card p-5 space-y-3 shadow-sm">
+        <input ref={fileInputRef} type="file" accept=".csv" onChange={handleImportLog} className="hidden" />
         <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
           <LineChart className="w-4 h-4 text-text-3" /> Evolução Temporal
         </p>
@@ -99,6 +147,9 @@ function OperationLogTimeline({ adProductId, roasEmpate }: { adProductId: string
           <LineChart className="w-10 h-10 text-text-3 mb-3" />
           <p className="text-base font-bold text-text-2">Importe o log de operações</p>
           <p className="text-sm text-text-3 mt-1">para ver o histórico de ajustes de ROAS e orçamento.</p>
+          <Button onClick={() => fileInputRef.current?.click()} size="sm" variant="outline" className="mt-3 gap-1.5">
+            <Upload className="w-3.5 h-3.5" /> Importar CSV de Operações
+          </Button>
         </div>
       </div>
     );
