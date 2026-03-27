@@ -119,38 +119,31 @@ export function AdsProductCard({
         ))}
       </div>
 
-      {/* Action area */}
-      <div className="mt-3 pt-3 border-t border-border/40" onClick={e => e.stopPropagation()}>
-        {isLinked && (!ad.roas_empate || ad.roas_empate <= 0) && (
-          <p className="text-xs text-warning mb-2">⚠️ Produto sem custo/preço configurado.</p>
-        )}
-        {isLinked ? (
-          <button
-            onClick={onLink}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-card text-xs font-medium text-text-2 hover:border-primary/30 hover:text-foreground transition-colors"
-          >
-            <Link2 className="w-3.5 h-3.5" /> Trocar vínculo
-          </button>
-        ) : (
-          <>
-            <p className="text-[11px] text-text-3 mb-2">Vincule a um produto para ver lucratividade</p>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={onLink}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 transition-colors"
-              >
-                <Link2 className="w-3.5 h-3.5" /> Vincular
-              </button>
-              <button
-                onClick={onQuickRegister}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold hover:bg-primary/90 transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" /> Cadastrar
-              </button>
-            </div>
-          </>
-        )}
-      </div>
+      {/* Action area — only for unlinked */}
+      {!isLinked && (
+        <div className="mt-3 pt-3 border-t border-border/40" onClick={e => e.stopPropagation()}>
+          <p className="text-[11px] text-warning mb-2 flex items-center gap-1">⚠️ Vincule para ver lucratividade</p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onLink}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-border bg-card text-xs font-bold text-foreground hover:border-primary/30 transition-colors"
+            >
+              <Link2 className="w-3.5 h-3.5" /> Vincular
+            </button>
+            <button
+              onClick={onQuickRegister}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-primary bg-transparent text-xs font-bold text-primary hover:bg-primary/10 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" /> Cadastrar
+            </button>
+          </div>
+        </div>
+      )}
+      {isLinked && (!ad.roas_empate || ad.roas_empate <= 0) && (
+        <div className="mt-3 pt-3 border-t border-border/40">
+          <p className="text-xs text-warning">⚠️ Produto sem custo/preço configurado.</p>
+        </div>
+      )}
     </div>
   );
 }
