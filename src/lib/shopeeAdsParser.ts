@@ -560,3 +560,125 @@ export function parseShopeeAdsCSV(csvContent: string): ParsedAdsFile | null {
   }
   return parseGeneralFormatCSV(csvContent);
 }
+
+// ─── Operation Log Types & Parser ───
+
+export type OperationField = 'roas_target' | 'budget' | 'quick_boost' | 'campaign_created' | 'other';
+
+export interface OperationLogEntry {
+  timestamp: string;
+  eventType: string;
+  field: OperationField;
+  details: string;
+  fromValue?: string;
+  toValue?: string;
+  shopeeProductId?: string;
+}
+
+function mapEventToField(eventType: string, details: string): OperationField {
+  const lower = eventType.toLowerCase();
+  if (lower.includes('alterar roas de destino') || lower.includes('roas')) return 'roas_target';
+  if (lower.includes('alterar orçamento') || lower.includes('orcamento') || lower.includes('budget')) return 'budget';
+  if (lower.includes('create campaign') || lower.includes('criar campanha')) return 'campaign_created';
+  if (details.toLowerCase().includes('impulsão') || details.toLowerCase().includes('impulsao') || lower.includes('boost')) return 'quick_boost';
+  return 'other';
+}
+
+function extractFromTo(details: string): { fromValue?: string; toValue?: string } {
+  const match = details.match(/:\s*([\d.,]+|Ilimitado|R\$[\d.,]+)\s*->\s*([\d.,]+|Ilimitado|R\$[\d.,]+)/);
+  if (match) return { fromValue: match[1], toValue: match[2] };
+  return {};
+}
+
+export function parseOperationLogCSV(csvContent: string): OperationLogEntry[] {
+  try {
+    const lines = csvContent.split('\n').map(l => l.replace(/^\uFEFF/, '').trim());
+    const entries: OperationLogEntry[] = [];
+
+    // Extract shopee product ID from metadata
+    let shopeeProductId: string | undefined;
+    for (let i = 0; i < Math.min(10, lines.length); i++) {
+      const cols = parseCSVLine(lines[i]);
+      const label = (cols[0] || '').toLowerCase().trim();
+      if (label.includes('id do produto')) {
+        shopeeProductId = (cols[1] || '').trim();
+        break;
+      }
+    }
+
+    // Find header row: starts with "Atualizar horário"
+    const headerIndex = lines.findIndex(l =>
+      l.toLowerCase().startsWith('atualizar hor') || l.toLowerCase().startsWith('atualizar hora')
+    );
+    if (headerIndex === -1) return [];
+
+    for (let i = headerIndex + 1; i < lines.length; i++) {
+      const line = lines[i];
+      if (!line) continue;
+      const cols = parseCSVLine(line);
+      if (cols.length < 4) continue;
+
+      const rawTimestamp = cols[0]?.trim();
+      if (!rawTimestamp || !/^\d{4}-\d{2}-\d{2}/.test(rawTimestamp)) continue;
+
+      const timestamp = rawTimestamp.replace(' ', 'T');
+      const eventType = (cols[3] || '').trim();
+      const details = (cols[4] || '').trim();
+
+      const field = mapEventToField(eventType, details);
+      const { fromValue, toValue } = extractFromTo(details);
+
+      // For campaign_created, extract initial ROAS from multi-line details
+      let campaignToValue = toValue;
+      if (field === 'campaign_created' && !campaignToValue) {
+        const roasMatch = details.match(/(?:Lance automático.*?|ROAS de destino:)\s*([\d.]+)/i);
+        if (roasMatch) campaignToValue = roasMatch[1];
+      }
+
+      entries.push({
+        timestamp,
+        eventType: sanitizeString(eventType),
+        field,
+        details: sanitizeString(details),
+        fromValue: fromValue ? sanitizeString(fromValue) : undefined,
+        toValue: (campaignToValue || toValue) ? sanitizeString(campaignToValue || toValue || '') : undefined,
+        shopeeProductId,
+      });
+    }
+
+    return entries.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+  } catch {
+    return [];
+  }
+}
+
+// ─── Auto-detect CSV format ───
+
+export interface DetectedCSVResult {
+  type: 'performance' | 'operation_log' | 'unknown';
+  performanceData?: ParsedAdsFile;
+  operationLog?: OperationLogEntry[];
+}
+
+export function detectAndParseCSV(content: string): DetectedCSVResult {
+  const firstLines = content.slice(0, 500).toLowerCase();
+
+  if (firstLines.includes('registro de opera')) {
+    const log = parseOperationLogCSV(content);
+    return { type: 'operation_log', operationLog: log };
+  }
+
+  if (firstLines.includes('relatório de anúncios') || firstLines.includes('relatorio de anuncios')
+    || firstLines.includes('dados gerais de anúncios') || firstLines.includes('dados gerais de anuncios')) {
+    const data = parseShopeeAdsCSV(content);
+    return { type: 'performance', performanceData: data ?? undefined };
+  }
+
+  // Fallback: try parsing as performance anyway
+  const fallback = parseShopeeAdsCSV(content);
+  if (fallback && fallback.metrics.length > 0) {
+    return { type: 'performance', performanceData: fallback };
+  }
+
+  return { type: 'unknown' };
+}

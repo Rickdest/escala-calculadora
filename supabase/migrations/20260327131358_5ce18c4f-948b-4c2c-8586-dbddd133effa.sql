@@ -1,0 +1,1 @@
+ALTER TABLE public.product_ads_metrics ADD COLUMN IF NOT EXISTS operation_log JSONB DEFAULT NULL;

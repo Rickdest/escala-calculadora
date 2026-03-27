@@ -1,15 +1,23 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useStore } from '@/contexts/StoreContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import {
   ArrowLeft, ChevronLeft, ChevronRight,
   TrendingUp, TrendingDown, AlertTriangle, Target, Zap, MapPin,
   Eye, MousePointerClick, ShoppingCart, DollarSign, Percent, Upload,
   Link2, BarChart3, Info, Clock, Wallet, Package, Plus, LineChart,
+  History, Settings,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { EnrichedAdsData } from '@/hooks/useAdsData';
+import { OperationLogEntry } from '@/lib/shopeeAdsParser';
+import {
+  LineChart as ReLineChart, Line, XAxis, YAxis, Tooltip as ReTooltip,
+  ReferenceLine, ResponsiveContainer,
+} from 'recharts';
 import {
   calcularRoasEmpate, classificarAnuncio, sugerirMetaRoas,
   classificarPosicao, getDiagnostico, detectarCrossSell,
@@ -29,6 +37,123 @@ interface Props {
   onReimport?: () => void;
   onUnlink?: () => void;
   onChangeLink?: () => void;
+}
+
+// ═══ Operation Log Timeline ═══
+
+const FIELD_ICONS: Record<string, { icon: React.ElementType; color: string }> = {
+  roas_target: { icon: Target, color: 'text-primary' },
+  budget: { icon: DollarSign, color: 'text-blue-500' },
+  quick_boost: { icon: Zap, color: 'text-warning' },
+  campaign_created: { icon: Plus, color: 'text-success' },
+  other: { icon: Settings, color: 'text-muted-foreground' },
+};
+
+function formatLogLabel(entry: OperationLogEntry): string {
+  switch (entry.field) {
+    case 'roas_target': return `ROAS meta: ${entry.fromValue ?? '?'} → ${entry.toValue ?? '?'}`;
+    case 'budget': return `Orçamento: ${entry.fromValue ?? '?'} → ${entry.toValue ?? '?'}`;
+    case 'quick_boost': return `Impulsão Rápida: ${entry.details.replace(/^.*?:/, '').trim()}`;
+    case 'campaign_created': return `Campanha criada${entry.toValue ? ` · ROAS inicial ${entry.toValue}` : ''}`;
+    default: return entry.details.slice(0, 60);
+  }
+}
+
+function formatLogDate(ts: string): string {
+  const d = new Date(ts);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${dd}/${mm} ${hh}:${min}`;
+}
+
+function OperationLogTimeline({ adProductId, roasEmpate }: { adProductId: string | null; roasEmpate: number | null }) {
+  const { user } = useAuth();
+  const [operationLog, setOperationLog] = useState<OperationLogEntry[] | null>(null);
+
+  useEffect(() => {
+    if (!user || !adProductId) return;
+    supabase
+      .from('product_ads_metrics')
+      .select('operation_log')
+      .eq('user_id', user.id)
+      .eq('product_id', adProductId)
+      .order('imported_at', { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0 && data[0].operation_log) {
+          setOperationLog(data[0].operation_log as unknown as OperationLogEntry[]);
+        }
+      });
+  }, [user, adProductId]);
+
+  if (!operationLog || operationLog.length === 0) {
+    return (
+      <div className="rounded-2xl border border-border bg-card p-5 space-y-3 shadow-sm">
+        <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+          <LineChart className="w-4 h-4 text-text-3" /> Evolução Temporal
+        </p>
+        <div className="flex flex-col items-center justify-center py-8 text-center">
+          <LineChart className="w-10 h-10 text-text-3 mb-3" />
+          <p className="text-base font-bold text-text-2">Importe o log de operações</p>
+          <p className="text-sm text-text-3 mt-1">para ver o histórico de ajustes de ROAS e orçamento.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const roasEntries = operationLog.filter(e => e.field === 'roas_target' || e.field === 'campaign_created');
+  const roasTimeline = roasEntries.map(e => ({
+    date: e.timestamp.slice(5, 10).replace('-', '/'),
+    roas: parseFloat(e.toValue ?? '0'),
+  }));
+
+  const showChart = roasTimeline.length >= 2;
+  const sortedEvents = [...operationLog].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
+      <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground flex items-center gap-1.5">
+        <History className="w-3.5 h-3.5 text-primary" /> Histórico de Ajustes
+      </p>
+
+      {showChart && (
+        <div className="h-[120px] w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <ReLineChart data={roasTimeline} margin={{ top: 5, right: 10, bottom: 0, left: 0 }}>
+              <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={30} domain={['auto', 'auto']} />
+              <ReTooltip
+                contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid hsl(var(--border))' }}
+                formatter={(v: number) => [`${v}`, 'ROAS meta']}
+              />
+              {roasEmpate && roasEmpate > 0 && roasEmpate !== Infinity && (
+                <ReferenceLine y={roasEmpate} stroke="hsl(var(--warning))" strokeDasharray="4 4" label={{ value: 'Empate', fontSize: 9, fill: 'hsl(var(--warning))' }} />
+              )}
+              <Line type="monotone" dataKey="roas" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: 'hsl(var(--primary))' }} />
+            </ReLineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+
+      <div className="space-y-1.5 max-h-[240px] overflow-y-auto">
+        {sortedEvents.map((entry, i) => {
+          const fi = FIELD_ICONS[entry.field] || FIELD_ICONS.other;
+          const Icon = fi.icon;
+          return (
+            <div key={i} className="flex items-start gap-2.5 py-1.5">
+              <Icon className={cn('w-3.5 h-3.5 mt-0.5 flex-shrink-0', fi.color)} />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-foreground font-medium truncate">{formatLogLabel(entry)}</p>
+                <p className="text-[10px] text-muted-foreground font-mono">{formatLogDate(entry.timestamp)}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 // ═══ Small helper components ═══
@@ -704,17 +829,8 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         </div>
       )}
 
-      {/* 7. Evolução Temporal (placeholder) */}
-      <div className="rounded-2xl border border-border bg-card p-5 space-y-3 shadow-sm">
-        <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-          <LineChart className="w-4 h-4 text-text-3" /> Evolução Temporal
-        </p>
-        <div className="flex flex-col items-center justify-center py-8 text-center">
-          <LineChart className="w-10 h-10 text-text-3 mb-3" />
-          <p className="text-base font-bold text-text-2">Importe relatórios de períodos diferentes</p>
-          <p className="text-sm text-text-3 mt-1">para ver a evolução ao longo do tempo.</p>
-        </div>
-      </div>
+      {/* 7. Evolução Temporal — Operation Log Timeline */}
+      <OperationLogTimeline adProductId={ad.product_id} roasEmpate={roasEmpate} />
     </div>
   );
 

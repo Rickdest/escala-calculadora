@@ -467,6 +467,7 @@ export type Database = {
           imported_at: string | null
           impressions: number | null
           items_sold: number | null
+          operation_log: Json | null
           period_end: string
           period_start: string
           product_id: string | null
@@ -492,6 +493,7 @@ export type Database = {
           imported_at?: string | null
           impressions?: number | null
           items_sold?: number | null
+          operation_log?: Json | null
           period_end: string
           period_start: string
           product_id?: string | null
@@ -517,6 +519,7 @@ export type Database = {
           imported_at?: string | null
           impressions?: number | null
           items_sold?: number | null
+          operation_log?: Json | null
           period_end?: string
           period_start?: string
           product_id?: string | null

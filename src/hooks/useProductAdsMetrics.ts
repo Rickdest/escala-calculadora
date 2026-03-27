@@ -1,13 +1,17 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { deriveMetrics, AdMetricDerived, ParsedAdMetric } from '@/lib/shopeeAdsParser';
+import { deriveMetrics, AdMetricDerived, ParsedAdMetric, OperationLogEntry } from '@/lib/shopeeAdsParser';
 
-export interface ProductAdsMap {
-  [productId: string]: AdMetricDerived;
+export interface AdMetricWithLog extends AdMetricDerived {
+  operationLog?: OperationLogEntry[];
 }
 
-function rowToMetric(r: any): AdMetricDerived & { _productId: string | null; _id: string } {
+export interface ProductAdsMap {
+  [productId: string]: AdMetricWithLog;
+}
+
+function rowToMetric(r: any): AdMetricWithLog & { _productId: string | null; _id: string } {
   const m: ParsedAdMetric = {
     shopeeProductId: r.shopee_product_id || r.shopee_product_id || '',
     shopeeProductName: r.nome_produto_csv || r.shopee_product_name || '',
@@ -27,13 +31,14 @@ function rowToMetric(r: any): AdMetricDerived & { _productId: string | null; _id
     directAcos: Number(r.acos_direto ?? r.direct_acos),
     costPerConv: Number(r.custo_por_conversao ?? r.cost_per_conv),
   };
-  return { ...deriveMetrics(m), _productId: r.product_id, _id: r.id };
+  const operationLog = (r.operation_log as OperationLogEntry[] | null) ?? undefined;
+  return { ...deriveMetrics(m), operationLog, _productId: r.product_id, _id: r.id };
 }
 
 export function useProductAdsMetrics() {
   const { user } = useAuth();
   const [metricsMap, setMetricsMap] = useState<ProductAdsMap>({});
-  const [allMetrics, setAllMetrics] = useState<(AdMetricDerived & { _productId: string | null; _id: string })[]>([]);
+  const [allMetrics, setAllMetrics] = useState<(AdMetricWithLog & { _productId: string | null; _id: string })[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadMetrics = useCallback(async () => {

@@ -7,7 +7,7 @@ import {
   XCircle, RefreshCw, Megaphone, Info
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { parseShopeeAdsCSV, ParsedAdMetric, deriveMetrics, AdMetricDerived, validateCSVSecurity } from '@/lib/shopeeAdsParser';
+import { parseShopeeAdsCSV, ParsedAdMetric, deriveMetrics, AdMetricDerived, validateCSVSecurity, detectAndParseCSV } from '@/lib/shopeeAdsParser';
 import { toast } from 'sonner';
 
 const formatCurrency = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
@@ -75,10 +75,34 @@ export function ProductAdsSection({ productId, shopeeProductId }: ProductAdsSect
       const text = await file.text();
       const validation = validateCSVSecurity(file, text);
       if (!validation.valid) { toast.error(validation.error || 'Arquivo inválido'); return; }
-      const parsed = parseShopeeAdsCSV(text);
+
+      const detected = detectAndParseCSV(text);
+
+      if (detected.type === 'unknown') {
+        toast.error('Formato de arquivo não reconhecido');
+        return;
+      }
+
+      if (detected.type === 'operation_log' && detected.operationLog) {
+        // Save operation log to existing metric row
+        const { error } = await supabase
+          .from('product_ads_metrics')
+          .update({ operation_log: detected.operationLog as any })
+          .eq('user_id', user.id)
+          .eq('product_id', productId);
+        if (error) {
+          toast.error('Erro ao salvar log de operações');
+        } else {
+          toast.success('Log de operações importado');
+          loadMetric();
+        }
+        return;
+      }
+
+      // Performance CSV — original flow
+      const parsed = detected.performanceData;
       if (!parsed || parsed.metrics.length === 0) { toast.error('CSV inválido'); return; }
       const m = parsed.metrics[0];
-      // Delete old metrics for this product
       await supabase.from('product_ads_metrics').delete().eq('user_id', user.id).eq('product_id', productId);
       await supabase.from('product_ads_metrics').insert({
         user_id: user.id,
