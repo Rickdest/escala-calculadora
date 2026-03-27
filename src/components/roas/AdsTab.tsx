@@ -152,6 +152,8 @@ export function AdsTab() {
           onLink={() => { setLinkTarget(selectedDetail.id); setSelectedDetail(null); }}
           onQuickRegister={() => { setQuickRegTarget(selectedDetail); setSelectedDetail(null); }}
           onReimport={() => { setPositionTarget(selectedDetail.id); positionFileRef.current?.click(); }}
+          onUnlink={() => { unlinkProduct(selectedDetail.id); setSelectedDetail(null); }}
+          onChangeLink={() => { setLinkTarget(selectedDetail.id); }}
         />
       ) : data.length === 0 ? (
         <AdsEmptyState onImport={() => fileRef.current?.click()} />
