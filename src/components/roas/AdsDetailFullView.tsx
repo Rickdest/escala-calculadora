@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useStore } from '@/contexts/StoreContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/contexts/AuthContext';
@@ -13,7 +13,8 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { EnrichedAdsData } from '@/hooks/useAdsData';
-import { OperationLogEntry } from '@/lib/shopeeAdsParser';
+import { OperationLogEntry, detectAndParseCSV, validateCSVSecurity } from '@/lib/shopeeAdsParser';
+import { toast } from 'sonner';
 import {
   LineChart as ReLineChart, Line, XAxis, YAxis, Tooltip as ReTooltip,
   ReferenceLine, ResponsiveContainer,
