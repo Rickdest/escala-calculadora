@@ -183,7 +183,7 @@ function ProductPicker({
           <button
             type="button"
             onClick={() => setShowSearch(true)}
-            className="w-full py-2 text-[10px] font-bold text-primary border-t border-border/50 bg-surface-2/30 hover:bg-surface-2/60 transition-colors"
+            className="w-full py-2.5 text-xs font-bold text-primary border-t border-border/50 bg-surface-2/30 hover:bg-surface-2/60 transition-colors"
           >
             Ver todos ({sorted.length} produtos)
           </button>
