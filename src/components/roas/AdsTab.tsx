@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef } from 'react';
 import { useStore } from '@/contexts/StoreContext';
 import { useAdsData, EnrichedAdsData } from '@/hooks/useAdsData';
-import { Upload, Trash2, MapPin, Calendar, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Upload, Trash2, MapPin, Calendar } from 'lucide-react';
 import { parseShopeeAdsCSV, validateCSVSecurity } from '@/lib/shopeeAdsParser';
 import { AdsDetailFullView } from './AdsDetailFullView';
 import { AdsLinkModal } from './AdsLinkModal';
