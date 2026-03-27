@@ -214,6 +214,52 @@ function ProductPicker({
         </div>
       </button>
 
+      {/* Mini-cards de outros produtos para indicar troca */}
+      {products.length > 1 && (() => {
+        const others = products
+          .filter(p => p.id !== selectedId)
+          .sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime())
+          .slice(0, 2);
+        if (others.length === 0) return null;
+        return (
+          <div className="mt-2 space-y-1.5">
+            <p className="text-[10px] font-semibold text-text-3 px-1">Outros produtos</p>
+            {others.map(p => {
+              const roasData = calcProductRoas(p, config);
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => onSelect(p.id)}
+                  className="w-full flex items-center gap-2.5 p-2 rounded-lg border border-border/40 bg-secondary/10 opacity-60 hover:opacity-100 hover:bg-surface-2 transition-all text-left"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                    {p.imageUrl ? (
+                      <img src={p.imageUrl} alt="" className="w-8 h-8 rounded-lg object-cover" />
+                    ) : (
+                      <Package className="w-3.5 h-3.5 text-text-3" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold truncate">{p.name}</p>
+                    <p className="text-[10px] text-text-3 tabular-nums font-mono">{formatCurrency(p.salePrice)}</p>
+                  </div>
+                  {roasData.roasAtual !== null && !roasData.margemInsuficiente && (
+                    <span className={cn('text-[9px] font-bold px-1.5 py-0.5 rounded-full tabular-nums font-mono flex-shrink-0',
+                      roasData.roasAtual >= (roasData.roasIdeal || 0) ? 'bg-success/15 text-success' :
+                      roasData.roasAtual >= (roasData.roasEmpate || 0) ? 'bg-warning/15 text-warning' :
+                      'bg-destructive/15 text-destructive'
+                    )}>
+                      {roasData.roasAtual.toFixed(1)}x
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        );
+      })()}
+
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
