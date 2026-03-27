@@ -96,10 +96,6 @@ export function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
           </div>
         ))}
       </div>
-
-      {/* Status mini cards */}
     </div>
-  );
-}
   );
 }
