@@ -117,19 +117,19 @@ export function AdsProductCard({
         </div>
 
         {/* ── SECONDARY METRICS: subtle bottom row ── */}
-        <div className="flex items-center justify-between text-[11px] text-muted-foreground font-mono border-t border-border/40 pt-2">
-          <span className="flex items-center gap-1">
-            <MapPin className="w-3 h-3" />
-            Pos: {hasPosition ? <span className={cn('font-bold', getPositionColor(ad.posicao_media!))}> #{ad.posicao_media}</span> : <span className="text-muted-foreground/50">-</span>}
-          </span>
-          <span className="flex items-center gap-1">
-            <ShoppingCart className="w-3 h-3" />
-            {ad.itens_vendidos} un
-          </span>
-          <span className="flex items-center gap-1">
-            <DollarSign className="w-3 h-3" />
-            Custo: {custoUn > 0 ? fmtShort(custoUn) : '—'}
-          </span>
+        <div className="grid grid-cols-3 gap-2 border-t border-border/40 pt-2.5">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-mono">
+            <MapPin className="w-3.5 h-3.5 shrink-0" />
+            {hasPosition ? <span className={cn('font-bold text-sm', getPositionColor(ad.posicao_media!))}>#{ad.posicao_media}</span> : <span>—</span>}
+          </div>
+          <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground font-mono">
+            <ShoppingCart className="w-3.5 h-3.5 shrink-0" />
+            <span className="font-bold text-foreground">{ad.itens_vendidos}</span> un
+          </div>
+          <div className="flex items-center justify-end gap-1.5 text-xs text-muted-foreground font-mono">
+            <DollarSign className="w-3.5 h-3.5 shrink-0" />
+            <span className="font-bold text-foreground">{custoUn > 0 ? fmtShort(custoUn) : '—'}</span>
+          </div>
         </div>
 
         {/* ── ACTION: linked — "Ver Detalhes" or "Trocar" ── */}
