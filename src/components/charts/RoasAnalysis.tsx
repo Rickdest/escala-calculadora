@@ -291,6 +291,7 @@ function ProductAnalysis() {
     }
   }, [selectedProduct?.id]);
 
+  useEffect(() => {
     if (!selectedProduct) return;
     const timeout = setTimeout(() => {
       const newGasto = parseFloat(gastoAds) || 0;
