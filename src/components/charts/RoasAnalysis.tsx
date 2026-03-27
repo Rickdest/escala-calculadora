@@ -418,23 +418,9 @@ function ProductAnalysis() {
 
                 {/* Gauge bar */}
                 {roasData.roasEmpate && roasData.roasSaudavel && roasData.roasIdeal && (
-                  <div className="space-y-1.5">
-                    {/* Labels acima da barra */}
-                    <div className="relative flex text-[10px] font-mono tabular-nums font-bold">
-                      <span className="text-destructive" style={{ position: 'absolute', left: 0 }}>PREJUÍZO</span>
-                      <span className="text-destructive" style={{ position: 'absolute', left: `${(roasData.roasEmpate / (roasData.roasIdeal * 1.3)) * 100}%`, transform: 'translateX(-50%)' }}>
-                        EMPATE ({roasData.roasEmpate.toFixed(1)})
-                      </span>
-                      <span className="text-warning" style={{ position: 'absolute', left: `${(roasData.roasSaudavel / (roasData.roasIdeal * 1.3)) * 100}%`, transform: 'translateX(-50%)' }}>
-                        SAUDÁVEL ({roasData.roasSaudavel.toFixed(1)})
-                      </span>
-                      <span className="text-success" style={{ position: 'absolute', right: 0 }}>
-                        IDEAL ({roasData.roasIdeal.toFixed(1)}+)
-                      </span>
-                    </div>
-
+                  <div className="space-y-0">
                     {/* Barra de gradiente */}
-                    <div className="relative h-4 rounded-full overflow-hidden mt-5"
+                    <div className="relative h-4 rounded-full overflow-hidden"
                       style={{ background: 'linear-gradient(to right, hsl(0 70% 50%), hsl(40 95% 50%) 40%, hsl(100 60% 45%) 70%, hsl(152 70% 42%))' }}
                     >
                       {/* Indicador (ponteiro) */}
@@ -446,14 +432,24 @@ function ProductAnalysis() {
                       )}
                     </div>
 
-                    {/* Tick marks */}
-                    <div className="relative h-3">
-                      {[roasData.roasEmpate, roasData.roasSaudavel, roasData.roasIdeal].map((v, i) => (
-                        <div
+                    {/* Labels + ticks abaixo da barra */}
+                    <div className="relative h-5 mt-1">
+                      {[
+                        { label: 'PREJUÍZO', color: 'text-destructive', pos: 0, anchor: 'left' as const },
+                        { label: `EMPATE (${roasData.roasEmpate.toFixed(1)})`, color: 'text-destructive', pos: (roasData.roasEmpate / (roasData.roasIdeal * 1.3)) * 100, anchor: 'center' as const },
+                        { label: `SAUDÁVEL (${roasData.roasSaudavel.toFixed(1)})`, color: 'text-warning', pos: (roasData.roasSaudavel / (roasData.roasIdeal * 1.3)) * 100, anchor: 'center' as const },
+                        { label: `IDEAL (${roasData.roasIdeal.toFixed(1)}+)`, color: 'text-success', pos: 100, anchor: 'right' as const },
+                      ].map((item, i) => (
+                        <span
                           key={i}
-                          className="absolute top-0 w-px h-2.5 bg-muted-foreground/50"
-                          style={{ left: `${(v / (roasData.roasIdeal! * 1.3)) * 100}%` }}
-                        />
+                          className={cn('absolute text-[8px] md:text-[10px] font-mono font-bold whitespace-nowrap', item.color)}
+                          style={{
+                            ...(item.anchor === 'left' ? { left: 0 } : item.anchor === 'right' ? { right: 0 } : { left: `${item.pos}%`, transform: 'translateX(-50%)' }),
+                            top: 0,
+                          }}
+                        >
+                          {item.label}
+                        </span>
                       ))}
                     </div>
                   </div>
