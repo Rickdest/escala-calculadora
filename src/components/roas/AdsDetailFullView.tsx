@@ -581,6 +581,33 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         <KpiCard icon={Target} label="ROAS" value={roasDireto.toFixed(2)} sub={roasEmpate ? `Emp: ${roasEmpate.toFixed(2)}` : undefined} subColor={roasEmpate ? (roasDireto >= roasEmpate ? 'text-success' : 'text-destructive') : undefined} highlight />
       </div>
 
+      {/* Position highlight card */}
+      {ad.posicao_media !== null && (() => {
+        const pos = ad.posicao_media!;
+        const isTop = pos <= 8;
+        const isMid = pos > 8 && pos <= 20;
+        const pageLabel = pos <= 3 ? 'Top 3' : pos <= 8 ? '1ª Página' : pos <= 20 ? '2ª Página' : '3ª Página ou mais';
+        const posColor = isTop ? 'text-success' : isMid ? 'text-warning' : 'text-destructive';
+        const posBg = isTop ? 'bg-success/8 border-success/25' : isMid ? 'bg-warning/8 border-warning/25' : 'bg-destructive/8 border-destructive/25';
+        const posHint = isTop ? 'Excelente visibilidade — considere escalar orçamento'
+          : isMid ? 'Visibilidade média — reduza a meta de ROAS para subir'
+          : 'Visibilidade baixa — reduza a meta de ROAS com urgência';
+        return (
+          <div className={cn('rounded-xl border p-4 flex items-center justify-between gap-4 mb-5', posBg)}>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">Posicionamento</p>
+              <p className={cn('text-xs font-medium', posColor)}>{posHint}</p>
+            </div>
+            <div className="text-right flex-shrink-0">
+              <p className={cn('font-black font-mono tabular-nums leading-none', posColor)}>
+                <span className="text-lg">#</span><span className="text-5xl">{pos}</span>
+              </p>
+              <p className={cn('text-[11px] font-bold mt-1', posColor)}>{pageLabel}</p>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Unlinked product warning */}
       {!product && (
         <div className="rounded-2xl border-2 border-dashed border-warning/30 bg-warning/10 p-6 space-y-4 mb-5">

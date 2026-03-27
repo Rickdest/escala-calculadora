@@ -477,6 +477,10 @@ export function AdsTab() {
               {/* ═══ Product list ═══ */}
               <div className="flex items-center justify-between gap-2">
                 <h2 className="text-lg font-bold text-foreground">Anúncios</h2>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => fileRef.current?.click()} className="flex items-center gap-1.5 text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors">
+                    <Upload className="w-3.5 h-3.5" /> Novo CSV
+                  </button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10 gap-1.5 text-xs">
