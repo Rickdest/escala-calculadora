@@ -831,7 +831,10 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         </div>
       )}
 
-      {/* 5. ACOS vs Margem */}
+      {/* 5. Evolução Temporal — Operation Log Timeline (moved up) */}
+      <OperationLogTimeline adProductId={ad.product_id} adShopeeProductId={ad.shopee_product_id} roasEmpate={roasEmpate} />
+
+      {/* 6. ACOS vs Margem */}
       {margemContrib !== null && (
         <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
           <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">ACOS vs Margem</p>
@@ -868,7 +871,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         </div>
       )}
 
-      {/* 6. Geral vs Direto */}
+      {/* 7. Geral vs Direto */}
       {ad.roas_direto > 0 && ad.gmv_direto > 0 && ad.gmv_direto !== ad.gmv && (
         <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
           <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Geral vs Direto</p>
@@ -926,9 +929,6 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
           <p className="text-sm text-text-2">{halo.message}</p>
         </div>
       )}
-
-      {/* 7. Evolução Temporal — Operation Log Timeline */}
-      <OperationLogTimeline adProductId={ad.product_id} adShopeeProductId={ad.shopee_product_id} roasEmpate={roasEmpate} />
     </div>
   );
 
