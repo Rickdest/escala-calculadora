@@ -76,18 +76,25 @@ export function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
           <div key={label} className="rounded-2xl border border-border bg-card p-3 md:p-5 min-w-0 overflow-hidden relative">
             <Icon className={cn('absolute top-3 right-3 w-7 h-7 md:w-9 md:h-9', iconColor)} />
             <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
-            <p className={cn('text-2xl md:text-4xl font-black font-mono tabular-nums mt-1 truncate', color)}>{value}</p>
+            <p className={cn('text-xl md:text-3xl font-black font-mono tabular-nums mt-1 truncate', color)}>{value}</p>
             {/* ROAS card gets a thermometer bar instead of sub text */}
             {idx === 2 ? (
               <div className="mt-2 space-y-1">
                 <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                   <span className="flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-success inline-block" />
-                    Acima da meta (3.0)
+                    <span className="w-1.5 h-1.5 rounded-full bg-success inline-block shrink-0" />
+                    <span className="truncate">Meta 3.0</span>
                   </span>
                 </div>
                 <div className="w-full h-2 rounded-full bg-secondary/80 overflow-hidden">
-                  <div className={cn('h-full rounded-full transition-all', roasBarColor)} style={{ width: `${roasBarWidth}%` }} />
+                  <div
+                    className={cn('h-full rounded-full transition-all duration-500')}
+                    style={{
+                      width: `${roasBarWidth}%`,
+                      minWidth: s.avgRoas > 0 ? '4px' : '0px',
+                      backgroundColor: s.avgRoas >= 5 ? 'hsl(var(--success))' : s.avgRoas >= 3 ? 'hsl(var(--primary))' : s.avgRoas >= 1 ? 'hsl(var(--warning))' : 'hsl(var(--destructive))',
+                    }}
+                  />
                 </div>
               </div>
             ) : sub ? (
