@@ -1,51 +1,22 @@
 
 
-## Corrigir erro de importação do CSV geral de Ads
+## Ajustar layout dos cards de Ads: 3 colunas desktop + métricas horizontais
 
-### Problema
-Erro `42P10: there is no unique or exclusion constraint matching the ON CONFLICT specification` ao importar CSV geral.
+### Mudanças
 
-### Causa raiz
-A migration `20260325164949` criou um **índice único parcial**:
-```sql
-CREATE UNIQUE INDEX idx_ads_data_unique_period 
-ON ads_data (user_id, nome_produto_csv, periodo_inicio, periodo_fim)
-WHERE nome_produto_csv IS NOT NULL;
-```
+**1. `src/components/roas/AdsTab.tsx` (linha 263)**
+- Trocar `grid-cols-1 md:grid-cols-2` por `grid-cols-1 md:grid-cols-2 lg:grid-cols-3` para 3 colunas no desktop
 
-O PostgreSQL **não permite** `ON CONFLICT` com índices parciais via Supabase client. O `upsert` com `onConflict: 'user_id,nome_produto_csv,periodo_inicio,periodo_fim'` falha porque precisa de uma constraint real (não um índice parcial).
-
-### Solução (2 partes)
-
-**1. Migration: Criar uma constraint UNIQUE real**
-
-Dropar o índice parcial e criar uma constraint completa:
-```sql
-DROP INDEX IF EXISTS idx_ads_data_unique_period;
-ALTER TABLE ads_data ADD CONSTRAINT uq_ads_data_period 
-  UNIQUE (user_id, nome_produto_csv, periodo_inicio, periodo_fim);
-```
-
-**2. Código: Ajustar o fallback em `useAdsData.ts`**
-
-Alterar a estratégia de upsert (linhas 246-250) para usar a nova constraint. Também adicionar tratamento de erro mais resiliente: se o upsert falhar, fazer delete + insert como fallback (o padrão que já funciona no import por produto).
-
-```typescript
-// Delete existing data for this period first, then insert
-await supabase.from('ads_data').delete()
-  .eq('user_id', user.id)
-  .eq('periodo_inicio', uniqueRows[0]?.periodo_inicio)
-  .eq('periodo_fim', uniqueRows[0]?.periodo_fim);
-
-const { error } = await supabase.from('ads_data').insert(uniqueRows);
-```
-
-A abordagem delete+insert é mais segura porque:
-- Funciona independente de constraints
-- Limpa dados antigos do mesmo período
-- Evita duplicatas naturalmente
+**2. `src/components/roas/AdsProductCard.tsx`**
+- Reorganizar o layout para mostrar as 6 métricas (ROAS, GMV, Gasto, Vendas, Posição, Custo/Un) em uma linha horizontal, como na imagem de referência
+- Mover o ROAS de volta para o grid junto com as outras métricas (em destaque com cor)
+- Header: imagem + nome + badge "Não vinculado" + período + delete icon no canto superior direito
+- Métricas: grid de 6 colunas com labels em cima e valores embaixo
+- Para não vinculados: mensagem "Vincule para ver lucratividade" + botões Vincular (sólido) e Cadastrar (outline)
+- Remover o ROAS destacado no canto superior direito (volta ao grid)
+- Remover a barra de progresso ROAS vs empate para simplificar
 
 ### Arquivos modificados
-- Nova migration SQL (criar constraint UNIQUE real)
-- `src/hooks/useAdsData.ts` (linhas 246-258)
+- `src/components/roas/AdsTab.tsx`
+- `src/components/roas/AdsProductCard.tsx`
 
