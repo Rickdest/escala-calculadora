@@ -359,36 +359,36 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
 function KpiCard({ label, value, sub, subColor, icon: Icon, highlight, colorClass }: { label: string; value: string; sub?: string; subColor?: string; icon: React.ElementType; highlight?: boolean; colorClass?: { text: string; bg: string; border: string } }) {
   if (colorClass) {
     return (
-      <div className={cn('p-2 md:p-3 text-center rounded-xl border', colorClass.bg, colorClass.border)}>
-        <p className={cn('text-[9px] font-bold uppercase tracking-wider flex items-center justify-center gap-1', colorClass.text)}>
-          <Icon className="w-3 h-3" />
+      <div className={cn('p-1.5 md:p-3 text-center rounded-xl border', colorClass.bg, colorClass.border)}>
+        <p className={cn('text-[8px] md:text-[9px] font-bold uppercase tracking-wider flex items-center justify-center gap-0.5', colorClass.text)}>
+          <Icon className="w-2.5 h-2.5 md:w-3 md:h-3" />
           {label}
         </p>
-        <p className={cn('text-2xl font-black mt-0.5 font-mono tabular-nums', colorClass.text)}>{value}</p>
-        {sub && <p className={cn('text-[11px] font-medium mt-0.5 truncate', subColor || colorClass.text)}>{sub}</p>}
+        <p className={cn('text-base md:text-2xl font-black mt-0.5 font-mono tabular-nums', colorClass.text)}>{value}</p>
+        {sub && <p className={cn('text-[10px] md:text-[11px] font-medium mt-0.5 truncate', subColor || colorClass.text)}>{sub}</p>}
       </div>
     );
   }
   if (highlight) {
     return (
-      <div className="p-2 md:p-3 text-center rounded-xl bg-success/10 dark:bg-success/20 border-2 border-success/50">
-        <p className="text-[9px] font-bold text-success uppercase tracking-wider flex items-center justify-center gap-1">
-          <Icon className="w-3 h-3" />
+      <div className="p-1.5 md:p-3 text-center rounded-xl bg-success/10 dark:bg-success/20 border-2 border-success/50">
+        <p className="text-[8px] md:text-[9px] font-bold text-success uppercase tracking-wider flex items-center justify-center gap-0.5">
+          <Icon className="w-2.5 h-2.5 md:w-3 md:h-3" />
           {label}
         </p>
-        <p className="text-2xl font-black mt-0.5 font-mono tabular-nums text-success">{value}</p>
-        {sub && <p className={cn('text-[11px] font-medium mt-0.5 truncate', subColor || 'text-text-2')}>{sub}</p>}
+        <p className="text-base md:text-2xl font-black mt-0.5 font-mono tabular-nums text-success">{value}</p>
+        {sub && <p className={cn('text-[10px] md:text-[11px] font-medium mt-0.5 truncate', subColor || 'text-text-2')}>{sub}</p>}
       </div>
     );
   }
   return (
-    <div className="p-2 md:p-3 text-center rounded-xl bg-surface-2 border border-border">
-      <p className="text-[9px] font-bold text-text-3 uppercase tracking-wider flex items-center justify-center gap-1">
-        <Icon className="w-3 h-3" />
+    <div className="p-1.5 md:p-3 text-center rounded-xl bg-surface-2 border border-border">
+      <p className="text-[8px] md:text-[9px] font-bold text-text-3 uppercase tracking-wider flex items-center justify-center gap-0.5">
+        <Icon className="w-2.5 h-2.5 md:w-3 md:h-3" />
         {label}
       </p>
-      <p className="text-lg font-bold mt-0.5 font-mono tabular-nums text-foreground">{value}</p>
-      {sub && <p className={cn('text-[11px] font-medium mt-0.5 truncate', subColor || 'text-text-2')}>{sub}</p>}
+      <p className="text-sm md:text-lg font-bold mt-0.5 font-mono tabular-nums text-foreground">{value}</p>
+      {sub && <p className={cn('text-[10px] md:text-[11px] font-medium mt-0.5 truncate', subColor || 'text-text-2')}>{sub}</p>}
     </div>
   );
 }
