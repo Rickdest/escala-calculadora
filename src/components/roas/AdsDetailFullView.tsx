@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { EnrichedAdsData } from '@/hooks/useAdsData';
 import { OperationLogEntry, detectAndParseCSV, validateCSVSecurity } from '@/lib/shopeeAdsParser';
 import { toast } from 'sonner';
