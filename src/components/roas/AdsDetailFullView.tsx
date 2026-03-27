@@ -610,7 +610,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
       </div>
 
       {/* KPIs grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 mb-5 overflow-hidden">
+      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 md:gap-2 mb-5 overflow-hidden">
         {ad.posicao_media !== null && (() => {
           const pos = ad.posicao_media!;
           const isTop = pos <= 8;
