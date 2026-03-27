@@ -101,7 +101,9 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
         .order('imported_at', { ascending: false })
         .limit(1);
       if (data && data.length > 0 && data[0].operation_log) {
-        setOperationLog(data[0].operation_log as unknown as OperationLogEntry[]);
+        const log = data[0].operation_log as unknown as OperationLogEntry[];
+        setOperationLog(log);
+        onLogLoaded?.(log);
       }
     }
   }, [user, adProductId, adShopeeProductId]);
