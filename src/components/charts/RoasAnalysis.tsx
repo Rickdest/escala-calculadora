@@ -257,6 +257,40 @@ function ProductDropdown({
   );
 }
 
+// ─── Análise principal ───
+function ProductAnalysis() {
+  const { currentStore, updateProduct } = useStore();
+  const config = currentStore?.config;
+  const initialProductId = useMemo(() => {
+    if (!currentStore || currentStore.products.length === 0) return '';
+    const sorted = [...currentStore.products].sort((a, b) => 
+      new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime()
+    );
+    return sorted[0].id;
+  }, [currentStore?.products]);
+
+  const [selectedProductId, setSelectedProductId] = useState<string>('');
+
+  useEffect(() => {
+    if (!selectedProductId && initialProductId) {
+      setSelectedProductId(initialProductId);
+    }
+  }, [initialProductId]);
+  const [gastoAds, setGastoAds] = useState<string>('');
+  const [receitaAds, setReceitaAds] = useState<string>('');
+
+  const selectedProduct = useMemo(() => {
+    if (!currentStore || !selectedProductId) return null;
+    return currentStore.products.find(p => p.id === selectedProductId) || null;
+  }, [currentStore, selectedProductId]);
+
+  useEffect(() => {
+    if (selectedProduct) {
+      setGastoAds(selectedProduct.adsCost > 0 ? String(selectedProduct.adsCost) : '');
+      setReceitaAds(selectedProduct.adsRevenue > 0 ? String(selectedProduct.adsRevenue) : '');
+    }
+  }, [selectedProduct?.id]);
+
   useEffect(() => {
     if (!selectedProduct) return;
     const timeout = setTimeout(() => {
