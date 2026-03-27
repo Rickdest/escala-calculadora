@@ -21,11 +21,13 @@ export function PageHeader({ title, subtitle, showStoreSelector = true, action }
   return (
     <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border px-4 py-3.5 safe-top md:hidden">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 flex-1">
-          <h1 className="text-xl font-bold text-foreground md:text-2xl">{title}</h1>
-          {subtitle && (
-            <p className="text-sm text-text-2 mt-0.5">{subtitle}</p>
-          )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline gap-2">
+            <h1 className="text-xl font-bold text-foreground md:text-2xl">{title}</h1>
+            {subtitle && (
+              <p className="text-xs text-text-2 truncate">{subtitle}</p>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-2">

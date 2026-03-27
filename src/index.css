@@ -192,13 +192,13 @@
   .glass-card {
     background: hsl(var(--surface));
     border: 1px solid hsl(var(--border));
-    border-radius: 14px;
+    border-radius: var(--radius);
   }
 
   .glass-card-hover {
     background: hsl(var(--surface));
     border: 1px solid hsl(var(--border));
-    border-radius: 14px;
+    border-radius: var(--radius);
     @apply transition-all duration-200;
   }
 
@@ -225,19 +225,19 @@
   .stat-card {
     background: hsl(var(--surface));
     border: 1px solid hsl(var(--border));
-    border-radius: 14px;
+    border-radius: var(--radius);
     @apply p-4 relative overflow-hidden;
   }
 
   .stat-card-primary {
     background: hsl(var(--primary));
-    border-radius: 14px;
+    border-radius: var(--radius);
     @apply p-4 relative overflow-hidden;
   }
 
   .stat-card-success {
     background: hsl(var(--success));
-    border-radius: 14px;
+    border-radius: var(--radius);
     @apply p-4 relative overflow-hidden;
   }
 
@@ -295,7 +295,7 @@
   .surface-card {
     background: hsl(var(--surface));
     border: 1px solid hsl(var(--border));
-    border-radius: 14px;
+    border-radius: var(--radius);
   }
 
   /* Botões secundários/outline visíveis no tema claro */
