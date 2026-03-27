@@ -105,12 +105,12 @@ export function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-center cursor-help">
-                  <p className={cn('text-xl font-black font-mono', s.avgScore >= 60 ? 'text-primary' : 'text-warning')}>
+                <div className="shrink-0 min-w-[5rem] rounded-xl border border-primary/20 bg-primary/5 p-2 md:p-3 text-center cursor-help">
+                  <p className={cn('text-base md:text-xl font-black font-mono', s.avgScore >= 60 ? 'text-primary' : 'text-warning')}>
                     {s.avgScore > 0 ? `${s.avgScore}/100` : '—'}
                   </p>
-                  <p className="text-[11px] font-bold text-primary flex items-center justify-center gap-1">
-                    ⚡ Score Médio <Info className="w-3 h-3 text-text-3" />
+                  <p className="text-[10px] md:text-[11px] font-bold text-primary flex items-center justify-center gap-1">
+                    ⚡ Score <Info className="w-3 h-3 text-text-3" />
                   </p>
                 </div>
               </TooltipTrigger>
