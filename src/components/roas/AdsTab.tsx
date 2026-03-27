@@ -37,7 +37,11 @@ function formatPeriodLabel(inicio: string, fim: string) {
 export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => void }) {
   const { currentStore } = useStore();
   const { data, loading, operating, importGeneralCSV, importProductCSV, linkProduct, unlinkProduct, reload, deleteAdsData, deleteAll } = useAdsData();
-  const [selectedDetail, setSelectedDetail] = useState<EnrichedAdsData | null>(null);
+  const [selectedDetail, setSelectedDetailRaw] = useState<EnrichedAdsData | null>(null);
+  const setSelectedDetail = (ad: EnrichedAdsData | null) => {
+    setSelectedDetailRaw(ad);
+    onDetailOpen?.(!!ad);
+  };
   const [linkTarget, setLinkTarget] = useState<string | null>(null);
   const [quickRegTarget, setQuickRegTarget] = useState<EnrichedAdsData | null>(null);
   const [filter, setFilter] = useState<FilterType>('all');
