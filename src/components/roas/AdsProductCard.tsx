@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { EnrichedAdsData } from '@/hooks/useAdsData';
 import { cn } from '@/lib/utils';
 import { Package, Link2, Plus, Trash2 } from 'lucide-react';
-import { fmt, getClassCor, getRoasColor } from './adsHelpers';
+import { fmt, fmtShort, getClassCor, getRoasColor } from './adsHelpers';
 import { calcAdEfficiencyScore } from '@/lib/adsLogic';
 
 function getPositionColor(pos: number) {
@@ -101,10 +101,9 @@ export function AdsProductCard({
         </div>
       </div>
 
-      {/* ── PRIMARY METRICS: 3-column cards (like ProductCard) ── */}
+      {/* ── PRIMARY METRICS: 3-column cards ── */}
       <div className="mt-3 grid grid-cols-3 gap-2">
-        {/* ROAS */}
-        <div className={cn('rounded-xl p-2.5 flex flex-col items-start border', getRoasBg(roasDireto))}>
+        <div className={cn('rounded-xl p-2.5 flex flex-col items-center text-center border', getRoasBg(roasDireto))}>
           <p className={cn('font-mono text-base font-extrabold leading-tight', getRoasColor(roasDireto))}>
             {roasDireto.toFixed(2)}
           </p>
@@ -116,45 +115,42 @@ export function AdsProductCard({
           )}
         </div>
 
-        {/* GMV */}
-        <div className="rounded-xl p-2.5 flex flex-col items-start border border-border/60 bg-secondary/30">
-          <p className="font-mono text-sm font-extrabold leading-tight text-foreground truncate w-full">
-            {fmt(ad.gmv)}
+        <div className="rounded-xl p-2.5 flex flex-col items-center text-center border border-border/60 bg-secondary/30">
+          <p className="font-mono text-sm font-extrabold leading-tight text-foreground">
+            {fmtShort(ad.gmv)}
           </p>
           <p className="text-[10px] font-medium text-muted-foreground mt-0.5">GMV</p>
         </div>
 
-        {/* Gasto */}
-        <div className="rounded-xl p-2.5 flex flex-col items-start border border-border/60 bg-secondary/30">
-          <p className="font-mono text-sm font-extrabold leading-tight text-foreground truncate w-full">
-            {fmt(ad.despesas)}
+        <div className="rounded-xl p-2.5 flex flex-col items-center text-center border border-border/60 bg-secondary/30">
+          <p className="font-mono text-sm font-extrabold leading-tight text-foreground">
+            {fmtShort(ad.despesas)}
           </p>
           <p className="text-[10px] font-medium text-muted-foreground mt-0.5">Gasto</p>
         </div>
       </div>
 
-      {/* ── SECONDARY METRICS: 3-column smaller row ── */}
-      <div className="mt-2 grid grid-cols-3 gap-1.5">
-        {/* Posição */}
-        <div className="rounded-lg bg-secondary/50 px-2.5 py-1.5 flex items-center justify-between">
-          <span className="text-[10px] font-medium text-muted-foreground">Posição</span>
-          <span className={cn('text-xs font-bold font-mono', hasPosition ? getPositionColor(ad.posicao_media!) : 'text-muted-foreground')}>
+      {/* ── SECONDARY METRICS: same card style ── */}
+      <div className="mt-2 grid grid-cols-3 gap-2">
+        <div className="rounded-xl p-2.5 flex flex-col items-center text-center border border-border/60 bg-secondary/30">
+          <p className={cn('font-mono text-base font-extrabold leading-tight', hasPosition ? getPositionColor(ad.posicao_media!) : 'text-muted-foreground')}>
             {hasPosition ? `#${ad.posicao_media}` : '—'}
-          </span>
+          </p>
+          <p className="text-[10px] font-medium text-muted-foreground mt-0.5">Posição</p>
         </div>
 
-        {/* Vendas */}
-        <div className="rounded-lg bg-secondary/50 px-2.5 py-1.5 flex items-center justify-between">
-          <span className="text-[10px] font-medium text-muted-foreground">Vendas</span>
-          <span className="text-xs font-bold font-mono text-foreground">{ad.itens_vendidos} un</span>
+        <div className="rounded-xl p-2.5 flex flex-col items-center text-center border border-border/60 bg-secondary/30">
+          <p className="font-mono text-base font-extrabold leading-tight text-foreground">
+            {ad.itens_vendidos} <span className="text-[10px] font-medium">un</span>
+          </p>
+          <p className="text-[10px] font-medium text-muted-foreground mt-0.5">Vendas</p>
         </div>
 
-        {/* Custo/Un */}
-        <div className="rounded-lg bg-secondary/50 px-2.5 py-1.5 flex items-center justify-between">
-          <span className="text-[10px] font-medium text-muted-foreground">Custo/Un</span>
-          <span className="text-xs font-bold font-mono text-foreground">
-            {custoUn > 0 ? fmt(custoUn) : '—'}
-          </span>
+        <div className="rounded-xl p-2.5 flex flex-col items-center text-center border border-border/60 bg-secondary/30">
+          <p className="font-mono text-sm font-extrabold leading-tight text-foreground">
+            {custoUn > 0 ? fmtShort(custoUn) : '—'}
+          </p>
+          <p className="text-[10px] font-medium text-muted-foreground mt-0.5">Custo/Un</p>
         </div>
       </div>
 
