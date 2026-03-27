@@ -668,20 +668,20 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
 
       {/* Tabs */}
       <Tabs defaultValue="diagnostico" className="w-full">
-        <TabsList className="w-full h-10 bg-secondary border border-border rounded-xl p-1 mb-4">
+        <TabsList className="w-full h-11 bg-secondary/80 border border-border rounded-xl p-1 mb-4">
           <TabsTrigger
             value="diagnostico"
-            className="flex-1 h-8 rounded-lg text-xs sm:text-sm font-bold gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground"
+            className="flex-1 h-9 rounded-lg text-xs sm:text-sm font-bold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=inactive]:text-foreground/70"
           >
-            <Target className="w-3.5 h-3.5 hidden sm:inline" />
-            Diagnóstico & Ação
+            <Target className="w-3.5 h-3.5" />
+            Diagnóstico
           </TabsTrigger>
           <TabsTrigger
             value="metricas"
-            className="flex-1 h-8 rounded-lg text-xs sm:text-sm font-bold gap-1.5 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground"
+            className="flex-1 h-9 rounded-lg text-xs sm:text-sm font-bold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=inactive]:text-foreground/70"
           >
-            <TrendingUp className="w-3.5 h-3.5 hidden sm:inline" />
-            Métricas & Histórico
+            <TrendingUp className="w-3.5 h-3.5" />
+            Métricas
           </TabsTrigger>
         </TabsList>
 
