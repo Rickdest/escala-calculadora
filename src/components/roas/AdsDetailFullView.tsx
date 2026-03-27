@@ -27,6 +27,8 @@ interface Props {
   onLink: () => void;
   onQuickRegister: () => void;
   onReimport?: () => void;
+  onUnlink?: () => void;
+  onChangeLink?: () => void;
 }
 
 // ═══ Small helper components ═══
@@ -46,7 +48,7 @@ function KpiCard({ label, value, sub, subColor, icon: Icon }: { label: string; v
 
 // ═══ Main Component ═══
 
-export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPosition, onLink, onQuickRegister, onReimport }: Props) {
+export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPosition, onLink, onQuickRegister, onReimport, onUnlink, onChangeLink }: Props) {
   const { currentStore } = useStore();
   const isMobile = useIsMobile();
   const config = currentStore?.config;
@@ -444,6 +446,16 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
           {onReimport && (
             <Button onClick={onReimport} variant="outline" size="sm" className="gap-1 text-xs font-bold flex-shrink-0">
               <Upload className="w-3.5 h-3.5" /> CSV
+            </Button>
+          )}
+          {product && onChangeLink && (
+            <Button onClick={onChangeLink} variant="outline" size="sm" className="gap-1 text-xs font-bold flex-shrink-0">
+              <Link2 className="w-3.5 h-3.5" /> Trocar
+            </Button>
+          )}
+          {product && onUnlink && (
+            <Button onClick={onUnlink} variant="ghost" size="sm" className="gap-1 text-xs font-bold flex-shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10">
+              Desvincular
             </Button>
           )}
         </div>
