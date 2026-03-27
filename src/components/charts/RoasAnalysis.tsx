@@ -144,8 +144,8 @@ function CostBreakdownCard({ product, roasData }: { product: Product; roasData: 
   );
 }
 
-// ─── Seletor de produto — lista vertical compacta ───
-function ProductPicker({
+// ─── Seletor de produto — dropdown compacto ───
+function ProductDropdown({
   products,
   selectedId,
   onSelect,
@@ -156,7 +156,7 @@ function ProductPicker({
   onSelect: (id: string) => void;
   config: any;
 }) {
-  const [showSearch, setShowSearch] = useState(false);
+  const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
 
   const sorted = useMemo(() => {
@@ -170,109 +170,84 @@ function ProductPicker({
     return sorted.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
   }, [sorted, search]);
 
-  const visible = sorted.slice(0, 4);
+  const selected = products.find(p => p.id === selectedId);
 
   return (
-    <div className="space-y-2">
-      <div className="rounded-xl border border-border bg-card overflow-hidden">
-        <div className="divide-y divide-border/50">
-          {visible.map(p => {
-            const isActive = p.id === selectedId;
-            const roasData = calcProductRoas(p, config);
-            return (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => onSelect(p.id)}
-                className={cn(
-                  'w-full flex items-center gap-3 px-3 py-2.5 transition-all text-left',
-                  isActive
-                    ? 'bg-primary/10 border-l-2 border-l-primary'
-                    : 'border-l-2 border-l-transparent hover:bg-surface-2/50'
-                )}
-              >
-                <div className="w-10 h-10 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                  {p.imageUrl ? (
-                    <img src={p.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover" />
-                  ) : (
-                    <span className="text-xs font-bold text-text-3">{(p.name || '?').charAt(0).toUpperCase()}</span>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className={cn('text-sm font-semibold truncate', isActive ? 'text-foreground' : 'text-text-2')}>{p.name}</p>
-                  <p className="text-xs text-text-3 tabular-nums font-mono">{formatCurrency(p.salePrice)}</p>
-                </div>
-                {roasData.roasAtual !== null && !roasData.margemInsuficiente && (
-                  <span className={cn('text-xs font-bold px-2 py-0.5 rounded-full tabular-nums font-mono flex-shrink-0',
-                    roasData.roasAtual >= (roasData.roasIdeal || 0) ? 'bg-success/15 text-success' :
-                    roasData.roasAtual >= (roasData.roasEmpate || 0) ? 'bg-warning/15 text-warning' :
-                    'bg-destructive/15 text-destructive'
-                  )}>
-                    {roasData.roasAtual.toFixed(1)}x
-                  </span>
-                )}
-              </button>
-            );
-          })}
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:border-primary/30 transition-colors"
+      >
+        <div className="w-10 h-10 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0 overflow-hidden">
+          {selected?.imageUrl ? (
+            <img src={selected.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover" />
+          ) : (
+            <span className="text-xs font-bold text-muted-foreground">IMG</span>
+          )}
         </div>
-        {sorted.length > 4 && (
-          <button
-            type="button"
-            onClick={() => setShowSearch(true)}
-            className="w-full py-2.5 text-xs font-bold text-primary border-t border-border/50 bg-surface-2/30 hover:bg-surface-2/60 transition-colors"
-          >
-            Ver todos ({sorted.length} produtos)
-          </button>
-        )}
-      </div>
+        <div className="flex-1 min-w-0 text-left">
+          <p className="text-sm font-semibold truncate text-foreground">{selected?.name || 'Selecione um produto'}</p>
+          {selected && <p className="text-xs text-muted-foreground tabular-nums font-mono">Preço de Venda: {formatCurrency(selected.salePrice)}</p>}
+        </div>
+        <ChevronDown className={cn('w-4 h-4 text-muted-foreground transition-transform', open && 'rotate-180')} />
+      </button>
 
-      {/* Search modal for >4 products */}
-      {showSearch && (
+      {open && (
         <>
-          <div className="fixed inset-0 z-40 bg-black/30" onClick={() => { setShowSearch(false); setSearch(''); }} />
-          <div className="fixed inset-x-4 top-[20%] z-50 rounded-xl border border-border bg-card shadow-2xl overflow-hidden animate-fade-in max-w-md mx-auto">
-            <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border bg-surface-2/50">
-              <Search className="w-4 h-4 text-text-3 flex-shrink-0" />
-              <input
-                autoFocus
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Buscar produto..."
-                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-text-3 outline-none"
-              />
-              <button onClick={() => { setShowSearch(false); setSearch(''); }} className="text-text-3 hover:text-foreground p-1 rounded-lg hover:bg-surface-2 transition-colors">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="max-h-[300px] overflow-y-auto scrollbar-none divide-y divide-border/50">
+          <div className="fixed inset-0 z-40" onClick={() => { setOpen(false); setSearch(''); }} />
+          <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-border bg-card shadow-2xl overflow-hidden animate-fade-in">
+            {sorted.length > 4 && (
+              <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border bg-surface-2/50">
+                <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                <input
+                  autoFocus
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  placeholder="Buscar produto..."
+                  className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+                />
+              </div>
+            )}
+            <div className="max-h-[260px] overflow-y-auto scrollbar-none divide-y divide-border/50">
               {filtered.map(p => {
                 const isActive = p.id === selectedId;
+                const roasData = calcProductRoas(p, config);
                 return (
                   <button
                     key={p.id}
                     type="button"
-                    onClick={() => { onSelect(p.id); setShowSearch(false); setSearch(''); }}
+                    onClick={() => { onSelect(p.id); setOpen(false); setSearch(''); }}
                     className={cn(
-                      'w-full flex items-center gap-3 px-3 py-3 text-left transition-colors',
-                      isActive ? 'bg-primary/8' : 'hover:bg-surface-2'
+                      'w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors',
+                      isActive ? 'bg-primary/10' : 'hover:bg-surface-2/50'
                     )}
                   >
                     <div className="w-9 h-9 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0 overflow-hidden">
                       {p.imageUrl ? (
                         <img src={p.imageUrl} alt="" className="w-9 h-9 rounded-lg object-cover" />
                       ) : (
-                        <Package className="w-3.5 h-3.5 text-text-3" />
+                        <Package className="w-3.5 h-3.5 text-muted-foreground" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold truncate">{p.name}</p>
-                      <p className="text-xs text-text-3 tabular-nums font-mono">{formatCurrency(p.salePrice)}</p>
+                      <p className="text-xs text-muted-foreground tabular-nums font-mono">{formatCurrency(p.salePrice)}</p>
                     </div>
+                    {roasData.roasAtual !== null && !roasData.margemInsuficiente && (
+                      <span className={cn('text-xs font-bold px-2 py-0.5 rounded-full tabular-nums font-mono flex-shrink-0',
+                        roasData.roasAtual >= (roasData.roasIdeal || 0) ? 'bg-success/15 text-success' :
+                        roasData.roasAtual >= (roasData.roasEmpate || 0) ? 'bg-warning/15 text-warning' :
+                        'bg-destructive/15 text-destructive'
+                      )}>
+                        {roasData.roasAtual.toFixed(1)}x
+                      </span>
+                    )}
                   </button>
                 );
               })}
               {filtered.length === 0 && (
-                <p className="text-center text-xs text-text-3 py-6">Nenhum produto encontrado</p>
+                <p className="text-center text-xs text-muted-foreground py-6">Nenhum produto encontrado</p>
               )}
             </div>
           </div>
@@ -281,41 +256,6 @@ function ProductPicker({
     </div>
   );
 }
-
-// ─── Análise principal ───
-function ProductAnalysis() {
-  const { currentStore, updateProduct } = useStore();
-  const config = currentStore?.config;
-  // Pre-select first product sorted by updatedAt desc
-  const initialProductId = useMemo(() => {
-    if (!currentStore || currentStore.products.length === 0) return '';
-    const sorted = [...currentStore.products].sort((a, b) => 
-      new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime()
-    );
-    return sorted[0].id;
-  }, [currentStore?.products]);
-
-  const [selectedProductId, setSelectedProductId] = useState<string>('');
-
-  useEffect(() => {
-    if (!selectedProductId && initialProductId) {
-      setSelectedProductId(initialProductId);
-    }
-  }, [initialProductId]);
-  const [gastoAds, setGastoAds] = useState<string>('');
-  const [receitaAds, setReceitaAds] = useState<string>('');
-
-  const selectedProduct = useMemo(() => {
-    if (!currentStore || !selectedProductId) return null;
-    return currentStore.products.find(p => p.id === selectedProductId) || null;
-  }, [currentStore, selectedProductId]);
-
-  useEffect(() => {
-    if (selectedProduct) {
-      setGastoAds(selectedProduct.adsCost > 0 ? String(selectedProduct.adsCost) : '');
-      setReceitaAds(selectedProduct.adsRevenue > 0 ? String(selectedProduct.adsRevenue) : '');
-    }
-  }, [selectedProduct?.id]);
 
   useEffect(() => {
     if (!selectedProduct) return;
