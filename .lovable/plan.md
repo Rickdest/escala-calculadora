@@ -1,26 +1,26 @@
 
 
-## Melhorar destaque de Posição, Vendas e Custo/Un nos cards de Ads
+## Melhorar seletor de produto na aba ROAS — mostrar lista visível no mobile
 
-### Mudanças em `src/components/roas/AdsProductCard.tsx`
+### Problema
+O `ProductPicker` atual mostra apenas um botão/card com "Selecione um produto..." e um botão "Trocar". No mobile, não fica claro que é preciso clicar ali. O usuário prefere ver uma lista/container de produtos diretamente.
 
-**1. Promover as 3 métricas secundárias para cards com mesmo estilo das primárias**
-- Trocar o layout atual (row compacta `bg-secondary/50` com label+valor lado a lado) por cards verticais iguais aos de ROAS/GMV/Gasto
-- Usar `rounded-xl p-2.5 border border-border/60 bg-secondary/30` — mesmo padrão visual
-- Valor em cima (grande, bold), label embaixo (pequeno, muted)
+### Mudanças em `src/components/charts/RoasAnalysis.tsx`
 
-**2. Posição com destaque especial**
-- Valor com cor semântica via `getPositionColor` existente
-- Tamanho `text-base font-extrabold` (igual ao ROAS)
+**Quando nenhum produto está selecionado (`!selectedProductId`):**
+- Em vez do picker fechado, mostrar uma **lista scrollável de produtos** como cards clicáveis (estilo similar ao dropdown já existente mas sempre visível)
+- Título "Selecione um produto" acima da lista
+- Cada item: imagem + nome + preço + badge ROAS (reaproveitando o layout do dropdown)
+- Max-height com scroll no mobile (~300px)
 
-**3. Vendas e Custo/Un com valores abreviados**
-- Usar `fmtShort` (já existe em `adsHelpers.ts`) para Custo/Un em vez de `fmt` — evita texto cortado
-- Vendas: manter `{ad.itens_vendidos} un` (já é curto)
+**Quando um produto já está selecionado:**
+- Manter o picker compacto atual com botão "Trocar" (funciona bem nesse estado)
 
-**4. Alinhamento uniforme**
-- Todos os 6 cards (2 rows de 3) com `flex flex-col items-center text-center` para centralizar e evitar cortes
-- Valores com `truncate` removido — usar abreviação em vez de cortar
+### Resultado
+- Usuário vê todos os produtos ao entrar na aba, sem precisar adivinhar que deve clicar
+- Após selecionar, o layout compacto com "Trocar" continua funcionando normalmente
+- Apenas mobile — desktop pode manter o mesmo comportamento
 
 ### Arquivo modificado
-- `src/components/roas/AdsProductCard.tsx`
+- `src/components/charts/RoasAnalysis.tsx` (componente `ProductPicker`)
 
