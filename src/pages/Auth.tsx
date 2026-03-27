@@ -69,7 +69,9 @@ export default function Auth() {
       if (isLogin) {
         const { error } = await signIn(email, password);
         if (error) {
-          setErrorMessage(traduzirErro(error.message));
+          const msg = traduzirErro(error.message);
+          setErrorMessage(msg);
+          toast.error(msg, { duration: 4000 });
         } else {
           navigate('/');
         }
