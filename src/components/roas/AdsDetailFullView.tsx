@@ -350,10 +350,22 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate }: { 
 
 // ═══ Small helper components ═══
 
-function KpiCard({ label, value, sub, subColor, icon: Icon, highlight }: { label: string; value: string; sub?: string; subColor?: string; icon: React.ElementType; highlight?: boolean }) {
+function KpiCard({ label, value, sub, subColor, icon: Icon, highlight, colorClass }: { label: string; value: string; sub?: string; subColor?: string; icon: React.ElementType; highlight?: boolean; colorClass?: { text: string; bg: string; border: string } }) {
+  if (colorClass) {
+    return (
+      <div className={cn('p-2 md:p-3 text-center rounded-xl border', colorClass.bg, colorClass.border)}>
+        <p className={cn('text-[9px] font-bold uppercase tracking-wider flex items-center justify-center gap-1', colorClass.text)}>
+          <Icon className="w-3 h-3" />
+          {label}
+        </p>
+        <p className={cn('text-2xl font-black mt-0.5 font-mono tabular-nums', colorClass.text)}>{value}</p>
+        {sub && <p className={cn('text-[11px] font-medium mt-0.5 truncate', subColor || colorClass.text)}>{sub}</p>}
+      </div>
+    );
+  }
   if (highlight) {
     return (
-      <div className="p-3 text-center rounded-xl bg-success/10 dark:bg-success/20 border-2 border-success/50">
+      <div className="p-2 md:p-3 text-center rounded-xl bg-success/10 dark:bg-success/20 border-2 border-success/50">
         <p className="text-[9px] font-bold text-success uppercase tracking-wider flex items-center justify-center gap-1">
           <Icon className="w-3 h-3" />
           {label}
@@ -364,7 +376,7 @@ function KpiCard({ label, value, sub, subColor, icon: Icon, highlight }: { label
     );
   }
   return (
-    <div className="p-3 text-center rounded-xl bg-surface-2 border border-border">
+    <div className="p-2 md:p-3 text-center rounded-xl bg-surface-2 border border-border">
       <p className="text-[9px] font-bold text-text-3 uppercase tracking-wider flex items-center justify-center gap-1">
         <Icon className="w-3 h-3" />
         {label}
@@ -571,8 +583,20 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         <span className="text-[11px] text-success font-mono tabular-nums md:hidden block mt-2">{periodLabel}</span>
       </div>
 
-      {/* KPIs — 6 columns grid */}
-      <div className="grid grid-cols-3 md:grid-cols-6 gap-2 mb-5">
+      {/* KPIs grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 mb-5 overflow-hidden">
+        {ad.posicao_media !== null && (() => {
+          const pos = ad.posicao_media!;
+          const isTop = pos <= 8;
+          const isMid = pos > 8 && pos <= 20;
+          const pageLabel = pos <= 3 ? 'Top 3' : pos <= 8 ? '1ª Página' : pos <= 20 ? '2ª Página' : '3ª Página+';
+          const posColorClass = {
+            text: isTop ? 'text-success' : isMid ? 'text-warning' : 'text-destructive',
+            bg: isTop ? 'bg-success/5' : isMid ? 'bg-warning/5' : 'bg-destructive/5',
+            border: isTop ? 'border-success/25' : isMid ? 'border-warning/25' : 'border-destructive/25',
+          };
+          return <KpiCard icon={MapPin} label="Posição" value={`#${pos}`} sub={pageLabel} colorClass={posColorClass} />;
+        })()}
         <KpiCard icon={Eye} label="Impressões" value={ad.impressoes >= 1000 ? `${(ad.impressoes / 1000).toFixed(1)}k` : String(ad.impressoes)} />
         <KpiCard icon={MousePointerClick} label="Cliques" value={ad.cliques >= 1000 ? `${(ad.cliques / 1000).toFixed(1)}k` : String(ad.cliques)} />
         <KpiCard icon={Percent} label="CTR" value={`${ad.ctr.toFixed(2)}%`} sub={ad.ctr >= 2.5 ? 'Bom' : ad.ctr >= 1.5 ? 'Ok' : 'Baixo'} subColor={ad.ctr >= 2.5 ? 'text-success' : ad.ctr >= 1.5 ? 'text-warning' : 'text-destructive'} />
@@ -580,43 +604,6 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         <KpiCard icon={DollarSign} label="GMV" value={fmtShort(ad.gmv)} />
         <KpiCard icon={Target} label="ROAS" value={roasDireto.toFixed(2)} sub={roasEmpate ? `Emp: ${roasEmpate.toFixed(2)}` : undefined} subColor={roasEmpate ? (roasDireto >= roasEmpate ? 'text-success' : 'text-destructive') : undefined} highlight />
       </div>
-
-      {/* Position highlight card */}
-      {ad.posicao_media !== null && (() => {
-        const pos = ad.posicao_media!;
-        const isTop = pos <= 8;
-        const isMid = pos > 8 && pos <= 20;
-        const pageLabel = pos <= 3 ? 'Top 3' : pos <= 8 ? '1ª Página' : pos <= 20 ? '2ª Página' : '3ª Página+';
-        const posColor = isTop ? 'text-success' : isMid ? 'text-warning' : 'text-destructive';
-        const posBorder = isTop ? 'border-success/25' : isMid ? 'border-warning/25' : 'border-destructive/25';
-        const posBg = isTop ? 'bg-success/5' : isMid ? 'bg-warning/5' : 'bg-destructive/5';
-        const posHint = isTop
-          ? 'Ótima visibilidade — considere escalar orçamento'
-          : isMid
-          ? 'Visibilidade média — reduza a meta de ROAS para subir'
-          : 'Visibilidade baixa — reduza a meta de ROAS com urgência';
-        return (
-          <div className={cn('rounded-xl border p-4 flex items-center justify-between gap-4 mb-5', posBg, posBorder)}>
-            <div className="flex-1">
-              <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1 flex items-center gap-1.5">
-                <MapPin className="w-3 h-3" /> Posicionamento
-              </p>
-              <p className={cn('text-xs font-semibold leading-snug', posColor)}>{posHint}</p>
-              <p className={cn('text-[11px] font-bold mt-2 px-2 py-0.5 rounded-md inline-block', posColor,
-                isTop ? 'bg-success/10' : isMid ? 'bg-warning/10' : 'bg-destructive/10'
-              )}>
-                {pageLabel}
-              </p>
-            </div>
-            <div className="flex-shrink-0 text-right">
-              <p className={cn('leading-none font-black font-mono tabular-nums', posColor)}>
-                <span className="text-xl">#</span>
-                <span className="text-6xl">{pos}</span>
-              </p>
-            </div>
-          </div>
-        );
-      })()}
 
       {/* Unlinked product warning */}
       {!product && (
