@@ -1,35 +1,25 @@
 
 
-## Fix: Ads Tab Resets When Switching Browser Tabs
+## Ajustes Visuais no Detalhe de Ads
 
-### Root Cause
+### Arquivo: `src/components/roas/AdsDetailFullView.tsx`
 
-Two layers of the same bug:
+**1. Card de Posição — mais impacto visual (linhas 584-609)**
 
-1. **`useAdsData.ts`** — `fetchData` depends on `user` (full object reference). When Supabase refreshes the token on tab switch, `user` gets a new reference → `fetchData` recreates → `useEffect` fires → **`setLoading(true)`**.
+Substituir o card atual por o layout proposto pelo usuário com:
+- Ícone `MapPin` no label "Posicionamento"
+- Badge inline com `pageLabel` e cor semântica
+- Número da posição em `text-6xl` com `#` em `text-xl`
+- Usar `bg-success/5`, `bg-warning/5`, `bg-destructive/5` (em vez de `/8`)
+- Adicionar `border-success/25`, `border-warning/25`, `border-destructive/25` separados
 
-2. **`AdsTab.tsx` line 146** — When `loading` is true, the component returns a spinner, **unmounting the entire detail view** and all local state (selected product, filters, scroll position).
+**2. Tabs — mais destaque visual (linhas 637-645)**
 
-### Fix
+Atualizar `TabsList` e `TabsTrigger`:
+- `TabsList`: `w-full h-11 bg-secondary border border-border rounded-xl p-1`
+- `TabsTrigger`: `flex-1 h-9 rounded-lg text-sm font-bold gap-2` com `data-[state=active]:bg-card data-[state=active]:shadow-sm data-[state=inactive]:text-muted-foreground`
 
-**File 1: `src/hooks/useAdsData.ts`**
-
-Same pattern as the SubscriptionContext fix — only show loading on first fetch:
-
-- Add a `hasResolved` ref
-- Change `setLoading(true)` in `fetchData` to `if (!hasResolved.current) setLoading(true)`
-- Set `hasResolved.current = true` after first fetch completes
-- Change `fetchData` dependencies from `user` to `user?.id` to avoid unnecessary recreations on token refresh (the full `user` object changes reference, but `user.id` stays the same)
-
-**File 2: `src/components/roas/AdsTab.tsx`**
-
-As a safety net, don't unmount the detail view during loading:
-
-- Change the early return on `loading` (line 146-152) to only show spinner when there's no data yet (`loading && !hasData`)
-- This way, subsequent refetches show existing data while updating silently
-
-### What does NOT change
-- All calculation logic, import logic, CSV parsing
-- UI components, detail view, filters
-- SubscriptionContext (already fixed)
+### O que NÃO muda
+- Nenhuma lógica de cálculo
+- Outros componentes intactos
 
