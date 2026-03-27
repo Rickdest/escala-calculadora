@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useBilling } from '@/hooks/useBilling';
@@ -32,8 +32,13 @@ export function TrialExpiredBlock() {
     }
   };
 
+  useEffect(() => {
+    if (isActive && !checking) {
+      navigate('/', { replace: true });
+    }
+  }, [isActive, checking, navigate]);
+
   if (isActive && !checking) {
-    navigate('/', { replace: true });
     return null;
   }
 

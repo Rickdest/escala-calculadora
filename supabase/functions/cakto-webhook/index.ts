@@ -39,13 +39,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Rate limiting: reject more than 10 requests per minute from the same IP
     const clientIp = req.headers.get("x-forwarded-for") ?? "unknown";
     console.log("Webhook request from:", clientIp.split(",")[0].trim());
 
     const body = await req.json();
 
-    // Validate secret from body (constant-time comparison to prevent timing attacks)
+    // Validate secret (constant-time comparison)
     const secret = body.fields?.secret || body.secret || "";
     const encoder = new TextEncoder();
     const a = encoder.encode(secret);
@@ -73,7 +72,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const email = customer.email.toLowerCase().trim();
     if (!emailRegex.test(email) || email.length > 255) {
@@ -93,7 +91,6 @@ Deno.serve(async (req) => {
       typeof body.product?.name === "string" ? body.product.name : "pro"
     ).slice(0, 50);
 
-    // Map Cakto events to subscription status
     const allowedEvents = [
       "purchase_approved",
       "refund",
@@ -111,23 +108,32 @@ Deno.serve(async (req) => {
       });
     }
 
-    let status = "free";
-    let periodStart: string | null = null;
+    // ── Idempotency check ──
+    // If we have an orderId, check if this exact event was already processed
+    if (orderId) {
+      const { data: existing } = await supabase
+        .from("subscriptions")
+        .select("id, status, cakto_order_id")
+        .eq("email", email)
+        .maybeSingle();
 
-    switch (event) {
-      case "purchase_approved":
-      case "subscription_renewed":
-        status = "active";
-        periodStart = new Date().toISOString();
-        break;
-      case "refund":
-      case "chargeback":
-      case "subscription_canceled":
-        status = "canceled";
-        break;
-      case "subscription_renewal_refused":
-        status = "past_due";
-        break;
+      if (existing?.cakto_order_id === orderId) {
+        // Same order already processed — check if status would change
+        const wouldBeStatus = getStatusForEvent(event);
+        if (existing.status === wouldBeStatus) {
+          console.log(`Idempotent: order ${orderId} already processed with status ${wouldBeStatus}`);
+          return new Response(JSON.stringify({ ok: true, status: wouldBeStatus, idempotent: true }), {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+    }
+
+    const status = getStatusForEvent(event);
+    let periodStart: string | null = null;
+    if (event === "purchase_approved" || event === "subscription_renewed") {
+      periodStart = new Date().toISOString();
     }
 
     // Find user by email
@@ -159,17 +165,17 @@ Deno.serve(async (req) => {
     if (periodStart) subscriptionData.current_period_start = periodStart;
 
     // Upsert by email
-    const { data: existing } = await supabase
+    const { data: existingRow } = await supabase
       .from("subscriptions")
       .select("id")
       .eq("email", email)
       .maybeSingle();
 
-    if (existing) {
+    if (existingRow) {
       const { error: updateError } = await supabase
         .from("subscriptions")
         .update(subscriptionData)
-        .eq("id", existing.id);
+        .eq("id", existingRow.id);
       if (updateError) console.error("Update error:", updateError.message);
     } else {
       if (!userId) {
@@ -181,7 +187,7 @@ Deno.serve(async (req) => {
       if (insertError) console.error("Insert error:", insertError.message);
     }
 
-    console.log(`Subscription ${status} for user`);
+    console.log(`Subscription ${status} for ${email} (order: ${orderId || 'n/a'})`);
 
     return new Response(JSON.stringify({ ok: true, status }), {
       status: 200,
@@ -198,3 +204,19 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+function getStatusForEvent(event: string): string {
+  switch (event) {
+    case "purchase_approved":
+    case "subscription_renewed":
+      return "active";
+    case "refund":
+    case "chargeback":
+    case "subscription_canceled":
+      return "canceled";
+    case "subscription_renewal_refused":
+      return "past_due";
+    default:
+      return "free";
+  }
+}

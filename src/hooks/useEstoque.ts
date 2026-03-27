@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { compressImage, uploadEstoqueImage, deleteEstoqueImage } from '@/lib/imageUtils';
+import type { Tables, TablesInsert, TablesUpdate } from '@/integrations/supabase/types';
 
 export interface EstoqueProduto {
   id: string;
@@ -64,21 +65,48 @@ export function getLocalStockImage(productId: string): string | null {
   return getLocalStockImages()[productId] || null;
 }
 
+function mapDbVariacao(v: Tables<'estoque_variacoes'>): EstoqueVariacao {
+  return {
+    id: v.id,
+    produto_id: v.produto_id,
+    user_id: v.user_id,
+    atributos: (v.atributos ?? {}) as Record<string, string>,
+    sku: v.sku,
+    preco_custo: Number(v.preco_custo),
+    quantidade: v.quantidade,
+    quantidade_minima: v.quantidade_minima,
+    created_at: v.created_at,
+    updated_at: v.updated_at,
+  };
+}
+
 async function fetchEstoque(userId: string): Promise<EstoqueProduto[]> {
   const [{ data: prods, error: e1 }, { data: vars, error: e2 }] = await Promise.all([
-    supabase.from('estoque_produtos' as any).select('*').eq('user_id', userId).order('created_at', { ascending: false }),
-    supabase.from('estoque_variacoes' as any).select('*').eq('user_id', userId),
+    supabase.from('estoque_produtos').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+    supabase.from('estoque_variacoes').select('*').eq('user_id', userId),
   ]);
   if (e1) throw e1;
   if (e2) throw e2;
+
   const varMap = new Map<string, EstoqueVariacao[]>();
-  for (const v of (vars || []) as any[]) {
-    const list = varMap.get(v.produto_id) || [];
-    list.push(v as EstoqueVariacao);
-    varMap.set(v.produto_id, list);
+  for (const v of vars || []) {
+    const mapped = mapDbVariacao(v);
+    const list = varMap.get(mapped.produto_id) || [];
+    list.push(mapped);
+    varMap.set(mapped.produto_id, list);
   }
-  return ((prods || []) as any[]).map(p => ({
-    ...p,
+
+  return (prods || []).map((p): EstoqueProduto => ({
+    id: p.id,
+    user_id: p.user_id,
+    nome: p.nome,
+    categoria: p.categoria,
+    sku_base: p.sku_base,
+    descricao: p.descricao,
+    image_url: p.image_url,
+    tem_variacoes: p.tem_variacoes,
+    created_at: p.created_at,
+    updated_at: p.updated_at,
     variacoes: varMap.get(p.id) || [],
   }));
 }
@@ -86,7 +114,7 @@ async function fetchEstoque(userId: string): Promise<EstoqueProduto[]> {
 export function useEstoque() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const queryKey = ['estoque', user?.id];
+  const queryKey = useMemo(() => ['estoque', user?.id], [user?.id]);
 
   const { data: produtos = [], isLoading: loading, isError, refetch } = useQuery({
     queryKey,
@@ -114,38 +142,44 @@ export function useEstoque() {
     variacoes: Omit<EstoqueVariacao, 'id' | 'produto_id' | 'user_id' | 'created_at' | 'updated_at'>[];
   }) => {
     if (!user) throw new Error('Não autenticado');
-    const { data: prod, error } = await (supabase.from('estoque_produtos' as any) as any).insert({
+
+    const insertData: TablesInsert<'estoque_produtos'> = {
       user_id: user.id,
       nome: data.nome,
       categoria: data.categoria || null,
       sku_base: data.sku_base || null,
       descricao: data.descricao || null,
       tem_variacoes: data.tem_variacoes,
-    }).select().single();
+    };
+
+    const { data: prod, error } = await supabase
+      .from('estoque_produtos')
+      .insert(insertData)
+      .select()
+      .single();
     if (error) { toast.error('Erro ao criar produto'); throw error; }
 
     if (data.imageDataUrl) {
       const url = await uploadEstoqueImage(user.id, prod.id, data.imageDataUrl);
       if (url) {
-        await (supabase.from('estoque_produtos' as any) as any)
-          .update({ image_url: url }).eq('id', prod.id);
+        await supabase.from('estoque_produtos').update({ image_url: url }).eq('id', prod.id);
       } else {
         const compressed = await compressImage(data.imageDataUrl);
-        saveLocalStockImage(prod.id, compressed); // fallback se upload falhar
+        saveLocalStockImage(prod.id, compressed);
       }
     }
 
     if (data.variacoes.length > 0) {
-      const rows = data.variacoes.map(v => ({
+      const rows: TablesInsert<'estoque_variacoes'>[] = data.variacoes.map(v => ({
         produto_id: prod.id,
         user_id: user.id,
-        atributos: v.atributos,
+        atributos: v.atributos as TablesInsert<'estoque_variacoes'>['atributos'],
         sku: v.sku || null,
         preco_custo: v.preco_custo,
         quantidade: v.quantidade,
         quantidade_minima: v.quantidade_minima,
       }));
-      const { error: ve } = await (supabase.from('estoque_variacoes' as any) as any).insert(rows);
+      const { error: ve } = await supabase.from('estoque_variacoes').insert(rows);
       if (ve) { toast.error('Erro ao salvar variações'); throw ve; }
     }
 
@@ -154,29 +188,23 @@ export function useEstoque() {
     return prod;
   }, [user, invalidate]);
 
-  const updateProduto = useCallback(async (id: string, data: Partial<{
-    nome: string;
-    categoria: string | null;
-    sku_base: string | null;
-    descricao: string | null;
-    tem_variacoes: boolean;
-  }>) => {
-    const { error } = await (supabase.from('estoque_produtos' as any) as any).update(data).eq('id', id);
+  const updateProduto = useCallback(async (id: string, data: TablesUpdate<'estoque_produtos'>) => {
+    const { error } = await supabase.from('estoque_produtos').update(data).eq('id', id);
     if (error) { toast.error('Erro ao atualizar produto'); return; }
     invalidate();
   }, [invalidate]);
 
   const deleteProduto = useCallback(async (id: string) => {
     if (user) await deleteEstoqueImage(user.id, id);
-    const { error } = await (supabase.from('estoque_produtos' as any) as any).delete().eq('id', id);
+    const { error } = await supabase.from('estoque_produtos').delete().eq('id', id);
     if (error) { toast.error('Erro ao excluir produto'); return; }
     removeLocalStockImage(id);
     invalidate();
     toast.success('Produto excluído');
   }, [user, invalidate]);
 
-  const updateVariacao = useCallback(async (id: string, data: Partial<EstoqueVariacao>) => {
-    const { error } = await (supabase.from('estoque_variacoes' as any) as any).update(data).eq('id', id);
+  const updateVariacao = useCallback(async (id: string, data: TablesUpdate<'estoque_variacoes'>) => {
+    const { error } = await supabase.from('estoque_variacoes').update(data).eq('id', id);
     if (error) { toast.error('Erro ao atualizar variação'); return; }
     invalidate();
   }, [invalidate]);
@@ -193,15 +221,16 @@ export function useEstoque() {
     else if (tipo === 'saida') newQty = Math.max(0, newQty - quantidade);
     else newQty = quantidade;
 
-    await (supabase.from('estoque_variacoes' as any) as any).update({ quantidade: newQty }).eq('id', variacaoId);
+    await supabase.from('estoque_variacoes').update({ quantidade: newQty }).eq('id', variacaoId);
 
-    await (supabase.from('estoque_movimentacoes' as any) as any).insert({
+    const movInsert: TablesInsert<'estoque_movimentacoes'> = {
       variacao_id: variacaoId,
       user_id: user.id,
       tipo,
       quantidade,
       motivo: motivo || null,
-    });
+    };
+    await supabase.from('estoque_movimentacoes').insert(movInsert);
 
     invalidate();
     toast.success('Estoque atualizado');
@@ -209,14 +238,23 @@ export function useEstoque() {
 
   const getMovimentacoes = useCallback(async (variacaoIds: string[]): Promise<EstoqueMovimentacao[]> => {
     if (!user || variacaoIds.length === 0) return [];
-    const { data, error } = await (supabase.from('estoque_movimentacoes' as any) as any)
+    const { data, error } = await supabase
+      .from('estoque_movimentacoes')
       .select('*')
       .in('variacao_id', variacaoIds)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(50);
     if (error) return [];
-    return (data || []) as EstoqueMovimentacao[];
+    return (data || []).map((m): EstoqueMovimentacao => ({
+      id: m.id,
+      variacao_id: m.variacao_id,
+      user_id: m.user_id,
+      tipo: m.tipo as EstoqueMovimentacao['tipo'],
+      quantidade: m.quantidade,
+      motivo: m.motivo,
+      created_at: m.created_at,
+    }));
   }, [user]);
 
   const stats = useMemo(() => ({
