@@ -533,6 +533,10 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
 
   // ═══ Render ═══
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0 });
+  }, [ad]);
+
   return (
     <div className="animate-fade-in px-1 md:px-0 bg-background min-h-screen -mx-1 md:-mx-0 pb-10 -mt-2 md:mt-0">
       {/* Breadcrumb / Header */}
