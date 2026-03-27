@@ -375,82 +375,71 @@ function ProductAnalysis() {
               </div>
 
               {/* Card resultado ROAS */}
-              <div className="rounded-xl border border-border bg-card p-5 space-y-5 animate-fade-in">
-                <div className="flex items-center justify-between flex-wrap gap-3">
-                  <div>
-                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mb-1">ROAS ATUAL SIMULADO</p>
-                    <div className="flex items-center gap-3">
-                      {roasData.roasAtual !== null ? (
-                        <>
-                          <span className={cn('text-4xl md:text-5xl font-black tabular-nums font-mono', statusColors[roasStatus || ''] || 'text-foreground')}>
-                            {roasData.roasAtual.toFixed(2)}x
+              <div className="rounded-xl border border-border bg-card p-4 md:p-5 space-y-4 animate-fade-in">
+                {/* ROAS value + label */}
+                <div>
+                  <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mb-1">ROAS ATUAL SIMULADO</p>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {roasData.roasAtual !== null ? (
+                      <>
+                        <span className={cn('text-4xl md:text-5xl font-black tabular-nums font-mono', statusColors[roasStatus || ''] || 'text-foreground')}>
+                          {roasData.roasAtual.toFixed(2)}x
+                        </span>
+                        {roasAtualLabel && (
+                          <span className={cn('text-xs font-bold px-2.5 py-1 rounded-full inline-flex items-center gap-1',
+                            roasAtualLabel.color,
+                            roasAtualLabel.color === 'text-success' ? 'bg-success/10' :
+                            roasAtualLabel.color === 'text-primary' ? 'bg-primary/10' :
+                            roasAtualLabel.color === 'text-warning' ? 'bg-warning/10' :
+                            'bg-destructive/10'
+                          )}>
+                            {roasAtualLabel.color === 'text-success' && '✓ '}{roasAtualLabel.text}
                           </span>
-                          {roasAtualLabel && (
-                            <span className={cn('text-xs font-bold px-2.5 py-1 rounded-full inline-flex items-center gap-1',
-                              roasAtualLabel.color,
-                              roasAtualLabel.color === 'text-success' ? 'bg-success/10' :
-                              roasAtualLabel.color === 'text-primary' ? 'bg-primary/10' :
-                              roasAtualLabel.color === 'text-warning' ? 'bg-warning/10' :
-                              'bg-destructive/10'
-                            )}>
-                              {roasAtualLabel.color === 'text-success' && '✓ '}{roasAtualLabel.text}
-                            </span>
-                          )}
-                        </>
-                      ) : (
-                        <span className="text-2xl font-bold text-muted-foreground">—</span>
-                      )}
-                    </div>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-2xl font-bold text-muted-foreground">—</span>
+                    )}
                   </div>
-
-                  {/* Lucro estimado (Ads) */}
-                  {roasData.roasAtual !== null && (parseFloat(receitaAds) || 0) > 0 && (
-                    <div className="text-right">
-                      <p className="text-[10px] text-muted-foreground font-medium">Lucro Estimado (Ads)</p>
-                      <p className={cn('text-2xl md:text-3xl font-black tabular-nums font-mono',
-                        (parseFloat(receitaAds) || 0) - (parseFloat(gastoAds) || 0) > 0 ? 'text-success' : 'text-destructive'
-                      )}>
-                        {(parseFloat(receitaAds) || 0) - (parseFloat(gastoAds) || 0) > 0 ? '+ ' : ''}{formatCurrency((parseFloat(receitaAds) || 0) - (parseFloat(gastoAds) || 0))}
-                      </p>
-                    </div>
-                  )}
                 </div>
+
+                {/* Lucro estimado (Ads) */}
+                {roasData.roasAtual !== null && (parseFloat(receitaAds) || 0) > 0 && (
+                  <div>
+                    <p className="text-[10px] text-muted-foreground font-medium mb-0.5">Lucro Estimado (Ads)</p>
+                    <p className={cn('text-2xl md:text-3xl font-black tabular-nums font-mono',
+                      (parseFloat(receitaAds) || 0) - (parseFloat(gastoAds) || 0) > 0 ? 'text-success' : 'text-destructive'
+                    )}>
+                      {(parseFloat(receitaAds) || 0) - (parseFloat(gastoAds) || 0) > 0 ? '+ ' : ''}{formatCurrency((parseFloat(receitaAds) || 0) - (parseFloat(gastoAds) || 0))}
+                    </p>
+                  </div>
+                )}
 
                 {/* Gauge bar */}
                 {roasData.roasEmpate && roasData.roasSaudavel && roasData.roasIdeal && (
-                  <div className="space-y-0">
+                  <div className="pt-1">
                     {/* Barra de gradiente */}
-                    <div className="relative h-4 rounded-full overflow-hidden"
-                      style={{ background: 'linear-gradient(to right, hsl(0 70% 50%), hsl(40 95% 50%) 40%, hsl(100 60% 45%) 70%, hsl(152 70% 42%))' }}
+                    <div className="relative h-3.5 rounded-full overflow-hidden shadow-inner"
+                      style={{ background: 'linear-gradient(to right, hsl(0 70% 45%), hsl(35 90% 50%) 35%, hsl(80 60% 45%) 60%, hsl(152 70% 42%) 85%)' }}
                     >
-                      {/* Indicador (ponteiro) */}
+                      {/* Ponteiro triangular */}
                       {roasData.roasAtual !== null && roasData.roasAtual > 0 && (
                         <div
-                          className="absolute top-0 bottom-0 w-1 bg-foreground rounded-full shadow-lg transition-all duration-700"
-                          style={{ left: `${Math.min(Math.max((roasData.roasAtual / (roasData.roasIdeal * 1.3)) * 100, 1), 99)}%` }}
-                        />
+                          className="absolute -top-1 transition-all duration-700"
+                          style={{ left: `${Math.min(Math.max((roasData.roasAtual / (roasData.roasIdeal * 1.3)) * 100, 2), 98)}%`, transform: 'translateX(-50%)' }}
+                        >
+                          <div className="w-0 h-0 border-l-[5px] border-r-[5px] border-t-[6px] border-l-transparent border-r-transparent border-t-foreground" />
+                          <div className="w-0.5 h-[18px] bg-foreground mx-auto rounded-full" />
+                        </div>
                       )}
                     </div>
 
-                    {/* Labels + ticks abaixo da barra */}
-                    <div className="relative h-5 mt-1">
-                      {[
-                        { label: 'PREJUÍZO', color: 'text-destructive', pos: 0, anchor: 'left' as const },
-                        { label: `EMPATE (${roasData.roasEmpate.toFixed(1)})`, color: 'text-destructive', pos: (roasData.roasEmpate / (roasData.roasIdeal * 1.3)) * 100, anchor: 'center' as const },
-                        { label: `SAUDÁVEL (${roasData.roasSaudavel.toFixed(1)})`, color: 'text-warning', pos: (roasData.roasSaudavel / (roasData.roasIdeal * 1.3)) * 100, anchor: 'center' as const },
-                        { label: `IDEAL (${roasData.roasIdeal.toFixed(1)}+)`, color: 'text-success', pos: 100, anchor: 'right' as const },
-                      ].map((item, i) => (
-                        <span
-                          key={i}
-                          className={cn('absolute text-[8px] md:text-[10px] font-mono font-bold whitespace-nowrap', item.color)}
-                          style={{
-                            ...(item.anchor === 'left' ? { left: 0 } : item.anchor === 'right' ? { right: 0 } : { left: `${item.pos}%`, transform: 'translateX(-50%)' }),
-                            top: 0,
-                          }}
-                        >
-                          {item.label}
-                        </span>
-                      ))}
+                    {/* Labels abaixo — grid fixo para não sobrepor */}
+                    <div className="grid grid-cols-4 mt-1.5 text-[8px] md:text-[9px] font-mono font-bold leading-tight">
+                      <span className="text-destructive text-left">PREJUÍZO</span>
+                      <span className="text-orange-400 text-center">EMPATE<br/><span className="font-normal opacity-70">{roasData.roasEmpate.toFixed(1)}</span></span>
+                      <span className="text-warning text-center">SAUDÁVEL<br/><span className="font-normal opacity-70">{roasData.roasSaudavel.toFixed(1)}</span></span>
+                      <span className="text-success text-right">IDEAL<br/><span className="font-normal opacity-70">{roasData.roasIdeal.toFixed(1)}+</span></span>
                     </div>
                   </div>
                 )}
