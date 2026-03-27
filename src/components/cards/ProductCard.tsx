@@ -186,15 +186,15 @@ export function ProductCard({
 
       {/* ── METRICS: margin · profit · stock in 3-column grid ── */}
       <div className="mt-3 grid grid-cols-3 gap-2">
-        <div className={cn('rounded-xl p-2.5 flex flex-col items-start border', status.bg, status.border)}>
+        <div className={cn('rounded-xl p-2.5 flex flex-col items-center text-center border', status.bg, status.border)}>
           <p className={cn('font-mono text-base font-extrabold leading-tight', status.color)}>
             {calculation.realMargin.toFixed(1)}%
           </p>
           <p className="text-[10px] font-medium text-muted-foreground mt-0.5">Margem</p>
         </div>
 
-        <div className={cn('rounded-xl p-2.5 flex flex-col items-start border', status.bg, status.border)}>
-          <p className={cn('font-mono text-sm font-extrabold leading-tight truncate w-full', status.color)}>
+        <div className={cn('rounded-xl p-2.5 flex flex-col items-center text-center border', status.bg, status.border)}>
+          <p className={cn('font-mono text-sm font-extrabold leading-tight', status.color)}>
             {fmt(calculation.netProfit)}
           </p>
           <p className="text-[10px] font-medium text-muted-foreground mt-0.5">Lucro</p>
@@ -204,7 +204,7 @@ export function ProductCard({
           const roasResult = config ? calcFullRoas(product.salePrice, product.costPrice, config, product.packagingCost) : null;
           const roasEmpate = roasResult?.roasEmpate;
           return (
-            <div className="rounded-xl p-2.5 flex flex-col items-start border bg-warning/10 border-warning/20">
+            <div className="rounded-xl p-2.5 flex flex-col items-center text-center border bg-warning/10 border-warning/20">
               <p className="font-mono text-base font-extrabold leading-tight text-warning">
                 {roasEmpate && roasEmpate > 0 ? `${roasEmpate.toFixed(2)}x` : '—'}
               </p>
