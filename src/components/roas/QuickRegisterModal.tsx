@@ -27,7 +27,7 @@ export function QuickRegisterModal({ adData, onClose, onRegistered }: QuickRegis
   const suggestedPrice = useMemo(() => {
     if (adData.itens_vendidos > 0) return adData.gmv / adData.itens_vendidos;
     if (adData.gmv_direto > 0 && adData.itens_vendidos_diretos > 0) {
-      return adData.gmv_direto / (adData as any).itens_vendidos_diretos;
+      return adData.gmv_direto / adData.itens_vendidos_diretos;
     }
     return 0;
   }, [adData]);
@@ -72,7 +72,7 @@ export function QuickRegisterModal({ adData, onClose, onRegistered }: QuickRegis
         attributes: [],
         variations: [],
         shopeeAcelera: 'none',
-      } as any);
+      } as Omit<import('@/types/store').Product, 'id' | 'createdAt' | 'updatedAt'>);
       toast.success('Produto cadastrado e vinculado!');
       onRegistered(newProduct.id);
     } catch {
