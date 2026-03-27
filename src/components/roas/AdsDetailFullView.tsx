@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { EnrichedAdsData } from '@/hooks/useAdsData';
 import { OperationLogEntry, detectAndParseCSV, validateCSVSecurity } from '@/lib/shopeeAdsParser';
 import { toast } from 'sonner';
@@ -372,7 +373,7 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate }: { 
 
 function KpiCard({ label, value, sub, subColor, icon: Icon }: { label: string; value: string; sub?: string; subColor?: string; icon: React.ElementType }) {
   return (
-    <div className="p-3 rounded-xl bg-surface-2 text-center min-w-0 overflow-hidden">
+    <div className="p-2.5 text-center min-w-0 overflow-hidden">
       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center justify-center gap-1">
         <Icon className="w-3 h-3" />
         {label}
@@ -508,260 +509,36 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
     : 'bg-destructive/5 border-destructive/20'
     : 'bg-surface-2 border-border';
 
-  // ═══ Right Column ═══
-  const renderRightColumn = () => {
-    if (!product) {
-      return (
-        <div className="rounded-2xl border-2 border-dashed border-warning/30 bg-warning/5 p-6 space-y-4">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-warning" />
-            <span className="text-base font-extrabold text-warning">PRODUTO NÃO VINCULADO</span>
-          </div>
-          <p className="text-sm text-text-2">Vincule a um produto cadastrado para:</p>
-          <ul className="text-sm text-text-2 space-y-1.5 ml-1">
-            <li>• Calcular ROAS Empate</li>
-            <li>• Ver se é lucrativo</li>
-            <li>• Receber meta ROAS ideal</li>
-            <li>• Score de eficiência completo</li>
-          </ul>
-          <div className="flex flex-col gap-2 pt-2">
-            <Button onClick={onLink} variant="outline" className="gap-1.5 text-sm font-bold w-full">
-              <Link2 className="w-4 h-4" /> Vincular Produto
-            </Button>
-            <Button onClick={onQuickRegister} className="gap-1.5 text-sm font-bold w-full">
-              <Plus className="w-4 h-4" /> Cadastro Rápido
-            </Button>
-          </div>
-        </div>
-      );
-    }
 
-    return (
-      <div className="space-y-5">
-        {/* Card 1: Score de Eficiência (compacto) */}
-        <div className="rounded-2xl border border-border bg-card p-5 space-y-3 shadow-sm">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Score</p>
-            <span className={cn('text-3xl font-extrabold font-mono tabular-nums', efficiency.color)}>
-              {efficiency.score}<span className="text-sm text-text-3 font-normal">/100</span>
-            </span>
-          </div>
-          <div className="w-full h-3.5 rounded-full bg-background overflow-hidden">
-            <div className={cn('h-full rounded-full transition-all', effBarColor)} style={{ width: `${efficiency.score}%` }} />
-          </div>
-          <div className="grid grid-cols-2 gap-1.5 text-xs text-text-3 font-mono tabular-nums">
-            <span>ROAS {efficiency.breakdown.roasScore}/40</span>
-            <span>CTR {efficiency.breakdown.ctrScore}/20</span>
-            <span>Conv {efficiency.breakdown.convScore}/20</span>
-            <span>Pos {efficiency.breakdown.posScore}/20</span>
-          </div>
+  // ═══ Render ═══
+
+  return (
+    <div className="animate-fade-in px-1 md:px-0">
+      {/* Breadcrumb / Header */}
+      <div className="flex items-center gap-3 mb-6 flex-wrap">
+        <Button variant="ghost" size="sm" onClick={onClose} className="gap-1.5 text-sm font-bold text-text-2 hover:text-foreground">
+          <ArrowLeft className="w-4 h-4" /> Voltar para Ads
+        </Button>
+
+        <div className="flex items-center gap-1.5 ml-auto md:ml-0">
+          <Button variant="ghost" size="icon" className="h-7 w-7" disabled={!prevAd} onClick={() => prevAd && onNavigate(prevAd)}>
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <span className="text-sm text-text-3 font-mono tabular-nums">{currentIndex + 1}/{allAds.length}</span>
+          <Button variant="ghost" size="icon" className="h-7 w-7" disabled={!nextAd} onClick={() => nextAd && onNavigate(nextAd)}>
+            <ChevronRight className="w-4 h-4" />
+          </Button>
         </div>
 
-        {/* Card 2: Custo vs Lucro por Venda */}
-        {empateResult && ad.itens_vendidos > 0 && (
-          <div className="rounded-2xl border border-border bg-card p-5 space-y-3 shadow-sm">
-            <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-              <Wallet className="w-4 h-4 text-primary" /> Custo vs Lucro por Venda
-            </p>
-            <div className="space-y-2.5 text-sm font-mono tabular-nums">
-              <div className="flex justify-between">
-                <span className="text-text-2">Custo por pedido:</span>
-                <span className="font-bold">{fmt(custoPorPedido)} <span className="text-text-3 text-xs">({ad.conversoes} pedidos)</span></span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-2">Custo por unidade:</span>
-                <span className="font-bold">{fmt(custoPorUnidade)} <span className="text-text-3 text-xs">({ad.itens_vendidos} un{ad.conversoes > 0 ? ` · média ${(ad.itens_vendidos / ad.conversoes).toFixed(1)}/ped` : ''})</span></span>
-              </div>
-              {ad.conversoes > 0 && ad.itens_vendidos / ad.conversoes > 1 && (
-                <p className="text-xs text-primary flex items-center gap-1">
-                  <Info className="w-3.5 h-3.5 flex-shrink-0" />
-                  Cada pedido tem em média {(ad.itens_vendidos / ad.conversoes).toFixed(1)} unidades — custo real por unidade é menor.
-                </p>
-              )}
-              <div className="flex justify-between">
-                <span className="text-text-2">Lucro por unidade:</span>
-                <span className="font-bold">{fmt(empateResult.lucroPorUnidade)}</span>
-              </div>
-              <div className="border-t border-dashed border-border pt-2">
-                <div className="flex justify-between">
-                  <span className="text-text-2 font-bold">Sobra por venda:</span>
-                  <span className={cn('font-extrabold', sobraPorVenda !== null && sobraPorVenda >= 0 ? 'text-success' : 'text-destructive')}>
-                    {sobraPorVenda !== null ? (sobraPorVenda >= 0 ? `${fmt(sobraPorVenda)} ✅` : `-${fmt(Math.abs(sobraPorVenda))} 🔴`) : '—'}
-                  </span>
-                </div>
-                {lucroTotalPeriodo !== null && (
-                  <div className="flex justify-between mt-1.5">
-                    <span className="text-text-2">{lucroTotalPeriodo >= 0 ? 'Lucro total período:' : 'Prejuízo total:'}</span>
-                    <span className={cn('font-bold', lucroTotalPeriodo >= 0 ? 'text-success' : 'text-destructive')}>{fmt(Math.abs(lucroTotalPeriodo))}</span>
-                  </div>
-                )}
-              </div>
-              {pctConsumo !== null && (
-                <p className="text-xs text-text-3 pt-1">O ads consome {pctConsumo.toFixed(1)}% do lucro por unidade.</p>
-              )}
-            </div>
-          </div>
+        {ad.status_anuncio && (
+          <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20 text-primary hidden md:inline-flex">
+            {ad.status_anuncio}
+          </span>
         )}
-
-        {/* Card 3: Configuração e Meta ROAS */}
-        {(ad.metodo_lance || metaRoas) && (
-          <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
-            <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">⚙️ Configuração</p>
-
-            {ad.metodo_lance && (
-              <div className="space-y-2.5">
-                <div className="flex justify-between text-sm">
-                  <span className="text-text-2">Tipo:</span>
-                  <span className="font-bold text-foreground">{ad.metodo_lance}</span>
-                </div>
-                {ad.status_anuncio && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-text-2">Status:</span>
-                    <span className="font-bold text-foreground">{ad.status_anuncio}</span>
-                  </div>
-                )}
-                {isMetaRoas && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-text-2">Proteção:</span>
-                    <span className={cn('font-bold', qualificaProtecao ? 'text-success' : 'text-warning')}>
-                      {qualificaProtecao ? `✅ Ativa (${convPorDia.toFixed(1)} conv/dia)` : `⚠️ Inativa (${convPorDia.toFixed(1)} conv/dia)`}
-                    </span>
-                  </div>
-                )}
-                {isAutomatic && (
-                  <div className="rounded-xl border border-warning/30 bg-warning/10 p-3 space-y-1.5">
-                    <p className="text-xs text-text-2">• Sem meta de ROAS definida</p>
-                    <p className="text-xs text-text-2">• Sem proteção</p>
-                    {roasEmpate && (
-                      <p className={cn('text-xs font-bold', roasDireto >= roasEmpate ? 'text-primary' : 'text-destructive')}>
-                        {roasDireto >= roasEmpate
-                          ? '💡 ROAS acima do empate. Migre para Meta de ROAS para ter controle.'
-                          : '🔴 ROAS abaixo do empate e sem proteção. Pause ou migre para Meta de ROAS.'}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {metaRoas && (
-              <div className="space-y-3 pt-3 border-t border-dashed border-border">
-                <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Meta de ROAS Sugerida</p>
-                <div className="grid grid-cols-3 gap-2.5">
-                  {[
-                    { label: 'Agressivo', value: metaRoas.agressivo, sub: '+volume' },
-                    { label: 'Equilibrado', value: metaRoas.equilibrado, sub: 'ideal' },
-                    { label: 'Conservador', value: metaRoas.conservador, sub: '+lucro' },
-                  ].map(m => (
-                    <div key={m.label} className="rounded-xl border border-border bg-surface-2 p-3 text-center">
-                      <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{m.label}</p>
-                      <p className="text-xl font-extrabold font-mono tabular-nums text-foreground mt-1">{m.value}</p>
-                      <p className="text-[11px] text-text-3">{m.sub}</p>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-xs text-warning flex items-center gap-1">
-                  <AlertTriangle className="w-3.5 h-3.5" /> Nunca abaixo de {roasEmpate?.toFixed(2)} (empate)
-                </p>
-                <p className="text-xs text-text-3 flex items-start gap-1">
-                  <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                  Após alterar, aguarde 3-5 dias.
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Card 4: Orçamento Sugerido */}
-        {custoConversao > 0 && (
-          <div className="rounded-2xl border border-border bg-card p-5 space-y-3 shadow-sm">
-            <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">💵 Orçamento Sugerido</p>
-            <div className="text-sm font-mono tabular-nums space-y-2.5">
-              <div className="flex justify-between">
-                <span className="text-text-2">Custo por conversão:</span>
-                <span className="font-bold">{fmt(custoConversao)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-2">Para proteção (≥5 vendas/dia):</span>
-                <span className="font-bold text-primary">{fmt(orcamentoProtecao)}/dia</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-2">Mínimo saudável (≥3 vendas/dia):</span>
-                <span className="font-bold">{fmt(orcamentoMinimo)}/dia</span>
-              </div>
-            </div>
-            <p className={cn('text-xs font-bold', qualificaProtecao ? 'text-success' : 'text-warning')}>
-              {qualificaProtecao
-                ? `✅ Você qualifica para proteção (${convPorDia.toFixed(1)} conv/dia)`
-                : `⚠️ Aumente budget para proteção (atual: ${convPorDia.toFixed(1)} conv/dia)`}
-            </p>
-          </div>
-        )}
-
-        {/* Card 5: Diagnóstico */}
-        {diagnostico ? (
-          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 space-y-3 shadow-sm">
-            <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">🎯 Diagnóstico Completo</p>
-            <div className="flex items-start gap-3">
-              <span className="text-2xl">{diagnostico.emoji}</span>
-              <div className="space-y-1">
-                <p className="text-base font-extrabold text-foreground">{diagnostico.titulo}</p>
-                <p className="text-sm text-text-2">{diagnostico.mensagem}</p>
-              </div>
-            </div>
-            <div className="space-y-2 text-sm pt-2">
-              <p className={cn('flex items-center gap-1.5', roasEmpate && roasDireto >= roasEmpate ? 'text-success' : 'text-destructive')}>
-                {roasEmpate && roasDireto >= roasEmpate ? '✅' : '❌'} ROAS {roasEmpate ? `${(roasDireto / roasEmpate).toFixed(1)}x` : ''} {roasEmpate && roasDireto >= roasEmpate ? 'acima' : 'abaixo'} do empate
-              </p>
-              {margemContrib !== null && (
-                <p className={cn('flex items-center gap-1.5', acosDireto < margemContrib ? 'text-success' : 'text-destructive')}>
-                  {acosDireto < margemContrib ? '✅' : '❌'} ACOS {acosDireto.toFixed(1)}% {'<'} Margem {margemContrib.toFixed(1)}%
-                </p>
-              )}
-              {ad.posicao_media !== null && posInfo && (
-                <p className={cn('flex items-center gap-1.5', posInfo.classe === 'TOPO' ? 'text-success' : posInfo.classe === 'PRIMEIRA_PAGINA' ? 'text-primary' : 'text-warning')}>
-                  ✅ Posição #{ad.posicao_media} — {posInfo.label.split('—')[0].trim()}
-                </p>
-              )}
-              <p className={cn('flex items-center gap-1.5', ad.taxa_conversao >= 3 ? 'text-success' : 'text-warning')}>
-                {ad.taxa_conversao >= 3 ? '✅' : '⚠️'} Taxa conv. {ad.taxa_conversao.toFixed(2)}% — {ad.taxa_conversao >= 3 ? 'Bom' : 'pode melhorar'}
-              </p>
-            </div>
-            <p className={cn('text-sm font-bold font-mono tabular-nums pt-1', efficiency.color)}>Score: {efficiency.score}/100</p>
-          </div>
-        ) : roasEmpate && classification ? (
-          <div className="rounded-2xl border border-border bg-card p-5 space-y-3 shadow-sm">
-            <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">🎯 Diagnóstico</p>
-            <div className="space-y-2 text-sm">
-              <p className={cn('flex items-center gap-1.5', roasDireto >= roasEmpate ? 'text-success' : 'text-destructive')}>
-                {roasDireto >= roasEmpate ? '✅' : '❌'} ROAS {(roasDireto / roasEmpate).toFixed(1)}x {roasDireto >= roasEmpate ? 'acima' : 'abaixo'} do empate
-              </p>
-              {margemContrib !== null && (
-                <p className={cn('flex items-center gap-1.5', acosDireto < margemContrib ? 'text-success' : 'text-destructive')}>
-                  {acosDireto < margemContrib ? '✅' : '❌'} ACOS {acosDireto.toFixed(1)}% vs Margem {margemContrib.toFixed(1)}%
-                </p>
-              )}
-              <p className={cn('flex items-center gap-1.5', ad.taxa_conversao >= 3 ? 'text-success' : 'text-warning')}>
-                {ad.taxa_conversao >= 3 ? '✅' : '⚠️'} Taxa conv. {ad.taxa_conversao.toFixed(2)}%
-              </p>
-              {ad.posicao_media === null && (
-                <p className="flex items-center gap-1.5 text-text-3">
-                  ❓ Importe CSV individual para posição
-                </p>
-              )}
-            </div>
-            <p className={cn('text-sm font-bold font-mono tabular-nums pt-1', efficiency.color)}>Score: {efficiency.score}/100</p>
-          </div>
-        ) : null}
       </div>
-    );
-  };
 
-  // ═══ Left Column ═══
-  const renderLeftColumn = () => (
-    <div className="space-y-5">
-      {/* 1. Header do produto — compacto */}
-      <div className="rounded-2xl border border-border bg-card p-3.5 shadow-sm space-y-3">
+      {/* Product Header Card */}
+      <div className="rounded-2xl border border-border bg-card p-3.5 shadow-sm space-y-3 mb-5">
         <div className="flex items-center gap-3">
           {product?.imageUrl ? (
             <img src={product.imageUrl} alt="" className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
@@ -782,7 +559,6 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
             </div>
           </div>
         </div>
-        {/* Action buttons row */}
         <div className="flex items-center gap-2 flex-wrap">
           {onReimport && (
             <Button onClick={onReimport} variant="outline" size="sm" className="gap-1 text-xs font-bold h-8">
@@ -807,8 +583,8 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         </div>
       </div>
 
-      {/* 2. KPIs em linha — destaque visual */}
-      <div className={cn('grid gap-2', isMobile ? 'grid-cols-3' : 'grid-cols-6')}>
+      {/* KPIs — clean horizontal grid */}
+      <div className="grid grid-cols-3 md:grid-cols-6 gap-1 rounded-2xl border border-border bg-card p-2 mb-5 shadow-sm">
         <KpiCard icon={Eye} label="Impressões" value={ad.impressoes >= 1000 ? `${(ad.impressoes / 1000).toFixed(1)}k` : String(ad.impressoes)} />
         <KpiCard icon={MousePointerClick} label="Cliques" value={ad.cliques >= 1000 ? `${(ad.cliques / 1000).toFixed(1)}k` : String(ad.cliques)} />
         <KpiCard icon={Percent} label="CTR" value={`${ad.ctr.toFixed(2)}%`} sub={ad.ctr >= 2.5 ? 'Bom' : ad.ctr >= 1.5 ? 'Ok' : 'Baixo'} subColor={ad.ctr >= 2.5 ? 'text-success' : ad.ctr >= 1.5 ? 'text-warning' : 'text-destructive'} />
@@ -817,288 +593,456 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         <KpiCard icon={Target} label="ROAS" value={roasDireto.toFixed(2)} sub={roasEmpate ? `Emp: ${roasEmpate.toFixed(2)}` : undefined} subColor={roasEmpate ? (roasDireto >= roasEmpate ? 'text-success' : 'text-destructive') : undefined} />
       </div>
 
-      {/* 3. Status de Lucratividade */}
-      <div className={cn('rounded-2xl border p-6 space-y-4 shadow-sm', semaphoreBg)}>
-        {classification ? (
-          <>
-            <div className="flex items-center gap-2">
-              {classification.classificacao === 'LUCRATIVO' ? (
-                <TrendingUp className={cn('w-5 h-5', statusColorClass)} />
-              ) : classification.classificacao === 'PREJUIZO' ? (
-                <TrendingDown className={cn('w-5 h-5', statusColorClass)} />
-              ) : (
-                <AlertTriangle className={cn('w-5 h-5', statusColorClass)} />
+      {/* Unlinked product warning — outside tabs */}
+      {!product && (
+        <div className="rounded-2xl border-2 border-dashed border-warning/30 bg-warning/5 p-6 space-y-4 mb-5">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-5 h-5 text-warning" />
+            <span className="text-base font-extrabold text-warning">PRODUTO NÃO VINCULADO</span>
+          </div>
+          <p className="text-sm text-text-2">Vincule a um produto cadastrado para:</p>
+          <ul className="text-sm text-text-2 space-y-1.5 ml-1">
+            <li>• Calcular ROAS Empate</li>
+            <li>• Ver se é lucrativo</li>
+            <li>• Receber meta ROAS ideal</li>
+            <li>• Score de eficiência completo</li>
+          </ul>
+          <div className="flex flex-col gap-2 pt-2">
+            <Button onClick={onLink} variant="outline" className="gap-1.5 text-sm font-bold w-full">
+              <Link2 className="w-4 h-4" /> Vincular Produto
+            </Button>
+            <Button onClick={onQuickRegister} className="gap-1.5 text-sm font-bold w-full">
+              <Plus className="w-4 h-4" /> Cadastro Rápido
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Tabs */}
+      <Tabs defaultValue="financeira" className="w-full">
+        <TabsList className="w-full md:w-auto mb-5">
+          <TabsTrigger value="financeira" className="flex-1 md:flex-none text-xs font-bold">Visão Financeira</TabsTrigger>
+          <TabsTrigger value="performance" className="flex-1 md:flex-none text-xs font-bold">Performance & Gráficos</TabsTrigger>
+        </TabsList>
+
+        {/* ═══ Tab 1: Visão Financeira ═══ */}
+        <TabsContent value="financeira">
+          <div className={cn('space-y-5', product ? 'grid md:grid-cols-[3fr_2fr] md:gap-6 md:space-y-0' : '')}>
+            {/* Left column */}
+            <div className="space-y-5">
+              {/* Status de Lucratividade */}
+              <div className={cn('rounded-2xl border p-6 space-y-4 shadow-sm', semaphoreBg)}>
+                {classification ? (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {classification.classificacao === 'LUCRATIVO' ? (
+                          <TrendingUp className={cn('w-5 h-5', statusColorClass)} />
+                        ) : classification.classificacao === 'PREJUIZO' ? (
+                          <TrendingDown className={cn('w-5 h-5', statusColorClass)} />
+                        ) : (
+                          <AlertTriangle className={cn('w-5 h-5', statusColorClass)} />
+                        )}
+                        <span className={cn('text-base font-extrabold', statusColorClass)}>
+                          Status: {classification.classificacao === 'LUCRATIVO' ? 'Altamente Lucrativo' : classification.classificacao.replace('_', ' ')}
+                        </span>
+                      </div>
+                      {roasEmpate && roasDireto >= roasEmpate && (
+                        <span className="text-[10px] font-bold px-2 py-1 rounded-full border border-success/30 bg-success/10 text-success">ROAS Seguro</span>
+                      )}
+                    </div>
+
+                    <div className="space-y-1">
+                      <p className="text-sm text-text-3">ROAS Real vs Empate</p>
+                      <div className="flex items-baseline gap-3">
+                        <span className={cn('text-4xl font-extrabold font-mono tabular-nums', statusColorClass)}>{roasDireto.toFixed(2)}</span>
+                        <span className="text-lg text-text-3 font-mono">/ {roasEmpate?.toFixed(2) ?? '—'}</span>
+                      </div>
+                    </div>
+
+                    {roasEmpate && (
+                      <>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-text-3">Margem de Segurança</span>
+                          <span className={cn('text-xl font-extrabold font-mono tabular-nums', statusColorClass)}>
+                            {(roasDireto / roasEmpate).toFixed(1)}x acima
+                          </span>
+                        </div>
+                        <div className="space-y-1.5">
+                          <div className="w-full h-4 rounded-full bg-background/50 overflow-hidden relative">
+                            {/* Empate zone */}
+                            <div className="absolute top-0 left-0 h-full bg-warning/40 rounded-l-full" style={{ width: `${Math.min((roasEmpate / (roasEmpate * 3)) * 100, 100)}%` }} />
+                            {/* Real zone */}
+                            <div className={cn('absolute top-0 left-0 h-full rounded-full transition-all', statusBgClass)} style={{ width: `${Math.min((roasDireto / (roasEmpate * 3)) * 100, 100)}%` }} />
+                            {/* Empate marker */}
+                            <div className="absolute top-0 h-full w-0.5 bg-warning" style={{ left: `${Math.min((roasEmpate / (roasEmpate * 3)) * 100, 100)}%` }} />
+                          </div>
+                          <div className="flex justify-between text-[10px] text-text-3 font-mono">
+                            <span>Empate ({roasEmpate.toFixed(2)})</span>
+                            <span>Real ({roasDireto.toFixed(2)})</span>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    <div className={cn('rounded-xl p-3 text-sm', statusColorClass === 'text-success' ? 'bg-success/10' : statusColorClass === 'text-warning' ? 'bg-warning/10' : 'bg-destructive/10')}>
+                      <p className="text-text-2">{classification.mensagem}</p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-sm text-text-3">Dados insuficientes para classificação.</p>
+                    {!product && (
+                      <Button onClick={onLink} variant="outline" size="sm" className="gap-1.5 text-xs">
+                        <Link2 className="w-3.5 h-3.5" /> Vincular Produto
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* ACOS vs Margem */}
+              {margemContrib !== null && (
+                <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
+                  <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">ACOS vs Margem</p>
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-text-2">ACOS (Custo do Ads)</span>
+                        <span className="font-bold font-mono tabular-nums">{acosDireto.toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full h-3 rounded-full bg-background overflow-hidden">
+                        <div className="h-full rounded-full bg-warning/80" style={{ width: `${Math.min((acosDireto / Math.max(margemContrib, acosDireto, 1)) * 100, 100)}%` }} />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-text-2">Sua Margem Bruta</span>
+                        <span className="font-bold font-mono tabular-nums">{margemContrib.toFixed(1)}%</span>
+                      </div>
+                      <div className="w-full h-3 rounded-full bg-background overflow-hidden">
+                        <div className="h-full rounded-full bg-success/80" style={{ width: `${Math.min((margemContrib / Math.max(margemContrib, acosDireto, 1)) * 100, 100)}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                  {folgaAcosMargem !== null && (
+                    <div className={cn('rounded-xl p-3 text-sm font-bold', folgaAcosMargem > 0 ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive')}>
+                      {folgaAcosMargem > 0
+                        ? `Folga de ${folgaAcosMargem.toFixed(1)}%. O Ads consome apenas ${acosDireto.toFixed(1)}% do faturamento.`
+                        : `Excedente: ${folgaAcosMargem.toFixed(1)}% 🔴 — ACOS maior que margem. Cada venda via ads dá prejuízo.`}
+                    </div>
+                  )}
+                </div>
               )}
-              <span className={cn('text-base font-extrabold uppercase', statusColorClass)}>
-                {classification.classificacao.replace('_', ' ')}
-              </span>
+
+              {/* Configuração e Meta ROAS */}
+              {(ad.metodo_lance || metaRoas) && (
+                <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
+                  <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">⚙️ Configuração</p>
+                  {ad.metodo_lance && (
+                    <div className="space-y-2.5">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-text-2">Tipo:</span>
+                        <span className="font-bold text-foreground">{ad.metodo_lance}</span>
+                      </div>
+                      {ad.status_anuncio && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-text-2">Status:</span>
+                          <span className="font-bold text-foreground">{ad.status_anuncio}</span>
+                        </div>
+                      )}
+                      {isMetaRoas && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-text-2">Proteção:</span>
+                          <span className={cn('font-bold', qualificaProtecao ? 'text-success' : 'text-warning')}>
+                            {qualificaProtecao ? `✅ Ativa (${convPorDia.toFixed(1)} conv/dia)` : `⚠️ Inativa (${convPorDia.toFixed(1)} conv/dia)`}
+                          </span>
+                        </div>
+                      )}
+                      {isAutomatic && (
+                        <div className="rounded-xl border border-warning/30 bg-warning/10 p-3 space-y-1.5">
+                          <p className="text-xs text-text-2">• Sem meta de ROAS definida</p>
+                          <p className="text-xs text-text-2">• Sem proteção</p>
+                          {roasEmpate && (
+                            <p className={cn('text-xs font-bold', roasDireto >= roasEmpate ? 'text-primary' : 'text-destructive')}>
+                              {roasDireto >= roasEmpate
+                                ? '💡 ROAS acima do empate. Migre para Meta de ROAS para ter controle.'
+                                : '🔴 ROAS abaixo do empate e sem proteção. Pause ou migre para Meta de ROAS.'}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {metaRoas && (
+                    <div className="space-y-3 pt-3 border-t border-dashed border-border">
+                      <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Meta de ROAS Sugerida</p>
+                      <div className="grid grid-cols-3 gap-2.5">
+                        {[
+                          { label: 'Agressivo', value: metaRoas.agressivo, sub: '+volume' },
+                          { label: 'Equilibrado', value: metaRoas.equilibrado, sub: 'ideal' },
+                          { label: 'Conservador', value: metaRoas.conservador, sub: '+lucro' },
+                        ].map(m => (
+                          <div key={m.label} className="rounded-xl border border-border bg-surface-2 p-3 text-center">
+                            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{m.label}</p>
+                            <p className="text-xl font-extrabold font-mono tabular-nums text-foreground mt-1">{m.value}</p>
+                            <p className="text-[11px] text-text-3">{m.sub}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-xs text-warning flex items-center gap-1">
+                        <AlertTriangle className="w-3.5 h-3.5" /> Nunca abaixo de {roasEmpate?.toFixed(2)} (empate)
+                      </p>
+                      <p className="text-xs text-text-3 flex items-start gap-1">
+                        <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" /> Após alterar, aguarde 3-5 dias.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Orçamento Sugerido */}
+              {custoConversao > 0 && (
+                <div className="rounded-2xl border border-border bg-card p-5 space-y-3 shadow-sm">
+                  <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">💵 Orçamento Sugerido</p>
+                  <div className="text-sm font-mono tabular-nums space-y-2.5">
+                    <div className="flex justify-between">
+                      <span className="text-text-2">Custo por conversão:</span>
+                      <span className="font-bold">{fmt(custoConversao)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-text-2">Para proteção (≥5 vendas/dia):</span>
+                      <span className="font-bold text-primary">{fmt(orcamentoProtecao)}/dia</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-text-2">Mínimo saudável (≥3 vendas/dia):</span>
+                      <span className="font-bold">{fmt(orcamentoMinimo)}/dia</span>
+                    </div>
+                  </div>
+                  <p className={cn('text-xs font-bold', qualificaProtecao ? 'text-success' : 'text-warning')}>
+                    {qualificaProtecao
+                      ? `✅ Você qualifica para proteção (${convPorDia.toFixed(1)} conv/dia)`
+                      : `⚠️ Aumente budget para proteção (atual: ${convPorDia.toFixed(1)} conv/dia)`}
+                  </p>
+                </div>
+              )}
+
+              {/* Diagnóstico */}
+              {diagnostico ? (
+                <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 space-y-3 shadow-sm">
+                  <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">🎯 Diagnóstico Completo</p>
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">{diagnostico.emoji}</span>
+                    <div className="space-y-1">
+                      <p className="text-base font-extrabold text-foreground">{diagnostico.titulo}</p>
+                      <p className="text-sm text-text-2">{diagnostico.mensagem}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2 text-sm pt-2">
+                    <p className={cn('flex items-center gap-1.5', roasEmpate && roasDireto >= roasEmpate ? 'text-success' : 'text-destructive')}>
+                      <Target className="w-3.5 h-3.5" />
+                      ROAS {roasDireto.toFixed(2)} vs Empate {roasEmpate?.toFixed(2)}
+                    </p>
+                    {ad.posicao_media !== null && (
+                      <p className="flex items-center gap-1.5 text-text-2">
+                        <MapPin className="w-3.5 h-3.5" />
+                        Posição #{ad.posicao_media} — {posInfo?.label}
+                      </p>
+                    )}
+                  </div>
+                  <p className={cn('text-sm font-bold font-mono tabular-nums pt-1', efficiency.color)}>Score: {efficiency.score}/100</p>
+                </div>
+              ) : null}
+
+              {/* Halo Effect */}
+              {halo && halo.isSignificant && (
+                <div className="rounded-2xl border border-success/30 bg-success/5 p-5 space-y-2 shadow-sm">
+                  <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">💎 Efeito Halo — Vendas Indiretas</p>
+                  <p className="text-sm text-text-2">{halo.message}</p>
+                </div>
+              )}
             </div>
 
-            <div className="space-y-2.5 text-sm font-mono tabular-nums">
-              <div className="flex justify-between">
-                <span className="text-text-2">ROAS Real:</span>
-                <span className={cn('font-extrabold', statusColorClass)}>{roasDireto.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-2">ROAS Empate:</span>
-                <span className="font-bold text-warning">{roasEmpate?.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-2">Segurança:</span>
-                <span className="font-bold">{roasEmpate ? `${(roasDireto / roasEmpate).toFixed(1)}x acima` : '—'}</span>
-              </div>
-            </div>
+            {/* Right column — Score + Custo vs Lucro */}
+            {product && (
+              <div className="space-y-5">
+                {/* Score de Eficiência */}
+                <div className="rounded-2xl border border-border bg-card p-5 space-y-3 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Score do Anúncio</p>
+                    <span className={cn('text-3xl font-extrabold font-mono tabular-nums', efficiency.color)}>
+                      {efficiency.score}<span className="text-sm text-text-3 font-normal">/100</span>
+                    </span>
+                  </div>
+                  <div className="w-full h-3.5 rounded-full bg-background overflow-hidden">
+                    <div className={cn('h-full rounded-full transition-all', effBarColor)} style={{ width: `${efficiency.score}%` }} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs font-mono tabular-nums">
+                    <div className="flex justify-between text-text-3"><span>ROAS</span><span className="font-bold text-foreground">{efficiency.breakdown.roasScore}/40</span></div>
+                    <div className="flex justify-between text-text-3"><span>CTR</span><span className="font-bold text-foreground">{efficiency.breakdown.ctrScore}/20</span></div>
+                    <div className="flex justify-between text-text-3"><span>Conv</span><span className="font-bold text-foreground">{efficiency.breakdown.convScore}/20</span></div>
+                    <div className="flex justify-between text-text-3"><span>Pos</span><span className="font-bold text-foreground">{efficiency.breakdown.posScore}/20</span></div>
+                  </div>
+                </div>
 
-            {/* ROAS visual bar */}
-            {roasEmpate && (
-              <div className="space-y-1">
-                <div className="w-full h-4 rounded-full bg-background/50 overflow-hidden relative">
-                  <div
-                    className={cn('h-full rounded-full transition-all', statusBgClass)}
-                    style={{ width: `${Math.min((roasDireto / (roasEmpate * 2.5)) * 100, 100)}%` }}
-                  />
-                  <div className="absolute top-0 h-full w-0.5 bg-warning/80" style={{ left: `${Math.min((roasEmpate / (roasEmpate * 2.5)) * 100, 100)}%` }} />
-                </div>
-                <div className="flex justify-between text-xs text-text-3">
-                  <span>↑ Empate</span>
-                  <span>↑ Real</span>
-                </div>
+                {/* Custo vs Lucro por Venda */}
+                {empateResult && ad.itens_vendidos > 0 && (
+                  <div className="rounded-2xl border border-border bg-card p-5 space-y-3 shadow-sm">
+                    <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                      <Wallet className="w-4 h-4 text-primary" /> Custo vs Lucro por Venda
+                    </p>
+                    <div className="space-y-2.5 text-sm font-mono tabular-nums">
+                      <div className="flex justify-between">
+                        <span className="text-text-2">Custo por pedido:</span>
+                        <span className="font-bold">{fmt(custoPorPedido)} <span className="text-text-3 text-xs">({ad.conversoes} pedidos)</span></span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-text-2">Custo por unidade:</span>
+                        <span className="font-bold">{fmt(custoPorUnidade)} <span className="text-text-3 text-xs">({ad.itens_vendidos} un{ad.conversoes > 0 ? ` · média ${(ad.itens_vendidos / ad.conversoes).toFixed(1)}/ped` : ''})</span></span>
+                      </div>
+                      {ad.conversoes > 0 && ad.itens_vendidos / ad.conversoes > 1 && (
+                        <p className="text-xs text-primary flex items-center gap-1">
+                          <Info className="w-3.5 h-3.5 flex-shrink-0" />
+                          Cada pedido tem em média {(ad.itens_vendidos / ad.conversoes).toFixed(1)} unidades — custo real por unidade é menor.
+                        </p>
+                      )}
+                      <div className="flex justify-between">
+                        <span className="text-text-2">Lucro por unidade:</span>
+                        <span className="font-bold">{fmt(empateResult.lucroPorUnidade)}</span>
+                      </div>
+                      <div className="border-t border-dashed border-border pt-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-text-2 font-bold">Sobra por venda:</span>
+                          <span className={cn('font-extrabold text-base', sobraPorVenda !== null && sobraPorVenda >= 0 ? 'text-success' : 'text-destructive')}>
+                            {sobraPorVenda !== null ? (sobraPorVenda >= 0 ? `${fmt(sobraPorVenda)} ✅` : `-${fmt(Math.abs(sobraPorVenda))} 🔴`) : '—'}
+                          </span>
+                        </div>
+                        {lucroTotalPeriodo !== null && (
+                          <div className="flex justify-between mt-1.5">
+                            <span className="text-text-2">{lucroTotalPeriodo >= 0 ? 'Lucro total período:' : 'Prejuízo total:'}</span>
+                            <span className={cn('font-bold', lucroTotalPeriodo >= 0 ? 'text-success' : 'text-destructive')}>{fmt(Math.abs(lucroTotalPeriodo))}</span>
+                          </div>
+                        )}
+                      </div>
+                      {pctConsumo !== null && (
+                        <p className="text-xs text-text-3 pt-1">O ads consome {pctConsumo.toFixed(1)}% do lucro por unidade.</p>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
-
-            <p className="text-sm text-text-2">{classification.mensagem}</p>
-          </>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-sm text-text-3">Dados insuficientes para classificação.</p>
-            {!product && (
-              <Button onClick={onLink} variant="outline" size="sm" className="gap-1.5 text-xs">
-                <Link2 className="w-3.5 h-3.5" /> Vincular Produto
-              </Button>
-            )}
           </div>
-        )}
-      </div>
+        </TabsContent>
 
-      {/* 4. Posicionamento */}
-      {ad.posicao_media !== null && posInfo ? (
-        <div className="rounded-2xl border border-border bg-card p-6 space-y-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-              <MapPin className="w-4 h-4" />
-              Posicionamento
-            </h3>
-            <span className="text-4xl font-bold font-mono tabular-nums">#{ad.posicao_media}</span>
-          </div>
-
-          {/* Régua visual melhorada */}
-          <div className="relative h-12 bg-gradient-to-r from-success/20 via-warning/20 to-destructive/20 rounded-xl mb-3">
-            {/* Marcadores de zona */}
-            <div className="absolute top-0 left-[15%] h-full border-l border-dashed border-border" />
-            <div className="absolute top-0 left-[40%] h-full border-l border-dashed border-border" />
-            <div className="absolute top-0 left-[80%] h-full border-l border-dashed border-border" />
-
-            {/* Indicador de posição */}
-            <div
-              className="absolute top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold shadow-lg"
-              style={{ left: `${Math.min((ad.posicao_media / 30) * 100, 95)}%`, transform: 'translateX(-50%) translateY(-50%)' }}
-            >
-              {ad.posicao_media}
-            </div>
-          </div>
-
-          {/* Labels das zonas */}
-          <div className="flex justify-between text-xs text-text-3 px-1">
-            <span>Top 3</span>
-            <span>Pág 1</span>
-            <span>Pág 2</span>
-            <span>17+</span>
-          </div>
-
-          {/* Classificação */}
-          <p className={cn(
-            'text-sm font-bold mt-2',
-            ad.posicao_media <= 3 && 'text-success',
-            ad.posicao_media > 3 && ad.posicao_media <= 8 && 'text-primary',
-            ad.posicao_media > 8 && ad.posicao_media <= 16 && 'text-warning',
-            ad.posicao_media > 16 && 'text-destructive',
-          )}>
-            {posInfo.label}
-          </p>
-
-          <div className="text-sm text-text-3 space-y-1.5">
-            <p className={ad.posicao_media <= 3 ? 'text-success font-bold' : ''}>• 1-3: Topo {ad.posicao_media <= 3 ? '← VOCÊ' : ''}</p>
-            <p className={ad.posicao_media > 3 && ad.posicao_media <= 8 ? 'text-primary font-bold' : ''}>• 4-8: Primeira página {ad.posicao_media > 3 && ad.posicao_media <= 8 ? '← VOCÊ' : ''}</p>
-            <p className={ad.posicao_media > 8 && ad.posicao_media <= 16 ? 'text-warning font-bold' : ''}>• 9-16: Segunda página {ad.posicao_media > 8 && ad.posicao_media <= 16 ? '← VOCÊ' : ''}</p>
-            <p className={ad.posicao_media > 16 ? 'text-destructive font-bold' : ''}>• 17+: Baixa visibilidade {ad.posicao_media > 16 ? '← VOCÊ' : ''}</p>
-          </div>
-        </div>
-      ) : (
-        <div className="rounded-2xl border border-dashed border-border bg-card p-5 space-y-3 shadow-sm">
-          <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-            <MapPin className="w-4 h-4 text-text-3" /> Posicionamento
-          </p>
-          <p className="text-sm text-text-2">Importe o CSV individual para ver a posição nos resultados de busca.</p>
-          <Button onClick={onImportPosition} size="sm" variant="outline" className="gap-1.5 text-sm">
-            <Upload className="w-4 h-4" /> Importar CSV do Produto
-          </Button>
-        </div>
-      )}
-
-      {/* 5. Evolução Temporal — Operation Log Timeline (moved up) */}
-      <OperationLogTimeline adProductId={ad.product_id} adShopeeProductId={ad.shopee_product_id} roasEmpate={roasEmpate} />
-
-      {/* 6. ACOS vs Margem */}
-      {margemContrib !== null && (
-        <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
-          <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">ACOS vs Margem</p>
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-text-2">ACOS</span>
-                <span className="font-bold font-mono tabular-nums">{acosDireto.toFixed(1)}%</span>
-              </div>
-              <div className="w-full h-3 rounded-full bg-background overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-warning/80"
-                  style={{ width: `${Math.min((acosDireto / Math.max(margemContrib, acosDireto, 1)) * 100, 100)}%` }}
-                />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-text-2">Margem</span>
-                <span className="font-bold font-mono tabular-nums">{margemContrib.toFixed(1)}%</span>
-              </div>
-              <div className="w-full h-3 rounded-full bg-background overflow-hidden">
-                <div className="h-full rounded-full bg-success/80" style={{ width: `${Math.min((margemContrib / Math.max(margemContrib, acosDireto, 1)) * 100, 100)}%` }} />
-              </div>
-            </div>
-          </div>
-          {folgaAcosMargem !== null && (
-            <div className={cn('rounded-xl p-3 text-sm font-bold', folgaAcosMargem > 0 ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive')}>
-              {folgaAcosMargem > 0
-                ? `Folga: ${folgaAcosMargem.toFixed(1)}% ✅ — O ads consome ${acosDireto.toFixed(1)}% do faturamento. Sua margem é ${margemContrib.toFixed(1)}%. Sobram ${folgaAcosMargem.toFixed(1)}% de lucro líquido.`
-                : `Excedente: ${folgaAcosMargem.toFixed(1)}% 🔴 — ACOS maior que margem. Cada venda via ads dá prejuízo.`}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* 7. Geral vs Direto */}
-      {ad.roas_direto > 0 && ad.gmv_direto > 0 && ad.gmv_direto !== ad.gmv && (
-        <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
-          <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Geral vs Direto</p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm font-mono tabular-nums">
-              <thead>
-                <tr className="text-text-3">
-                  <th className="text-left py-2 font-normal text-xs uppercase tracking-wider"></th>
-                  <th className="text-right py-2 font-normal text-xs uppercase tracking-wider">Geral</th>
-                  <th className="text-right py-2 font-normal text-xs uppercase tracking-wider">Direto</th>
-                  <th className="text-right py-2 font-normal text-xs uppercase tracking-wider">Diferença</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-t border-border">
-                  <td className="py-2 text-text-2 font-bold">ROAS</td>
-                  <td className="py-2 text-right font-bold">{ad.roas.toFixed(2)}</td>
-                  <td className="py-2 text-right font-bold">{ad.roas_direto.toFixed(2)}</td>
-                  <td className={cn('py-2 text-right font-bold', ad.roas - ad.roas_direto > 0 ? 'text-success' : 'text-destructive')}>
-                    {(ad.roas - ad.roas_direto) > 0 ? '+' : ''}{(ad.roas - ad.roas_direto).toFixed(2)}
-                  </td>
-                </tr>
-                <tr className="border-t border-border">
-                  <td className="py-2 text-text-2 font-bold">ACOS</td>
-                  <td className="py-2 text-right font-bold">{ad.acos.toFixed(1)}%</td>
-                  <td className="py-2 text-right font-bold">{acosDireto.toFixed(1)}%</td>
-                  <td className={cn('py-2 text-right font-bold', ad.acos - acosDireto < 0 ? 'text-success' : 'text-destructive')}>
-                    {(ad.acos - acosDireto).toFixed(1)}%
-                  </td>
-                </tr>
-                <tr className="border-t border-border">
-                  <td className="py-2 text-text-2 font-bold">GMV</td>
-                  <td className="py-2 text-right font-bold">{fmt(ad.gmv)}</td>
-                  <td className="py-2 text-right font-bold">{fmt(ad.gmv_direto)}</td>
-                  <td className={cn('py-2 text-right font-bold', ad.gmv - ad.gmv_direto > 0 ? 'text-success' : 'text-text-2')}>
-                    +{fmt(ad.gmv - ad.gmv_direto)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          {crossSell && (
-            <div className="flex items-start gap-2.5 pt-2 border-t border-dashed border-border">
-              <Info className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-text-2">{crossSell.mensagem}</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Halo Effect */}
-      {halo && halo.isSignificant && (
-        <div className="rounded-2xl border border-success/30 bg-success/5 p-5 space-y-2 shadow-sm">
-          <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">💎 Efeito Halo — Vendas Indiretas</p>
-          <p className="text-sm text-text-2">{halo.message}</p>
-        </div>
-      )}
-    </div>
-  );
-
-  return (
-    <div className="animate-fade-in px-1 md:px-0">
-      {/* Breadcrumb / Header */}
-      <div className="flex items-center gap-3 mb-6 flex-wrap">
-        <Button variant="ghost" size="sm" onClick={onClose} className="gap-1.5 text-sm font-bold text-text-2 hover:text-foreground">
-          <ArrowLeft className="w-4 h-4" /> Voltar para Ads
-        </Button>
-
-        <div className="flex items-center gap-1.5 ml-auto md:ml-0">
-          <Button
-            variant="ghost" size="icon"
-            className="h-7 w-7"
-            disabled={!prevAd}
-            onClick={() => prevAd && onNavigate(prevAd)}
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <span className="text-sm text-text-3 font-mono tabular-nums">
-            {currentIndex + 1}/{allAds.length}
-          </span>
-          <Button
-            variant="ghost" size="icon"
-            className="h-7 w-7"
-            disabled={!nextAd}
-            onClick={() => nextAd && onNavigate(nextAd)}
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </div>
-
-        {ad.status_anuncio && (
-          <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20 text-primary hidden md:inline-flex">
-            {ad.status_anuncio}
-          </span>
-        )}
-      </div>
-
-      {/* Main 2-column layout */}
-      {isMobile ? (
-        <div className="space-y-5">
-          {renderLeftColumn()}
-          {renderRightColumn()}
-        </div>
-      ) : (
-        <div className="grid grid-cols-[3fr_2fr] gap-6">
-          {renderLeftColumn()}
+        {/* ═══ Tab 2: Performance & Gráficos ═══ */}
+        <TabsContent value="performance">
           <div className="space-y-5">
-            <div className="lg:sticky lg:top-4">
-              {renderRightColumn()}
+            {/* Histórico de Ajustes & ROAS */}
+            <div className="rounded-2xl border border-border bg-card p-5 space-y-2 shadow-sm">
+              <h3 className="text-base font-bold text-foreground">Histórico de Ajustes & ROAS</h3>
+              <p className="text-sm text-text-3">Evolução do ROAS em relação às mudanças na campanha</p>
             </div>
+            <OperationLogTimeline adProductId={ad.product_id} adShopeeProductId={ad.shopee_product_id} roasEmpate={roasEmpate} />
+
+            {/* Posicionamento */}
+            {ad.posicao_media !== null && posInfo ? (
+              <div className="rounded-2xl border border-border bg-card p-6 space-y-4 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <MapPin className="w-4 h-4" /> Posicionamento
+                  </h3>
+                  <span className="text-4xl font-bold font-mono tabular-nums">#{ad.posicao_media}</span>
+                </div>
+                <div className="relative h-12 bg-gradient-to-r from-success/20 via-warning/20 to-destructive/20 rounded-xl mb-3">
+                  <div className="absolute top-0 left-[15%] h-full border-l border-dashed border-border" />
+                  <div className="absolute top-0 left-[40%] h-full border-l border-dashed border-border" />
+                  <div className="absolute top-0 left-[80%] h-full border-l border-dashed border-border" />
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold shadow-lg"
+                    style={{ left: `${Math.min((ad.posicao_media / 30) * 100, 95)}%`, transform: 'translateX(-50%) translateY(-50%)' }}
+                  >
+                    {ad.posicao_media}
+                  </div>
+                </div>
+                <div className="flex justify-between text-xs text-text-3 px-1">
+                  <span>Top 3</span><span>Pág 1</span><span>Pág 2</span><span>17+</span>
+                </div>
+                <p className={cn('text-sm font-bold mt-2', ad.posicao_media <= 3 && 'text-success', ad.posicao_media > 3 && ad.posicao_media <= 8 && 'text-primary', ad.posicao_media > 8 && ad.posicao_media <= 16 && 'text-warning', ad.posicao_media > 16 && 'text-destructive')}>
+                  {posInfo.label}
+                </p>
+                <div className="text-sm text-text-3 space-y-1.5">
+                  <p className={ad.posicao_media <= 3 ? 'text-success font-bold' : ''}>• 1-3: Topo {ad.posicao_media <= 3 ? '← VOCÊ' : ''}</p>
+                  <p className={ad.posicao_media > 3 && ad.posicao_media <= 8 ? 'text-primary font-bold' : ''}>• 4-8: Primeira página {ad.posicao_media > 3 && ad.posicao_media <= 8 ? '← VOCÊ' : ''}</p>
+                  <p className={ad.posicao_media > 8 && ad.posicao_media <= 16 ? 'text-warning font-bold' : ''}>• 9-16: Segunda página {ad.posicao_media > 8 && ad.posicao_media <= 16 ? '← VOCÊ' : ''}</p>
+                  <p className={ad.posicao_media > 16 ? 'text-destructive font-bold' : ''}>• 17+: Baixa visibilidade {ad.posicao_media > 16 ? '← VOCÊ' : ''}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-border bg-card p-5 space-y-3 shadow-sm">
+                <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <MapPin className="w-4 h-4 text-text-3" /> Posicionamento
+                </p>
+                <p className="text-sm text-text-2">Importe o CSV individual para ver a posição nos resultados de busca.</p>
+                <Button onClick={onImportPosition} size="sm" variant="outline" className="gap-1.5 text-sm">
+                  <Upload className="w-4 h-4" /> Importar CSV do Produto
+                </Button>
+              </div>
+            )}
+
+            {/* Geral vs Direto */}
+            {ad.roas_direto > 0 && ad.gmv_direto > 0 && ad.gmv_direto !== ad.gmv && (
+              <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-sm">
+                <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Geral vs Direto</p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm font-mono tabular-nums">
+                    <thead>
+                      <tr className="text-text-3">
+                        <th className="text-left py-2 font-normal text-xs uppercase tracking-wider">Métrica</th>
+                        <th className="text-right py-2 font-normal text-xs uppercase tracking-wider">Geral</th>
+                        <th className="text-right py-2 font-normal text-xs uppercase tracking-wider">Direto</th>
+                        <th className="text-right py-2 font-normal text-xs uppercase tracking-wider">Diferença</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="border-t border-border">
+                        <td className="py-2 text-text-2 font-bold">ROAS</td>
+                        <td className="py-2 text-right font-bold">{ad.roas.toFixed(2)}</td>
+                        <td className="py-2 text-right font-bold">{ad.roas_direto.toFixed(2)}</td>
+                        <td className={cn('py-2 text-right font-bold', ad.roas - ad.roas_direto > 0 ? 'text-success' : 'text-destructive')}>
+                          {(ad.roas - ad.roas_direto) > 0 ? '+' : ''}{(ad.roas - ad.roas_direto).toFixed(2)}
+                        </td>
+                      </tr>
+                      <tr className="border-t border-border">
+                        <td className="py-2 text-text-2 font-bold">ACOS</td>
+                        <td className="py-2 text-right font-bold">{ad.acos.toFixed(1)}%</td>
+                        <td className="py-2 text-right font-bold">{acosDireto.toFixed(1)}%</td>
+                        <td className={cn('py-2 text-right font-bold', ad.acos - acosDireto < 0 ? 'text-success' : 'text-destructive')}>
+                          {(ad.acos - acosDireto).toFixed(1)}%
+                        </td>
+                      </tr>
+                      <tr className="border-t border-border">
+                        <td className="py-2 text-text-2 font-bold">GMV</td>
+                        <td className="py-2 text-right font-bold">{fmt(ad.gmv)}</td>
+                        <td className="py-2 text-right font-bold">{fmt(ad.gmv_direto)}</td>
+                        <td className={cn('py-2 text-right font-bold', ad.gmv - ad.gmv_direto > 0 ? 'text-success' : 'text-text-2')}>
+                          +{fmt(ad.gmv - ad.gmv_direto)}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                {crossSell && (
+                  <div className="flex items-start gap-2.5 pt-2 border-t border-dashed border-border">
+                    <Info className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-text-2">{crossSell.mensagem}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
