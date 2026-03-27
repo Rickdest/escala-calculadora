@@ -84,18 +84,18 @@ function CostBreakdownChart({ product, roasData }: { product: Product; roasData:
   }, [roasData]);
 
   return (
-    <div className="flex items-center gap-3 md:gap-5">
-      <div className="w-[100px] h-[100px] md:w-[120px] md:h-[120px] flex-shrink-0">
+    <div className="flex items-center gap-4 md:gap-5">
+      <div className="w-[110px] h-[110px] md:w-[130px] md:h-[130px] flex-shrink-0">
         <ResponsiveContainer width="100%" height="100%">
           <RechartsPie>
-            <Pie data={data} cx="50%" cy="50%" innerRadius={28} outerRadius={45} paddingAngle={3} dataKey="value" strokeWidth={0}>
+            <Pie data={data} cx="50%" cy="50%" innerRadius={30} outerRadius={48} paddingAngle={3} dataKey="value" strokeWidth={0}>
               {data.map((entry, idx) => <Cell key={idx} fill={entry.color} />)}
             </Pie>
             <Tooltip formatter={(v: number) => formatCurrency(v)} />
           </RechartsPie>
         </ResponsiveContainer>
       </div>
-      <div className="flex-1 space-y-1">
+      <div className="flex-1 space-y-1.5">
         {data.map((item, idx) => (
           <div key={idx} className="flex items-center gap-2 text-xs">
             <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
@@ -108,7 +108,7 @@ function CostBreakdownChart({ product, roasData }: { product: Product; roasData:
   );
 }
 
-// ─── Seletor de produto como dropdown ───
+// ─── Seletor de produto como dropdown card ───
 function ProductPicker({
   products,
   selectedId,
@@ -131,24 +131,27 @@ function ProductPicker({
 
   return (
     <div className="relative">
-      {/* Trigger */}
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="w-full flex items-center gap-3 rounded-xl border border-border bg-card p-3 text-left transition-colors hover:border-primary/30 active:scale-[0.99]"
+        className={cn(
+          'w-full flex items-center gap-3 rounded-xl border-2 p-3.5 text-left transition-all group',
+          'border-border bg-card hover:border-primary/40 hover:bg-surface-2 active:scale-[0.995]',
+          open && 'border-primary/40'
+        )}
       >
-        <div className="w-10 h-10 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0 overflow-hidden">
+        <div className="w-12 h-12 rounded-xl bg-surface-2 flex items-center justify-center flex-shrink-0 overflow-hidden ring-1 ring-border">
           {selected?.imageUrl ? (
-            <img src={selected.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover" />
+            <img src={selected.imageUrl} alt="" className="w-12 h-12 rounded-xl object-cover" />
           ) : (
-            <Package className="w-4 h-4 text-text-3" />
+            <Package className="w-5 h-5 text-text-3" />
           )}
         </div>
         <div className="flex-1 min-w-0">
           {selected ? (
             <>
               <p className="text-sm font-bold text-foreground truncate">{selected.name}</p>
-              <p className="text-xs text-text-3 tabular-nums font-mono">
+              <p className="text-xs text-text-3 tabular-nums font-mono mt-0.5">
                 {formatCurrency(selected.salePrice)} · Custo {formatCurrency(selected.costPrice)}
               </p>
             </>
@@ -156,70 +159,72 @@ function ProductPicker({
             <p className="text-sm text-text-3">Selecione um produto...</p>
           )}
         </div>
-        <div className="flex items-center gap-1 text-text-3 flex-shrink-0">
-          <span className="text-xs font-medium">Trocar</span>
-          <ChevronDown className="w-4 h-4" />
+        <div className="flex items-center gap-1.5 text-text-3 flex-shrink-0 bg-surface-2 group-hover:bg-card px-2.5 py-1.5 rounded-lg border border-border transition-colors">
+          <span className="text-[11px] font-semibold">Trocar</span>
+          <ChevronDown className={cn('w-3.5 h-3.5 transition-transform', open && 'rotate-180')} />
         </div>
       </button>
 
-      {/* Dropdown */}
       {open && (
-        <div className="absolute left-0 right-0 top-full mt-1 z-50 rounded-xl border border-border bg-card shadow-xl overflow-hidden animate-fade-in">
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-border">
-            <Search className="w-4 h-4 text-text-3 flex-shrink-0" />
-            <input
-              autoFocus
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Buscar produto..."
-              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-text-3 outline-none"
-            />
-            <button onClick={() => setOpen(false)} className="text-text-3 hover:text-foreground">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-          <div className="max-h-[260px] overflow-y-auto scrollbar-none">
-            {filtered.map(p => {
-              const roasData = calcProductRoas(p, config);
-              const isActive = p.id === selectedId;
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => { onSelect(p.id); setOpen(false); setSearch(''); }}
-                  className={cn(
-                    'w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors',
-                    isActive ? 'bg-primary/10' : 'hover:bg-surface-2'
-                  )}
-                >
-                  <div className="w-8 h-8 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                    {p.imageUrl ? (
-                      <img src={p.imageUrl} alt="" className="w-8 h-8 rounded-lg object-cover" />
-                    ) : (
-                      <Package className="w-3.5 h-3.5 text-text-3" />
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute left-0 right-0 top-full mt-1.5 z-50 rounded-xl border border-border bg-card shadow-2xl overflow-hidden animate-fade-in">
+            <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border bg-surface-2/50">
+              <Search className="w-4 h-4 text-text-3 flex-shrink-0" />
+              <input
+                autoFocus
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Buscar produto..."
+                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-text-3 outline-none"
+              />
+              <button onClick={() => setOpen(false)} className="text-text-3 hover:text-foreground p-1 rounded-lg hover:bg-surface-2 transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="max-h-[280px] overflow-y-auto scrollbar-none divide-y divide-border/50">
+              {filtered.map(p => {
+                const roasData = calcProductRoas(p, config);
+                const isActive = p.id === selectedId;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => { onSelect(p.id); setOpen(false); setSearch(''); }}
+                    className={cn(
+                      'w-full flex items-center gap-3 px-3 py-3 text-left transition-colors',
+                      isActive ? 'bg-primary/8' : 'hover:bg-surface-2'
                     )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold truncate">{p.name}</p>
-                    <p className="text-xs text-text-3 tabular-nums font-mono">{formatCurrency(p.salePrice)}</p>
-                  </div>
-                  {roasData.roasAtual !== null && !roasData.margemInsuficiente && (
-                    <span className={cn('text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums font-mono',
-                      roasData.roasAtual >= (roasData.roasIdeal || 0) ? 'bg-success/15 text-success' :
-                      roasData.roasAtual >= (roasData.roasEmpate || 0) ? 'bg-warning/15 text-warning' :
-                      'bg-destructive/15 text-destructive'
-                    )}>
-                      {roasData.roasAtual.toFixed(1)}x
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-            {filtered.length === 0 && (
-              <p className="text-center text-xs text-text-3 py-4">Nenhum produto encontrado</p>
-            )}
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {p.imageUrl ? (
+                        <img src={p.imageUrl} alt="" className="w-9 h-9 rounded-lg object-cover" />
+                      ) : (
+                        <Package className="w-3.5 h-3.5 text-text-3" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate">{p.name}</p>
+                      <p className="text-xs text-text-3 tabular-nums font-mono">{formatCurrency(p.salePrice)}</p>
+                    </div>
+                    {roasData.roasAtual !== null && !roasData.margemInsuficiente && (
+                      <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full tabular-nums font-mono',
+                        roasData.roasAtual >= (roasData.roasIdeal || 0) ? 'bg-success/15 text-success' :
+                        roasData.roasAtual >= (roasData.roasEmpate || 0) ? 'bg-warning/15 text-warning' :
+                        'bg-destructive/15 text-destructive'
+                      )}>
+                        {roasData.roasAtual.toFixed(1)}x
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+              {filtered.length === 0 && (
+                <p className="text-center text-xs text-text-3 py-6">Nenhum produto encontrado</p>
+              )}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
@@ -290,19 +295,18 @@ function ProductAnalysis() {
 
   if (!currentStore || currentStore.products.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="w-14 h-14 rounded-2xl bg-surface-2 flex items-center justify-center mb-3">
-          <Target className="w-7 h-7 text-text-2" />
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
+          <Target className="w-6 h-6 text-primary" />
         </div>
         <p className="text-sm font-bold text-foreground mb-1">Nenhum produto cadastrado</p>
-        <p className="text-xs text-text-2 max-w-xs">Adicione seus produtos na página Produtos para analisar o ROAS.</p>
+        <p className="text-xs text-text-3 max-w-[260px]">Adicione seus produtos na aba Produtos para começar a analisar o ROAS.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      {/* ── Seletor ── */}
       <ProductPicker
         products={currentStore.products}
         selectedId={selectedProductId}
@@ -312,52 +316,65 @@ function ProductAnalysis() {
 
       {selectedProduct && roasData && !roasData.margemInsuficiente && (
         <>
-          {/* ── Status pill + ROAS bars ── */}
+          {/* ── Unified ROAS gauge ── */}
           <div className="rounded-xl border border-border bg-card p-4 space-y-4 animate-fade-in">
             <div className="flex items-center justify-between">
               <span className={cn('text-xs font-bold px-2.5 py-1 rounded-full inline-flex items-center gap-1', marginStatus.bg, marginStatus.color)}>
                 <Zap className="w-3 h-3" />
-                {marginStatus.label} · {marginPercent.toFixed(1)}% margem
+                {marginStatus.label} · {marginPercent.toFixed(1)}%
               </span>
-              <span className="text-xs text-text-3 font-medium">Shopee</span>
+              <span className="text-[10px] text-text-3 font-medium bg-surface-2 px-2 py-0.5 rounded-md">Shopee</span>
             </div>
 
-            <div className="space-y-2.5">
-              {[
-                { label: 'Empate', value: roasData.roasEmpate!, max: (roasData.roasIdeal ?? 1) * 1.1, barClass: 'bg-destructive', tip: 'ROAS mínimo para não ter prejuízo. Abaixo disso cada venda com anúncio gera perda.' },
-                { label: 'Saudável', value: roasData.roasSaudavel!, max: (roasData.roasIdeal ?? 1) * 1.1, barClass: 'bg-warning', tip: 'A partir daqui o lucro é consistente e seguro para escalar.' },
-                { label: 'Ideal', value: roasData.roasIdeal!, max: (roasData.roasIdeal ?? 1) * 1.1, barClass: 'bg-success', tip: 'Margem excelente. Nesse nível vale aumentar o investimento em Ads com confiança.' },
-              ].map(row => (
-                <div key={row.label} className="flex items-center gap-3">
-                  <div className="w-[70px] flex items-center gap-1 flex-shrink-0">
-                    <span className="text-xs text-text-2 font-medium">{row.label}</span>
-                    <TipIcon text={row.tip} />
-                  </div>
-                  <div className="flex-1 h-2.5 rounded-full bg-surface-2 overflow-hidden">
+            {/* Single gauge bar with ticks */}
+            {roasData.roasEmpate && roasData.roasSaudavel && roasData.roasIdeal && (
+              <div className="space-y-2">
+                <div className="relative h-3 rounded-full bg-surface-2 overflow-hidden">
+                  {/* Gradient fill */}
+                  {roasData.roasAtual !== null && roasData.roasAtual > 0 && (
                     <div
-                      className={cn('h-full rounded-full transition-all duration-500', row.barClass)}
-                      style={{ width: `${Math.min((row.value / row.max) * 100, 100)}%` }}
+                      className={cn(
+                        'absolute inset-y-0 left-0 rounded-full transition-all duration-700',
+                        roasData.roasAtual >= roasData.roasIdeal ? 'bg-gradient-to-r from-destructive via-warning to-success' :
+                        roasData.roasAtual >= roasData.roasSaudavel ? 'bg-gradient-to-r from-destructive via-warning to-warning' :
+                        roasData.roasAtual >= roasData.roasEmpate ? 'bg-gradient-to-r from-destructive to-destructive' :
+                        'bg-destructive/60'
+                      )}
+                      style={{ width: `${Math.min((roasData.roasAtual / (roasData.roasIdeal * 1.3)) * 100, 100)}%` }}
                     />
-                  </div>
-                  <span className={cn('text-sm font-bold tabular-nums font-mono w-[60px] text-right',
-                    row.barClass === 'bg-destructive' ? 'text-destructive' :
-                    row.barClass === 'bg-warning' ? 'text-warning' : 'text-success'
-                  )}>
-                    {row.value.toFixed(2)}x
-                  </span>
+                  )}
+                  {/* Tick marks */}
+                  {[
+                    { value: roasData.roasEmpate, color: 'bg-destructive' },
+                    { value: roasData.roasSaudavel, color: 'bg-warning' },
+                    { value: roasData.roasIdeal, color: 'bg-success' },
+                  ].map((tick, i) => (
+                    <div
+                      key={i}
+                      className={cn('absolute top-0 bottom-0 w-0.5', tick.color)}
+                      style={{ left: `${Math.min((tick.value / (roasData.roasIdeal! * 1.3)) * 100, 100)}%` }}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
+                {/* Labels under gauge */}
+                <div className="flex justify-between text-[10px] font-mono tabular-nums">
+                  <span className="text-destructive font-bold">Emp {roasData.roasEmpate.toFixed(1)}</span>
+                  <span className="text-warning font-bold">Saud {roasData.roasSaudavel.toFixed(1)}</span>
+                  <span className="text-success font-bold">Ideal {roasData.roasIdeal.toFixed(1)}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* ── Inputs de Ads + resultado inline ── */}
           <div className="rounded-xl border border-border bg-card p-4 space-y-4 animate-fade-in">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <p className="text-xs font-bold uppercase tracking-wider text-text-2">Dados de Ads</p>
+                <Megaphone className="w-3.5 h-3.5 text-primary" />
+                <p className="section-label !mb-0">Dados de Ads</p>
                 <span className="text-[10px] text-text-3 bg-surface-2 px-1.5 py-0.5 rounded">opcional</span>
               </div>
-              <span className="text-[10px] text-text-3">Salvo automaticamente</span>
+              <span className="text-[10px] text-text-3">Salvo auto</span>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -372,22 +389,28 @@ function ProductAnalysis() {
             </div>
 
             {roasData.roasAtual !== null && roasAtualLabel ? (
-              <div className="flex items-center justify-between pt-2 border-t border-border">
-                <div className="flex items-center gap-1">
+              <div className="flex items-center justify-between pt-3 border-t border-border">
+                <div className="flex items-center gap-1.5">
                   <span className="text-xs text-text-2 font-medium">ROAS atual</span>
                   <TipIcon text="Retorno sobre o investimento em anúncio. Ex: ROAS 3 significa que para cada R$1 investido, você vendeu R$3." />
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={cn('text-xl font-extrabold tabular-nums font-mono', statusColors[roasStatus || ''] || 'text-foreground')}>
+                <div className="flex items-center gap-2.5">
+                  <span className={cn('text-2xl font-black tabular-nums font-mono', statusColors[roasStatus || ''] || 'text-foreground')}>
                     {roasData.roasAtual.toFixed(2)}x
                   </span>
-                  <span className={cn('text-xs font-bold', roasAtualLabel.color)}>
+                  <span className={cn('text-[11px] font-bold px-2 py-0.5 rounded-full',
+                    roasAtualLabel.color,
+                    roasAtualLabel.color === 'text-success' ? 'bg-success/10' :
+                    roasAtualLabel.color === 'text-primary' ? 'bg-primary/10' :
+                    roasAtualLabel.color === 'text-warning' ? 'bg-warning/10' :
+                    'bg-destructive/10'
+                  )}>
                     {roasAtualLabel.text}
                   </span>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-2 pt-2 border-t border-border text-text-3">
+              <div className="flex items-center gap-2 pt-3 border-t border-border text-text-3">
                 <Info className="w-3.5 h-3.5 flex-shrink-0" />
                 <p className="text-xs">Preencha gasto e receita para ver o ROAS atual</p>
               </div>
@@ -397,34 +420,35 @@ function ProductAnalysis() {
           {/* ── Breakdown + Resumo ── */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-              <p className="text-xs font-bold uppercase tracking-wider text-text-2">Composição</p>
+              <p className="section-label">Composição do preço</p>
               <CostBreakdownChart product={selectedProduct} roasData={roasData} />
             </div>
-            <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-              <p className="text-xs font-bold uppercase tracking-wider text-text-2">Resumo</p>
-              <div className="space-y-3">
-                <div>
-                  <div className="flex items-center gap-1">
-                    <p className="text-[10px] text-text-3 font-medium">Lucro bruto</p>
-                    <TipIcon text={getTooltipText('lucro_bruto')} />
-                  </div>
-                  <p className={cn('text-lg font-extrabold tabular-nums font-mono', roasData.lucroBruto > 0 ? 'text-success' : 'text-destructive')}>
-                    {formatCurrency(roasData.lucroBruto)}
-                  </p>
-                  <p className="text-[10px] text-text-3">Antes de Ads</p>
+            <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+              <p className="section-label">Resumo financeiro</p>
+              <div className={cn(
+                'rounded-xl p-3.5 space-y-1',
+                roasData.lucroBruto > 0 ? 'bg-success/5 border border-success/15' : 'bg-destructive/5 border border-destructive/15'
+              )}>
+                <div className="flex items-center gap-1">
+                  <p className="text-[10px] text-text-3 font-medium">Lucro bruto</p>
+                  <TipIcon text={getTooltipText('lucro_bruto')} />
                 </div>
-                <div>
-                  <div className="flex items-center gap-1">
-                    <p className="text-[10px] text-text-3 font-medium">Taxa Shopee</p>
-                    <TipIcon text={getTooltipText('taxa_shopee')} />
-                  </div>
-                  <p className="text-lg font-extrabold tabular-nums font-mono text-foreground">
-                    {formatCurrency(roasData.taxaShopee)}
-                  </p>
-                  <p className="text-[10px] text-text-3">
-                    {((roasData.taxaShopee / selectedProduct.salePrice) * 100).toFixed(1)}% do preço
-                  </p>
+                <p className={cn('text-2xl font-black tabular-nums font-mono', roasData.lucroBruto > 0 ? 'text-success' : 'text-destructive')}>
+                  {formatCurrency(roasData.lucroBruto)}
+                </p>
+                <p className="text-[10px] text-text-3">Antes de Ads</p>
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-1">
+                  <p className="text-[10px] text-text-3 font-medium">Taxa Shopee</p>
+                  <TipIcon text={getTooltipText('taxa_shopee')} />
                 </div>
+                <p className="text-lg font-extrabold tabular-nums font-mono text-foreground">
+                  {formatCurrency(roasData.taxaShopee)}
+                </p>
+                <p className="text-[10px] text-text-3">
+                  {((roasData.taxaShopee / selectedProduct.salePrice) * 100).toFixed(1)}% do preço
+                </p>
               </div>
             </div>
           </div>
@@ -443,10 +467,12 @@ function ProductAnalysis() {
       )}
 
       {!selectedProduct && (
-        <div className="flex flex-col items-center justify-center py-16 text-center rounded-xl border border-border bg-card">
-          <Target className="w-10 h-10 text-text-3/30 mb-3" />
+        <div className="flex flex-col items-center justify-center py-14 text-center rounded-xl border border-dashed border-border/60 bg-card/50">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
+            <Target className="w-6 h-6 text-primary/60" />
+          </div>
           <p className="text-sm font-semibold text-text-2">Selecione um produto acima</p>
-          <p className="text-xs text-text-2 mt-1">Escolha o produto para ver a análise de ROAS</p>
+          <p className="text-xs text-text-3 mt-1">Escolha o produto para ver a análise de ROAS</p>
         </div>
       )}
     </div>
@@ -485,38 +511,37 @@ function RoasRanking() {
     <div className="space-y-3">
       <div className="flex items-center gap-2">
         <BarChart3 className="w-4 h-4 text-primary" />
-        <p className="text-xs font-bold uppercase tracking-wider text-text-2">Ranking de Produtos</p>
+        <p className="section-label !mb-0">Ranking de Produtos</p>
       </div>
 
       {withAds.length > 0 && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <p className="text-[10px] text-text-3 font-medium uppercase tracking-wider px-1">
             Com dados de Ads · {withAds.length}
           </p>
           {withAds.map((r, i) => (
-            <div key={r.product.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
-              <span className={cn('text-xs font-bold w-6 text-center',
-                statusColors[r.status || ''] || 'text-text-3'
+            <div key={r.product.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:border-primary/20 transition-colors">
+              <span className={cn('text-xs font-black w-7 h-7 rounded-lg flex items-center justify-center',
+                i === 0 ? 'bg-primary/15 text-primary' :
+                i === 1 ? 'bg-success/10 text-success' :
+                'bg-surface-2 text-text-3'
               )}>
                 #{i + 1}
               </span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold truncate">{r.product.name}</p>
                 <p className="text-[10px] text-text-3 tabular-nums font-mono">
-                  {formatCurrency(r.product.adsCost)} gasto →{' '}
-                  {formatCurrency(r.product.adsRevenue)}
+                  {formatCurrency(r.product.adsCost)} gasto → {formatCurrency(r.product.adsRevenue)}
                 </p>
               </div>
               <div className="text-right flex-shrink-0">
-                <p className={cn('text-sm font-extrabold tabular-nums font-mono',
+                <p className={cn('text-base font-black tabular-nums font-mono',
                   statusColors[r.status || ''] || 'text-foreground'
                 )}>
                   {r.roasAtual!.toFixed(2)}x
                 </p>
-                <p className="text-[10px] text-text-3 tabular-nums">
-                  Emp: {r.roasEmpate?.toFixed(1)}
-                  {' · '}
-                  Ideal: {r.roasIdeal?.toFixed(1)}
+                <p className="text-[10px] text-text-3 tabular-nums font-mono">
+                  Emp {r.roasEmpate?.toFixed(1)} · Ideal {r.roasIdeal?.toFixed(1)}
                 </p>
               </div>
             </div>
@@ -525,17 +550,17 @@ function RoasRanking() {
       )}
 
       {withoutAds.length > 0 && (
-        <div className="space-y-1.5">
+        <div className="space-y-2">
           <p className="text-[10px] text-text-3 font-medium uppercase tracking-wider px-1">
             Sem Ads importados · {withoutAds.length} produto{withoutAds.length > 1 ? 's' : ''}
           </p>
           {withoutAds.map((r, i) => (
-            <div key={r.product.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
-              <span className="text-xs font-bold text-text-3 w-6 text-center">
+            <div key={r.product.id} className="flex items-center gap-3 rounded-xl border border-border/60 bg-card/60 p-3">
+              <span className="text-xs font-bold text-text-3 w-7 h-7 rounded-lg bg-surface-2 flex items-center justify-center">
                 #{withAds.length + i + 1}
               </span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate">{r.product.name}</p>
+                <p className="text-sm font-semibold truncate text-text-2">{r.product.name}</p>
                 <p className="text-[10px] text-text-3 tabular-nums font-mono">{formatCurrency(r.product.salePrice)}</p>
               </div>
               <div className="text-right flex-shrink-0">
@@ -560,26 +585,23 @@ function RoasRanking() {
   );
 }
 
-// ─── Meta tags formatadas para ranking ───
-function MetaTag({ label, value }: { label: string; value: string }) {
-  return (
-    <span className="text-[10px] bg-surface-2 text-text-2 px-1.5 py-0.5 rounded font-mono tabular-nums">
-      {label}: {value}
-    </span>
-  );
-}
-
 // ─── Export principal ───
 export function RoasAnalysis() {
   return (
     <div className="pb-6 md:pb-4">
       <Tabs defaultValue="roas" className="w-full">
         <TabsList className="w-full grid grid-cols-2 h-11 mb-5 bg-surface-2 rounded-xl p-1">
-          <TabsTrigger value="roas" className="rounded-lg text-xs font-bold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsTrigger
+            value="roas"
+            className="rounded-lg text-xs font-bold gap-1.5 transition-all data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-text-3"
+          >
             <Target className="w-3.5 h-3.5" />
             ROAS
           </TabsTrigger>
-          <TabsTrigger value="ads" className="rounded-lg text-xs font-bold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsTrigger
+            value="ads"
+            className="rounded-lg text-xs font-bold gap-1.5 transition-all data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-text-3"
+          >
             <Megaphone className="w-3.5 h-3.5" />
             Análise de Ads
           </TabsTrigger>
