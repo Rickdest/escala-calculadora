@@ -536,7 +536,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
   return (
     <div className="animate-fade-in px-1 md:px-0 bg-background min-h-screen -mx-1 md:-mx-0 pb-10">
       {/* Breadcrumb / Header */}
-      <div className="flex items-center gap-3 mb-5 flex-wrap px-1 pt-2">
+      <div className="flex items-center gap-3 mb-3 flex-wrap px-1 pt-1">
         <Button variant="ghost" size="sm" onClick={onClose} className="gap-1.5 text-sm font-bold text-text-2 hover:text-foreground hover:bg-surface-2">
           <ArrowLeft className="w-4 h-4" /> Voltar
         </Button>
@@ -553,7 +553,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
       </div>
 
       {/* Product Header Card with glow */}
-      <div className="rounded-2xl border border-border bg-card p-4 shadow-lg mb-5 relative overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card p-3 md:p-4 shadow-lg mb-3 relative overflow-hidden">
         <div className="absolute -top-20 -right-20 w-60 h-60 bg-success/5 blur-3xl rounded-full pointer-events-none" />
         <div className="relative flex items-center gap-3">
           {product?.imageUrl ? (
@@ -609,26 +609,32 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         <span className="text-[11px] text-success font-mono tabular-nums md:hidden block mt-2">{periodLabel}</span>
       </div>
 
-      {/* KPIs grid */}
-      <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-1.5 md:gap-2 mb-5 overflow-hidden">
-        {ad.posicao_media !== null && (() => {
-          const pos = ad.posicao_media!;
-          const isTop = pos <= 8;
-          const isMid = pos > 8 && pos <= 20;
-          const pageLabel = pos <= 3 ? 'Top 3' : pos <= 8 ? '1ª Página' : pos <= 20 ? '2ª Página' : '3ª Página+';
-          const posColorClass = {
-            text: isTop ? 'text-success' : isMid ? 'text-warning' : 'text-destructive',
-            bg: isTop ? 'bg-success/5' : isMid ? 'bg-warning/5' : 'bg-destructive/5',
-            border: isTop ? 'border-success/25' : isMid ? 'border-warning/25' : 'border-destructive/25',
-          };
-          return <KpiCard icon={MapPin} label="Posição" value={`#${pos}`} sub={pageLabel} colorClass={posColorClass} />;
+      {/* KPIs grid — Row 1: Posição, ROAS, Custo/Un */}
+      <div className="grid grid-cols-3 gap-1.5 md:gap-2 mb-1.5 overflow-hidden">
+        {(() => {
+          const pos = ad.posicao_media;
+          if (pos !== null) {
+            const isTop = pos <= 8;
+            const isMid = pos > 8 && pos <= 20;
+            const pageLabel = pos <= 3 ? 'Top 3' : pos <= 8 ? '1ª Página' : pos <= 20 ? '2ª Página' : '3ª Página+';
+            const posColorClass = {
+              text: isTop ? 'text-success' : isMid ? 'text-warning' : 'text-destructive',
+              bg: isTop ? 'bg-success/5' : isMid ? 'bg-warning/5' : 'bg-destructive/5',
+              border: isTop ? 'border-success/25' : isMid ? 'border-warning/25' : 'border-destructive/25',
+            };
+            return <KpiCard icon={MapPin} label="Posição" value={`#${pos}`} sub={pageLabel} colorClass={posColorClass} />;
+          }
+          return <KpiCard icon={MapPin} label="Posição" value="—" />;
         })()}
-        <KpiCard icon={Eye} label="Impressões" value={ad.impressoes >= 1000 ? `${(ad.impressoes / 1000).toFixed(1)}k` : String(ad.impressoes)} />
-        <KpiCard icon={MousePointerClick} label="Cliques" value={ad.cliques >= 1000 ? `${(ad.cliques / 1000).toFixed(1)}k` : String(ad.cliques)} />
+        <KpiCard icon={Target} label="ROAS" value={roasDireto.toFixed(2)} sub={roasEmpate ? `Emp: ${roasEmpate.toFixed(2)}` : undefined} subColor={roasEmpate ? (roasDireto >= roasEmpate ? 'text-success' : 'text-destructive') : undefined} highlight />
+        <KpiCard icon={Wallet} label="Custo/Un" value={custoPorUnidade > 0 ? fmtShort(custoPorUnidade) : '—'} sub={sobraPorVenda !== null ? `Sobra: ${fmtShort(sobraPorVenda)}` : undefined} subColor={sobraPorVenda !== null ? (sobraPorVenda > 0 ? 'text-success' : 'text-destructive') : undefined} />
+      </div>
+
+      {/* KPIs grid — Row 2: CTR, Vendas, GMV */}
+      <div className="grid grid-cols-3 gap-1.5 md:gap-2 mb-3 overflow-hidden">
         <KpiCard icon={Percent} label="CTR" value={`${ad.ctr.toFixed(2)}%`} sub={ad.ctr >= 2.5 ? 'Bom' : ad.ctr >= 1.5 ? 'Ok' : 'Baixo'} subColor={ad.ctr >= 2.5 ? 'text-success' : ad.ctr >= 1.5 ? 'text-warning' : 'text-destructive'} />
         <KpiCard icon={ShoppingCart} label="Vendas" value={ad.itens_vendidos >= 1000 ? `${(ad.itens_vendidos / 1000).toFixed(1)}k` : String(ad.itens_vendidos)} />
         <KpiCard icon={DollarSign} label="GMV" value={fmtShort(ad.gmv)} />
-        <KpiCard icon={Target} label="ROAS" value={roasDireto.toFixed(2)} sub={roasEmpate ? `Emp: ${roasEmpate.toFixed(2)}` : undefined} subColor={roasEmpate ? (roasDireto >= roasEmpate ? 'text-success' : 'text-destructive') : undefined} highlight />
       </div>
 
       {/* Unlinked product warning */}
