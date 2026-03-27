@@ -1,32 +1,36 @@
 
-## Corrigir importação do CSV de Operation Log + garantir gráfico funcional
 
-### Problemas identificados
+## Subir Histórico de Ajustes + Marcações no gráfico
 
-1. **Security validation quebra em CSV com campos quoted multi-line**: O "Create Campaign" no CSV tem detalhes entre aspas com quebras de linha internas. A validação de segurança faz `line.split(',')` sem respeitar aspas — campos internos com vírgulas são tratados como campos separados, podendo falhar na checagem de `field.length > 500`.
+### Problema
+A seção "Histórico de Ajustes" está no final da página (seção 7), muito escondida. Além disso, o gráfico de ROAS meta não mostra marcações visuais de cada alteração feita.
 
-2. **Parser não lida com campos multi-line**: `parseOperationLogCSV` faz `split('\n')` e processa linha a linha. O "Create Campaign" tem um campo com `\n` dentro de aspas — isso quebra a linha em múltiplas, e o parser não reconhece como uma entrada válida.
+### Mudanças em `src/components/roas/AdsDetailFullView.tsx`
 
-3. **Sem botão de importação do log na tela de detalhe de Ads**: O `OperationLogTimeline` mostra "Importe o log de operações" mas não tem botão de importação. O usuário precisa ir até o produto para importar.
+**1. Mover timeline para cima — após "Posicionamento" (seção 4)**
 
-### Correções
+Na função `renderRightColumn()` (~linha 884-885), mover o `<OperationLogTimeline>` de depois do Halo Effect para logo após a seção de Posicionamento (~linha 786). Isso coloca a timeline como seção 5, empurrando ACOS vs Margem e as demais para baixo.
 
-**1. `src/lib/shopeeAdsParser.ts` — Security validation e parser**
+**2. Adicionar marcações no gráfico para cada evento**
 
-- `validateCSVSecurity`: substituir o loop naive `line.split(',')` por um check que respeita campos entre aspas, ou simplesmente remover a checagem de campo individual e manter apenas o check de tamanho total do arquivo (5MB) e extensão — que já são suficientes.
+No `ReLineChart` dentro do `OperationLogTimeline`:
+- Para cada entrada do `sortedEvents` (não apenas roas_target, mas budget, quick_boost, etc.), adicionar um `<ReferenceLine x={date}>` vertical com:
+  - Cor do ícone correspondente ao tipo (laranja roas_target, azul budget, amarelo quick_boost, verde campaign_created)
+  - Stroke tracejado fino
+  - Label no topo com texto curto (ex: "ROAS 14.0", "Orç R$30", "Boost", "Criou")
+- Usar `<ReferenceDot>` nos pontos de mudança de ROAS para destacar com dot maior
+- Importar `ReferenceDot` do recharts (já disponível)
 
-- `parseOperationLogCSV`: reescrever para lidar com campos quoted multi-line. Antes de fazer `split('\n')`, pré-processar o conteúdo para juntar linhas que estão dentro de aspas abertas. Isso garante que "Create Campaign" com detalhes multi-line vire uma única linha lógica.
+**3. Ajustar dados do gráfico para incluir eventos não-ROAS**
 
-**2. `src/components/roas/AdsDetailFullView.tsx` — Botão de importação no timeline**
+Atualmente o eixo X só tem pontos de `roas_target` e `campaign_created`. Para que as `ReferenceLine` verticais dos outros eventos (budget, boost) apareçam corretamente:
+- Incluir TODOS os eventos no eixo X como pontos de dados (com valor ROAS repetido do ponto anterior, ou null)
+- Ou usar `ReferenceLine` com valor de x baseado no label de data correspondente
 
-- Adicionar um `<input type="file" ref>` e botão "Importar Log" no empty state do `OperationLogTimeline`
-- Ao selecionar arquivo, usar `detectAndParseCSV`, validar, e salvar no `product_ads_metrics.operation_log` via `product_id` do ad
-- Após salvar, recarregar o log
+### Resultado
+- Timeline visível mais cedo ao rolar a página
+- Cada ajuste marcado visualmente no gráfico com linha vertical colorida e label
 
-**3. `src/components/roas/AdsDetailFullView.tsx` — Busca do log também por `shopee_product_id`**
+### Arquivo modificado
+- `src/components/roas/AdsDetailFullView.tsx`
 
-- O `OperationLogTimeline` busca por `product_id`, mas o operation log pode estar vinculado via `shopee_product_id` (que vem do CSV). Adicionar fallback de busca.
-
-### Arquivos modificados
-1. `src/lib/shopeeAdsParser.ts` — fix security validation + multi-line CSV handling
-2. `src/components/roas/AdsDetailFullView.tsx` — botão import no timeline + busca por shopee_product_id
