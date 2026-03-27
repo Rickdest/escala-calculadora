@@ -76,7 +76,7 @@ export function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
           <div key={label} className="rounded-2xl border border-border bg-card p-3 md:p-5 min-w-0 overflow-hidden relative">
             <Icon className={cn('absolute top-3 right-3 w-7 h-7 md:w-9 md:h-9', iconColor)} />
             <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
-            <p className={cn('text-xl md:text-3xl font-black font-mono tabular-nums mt-1 truncate', color)}>{value}</p>
+            <p className={cn('text-2xl md:text-4xl font-black font-mono tabular-nums mt-1 truncate', color)}>{value}</p>
             {/* ROAS card gets a thermometer bar instead of sub text */}
             {idx === 2 ? (
               <div className="mt-2 space-y-1">
@@ -98,44 +98,8 @@ export function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
       </div>
 
       {/* Status mini cards */}
-      {allZeroClassification && s.naoVinculados > 0 ? (
-        <div className="rounded-xl border border-warning/20 bg-warning/5 px-3 py-2 flex items-center gap-2">
-          <span className="text-xs font-bold text-warning whitespace-nowrap">⚠️ {s.naoVinculados} não vinculado{s.naoVinculados !== 1 ? 's' : ''}</span>
-          <span className="text-[11px] text-muted-foreground">· Vincule para ver lucratividade</span>
-        </div>
-      ) : (
-        <div className="flex overflow-x-auto scrollbar-hide gap-2 md:grid md:grid-cols-4 pb-1 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0">
-          <div className="shrink-0 min-w-[5rem] rounded-xl border border-success/20 bg-success/5 p-2 md:p-3 text-center">
-            <p className="text-base md:text-xl font-black text-success">{s.lucrativos}</p>
-            <p className="text-[10px] md:text-[11px] font-bold text-success">✅ Lucrativos</p>
-          </div>
-          <div className="shrink-0 min-w-[5rem] rounded-xl border border-warning/20 bg-warning/5 p-2 md:p-3 text-center">
-            <p className="text-base md:text-xl font-black text-warning">{s.atencao}</p>
-            <p className="text-[10px] md:text-[11px] font-bold text-warning">🟠 Atenção</p>
-          </div>
-          <div className="shrink-0 min-w-[5rem] rounded-xl border border-destructive/20 bg-destructive/5 p-2 md:p-3 text-center">
-            <p className="text-base md:text-xl font-black text-destructive">{s.prejuizo}</p>
-            <p className="text-[10px] md:text-[11px] font-bold text-destructive">🔴 Prejuízo</p>
-          </div>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="shrink-0 min-w-[5rem] rounded-xl border border-primary/20 bg-primary/5 p-2 md:p-3 text-center cursor-help">
-                  <p className={cn('text-base md:text-xl font-black font-mono', s.avgScore >= 60 ? 'text-primary' : 'text-warning')}>
-                    {s.avgScore > 0 ? `${s.avgScore}/100` : '—'}
-                  </p>
-                  <p className="text-[10px] md:text-[11px] font-bold text-primary flex items-center justify-center gap-1">
-                    ⚡ Score <Info className="w-3 h-3 text-muted-foreground" />
-                  </p>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="max-w-[200px]">
-                <p className="text-xs">Baseado em ROAS, CTR, Taxa de Conversão e Posição Média dos produtos vinculados.</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      )}
     </div>
+  );
+}
   );
 }
