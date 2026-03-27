@@ -17,7 +17,7 @@ import { OperationLogEntry, detectAndParseCSV, validateCSVSecurity } from '@/lib
 import { toast } from 'sonner';
 import {
   LineChart as ReLineChart, Line, XAxis, YAxis, Tooltip as ReTooltip,
-  ReferenceLine, ReferenceDot, ResponsiveContainer,
+  ReferenceLine, Customized, ResponsiveContainer,
 } from 'recharts';
 import {
   calcularRoasEmpate, classificarAnuncio, sugerirMetaRoas,
@@ -231,9 +231,9 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate }: { 
 
       {showChart && (
         <>
-          <div className="h-[160px] w-full">
+          <div className="h-[190px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <ReLineChart data={chartData} margin={{ top: 8, right: 10, bottom: 0, left: 0 }}>
+              <ReLineChart data={chartData} margin={{ top: 30, right: 10, bottom: 0, left: 0 }}>
                 <XAxis
                   dataKey="fullDate"
                   tick={{ fontSize: 10 }}
@@ -256,44 +256,92 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate }: { 
                 {roasEmpate && roasEmpate > 0 && roasEmpate !== Infinity && (
                   <ReferenceLine y={roasEmpate} stroke="hsl(var(--warning))" strokeDasharray="4 4" label={{ value: 'Empate', fontSize: 9, fill: 'hsl(var(--warning))' }} />
                 )}
-                {/* Clean vertical markers — no text labels, just colored lines */}
+                {/* Subtle vertical guide lines */}
                 {dateMarkers.map((m, i) => (
                   <ReferenceLine
                     key={`evt-${i}`}
                     x={m.fullDate}
                     stroke={m.color}
-                    strokeDasharray="3 3"
-                    strokeWidth={1.5}
-                    strokeOpacity={0.6}
+                    strokeWidth={0.5}
+                    strokeOpacity={0.3}
                   />
                 ))}
                 <Line type="monotone" dataKey="roas" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3, fill: 'hsl(var(--primary))' }} connectNulls />
-                {/* Colored dots per event type at the data point */}
-                {dateMarkers.map((m, i) => {
-                  const point = chartData.find(d => d.fullDate === m.fullDate);
-                  if (!point || point.roas === null) return null;
+                {/* SVG icons at the top of the chart */}
+                <Customized component={(props: any) => {
+                  const { xAxisMap, yAxisMap } = props;
+                  const xAxis = xAxisMap && Object.values(xAxisMap)[0] as any;
+                  if (!xAxis || !xAxis.scale) return null;
+                  const yTop = 4; // px from top of SVG area
                   return (
-                    <ReferenceDot
-                      key={`mdot-${i}`}
-                      x={m.fullDate}
-                      y={point.roas}
-                      r={5}
-                      fill={m.color}
-                      stroke="hsl(var(--background))"
-                      strokeWidth={2}
-                    />
+                    <g>
+                      {dateMarkers.map((m, i) => {
+                        const xPx = xAxis.scale(m.fullDate);
+                        if (xPx === undefined || isNaN(xPx)) return null;
+                        // Pick the most relevant icon for this day
+                        const priorityOrder: string[] = ['roas_target', 'budget', 'quick_boost', 'campaign_created', 'other'];
+                        const sortedFields = [...m.fields].sort((a, b) => priorityOrder.indexOf(a) - priorityOrder.indexOf(b));
+                        // Render up to 2 icons stacked
+                        const iconsToShow = sortedFields.slice(0, 2);
+                        return (
+                          <g key={`icon-${i}`}>
+                            {iconsToShow.map((field, fi) => {
+                              const iconInfo = FIELD_ICONS[field] || FIELD_ICONS.other;
+                              const fillColor = EVENT_COLORS[field] || EVENT_COLORS.other;
+                              const yPos = yTop + fi * 14;
+                              // Render simple SVG icon shapes
+                              return (
+                                <g key={`ic-${i}-${fi}`} transform={`translate(${xPx - 6}, ${yPos})`}>
+                                  <rect x={-1} y={-1} width={14} height={14} rx={3} fill="hsl(var(--card))" opacity={0.9} />
+                                  {field === 'roas_target' && (
+                                    <g stroke={fillColor} strokeWidth={1.5} fill="none">
+                                      <circle cx={6} cy={6} r={5} />
+                                      <circle cx={6} cy={6} r={2.5} />
+                                      <circle cx={6} cy={6} r={0.5} fill={fillColor} />
+                                    </g>
+                                  )}
+                                  {field === 'budget' && (
+                                    <g stroke={fillColor} strokeWidth={1.5} fill="none">
+                                      <text x={6} y={10} textAnchor="middle" fontSize={10} fontWeight={700} fill={fillColor} stroke="none">$</text>
+                                    </g>
+                                  )}
+                                  {field === 'quick_boost' && (
+                                    <g fill={fillColor}>
+                                      <polygon points="7,0 4,6 6.5,6 5,12 9,5 6.5,5 7,0" />
+                                    </g>
+                                  )}
+                                  {field === 'campaign_created' && (
+                                    <g stroke={fillColor} strokeWidth={1.8} fill="none">
+                                      <line x1={6} y1={2} x2={6} y2={10} />
+                                      <line x1={2} y1={6} x2={10} y2={6} />
+                                    </g>
+                                  )}
+                                  {field === 'other' && (
+                                    <g stroke={fillColor} strokeWidth={1.5} fill="none">
+                                      <circle cx={6} cy={6} r={4} />
+                                    </g>
+                                  )}
+                                </g>
+                              );
+                            })}
+                          </g>
+                        );
+                      })}
+                    </g>
                   );
-                })}
+                }} />
               </ReLineChart>
             </ResponsiveContainer>
           </div>
           {/* Legend */}
           <div className="flex flex-wrap gap-3">
             {Array.from(presentTypes).map(t => {
+              const fi = FIELD_ICONS[t] || FIELD_ICONS.other;
+              const IconComp = fi.icon;
               const leg = LEGEND_MAP[t] || LEGEND_MAP.other;
               return (
                 <div key={t} className="flex items-center gap-1.5">
-                  <span className={cn('w-2.5 h-2.5 rounded-full', leg.color)} />
+                  <IconComp className={cn('w-3 h-3', fi.color)} />
                   <span className="text-[10px] text-muted-foreground">{leg.label}</span>
                 </div>
               );
