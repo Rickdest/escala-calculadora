@@ -620,7 +620,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
               </div>
               <div className="w-full h-3 rounded-full bg-background overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-orange-500/80"
+                  className="h-full rounded-full bg-warning/80"
                   style={{ width: `${Math.min((acosDireto / Math.max(margemContrib, acosDireto, 1)) * 100, 100)}%` }}
                 />
               </div>
@@ -631,12 +631,12 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                 <span className="font-bold font-mono tabular-nums">{margemContrib.toFixed(1)}%</span>
               </div>
               <div className="w-full h-3 rounded-full bg-background overflow-hidden">
-                <div className="h-full rounded-full bg-emerald-500/80" style={{ width: `${Math.min((margemContrib / Math.max(margemContrib, acosDireto, 1)) * 100, 100)}%` }} />
+                <div className="h-full rounded-full bg-success/80" style={{ width: `${Math.min((margemContrib / Math.max(margemContrib, acosDireto, 1)) * 100, 100)}%` }} />
               </div>
             </div>
           </div>
           {folgaAcosMargem !== null && (
-            <div className={cn('rounded-xl p-3 text-sm font-bold', folgaAcosMargem > 0 ? 'bg-emerald-500/10 text-success' : 'bg-red-500/10 text-destructive')}>
+            <div className={cn('rounded-xl p-3 text-sm font-bold', folgaAcosMargem > 0 ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive')}>
               {folgaAcosMargem > 0
                 ? `Folga: ${folgaAcosMargem.toFixed(1)}% ✅ — O ads consome ${acosDireto.toFixed(1)}% do faturamento. Sua margem é ${margemContrib.toFixed(1)}%. Sobram ${folgaAcosMargem.toFixed(1)}% de lucro líquido.`
                 : `Excedente: ${folgaAcosMargem.toFixed(1)}% 🔴 — ACOS maior que margem. Cada venda via ads dá prejuízo.`}
