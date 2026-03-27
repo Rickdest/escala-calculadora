@@ -38,7 +38,7 @@ function rowToMetric(r: any): AdMetricWithLog & { _productId: string | null; _id
 export function useProductAdsMetrics() {
   const { user } = useAuth();
   const [metricsMap, setMetricsMap] = useState<ProductAdsMap>({});
-  const [allMetrics, setAllMetrics] = useState<(AdMetricDerived & { _productId: string | null; _id: string })[]>([]);
+  const [allMetrics, setAllMetrics] = useState<(AdMetricWithLog & { _productId: string | null; _id: string })[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadMetrics = useCallback(async () => {
