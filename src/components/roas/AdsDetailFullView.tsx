@@ -157,6 +157,13 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
     : 'text-destructive'
     : 'text-text-3';
 
+  const statusBgClass = classification
+    ? classification.classificacao === 'LUCRATIVO' ? 'bg-success'
+    : classification.classificacao === 'MARGEM_APERTADA' ? 'bg-warning'
+    : classification.classificacao === 'ABAIXO_EMPATE' ? 'bg-warning'
+    : 'bg-destructive'
+    : 'bg-text-3';
+
   const semaphoreBg = classification
     ? classification.classificacao === 'LUCRATIVO' ? 'bg-success/5 border-success/20'
     : classification.classificacao === 'MARGEM_APERTADA' ? 'bg-warning/5 border-warning/20'
