@@ -438,7 +438,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
             <div className="flex items-center gap-2 flex-wrap mt-1">
               <span className="text-[11px] text-text-3 font-mono tabular-nums">{periodLabel}</span>
               {emAprendizado && (
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center gap-1">
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-warning/10 border border-warning/20 text-warning flex items-center gap-1">
                   <Clock className="w-3 h-3" /> Aprendizado
                 </span>
               )}
