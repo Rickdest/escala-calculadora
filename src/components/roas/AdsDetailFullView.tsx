@@ -534,9 +534,9 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
   // ═══ Render ═══
 
   return (
-    <div className="animate-fade-in px-1 md:px-0 bg-background min-h-screen -mx-1 md:-mx-0 pb-10">
+    <div className="animate-fade-in px-1 md:px-0 bg-background min-h-screen -mx-1 md:-mx-0 pb-10 -mt-2 md:mt-0">
       {/* Breadcrumb / Header */}
-      <div className="flex items-center gap-3 mb-2 flex-wrap px-1">
+      <div className="flex items-center gap-3 mb-1 flex-wrap px-1">
         <Button variant="ghost" size="sm" onClick={onClose} className="gap-1.5 text-sm font-bold text-text-2 hover:text-foreground hover:bg-surface-2">
           <ArrowLeft className="w-4 h-4" /> Voltar
         </Button>
@@ -553,7 +553,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
       </div>
 
       {/* Product Header Card with glow */}
-      <div className="rounded-2xl border border-border bg-card p-3 md:p-4 shadow-lg mb-2 relative overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card p-3 md:p-4 shadow-lg mb-1.5 relative overflow-hidden">
         <div className="absolute -top-20 -right-20 w-60 h-60 bg-success/5 blur-3xl rounded-full pointer-events-none" />
         <div className="relative flex items-center gap-3">
           {product?.imageUrl ? (
