@@ -1,12 +1,23 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useStore } from '@/contexts/StoreContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import {
   ArrowLeft, ChevronLeft, ChevronRight,
   TrendingUp, TrendingDown, AlertTriangle, Target, Zap, MapPin,
   Eye, MousePointerClick, ShoppingCart, DollarSign, Percent, Upload,
   Link2, BarChart3, Info, Clock, Wallet, Package, Plus, LineChart,
+  History, Settings,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { EnrichedAdsData } from '@/hooks/useAdsData';
+import { OperationLogEntry } from '@/lib/shopeeAdsParser';
+import {
+  LineChart as ReLineChart, Line, XAxis, YAxis, Tooltip as ReTooltip,
+  ReferenceLine, ResponsiveContainer,
+} from 'recharts';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { EnrichedAdsData } from '@/hooks/useAdsData';
@@ -704,17 +715,8 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         </div>
       )}
 
-      {/* 7. Evolução Temporal (placeholder) */}
-      <div className="rounded-2xl border border-border bg-card p-5 space-y-3 shadow-sm">
-        <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-          <LineChart className="w-4 h-4 text-text-3" /> Evolução Temporal
-        </p>
-        <div className="flex flex-col items-center justify-center py-8 text-center">
-          <LineChart className="w-10 h-10 text-text-3 mb-3" />
-          <p className="text-base font-bold text-text-2">Importe relatórios de períodos diferentes</p>
-          <p className="text-sm text-text-3 mt-1">para ver a evolução ao longo do tempo.</p>
-        </div>
-      </div>
+      {/* 7. Evolução Temporal — Operation Log Timeline */}
+      <OperationLogTimeline adProductId={ad.product_id} roasEmpate={roasEmpate} />
     </div>
   );
 
