@@ -604,25 +604,29 @@ function RoasRanking() {
 
 // ─── Export principal ───
 export function RoasAnalysis() {
+  const [adsDetailOpen, setAdsDetailOpen] = useState(false);
+
   return (
     <div className="pb-6 md:pb-4 bg-background rounded-2xl p-4 md:p-6">
       <Tabs defaultValue="roas" className="w-full">
-        <TabsList className="w-full grid grid-cols-2 h-12 mb-5 bg-card border border-border rounded-lg p-1">
-          <TabsTrigger
-            value="roas"
-            className="rounded-lg text-xs font-bold gap-1.5 transition-all data-[state=active]:bg-surface-2 data-[state=active]:text-foreground data-[state=active]:shadow-sm text-text-3"
-          >
-            <Target className="w-3.5 h-3.5" />
-            ROAS
-          </TabsTrigger>
-          <TabsTrigger
-            value="ads"
-            className="rounded-lg text-xs font-bold gap-1.5 transition-all data-[state=active]:bg-surface-2 data-[state=active]:text-foreground data-[state=active]:shadow-sm text-text-3"
-          >
-            <Megaphone className="w-3.5 h-3.5" />
-            Análise de Ads
-          </TabsTrigger>
-        </TabsList>
+        {!adsDetailOpen && (
+          <TabsList className="w-full grid grid-cols-2 h-12 mb-5 bg-card border border-border rounded-lg p-1">
+            <TabsTrigger
+              value="roas"
+              className="rounded-lg text-xs font-bold gap-1.5 transition-all data-[state=active]:bg-surface-2 data-[state=active]:text-foreground data-[state=active]:shadow-sm text-text-3"
+            >
+              <Target className="w-3.5 h-3.5" />
+              ROAS
+            </TabsTrigger>
+            <TabsTrigger
+              value="ads"
+              className="rounded-lg text-xs font-bold gap-1.5 transition-all data-[state=active]:bg-surface-2 data-[state=active]:text-foreground data-[state=active]:shadow-sm text-text-3"
+            >
+              <Megaphone className="w-3.5 h-3.5" />
+              Análise de Ads
+            </TabsTrigger>
+          </TabsList>
+        )}
 
         <TabsContent value="roas">
           <div className="space-y-6">
@@ -632,7 +636,7 @@ export function RoasAnalysis() {
         </TabsContent>
 
         <TabsContent value="ads">
-          <AdsTab />
+          <AdsTab onDetailOpen={setAdsDetailOpen} />
         </TabsContent>
       </Tabs>
     </div>
