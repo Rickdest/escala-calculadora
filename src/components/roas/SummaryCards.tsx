@@ -73,11 +73,11 @@ export function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
         {kpis.map(({ label, value, color, sub, icon: Icon, accentColor, iconBg }) => (
-          <div key={label} className={cn('rounded-xl border border-border bg-card p-3 md:p-4 min-w-0 overflow-hidden relative border-t-2', accentColor)}>
-            <Icon className={cn('absolute top-3 right-3 w-8 h-8', iconBg)} />
-            <p className="section-label">{label}</p>
-            <p className={cn('text-lg md:text-2xl font-black font-mono tabular-nums mt-1 truncate', color)}>{value}</p>
-            <p className="text-[11px] text-text-3 mt-0.5 truncate">{sub}</p>
+          <div key={label} className={cn('rounded-xl border border-border bg-card p-2.5 md:p-4 min-w-0 overflow-hidden relative border-t-2', accentColor)}>
+            <Icon className={cn('absolute top-2.5 right-2.5 w-6 h-6 md:w-8 md:h-8', iconBg)} />
+            <p className="section-label text-[9px] md:text-[10px]">{label}</p>
+            <p className={cn('text-base md:text-2xl font-black font-mono tabular-nums mt-0.5 truncate', color)}>{value}</p>
+            <p className="text-[10px] md:text-[11px] text-text-3 mt-0.5 truncate">{sub}</p>
           </div>
         ))}
       </div>
@@ -89,28 +89,28 @@ export function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
           <span className="text-[11px] text-text-3">· Vincule para ver lucratividade</span>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-          <div className="rounded-xl border border-success/20 bg-success/5 p-3 text-center">
-            <p className="text-xl font-black text-success">{s.lucrativos}</p>
-            <p className="text-[11px] font-bold text-success">✅ Lucrativos</p>
+        <div className="flex overflow-x-auto scrollbar-hide gap-2 md:grid md:grid-cols-4 pb-1 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0">
+          <div className="shrink-0 min-w-[5rem] rounded-xl border border-success/20 bg-success/5 p-2 md:p-3 text-center">
+            <p className="text-base md:text-xl font-black text-success">{s.lucrativos}</p>
+            <p className="text-[10px] md:text-[11px] font-bold text-success">✅ Lucrativos</p>
           </div>
-          <div className="rounded-xl border border-warning/20 bg-warning/5 p-3 text-center">
-            <p className="text-xl font-black text-warning">{s.atencao}</p>
-            <p className="text-[11px] font-bold text-warning">🟠 Atenção</p>
+          <div className="shrink-0 min-w-[5rem] rounded-xl border border-warning/20 bg-warning/5 p-2 md:p-3 text-center">
+            <p className="text-base md:text-xl font-black text-warning">{s.atencao}</p>
+            <p className="text-[10px] md:text-[11px] font-bold text-warning">🟠 Atenção</p>
           </div>
-          <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-center">
-            <p className="text-xl font-black text-destructive">{s.prejuizo}</p>
-            <p className="text-[11px] font-bold text-destructive">🔴 Prejuízo</p>
+          <div className="shrink-0 min-w-[5rem] rounded-xl border border-destructive/20 bg-destructive/5 p-2 md:p-3 text-center">
+            <p className="text-base md:text-xl font-black text-destructive">{s.prejuizo}</p>
+            <p className="text-[10px] md:text-[11px] font-bold text-destructive">🔴 Prejuízo</p>
           </div>
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-center cursor-help">
-                  <p className={cn('text-xl font-black font-mono', s.avgScore >= 60 ? 'text-primary' : 'text-warning')}>
+                <div className="shrink-0 min-w-[5rem] rounded-xl border border-primary/20 bg-primary/5 p-2 md:p-3 text-center cursor-help">
+                  <p className={cn('text-base md:text-xl font-black font-mono', s.avgScore >= 60 ? 'text-primary' : 'text-warning')}>
                     {s.avgScore > 0 ? `${s.avgScore}/100` : '—'}
                   </p>
-                  <p className="text-[11px] font-bold text-primary flex items-center justify-center gap-1">
-                    ⚡ Score Médio <Info className="w-3 h-3 text-text-3" />
+                  <p className="text-[10px] md:text-[11px] font-bold text-primary flex items-center justify-center gap-1">
+                    ⚡ Score <Info className="w-3 h-3 text-text-3" />
                   </p>
                 </div>
               </TooltipTrigger>
