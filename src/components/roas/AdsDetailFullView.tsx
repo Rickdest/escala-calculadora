@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { EnrichedAdsData } from '@/hooks/useAdsData';
 import { OperationLogEntry, detectAndParseCSV, validateCSVSecurity } from '@/lib/shopeeAdsParser';
+import { parseShopeeExcel, validateExcelFile, ExcelPerformanceData } from '@/lib/shopeeExcelParser';
+import { ExcelAnalysis } from './ExcelAnalysis';
 import { toast } from 'sonner';
 import {
   AreaChart, Area, LineChart as ReLineChart, Line, XAxis, YAxis, Tooltip as ReTooltip,
