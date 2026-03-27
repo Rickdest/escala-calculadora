@@ -413,7 +413,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
   const renderLeftColumn = () => (
     <div className="space-y-5">
       {/* 1. Header do produto — compacto */}
-      <div className="rounded-2xl border border-border bg-card p-3.5 shadow-sm">
+      <div className="rounded-2xl border border-border bg-card p-3.5 shadow-sm space-y-3">
         <div className="flex items-center gap-3">
           {product?.imageUrl ? (
             <img src={product.imageUrl} alt="" className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
@@ -426,16 +426,6 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
             <h2 className="text-base font-extrabold text-foreground leading-tight line-clamp-2">{ad.nome_produto_csv}</h2>
             <div className="flex items-center gap-2 flex-wrap mt-1">
               <span className="text-[11px] text-text-3 font-mono tabular-nums">{periodLabel}</span>
-              {ad.metodo_lance && (
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-surface-2 border border-border text-text-2">
-                  {ad.metodo_lance}
-                </span>
-              )}
-              {ad.status_anuncio && (
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary/10 border border-primary/20 text-primary">
-                  {ad.status_anuncio}
-                </span>
-              )}
               {emAprendizado && (
                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center gap-1">
                   <Clock className="w-3 h-3" /> Aprendizado
@@ -443,20 +433,28 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
               )}
             </div>
           </div>
+        </div>
+        {/* Action buttons row */}
+        <div className="flex items-center gap-2 flex-wrap">
           {onReimport && (
-            <Button onClick={onReimport} variant="outline" size="sm" className="gap-1 text-xs font-bold flex-shrink-0">
+            <Button onClick={onReimport} variant="outline" size="sm" className="gap-1 text-xs font-bold h-8">
               <Upload className="w-3.5 h-3.5" /> CSV
             </Button>
           )}
           {product && onChangeLink && (
-            <Button onClick={onChangeLink} variant="outline" size="sm" className="gap-1 text-xs font-bold flex-shrink-0">
+            <Button onClick={onChangeLink} variant="outline" size="sm" className="gap-1 text-xs font-bold h-8">
               <Link2 className="w-3.5 h-3.5" /> Trocar
             </Button>
           )}
           {product && onUnlink && (
-            <Button onClick={onUnlink} variant="ghost" size="sm" className="gap-1 text-xs font-bold flex-shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10">
+            <Button onClick={onUnlink} variant="ghost" size="sm" className="gap-1 text-xs font-bold h-8 text-destructive hover:text-destructive hover:bg-destructive/10">
               Desvincular
             </Button>
+          )}
+          {ad.metodo_lance && (
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-surface-2 border border-border text-text-2 ml-auto">
+              {ad.metodo_lance}
+            </span>
           )}
         </div>
       </div>

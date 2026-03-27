@@ -48,10 +48,10 @@ export function AdsProductCard({
   return (
     <div
       className={cn(
-        'rounded-2xl border p-4 cursor-pointer transition-all active:scale-[0.995]',
+        'rounded-2xl border-2 p-4 cursor-pointer transition-all active:scale-[0.995]',
         isLinked
           ? 'border-border bg-card hover:border-primary/30 hover:shadow-md hover:shadow-primary/5'
-          : 'border-dashed border-border/60 bg-card/50 hover:border-primary/30'
+          : 'border-warning/50 bg-card/50 hover:border-warning/70'
       )}
       onClick={onClick}
     >
