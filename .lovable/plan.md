@@ -1,21 +1,38 @@
 
 
-## Remover Posição e Alerta dos Cards Gerais (SummaryCards)
+## Simplificar Import na Tela de Análise de Ads
 
-### Problema
-O card de "POSIÇÃO" e o alerta de posição média estão nos KPIs gerais da aba de Ads, mas a posição é uma métrica individual de cada anúncio — não faz sentido no resumo geral. Deve aparecer apenas no detalhe do produto (AdsDetailFullView), onde já está implementado.
+### Mudança em `src/components/roas/AdsTab.tsx`
 
-### Mudança em `src/components/roas/SummaryCards.tsx`
+**1. Remover o componente `ImportPanel`** (linhas 36-128) — todo o bloco da função `ImportPanel` e seus tipos.
 
-1. Remover do `useMemo`: cálculo de `avgPosition`, `withPosition`
-2. Remover constantes: `positionColor`, `positionLabel`, `showPositionWarning`
-3. Remover do grid: o card condicional de Posição (`{s.avgPosition !== null && (...)}`)
-4. Simplificar grid: voltar para `grid-cols-2 md:grid-cols-4` fixo (sem condicional de 5 colunas)
-5. Remover o bloco de alerta `{showPositionWarning && (...)}` abaixo do grid
-6. Remover imports não usados: `MapPin`, `AlertTriangle`
+**2. Remover a renderização do `ImportPanel`** (linhas 400-409) — substituir por um header discreto:
+
+```tsx
+{/* Header com botão discreto */}
+<div className="flex items-center justify-between">
+  <div>
+    <p className="text-sm font-bold text-foreground">Análise de Ads</p>
+    {periodLabel && (
+      <p className="text-[11px] text-muted-foreground font-mono">{periodLabel}</p>
+    )}
+  </div>
+  <button
+    onClick={() => fileRef.current?.click()}
+    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-secondary hover:bg-secondary/80 text-[12px] font-semibold text-foreground transition-colors"
+  >
+    <Upload className="w-3.5 h-3.5" />
+    Atualizar CSV
+  </button>
+</div>
+```
+
+**3. Remover o botão "Novo CSV" duplicado** (linhas 481-483) na seção "Anúncios", já que o novo header acima já cumpre essa função.
+
+**4. Cleanup**: Remover `operationLogInputRef`, `operationEvents`, `hasOperationLog`, `handleOperationLogSelect` e o `OperationLogResults` component + sua renderização (linha 472), já que o log de operações pertence ao detalhe do produto. Remover o input hidden do operation log (linha 382). Remover imports não usados (`RefreshCw`).
 
 ### O que NÃO muda
-- Os 4 KPIs (GMV, Gasto, ROAS Médio, Lucro Est.) permanecem intactos
-- O card de posição no `AdsDetailFullView.tsx` permanece (é o lugar correto)
-- Nenhuma lógica de cálculo alterada
+- EmptyState para quando `!hasData`
+- ImportAdsModal, SummaryCards, FilterChips, AlertsSection
+- Lógica de cálculo, hooks, parser
 
