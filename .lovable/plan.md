@@ -1,24 +1,26 @@
 
 
-## Compactar filtros e status no mobile — aba Análise de Ads
+## Melhorar destaque de Posição, Vendas e Custo/Un nos cards de Ads
 
-### Mudanças (apenas mobile, desktop inalterado)
+### Mudanças em `src/components/roas/AdsProductCard.tsx`
 
-**1. `src/components/roas/SummaryCards.tsx` — Status mini cards compactos no mobile**
-- Trocar o grid 2x2 de cards altos por uma **row horizontal única** (`flex overflow-x-auto md:grid md:grid-cols-4`) no mobile
-- Reduzir padding de `p-3` para `p-2` e texto de `text-xl` para `text-base` no mobile
-- Resultado: 4 items numa linha scrollável em vez de 2x2
+**1. Promover as 3 métricas secundárias para cards com mesmo estilo das primárias**
+- Trocar o layout atual (row compacta `bg-secondary/50` com label+valor lado a lado) por cards verticais iguais aos de ROAS/GMV/Gasto
+- Usar `rounded-xl p-2.5 border border-border/60 bg-secondary/30` — mesmo padrão visual
+- Valor em cima (grande, bold), label embaixo (pequeno, muted)
 
-**2. `src/components/roas/FilterChips.tsx` — Chips menores no mobile**
-- Reduzir padding de `px-3 py-1.5` para `px-2.5 py-1`
-- Reduzir fonte de `text-xs` para `text-[10px]`
-- Reduzir gap de `gap-2` para `gap-1.5`
+**2. Posição com destaque especial**
+- Valor com cor semântica via `getPositionColor` existente
+- Tamanho `text-base font-extrabold` (igual ao ROAS)
 
-**3. `src/components/roas/SummaryCards.tsx` — KPI cards compactos no mobile**
-- Reduzir padding de `p-3` para `p-2.5` no mobile
-- Reduzir valor de `text-lg` para `text-base` no mobile
+**3. Vendas e Custo/Un com valores abreviados**
+- Usar `fmtShort` (já existe em `adsHelpers.ts`) para Custo/Un em vez de `fmt` — evita texto cortado
+- Vendas: manter `{ad.itens_vendidos} un` (já é curto)
 
-### Arquivos modificados
-- `src/components/roas/SummaryCards.tsx`
-- `src/components/roas/FilterChips.tsx`
+**4. Alinhamento uniforme**
+- Todos os 6 cards (2 rows de 3) com `flex flex-col items-center text-center` para centralizar e evitar cortes
+- Valores com `truncate` removido — usar abreviação em vez de cortar
+
+### Arquivo modificado
+- `src/components/roas/AdsProductCard.tsx`
 
