@@ -31,6 +31,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [plan, setPlan] = useState('free');
   const [loading, setLoading] = useState(true);
   const lastKnownStatus = useRef<{ status: SubscriptionStatus; plan: string } | null>(null);
+  const hasResolved = useRef(false);
 
   const fetchSubscription = useCallback(async (noCache = false) => {
     if (authLoading) return;
@@ -42,7 +43,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      setLoading(true);
+      if (!hasResolved.current) setLoading(true);
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('timeout')), 10000)
       );
