@@ -65,6 +65,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         setPlan('free');
       }
     } finally {
+      hasResolved.current = true;
       setLoading(false);
     }
   }, [user, session?.access_token, authLoading]);
