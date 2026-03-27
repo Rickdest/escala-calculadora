@@ -24,13 +24,7 @@ export function SummaryCards({ data }: { data: EnrichedAdsData[] }) {
     });
     const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, s) => a + s.score, 0) / scores.length) : 0;
 
-    // Calculate avg position from data that has position
-    const withPosition = data.filter(d => d.posicao_media !== null && d.posicao_media > 0);
-    const avgPosition = withPosition.length > 0
-      ? withPosition.reduce((a, d) => a + (d.posicao_media || 0), 0) / withPosition.length
-      : null;
-
-    return { totalGmv, totalSpend, avgRoas, lucroEstimado, lucrativos, atencao, prejuizo, naoVinculados, total: data.length, avgScore, avgPosition };
+    return { totalGmv, totalSpend, avgRoas, lucroEstimado, lucrativos, atencao, prejuizo, naoVinculados, total: data.length, avgScore };
   }, [data]);
 
   const allZeroClassification = s.lucrativos === 0 && s.atencao === 0 && s.prejuizo === 0;
