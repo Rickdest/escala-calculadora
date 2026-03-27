@@ -160,11 +160,9 @@ export function AdsTab() {
       ) : (
         <>
           {/* ═══ Toolbar ═══ */}
-          <div className="flex items-center justify-between gap-2 rounded-xl border border-border bg-card p-3 md:p-4 overflow-hidden">
-            <div className="flex items-center gap-2">
-              <Megaphone className="w-5 h-5 text-primary flex-shrink-0" />
-              <span className="text-sm font-bold text-foreground">{periodFiltered.length} anúncio{periodFiltered.length !== 1 ? 's' : ''}</span>
-              <span className="text-xs text-text-3 hidden md:inline">· {filtered.length} visíveis</span>
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h2 className="text-lg font-bold text-foreground">Visão Geral de Ads</h2>
             </div>
             <div className="flex items-center gap-2">
               <Button
