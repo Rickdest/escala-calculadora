@@ -32,8 +32,13 @@ export function TrialExpiredBlock() {
     }
   };
 
+  useEffect(() => {
+    if (isActive && !checking) {
+      navigate('/', { replace: true });
+    }
+  }, [isActive, checking, navigate]);
+
   if (isActive && !checking) {
-    navigate('/', { replace: true });
     return null;
   }
 
