@@ -1,5 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+function maskEmail(email: string): string {
+  const [user, domain] = email.split('@');
+  return `${user.substring(0, 3)}***@${domain}`;
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://pay.cakto.com.br",
   "Access-Control-Allow-Headers":
@@ -121,7 +126,7 @@ Deno.serve(async (req) => {
         // Same order already processed — check if status would change
         const wouldBeStatus = getStatusForEvent(event);
         if (existing.status === wouldBeStatus) {
-          console.log(`Idempotent: order ${orderId} already processed with status ${wouldBeStatus}`);
+          console.log(`Idempotent: order ${orderId} already processed with status ${wouldBeStatus} for ${maskEmail(email)}`);
           return new Response(JSON.stringify({ ok: true, status: wouldBeStatus, idempotent: true }), {
             status: 200,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -197,10 +202,9 @@ Deno.serve(async (req) => {
       order_id: orderId,
       status_before: statusBefore,
       status_after: status,
-      raw_payload: body,
     });
 
-    console.log(`Subscription ${status} for ${email} (order: ${orderId || 'n/a'})`);
+    console.log(`Subscription ${status} for ${maskEmail(email)} (order: ${orderId || 'n/a'})`);
 
     return new Response(JSON.stringify({ ok: true, status }), {
       status: 200,
