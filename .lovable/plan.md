@@ -1,25 +1,33 @@
 
 
-## Reduzir Margem Entre Cabeçalho e Conteúdo do Detalhe
+## Substituir loop manual por `crypto.subtle.timingSafeEqual`
 
-### Causa
+### Arquivo: `supabase/functions/cakto-webhook/index.ts`
 
-1. **`src/pages/Roas.tsx` linha 9**: `py-4` adiciona 16px de padding-top entre o PageHeader e o conteúdo
-2. **`src/components/roas/AdsDetailFullView.tsx` linha 537**: O container tem `bg-background min-h-screen` mas não elimina o padding herdado do pai
-3. **Breadcrumb (linha 539)**: `mb-2` adiciona espaço extra abaixo do "Voltar"
+**Linhas 55-61** — Substituir o bloco de comparação manual:
 
-### Mudanças
+```typescript
+// ANTES (loop manual)
+const encoder = new TextEncoder();
+const a = encoder.encode(String(secret));
+const b = encoder.encode(CAKTO_WEBHOOK_SECRET);
+let match = a.length === b.length;
+for (let i = 0; i < Math.max(a.length, b.length); i++) {
+  if ((a[i] ?? 0) !== (b[i] ?? 0)) match = false;
+}
+if (!match) { ...
 
-**Arquivo 1: `src/pages/Roas.tsx`**
-- Reduzir `py-4` para `py-2` no mobile: `py-2 md:py-8`
+// DEPOIS (nativo Deno)
+const encoder = new TextEncoder();
+const receivedBytes = encoder.encode(String(secret));
+const expectedBytes = encoder.encode(CAKTO_WEBHOOK_SECRET);
+const isValid = receivedBytes.length === expectedBytes.length &&
+  crypto.subtle.timingSafeEqual(receivedBytes, expectedBytes);
+if (!isValid) { ...
+```
 
-**Arquivo 2: `src/components/roas/AdsDetailFullView.tsx`**
-- Linha 537: Adicionar `-mt-2` ao container principal para compensar o padding do pai quando o detalhe está aberto
-- Linha 539 (breadcrumb): Reduzir `mb-2` para `mb-1`
-- Linha 556 (header card): Reduzir `mb-2` para `mb-1.5`
+Nenhuma outra alteração — CORS, maskEmail, logs, lógica de eventos e audit log permanecem idênticos.
 
-Resultado: o "Voltar" fica praticamente colado ao PageHeader, sem espaço desperdiçado.
-
-### O que NÃO muda
-- Nenhuma lógica, cálculos, ou outros componentes
+### Sobre o alerta do scanner
+Após deploy, ignorar o alerta "Webhook Secret Validated via Body-Embedded Shared Secret" no painel — é limitação da Cakto, não do código.
 
