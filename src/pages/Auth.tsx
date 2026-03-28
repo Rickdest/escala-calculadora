@@ -32,6 +32,7 @@ export default function Auth() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [activeTab, setActiveTab] = useState<'signup' | 'login'>('signup');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
   
@@ -192,10 +193,28 @@ export default function Auth() {
               </div>
             </div>
 
+            {/* Terms checkbox - signup only */}
+            {!isLogin && (
+              <label className="flex items-start gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded border-[#1F2433] bg-[#1A1D27] accent-[#F97316] cursor-pointer"
+                />
+                <span className="text-[12px] text-[#8B92A5] leading-tight">
+                  Li e aceito os{' '}
+                  <a href="#" className="text-[#F97316] underline">Termos de Uso</a>{' '}
+                  e a{' '}
+                  <a href="#" className="text-[#F97316] underline">Política de Privacidade</a>
+                </span>
+              </label>
+            )}
+
             {/* Submit */}
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loading || (!isLogin && !acceptedTerms)}
               className="w-full h-12 text-[15px] font-semibold bg-[#F97316] hover:bg-[#EA6C0A] text-white rounded-[10px] active:scale-[0.98] transition-all"
             >
               {loading ? (
