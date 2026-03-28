@@ -1,5 +1,5 @@
 import React, { useRef, useCallback } from 'react';
-import { Package, MoreVertical, Copy, Trash2, Edit, Upload, AlertTriangle, ChevronRight } from 'lucide-react';
+import { Package, MoreVertical, Copy, Trash2, Edit, Upload, ChevronRight } from 'lucide-react';
 import { Product, ProductCalculation, StoreConfig } from '@/types/store';
 import { cn, getMarginStatus } from '@/lib/utils';
 import { calcFullRoas } from '@/lib/roasUtils';
