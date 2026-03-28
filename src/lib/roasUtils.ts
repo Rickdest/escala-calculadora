@@ -29,6 +29,12 @@ export interface RoasResult {
  * Unified ROAS calculation using ALL costs from StoreConfig.
  * Used by: RoasAnalysis, QuickCalculator, AdsTab, Ranking.
  */
+// Percentual de margem consumida pelos ads:
+// Saudável = ads consomem até 39% da margem (divisor 0.61)
+// Ideal = ads consomem até 60% da margem (divisor 0.40)
+const ROAS_SAUDAVEL_DIVISOR = 0.61;
+const ROAS_IDEAL_DIVISOR = 0.40;
+
 export function calcFullRoas(
   salePrice: number,
   costPrice: number,
@@ -82,8 +88,8 @@ export function calcFullRoas(
   }
 
   const roasEmpate = parseFloat((sp / netProfit).toFixed(2));
-  const roasSaudavel = parseFloat((roasEmpate / 0.61).toFixed(2));
-  const roasIdeal = parseFloat((roasEmpate / 0.40).toFixed(2));
+  const roasSaudavel = parseFloat((roasEmpate / ROAS_SAUDAVEL_DIVISOR).toFixed(2));
+  const roasIdeal = parseFloat((roasEmpate / ROAS_IDEAL_DIVISOR).toFixed(2));
   const roasAtual = gastoAds > 0 ? parseFloat((receitaAds / gastoAds).toFixed(2)) : null;
 
   return {
@@ -107,7 +113,7 @@ export function calcProductRoas(product: Product, config: StoreConfig): RoasResu
 
 export function getRoasStatus(roasAtual: number, roasEmpate: number, roasSaudavel: number, roasIdeal: number) {
   if (roasAtual < roasEmpate) return 'danger';
-  if (roasAtual === roasEmpate) return 'empate';
+  if (Math.abs(roasAtual - roasEmpate) < 0.01) return 'empate';
   if (roasAtual < roasSaudavel) return 'warning';
   if (roasAtual < roasIdeal) return 'medium';
   return 'success';
