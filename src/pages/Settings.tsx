@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSignOut } from '@/hooks/useSignOut';
 import { SHOPEE_FEE_RANGES, ShopeeAceleraOption } from '@/types/store';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -19,7 +20,8 @@ export default function Settings() {
   const navigate = useNavigate();
   const { currentStore, updateStoreConfig } = useStore();
   const { theme, setTheme } = useTheme();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
+  const { handleSignOut } = useSignOut();
 
   // Section 1: Minha Loja
   const [desiredMargin, setDesiredMargin] = useState(currentStore?.config.desiredMargin?.toString() || '17');
@@ -456,7 +458,7 @@ export default function Settings() {
                   <p className="text-sm font-semibold text-foreground">Conta</p>
                   <p className="text-xs text-muted-foreground">{user.email}</p>
                 </div>
-                <Button variant="destructive" size="sm" onClick={() => signOut()}>
+                <Button variant="destructive" size="sm" onClick={handleSignOut}>
                   <LogOut className="w-4 h-4 mr-2" />
                   Sair
                 </Button>

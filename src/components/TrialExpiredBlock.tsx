@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useBilling } from '@/hooks/useBilling';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSignOut } from '@/hooks/useSignOut';
 import { toast } from 'sonner';
 import logoIcon from '@/assets/logo-icon.png';
 import { PRICING } from '@/constants/pricing';
@@ -16,7 +16,7 @@ const benefits = [
 
 export function TrialExpiredBlock() {
   const { handleCheckout, refreshSubscription, isActive } = useBilling();
-  const { signOut } = useAuth();
+  const { handleSignOut } = useSignOut();
   const navigate = useNavigate();
   const [checking, setChecking] = useState(false);
 
@@ -127,10 +127,7 @@ export function TrialExpiredBlock() {
           </button>
 
           <button
-            onClick={async () => {
-              await signOut();
-              navigate('/auth', { replace: true });
-            }}
+            onClick={handleSignOut}
             className="text-muted-foreground/60 hover:text-foreground transition-colors"
             style={{ fontSize: '13px', paddingTop: '8px' }}
           >
