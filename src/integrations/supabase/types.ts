@@ -734,6 +734,42 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_events: {
+        Row: {
+          created_at: string
+          email: string
+          event_type: string
+          id: string
+          order_id: string | null
+          raw_payload: Json | null
+          status_after: string | null
+          status_before: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          event_type: string
+          id?: string
+          order_id?: string | null
+          raw_payload?: Json | null
+          status_after?: string | null
+          status_before?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          event_type?: string
+          id?: string
+          order_id?: string | null
+          raw_payload?: Json | null
+          status_after?: string | null
+          status_before?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
           cakto_order_id: string | null
