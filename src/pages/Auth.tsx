@@ -177,10 +177,10 @@ export default function Auth() {
                   autoComplete={isLogin ? 'current-password' : 'new-password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="mínimo 6 caracteres"
+                  placeholder="mínimo 8 caracteres"
                   className="w-full h-12 bg-[#1A1D27] border border-[#1F2433] rounded-[8px] px-3 pr-11 text-[15px] text-[#F0F2F7] placeholder:text-[#4A5068] focus:outline-none focus:border-[#F97316] transition-colors"
                   required
-                  minLength={6}
+                  minLength={8}
                 />
                 <button
                   type="button"

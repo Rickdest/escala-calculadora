@@ -1,9 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://pay.cakto.com.br",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-webhook-secret",
 };
 
 Deno.serve(async (req) => {
@@ -42,10 +42,8 @@ Deno.serve(async (req) => {
     const clientIp = req.headers.get("x-forwarded-for") ?? "unknown";
     console.log("Webhook request from:", clientIp.split(",")[0].trim());
 
-    const body = await req.json();
-
-    // Validate secret (constant-time comparison)
-    const secret = body.fields?.secret || body.secret || "";
+    // Validate secret via header (constant-time comparison)
+    const secret = req.headers.get("x-webhook-secret") || "";
     const encoder = new TextEncoder();
     const a = encoder.encode(secret);
     const b = encoder.encode(CAKTO_WEBHOOK_SECRET);
@@ -60,6 +58,8 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const body = await req.json();
 
     const event = body.event;
     console.log("Cakto webhook event:", event);
