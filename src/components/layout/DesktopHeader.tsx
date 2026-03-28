@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSidebarState } from '@/contexts/SidebarContext';
 import { useStore } from '@/contexts/StoreContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSignOut } from '@/hooks/useSignOut';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +16,7 @@ export function DesktopHeader() {
   const { collapsed, toggle } = useSidebarState();
   const { currentStore } = useStore();
   const { theme, toggleTheme } = useTheme();
-  const { signOut } = useAuth();
+  const { handleSignOut } = useSignOut();
   const navigate = useNavigate();
 
   return (
@@ -64,7 +64,7 @@ export function DesktopHeader() {
             Perfil
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer text-destructive focus:text-destructive">
+          <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive focus:text-destructive">
             <LogOut className="w-4 h-4 mr-2" />
             Sair
           </DropdownMenuItem>

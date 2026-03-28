@@ -167,9 +167,11 @@ Deno.serve(async (req) => {
     // Upsert by email
     const { data: existingRow } = await supabase
       .from("subscriptions")
-      .select("id")
+      .select("id, status")
       .eq("email", email)
       .maybeSingle();
+
+    const statusBefore = existingRow?.status || null;
 
     if (existingRow) {
       const { error: updateError } = await supabase
@@ -186,6 +188,17 @@ Deno.serve(async (req) => {
         .insert(subscriptionData);
       if (insertError) console.error("Insert error:", insertError.message);
     }
+
+    // Audit log
+    await supabase.from("subscription_events").insert({
+      email,
+      user_id: userId,
+      event_type: event,
+      order_id: orderId,
+      status_before: statusBefore,
+      status_after: status,
+      raw_payload: body,
+    });
 
     console.log(`Subscription ${status} for ${email} (order: ${orderId || 'n/a'})`);
 
