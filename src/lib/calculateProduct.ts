@@ -1,6 +1,17 @@
 import { Product, Store, StoreConfig, ProductCalculation, getShopeeFeeForPrice, SHOPEE_ACELERA_RATES } from '@/types/store';
 
 export function calculateProduct(product: Product, config: StoreConfig): ProductCalculation {
+  if (product.salePrice <= 0 || product.costPrice <= 0) {
+    return {
+      grossRevenue: 0, shopeeFeePercent: 0, shopeeFeeFixed: 0,
+      totalShopeeFee: 0, taxes: 0, affiliateCommission: 0,
+      shopeeCampaigns: 0, shopeeAcelera: 0, adsRevenue: 0,
+      totalCosts: 0, netProfit: 0, realMargin: 0,
+      marginDifference: 0 - config.desiredMargin,
+      isAboveTarget: false,
+    };
+  }
+
   const grossRevenue = product.salePrice;
   const range = getShopeeFeeForPrice(grossRevenue);
   const feePercent = range.percent;

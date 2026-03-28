@@ -5,6 +5,7 @@ import { useBilling } from '@/hooks/useBilling';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import logoIcon from '@/assets/logo-icon.png';
+import { PRICING } from '@/constants/pricing';
 
 const benefits = [
   { icon: '💰', text: 'Lucro real por produto' },
@@ -86,10 +87,10 @@ export function TrialExpiredBlock() {
             Oferta de lançamento
           </span>
           <p className="text-foreground font-bold font-mono" style={{ fontSize: '36px', lineHeight: '1.1' }}>
-            R$ 39,90 <span className="text-muted-foreground font-normal" style={{ fontSize: '16px' }}>/mês</span>
+            {PRICING.monthlyLabel} <span className="text-muted-foreground font-normal" style={{ fontSize: '16px' }}>/mês</span>
           </p>
           <p className="text-muted-foreground/60" style={{ fontSize: '13px' }}>
-            ou R$ 197,00/ano (economize 59%)
+            ou {PRICING.yearlyLabel}/ano (economize {PRICING.yearlySavingPct}%)
           </p>
         </div>
 

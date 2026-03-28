@@ -2,6 +2,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { useBilling } from '@/hooks/useBilling';
 import { Lock, ArrowRight } from 'lucide-react';
 import logoIcon from '@/assets/logo-icon.png';
+import { PRICING } from '@/constants/pricing';
 
 const benefits = [
   'Cálculo automático de todas as taxas da Shopee',
@@ -49,9 +50,9 @@ export default function Paywall() {
 
         <div className="text-center space-y-1">
           <p className="text-3xl font-bold text-foreground">
-            R$ 39,90 <span className="text-base font-normal text-muted-foreground">/mês</span>
+            {PRICING.monthlyLabel} <span className="text-base font-normal text-muted-foreground">/mês</span>
           </p>
-          <p className="text-sm text-muted-foreground">ou R$ 197,00/ano (economize 59%)</p>
+          <p className="text-sm text-muted-foreground">ou {PRICING.yearlyLabel}/ano (economize {PRICING.yearlySavingPct}%)</p>
         </div>
 
         <button
