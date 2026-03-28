@@ -111,8 +111,6 @@ export function ProductCard({
   const taxes = config?.taxes ?? 0;
   const desiredMargin = config?.desiredMargin ?? 15;
 
-  const isIncomplete = product.salePrice <= 0 || product.costPrice <= 0;
-
   // ── Header with image, name, menu (shared) ──
   const cardHeader = (
     <div className="flex items-start gap-3">
@@ -126,16 +124,11 @@ export function ProductCard({
 
       <div className="flex-1 min-w-0">
         <h3 className="font-bold text-sm text-foreground truncate">{product.name}</h3>
-        {!isIncomplete && (
-          <p className="text-xs text-muted-foreground mt-0.5 truncate">
-            <span className="font-semibold text-primary">{fmt(product.salePrice)}</span>
-            <span className="mx-1">venda · custo</span>
-            <span className="font-semibold text-foreground">{fmt(product.costPrice)}</span>
-          </p>
-        )}
-        {isIncomplete && (
-          <p className="text-xs text-muted-foreground mt-0.5">Sem preço cadastrado</p>
-        )}
+        <p className="text-xs text-muted-foreground mt-0.5 truncate">
+          <span className="font-semibold text-primary">{fmt(product.salePrice)}</span>
+          <span className="mx-1">venda · custo</span>
+          <span className="font-semibold text-foreground">{fmt(product.costPrice)}</span>
+        </p>
       </div>
 
       <DropdownMenu>
@@ -158,35 +151,6 @@ export function ProductCard({
       </DropdownMenu>
     </div>
   );
-
-  // ── Incomplete product state ──
-  if (isIncomplete) {
-    return (
-      <div
-        className="rounded-2xl border border-border bg-card p-4 cursor-pointer select-none active:scale-[0.995] transition-all hover:border-primary/30"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        onTouchMove={handleTouchMove}
-        onClick={handleClick}
-      >
-        {cardHeader}
-
-        <div className="mt-3 flex items-start gap-2 rounded-xl bg-warning/10 border border-warning/20 p-3">
-          <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
-          <p className="text-xs text-warning font-medium">Complete o cadastro para ver os cálculos</p>
-        </div>
-
-        <div className="mt-3 flex justify-end">
-          <button
-            onClick={(e) => { e.stopPropagation(); onEdit(product); }}
-            className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
-          >
-            Completar <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   // ── Platform margins ──
   const platformMargins = PLATFORM_FEES
