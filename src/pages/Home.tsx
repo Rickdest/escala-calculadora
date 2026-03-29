@@ -11,7 +11,7 @@ import { SubscriptionModal } from '@/components/SubscriptionModal';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { cn } from '@/lib/utils';
 import { QuickCalculator } from '@/components/home/QuickCalculator';
-import { HomeEducationCard } from '@/components/home/HomeEducationCard';
+
 import { ProductThumbnail } from '@/components/ProductThumbnail';
 import { useEstoque } from '@/hooks/useEstoque';
 import { BannerCarousel } from '@/components/home/BannerCarousel';
@@ -397,9 +397,6 @@ export default function Home() {
                 <ChevronRight className="w-4 h-4 text-text-3" />
               </button>
             )}
-
-            {/* Education */}
-            <HomeEducationCard />
           </div>
         </div>
       </div>
