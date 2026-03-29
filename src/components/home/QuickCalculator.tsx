@@ -86,11 +86,11 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
   return (
-    <div className="bg-card border border-primary/35 rounded-2xl p-4 animate-fade-up" style={{ boxShadow: '0 0 16px hsla(24, 95%, 53%, 0.08)' }}>
+    <div className="bg-card rounded-2xl p-4 animate-fade-up" style={{ border: '1px solid rgba(232, 93, 0, 0.30)', boxShadow: '0 0 20px rgba(232, 93, 0, 0.07)' }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <p className="section-label">CALCULADORA RÁPIDA</p>
-        <Badge className="bg-primary/15 text-primary border-primary/30 text-[10px] font-semibold px-2 py-0.5">
+        <Badge className="text-[10px] font-medium px-2.5 py-0.5 border-0" style={{ background: '#e85d00', color: '#ffffff', borderRadius: '20px' }}>
           Shopee
         </Badge>
       </div>
@@ -109,7 +109,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               value={costPrice}
               onChange={(e) => setCostPrice(e.target.value)}
               placeholder="0,00"
-              className="w-full h-12 pl-10 pr-2 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num text-base focus:border-primary focus:outline-none transition-colors"
+              className="w-full h-12 pl-10 pr-2 border rounded-[10px] text-foreground font-mono font-mono-num text-base focus:border-primary focus:outline-none transition-colors" style={{ background: '#111111', borderColor: '#252525' }}
             />
           </div>
         </div>
@@ -125,7 +125,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               value={salePrice}
               onChange={(e) => setSalePrice(e.target.value)}
               placeholder="0,00"
-              className="w-full h-12 pl-10 pr-2 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num text-base focus:border-primary focus:outline-none transition-colors"
+              className="w-full h-12 pl-10 pr-2 border rounded-[10px] text-foreground font-mono font-mono-num text-base focus:border-primary focus:outline-none transition-colors" style={{ background: '#111111', borderColor: '#252525' }}
             />
           </div>
         </div>
@@ -142,7 +142,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
             value={packaging}
             onChange={(e) => setPackaging(e.target.value)}
             placeholder="0,00"
-            className="w-full h-12 pl-10 pr-2 bg-surface-2 border border-border rounded-lg text-foreground font-mono font-mono-num text-base focus:border-primary focus:outline-none transition-colors"
+            className="w-full h-12 pl-10 pr-2 border rounded-[10px] text-foreground font-mono font-mono-num text-base focus:border-primary focus:outline-none transition-colors" style={{ background: '#111111', borderColor: '#252525' }}
           />
         </div>
       </div>

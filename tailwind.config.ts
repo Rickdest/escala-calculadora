@@ -19,11 +19,11 @@ export default {
       },
       fontSize: {
         display: ['24px', { lineHeight: '1.2', fontWeight: '700' }],
-        title: ['18px', { lineHeight: '1.3', fontWeight: '600' }],
-        subtitle: ['15px', { lineHeight: '1.4', fontWeight: '600' }],
+        title: ['18px', { lineHeight: '1.3', fontWeight: '700' }],
+        subtitle: ['15px', { lineHeight: '1.4', fontWeight: '500' }],
         body: ['13px', { lineHeight: '1.5', fontWeight: '400' }],
         small: ['11px', { lineHeight: '1.4', fontWeight: '400' }],
-        micro: ['10px', { lineHeight: '1.3', fontWeight: '600', letterSpacing: '0.06em' }],
+        micro: ['10px', { lineHeight: '1.3', fontWeight: '500', letterSpacing: '0.06em' }],
       },
       colors: {
         border: "hsl(var(--border))",

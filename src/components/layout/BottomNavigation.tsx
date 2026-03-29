@@ -39,7 +39,7 @@ export const BottomNavigation = React.forwardRef<HTMLElement, Record<string, nev
               <div
                 className="flex items-center justify-center"
                 style={{
-                  background: isActive ? 'rgba(232, 93, 0, 0.09)' : 'transparent',
+                  background: isActive ? 'rgba(232, 93, 0, 0.12)' : 'transparent',
                   borderRadius: '12px',
                   padding: isActive ? '5px 12px' : '5px 12px',
                 }}
@@ -47,14 +47,14 @@ export const BottomNavigation = React.forwardRef<HTMLElement, Record<string, nev
                 <Icon
                   size={16}
                   strokeWidth={isActive ? 2.2 : 1.8}
-                  style={{ color: isActive ? '#e85d00' : '#555555' }}
+                  style={{ color: isActive ? '#e85d00' : '#3a3a3a' }}
                 />
               </div>
               <span
                 style={{
                   fontSize: '10px',
                   fontWeight: isActive ? 500 : 400,
-                  color: isActive ? '#e85d00' : '#555555',
+                  color: isActive ? '#e85d00' : '#3a3a3a',
                   lineHeight: 1,
                 }}
               >
