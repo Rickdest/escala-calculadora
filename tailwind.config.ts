@@ -17,6 +17,14 @@ export default {
         sans: ['DM Sans', 'system-ui', 'sans-serif'],
         mono: ['DM Mono', 'monospace'],
       },
+      fontSize: {
+        display: ['24px', { lineHeight: '1.2', fontWeight: '700' }],
+        title: ['18px', { lineHeight: '1.3', fontWeight: '600' }],
+        subtitle: ['15px', { lineHeight: '1.4', fontWeight: '600' }],
+        body: ['13px', { lineHeight: '1.5', fontWeight: '400' }],
+        small: ['11px', { lineHeight: '1.4', fontWeight: '400' }],
+        micro: ['10px', { lineHeight: '1.3', fontWeight: '600', letterSpacing: '0.06em' }],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -89,6 +97,10 @@ export default {
         sm: "calc(var(--radius) - 4px)",
         xl: "calc(var(--radius) + 4px)",
         "2xl": "calc(var(--radius) + 8px)",
+        card: "12px",
+        badge: "6px",
+        button: "10px",
+        input: "9px",
       },
       keyframes: {
         "accordion-down": {
