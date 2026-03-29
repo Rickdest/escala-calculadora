@@ -171,9 +171,13 @@ export function ProductCard({
       {/* ── METRICS: inline 3-column ── */}
       <div className="mt-3 grid grid-cols-3 gap-2">
         <div className="text-center">
-          <p className={cn('font-mono text-lg font-extrabold leading-tight', status.color)}>
-            {calculation.realMargin.toFixed(1)}%
-          </p>
+          {calculation.realMargin > 200 || calculation.realMargin < -100 ? (
+            <p className="font-mono text-lg font-extrabold leading-tight text-warning">⚠ Revisar</p>
+          ) : (
+            <p className={cn('font-mono text-lg font-extrabold leading-tight', status.color)}>
+              {calculation.realMargin.toFixed(1)}%
+            </p>
+          )}
           <p className="text-[10px] font-medium text-muted-foreground mt-0.5">Margem</p>
         </div>
 
@@ -181,7 +185,7 @@ export function ProductCard({
           <p className={cn('font-mono text-sm font-extrabold leading-tight', status.color)}>
             {fmt(calculation.netProfit)}
           </p>
-          <p className="text-[10px] font-medium text-muted-foreground mt-0.5">Lucro</p>
+          <p className="text-[10px] font-medium text-muted-foreground mt-0.5">Lucro/un</p>
         </div>
 
         <div className="text-center">
@@ -219,89 +223,6 @@ export function ProductCard({
         </div>
       )}
 
-      {/* ── ADS: compact 3-column card ── */}
-      {adsMetric ? (
-        <div className="mt-3 pt-3 border-t border-dashed border-border/40">
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <span className={cn('w-1.5 h-1.5 rounded-full', adsMetric.roas >= 5 ? 'bg-success' : adsMetric.roas >= 2 ? 'bg-warning' : 'bg-destructive')} />
-                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Ads Shopee</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-1.5">
-              {(() => {
-                const pos = adsMetric.avgPosition;
-                const hasPos = pos != null && pos > 0;
-                const isGreen = hasPos && pos <= 10;
-                const isYellow = hasPos && pos > 10 && pos <= 20;
-                return (
-                  <div className={cn(
-                    'rounded-lg border px-2 py-2 text-center',
-                    hasPos
-                      ? isGreen ? 'bg-success/5 border-success/25'
-                        : isYellow ? 'bg-warning/5 border-warning/25'
-                        : 'bg-destructive/5 border-destructive/25'
-                      : 'border-border/60 bg-secondary/30'
-                  )}>
-                    <p className="text-[8px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Posição</p>
-                    <p className={cn(
-                      'font-black font-mono tabular-nums leading-none',
-                      hasPos
-                        ? isGreen ? 'text-success' : isYellow ? 'text-warning' : 'text-destructive'
-                        : 'text-muted-foreground'
-                    )}>
-                      {hasPos ? (
-                        <>
-                          <span className="text-[11px]">#</span>
-                          <span className="text-[20px]">{pos}</span>
-                        </>
-                      ) : '—'}
-                    </p>
-                  </div>
-                );
-              })()}
-
-              <div className={cn('rounded-lg border px-2 py-2 text-center',
-                adsMetric.roas >= 5 ? 'bg-success/5 border-success/25'
-                : adsMetric.roas >= 2 ? 'bg-warning/5 border-warning/25'
-                : 'bg-destructive/5 border-destructive/25'
-              )}>
-                <p className="text-[8px] font-bold uppercase tracking-wide text-muted-foreground mb-1">ROAS</p>
-                <p className={cn('text-[20px] font-black font-mono tabular-nums leading-none', getRoasColor(adsMetric.roas))}>
-                  {adsMetric.roas.toFixed(2)}
-                </p>
-                {adsMetric.directRoas != null && adsMetric.directRoas > 0 && (
-                  <p className="text-[8px] text-muted-foreground font-mono mt-0.5">
-                    direto {adsMetric.directRoas.toFixed(2)}
-                  </p>
-                )}
-              </div>
-
-              <div className="rounded-lg border border-border bg-secondary/30 px-2 py-2 text-center">
-                <p className="text-[8px] font-bold uppercase tracking-wide text-muted-foreground mb-1">Custo/un</p>
-                <p className="text-[15px] font-black font-mono tabular-nums leading-none text-foreground">
-                  {adsMetric.spend && adsMetric.itemsSold > 0 ? fmt(adsMetric.spend / adsMetric.itemsSold) : '—'}
-                </p>
-                {adsMetric.itemsSold > 0 && (
-                  <p className="text-[8px] text-muted-foreground font-mono mt-0.5">
-                    {adsMetric.itemsSold} vendidos
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <button
-          onClick={(e) => { e.stopPropagation(); onImportAds?.(product.id); }}
-          className="mt-3 w-full flex items-center justify-center gap-1.5 py-2 rounded-lg border border-dashed border-border/60 bg-transparent hover:bg-secondary transition-colors text-[11px] text-muted-foreground hover:text-foreground"
-        >
-          <Upload className="w-3.5 h-3.5" />
-          Importar relatório de Ads
-        </button>
-      )}
 
       {/* ── FOOTER: stock + ver detalhes ── */}
       <div className="mt-3 pt-3 border-t border-border/30 flex items-center justify-between">
