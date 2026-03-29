@@ -399,6 +399,14 @@ export default function Products() {
             setDetailProduct(null);
             await deleteProduct(id);
           }}
+          onSave={async (data) => {
+            await updateProduct(detailProduct.product.id, data);
+            setDetailProduct(null);
+            toast.success('Produto atualizado!');
+          }}
+        />
+      )}
+          }}
         />
       )}
     </AppLayout>
