@@ -1,28 +1,62 @@
 
 
-## Fix: Botão "Salvar" escondido atrás da navegação inferior
+## Drawer de produto — Tela única (sem abas, sem página de edição)
 
-### Problema
-O footer do drawer (`absolute bottom-0`) fica por baixo da barra de navegação inferior (`fixed bottom-0 z-50`). No mobile, o botão "Salvar alterações" fica inacessível.
+### Mudança principal
+Eliminar as 3 abas e a página `/products/:id/edit`. Tudo fica em um único scroll contínuo dentro do drawer, com o formulário de edição inline (borda laranja) entre as métricas e o breakdown.
 
-### Correção
+### Estrutura do scroll (de cima para baixo)
 
-**Arquivo: `src/components/ProductDetailDrawer.tsx` (linha 485)**
-
-Adicionar padding-bottom extra no footer para compensar a altura da bottom nav (~70px + safe area):
-
+```text
+┌─ Header (thumb + nome + preço + ✕)
+│  Badge de status (✓ Lucrativo)
+├─ Métricas (3 cards: Lucro/un · Margem · vs Meta)
+├─ ✏ Editar produto (borda laranja esquerda, fundo laranja 3%)
+│    Nome · Custo|Venda · Embalagem
+│    Preview live (card verde: Lucro · Margem · ROAS emp.)
+├─ Breakdown de Custos
+├─ ROAS de Referência
+├─ Margem por Canal (grid 2x2)
+├─ Projeção Mensal (slider + grid 2x2 + status)
+└─ Footer fixo: [🗑] [↗] [💾 Salvar alterações]
 ```
-// ANTES
-<div className="absolute bottom-0 left-0 right-0 p-3 pb-5 bg-gradient-to-t ...">
 
-// DEPOIS  
-<div className="absolute bottom-0 left-0 right-0 p-3 pb-[calc(1.25rem+70px+env(safe-area-inset-bottom))] bg-gradient-to-t ...">
+### Arquivos modificados
+
+**1. `src/components/ProductDetailDrawer.tsx`** — Reescrever o conteúdo:
+- Remover estado `tab` e as 3 abas (Resumo/Projeção/Canais)
+- Remover barra de tabs do header
+- Adicionar estado de edição: `editName`, `editCost`, `editSale`, `editPkg`
+- Calcular `editCalc` em tempo real com `calculateProduct` para o preview live
+- Layout do scroll: métricas → seção edição (borda laranja) → breakdown → ROAS → canais → projeção, tudo sequencial
+- Seção de edição: `border-l-[3px] border-primary bg-primary/[0.03]`, com label "✏ EDITAR PRODUTO" em laranja uppercase
+- Preview bar verde dentro da seção de edição: lucro/un, margem, ROAS empate
+- Footer: botão 🗑 (delete), botão ↗ (share), botão 💾 "Salvar alterações" (verde/success), chama `onSave` com os dados editados
+
+**2. `src/App.tsx`** — Remover rota `/products/:id/edit`
+
+**3. `src/pages/ProductEdit.tsx`** — Deletar arquivo (não mais necessário)
+
+**4. `src/pages/Products.tsx`** — Remover import de `ProductEdit` se houver referência
+
+### Detalhes técnicos da seção de edição inline
+
+```tsx
+// Seção com borda laranja
+<div className="border-t border-border border-l-[3px] border-l-primary bg-primary/[0.03] px-4 py-3.5">
+  <p className="text-micro uppercase text-primary mb-3 flex items-center gap-1.5">
+    <Pencil className="w-3 h-3" /> Editar produto
+  </p>
+  {/* campos: nome, custo|venda (2 cols), embalagem */}
+  {/* preview bar verde com lucro, margem, ROAS empate do editCalc */}
+</div>
 ```
 
-Também aumentar o padding-bottom da área de scroll para que o conteúdo não fique atrás do footer expandido:
-
-Localizar o container scrollável e ajustar seu `pb-` de modo que o último conteúdo não fique coberto pelo footer maior.
+### Footer
+- Botão salvar: `bg-success text-white` (verde) sempre visível
+- Chama `onSave({ name: editName, costPrice, salePrice, packagingCost })`
+- Toast de sucesso + fecha drawer
 
 ### Resultado
-O botão "Salvar alterações" ficará visível acima da barra de navegação inferior em todas as telas mobile.
+Uma única tela scrollável com tudo visível. O usuário edita inline e vê o preview atualizar em tempo real, sem trocar de tela.
 
