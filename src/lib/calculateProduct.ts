@@ -31,8 +31,8 @@ export function calculateProduct(product: Product, config: StoreConfig): Product
   const productAcelera = product.shopeeAcelera !== 'none' ? product.shopeeAcelera : config.shopeeAcelera;
   const aceleraCost = grossRevenue * (SHOPEE_ACELERA_RATES[productAcelera] ?? 0);
 
-  const totalCosts = product.costPrice + packagingCost + adsCost + totalShopeeFee + taxesValue + affiliateCommissionValue + shopeeCampaignsValue + aceleraCost;
-  const netProfit = grossRevenue + adsRevenue - totalCosts;
+  const totalCosts = product.costPrice + packagingCost + totalShopeeFee + taxesValue + affiliateCommissionValue + shopeeCampaignsValue + aceleraCost;
+  const netProfit = grossRevenue - totalCosts;
   const realMargin = grossRevenue > 0 ? (netProfit / grossRevenue) * 100 : 0;
   const marginDifference = realMargin - config.desiredMargin;
 
