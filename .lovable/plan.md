@@ -1,42 +1,21 @@
 
 
-## Fix: Margem extra na aba Ads (mobile)
+## Destaque das abas Produtos/Análise — estilo igual ao Ads
 
 ### Problema
-A página Ads tem margens laterais maiores que a Home porque há padding duplo:
-- `AppLayout` já aplica `px-4` no `<main>`
-- `RoasAnalysis` (linha 610) adiciona `p-4` no seu wrapper → total de 32px de cada lado no mobile
-
-A Home não tem esse padding extra no conteúdo, por isso fica com 16px corretos.
+As abas "Produtos" e "Análise" usam estilo apagado (`bg-surface-2`, `data-[state=active]:bg-surface`, `text-text-2`) enquanto as abas do Ads usam estilo com destaque forte (`data-[state=active]:bg-primary`, `data-[state=active]:text-primary-foreground`, `data-[state=active]:shadow-md`).
 
 ### Correção
 
-**Arquivo: `src/components/charts/RoasAnalysis.tsx` (linha 610)**
+**Arquivo: `src/pages/Products.tsx` (linhas 162-168)**
 
-Remover o `p-4` horizontal no mobile, mantendo apenas no desktop:
+Atualizar o `TabsList` e os dois `TabsTrigger` para usar o mesmo padrão visual do Ads:
 
-```
-// ANTES
-<div className="pb-6 md:pb-4 bg-background rounded-2xl p-4 md:p-6">
+- `TabsList`: trocar `h-9 bg-surface-2 p-0.5` por `h-11 bg-secondary/80 border border-border rounded-xl p-1`
+- Ambos `TabsTrigger`: trocar classes por `flex-1 h-9 rounded-lg text-xs font-bold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=inactive]:text-foreground/70`
 
-// DEPOIS  
-<div className="pb-6 md:pb-4 bg-background rounded-2xl px-0 py-2 md:p-6">
-```
-
-Isso elimina o padding horizontal duplicado no mobile enquanto mantém o `p-6` no desktop intacto.
-
-**Arquivo: `src/pages/Roas.tsx` (linha 9)**
-
-Ajustar o wrapper para ser consistente com a Home (sem padding vertical extra no mobile):
-
-```
-// ANTES
-<div className="py-2 md:py-8">
-
-// DEPOIS
-<div className="py-1 md:py-8">
-```
+O texto e contagem `({stats?.totalProducts || 0})` permanecem iguais — só muda o estilo visual.
 
 ### Resultado
-A aba Ads terá as mesmas margens laterais da Home (16px via AppLayout) no mobile, sem afetar o desktop.
+As abas de Produtos ficam com o mesmo destaque laranja forte do Ads (aba ativa com fundo `bg-primary` e texto branco).
 
