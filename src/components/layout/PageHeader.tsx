@@ -23,9 +23,9 @@ export function PageHeader({ title, subtitle, showStoreSelector = true, action }
       <div className="flex items-center justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2">
-            <h1 className="text-xl font-bold text-foreground md:text-2xl">{title}</h1>
+            <h1 className="text-display text-foreground md:text-2xl">{title}</h1>
             {subtitle && (
-              <p className="text-xs text-text-2 truncate">{subtitle}</p>
+              <p className="text-small text-text-2 truncate">{subtitle}</p>
             )}
           </div>
         </div>
@@ -36,7 +36,7 @@ export function PageHeader({ title, subtitle, showStoreSelector = true, action }
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-2 border border-border hover:border-primary/30 transition-colors">
-                  <span className="text-[13px] text-text-2 max-w-[80px] md:max-w-[160px] truncate">
+                  <span className="text-body text-text-2 max-w-[80px] md:max-w-[160px] truncate">
                     {currentStore.name}
                   </span>
                   <ChevronDown className="w-3 h-3 text-text-3" />

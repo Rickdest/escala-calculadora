@@ -108,8 +108,8 @@ export function ProductCard({
       )}
 
       <div className="flex-1 min-w-0">
-        <h3 className="font-bold text-sm text-foreground truncate">{product.name}</h3>
-        <p className="text-xs text-muted-foreground mt-0.5 truncate">
+        <h3 className="font-bold text-subtitle text-foreground truncate">{product.name}</h3>
+        <p className="text-small text-muted-foreground mt-0.5 truncate">
           <span className="font-semibold text-primary">{fmt(product.salePrice)}</span>
           <span className="mx-1">venda · custo</span>
           <span className="font-semibold text-foreground">{fmt(product.costPrice)}</span>
@@ -160,7 +160,7 @@ export function ProductCard({
 
   return (
     <div
-      className="rounded-2xl border border-border bg-card p-4 cursor-pointer select-none active:scale-[0.995] transition-all hover:border-primary/30"
+      className="rounded-card border border-border bg-card p-4 cursor-pointer select-none active:scale-[0.995] transition-all hover:border-primary/30"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onTouchMove={handleTouchMove}
@@ -178,40 +178,40 @@ export function ProductCard({
               {calculation.realMargin.toFixed(1)}%
             </p>
           )}
-          <p className="text-[10px] font-medium text-muted-foreground mt-0.5">Margem</p>
+          <p className="label-metric">Margem</p>
         </div>
 
         <div className="text-center">
           <p className={cn('font-mono text-sm font-extrabold leading-tight', status.color)}>
             {fmt(calculation.netProfit)}
           </p>
-          <p className="text-[10px] font-medium text-muted-foreground mt-0.5">Lucro/un</p>
+          <p className="label-metric">Lucro/un</p>
         </div>
 
         <div className="text-center">
           <p className="font-mono text-lg font-extrabold leading-tight text-warning">
             {roasEmpate && roasEmpate > 0 ? `${roasEmpate.toFixed(2)}x` : '—'}
           </p>
-          <p className="text-[10px] font-medium text-muted-foreground mt-0.5">ROAS empate</p>
+          <p className="label-metric">ROAS empate</p>
         </div>
       </div>
 
       {/* ── PLATFORMS: 2×2 grid with best highlighted ── */}
       {config && (
         <div className="mt-3">
-          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+          <p className="label-metric mb-1.5">
             Margem em outras plataformas
           </p>
           <div className="grid grid-cols-2 gap-1.5">
             {platformMargins.map(p => (
               <div key={p.id} className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-secondary/50">
-                <span className="text-[11px] font-medium text-foreground truncate">
+                <span className="text-small font-medium text-foreground truncate">
                   {p.id === bestPlatform.id && (
                     <span className="text-warning mr-0.5">★</span>
                   )}
                   {p.name}
                 </span>
-                <span className={cn('text-[11px] font-bold font-mono', 
+                <span className={cn('text-small font-bold font-mono', 
                   p.margin >= desiredMargin ? 'text-success' :
                   p.margin >= 0 ? 'text-foreground' : 'text-destructive'
                 )}>
@@ -226,7 +226,7 @@ export function ProductCard({
 
       {/* ── FOOTER: stock + ver detalhes ── */}
       <div className="mt-3 pt-3 border-t border-border/30 flex items-center justify-between">
-        <div className={cn('flex items-center gap-1.5 text-xs', 
+        <div className={cn('flex items-center gap-1.5 text-small', 
           product.stockQuantity === 0 ? 'text-destructive' :
           product.stockQuantity <= (product.minStockQuantity ?? 5) ? 'text-warning' :
           'text-muted-foreground'
@@ -236,7 +236,7 @@ export function ProductCard({
         </div>
         <button
           onClick={(e) => { e.stopPropagation(); if (onCardClick) onCardClick(product); else onEdit(product); }}
-          className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+          className="flex items-center gap-1 text-small font-semibold text-primary hover:text-primary/80 transition-colors"
         >
           Ver detalhes <ChevronRight className="w-3.5 h-3.5" />
         </button>

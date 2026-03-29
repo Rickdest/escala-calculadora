@@ -61,7 +61,7 @@ export function Sidebar() {
               key={path}
               onClick={() => navigate(path)}
               className={cn(
-                'w-full flex items-center gap-3 rounded-lg text-[14px] font-medium transition-colors',
+                'w-full flex items-center gap-3 rounded-lg text-body font-medium transition-colors',
                 collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2.5',
                 isActive
                   ? 'bg-primary/10 text-primary'
@@ -69,7 +69,7 @@ export function Sidebar() {
               )}
             >
               <Icon className="w-5 h-5 flex-shrink-0" strokeWidth={isActive ? 2.5 : 2} />
-              {!collapsed && <span className={cn('truncate text-[13px]', isActive ? 'text-primary' : 'text-text-3')}>{label}</span>}
+              {!collapsed && <span className={cn('truncate text-body', isActive ? 'text-primary' : 'text-text-3')}>{label}</span>}
             </button>
           );
 
@@ -111,7 +111,7 @@ export function Sidebar() {
             href={WHATSAPP_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full flex items-center gap-3 rounded-lg px-4 py-2.5 text-[13px] font-medium transition-colors text-text-3 hover:text-text-2 hover:bg-surface-2/50"
+            className="w-full flex items-center gap-3 rounded-lg px-4 py-2.5 text-body font-medium transition-colors text-text-3 hover:text-text-2 hover:bg-surface-2/50"
           >
             <MessageCircle className="w-3.5 h-3.5 flex-shrink-0" />
             <span className="truncate">Suporte</span>
@@ -131,7 +131,7 @@ export function Sidebar() {
                 <Store className="w-4 h-4 text-sidebar-foreground flex-shrink-0" />
                 {!collapsed && (
                   <>
-                    <span className="text-[13px] text-sidebar-foreground truncate flex-1 text-left">
+                    <span className="text-body text-sidebar-foreground truncate flex-1 text-left">
                       {currentStore.name}
                     </span>
                     <ChevronDown className="w-3.5 h-3.5 text-sidebar-foreground flex-shrink-0" />
