@@ -1,9 +1,8 @@
 import React, { useRef, useCallback } from 'react';
-import { Package, MoreVertical, Copy, Trash2, Edit, Upload, ChevronRight } from 'lucide-react';
+import { Package, MoreVertical, Copy, Trash2, Edit, ChevronRight } from 'lucide-react';
 import { Product, ProductCalculation, StoreConfig } from '@/types/store';
 import { cn, getMarginStatus } from '@/lib/utils';
 import { calcFullRoas } from '@/lib/roasUtils';
-import { getRoasColor } from '@/components/roas/adsHelpers';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,23 +37,12 @@ interface ProductCardProps {
   product: Product;
   calculation: ProductCalculation;
   config?: StoreConfig;
-  adsMetric?: {
-    roas: number;
-    acos: number;
-    directAcos?: number | null;
-    itemsSold: number;
-    avgPosition?: number | null;
-    directRoas?: number | null;
-    spend?: number;
-  } | null;
   onEdit: (product: Product) => void;
   onDuplicate: (productId: string) => void;
   onDelete: (productId: string) => void;
-  onImportAds?: (productId: string) => void;
   onCardClick?: (product: Product) => void;
   /** @deprecated use onCardClick */
   onTap?: () => void;
-  onAdsUpdate?: () => void;
 }
 
 const fmt = (v: number) =>
@@ -64,14 +52,11 @@ export function ProductCard({
   product,
   calculation,
   config,
-  adsMetric,
   onEdit,
   onDuplicate,
   onDelete,
-  onImportAds,
   onCardClick,
   onTap,
-  onAdsUpdate,
 }: ProductCardProps) {
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isLongPress = useRef(false);
