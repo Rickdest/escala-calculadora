@@ -1,4 +1,25 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://esm.sh/zod@3.22.4";
+
+const caktoPayloadSchema = z.object({
+  event: z.string().min(1).max(100),
+  id: z.string().max(100).optional(),
+  refId: z.string().max(100).optional(),
+  fields: z.object({
+    secret: z.string().min(1),
+  }).optional(),
+  secret: z.string().optional(),
+  customer: z.object({
+    email: z.string().email().max(255),
+    name: z.string().max(200).optional(),
+  }),
+  product: z.object({
+    name: z.string().max(50).optional(),
+  }).optional(),
+  subscription: z.object({
+    id: z.string().max(100).optional(),
+  }).optional(),
+});
 
 function maskEmail(email: string): string {
   const [user, domain] = email.split('@');
