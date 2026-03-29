@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn, getMarginStatus } from '@/lib/utils';
 import { exportToCSV, exportToPDF } from '@/lib/exportUtils';
+import { toast } from 'sonner';
 
 const productSortOptions: { value: SortOption; label: string }[] = [
   { value: 'recent', label: 'Mais Recentes' },
