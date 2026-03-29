@@ -159,11 +159,11 @@ export default function Products() {
       <div className="pt-2 pb-24 md:pb-6 space-y-2.5 md:pt-6">
         <Tabs defaultValue="products" className="w-full">
           <div className="flex items-center gap-2">
-            <TabsList className="flex-1 grid grid-cols-2 h-9 rounded-lg bg-surface-2 p-0.5">
-              <TabsTrigger value="products" className="text-xs font-semibold rounded-md data-[state=active]:bg-surface data-[state=active]:text-foreground text-text-2">
-                Produtos <span className="text-text-3 ml-1">({stats?.totalProducts || 0})</span>
+            <TabsList className="flex-1 grid grid-cols-2 h-11 rounded-xl bg-secondary/80 border border-border p-1">
+              <TabsTrigger value="products" className="flex-1 h-9 rounded-lg text-xs font-bold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=inactive]:text-foreground/70">
+                Produtos <span className="ml-1 opacity-70">({stats?.totalProducts || 0})</span>
               </TabsTrigger>
-              <TabsTrigger value="analysis" className="text-xs font-semibold rounded-md data-[state=active]:bg-surface data-[state=active]:text-foreground text-text-2">
+              <TabsTrigger value="analysis" className="flex-1 h-9 rounded-lg text-xs font-bold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=inactive]:text-foreground/70">
                 Análise
               </TabsTrigger>
             </TabsList>
