@@ -26,6 +26,7 @@ const Paywall = lazy(() => import("./pages/Paywall"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const AdminBanners = lazy(() => import("./pages/AdminBanners"));
 const Calculators = lazy(() => import("./pages/Calculators"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
