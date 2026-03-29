@@ -90,7 +90,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <p className="section-label">CALCULADORA RÁPIDA</p>
-        <Badge className="text-[10px] font-medium px-2.5 py-0.5 border-0" style={{ background: '#e85d00', color: '#ffffff', borderRadius: '20px' }}>
+        <Badge className="text-[10px] font-medium px-2.5 py-0.5 border-0 bg-primary text-primary-foreground rounded-[20px]">
           Shopee
         </Badge>
       </div>
@@ -109,7 +109,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               value={costPrice}
               onChange={(e) => setCostPrice(e.target.value)}
               placeholder="0,00"
-              className="w-full h-12 pl-10 pr-2 border rounded-[10px] text-foreground font-mono font-mono-num text-base focus:border-primary focus:outline-none transition-colors" style={{ background: '#111111', borderColor: '#252525' }}
+              className="w-full h-12 pl-10 pr-2 border border-border rounded-[10px] text-foreground font-mono font-mono-num text-base focus:border-primary focus:outline-none transition-colors bg-background"
             />
           </div>
         </div>
@@ -125,7 +125,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               value={salePrice}
               onChange={(e) => setSalePrice(e.target.value)}
               placeholder="0,00"
-              className="w-full h-12 pl-10 pr-2 border rounded-[10px] text-foreground font-mono font-mono-num text-base focus:border-primary focus:outline-none transition-colors" style={{ background: '#111111', borderColor: '#252525' }}
+              className="w-full h-12 pl-10 pr-2 border border-border rounded-[10px] text-foreground font-mono font-mono-num text-base focus:border-primary focus:outline-none transition-colors bg-background"
             />
           </div>
         </div>
@@ -142,7 +142,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
             value={packaging}
             onChange={(e) => setPackaging(e.target.value)}
             placeholder="0,00"
-            className="w-full h-12 pl-10 pr-2 border rounded-[10px] text-foreground font-mono font-mono-num text-base focus:border-primary focus:outline-none transition-colors" style={{ background: '#111111', borderColor: '#252525' }}
+            className="w-full h-12 pl-10 pr-2 border border-border rounded-[10px] text-foreground font-mono font-mono-num text-base focus:border-primary focus:outline-none transition-colors bg-background"
           />
         </div>
       </div>
