@@ -228,10 +228,10 @@ export default function Products() {
                     calculation={calc}
                     config={currentStore.config}
                     onCardClick={(p) => {
-                      if (isMobile) {
-                        setDetailProduct({ product: p, calc });
-                      } else {
+                      if (window.innerWidth >= 1024) {
                         navigate(`/products/${p.id}`);
+                      } else {
+                        setDetailProduct({ product: p, calc });
                       }
                     }}
                     onEdit={handleEdit}
