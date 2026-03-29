@@ -232,7 +232,7 @@ export function ProductDetailDrawer({
         </div>
 
         {/* Scrollable content */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto pb-24">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto pb-36">
           {/* ── TAB RESUMO ── */}
           {tab === 'resumo' && (
             <>
@@ -482,7 +482,7 @@ export function ProductDetailDrawer({
         </div>
 
         {/* Footer */}
-        <div className="absolute bottom-0 left-0 right-0 p-3 pb-5 bg-gradient-to-t from-card via-card to-transparent flex gap-2">
+        <div className="absolute bottom-0 left-0 right-0 p-3 pb-[calc(1.25rem+70px+env(safe-area-inset-bottom))] bg-gradient-to-t from-card via-card to-transparent flex gap-2">
           <button
             onClick={() => { onDelete(product.id); onClose(); }}
             className="h-11 px-3.5 rounded-button bg-destructive/10 text-destructive border border-destructive/20 flex items-center justify-center"
