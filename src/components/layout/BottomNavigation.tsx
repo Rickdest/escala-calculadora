@@ -20,8 +20,8 @@ export const BottomNavigation = React.forwardRef<HTMLElement, Record<string, nev
       ref={ref}
       className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
       style={{
-        background: '#1a1a1a',
-        borderTop: '0.5px solid #2a2a2a',
+        background: '#111111',
+        borderTop: '0.5px solid #252525',
         padding: '10px 8px calc(18px + env(safe-area-inset-bottom))',
       }}
     >

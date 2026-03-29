@@ -11,7 +11,7 @@ import { SubscriptionModal } from '@/components/SubscriptionModal';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { cn } from '@/lib/utils';
 import { QuickCalculator } from '@/components/home/QuickCalculator';
-import { HomeEducationCard } from '@/components/home/HomeEducationCard';
+
 import { ProductThumbnail } from '@/components/ProductThumbnail';
 import { useEstoque } from '@/hooks/useEstoque';
 import { BannerCarousel } from '@/components/home/BannerCarousel';
@@ -20,14 +20,14 @@ import { MARKETPLACE_SHORTCUTS } from '@/lib/marketplaceShortcuts';
 import type { Product } from '@/types/store';
 
 const toolItems = [
-  { icon: Calculator, label: 'Precificar', isAccent: true, action: 'addProduct' as const, iconBg: 'bg-primary', iconColor: 'text-white' },
-  { icon: ShoppingBag, label: 'Produtos', route: '/products', iconBg: 'bg-[hsl(210_50%_18%)]', iconColor: 'text-[hsl(210_100%_65%)]' },
-  { icon: BarChart2, label: 'Ads', route: '/roas', iconBg: 'bg-[hsl(130_30%_14%)]', iconColor: 'text-[hsl(130_50%_50%)]' },
-  { icon: GraduationCap, label: 'Educação', route: '/education', iconBg: 'bg-[hsl(270_30%_18%)]', iconColor: 'text-[hsl(270_80%_75%)]' },
-  { icon: Archive, label: 'Estoque', route: '/stock', iconBg: 'bg-[hsl(140_25%_14%)]', iconColor: 'text-[hsl(140_40%_55%)]' },
-  { icon: Percent, label: 'Taxas', route: '/settings', iconBg: 'bg-[hsl(50_30%_14%)]', iconColor: 'text-[hsl(45_80%_60%)]' },
-  { icon: Store, label: 'Lojas', route: '/stores', iconBg: 'bg-[hsl(0_25%_14%)]', iconColor: 'text-[hsl(0_60%_65%)]' },
-  { icon: UserCircle, label: 'Perfil', route: '/profile', iconBg: 'bg-[hsl(240_25%_14%)]', iconColor: 'text-[hsl(240_60%_65%)]' },
+  { icon: Calculator, label: 'Precificar', isAccent: true, action: 'addProduct' as const, iconBg: '', iconColor: '' },
+  { icon: ShoppingBag, label: 'Produtos', route: '/products', iconBg: '', iconColor: '' },
+  { icon: BarChart2, label: 'Ads', route: '/roas', iconBg: '', iconColor: '' },
+  { icon: GraduationCap, label: 'Educação', route: '/education', iconBg: '', iconColor: '' },
+  { icon: Archive, label: 'Estoque', route: '/stock', iconBg: '', iconColor: '' },
+  { icon: Percent, label: 'Taxas', route: '/settings', iconBg: '', iconColor: '' },
+  { icon: Store, label: 'Lojas', route: '/stores', iconBg: '', iconColor: '' },
+  { icon: UserCircle, label: 'Perfil', route: '/profile', iconBg: '', iconColor: '' },
 ];
 
 
@@ -195,7 +195,8 @@ export default function Home() {
               <button
                 key={mp.tab}
                 onClick={() => navigate(`/calculadoras?tab=${mp.tab}`)}
-                className="flex flex-col items-center gap-1.5 py-2.5 px-3 min-w-[66px] bg-card rounded-[14px] border border-border transition-colors active:scale-95 hover:border-primary/50"
+                className="flex flex-col items-center gap-1.5 py-2.5 px-3 min-w-[66px] rounded-[14px] transition-colors active:scale-95 hover:border-primary/50"
+                style={{ background: '#1a1a1a', border: '0.5px solid #252525' }}
               >
                 <div
                   className={cn('w-9 h-9 rounded-lg flex items-center justify-center text-body font-extrabold', mp.text)}
@@ -214,23 +215,30 @@ export default function Home() {
         <div className="animate-fade-up">
           <p className="section-label mb-3">Ferramentas</p>
           <div className="grid grid-cols-4 gap-y-3 gap-x-2">
-            {toolItems.map((item) => (
-              <button
-                key={item.label}
-                onClick={() => handleToolClick(item)}
-                className="flex flex-col items-center gap-1.5 py-2.5 px-1.5 bg-card rounded-[14px] border border-border transition-colors active:scale-95"
-              >
-                <div className={cn(
-                  'w-9 h-9 rounded-[10px] flex items-center justify-center',
-                  item.iconBg, item.iconColor
-                )}>
-                  <item.icon className="w-[18px] h-[18px]" />
-                </div>
-                <span className="text-[9px] font-medium text-text-2 leading-tight text-center line-clamp-1">
-                  {item.label}
-                </span>
-              </button>
-            ))}
+            {toolItems.map((item) => {
+              const isAccent = 'isAccent' in item && item.isAccent;
+              return (
+                <button
+                  key={item.label}
+                  onClick={() => handleToolClick(item)}
+                  className="flex flex-col items-center gap-1.5 py-2.5 px-1.5 rounded-[14px] transition-colors active:scale-95"
+                  style={{ background: '#1a1a1a', border: '0.5px solid #252525' }}
+                >
+                  <div
+                    className="w-9 h-9 rounded-[10px] flex items-center justify-center"
+                    style={isAccent
+                      ? { background: 'rgba(232,93,0,0.18)', border: '0.5px solid rgba(232,93,0,0.3)' }
+                      : { background: '#222222', border: '0.5px solid #252525' }
+                    }
+                  >
+                    <item.icon className="w-[18px] h-[18px]" style={{ color: isAccent ? '#e85d00' : '#888888' }} />
+                  </div>
+                  <span className="text-[9px] font-medium leading-tight text-center line-clamp-1" style={{ color: '#aaaaaa' }}>
+                    {item.label}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -248,7 +256,6 @@ export default function Home() {
               <ChevronRight className="w-4 h-4 text-text-3" />
             </button>
           )}
-          <HomeEducationCard />
         </div>
 
         {/* Products */}
@@ -390,9 +397,6 @@ export default function Home() {
                 <ChevronRight className="w-4 h-4 text-text-3" />
               </button>
             )}
-
-            {/* Education */}
-            <HomeEducationCard />
           </div>
         </div>
       </div>

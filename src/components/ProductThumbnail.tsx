@@ -20,8 +20,11 @@ export function ProductThumbnail({ productName, imageUrl }: ProductThumbnailProp
   }
 
   return (
-    <div className="w-12 h-12 rounded-lg bg-surface-2 flex items-center justify-center flex-shrink-0">
-      <span className="text-[16px] font-bold text-text-3">{initial}</span>
+    <div
+      className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
+      style={{ background: '#1e1e1e', border: '0.5px solid #252525' }}
+    >
+      <span className="text-[16px] font-bold" style={{ color: '#444444' }}>{initial}</span>
     </div>
   );
 }
