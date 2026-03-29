@@ -19,7 +19,7 @@ export function PageHeader({ title, subtitle, showStoreSelector = true, action }
   const { stores, currentStore, setCurrentStore } = useStore();
 
   return (
-    <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-border px-4 py-3.5 safe-top md:hidden">
+    <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border px-4 py-3 safe-top md:hidden">
       <div className="flex items-center justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-2">
