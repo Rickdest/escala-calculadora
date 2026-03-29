@@ -45,7 +45,7 @@ export default function Products() {
   const { currentStore, addProduct, updateProduct, deleteProduct, duplicateProduct, calculateProduct, getStoreStats, isLoading, loadError, retryLoad } = useStore();
   const { metricsMap, reload: reloadAds } = useProductAdsMetrics();
   const navigate = useNavigate();
-  const isMobile = useIsMobile();
+  
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
