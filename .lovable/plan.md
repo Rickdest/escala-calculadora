@@ -1,62 +1,66 @@
 
 
-## Drawer de produto — Tela única (sem abas, sem página de edição)
+## Correção do Tema Claro — Tokens Unificados
 
-### Mudança principal
-Eliminar as 3 abas e a página `/products/:id/edit`. Tudo fica em um único scroll contínuo dentro do drawer, com o formulário de edição inline (borda laranja) entre as métricas e o breakdown.
+### Problema
+Muitos componentes usam cores hardcoded em `style={{}}` (ex: `#1a1a1a`, `#252525`, `#111111`) que só funcionam no dark mode. O light mode herda essas cores e fica inconsistente. As variáveis CSS em `:root` (light) também usam tons warm (hue 20-30) em vez dos cinzas neutros pedidos.
 
-### Estrutura do scroll (de cima para baixo)
+### Plano
 
-```text
-┌─ Header (thumb + nome + preço + ✕)
-│  Badge de status (✓ Lucrativo)
-├─ Métricas (3 cards: Lucro/un · Margem · vs Meta)
-├─ ✏ Editar produto (borda laranja esquerda, fundo laranja 3%)
-│    Nome · Custo|Venda · Embalagem
-│    Preview live (card verde: Lucro · Margem · ROAS emp.)
-├─ Breakdown de Custos
-├─ ROAS de Referência
-├─ Margem por Canal (grid 2x2)
-├─ Projeção Mensal (slider + grid 2x2 + status)
-└─ Footer fixo: [🗑] [↗] [💾 Salvar alterações]
+**1. Atualizar variáveis light em `src/index.css` (`:root`)**
+
+Ajustar os tokens light para os valores pedidos:
+- `--background`: #F5F5F5 → `0 0% 96%`
+- `--card`: #FFFFFF → `0 0% 100%`
+- `--foreground`: #1a1a1a → `0 0% 10%`
+- `--muted`: #F0F0F0 → `0 0% 94%`
+- `--muted-foreground`: #999999 → `0 0% 60%`
+- `--border` / `--input`: #E0E0E0 → `0 0% 88%`
+- `--secondary`: #F0F0F0 → `0 0% 94%`
+- `--secondary-foreground`: #555555 → `0 0% 33%`
+- `--surface`: #FFFFFF → `0 0% 100%`
+- `--surface-2`: #F0F0F0 → `0 0% 94%`
+- `--text-1`: #1a1a1a → `0 0% 10%`
+- `--text-2`: #555555 → `0 0% 33%`
+- `--text-3`: #999999 → `0 0% 60%`
+- `--success`: #2e7d32 (darker green for light bg)
+- `--danger` / `--destructive`: #d32f2f
+- Sidebar tokens: branco com bordas #E0E0E0
+
+Atualizar os overrides `html:not(.dark)` para usar `#F5F5F5` nos inputs em vez de branco, e `#E0E0E0` para bordas. Placeholder: `#999999`.
+
+**2. Substituir inline styles hardcoded por classes Tailwind theme-aware**
+
+Nos 3 arquivos com hex hardcoded:
+
+- **`src/pages/Home.tsx`**: Trocar `style={{ background: '#1a1a1a', border: '0.5px solid #252525' }}` por classes `bg-card border border-border`. Trocar cores de ícones de `#888888`/`#e85d00` por classes condicionais `text-primary` / `text-muted-foreground`.
+
+- **`src/components/home/QuickCalculator.tsx`**: Trocar `style={{ background: '#111111', borderColor: '#252525' }}` dos inputs por `bg-background border-border` (que resolve para #F5F5F5/#E0E0E0 em light e #111/#252525 em dark).
+
+- **`src/components/ProductThumbnail.tsx`**: Trocar `style={{ background: '#1e1e1e', border: '0.5px solid #252525' }}` por `bg-muted border border-border` (resolve para #F0F0F0/#E0E0E0 em light). Cor da letra: `text-muted-foreground`.
+
+- **`src/components/layout/BottomNavigation.tsx`**: Substituir hex hardcoded por variáveis CSS com fallback. Background: `hsl(var(--background))` em vez de `#111111`. Borda: `hsl(var(--border))`. Cores ativas/inativas: usar variáveis ou classes CSS condicionais com `dark:` prefix.
+
+**3. Adicionar shadow token para cards em light mode**
+
+No `src/index.css`, adicionar regra:
+```css
+html:not(.dark) .bg-card,
+html:not(.dark) [class*="surface-card"] {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+}
 ```
 
-### Arquivos modificados
+### Arquivos modificados (~5)
+1. `src/index.css` — tokens `:root` + overrides light
+2. `src/pages/Home.tsx` — remover inline hex, usar classes
+3. `src/components/home/QuickCalculator.tsx` — inputs theme-aware
+4. `src/components/ProductThumbnail.tsx` — avatar theme-aware
+5. `src/components/layout/BottomNavigation.tsx` — nav theme-aware
 
-**1. `src/components/ProductDetailDrawer.tsx`** — Reescrever o conteúdo:
-- Remover estado `tab` e as 3 abas (Resumo/Projeção/Canais)
-- Remover barra de tabs do header
-- Adicionar estado de edição: `editName`, `editCost`, `editSale`, `editPkg`
-- Calcular `editCalc` em tempo real com `calculateProduct` para o preview live
-- Layout do scroll: métricas → seção edição (borda laranja) → breakdown → ROAS → canais → projeção, tudo sequencial
-- Seção de edição: `border-l-[3px] border-primary bg-primary/[0.03]`, com label "✏ EDITAR PRODUTO" em laranja uppercase
-- Preview bar verde dentro da seção de edição: lucro/un, margem, ROAS empate
-- Footer: botão 🗑 (delete), botão ↗ (share), botão 💾 "Salvar alterações" (verde/success), chama `onSave` com os dados editados
-
-**2. `src/App.tsx`** — Remover rota `/products/:id/edit`
-
-**3. `src/pages/ProductEdit.tsx`** — Deletar arquivo (não mais necessário)
-
-**4. `src/pages/Products.tsx`** — Remover import de `ProductEdit` se houver referência
-
-### Detalhes técnicos da seção de edição inline
-
-```tsx
-// Seção com borda laranja
-<div className="border-t border-border border-l-[3px] border-l-primary bg-primary/[0.03] px-4 py-3.5">
-  <p className="text-micro uppercase text-primary mb-3 flex items-center gap-1.5">
-    <Pencil className="w-3 h-3" /> Editar produto
-  </p>
-  {/* campos: nome, custo|venda (2 cols), embalagem */}
-  {/* preview bar verde com lucro, margem, ROAS empate do editCalc */}
-</div>
-```
-
-### Footer
-- Botão salvar: `bg-success text-white` (verde) sempre visível
-- Chama `onSave({ name: editName, costPrice, salePrice, packagingCost })`
-- Toast de sucesso + fecha drawer
-
-### Resultado
-Uma única tela scrollável com tudo visível. O usuário edita inline e vê o preview atualizar em tempo real, sem trocar de tela.
+### Não alterar
+- Bloco `.dark {}` — intocado
+- Layout, funcionalidades, navegação
+- Gradiente do banner
+- Cores de logo das plataformas
 
