@@ -406,9 +406,6 @@ export default function Products() {
           }}
         />
       )}
-          }}
-        />
-      )}
     </AppLayout>
   );
 }
