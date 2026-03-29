@@ -27,7 +27,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const AdminBanners = lazy(() => import("./pages/AdminBanners"));
 const Calculators = lazy(() => import("./pages/Calculators"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
-const ProductEdit = lazy(() => import("./pages/ProductEdit"));
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -113,7 +113,7 @@ const App = () => (
                   <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                   <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
                   <Route path="/products/:id" element={<ProtectedRoute><ProductDetail /></ProtectedRoute>} />
-                  <Route path="/products/:id/edit" element={<ProtectedRoute><ProductEdit /></ProtectedRoute>} />
+                  
                   <Route path="/stores" element={<ProtectedRoute><Stores /></ProtectedRoute>} />
                   <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                   <Route path="/education" element={<ProtectedRoute><Education /></ProtectedRoute>} />
