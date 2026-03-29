@@ -610,17 +610,17 @@ export function RoasAnalysis() {
     <div className="pb-6 md:pb-4 bg-background rounded-2xl px-0 py-2 md:p-6">
       <Tabs defaultValue="roas" className="w-full">
         {!adsDetailOpen && (
-          <TabsList className="w-full grid grid-cols-2 h-12 mb-5 bg-card border border-border rounded-lg p-1">
+           <TabsList className="w-full grid grid-cols-2 h-11 mb-5 bg-secondary/80 border border-border rounded-xl p-1">
             <TabsTrigger
               value="roas"
-              className="rounded-lg text-xs font-bold gap-1.5 transition-all data-[state=active]:bg-surface-2 data-[state=active]:text-foreground data-[state=active]:shadow-sm text-text-3"
+              className="flex-1 h-9 rounded-lg text-xs font-bold gap-1.5 transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=inactive]:text-foreground/70"
             >
               <Target className="w-3.5 h-3.5" />
               ROAS
             </TabsTrigger>
             <TabsTrigger
               value="ads"
-              className="rounded-lg text-xs font-bold gap-1.5 transition-all data-[state=active]:bg-surface-2 data-[state=active]:text-foreground data-[state=active]:shadow-sm text-text-3"
+              className="flex-1 h-9 rounded-lg text-xs font-bold gap-1.5 transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=inactive]:text-foreground/70"
             >
               <Megaphone className="w-3.5 h-3.5" />
               Análise de Ads
