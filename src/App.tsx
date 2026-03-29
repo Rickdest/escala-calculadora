@@ -26,6 +26,7 @@ const Paywall = lazy(() => import("./pages/Paywall"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const AdminBanners = lazy(() => import("./pages/AdminBanners"));
 const Calculators = lazy(() => import("./pages/Calculators"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -110,6 +111,7 @@ const App = () => (
                   <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
                   <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                   <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
+                  <Route path="/products/:id" element={<ProtectedRoute><ProductDetail /></ProtectedRoute>} />
                   <Route path="/stores" element={<ProtectedRoute><Stores /></ProtectedRoute>} />
                   <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                   <Route path="/education" element={<ProtectedRoute><Education /></ProtectedRoute>} />

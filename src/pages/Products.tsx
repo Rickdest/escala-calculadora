@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Search, SlidersHorizontal, Package, TrendingUp, TrendingDown, Percent, DollarSign, Download, FileSpreadsheet, FileText, ArrowUpDown, ChevronRight } from 'lucide-react';
 import { useProductAdsMetrics } from '@/hooks/useProductAdsMetrics';
 import { useStore } from '@/contexts/StoreContext';
@@ -22,6 +23,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn, getMarginStatus } from '@/lib/utils';
 import { exportToCSV, exportToPDF } from '@/lib/exportUtils';
+import { toast } from 'sonner';
 
 const productSortOptions: { value: SortOption; label: string }[] = [
   { value: 'recent', label: 'Mais Recentes' },
@@ -42,6 +44,8 @@ const analysisSortOptions: { value: SortOption; label: string }[] = [
 export default function Products() {
   const { currentStore, addProduct, updateProduct, deleteProduct, duplicateProduct, calculateProduct, getStoreStats, isLoading, loadError, retryLoad } = useStore();
   const { metricsMap, reload: reloadAds } = useProductAdsMetrics();
+  const navigate = useNavigate();
+  
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -222,7 +226,13 @@ export default function Products() {
                     product={product}
                     calculation={calc}
                     config={currentStore.config}
-                    onCardClick={(p) => setDetailProduct({ product: p, calc })}
+                    onCardClick={(p) => {
+                      if (window.innerWidth >= 1024) {
+                        navigate(`/products/${p.id}`);
+                      } else {
+                        setDetailProduct({ product: p, calc });
+                      }
+                    }}
                     onEdit={handleEdit}
                     onDuplicate={async (id) => { await duplicateProduct(id); }}
                     onDelete={async (id) => { await deleteProduct(id); }}
@@ -388,6 +398,11 @@ export default function Products() {
           onDelete={async (id) => {
             setDetailProduct(null);
             await deleteProduct(id);
+          }}
+          onSave={async (data) => {
+            await updateProduct(detailProduct.product.id, data);
+            setDetailProduct(null);
+            toast.success('Produto atualizado!');
           }}
         />
       )}
