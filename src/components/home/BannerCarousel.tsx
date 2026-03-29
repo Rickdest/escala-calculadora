@@ -21,8 +21,8 @@ const fallbackSlides = [
     cta: 'Precificar produto',
     emoji: '🎯',
     link_destino: '/?new=1',
-    bgClass: 'bg-gradient-to-br from-primary to-primary/80',
-    textClass: 'text-primary-foreground',
+    bgClass: 'bg-gradient-to-r from-[#b84300] via-[#e85d00] to-[#ff8830]',
+    textClass: 'text-white',
   },
   {
     id: 'f2',
