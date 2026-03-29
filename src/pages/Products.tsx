@@ -226,7 +226,13 @@ export default function Products() {
                     product={product}
                     calculation={calc}
                     config={currentStore.config}
-                    onCardClick={(p) => setDetailProduct({ product: p, calc })}
+                    onCardClick={(p) => {
+                      if (isMobile) {
+                        setDetailProduct({ product: p, calc });
+                      } else {
+                        navigate(`/products/${p.id}`);
+                      }
+                    }}
                     onEdit={handleEdit}
                     onDuplicate={async (id) => { await duplicateProduct(id); }}
                     onDelete={async (id) => { await deleteProduct(id); }}
