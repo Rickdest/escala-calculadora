@@ -194,15 +194,15 @@ export function ProductDetailDrawer({
         <div className="px-4 pb-3 shrink-0">
           <div className="flex items-start gap-2.5 mb-2">
             {product.imageUrl ? (
-              <img src={product.imageUrl} alt="" className="w-10 h-10 rounded-[10px] object-cover shrink-0" />
+              <img src={product.imageUrl} alt="" className="w-10 h-10 rounded-card object-cover shrink-0" />
             ) : (
-              <div className="w-10 h-10 rounded-[10px] bg-secondary flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-card bg-secondary flex items-center justify-center shrink-0">
                 <Package className="w-5 h-5 text-muted-foreground" />
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-foreground text-sm leading-tight truncate">{product.name}</h3>
-              <p className="text-xs text-muted-foreground font-mono mt-0.5">
+              <h3 className="font-semibold text-foreground text-subtitle leading-tight truncate">{product.name}</h3>
+              <p className="text-small text-muted-foreground font-mono mt-0.5">
                 <span className="text-primary font-medium">{fmt(product.salePrice)}</span> venda · custo {fmt(product.costPrice)}
               </p>
             </div>
@@ -210,7 +210,7 @@ export function ProductDetailDrawer({
               <X className="w-3 h-3 text-muted-foreground" />
             </button>
           </div>
-          <span className={cn('inline-flex items-center text-[11px] font-semibold px-2.5 py-0.5 rounded-full border', statusBadge.cls)}>
+          <span className={cn('inline-flex items-center text-small font-semibold px-2.5 py-0.5 rounded-full border', statusBadge.cls)}>
             {statusBadge.text}
           </span>
         </div>
@@ -222,7 +222,7 @@ export function ProductDetailDrawer({
               key={t.id}
               onClick={() => setTab(t.id)}
               className={cn(
-                'flex-1 text-center py-2 text-xs font-medium border-b-2 transition-colors -mb-px',
+                'flex-1 text-center py-2 text-small font-medium border-b-2 transition-colors -mb-px',
                 tab === t.id ? 'text-primary border-primary' : 'text-muted-foreground border-transparent'
               )}
             >
@@ -238,50 +238,50 @@ export function ProductDetailDrawer({
             <>
               {/* 3 metrics */}
               <div className="grid grid-cols-3 gap-2 p-3.5">
-                <div className="bg-secondary/50 border border-border rounded-[10px] p-2.5">
+                <div className="bg-secondary/50 border border-border rounded-card p-2.5">
                   <p className={cn('font-mono text-base font-bold leading-none', calculation.netProfit >= 0 ? 'text-success' : 'text-destructive')}>
                     {fmt(calculation.netProfit)}
                   </p>
-                  <p className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider mt-1">Lucro/un</p>
+                  <p className="label-metric">Lucro/un</p>
                 </div>
-                <div className="bg-secondary/50 border border-border rounded-[10px] p-2.5">
+                <div className="bg-secondary/50 border border-border rounded-card p-2.5">
                   <p className={cn('font-mono text-base font-bold leading-none', status.color)}>
                     {calculation.realMargin.toFixed(1)}%
                   </p>
-                  <p className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider mt-1">Margem</p>
+                  <p className="label-metric">Margem</p>
                 </div>
-                <div className="bg-secondary/50 border border-border rounded-[10px] p-2.5">
+                <div className="bg-secondary/50 border border-border rounded-card p-2.5">
                   <p className={cn('font-mono text-base font-bold leading-none', marginDiff >= 0 ? 'text-primary' : 'text-destructive')}>
                     {marginDiff >= 0 ? '+' : ''}{marginDiff.toFixed(1)}%
                   </p>
-                  <p className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider mt-1">vs Meta {config.desiredMargin}%</p>
+                  <p className="label-metric">vs Meta {config.desiredMargin}%</p>
                 </div>
               </div>
 
               {/* Breakdown */}
               <div className="border-t border-border px-4 py-3 space-y-1.5">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2.5">Breakdown de Custos</p>
+                <p className="section-label mb-2.5">Breakdown de Custos</p>
                 {costItems.map((item, i) => (
                   <div key={i} className="flex items-center justify-between py-1">
-                    <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-2 text-small text-muted-foreground">
                       <span className={cn('w-[7px] h-[7px] rounded-full', item.dot)} />
                       {item.label}
                     </span>
-                    <span className={cn('font-mono text-xs font-medium', item.value > 0 ? 'text-foreground' : 'text-muted-foreground/50')}>
+                    <span className={cn('font-mono text-small font-medium', item.value > 0 ? 'text-foreground' : 'text-muted-foreground/50')}>
                       {item.value > 0 ? fmt(item.value) : '—'}
                     </span>
                   </div>
                 ))}
                 <div className="border-t border-border pt-2 mt-2 flex justify-between">
-                  <span className="text-[13px] font-semibold text-foreground">Total de custos</span>
-                  <span className="font-mono text-sm font-bold text-destructive">{fmt(calculation.totalCosts)}</span>
+                  <span className="text-body font-semibold text-foreground">Total de custos</span>
+                  <span className="font-mono text-body font-bold text-destructive">{fmt(calculation.totalCosts)}</span>
                 </div>
               </div>
 
               {/* ROAS */}
               {!roas.margemInsuficiente && roas.roasEmpate && (
                 <div className="border-t border-border px-4 py-3">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2.5">ROAS de Referência (Ads)</p>
+                  <p className="section-label mb-2.5">ROAS de Referência (Ads)</p>
                   <div className="space-y-1.5">
                     {[
                       { label: 'Ponto de empate', value: roas.roasEmpate, color: 'text-destructive', bg: 'bg-destructive', w: 30 },
@@ -289,11 +289,11 @@ export function ProductDetailDrawer({
                       { label: 'Ideal', value: roas.roasIdeal, color: 'text-success', bg: 'bg-success', w: 77 },
                     ].map((row) => row.value != null && (
                       <div key={row.label} className="flex items-center gap-2">
-                        <span className="text-[11px] text-muted-foreground w-[76px] shrink-0">{row.label}</span>
+                        <span className="text-small text-muted-foreground w-[76px] shrink-0">{row.label}</span>
                         <div className="flex-1 h-[5px] bg-secondary rounded-full overflow-hidden">
                           <div className={cn('h-full rounded-full', row.bg)} style={{ width: `${row.w}%` }} />
                         </div>
-                        <span className={cn('font-mono text-xs font-bold w-[30px] text-right', row.color)}>
+                        <span className={cn('font-mono text-small font-bold w-[30px] text-right', row.color)}>
                           {row.value.toFixed(2)}
                         </span>
                       </div>
@@ -304,13 +304,13 @@ export function ProductDetailDrawer({
 
               {/* Stock */}
               <div className="border-t border-border px-4 py-3">
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2.5">Estoque</p>
+                <p className="section-label mb-2.5">Estoque</p>
                 <div className="flex items-center justify-between">
-                  <span className="text-[13px] text-muted-foreground">Quantidade atual</span>
+                  <span className="text-body text-muted-foreground">Quantidade atual</span>
                   <span className="font-mono text-xl font-bold text-foreground">{product.stockQuantity} un.</span>
                 </div>
                 {product.stockQuantity <= (product.minStockQuantity ?? 5) && (
-                  <p className="text-[11px] text-warning font-medium mt-1">
+                  <p className="text-small text-warning font-medium mt-1">
                     ⚠ Abaixo do mínimo ({product.minStockQuantity ?? 5} un.)
                   </p>
                 )}
@@ -322,69 +322,69 @@ export function ProductDetailDrawer({
           {tab === 'editar' && (
             <div className="px-4 py-3.5 space-y-3">
               <div>
-                <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Nome do produto *</label>
+                <label className="label-field">Nome do produto *</label>
                 <input
                   value={editName}
                   onChange={e => setEditName(e.target.value)}
-                  className="w-full h-[42px] bg-secondary border border-border rounded-[9px] px-3 text-sm text-foreground font-sans"
+                  className="w-full h-[42px] bg-secondary border border-border rounded-input px-3 text-body text-foreground font-sans"
                 />
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Preço de custo *</label>
-                  <div className="flex items-center h-[42px] bg-secondary border border-border rounded-[9px] px-3">
-                    <span className="text-muted-foreground font-mono text-[13px] mr-1.5">R$</span>
+                  <label className="label-field">Preço de custo *</label>
+                  <div className="flex items-center h-[42px] bg-secondary border border-border rounded-input px-3">
+                    <span className="text-muted-foreground font-mono text-body mr-1.5">R$</span>
                     <input
                       value={editCost}
                       onChange={e => setEditCost(e.target.value)}
                       type="number"
-                      className="flex-1 bg-transparent text-foreground font-mono text-[15px] font-medium outline-none"
+                      className="flex-1 bg-transparent text-foreground font-mono text-subtitle font-medium outline-none"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Preço de venda *</label>
-                  <div className="flex items-center h-[42px] bg-secondary border border-border rounded-[9px] px-3">
-                    <span className="text-muted-foreground font-mono text-[13px] mr-1.5">R$</span>
+                  <label className="label-field">Preço de venda *</label>
+                  <div className="flex items-center h-[42px] bg-secondary border border-border rounded-input px-3">
+                    <span className="text-muted-foreground font-mono text-body mr-1.5">R$</span>
                     <input
                       value={editSale}
                       onChange={e => setEditSale(e.target.value)}
                       type="number"
-                      className="flex-1 bg-transparent text-foreground font-mono text-[15px] font-medium outline-none"
+                      className="flex-1 bg-transparent text-foreground font-mono text-subtitle font-medium outline-none"
                     />
                   </div>
                 </div>
               </div>
               <div>
-                <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Embalagem e insumos</label>
-                <div className="flex items-center h-[42px] bg-secondary border border-border rounded-[9px] px-3">
-                  <span className="text-muted-foreground font-mono text-[13px] mr-1.5">R$</span>
+                <label className="label-field">Embalagem e insumos</label>
+                <div className="flex items-center h-[42px] bg-secondary border border-border rounded-input px-3">
+                  <span className="text-muted-foreground font-mono text-body mr-1.5">R$</span>
                   <input
                     value={editPkg}
                     onChange={e => setEditPkg(e.target.value)}
                     type="number"
-                    className="flex-1 bg-transparent text-foreground font-mono text-[15px] font-medium outline-none"
+                    className="flex-1 bg-transparent text-foreground font-mono text-subtitle font-medium outline-none"
                   />
                 </div>
               </div>
 
               {/* Preview card */}
               {editCalc && (
-                <div className="bg-success/5 border border-success/20 rounded-[10px] p-3">
-                  <p className="text-[10px] font-bold text-success uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                <div className="bg-success/5 border border-success/20 rounded-card p-3">
+                  <p className="label-metric flex items-center gap-1.5 mb-2 text-success">
                     📊 Prévia do Cálculo
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
                       <p className="font-mono text-lg font-bold text-success">{fmt(editCalc.netProfit)}</p>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Lucro líquido</p>
+                      <p className="label-metric text-muted-foreground">Lucro líquido</p>
                     </div>
                     <div>
                       <p className="font-mono text-lg font-bold text-success">{editCalc.realMargin.toFixed(1)}%</p>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Margem real</p>
+                      <p className="label-metric text-muted-foreground">Margem real</p>
                     </div>
                   </div>
-                  <div className="border-t border-success/20 mt-2 pt-2 flex justify-between text-[11px] text-muted-foreground">
+                  <div className="border-t border-success/20 mt-2 pt-2 flex justify-between text-small text-muted-foreground">
                     <span>Taxa Shopee (automática)</span>
                     <span className="font-mono">{fmt(editCalc.totalShopeeFee)}</span>
                   </div>
@@ -396,9 +396,9 @@ export function ProductDetailDrawer({
           {/* ── TAB PROJEÇÃO ── */}
           {tab === 'projecao' && (
             <div className="px-4 py-3.5">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Simulação Mensal</p>
+              <p className="section-label mb-3">Simulação Mensal</p>
               <div className="flex items-center gap-2.5 mb-2.5">
-                <span className="text-xs text-muted-foreground flex-1">Vendas por mês</span>
+                <span className="text-small text-muted-foreground flex-1">Vendas por mês</span>
                 <input
                   value={monthlySales}
                   onChange={e => setMonthlySales(Math.max(1, Math.min(1000, parseInt(e.target.value) || 1)))}
@@ -417,23 +417,23 @@ export function ProductDetailDrawer({
               <div className="grid grid-cols-2 gap-1.5">
                 <div className="bg-secondary/50 border border-border rounded-lg p-2.5">
                   <p className="font-mono text-sm font-bold text-success">{fmt(projection.revenue)}</p>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Receita bruta</p>
+                  <p className="label-metric text-muted-foreground">Receita bruta</p>
                 </div>
                 <div className="bg-secondary/50 border border-border rounded-lg p-2.5">
                   <p className="font-mono text-sm font-bold text-destructive">{fmt(projection.costs)}</p>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Custos totais</p>
+                  <p className="label-metric text-muted-foreground">Custos totais</p>
                 </div>
                 <div className="bg-secondary/50 border border-border rounded-lg p-2.5">
                   <p className={cn('font-mono text-sm font-bold', projection.profit >= 0 ? 'text-success' : 'text-destructive')}>{fmt(projection.profit)}</p>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Lucro mensal</p>
+                  <p className="label-metric text-muted-foreground">Lucro mensal</p>
                 </div>
                 <div className="bg-secondary/50 border border-border rounded-lg p-2.5">
                   <p className={cn('font-mono text-sm font-bold', status.color)}>{projection.margin.toFixed(1)}%</p>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Margem</p>
+                  <p className="label-metric text-muted-foreground">Margem</p>
                 </div>
               </div>
               <div className={cn(
-                'mt-2.5 py-2.5 px-3 rounded-[9px] border text-center text-xs font-medium',
+                'mt-2.5 py-2.5 px-3 rounded-input border text-center text-small font-medium',
                 projection.profit >= 0 ? 'bg-success/5 border-success/20 text-success' : 'bg-destructive/5 border-destructive/20 text-destructive'
               )}>
                 {projection.profit >= 0
@@ -446,18 +446,18 @@ export function ProductDetailDrawer({
           {/* ── TAB CANAIS ── */}
           {tab === 'canais' && (
             <div className="px-4 py-3.5">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Margem em Outras Plataformas</p>
+              <p className="section-label mb-3">Margem em Outras Plataformas</p>
               <div className="grid grid-cols-2 gap-1.5">
                 {allPlatformMargins.map(p => (
                   <div key={p.id} className={cn(
                     'bg-secondary/50 border rounded-lg px-2.5 py-2 flex items-center justify-between',
                     p.id === bestPlatform?.id ? 'border-primary/25' : 'border-border'
                   )}>
-                    <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                      {p.id === bestPlatform?.id && <span className="text-primary text-[10px]">★</span>}
+                    <span className="text-small text-muted-foreground flex items-center gap-1">
+                      {p.id === bestPlatform?.id && <span className="text-primary text-micro">★</span>}
                       {p.name}
                     </span>
-                    <span className={cn('font-mono text-xs font-bold',
+                    <span className={cn('font-mono text-small font-bold',
                       p.margin >= config.desiredMargin ? 'text-success' :
                       p.margin >= 0 ? 'text-foreground' : 'text-destructive'
                     )}>
@@ -467,11 +467,11 @@ export function ProductDetailDrawer({
                 ))}
               </div>
               {bestPlatform && shopeeMargin && (
-                <div className="mt-3 bg-secondary/50 border border-border rounded-[9px] p-3">
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">🏆 Melhor canal</p>
-                  <p className="text-[13px] font-semibold text-foreground">{bestPlatform.name} — {bestPlatform.margin.toFixed(1)}% de margem</p>
+                <div className="mt-3 bg-secondary/50 border border-border rounded-input p-3">
+                  <p className="label-metric mb-1.5">🏆 Melhor canal</p>
+                  <p className="text-body font-semibold text-foreground">{bestPlatform.name} — {bestPlatform.margin.toFixed(1)}% de margem</p>
                   {bestPlatform.id !== 'shopee' && (
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                    <p className="text-small text-muted-foreground mt-0.5">
                       {fmt(((bestPlatform.margin - shopeeMargin.margin) / 100) * product.salePrice)}/un a mais que na Shopee
                     </p>
                   )}
@@ -485,20 +485,20 @@ export function ProductDetailDrawer({
         <div className="absolute bottom-0 left-0 right-0 p-3 pb-5 bg-gradient-to-t from-card via-card to-transparent flex gap-2">
           <button
             onClick={() => { onDelete(product.id); onClose(); }}
-            className="h-11 px-3.5 rounded-[11px] bg-destructive/10 text-destructive border border-destructive/20 flex items-center justify-center"
+            className="h-11 px-3.5 rounded-button bg-destructive/10 text-destructive border border-destructive/20 flex items-center justify-center"
           >
             <Trash2 className="w-4 h-4" />
           </button>
           <button
             onClick={handleShare}
-            className="h-11 px-3.5 rounded-[11px] bg-transparent text-muted-foreground border border-border flex items-center justify-center"
+            className="h-11 px-3.5 rounded-button bg-transparent text-muted-foreground border border-border flex items-center justify-center"
           >
             <Share2 className="w-4 h-4" />
           </button>
           {tab === 'editar' ? (
             <button
               onClick={handleSaveEdit}
-              className="flex-[2] h-11 rounded-[11px] bg-success text-white font-semibold text-sm flex items-center justify-center gap-1.5"
+              className="flex-[2] h-11 rounded-button bg-success text-white font-semibold text-body flex items-center justify-center gap-1.5"
             >
               <Save className="w-4 h-4" />
               Salvar alterações
@@ -506,7 +506,7 @@ export function ProductDetailDrawer({
           ) : (
             <button
               onClick={() => setTab('editar')}
-              className="flex-[2] h-11 rounded-[11px] bg-primary text-primary-foreground font-semibold text-sm flex items-center justify-center gap-1.5"
+              className="flex-[2] h-11 rounded-button bg-primary text-primary-foreground font-semibold text-body flex items-center justify-center gap-1.5"
             >
               <Sparkles className="w-4 h-4" />
               Editar produto

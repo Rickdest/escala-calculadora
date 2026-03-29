@@ -50,7 +50,7 @@ export function AdsProductCard({
 
   return (
     <div
-      className="rounded-2xl border border-border bg-card cursor-pointer transition-all hover:border-primary/30 hover:shadow-md hover:shadow-primary/5 hover:-translate-y-0.5 active:scale-[0.995] overflow-hidden"
+      className="rounded-card border border-border bg-card cursor-pointer transition-all hover:border-primary/30 hover:shadow-md hover:shadow-primary/5 hover:-translate-y-0.5 active:scale-[0.995] overflow-hidden"
       onClick={onClick}
     >
       {/* Top accent bar */}
@@ -68,18 +68,18 @@ export function AdsProductCard({
           )}
 
           <div className="flex-1 min-w-0">
-            <h3 className="font-bold text-sm text-foreground line-clamp-2 leading-tight">{ad.nome_produto_csv || 'Produto sem nome'}</h3>
+            <h3 className="font-bold text-subtitle text-foreground line-clamp-2 leading-tight">{ad.nome_produto_csv || 'Produto sem nome'}</h3>
             <div className="flex items-center gap-2 flex-wrap mt-1">
               {isLinked ? (
-                <span className={cn('inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[10px] font-bold', cls.bg, cls.color)}>
+                <span className={cn('inline-flex items-center gap-1 px-1.5 py-0.5 rounded-badge border text-micro', cls.bg, cls.color)}>
                   {cls.label}
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-warning/30 bg-warning/15 text-[10px] font-bold text-warning">
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-badge border border-warning/30 bg-warning/15 text-micro text-warning">
                   ⚠️ Não vinculado
                 </span>
               )}
-              <span className="text-[10px] text-muted-foreground font-mono">{periodLabel}</span>
+              <span className="text-micro text-muted-foreground font-mono">{periodLabel}</span>
             </div>
           </div>
 
@@ -100,19 +100,19 @@ export function AdsProductCard({
             <p className={cn('font-mono text-2xl font-extrabold leading-tight', getRoasColor(roasDireto))}>
               {roasDireto.toFixed(2)}
             </p>
-            <p className="text-[10px] font-medium text-muted-foreground mt-0.5">ROAS</p>
+            <p className="label-metric">ROAS</p>
           </div>
           <div className="text-center">
             <p className="font-mono text-lg font-extrabold leading-tight text-foreground">
               {fmtShort(ad.gmv)}
             </p>
-            <p className="text-[10px] font-medium text-muted-foreground mt-0.5">GMV</p>
+            <p className="label-metric">GMV</p>
           </div>
           <div className="text-center">
             <p className="font-mono text-lg font-extrabold leading-tight text-foreground">
               {fmtShort(ad.despesas)}
             </p>
-            <p className="text-[10px] font-medium text-muted-foreground mt-0.5">GASTO</p>
+            <p className="label-metric">GASTO</p>
           </div>
         </div>
 
@@ -122,19 +122,19 @@ export function AdsProductCard({
             <p className={cn('font-mono text-lg font-extrabold leading-tight', hasPosition ? getPositionColor(ad.posicao_media!) : 'text-muted-foreground')}>
               {hasPosition ? `#${ad.posicao_media}` : '—'}
             </p>
-            <p className="text-[10px] font-medium text-muted-foreground mt-0.5">POSIÇÃO</p>
+            <p className="label-metric">POSIÇÃO</p>
           </div>
           <div className="text-center">
             <p className="font-mono text-lg font-extrabold leading-tight text-foreground">
               {ad.itens_vendidos}
             </p>
-            <p className="text-[10px] font-medium text-muted-foreground mt-0.5">VENDAS</p>
+            <p className="label-metric">VENDAS</p>
           </div>
           <div className="text-center">
             <p className="font-mono text-lg font-extrabold leading-tight text-foreground">
               {custoUn > 0 ? fmtShort(custoUn) : '—'}
             </p>
-            <p className="text-[10px] font-medium text-muted-foreground mt-0.5">CUSTO/UN</p>
+            <p className="label-metric">CUSTO/UN</p>
           </div>
         </div>
 
@@ -168,7 +168,7 @@ export function AdsProductCard({
 
         {/* ── WARNING: linked but no price ── */}
         {isLinked && (!ad.roas_empate || ad.roas_empate <= 0) && (
-          <p className="text-[10px] text-warning">⚠️ Produto sem custo/preço configurado.</p>
+          <p className="text-micro text-warning">⚠️ Produto sem custo/preço configurado.</p>
         )}
       </div>
     </div>

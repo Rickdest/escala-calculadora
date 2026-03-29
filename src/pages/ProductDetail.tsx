@@ -207,13 +207,13 @@ export default function ProductDetail() {
           {/* Fields */}
           <div className="space-y-3">
             <div>
-              <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Nome do produto *</label>
+              <label className="label-field">Nome do produto *</label>
               <input value={editName} onChange={e => setEditName(e.target.value)}
                 className="w-full h-11 bg-secondary border border-border rounded-xl px-3 text-sm text-foreground" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Preço de custo *</label>
+                <label className="label-field">Preço de custo *</label>
                 <div className="flex items-center h-11 bg-secondary border border-border rounded-xl px-3">
                   <span className="text-muted-foreground font-mono text-sm mr-1.5">R$</span>
                   <input value={editCost} onChange={e => setEditCost(e.target.value)} type="number"
@@ -221,7 +221,7 @@ export default function ProductDetail() {
                 </div>
               </div>
               <div>
-                <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Preço de venda *</label>
+                <label className="label-field">Preço de venda *</label>
                 <div className="flex items-center h-11 bg-secondary border border-border rounded-xl px-3">
                   <span className="text-muted-foreground font-mono text-sm mr-1.5">R$</span>
                   <input value={editSale} onChange={e => setEditSale(e.target.value)} type="number"
@@ -230,7 +230,7 @@ export default function ProductDetail() {
               </div>
             </div>
             <div>
-              <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Embalagem e insumos</label>
+              <label className="label-field">Embalagem e insumos</label>
               <div className="flex items-center h-11 bg-secondary border border-border rounded-xl px-3">
                 <span className="text-muted-foreground font-mono text-sm mr-1.5">R$</span>
                 <input value={editPkg} onChange={e => setEditPkg(e.target.value)} type="number"
@@ -253,7 +253,7 @@ export default function ProductDetail() {
         {/* ── RIGHT: Live results ── */}
         <div className="space-y-5">
           {/* Status badge */}
-          <span className={cn('inline-flex items-center text-xs font-semibold px-3 py-1 rounded-full border', statusBadge.cls)}>
+          <span className={cn('inline-flex items-center text-small font-semibold px-3 py-1 rounded-full border', statusBadge.cls)}>
             {statusBadge.text}
           </span>
 
@@ -264,26 +264,26 @@ export default function ProductDetail() {
                 <p className={cn('font-mono text-2xl font-bold', calculation.netProfit >= 0 ? 'text-success' : 'text-destructive')}>
                   {fmt(editCalc ? editCalc.netProfit : calculation.netProfit)}
                 </p>
-                <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mt-1">Lucro/un</p>
+                <p className="label-metric">Lucro/un</p>
               </div>
               <div>
                 <p className={cn('font-mono text-2xl font-bold', status.color)}>
                   {(editCalc ? editCalc.realMargin : calculation.realMargin).toFixed(1)}%
                 </p>
-                <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mt-1">Margem real</p>
+                <p className="label-metric">Margem real</p>
               </div>
               <div>
                 <p className={cn('font-mono text-2xl font-bold', marginDiff >= 0 ? 'text-primary' : 'text-destructive')}>
                   {marginDiff >= 0 ? '+' : ''}{(editCalc ? editCalc.marginDifference : marginDiff).toFixed(1)}%
                 </p>
-                <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider mt-1">vs Meta {config.desiredMargin}%</p>
+                <p className="label-metric">vs Meta {config.desiredMargin}%</p>
               </div>
             </div>
           </div>
 
           {/* Bloco 2 — Breakdown */}
           <div className="surface-card p-5 space-y-2">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Breakdown de Custos</p>
+            <p className="section-label mb-3">Breakdown de Custos</p>
             {costItems.map((item, i) => (
               <div key={i} className="flex items-center justify-between py-1">
                 <span className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -304,7 +304,7 @@ export default function ProductDetail() {
           {/* Bloco 3 — ROAS */}
           {!roas.margemInsuficiente && roas.roasEmpate && (
             <div className="surface-card p-5">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">ROAS de Referência (Ads)</p>
+              <p className="section-label mb-3">ROAS de Referência (Ads)</p>
               <div className="space-y-2">
                 {[
                   { label: 'Ponto de empate', value: roas.roasEmpate, color: 'text-destructive', bg: 'bg-destructive', w: 30 },
@@ -327,18 +327,18 @@ export default function ProductDetail() {
 
           {/* Bloco 4 — Channels */}
           <div className="surface-card p-5">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Comparativo de Canais</p>
+            <p className="section-label mb-3">Comparativo de Canais</p>
             <div className="grid grid-cols-2 gap-2">
               {allPlatformMargins.map(p => (
                 <div key={p.id} className={cn(
                   'bg-secondary/50 border rounded-lg px-3 py-2.5 flex items-center justify-between',
                   p.id === bestPlatform?.id ? 'border-primary/25' : 'border-border'
                 )}>
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    {p.id === bestPlatform?.id && <span className="text-primary text-[10px]">🏆</span>}
+                  <span className="text-small text-muted-foreground flex items-center gap-1">
+                    {p.id === bestPlatform?.id && <span className="text-primary text-micro">🏆</span>}
                     {p.name}
                   </span>
-                  <span className={cn('font-mono text-xs font-bold',
+                  <span className={cn('font-mono text-small font-bold',
                     p.margin >= config.desiredMargin ? 'text-success' :
                     p.margin >= 0 ? 'text-foreground' : 'text-destructive'
                   )}>
@@ -349,8 +349,8 @@ export default function ProductDetail() {
             </div>
             {bestPlatform && shopeeMargin && bestPlatform.id !== 'shopee' && (
               <div className="mt-3 bg-secondary/30 border border-border rounded-lg p-3">
-                <p className="text-xs font-semibold text-foreground">{bestPlatform.name} — {bestPlatform.margin.toFixed(1)}% de margem</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
+                <p className="text-small font-semibold text-foreground">{bestPlatform.name} — {bestPlatform.margin.toFixed(1)}% de margem</p>
+                <p className="text-small text-muted-foreground mt-0.5">
                   {fmt(((bestPlatform.margin - shopeeMargin.margin) / 100) * product.salePrice)}/un a mais que na Shopee
                 </p>
               </div>
@@ -359,7 +359,7 @@ export default function ProductDetail() {
 
           {/* Bloco 5 — Projection */}
           <div className="surface-card p-5">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Projeção Mensal</p>
+            <p className="section-label mb-3">Projeção Mensal</p>
             <div className="flex items-center gap-3 mb-3">
               <span className="text-sm text-muted-foreground flex-1">Vendas por mês</span>
               <input value={monthlySales} onChange={e => setMonthlySales(Math.max(1, Math.min(1000, parseInt(e.target.value) || 1)))}
@@ -369,32 +369,32 @@ export default function ProductDetail() {
             <div className="grid grid-cols-2 gap-2">
               <div className="bg-secondary/50 border border-border rounded-lg p-3">
                 <p className="font-mono text-base font-bold text-success">{fmt(projection.revenue)}</p>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Receita bruta</p>
+                <p className="label-metric text-muted-foreground">Receita bruta</p>
               </div>
               <div className="bg-secondary/50 border border-border rounded-lg p-3">
                 <p className="font-mono text-base font-bold text-destructive">{fmt(projection.costs)}</p>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Custos totais</p>
+                <p className="label-metric text-muted-foreground">Custos totais</p>
               </div>
               <div className="bg-secondary/50 border border-border rounded-lg p-3">
                 <p className={cn('font-mono text-base font-bold', projection.profit >= 0 ? 'text-success' : 'text-destructive')}>{fmt(projection.profit)}</p>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Lucro mensal</p>
+                <p className="label-metric text-muted-foreground">Lucro mensal</p>
               </div>
               <div className="bg-secondary/50 border border-border rounded-lg p-3">
                 <p className={cn('font-mono text-base font-bold', status.color)}>{projection.margin.toFixed(1)}%</p>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Margem</p>
+                <p className="label-metric text-muted-foreground">Margem</p>
               </div>
             </div>
           </div>
 
           {/* Bloco 6 — Stock */}
           <div className="surface-card p-5">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Estoque</p>
+            <p className="section-label mb-3">Estoque</p>
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Quantidade atual</span>
               <span className="font-mono text-2xl font-bold text-foreground">{product.stockQuantity} un.</span>
             </div>
             {product.stockQuantity <= (product.minStockQuantity ?? 5) && (
-              <p className="text-xs text-warning font-medium mt-1.5">
+              <p className="text-small text-warning font-medium mt-1.5">
                 ⚠ Abaixo do mínimo ({product.minStockQuantity ?? 5} un.)
               </p>
             )}

@@ -182,10 +182,20 @@
 }
 
 @layer components {
-  /* Section label */
+  /* Section label — uses micro scale */
   .section-label {
-    @apply uppercase text-[10px] tracking-[0.1em] font-medium;
+    @apply uppercase text-micro tracking-[0.08em] font-semibold;
     color: hsl(var(--text-3));
+  }
+
+  /* Label for form fields */
+  .label-field {
+    @apply text-micro uppercase tracking-[0.08em] font-semibold text-muted-foreground block mb-1.5;
+  }
+
+  /* Metric label below numbers */
+  .label-metric {
+    @apply text-micro uppercase tracking-[0.08em] font-semibold text-muted-foreground mt-1;
   }
 
   /* Backwards-compatible aliases */

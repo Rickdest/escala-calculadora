@@ -107,7 +107,7 @@ export default function Home() {
       className="w-full h-9 flex items-center gap-2 px-3 rounded-[8px] border-l-[3px] border-l-primary bg-surface-2 transition-colors hover:bg-surface-2/80 active:scale-[0.98] animate-fade-up"
     >
       <span className="text-xs">⚡</span>
-      <span className="text-[13px] text-text-2 flex-1 text-left">
+      <span className="text-body text-text-2 flex-1 text-left">
         Acesso expirou · <span className="text-primary font-semibold">Assinar R$39,90/mês →</span>
       </span>
     </button>
@@ -127,13 +127,13 @@ export default function Home() {
           <button key={product.id} className="w-full py-3 flex items-center gap-3 text-left" onClick={() => navigate('/products')}>
             <ProductThumbnail productId={product.id} productName={product.name} imageUrl={product.imageUrl} />
             <div className="flex-1 min-w-0">
-              <p className="text-[15px] font-medium text-foreground truncate">{product.name}</p>
+              <p className="text-subtitle font-medium text-foreground truncate">{product.name}</p>
               <div className="flex items-center gap-1.5 mt-1">
-                <span className={cn('font-mono text-[13px] font-mono-num', calc.netProfit >= 0 ? 'text-success' : 'text-danger')}>
+                <span className={cn('font-mono text-body font-mono-num', calc.netProfit >= 0 ? 'text-success' : 'text-danger')}>
                   Lucro R$ {calc.netProfit.toFixed(2).replace('.', ',')}
                 </span>
-                <span className="text-text-3 text-[13px]">·</span>
-                <span className={cn('font-mono text-[13px] font-bold font-mono-num',
+                <span className="text-text-3 text-body">·</span>
+                <span className={cn('font-mono text-body font-bold font-mono-num',
                   calc.realMargin >= 20 ? 'text-success' : calc.realMargin >= 12 ? 'text-warning' : 'text-danger'
                 )}>
                   {calc.realMargin.toFixed(1)}%
@@ -152,7 +152,7 @@ export default function Home() {
         <ShoppingBag className="w-7 h-7 text-text-3" />
       </div>
       <h3 className="font-semibold text-foreground mb-1">Nenhum produto ainda</h3>
-      <p className="text-sm text-text-2 mb-5 max-w-xs mx-auto">Adicione seu primeiro produto para começar a precificar</p>
+      <p className="text-body text-text-2 mb-5 max-w-xs mx-auto">Adicione seu primeiro produto para começar a precificar</p>
     </div>
   ) : null;
 
@@ -197,13 +197,13 @@ export default function Home() {
                 className="flex flex-col items-center gap-1.5 py-2.5 bg-surface-2 rounded-xl border border-border transition-colors active:scale-95 hover:border-primary/50"
               >
                 <div
-                  className={cn('w-9 h-9 rounded-lg flex items-center justify-center text-[13px] font-extrabold', mp.text)}
+                  className={cn('w-9 h-9 rounded-lg flex items-center justify-center text-body font-extrabold', mp.text)}
                   style={{ backgroundColor: mp.bg }}
                 >
                   {mp.sigla}
                 </div>
-                <span className="text-[10px] font-semibold text-text-2 text-center leading-tight">{mp.name}</span>
-                <span className="text-[9px] text-text-3">{mp.rate}</span>
+                <span className="text-micro normal-case tracking-normal font-semibold text-text-2 text-center leading-tight">{mp.name}</span>
+                <span className="text-micro normal-case tracking-normal text-text-3">{mp.rate}</span>
               </button>
             ))}
           </div>
@@ -225,7 +225,7 @@ export default function Home() {
                 )}>
                   <item.icon className="w-5 h-5" />
                 </div>
-                <span className="text-[11px] font-medium text-text-2 leading-tight text-center px-1 line-clamp-2">
+                <span className="text-small font-medium text-text-2 leading-tight text-center px-1 line-clamp-2">
                   {item.label}
                 </span>
               </button>
@@ -240,8 +240,8 @@ export default function Home() {
               <div className="flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-warning" />
                 <div className="text-left">
-                  <p className="text-[13px] font-semibold text-foreground">Estoque baixo</p>
-                  <p className="text-[11px] text-text-2">{estoqueStats.baixo} {estoqueStats.baixo === 1 ? 'variação' : 'variações'} abaixo do mínimo</p>
+                  <p className="text-body font-semibold text-foreground">Estoque baixo</p>
+                  <p className="text-small text-text-2">{estoqueStats.baixo} {estoqueStats.baixo === 1 ? 'variação' : 'variações'} abaixo do mínimo</p>
                 </div>
               </div>
               <ChevronRight className="w-4 h-4 text-text-3" />
@@ -284,7 +284,7 @@ export default function Home() {
                     >
                       <Plus className="w-4 h-4" /> Precificar produto
                     </button>
-                    <span className="text-[12px] text-white/60 mt-1 text-center">Calcule em segundos</span>
+                    <span className="text-small text-white/60 mt-1 text-center">Calcule em segundos</span>
                   </div>
                   <div className="flex flex-col items-center">
                     <button
@@ -293,7 +293,7 @@ export default function Home() {
                     >
                       <TrendingUp className="w-4 h-4" /> Análise de Ads
                     </button>
-                    <span className="text-[12px] text-white/60 mt-1 text-center">Importe seu relatório</span>
+                    <span className="text-small text-white/60 mt-1 text-center">Importe seu relatório</span>
                   </div>
                 </div>
               </div>
@@ -312,13 +312,13 @@ export default function Home() {
                     className="flex flex-col items-center gap-2 py-3 bg-surface-2 rounded-xl border border-border transition-colors hover:border-primary/50 hover:bg-surface-2/80 active:scale-95"
                   >
                     <div
-                      className={cn('w-10 h-10 rounded-lg flex items-center justify-center text-sm font-extrabold', mp.text)}
+                      className={cn('w-10 h-10 rounded-lg flex items-center justify-center text-body font-extrabold', mp.text)}
                       style={{ backgroundColor: mp.bg }}
                     >
                       {mp.sigla}
                     </div>
-                    <span className="text-[11px] font-semibold text-text-2 text-center leading-tight">{mp.name}</span>
-                    <span className="text-[10px] text-text-3 text-center">{mp.rateDesktop || mp.rate}</span>
+                    <span className="text-small font-semibold text-text-2 text-center leading-tight">{mp.name}</span>
+                    <span className="text-micro normal-case tracking-normal text-text-3 text-center">{mp.rateDesktop || mp.rate}</span>
                   </button>
                 ))}
               </div>
@@ -336,7 +336,7 @@ export default function Home() {
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                   <Bell className="w-4 h-4 text-primary" />
                 </div>
-                <h2 className="text-sm font-semibold text-foreground">Novidades</h2>
+                <h2 className="text-body font-semibold text-foreground">Novidades</h2>
               </div>
               <div className="space-y-3 flex-1">
                 {[
@@ -347,7 +347,7 @@ export default function Home() {
                 ].map((item, i) => (
                   <div key={i} className="flex items-start gap-2.5">
                     <span className="text-sm mt-0.5 flex-shrink-0">{item.emoji}</span>
-                    <p className="text-[13px] text-muted-foreground leading-snug">{item.text}</p>
+                    <p className="text-body text-muted-foreground leading-snug">{item.text}</p>
                   </div>
                 ))}
               </div>
@@ -367,8 +367,8 @@ export default function Home() {
                       <link.icon className={cn('w-4.5 h-4.5', link.color)} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-semibold text-foreground">{link.label}</p>
-                      <p className="text-[11px] text-text-3">{link.desc}</p>
+                      <p className="text-body font-semibold text-foreground">{link.label}</p>
+                      <p className="text-small text-text-3">{link.desc}</p>
                     </div>
                     <ArrowRight className="w-4 h-4 text-text-3 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </button>
@@ -382,8 +382,8 @@ export default function Home() {
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 text-warning" />
                   <div className="text-left">
-                    <p className="text-[13px] font-semibold text-foreground">Estoque baixo</p>
-                    <p className="text-[11px] text-text-2">{estoqueStats.baixo} {estoqueStats.baixo === 1 ? 'variação' : 'variações'} abaixo do mínimo</p>
+                  <p className="text-body font-semibold text-foreground">Estoque baixo</p>
+                  <p className="text-small text-text-2">{estoqueStats.baixo} {estoqueStats.baixo === 1 ? 'variação' : 'variações'} abaixo do mínimo</p>
                   </div>
                 </div>
                 <ChevronRight className="w-4 h-4 text-text-3" />

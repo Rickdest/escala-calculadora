@@ -199,14 +199,14 @@ export default function Settings() {
 
         {/* ═══════ SEÇÃO 1 — MINHA LOJA ═══════ */}
         <div className="space-y-1 pt-2">
-          <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Minha Loja</h3>
+          <h3 className="section-label">Minha Loja</h3>
         </div>
 
         {/* Margem Desejada */}
         <div className="glass-card p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Percent className="w-4 h-4 text-success" />
-            <Label htmlFor="desiredMargin" className="text-sm font-semibold">Margem Desejada</Label>
+            <Label htmlFor="desiredMargin" className="text-body font-semibold">Margem Desejada</Label>
           </div>
           <div className="relative">
             <Input
@@ -222,21 +222,21 @@ export default function Settings() {
             />
             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">%</span>
           </div>
-          <p className="text-xs text-muted-foreground">Produtos abaixo dessa margem serão destacados em vermelho</p>
+          <p className="text-small text-muted-foreground">Produtos abaixo dessa margem serão destacados em vermelho</p>
         </div>
 
         {/* Tipo de Vendedor */}
         <div className="glass-card p-4 space-y-3">
           <div className="flex items-center gap-2">
             <UserCheck className="w-4 h-4 text-primary" />
-            <Label className="text-sm font-semibold">Tipo de Vendedor</Label>
+            <Label className="text-body font-semibold">Tipo de Vendedor</Label>
           </div>
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => { setIsCpfSeller(true); setHasOver450Orders(false); }}
               className={cn(
-                'flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all border',
+                'flex-1 py-2.5 rounded-button text-body font-semibold transition-all border',
                 isCpfSeller
                   ? 'bg-primary text-primary-foreground border-primary'
                   : 'bg-secondary/50 text-muted-foreground border-transparent hover:bg-secondary'
@@ -248,7 +248,7 @@ export default function Settings() {
               type="button"
               onClick={() => { setIsCpfSeller(false); setHasOver450Orders(false); }}
               className={cn(
-                'flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all border',
+                'flex-1 py-2.5 rounded-button text-body font-semibold transition-all border',
                 !isCpfSeller
                   ? 'bg-primary text-primary-foreground border-primary'
                   : 'bg-secondary/50 text-muted-foreground border-transparent hover:bg-secondary'
@@ -260,8 +260,8 @@ export default function Settings() {
           {isCpfSeller && (
             <div className="flex items-center justify-between bg-secondary/30 rounded-xl p-3">
               <div>
-                <p className="text-xs font-semibold">Aplicar adicional de R$3,00</p>
-                <p className="text-[10px] text-muted-foreground">Marque se você teve mais de 450 pedidos nos últimos 90 dias.</p>
+                <p className="text-small font-semibold">Aplicar adicional de R$3,00</p>
+                <p className="text-micro normal-case tracking-normal text-muted-foreground">Marque se você teve mais de 450 pedidos nos últimos 90 dias.</p>
               </div>
               <Switch checked={hasOver450Orders} onCheckedChange={setHasOver450Orders} />
             </div>
@@ -270,8 +270,8 @@ export default function Settings() {
 
         {/* ═══════ SEÇÃO 2 — CUSTOS OPCIONAIS GLOBAIS ═══════ */}
         <div className="space-y-1 pt-4">
-          <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Custos Opcionais Globais</h3>
-          <p className="text-[10px] text-muted-foreground">Aplicados automaticamente em todos os produtos</p>
+          <h3 className="section-label">Custos Opcionais Globais</h3>
+          <p className="text-micro normal-case tracking-normal text-muted-foreground">Aplicados automaticamente em todos os produtos</p>
         </div>
 
         {/* Impostos */}
@@ -279,7 +279,7 @@ export default function Settings() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <DollarSign className="w-4 h-4 text-primary" />
-              <Label className="text-sm font-semibold">Impostos</Label>
+              <Label className="text-body font-semibold">Impostos</Label>
             </div>
             <Switch checked={enableTaxes} onCheckedChange={setEnableTaxes} />
           </div>
@@ -299,7 +299,7 @@ export default function Settings() {
                 />
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">%</span>
               </div>
-              <p className="text-xs text-muted-foreground">MEI, Simples Nacional, etc.</p>
+              <p className="text-small text-muted-foreground">MEI, Simples Nacional, etc.</p>
             </div>
           )}
         </div>
@@ -309,7 +309,7 @@ export default function Settings() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4 text-primary" />
-              <Label className="text-sm font-semibold">Comissão de Afiliados</Label>
+              <Label className="text-body font-semibold">Comissão de Afiliados</Label>
             </div>
             <Switch checked={enableAffiliateCommission} onCheckedChange={setEnableAffiliateCommission} />
           </div>
@@ -335,7 +335,7 @@ export default function Settings() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Megaphone className="w-4 h-4 text-primary" />
-              <Label className="text-sm font-semibold">Campanhas de Destaque</Label>
+              <Label className="text-body font-semibold">Campanhas de Destaque</Label>
             </div>
             <Switch checked={enableShopeeCampaigns} onCheckedChange={setEnableShopeeCampaigns} />
           </div>
@@ -361,7 +361,7 @@ export default function Settings() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Percent className="w-4 h-4 text-primary" />
-              <Label className="text-sm font-semibold">Shopee Acelera</Label>
+              <Label className="text-body font-semibold">Shopee Acelera</Label>
             </div>
             <Switch checked={enableAcelera} onCheckedChange={setEnableAcelera} />
           </div>
@@ -371,7 +371,7 @@ export default function Settings() {
                 type="button"
                 onClick={() => setShopeeAcelera('indicado')}
                 className={cn(
-                  'flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all border',
+                  'flex-1 py-2.5 rounded-button text-small font-semibold transition-all border',
                   shopeeAcelera === 'indicado'
                     ? 'bg-primary text-primary-foreground border-primary'
                     : 'bg-secondary/50 text-muted-foreground border-transparent hover:bg-secondary'
@@ -383,7 +383,7 @@ export default function Settings() {
                 type="button"
                 onClick={() => setShopeeAcelera('nao_indicado')}
                 className={cn(
-                  'flex-1 py-2.5 rounded-xl text-xs font-semibold transition-all border',
+                  'flex-1 py-2.5 rounded-button text-small font-semibold transition-all border',
                   shopeeAcelera === 'nao_indicado'
                     ? 'bg-primary text-primary-foreground border-primary'
                     : 'bg-secondary/50 text-muted-foreground border-transparent hover:bg-secondary'
@@ -415,19 +415,19 @@ export default function Settings() {
 
         {/* ═══════ SEÇÃO 3 — TABELA DE TAXAS DA SHOPEE ═══════ */}
         <div className="space-y-1 pt-4">
-          <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Taxas da Shopee</h3>
-          <p className="text-[10px] text-muted-foreground">Somente referência — aplicadas automaticamente</p>
+          <h3 className="section-label">Taxas da Shopee</h3>
+          <p className="text-micro normal-case tracking-normal text-muted-foreground">Somente referência — aplicadas automaticamente</p>
         </div>
 
         <div className="glass-card p-4 space-y-4">
           <div className="rounded-xl border border-border/50 overflow-hidden">
-            <div className="grid grid-cols-3 gap-0 text-[10px] uppercase tracking-wide font-semibold text-muted-foreground bg-secondary/50 px-3 py-2">
+            <div className="grid grid-cols-3 gap-0 text-micro uppercase tracking-wide font-semibold text-muted-foreground bg-secondary/50 px-3 py-2">
               <span>Faixa de Preço</span>
               <span className="text-center">Comissão</span>
               <span className="text-right">Taxa Fixa</span>
             </div>
             {SHOPEE_FEE_RANGES.map((range, i) => (
-              <div key={i} className="grid grid-cols-3 gap-0 px-3 py-2.5 border-t border-border/30 text-sm">
+              <div key={i} className="grid grid-cols-3 gap-0 px-3 py-2.5 border-t border-border/30 text-body">
                 <span className="font-medium text-foreground">{range.label}</span>
                 <span className="text-center text-muted-foreground">{range.percent}%</span>
                 <span className="text-right text-muted-foreground">R${range.fixed.toFixed(2)}</span>
@@ -436,7 +436,7 @@ export default function Settings() {
           </div>
           <div className="flex items-start gap-2 p-3 rounded-xl bg-primary/5 border border-primary/10">
             <Info className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-small text-muted-foreground">
               Tabela vigente desde março de 2026. A comissão já contempla a taxa de transação.
             </p>
           </div>
@@ -455,8 +455,8 @@ export default function Settings() {
             <div className="glass-card p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-foreground">Conta</p>
-                  <p className="text-xs text-muted-foreground">{user.email}</p>
+                  <p className="text-body font-semibold text-foreground">Conta</p>
+                  <p className="text-small text-muted-foreground">{user.email}</p>
                 </div>
                 <Button variant="destructive" size="sm" onClick={handleSignOut}>
                   <LogOut className="w-4 h-4 mr-2" />

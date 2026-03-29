@@ -36,7 +36,7 @@ export const BottomNavigation = React.forwardRef<HTMLElement, Record<string, nev
               />
               <span 
                 className={cn(
-                  'text-[10px] font-medium transition-colors duration-150',
+                  'text-micro normal-case tracking-normal transition-colors duration-150',
                   isActive ? 'text-primary' : 'text-text-3'
                 )}
               >
