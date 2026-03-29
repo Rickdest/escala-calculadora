@@ -607,7 +607,7 @@ export function RoasAnalysis() {
   const [adsDetailOpen, setAdsDetailOpen] = useState(false);
 
   return (
-    <div className="pb-6 md:pb-4 bg-background rounded-2xl p-4 md:p-6">
+    <div className="pb-6 md:pb-4 bg-background rounded-2xl px-0 py-2 md:p-6">
       <Tabs defaultValue="roas" className="w-full">
         {!adsDetailOpen && (
           <TabsList className="w-full grid grid-cols-2 h-12 mb-5 bg-card border border-border rounded-lg p-1">
