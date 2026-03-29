@@ -20,14 +20,14 @@ import { MARKETPLACE_SHORTCUTS } from '@/lib/marketplaceShortcuts';
 import type { Product } from '@/types/store';
 
 const toolItems = [
-  { icon: Calculator, label: 'Precificar', isAccent: true, action: 'addProduct' as const, iconBg: 'bg-primary', iconColor: 'text-white' },
-  { icon: ShoppingBag, label: 'Produtos', route: '/products', iconBg: 'bg-[hsl(210_50%_18%)]', iconColor: 'text-[hsl(210_100%_65%)]' },
-  { icon: BarChart2, label: 'Ads', route: '/roas', iconBg: 'bg-[hsl(130_30%_14%)]', iconColor: 'text-[hsl(130_50%_50%)]' },
-  { icon: GraduationCap, label: 'Educação', route: '/education', iconBg: 'bg-[hsl(270_30%_18%)]', iconColor: 'text-[hsl(270_80%_75%)]' },
-  { icon: Archive, label: 'Estoque', route: '/stock', iconBg: 'bg-[hsl(140_25%_14%)]', iconColor: 'text-[hsl(140_40%_55%)]' },
-  { icon: Percent, label: 'Taxas', route: '/settings', iconBg: 'bg-[hsl(50_30%_14%)]', iconColor: 'text-[hsl(45_80%_60%)]' },
-  { icon: Store, label: 'Lojas', route: '/stores', iconBg: 'bg-[hsl(0_25%_14%)]', iconColor: 'text-[hsl(0_60%_65%)]' },
-  { icon: UserCircle, label: 'Perfil', route: '/profile', iconBg: 'bg-[hsl(240_25%_14%)]', iconColor: 'text-[hsl(240_60%_65%)]' },
+  { icon: Calculator, label: 'Precificar', isAccent: true, action: 'addProduct' as const, iconBg: '', iconColor: '' },
+  { icon: ShoppingBag, label: 'Produtos', route: '/products', iconBg: '', iconColor: '' },
+  { icon: BarChart2, label: 'Ads', route: '/roas', iconBg: '', iconColor: '' },
+  { icon: GraduationCap, label: 'Educação', route: '/education', iconBg: '', iconColor: '' },
+  { icon: Archive, label: 'Estoque', route: '/stock', iconBg: '', iconColor: '' },
+  { icon: Percent, label: 'Taxas', route: '/settings', iconBg: '', iconColor: '' },
+  { icon: Store, label: 'Lojas', route: '/stores', iconBg: '', iconColor: '' },
+  { icon: UserCircle, label: 'Perfil', route: '/profile', iconBg: '', iconColor: '' },
 ];
 
 
