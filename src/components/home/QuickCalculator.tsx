@@ -86,7 +86,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
   return (
-    <div className="bg-surface-1 border border-primary/40 rounded-2xl p-4 animate-fade-up">
+    <div className="bg-card border border-primary/35 rounded-2xl p-4 animate-fade-up" style={{ boxShadow: '0 0 16px hsla(24, 95%, 53%, 0.08)' }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <p className="section-label">CALCULADORA RÁPIDA</p>

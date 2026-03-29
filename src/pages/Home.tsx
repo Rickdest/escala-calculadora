@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, ShoppingBag, TrendingUp, GraduationCap, Store, Boxes, UserCircle, Settings2, ChevronRight, AlertTriangle, ArrowRight, Image as ImageIcon, Bell } from 'lucide-react';
+import { Calculator, ShoppingBag, BarChart2, GraduationCap, Store, Archive, UserCircle, Percent, ChevronRight, AlertTriangle, ArrowRight, Image as ImageIcon, Bell, Plus, TrendingUp, Settings2, Boxes } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -20,14 +20,14 @@ import { MARKETPLACE_SHORTCUTS } from '@/lib/marketplaceShortcuts';
 import type { Product } from '@/types/store';
 
 const toolItems = [
-  { icon: Plus, label: 'Precificar', isAccent: true, action: 'addProduct' as const },
-  { icon: ShoppingBag, label: 'Produtos', route: '/products' },
-  { icon: TrendingUp, label: 'Ads', route: '/roas' },
-  { icon: GraduationCap, label: 'Educação', route: '/education' },
-  { icon: Boxes, label: 'Estoque', route: '/stock' },
-  { icon: Settings2, label: 'Taxas da Loja', route: '/settings' },
-  { icon: Store, label: 'Lojas', route: '/stores' },
-  { icon: UserCircle, label: 'Perfil', route: '/profile' },
+  { icon: Calculator, label: 'Precificar', isAccent: true, action: 'addProduct' as const, iconBg: 'bg-primary', iconColor: 'text-white' },
+  { icon: ShoppingBag, label: 'Produtos', route: '/products', iconBg: 'bg-[hsl(210_50%_18%)]', iconColor: 'text-[hsl(210_100%_65%)]' },
+  { icon: BarChart2, label: 'Ads', route: '/roas', iconBg: 'bg-[hsl(130_30%_14%)]', iconColor: 'text-[hsl(130_50%_50%)]' },
+  { icon: GraduationCap, label: 'Educação', route: '/education', iconBg: 'bg-[hsl(270_30%_18%)]', iconColor: 'text-[hsl(270_80%_75%)]' },
+  { icon: Archive, label: 'Estoque', route: '/stock', iconBg: 'bg-[hsl(140_25%_14%)]', iconColor: 'text-[hsl(140_40%_55%)]' },
+  { icon: Percent, label: 'Taxas', route: '/settings', iconBg: 'bg-[hsl(50_30%_14%)]', iconColor: 'text-[hsl(45_80%_60%)]' },
+  { icon: Store, label: 'Lojas', route: '/stores', iconBg: 'bg-[hsl(0_25%_14%)]', iconColor: 'text-[hsl(0_60%_65%)]' },
+  { icon: UserCircle, label: 'Perfil', route: '/profile', iconBg: 'bg-[hsl(240_25%_14%)]', iconColor: 'text-[hsl(240_60%_65%)]' },
 ];
 
 
@@ -122,13 +122,13 @@ export default function Home() {
           Ver Todos <ChevronRight className="w-3.5 h-3.5" />
         </button>
       </div>
-      <div className="divide-y divide-border">
+      <div className="divide-y divide-border/50">
         {topProducts.map(({ product, calc }) => (
           <button key={product.id} className="w-full py-3 flex items-center gap-3 text-left" onClick={() => navigate('/products')}>
             <ProductThumbnail productId={product.id} productName={product.name} imageUrl={product.imageUrl} />
             <div className="flex-1 min-w-0">
-              <p className="text-subtitle font-medium text-foreground truncate">{product.name}</p>
-              <div className="flex items-center gap-1.5 mt-1">
+              <p className="text-body font-medium text-foreground truncate">{product.name}</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
                 <span className={cn('font-mono text-body font-mono-num', calc.netProfit >= 0 ? 'text-success' : 'text-danger')}>
                   Lucro R$ {calc.netProfit.toFixed(2).replace('.', ',')}
                 </span>
@@ -140,6 +140,7 @@ export default function Home() {
                 </span>
               </div>
             </div>
+            <ChevronRight className="w-4 h-4 text-text-3 flex-shrink-0" />
           </button>
         ))}
       </div>
@@ -189,12 +190,12 @@ export default function Home() {
         {/* Outras plataformas */}
         <div className="animate-fade-up">
           <p className="section-label mb-3">Outras plataformas</p>
-          <div className="grid grid-cols-5 gap-2">
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
             {MARKETPLACE_SHORTCUTS.map((mp) => (
               <button
                 key={mp.tab}
                 onClick={() => navigate(`/calculadoras?tab=${mp.tab}`)}
-                className="flex flex-col items-center gap-1.5 py-2.5 bg-surface-2 rounded-xl border border-border transition-colors active:scale-95 hover:border-primary/50"
+                className="flex flex-col items-center gap-1.5 py-2.5 px-3 min-w-[66px] bg-card rounded-[14px] border border-border transition-colors active:scale-95 hover:border-primary/50"
               >
                 <div
                   className={cn('w-9 h-9 rounded-lg flex items-center justify-center text-body font-extrabold', mp.text)}
@@ -202,8 +203,8 @@ export default function Home() {
                 >
                   {mp.sigla}
                 </div>
-                <span className="text-micro normal-case tracking-normal font-semibold text-text-2 text-center leading-tight">{mp.name}</span>
-                <span className="text-micro normal-case tracking-normal text-text-3">{mp.rate}</span>
+                <span className="text-micro normal-case tracking-normal font-semibold text-text-2 text-center leading-tight whitespace-nowrap">{mp.name}</span>
+                <span className="text-micro normal-case tracking-normal text-text-3 whitespace-nowrap">{mp.rate}</span>
               </button>
             ))}
           </div>
@@ -217,15 +218,15 @@ export default function Home() {
               <button
                 key={item.label}
                 onClick={() => handleToolClick(item)}
-                className="flex flex-col items-center gap-1.5 py-2 transition-colors active:scale-95"
+                className="flex flex-col items-center gap-1.5 py-2.5 px-1.5 bg-card rounded-[14px] border border-border transition-colors active:scale-95"
               >
                 <div className={cn(
-                  'w-11 h-11 rounded-xl flex items-center justify-center',
-                  item.isAccent ? 'bg-primary text-primary-foreground' : 'bg-surface-2 text-text-2'
+                  'w-9 h-9 rounded-[10px] flex items-center justify-center',
+                  item.iconBg, item.iconColor
                 )}>
-                  <item.icon className="w-5 h-5" />
+                  <item.icon className="w-[18px] h-[18px]" />
                 </div>
-                <span className="text-small font-medium text-text-2 leading-tight text-center px-1 line-clamp-2">
+                <span className="text-[9px] font-medium text-text-2 leading-tight text-center line-clamp-1">
                   {item.label}
                 </span>
               </button>
