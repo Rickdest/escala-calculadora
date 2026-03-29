@@ -6,7 +6,7 @@ export default function Roas() {
   return (
     <AppLayout>
       <PageHeader title="Ads" subtitle="Análise de anúncios e ROAS" />
-      <div className="py-2 md:py-8">
+      <div className="py-1 md:py-8">
         <RoasAnalysis />
       </div>
     </AppLayout>
