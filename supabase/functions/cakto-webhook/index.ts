@@ -98,35 +98,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    const event = body.event;
+    const event = payload.event;
     console.log("Cakto webhook event:", event);
 
-    const customer = body.customer;
-    if (!customer?.email || typeof customer.email !== "string") {
-      return new Response(JSON.stringify({ error: "Missing customer email" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const email = customer.email.toLowerCase().trim();
-    if (!emailRegex.test(email) || email.length > 255) {
-      return new Response(JSON.stringify({ error: "Invalid email" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const email = payload.customer.email.toLowerCase().trim();
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const orderId = typeof body.id === "string" ? body.id.slice(0, 100) : null;
-    const refId = typeof body.refId === "string" ? body.refId.slice(0, 100) : null;
-    const subscriptionId = typeof body.subscription?.id === "string"
-      ? body.subscription.id.slice(0, 100) : null;
-    const planName = (
-      typeof body.product?.name === "string" ? body.product.name : "pro"
-    ).slice(0, 50);
+    const orderId = payload.id?.slice(0, 100) ?? null;
+    const refId = payload.refId?.slice(0, 100) ?? null;
+    const subscriptionId = payload.subscription?.id?.slice(0, 100) ?? null;
+    const planName = (payload.product?.name ?? "pro").slice(0, 50);
 
     const allowedEvents = [
       "purchase_approved",
