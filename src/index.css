@@ -310,26 +310,18 @@
     border-radius: var(--radius);
   }
 
-  /* Botões secundários/outline visíveis no tema claro */
-  html:not(.dark) button.border:not(.bg-primary):not(.bg-destructive):not(.bg-success),
-  html:not(.dark) button[class*="outline"]:not(.bg-primary):not(.bg-destructive):not(.bg-success),
-  html:not(.dark) button.bg-surface-2:not(.bg-primary):not(.bg-destructive):not(.bg-success),
-  html:not(.dark) button.bg-background:not(.bg-primary):not(.bg-destructive):not(.bg-success),
-  html:not(.dark) [role="button"].border:not(.bg-primary):not(.bg-destructive):not(.bg-success),
-  html:not(.dark) [role="button"][class*="outline"]:not(.bg-primary):not(.bg-destructive):not(.bg-success) {
+  /* Botões secundários/outline visíveis no tema claro — apenas botões com variant outline explícito */
+  html:not(.dark) button[data-variant="outline"]:not(.bg-primary):not(.bg-destructive):not(.bg-success),
+  html:not(.dark) [role="button"][data-variant="outline"]:not(.bg-primary):not(.bg-destructive):not(.bg-success) {
     background-color: hsl(0 0% 100%);
-    border: 1.5px solid hsl(11 60% 80%);
-    color: hsl(11 86% 42%);
-    font-weight: 600;
+    border: 1px solid hsl(0 0% 88%);
+    color: hsl(24 100% 45%);
+    font-weight: 500;
   }
 
-  html:not(.dark) button.border:not(.bg-primary):not(.bg-destructive):not(.bg-success):hover,
-  html:not(.dark) button[class*="outline"]:not(.bg-primary):not(.bg-destructive):not(.bg-success):hover,
-  html:not(.dark) button.bg-surface-2:not(.bg-primary):not(.bg-destructive):not(.bg-success):hover,
-  html:not(.dark) button.bg-background:not(.bg-primary):not(.bg-destructive):not(.bg-success):hover,
-  html:not(.dark) [role="button"].border:not(.bg-primary):not(.bg-destructive):not(.bg-success):hover,
-  html:not(.dark) [role="button"][class*="outline"]:not(.bg-primary):not(.bg-destructive):not(.bg-success):hover {
-    background-color: hsl(16 90% 96%);
+  html:not(.dark) button[data-variant="outline"]:not(.bg-primary):not(.bg-destructive):not(.bg-success):hover,
+  html:not(.dark) [role="button"][data-variant="outline"]:not(.bg-primary):not(.bg-destructive):not(.bg-success):hover {
+    background-color: hsl(0 0% 96%);
   }
 
   /* Bottom navigation */
