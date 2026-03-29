@@ -71,8 +71,20 @@ Deno.serve(async (req) => {
     // Parse body first — Cakto sends the secret inside the JSON payload
     const body = await req.json();
 
+    // Validate payload schema
+    const parsed = caktoPayloadSchema.safeParse(body);
+    if (!parsed.success) {
+      console.error("Invalid payload schema:", parsed.error.issues.map(i => i.message).join(", "));
+      return new Response(
+        JSON.stringify({ error: "Invalid payload" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const payload = parsed.data;
+
     // Validate secret from body (constant-time comparison)
-    const secret = body.fields?.secret || body.secret || "";
+    const secret = payload.fields?.secret || payload.secret || "";
     const encoder = new TextEncoder();
     const receivedBytes = encoder.encode(String(secret));
     const expectedBytes = encoder.encode(CAKTO_WEBHOOK_SECRET);
