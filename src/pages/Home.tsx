@@ -195,8 +195,7 @@ export default function Home() {
               <button
                 key={mp.tab}
                 onClick={() => navigate(`/calculadoras?tab=${mp.tab}`)}
-                className="flex flex-col items-center gap-1.5 py-2.5 px-3 min-w-[66px] rounded-[14px] transition-colors active:scale-95 hover:border-primary/50"
-                style={{ background: '#1a1a1a', border: '0.5px solid #252525' }}
+                className="flex flex-col items-center gap-1.5 py-2.5 px-3 min-w-[66px] rounded-[14px] transition-colors active:scale-95 hover:border-primary/50 bg-card border border-border"
               >
                 <div
                   className={cn('w-9 h-9 rounded-lg flex items-center justify-center text-body font-extrabold', mp.text)}
@@ -221,19 +220,17 @@ export default function Home() {
                 <button
                   key={item.label}
                   onClick={() => handleToolClick(item)}
-                  className="flex flex-col items-center gap-1.5 py-2.5 px-1.5 rounded-[14px] transition-colors active:scale-95"
-                  style={{ background: '#1a1a1a', border: '0.5px solid #252525' }}
+                  className="flex flex-col items-center gap-1.5 py-2.5 px-1.5 rounded-[14px] transition-colors active:scale-95 bg-card border border-border"
                 >
                   <div
-                    className="w-9 h-9 rounded-[10px] flex items-center justify-center"
-                    style={isAccent
-                      ? { background: 'rgba(232,93,0,0.18)', border: '0.5px solid rgba(232,93,0,0.3)' }
-                      : { background: '#222222', border: '0.5px solid #252525' }
-                    }
+                    className={cn(
+                      'w-9 h-9 rounded-[10px] flex items-center justify-center border',
+                      isAccent ? 'bg-primary/[0.18] border-primary/30' : 'bg-muted border-border'
+                    )}
                   >
-                    <item.icon className="w-[18px] h-[18px]" style={{ color: isAccent ? '#e85d00' : '#888888' }} />
+                    <item.icon className={cn('w-[18px] h-[18px]', isAccent ? 'text-primary' : 'text-muted-foreground')} />
                   </div>
-                  <span className="text-[9px] font-medium leading-tight text-center line-clamp-1" style={{ color: '#aaaaaa' }}>
+                  <span className="text-[9px] font-medium leading-tight text-center line-clamp-1 text-secondary-foreground">
                     {item.label}
                   </span>
                 </button>

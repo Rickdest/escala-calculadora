@@ -20,8 +20,8 @@ export const BottomNavigation = React.forwardRef<HTMLElement, Record<string, nev
       ref={ref}
       className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
       style={{
-        background: '#111111',
-        borderTop: '0.5px solid #252525',
+        background: 'hsl(var(--background))',
+        borderTop: '0.5px solid hsl(var(--border))',
         padding: '10px 8px calc(18px + env(safe-area-inset-bottom))',
       }}
     >
@@ -39,7 +39,7 @@ export const BottomNavigation = React.forwardRef<HTMLElement, Record<string, nev
               <div
                 className="flex items-center justify-center"
                 style={{
-                  background: isActive ? 'rgba(232, 93, 0, 0.12)' : 'transparent',
+                  background: isActive ? 'hsla(24, 100%, 45%, 0.12)' : 'transparent',
                   borderRadius: '12px',
                   padding: isActive ? '5px 12px' : '5px 12px',
                 }}
@@ -47,14 +47,14 @@ export const BottomNavigation = React.forwardRef<HTMLElement, Record<string, nev
                 <Icon
                   size={16}
                   strokeWidth={isActive ? 2.2 : 1.8}
-                  style={{ color: isActive ? '#e85d00' : '#3a3a3a' }}
+                  style={{ color: isActive ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))' }}
                 />
               </div>
               <span
                 style={{
                   fontSize: '10px',
                   fontWeight: isActive ? 500 : 400,
-                  color: isActive ? '#e85d00' : '#3a3a3a',
+                  color: isActive ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground))',
                   lineHeight: 1,
                 }}
               >
