@@ -195,7 +195,6 @@ export default function Home() {
               <button
                 key={mp.tab}
                 onClick={() => navigate(`/calculadoras?tab=${mp.tab}`)}
-                className="flex flex-col items-center gap-1.5 py-2.5 px-3 min-w-[66px] rounded-[14px] transition-colors active:scale-95 hover:border-primary/50"
                 className="flex flex-col items-center gap-1.5 py-2.5 px-3 min-w-[66px] rounded-[14px] transition-colors active:scale-95 hover:border-primary/50 bg-card border border-border"
               >
                 <div
