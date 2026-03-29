@@ -222,12 +222,10 @@ export default function Products() {
                     product={product}
                     calculation={calc}
                     config={currentStore.config}
-                    adsMetric={metricsMap[product.id] ? { ...metricsMap[product.id], spend: (metricsMap[product.id] as any).spend } : null}
                     onCardClick={(p) => setDetailProduct({ product: p, calc })}
                     onEdit={handleEdit}
                     onDuplicate={async (id) => { await duplicateProduct(id); }}
                     onDelete={async (id) => { await deleteProduct(id); }}
-                    onAdsUpdate={reloadAds}
                   />
                 ))}
               </div>
