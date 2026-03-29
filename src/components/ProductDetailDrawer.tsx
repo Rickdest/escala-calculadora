@@ -115,30 +115,6 @@ export function ProductDetailDrawer({
   const marginDiff = calculation.marginDifference;
   const fee = getShopeeFeeForPrice(product.salePrice);
 
-  // Edit preview calc
-  const editCalc = useMemo(() => {
-    const sp = parseFloat(editSale) || 0;
-    const cp = parseFloat(editCost) || 0;
-    const pkg = parseFloat(editPkg) || 0;
-    if (sp <= 0 || cp <= 0) return null;
-    const draft = { ...product, costPrice: cp, salePrice: sp, packagingCost: pkg, name: editName };
-    return calculateProductFn(draft, config);
-  }, [editName, editCost, editSale, editPkg, config, product]);
-
-  // Channels
-  const channelResults = useMemo(() => {
-    if (!product.outrosCanais) return [];
-    return calcOutrosCanais(product.outrosCanais, config.taxes);
-  }, [product.outrosCanais, config.taxes]);
-
-  const allPlatformMargins = useMemo(() => {
-    const taxes = config.taxes ?? 0;
-    return PLATFORM_FEES.map(p => ({
-      ...p,
-      margin: calcPlatformMargin(product.salePrice, product.costPrice, product.packagingCost, p.feePercent, p.feeFixed, taxes),
-    })).sort((a, b) => b.margin - a.margin);
-  }, [product, config]);
-
   const bestPlatform = allPlatformMargins[0];
   const shopeeMargin = allPlatformMargins.find(p => p.id === 'shopee');
 
@@ -193,14 +169,6 @@ export function ProductDetailDrawer({
       onClose();
     }
   };
-
-  // Projection
-  const projection = useMemo(() => {
-    const revenue = product.salePrice * monthlySales;
-    const costs = calculation.totalCosts * monthlySales;
-    const profit = calculation.netProfit * monthlySales;
-    return { revenue, costs, profit, margin: calculation.realMargin };
-  }, [product, calculation, monthlySales]);
 
   const tabs: { id: DrawerTab; label: string }[] = [
     { id: 'resumo', label: 'Resumo' },
