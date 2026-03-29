@@ -366,7 +366,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                           delete next.shein;
                           setOutrosCanais(next);
                         } else {
-                          setOutrosCanais(prev => ({ ...prev, shein: { costPrice: parseFloat(costPrice) || 0, salePrice: parseFloat(salePrice) || 0 } }));
+                          setOutrosCanais(prev => ({ ...prev, shein: { costPrice: parseFloat(costPrice) || 0, salePrice: parseFloat(salePrice) || 0, category: 'moda' as const, weightKg: 0.3 } }));
                         }
                       }}
                     />
