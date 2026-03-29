@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { saveLocalStockImage, getLocalStockImage } from '@/hooks/useEstoque';
 import { compressImage } from '@/lib/imageUtils';
+import { validateImageMagicBytes, validateImageSize } from '@/lib/imageValidation';
 
 const CATEGORIES = ['Moda', 'Calçados', 'Acessórios', 'Eletrônicos', 'Beleza', 'Casa e Decoração', 'Esporte', 'Alimentos', 'Outro'];
 
@@ -156,9 +157,17 @@ export function StockWizard({ onClose, editProduct }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [temVariacoes, attributes]);
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!validateImageSize(file)) {
+      toast.error('Imagem muito grande. Máximo 5MB.');
+      return;
+    }
+    if (!(await validateImageMagicBytes(file))) {
+      toast.error('Arquivo inválido. Use apenas JPG, PNG ou WebP.');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = async () => {
       const compressed = await compressImage(reader.result as string);
@@ -170,6 +179,14 @@ export function StockWizard({ onClose, editProduct }: Props) {
   const handleGroupImageSelect = async (groupValue: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!validateImageSize(file)) {
+      toast.error('Imagem muito grande. Máximo 5MB.');
+      return;
+    }
+    if (!(await validateImageMagicBytes(file))) {
+      toast.error('Arquivo inválido. Use apenas JPG, PNG ou WebP.');
+      return;
+    }
     const reader = new FileReader();
     reader.onload = async () => {
       const compressed = await compressImage(reader.result as string);

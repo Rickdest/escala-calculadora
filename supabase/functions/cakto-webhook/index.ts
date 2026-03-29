@@ -1,4 +1,25 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { z } from "https://esm.sh/zod@3.22.4";
+
+const caktoPayloadSchema = z.object({
+  event: z.string().min(1).max(100),
+  id: z.string().max(100).optional(),
+  refId: z.string().max(100).optional(),
+  fields: z.object({
+    secret: z.string().min(1),
+  }).optional(),
+  secret: z.string().optional(),
+  customer: z.object({
+    email: z.string().email().max(255),
+    name: z.string().max(200).optional(),
+  }),
+  product: z.object({
+    name: z.string().max(50).optional(),
+  }).optional(),
+  subscription: z.object({
+    id: z.string().max(100).optional(),
+  }).optional(),
+});
 
 function maskEmail(email: string): string {
   const [user, domain] = email.split('@');
@@ -50,8 +71,20 @@ Deno.serve(async (req) => {
     // Parse body first — Cakto sends the secret inside the JSON payload
     const body = await req.json();
 
+    // Validate payload schema
+    const parsed = caktoPayloadSchema.safeParse(body);
+    if (!parsed.success) {
+      console.error("Invalid payload schema:", parsed.error.issues.map(i => i.message).join(", "));
+      return new Response(
+        JSON.stringify({ error: "Invalid payload" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const payload = parsed.data;
+
     // Validate secret from body (constant-time comparison)
-    const secret = body.fields?.secret || body.secret || "";
+    const secret = payload.fields?.secret || payload.secret || "";
     const encoder = new TextEncoder();
     const receivedBytes = encoder.encode(String(secret));
     const expectedBytes = encoder.encode(CAKTO_WEBHOOK_SECRET);
@@ -65,35 +98,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    const event = body.event;
+    const event = payload.event;
     console.log("Cakto webhook event:", event);
 
-    const customer = body.customer;
-    if (!customer?.email || typeof customer.email !== "string") {
-      return new Response(JSON.stringify({ error: "Missing customer email" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const email = customer.email.toLowerCase().trim();
-    if (!emailRegex.test(email) || email.length > 255) {
-      return new Response(JSON.stringify({ error: "Invalid email" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const email = payload.customer.email.toLowerCase().trim();
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const orderId = typeof body.id === "string" ? body.id.slice(0, 100) : null;
-    const refId = typeof body.refId === "string" ? body.refId.slice(0, 100) : null;
-    const subscriptionId = typeof body.subscription?.id === "string"
-      ? body.subscription.id.slice(0, 100) : null;
-    const planName = (
-      typeof body.product?.name === "string" ? body.product.name : "pro"
-    ).slice(0, 50);
+    const orderId = payload.id?.slice(0, 100) ?? null;
+    const refId = payload.refId?.slice(0, 100) ?? null;
+    const subscriptionId = payload.subscription?.id?.slice(0, 100) ?? null;
+    const planName = (payload.product?.name ?? "pro").slice(0, 50);
 
     const allowedEvents = [
       "purchase_approved",

@@ -15,6 +15,7 @@ import { Slider } from '@/components/ui/slider';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn, getMarginStatus } from '@/lib/utils';
 import { compressImage } from '@/lib/imageUtils';
+import { validateImageMagicBytes, validateImageSize } from '@/lib/imageValidation';
 import { productSchema, validateForm } from '@/lib/validations';
 import { toast } from 'sonner';
 
@@ -181,16 +182,23 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const compressed = await compressImage(reader.result as string);
-        setImageUrl(compressed);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    if (!validateImageSize(file)) {
+      toast.error('Imagem muito grande. Máximo 5MB.');
+      return;
     }
+    if (!(await validateImageMagicBytes(file))) {
+      toast.error('Arquivo inválido. Use apenas JPG, PNG ou WebP.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const compressed = await compressImage(reader.result as string);
+      setImageUrl(compressed);
+    };
+    reader.readAsDataURL(file);
   };
 
   const isValid =

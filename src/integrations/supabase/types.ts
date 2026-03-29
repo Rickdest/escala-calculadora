@@ -784,7 +784,7 @@ export type Database = {
           trial_end: string | null
           trial_start: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           cakto_order_id?: string | null
@@ -799,7 +799,7 @@ export type Database = {
           trial_end?: string | null
           trial_start?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           cakto_order_id?: string | null
@@ -814,7 +814,7 @@ export type Database = {
           trial_end?: string | null
           trial_start?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: []
       }

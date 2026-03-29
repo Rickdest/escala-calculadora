@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { validateImageMagicBytes, validateImageSize } from '@/lib/imageValidation';
 
 interface Banner {
   id: string;
@@ -91,6 +92,14 @@ export default function AdminBanners() {
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (!validateImageSize(file)) {
+      toast.error('Imagem muito grande. Máximo 5MB.');
+      return;
+    }
+    if (!(await validateImageMagicBytes(file))) {
+      toast.error('Arquivo inválido. Use apenas JPG, PNG ou WebP.');
+      return;
+    }
     setUploading(true);
     try {
       const reader = new FileReader();
