@@ -1,8 +1,8 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
-import { X, Trash2, Share2, Sparkles, Save, Package } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { X, Trash2, Share2, Pencil, Package } from 'lucide-react';
 import { Product, ProductCalculation, StoreConfig, getShopeeFeeForPrice } from '@/types/store';
 import { calcFullRoas } from '@/lib/roasUtils';
-import { calculateProduct as calculateProductFn } from '@/lib/calculateProduct';
 import { calcOutrosCanais, getBestChannel, ChannelResult } from '@/lib/outrosCanaisUtils';
 import { cn, getMarginStatus } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -27,7 +27,7 @@ function calcPlatformMargin(sp: number, cp: number, pkg: number, fp: number, ff:
   return sp > 0 ? (net / sp) * 100 : 0;
 }
 
-type DrawerTab = 'resumo' | 'editar' | 'projecao' | 'canais';
+type DrawerTab = 'resumo' | 'projecao' | 'canais';
 
 interface ProductDetailDrawerProps {
   product: Product;
@@ -52,25 +52,10 @@ export function ProductDetailDrawer({
   onDelete,
   onSave,
 }: ProductDetailDrawerProps) {
+  const navigate = useNavigate();
   const [tab, setTab] = useState<DrawerTab>('resumo');
   const scrollRef = useRef<HTMLDivElement>(null);
   const [monthlySales, setMonthlySales] = useState(50);
-
-  // Edit form state
-  const [editName, setEditName] = useState(product.name);
-  const [editCost, setEditCost] = useState(product.costPrice.toString());
-  const [editSale, setEditSale] = useState(product.salePrice.toString());
-  const [editPkg, setEditPkg] = useState(product.packagingCost.toString());
-
-  // Edit preview calc
-  const editCalc = useMemo(() => {
-    const sp = parseFloat(editSale) || 0;
-    const cp = parseFloat(editCost) || 0;
-    const pkg = parseFloat(editPkg) || 0;
-    if (sp <= 0 || cp <= 0 || !config) return null;
-    const draft = { ...product, costPrice: cp, salePrice: sp, packagingCost: pkg, name: editName };
-    return calculateProductFn(draft, config);
-  }, [editName, editCost, editSale, editPkg, config, product]);
 
   // Channels
   const channelResults = useMemo(() => {
@@ -96,10 +81,6 @@ export function ProductDetailDrawer({
 
   // Reset on product change
   useEffect(() => {
-    setEditName(product.name);
-    setEditCost(product.costPrice.toString());
-    setEditSale(product.salePrice.toString());
-    setEditPkg(product.packagingCost.toString());
     setTab('resumo');
   }, [product.id]);
 
@@ -155,24 +136,13 @@ export function ProductDetailDrawer({
     }
   };
 
-  const handleSaveEdit = async () => {
-    if (onSave) {
-      await onSave({
-        name: editName,
-        costPrice: parseFloat(editCost) || product.costPrice,
-        salePrice: parseFloat(editSale) || product.salePrice,
-        packagingCost: parseFloat(editPkg) || 0,
-      });
-      setTab('resumo');
-    } else {
-      onEdit({ ...product, name: editName, costPrice: parseFloat(editCost) || product.costPrice, salePrice: parseFloat(editSale) || product.salePrice, packagingCost: parseFloat(editPkg) || 0 });
-      onClose();
-    }
+  const handleEditNavigate = () => {
+    onClose();
+    navigate(`/products/${product.id}/edit`);
   };
 
   const tabs: { id: DrawerTab; label: string }[] = [
     { id: 'resumo', label: 'Resumo' },
-    { id: 'editar', label: 'Editar' },
     { id: 'projecao', label: 'Projeção' },
     { id: 'canais', label: 'Canais' },
   ];
@@ -232,7 +202,7 @@ export function ProductDetailDrawer({
         </div>
 
         {/* Scrollable content */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto pb-36">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto pb-4">
           {/* ── TAB RESUMO ── */}
           {tab === 'resumo' && (
             <>
@@ -316,81 +286,6 @@ export function ProductDetailDrawer({
                 )}
               </div>
             </>
-          )}
-
-          {/* ── TAB EDITAR ── */}
-          {tab === 'editar' && (
-            <div className="px-4 py-3.5 space-y-3">
-              <div>
-                <label className="label-field">Nome do produto *</label>
-                <input
-                  value={editName}
-                  onChange={e => setEditName(e.target.value)}
-                  className="w-full h-[42px] bg-secondary border border-border rounded-input px-3 text-body text-foreground font-sans"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="label-field">Preço de custo *</label>
-                  <div className="flex items-center h-[42px] bg-secondary border border-border rounded-input px-3">
-                    <span className="text-muted-foreground font-mono text-body mr-1.5">R$</span>
-                    <input
-                      value={editCost}
-                      onChange={e => setEditCost(e.target.value)}
-                      type="number"
-                      className="flex-1 bg-transparent text-foreground font-mono text-subtitle font-medium outline-none"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="label-field">Preço de venda *</label>
-                  <div className="flex items-center h-[42px] bg-secondary border border-border rounded-input px-3">
-                    <span className="text-muted-foreground font-mono text-body mr-1.5">R$</span>
-                    <input
-                      value={editSale}
-                      onChange={e => setEditSale(e.target.value)}
-                      type="number"
-                      className="flex-1 bg-transparent text-foreground font-mono text-subtitle font-medium outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div>
-                <label className="label-field">Embalagem e insumos</label>
-                <div className="flex items-center h-[42px] bg-secondary border border-border rounded-input px-3">
-                  <span className="text-muted-foreground font-mono text-body mr-1.5">R$</span>
-                  <input
-                    value={editPkg}
-                    onChange={e => setEditPkg(e.target.value)}
-                    type="number"
-                    className="flex-1 bg-transparent text-foreground font-mono text-subtitle font-medium outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Preview card */}
-              {editCalc && (
-                <div className="bg-success/5 border border-success/20 rounded-card p-3">
-                  <p className="label-metric flex items-center gap-1.5 mb-2 text-success">
-                    📊 Prévia do Cálculo
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <p className="font-mono text-lg font-bold text-success">{fmt(editCalc.netProfit)}</p>
-                      <p className="label-metric text-muted-foreground">Lucro líquido</p>
-                    </div>
-                    <div>
-                      <p className="font-mono text-lg font-bold text-success">{editCalc.realMargin.toFixed(1)}%</p>
-                      <p className="label-metric text-muted-foreground">Margem real</p>
-                    </div>
-                  </div>
-                  <div className="border-t border-success/20 mt-2 pt-2 flex justify-between text-small text-muted-foreground">
-                    <span>Taxa Shopee (automática)</span>
-                    <span className="font-mono">{fmt(editCalc.totalShopeeFee)}</span>
-                  </div>
-                </div>
-              )}
-            </div>
           )}
 
           {/* ── TAB PROJEÇÃO ── */}
@@ -481,8 +376,8 @@ export function ProductDetailDrawer({
           )}
         </div>
 
-        {/* Footer */}
-        <div className="absolute bottom-0 left-0 right-0 p-3 pb-[calc(1.25rem+70px+env(safe-area-inset-bottom))] bg-gradient-to-t from-card via-card to-transparent flex gap-2">
+        {/* Footer — flex-shrink-0, NOT absolute/fixed */}
+        <div className="shrink-0 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-card border-t border-border flex gap-2">
           <button
             onClick={() => { onDelete(product.id); onClose(); }}
             className="h-11 px-3.5 rounded-button bg-destructive/10 text-destructive border border-destructive/20 flex items-center justify-center"
@@ -495,23 +390,13 @@ export function ProductDetailDrawer({
           >
             <Share2 className="w-4 h-4" />
           </button>
-          {tab === 'editar' ? (
-            <button
-              onClick={handleSaveEdit}
-              className="flex-[2] h-11 rounded-button bg-success text-white font-semibold text-body flex items-center justify-center gap-1.5"
-            >
-              <Save className="w-4 h-4" />
-              Salvar alterações
-            </button>
-          ) : (
-            <button
-              onClick={() => setTab('editar')}
-              className="flex-[2] h-11 rounded-button bg-primary text-primary-foreground font-semibold text-body flex items-center justify-center gap-1.5"
-            >
-              <Sparkles className="w-4 h-4" />
-              Editar produto
-            </button>
-          )}
+          <button
+            onClick={handleEditNavigate}
+            className="flex-[2] h-11 rounded-button bg-primary text-primary-foreground font-semibold text-body flex items-center justify-center gap-1.5"
+          >
+            <Pencil className="w-4 h-4" />
+            Editar produto
+          </button>
         </div>
       </div>
     </div>
