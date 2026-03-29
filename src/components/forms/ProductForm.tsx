@@ -15,6 +15,7 @@ import { Slider } from '@/components/ui/slider';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn, getMarginStatus } from '@/lib/utils';
 import { compressImage } from '@/lib/imageUtils';
+import { validateImageMagicBytes, validateImageSize } from '@/lib/imageValidation';
 import { productSchema, validateForm } from '@/lib/validations';
 import { toast } from 'sonner';
 

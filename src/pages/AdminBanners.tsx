@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { validateImageMagicBytes, validateImageSize } from '@/lib/imageValidation';
 
 interface Banner {
   id: string;
