@@ -110,7 +110,7 @@ export default function Auth() {
             Skalify
           </h1>
           <p className="text-[13px] leading-relaxed" style={{ color: '#888888' }}>
-            Calcule margem, ROAS e taxas de marketplace em segundos
+            Precificação inteligente e gestão de Ads orientada por dados
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             {featurePills.map(({ icon: Icon, label }) => (
