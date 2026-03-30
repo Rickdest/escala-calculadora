@@ -1,43 +1,30 @@
 
 
-## Redesign da Tela de Login — Estilo da Referência
+## Renomear App: Precify → Skalify + Novo Subtítulo na Login
 
-### Mudanças visuais (sem alterar funcionalidade)
+### Mudanças
 
-**Arquivo: `src/pages/Auth.tsx`**
+**Substituição global "Precify" → "Skalify"** em todos os arquivos (textos visíveis ao usuário). Keys de localStorage (`precify-theme`, `precify-current-store`, etc.) permanecem iguais para não quebrar dados existentes.
 
-**1. Header redesenhado**
-- "Precify" em branco (não laranja), ~28px bold
-- Subtítulo: "Calcule margem, ROAS e taxas de marketplace em segundos"
-- Abaixo: 4 pills/badges horizontais com ícones pequenos: "Margem real", "ROAS ideal", "Taxas auto", "Multi-canal" — fundo `rgba(255,255,255,0.06)`, borda `#252525`, texto `#ccc`
-- Remover pill "3 dias grátis · Sem cartão"
+**Arquivos afetados (~14):**
 
-**2. Background e Card**
-- Page bg: `#0D1117` (azul-escuro profundo como na imagem)
-- Card bg: `#111111` com borda `#252525`, border-radius 16px
+1. `index.html` — title, meta description, og:title, twitter:title → "Skalify"
+2. `src/pages/Auth.tsx` — h1 "Skalify", subtítulo → "Precificação inteligente e gestão de Ads orientada por dados", social proof "+200 vendedores já usam o Skalify"
+3. `src/pages/Home.tsx` — PageHeader title → "Skalify"
+4. `src/components/layout/Sidebar.tsx` — logo text "Skalify" (expanded), "S" (collapsed), WhatsApp URL text
+5. `src/components/layout/DesktopHeader.tsx` — fallback store name "Skalify"
+6. `src/components/SubscriptionModal.tsx` — "Desbloqueie o Skalify"
+7. `src/pages/Paywall.tsx` — alt text e heading "Skalify"
+8. `src/pages/Profile.tsx` — "Acesso completo ao Skalify"
+9. `src/pages/Settings.tsx` — WhatsApp URL text
+10. `src/lib/exportUtils.ts` — footer "| Skalify"
+11. `src/components/roas/ShareResult.tsx` — "Calculado com Skalify"
+12. `src/pages/ProductDetail.tsx` — "Calculado com Skalify"
+13. `src/components/ProductDetailDrawer.tsx` — "Calculado com Skalify"
+14. `src/components/home/BannerCarousel.tsx` — "Precifique" → manter (é verbo de ação, não nome da marca)
 
-**3. Tabs "Criar conta / Entrar"**
-- Estilo segmented: aba ativa com fundo sólido `#1a1a1a` e texto branco, inativa transparente com texto muted
-- Labels: "Criar conta" e "Entrar" (trocar "Já tenho conta" → "Entrar")
-
-**4. Inputs**
-- Manter labels uppercase 11px
-- Input bg `#1a1a1a`, borda `#252525`, focus border `#e85d00`
-- Placeholder mais visível
-
-**5. Botão submit**
-- Signup: "Criar conta gratuita →" (com seta), bg `#e85d00`, rounded-xl, h-12
-- Login: "Entrar →"
-
-**6. Social proof no rodapé**
-- Adicionar abaixo do botão Google: 3 círculos coloridos sobrepostos + "+200 vendedores já usam o Precify" em texto `#666`
-
-**7. Cores alinhadas aos tokens do app**
-- Usar `#111111`, `#1a1a1a`, `#222222`, `#252525`, `#e85d00` consistentemente
-
-### Não alterar
-- Lógica de auth (signIn, signUp, Google OAuth)
-- Validações, tradução de erros
-- Checkbox de termos
-- Fluxo de navegação
+**Não alterar:**
+- Keys de localStorage (evitar perda de dados)
+- Layout, funcionalidade, navegação
+- Cores, bordas, estilos
 
