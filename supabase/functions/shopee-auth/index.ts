@@ -8,20 +8,10 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-function getPartnerId(): number {
-  const raw = (Deno.env.get("SHOPEE_PARTNER_ID") || "").trim();
-  if (!/^\d+$/.test(raw)) {
-    throw new Error(`SHOPEE_PARTNER_ID is not a valid integer: "${raw}"`);
-  }
-  const id = parseInt(raw, 10);
-  if (id < 0 || id > 4294967295) {
-    throw new Error(`SHOPEE_PARTNER_ID out of range: ${id}`);
-  }
-  return id;
-}
+const SHOPEE_PARTNER_ID = 1231044;
 
 async function hmacSign(path: string, timestamp: number): Promise<string> {
-  const partnerId = getPartnerId();
+  const partnerId = SHOPEE_PARTNER_ID;
   const partnerKey = Deno.env.get("SHOPEE_PARTNER_KEY")!;
   const baseStr = `${partnerId}${path}${timestamp}`;
   const key = await crypto.subtle.importKey(
@@ -73,7 +63,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const partnerId = getPartnerId();
+    const partnerId = SHOPEE_PARTNER_ID;
     const { redirect_url } = await req.json();
     if (!redirect_url) {
       return new Response(JSON.stringify({ error: "redirect_url required" }), {
