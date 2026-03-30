@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingBag, Zap, RefreshCw, FileX, Loader2, CheckCircle2 } from 'lucide-react';
@@ -52,6 +52,9 @@ export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClo
             </div>
             <div>
               <DialogTitle className="text-base">Integração com Shopee</DialogTitle>
+              <DialogDescription className="sr-only">
+                Conecte sua loja Shopee para sincronizar dados automaticamente
+              </DialogDescription>
               {isAdmin && isConnected ? (
                 <Badge className="mt-1 bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-[10px]">
                   Conectada

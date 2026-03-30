@@ -7,6 +7,9 @@ import { toast } from 'sonner';
 
 const SHOPEE_ERROR_MESSAGES: Record<string, string> = {
   token_failed: 'Falha ao obter token da Shopee. Tente novamente.',
+  token_exchange_http_error: 'Erro HTTP na troca de token com a Shopee.',
+  token_parse_error: 'Resposta inválida da Shopee ao trocar token.',
+  token_upsert_failed: 'Erro ao salvar credenciais da Shopee no banco.',
   no_admin: 'Nenhum administrador encontrado para vincular a loja.',
   missing_params: 'Parâmetros de callback incompletos da Shopee.',
   wrong_sign: 'Assinatura inválida. Verifique as credenciais da Shopee.',
