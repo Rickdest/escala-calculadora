@@ -11,7 +11,7 @@ const corsHeaders = {
 const SHOPEE_PARTNER_ID = 1231044;
 
 async function hmacSign(path: string, timestamp: number): Promise<string> {
-  const partnerId = getPartnerId();
+  const partnerId = SHOPEE_PARTNER_ID;
   const partnerKey = Deno.env.get("SHOPEE_PARTNER_KEY")!;
   const baseStr = `${partnerId}${path}${timestamp}`;
   const key = await crypto.subtle.importKey(
@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const partnerId = getPartnerId();
+    const partnerId = SHOPEE_PARTNER_ID;
     const { redirect_url } = await req.json();
     if (!redirect_url) {
       return new Response(JSON.stringify({ error: "redirect_url required" }), {
