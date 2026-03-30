@@ -54,7 +54,7 @@ export function TrialExpiredBlock() {
         {/* Headline */}
         <div className="text-center space-y-2">
           <h1 className="text-foreground font-bold leading-tight" style={{ fontSize: '24px' }}>
-            Assine o Precify
+            Assine o Skalify
           </h1>
           <p className="text-muted-foreground leading-relaxed" style={{ fontSize: '14px' }}>
             Para acessar todas as ferramentas de precificação, análise de Ads e gestão da sua loja, assine agora.
