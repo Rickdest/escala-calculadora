@@ -1,74 +1,44 @@
 
-Objetivo
 
-Fazer a integração abrir a autenticação da Shopee de fato. Hoje o front já tenta redirecionar para a Shopee, mas a Shopee rejeita a URL antes do login porque a assinatura HMAC está inválida.
+## Diagnóstico final: SHOPEE_PARTNER_KEY incorreta
 
-Diagnóstico confirmado
+### O que os logs confirmam
 
-- O botão já segue o fluxo esperado “estilo Upseller”: `startOAuth()` chama o backend e faz `window.location.href = auth_url`.
-- Portanto, o problema não é faltar redirecionamento para o site da Shopee; o redirecionamento está sendo bloqueado pela própria Shopee.
-- A função `shopee-auth` já está usando:
-  - host de sandbox
-  - `partner_id=1231044`
-  - path `/api/v2/shop/auth_partner`
-- O erro atual mudou de `partner_id invalid` para `error_sign / Wrong sign`, então o bloqueio agora está na assinatura.
-- Os logs mostram `SHOPEE_PARTNER_KEY` com `keyLength: 13`, o que é um forte indício de key errada, incompleta, ou salva em formato incorreto.
-- `shopee-auth` já usa `.trim()`, mas `shopee-callback` e `shopee-sync` ainda não padronizam isso; mesmo corrigindo o login, o restante do fluxo pode quebrar depois.
+O erro nos logs da Edge Function é claro e direto:
 
-Plano de correção
+```
+SHOPEE_PARTNER_KEY looks invalid (length=13). Expected 30+ chars.
+```
 
-1. Centralizar a lógica Shopee
-- Criar um helper compartilhado para:
-  - ler `partner_id` e `partner_key`
-  - aplicar `trim()`
-  - validar vazio/formato
-  - gerar assinatura HMAC de forma única
-- Remover a duplicação entre `shopee-auth`, `shopee-callback` e `shopee-sync`.
+A key salva no backend tem apenas **13 caracteres**. Uma Partner Key válida da Shopee tem tipicamente **32+ caracteres**. O código está corretamente rejeitando essa key antes de tentar assinar.
 
-2. Endurecer validação e diagnóstico
-- Fazer o backend devolver erro claro quando a key estiver inválida ou suspeita.
-- Padronizar logs seguros com:
-  - endpoint
-  - base string
-  - tamanho da key
-  - prefixo mascarado
-- Evitar continuar o fluxo com credencial ruim.
+### O que NÃO precisa mudar no código
 
-3. Melhorar a UX do erro
-- Em `useShopeeToken` e no modal, exibir a mensagem real do backend em vez de toast genérico.
-- Em `Roas.tsx`, tratar estados distintos como:
-  - `wrong_sign`
-  - `token_failed`
-  - `no_admin`
-  - `unknown`
-- Isso vai deixar claro se o problema é credencial, callback ou permissão.
+- A lógica HMAC-SHA256 está correta (usa `crypto.subtle.sign` com a base string `partnerId + path + timestamp`)
+- O host de sandbox está correto (`partner.test-stable.shopeemobile.com`)
+- O Partner ID está hardcoded como `1231044` ✓
+- O fluxo OAuth (redirect → callback → token) está implementado corretamente
+- O helper compartilhado `_shared/shopee.ts` já centraliza tudo
 
-4. Fechar o fluxo OAuth completo
-- Confirmar o `redirect_url` do callback.
-- Padronizar `.trim()`/validação também na troca e refresh de token.
-- Garantir que, após autorização, o callback grave o token e volte para `/roas?shopee_connected=true`.
+### Única ação necessária
 
-5. Validar ponta a ponta
-- Testar `shopee-auth` até a URL abrir a tela de login/autorização da Shopee.
-- Validar o callback após a autorização.
-- Testar a sincronização de ads depois da conexão.
+1. **Deletar** o secret `SHOPEE_PARTNER_KEY` atual (valor com 13 chars)
+2. **Re-adicionar** com o valor completo da Partner Key do console Shopee Open Platform
+   - Acesse: Console Shopee → Detalhes do App → copie a **Partner Key** (também chamada de "Client Secret")
+   - A key correta deve ter 32+ caracteres (ex: `4b6a5c7d8e9f0a1b2c3d4e5f6a7b8c9d`)
 
-Dependência externa provável
+### Onde encontrar a key correta
 
-- Se, após a padronização do código, o erro continuar, a causa mais provável continuará sendo o valor salvo em `SHOPEE_PARTNER_KEY`.
-- Pelos logs atuais, essa é a hipótese principal.
-- Nesse caso, será necessário substituir a key pelo valor exato do painel da Shopee Open Platform e repetir o teste.
+No painel da Shopee Open Platform:
+- Acesse `open.shopee.com` → faça login
+- Vá em **Console** → selecione seu app
+- Na seção de detalhes, copie a **Partner Key / Client Secret**
+- Como está em modo desenvolvimento, use a **Test Partner Key** (não a Live Key)
 
-Arquivos a ajustar
+### Resultado após correção
 
-- `supabase/functions/shopee-auth/index.ts`
-- `supabase/functions/shopee-callback/index.ts`
-- `supabase/functions/shopee-sync/index.ts`
-- `src/hooks/useShopeeToken.ts`
-- `src/pages/Roas.tsx`
+- A validação `key.length < 20` passa
+- O HMAC é gerado corretamente
+- A URL de autorização redireciona para a tela de login da Shopee (estilo Upseller)
+- Após o vendedor autorizar, o callback salva o token e redireciona para `/roas?shopee_connected=true`
 
-Resultado esperado
-
-- Ao clicar em “Conectar Loja Shopee”, o app abre a autenticação da Shopee em vez de mostrar `Wrong sign`.
-- Após autorizar, o usuário volta para o app com a loja conectada.
-- Se houver credencial inválida, o app passa a mostrar a causa correta em vez de erro genérico.
