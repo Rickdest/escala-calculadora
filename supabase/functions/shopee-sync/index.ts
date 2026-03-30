@@ -1,5 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const SHOPEE_HOST = "https://partner.test-stable.shopeemobile.com";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -24,11 +26,11 @@ async function hmacSign(path: string, timestamp: number, accessToken: string, sh
 }
 
 async function shopeeGet(path: string, accessToken: string, shopId: string, extraParams: Record<string, string> = {}) {
-  const partnerId = Deno.env.get("SHOPEE_PARTNER_ID")!;
+  const partnerId = Number(Deno.env.get("SHOPEE_PARTNER_ID")!);
   const timestamp = Math.floor(Date.now() / 1000);
   const sign = await hmacSign(path, timestamp, accessToken, shopId);
 
-  let url = `https://partner.shopeemobile.com${path}?partner_id=${parseInt(partnerId, 10)}&timestamp=${timestamp}&sign=${sign}&access_token=${accessToken}&shop_id=${shopId}`;
+  let url = `${SHOPEE_HOST}${path}?partner_id=${partnerId}&timestamp=${timestamp}&sign=${sign}&access_token=${accessToken}&shop_id=${shopId}`;
   for (const [k, v] of Object.entries(extraParams)) {
     url += `&${k}=${encodeURIComponent(v)}`;
   }
@@ -57,15 +59,14 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: corsHeaders,
       });
     }
-    const userId = claimsData.claims.sub as string;
+    const userId = user.id;
 
     const { data: isAdmin } = await supabase.rpc("has_role", { _role: "admin" });
     if (!isAdmin) {
@@ -75,7 +76,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Get stored token
     const { data: tokens } = await supabase
       .from("shopee_tokens")
       .select("*")
@@ -93,13 +93,11 @@ Deno.serve(async (req) => {
     const shopId = String(shopeeToken.shop_id);
     const accessToken = shopeeToken.access_token;
 
-    // Check if token is expired and refresh if needed
     const tokenAge = (Date.now() - new Date(shopeeToken.token_created_at).getTime()) / 1000;
     let currentAccessToken = accessToken;
 
     if (tokenAge > (shopeeToken.expire_in - 300)) {
-      // Refresh token
-      const partnerId = Deno.env.get("SHOPEE_PARTNER_ID")!;
+      const partnerId = Number(Deno.env.get("SHOPEE_PARTNER_ID")!);
       const partnerKey = Deno.env.get("SHOPEE_PARTNER_KEY")!;
       const refreshPath = "/api/v2/auth/access_token/get";
       const timestamp = Math.floor(Date.now() / 1000);
@@ -116,18 +114,15 @@ Deno.serve(async (req) => {
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("");
 
-      const refreshUrl = new URL(`https://partner.shopeemobile.com${refreshPath}`);
-      refreshUrl.searchParams.set("partner_id", partnerId);
-      refreshUrl.searchParams.set("timestamp", String(timestamp));
-      refreshUrl.searchParams.set("sign", sign);
+      const refreshUrl = `${SHOPEE_HOST}${refreshPath}?partner_id=${partnerId}&timestamp=${timestamp}&sign=${sign}`;
 
-      const refreshRes = await fetch(refreshUrl.toString(), {
+      const refreshRes = await fetch(refreshUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           refresh_token: shopeeToken.refresh_token,
           shop_id: Number(shopId),
-          partner_id: Number(partnerId),
+          partner_id: partnerId,
         }),
       });
 
@@ -135,7 +130,6 @@ Deno.serve(async (req) => {
       if (refreshData.access_token) {
         currentAccessToken = refreshData.access_token;
 
-        // Update token in DB using service role
         const supabaseAdmin = createClient(
           Deno.env.get("SUPABASE_URL")!,
           Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
@@ -153,8 +147,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fetch ads data from Shopee
-    // Using the marketing/ads endpoint
     const adsData = await shopeeGet(
       "/api/v2/marketing/get_shop_campaigns",
       currentAccessToken,
