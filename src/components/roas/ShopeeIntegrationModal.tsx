@@ -64,8 +64,8 @@ export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClo
             </div>
           </div>
         </DialogHeader>
+        <p id="shopee-modal-desc" className="sr-only">Modal de integração com a Shopee</p>
 
-        {isAdmin ? (
           <>
             {isConnected ? (
               <div className="space-y-3">
