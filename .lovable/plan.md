@@ -1,69 +1,43 @@
 
 
-## Drawer de Produto — Layout com 2 Abas (Info + Editar)
+## Redesign da Tela de Login — Estilo da Referência
 
-### Mudança
-Trocar o scroll único atual por 2 abas: **📋 Informações** (somente leitura) e **✏ Editar** (formulário). Header + métricas ficam fixos acima das abas.
+### Mudanças visuais (sem alterar funcionalidade)
 
-### Estrutura
+**Arquivo: `src/pages/Auth.tsx`**
 
-```text
-┌─ Header (thumb + nome + preço + ✕)
-├─ Badge status (Lucrativo / Prejuízo)
-├─ Métricas (Lucro | Margem | vs Meta)
-├─ [📋 Informações] [✏ Editar]  ← abas
-│
-│  ABA INFO (scroll):
-│   ├─ Breakdown de Custos
-│   ├─ ROAS de Referência
-│   ├─ Margem por Canal + link "Editar taxas ✎"
-│   ├─ Projeção Mensal (slider)
-│   └─ Estoque
-│
-│  ABA EDITAR (scroll):
-│   ├─ Dados do Produto (nome, custo|venda 2cols, embalagem)
-│   ├─ Preview live (lucro, margem, ROAS emp.)
-│   ├─ Taxas por Canal (cada canal com input % editável)
-│   └─ Custos opcionais (collapsible)
-│
-├─ Footer Info:  🗑 ↗ [✏ Editar produto] (laranja)
-└─ Footer Edit:  🗑 ↗ [💾 Salvar alterações] (verde)
-```
+**1. Header redesenhado**
+- "Precify" em branco (não laranja), ~28px bold
+- Subtítulo: "Calcule margem, ROAS e taxas de marketplace em segundos"
+- Abaixo: 4 pills/badges horizontais com ícones pequenos: "Margem real", "ROAS ideal", "Taxas auto", "Multi-canal" — fundo `rgba(255,255,255,0.06)`, borda `#252525`, texto `#ccc`
+- Remover pill "3 dias grátis · Sem cartão"
 
-### Detalhes técnicos — `src/components/ProductDetailDrawer.tsx`
+**2. Background e Card**
+- Page bg: `#0D1117` (azul-escuro profundo como na imagem)
+- Card bg: `#111111` com borda `#252525`, border-radius 16px
 
-**1. Estado de aba**
-- Adicionar `const [activeTab, setActiveTab] = useState<'info'|'edit'>('info')`
+**3. Tabs "Criar conta / Entrar"**
+- Estilo segmented: aba ativa com fundo sólido `#1a1a1a` e texto branco, inativa transparente com texto muted
+- Labels: "Criar conta" e "Entrar" (trocar "Já tenho conta" → "Entrar")
 
-**2. Abas visuais**
-- Após métricas, inserir row com 2 abas estilo underline (borda inferior laranja na ativa, texto `text-muted-foreground` na inativa)
-- Estilo: `border-b-2 border-primary` na ativa, `border-transparent` na inativa
+**4. Inputs**
+- Manter labels uppercase 11px
+- Input bg `#1a1a1a`, borda `#252525`, focus border `#e85d00`
+- Placeholder mais visível
 
-**3. Aba Info** — mover conteúdo existente (breakdown, ROAS, canais read-only, projeção, estoque) para dentro de `{activeTab === 'info' && (...)}`
-- Na seção "Margem por Canal", adicionar link "Editar taxas ✎" que chama `setActiveTab('edit')`
+**5. Botão submit**
+- Signup: "Criar conta gratuita →" (com seta), bg `#e85d00`, rounded-xl, h-12
+- Login: "Entrar →"
 
-**4. Aba Editar** — dentro de `{activeTab === 'edit' && (...)}`
-- Seção "Dados do Produto": nome (full width), custo|venda (grid 2 cols), embalagem
-- Preview live (card verde com lucro, margem, ROAS empate) — já existe, reutilizar
-- Seção "Taxas por Canal": listar cada plataforma com nome, sub-info, e input de % editável
-  - Shopee: mostrar taxa fixa das configurações (não editável aqui, link para config)
-  - Outros canais: input `%` editável por canal
-  - Precisa de estado para fees editáveis por canal (inicializado dos PLATFORM_FEES defaults)
-- Seção "Custos opcionais": collapsible placeholder
+**6. Social proof no rodapé**
+- Adicionar abaixo do botão Google: 3 círculos coloridos sobrepostos + "+200 vendedores já usam o Precify" em texto `#666`
 
-**5. Footer condicional**
-- `activeTab === 'info'`: botão delete + share + "✏ Editar produto" (bg-primary) que chama `setActiveTab('edit')`
-- `activeTab === 'edit'`: botão delete + share + "💾 Salvar alterações" (bg-success, disabled se !hasChanges)
+**7. Cores alinhadas aos tokens do app**
+- Usar `#111111`, `#1a1a1a`, `#222222`, `#252525`, `#e85d00` consistentemente
 
-**6. Remover** a seção inline de edição com borda laranja (linhas 219-293) — os campos agora vivem na aba Editar
-
-### Campos no estilo do HTML
-- Labels: `text-micro uppercase text-muted-foreground` (9px, tracking wide)
-- Inputs: `bg-secondary border border-border rounded-lg h-[38px] px-3 font-mono text-body`
-- Focus: `focus:border-primary focus:shadow-[0_0_0_2px_rgba(249,115,22,0.1)]`
-- Grid 2 cols para Custo|Venda
-- Prefixo "R$" ou "%" dentro do input como span muted
-
-### Arquivo modificado
-- `src/components/ProductDetailDrawer.tsx` — reestruturação completa do conteúdo em 2 abas
+### Não alterar
+- Lógica de auth (signIn, signUp, Google OAuth)
+- Validações, tradução de erros
+- Checkbox de termos
+- Fluxo de navegação
 
