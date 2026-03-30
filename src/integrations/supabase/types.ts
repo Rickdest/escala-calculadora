@@ -671,6 +671,42 @@ export type Database = {
         }
         Relationships: []
       }
+      shopee_tokens: {
+        Row: {
+          access_token: string
+          created_at: string
+          expire_in: number
+          id: string
+          refresh_token: string
+          shop_id: number
+          token_created_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          expire_in?: number
+          id?: string
+          refresh_token: string
+          shop_id: number
+          token_created_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          expire_in?: number
+          id?: string
+          refresh_token?: string
+          shop_id?: number
+          token_created_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       stores: {
         Row: {
           affiliate_commission: number | null

@@ -5,3 +5,12 @@ verify_jwt = false
 
 [functions.check-subscription]
 verify_jwt = false
+
+[functions.shopee-auth]
+verify_jwt = false
+
+[functions.shopee-callback]
+verify_jwt = false
+
+[functions.shopee-sync]
+verify_jwt = false
