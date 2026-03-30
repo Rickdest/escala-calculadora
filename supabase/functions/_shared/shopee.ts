@@ -1,22 +1,34 @@
 // Shared Shopee configuration and HMAC signing logic
-// Used by shopee-auth, shopee-callback, and shopee-sync
+// Official Shopee API v2 signing spec
 
 export const SHOPEE_HOST = "https://partner.test-stable.shopeemobile.com";
 
-const SANDBOX_PARTNER_ID = 1231044;
-const SANDBOX_PARTNER_KEY = "shpk764a7272526b4d7a5664794d744a57494d485650664e5a6778635968514d";
-
-export function getPartnerId(): number {
+export const PARTNER_ID: number = (() => {
   const envId = (Deno.env.get("SHOPEE_PARTNER_ID") || "").trim();
   if (envId && /^\d+$/.test(envId)) {
-    console.log(`getPartnerId: source=env, value=${envId}`);
+    console.log(`[SHOPEE] partner_id source=env, value=${envId}`);
     return Number(envId);
   }
-  console.log(`getPartnerId: source=SANDBOX_FALLBACK, value=${SANDBOX_PARTNER_ID}`);
-  return SANDBOX_PARTNER_ID;
-}
+  console.log(`[SHOPEE] partner_id source=SANDBOX_FALLBACK, value=1231044`);
+  return 1231044;
+})();
 
-export const SHOPEE_PARTNER_ID = getPartnerId();
+// Alias for backward compat
+export const SHOPEE_PARTNER_ID = PARTNER_ID;
+
+function getPartnerKey(): string {
+  const key = (Deno.env.get("SHOPEE_KEY") || "").trim();
+  if (key && key.length >= 20) {
+    console.log(`[SHOPEE] partner_key source=SHOPEE_KEY, length=${key.length}`);
+    return key;
+  }
+  const keyOld = (Deno.env.get("SHOPEE_PARTNER_KEY") || "").trim();
+  if (keyOld && keyOld.length >= 20) {
+    console.log(`[SHOPEE] partner_key source=SHOPEE_PARTNER_KEY, length=${keyOld.length}`);
+    return keyOld;
+  }
+  throw new Error("SHOPEE_KEY secret não configurado ou inválido. Configure no Supabase.");
+}
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -24,94 +36,75 @@ export const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-export function getPartnerKey(): string {
-  const rawNew = (Deno.env.get("SHOPEE_KEY") || "").trim();
-  const rawOld = (Deno.env.get("SHOPEE_PARTNER_KEY") || "").trim();
+/**
+ * Official Shopee API v2 HMAC-SHA256 signing.
+ *
+ * Auth URL (no access_token):
+ *   base_string = partner_id + path + timestamp
+ *
+ * Authenticated calls:
+ *   base_string = partner_id + path + timestamp + access_token + shop_id
+ */
+export async function generateSign(
+  path: string,
+  timestamp: number,
+  accessToken?: string,
+  shopId?: number | string
+): Promise<string> {
+  const partnerKey = getPartnerKey();
 
-  if (rawNew && rawNew.length >= 20) {
-    console.log(`getPartnerKey: source=SHOPEE_KEY, length=${rawNew.length}`);
-    return rawNew;
+  let baseString = `${PARTNER_ID}${path}${timestamp}`;
+  if (accessToken && shopId) {
+    baseString += `${accessToken}${shopId}`;
   }
-  if (rawOld && rawOld.length >= 20) {
-    console.log(`getPartnerKey: source=SHOPEE_PARTNER_KEY, length=${rawOld.length}`);
-    return rawOld;
-  }
 
-  console.log(`getPartnerKey: source=SANDBOX_FALLBACK, length=${SANDBOX_PARTNER_KEY.length}`);
-  return SANDBOX_PARTNER_KEY;
-}
+  console.log("[SHOPEE DEBUG] path:", path);
+  console.log("[SHOPEE DEBUG] timestamp:", timestamp);
+  console.log("[SHOPEE DEBUG] base_string:", baseString);
+  console.log("[SHOPEE DEBUG] base_string_length:", baseString.length);
+  console.log("[SHOPEE DEBUG] key_length:", partnerKey.length);
+  console.log("[SHOPEE DEBUG] key_prefix:", partnerKey.substring(0, 8) + "***");
 
-async function hmacSha256(key: string, message: string): Promise<string> {
+  const keyData = new TextEncoder().encode(partnerKey);
+  const msgData = new TextEncoder().encode(baseString);
+
   const cryptoKey = await crypto.subtle.importKey(
     "raw",
-    new TextEncoder().encode(key),
+    keyData,
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"]
   );
-  const sig = await crypto.subtle.sign(
-    "HMAC",
-    cryptoKey,
-    new TextEncoder().encode(message)
-  );
-  return Array.from(new Uint8Array(sig))
+
+  const signature = await crypto.subtle.sign("HMAC", cryptoKey, msgData);
+  const sign = Array.from(new Uint8Array(signature))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
+
+  console.log("[SHOPEE DEBUG] sign:", sign);
+  return sign;
 }
 
-/**
- * Sign for /api/v2/shop/auth_partner — base string: partnerId + path + timestamp
- * Note: Shopee docs say auth_partner uses the SAME format as other endpoints.
- */
-export async function hmacSign(
-  path: string,
-  timestamp: number,
-  accessToken = "",
-  shopId = ""
-): Promise<string> {
-  const partnerKey = getPartnerKey();
-  const partnerId = SHOPEE_PARTNER_ID;
-  const baseStr = `${partnerId}${path}${timestamp}${accessToken}${shopId}`;
-
-  console.log("HMAC sign:", {
-    path,
-    timestamp,
-    baseStrLength: baseStr.length,
-    keyLength: partnerKey.length,
-    keyPrefix: partnerKey.substring(0, 8) + "***",
-    hasAccessToken: !!accessToken,
-    hasShopId: !!shopId,
-  });
-
-  return hmacSha256(partnerKey, baseStr);
-}
+// Legacy aliases
+export const hmacSign = generateSign;
 
 /**
- * Special signing for auth_partner: partnerId + path + timestamp
- * Some sandbox environments need only partnerId + timestamp (no path).
- * We try BOTH and return two URLs so the caller can pick.
+ * Build the Shopee OAuth authorization URL.
+ * base_string for auth_partner = partner_id + path + timestamp (NO access_token)
  */
-export async function signAuthPartner(timestamp: number): Promise<{ withPath: string; withoutPath: string }> {
-  const partnerKey = getPartnerKey();
-  const partnerId = SHOPEE_PARTNER_ID;
+export async function getAuthUrl(redirectUrl: string): Promise<string> {
+  const path = "/api/v2/shop/auth_partner";
+  const timestamp = Math.floor(Date.now() / 1000);
+  const sign = await generateSign(path, timestamp);
 
-  const baseWithPath = `${partnerId}/api/v2/shop/auth_partner${timestamp}`;
-  const baseWithoutPath = `${partnerId}${timestamp}`;
-
-  console.log("signAuthPartner:", {
-    timestamp,
-    partnerId,
-    baseWithPathLen: baseWithPath.length,
-    baseWithoutPathLen: baseWithoutPath.length,
-    keyPrefix: partnerKey.substring(0, 8) + "***",
+  const params = new URLSearchParams({
+    partner_id: String(PARTNER_ID),
+    timestamp: String(timestamp),
+    sign,
+    redirect: redirectUrl,
   });
 
-  const [signWithPath, signWithoutPath] = await Promise.all([
-    hmacSha256(partnerKey, baseWithPath),
-    hmacSha256(partnerKey, baseWithoutPath),
-  ]);
-
-  return { withPath: signWithPath, withoutPath: signWithoutPath };
+  return `${SHOPEE_HOST}${path}?${params.toString()}`;
 }
 
 /**
@@ -120,24 +113,26 @@ export async function signAuthPartner(timestamp: number): Promise<{ withPath: st
 export async function shopeeGet(
   path: string,
   accessToken: string,
-  shopId: string,
+  shopId: string | number,
   extraParams: Record<string, string> = {}
 ) {
   const timestamp = Math.floor(Date.now() / 1000);
-  const sign = await hmacSign(path, timestamp, accessToken, shopId);
+  const sign = await generateSign(path, timestamp, accessToken, Number(shopId));
 
-  let url = `${SHOPEE_HOST}${path}?partner_id=${SHOPEE_PARTNER_ID}&timestamp=${timestamp}&sign=${sign}&access_token=${accessToken}&shop_id=${shopId}`;
-  for (const [k, v] of Object.entries(extraParams)) {
-    url += `&${k}=${encodeURIComponent(v)}`;
-  }
+  const params = new URLSearchParams({
+    partner_id: String(PARTNER_ID),
+    timestamp: String(timestamp),
+    sign,
+    access_token: accessToken,
+    shop_id: String(shopId),
+    ...extraParams,
+  });
 
+  const url = `${SHOPEE_HOST}${path}?${params.toString()}`;
   const res = await fetch(url);
   return res.json();
 }
 
-/**
- * Build an error JSON response with CORS headers.
- */
 export function errorResponse(message: string, status = 400): Response {
   return new Response(JSON.stringify({ error: message }), {
     status,
@@ -145,9 +140,6 @@ export function errorResponse(message: string, status = 400): Response {
   });
 }
 
-/**
- * Build a success JSON response with CORS headers.
- */
 export function jsonResponse(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
