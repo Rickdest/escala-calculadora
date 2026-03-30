@@ -1,18 +1,42 @@
 
 
-## Remover pills e destacar nome + slogan na tela de login
+## Fix: App não abre como aplicativo + ícone não aparece na tela de início
 
-### Mudanças em `src/pages/Auth.tsx`
+### Problema
+Falta o arquivo `manifest.json` e as tags `<link>` para `apple-touch-icon` no `index.html`. Sem o manifest com `"display": "standalone"`, o navegador trata como site normal. Sem `apple-touch-icon`, o iOS usa um screenshot como ícone.
 
-**1. Remover feature pills**
-- Remover o array `featurePills` (linhas 27-32) e os imports `TrendingUp, Target, Zap, BarChart3`
-- Remover o bloco JSX das pills (linhas 115-130)
+### Correção
 
-**2. Dar mais destaque ao nome e slogan**
-- "Skalify": aumentar de `text-[28px]` para `text-[36px]`, adicionar `tracking-[-0.02em]`
-- Slogan: aumentar de `text-[13px]` para `text-[15px]`, cor de `#888888` para `#aaaaaa`, adicionar `max-w-[280px]` para quebra de linha mais elegante
-- Aumentar espaçamento entre nome e slogan com `space-y-4`
+**1. Criar `public/manifest.json`**
+```json
+{
+  "name": "Skalify",
+  "short_name": "Skalify",
+  "description": "Precificação inteligente e gestão de Ads orientada por dados",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0D1117",
+  "theme_color": "#F97316",
+  "icons": [
+    { "src": "/favicon.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/favicon.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
+```
+
+**2. Atualizar `index.html` — adicionar no `<head>`**
+- `<link rel="manifest" href="/manifest.json">`
+- `<link rel="apple-touch-icon" href="/favicon.png">`
+- `<meta name="apple-mobile-web-app-capable" content="yes">`
+- `<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">`
+- `<link rel="icon" href="/favicon.png" type="image/png">`
+
+**3. Remover `public/favicon.ico`** — browsers solicitam `/favicon.ico` por padrão e ele pode sobrescrever o `.png`.
+
+### Nota importante
+- Não será adicionado service worker nem `vite-plugin-pwa` — apenas o manifest simples é suficiente para instalabilidade
+- O ícone usará o `favicon.png` já existente no projeto. Se quiser um ícone diferente/maior, envie a imagem desejada
 
 ### Resultado
-Header mais limpo e impactante: nome grande + slogan legível, sem as pills ocupando espaço visual.
+Ao adicionar à tela de início, o app abrirá em tela cheia (sem barra do navegador) e mostrará o ícone correto.
 
