@@ -11,7 +11,8 @@ export const corsHeaders = {
 };
 
 export function getPartnerKey(): string {
-  const raw = Deno.env.get("SHOPEE_PARTNER_KEY") || "";
+  // Try SHOPEE_KEY first, fall back to SHOPEE_PARTNER_KEY for backward compat
+  const raw = Deno.env.get("SHOPEE_KEY") || Deno.env.get("SHOPEE_PARTNER_KEY") || "";
   const key = raw.trim();
   if (!key) {
     throw new Error("SHOPEE_PARTNER_KEY is empty or not set");
