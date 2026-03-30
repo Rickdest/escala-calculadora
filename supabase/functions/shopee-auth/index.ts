@@ -12,8 +12,12 @@ const SHOPEE_PARTNER_ID = 1231044;
 
 async function hmacSign(path: string, timestamp: number): Promise<string> {
   const partnerId = SHOPEE_PARTNER_ID;
-  const partnerKey = Deno.env.get("SHOPEE_PARTNER_KEY")!;
+  const partnerKey = (Deno.env.get("SHOPEE_PARTNER_KEY") || "").trim();
+  if (!partnerKey) {
+    throw new Error("SHOPEE_PARTNER_KEY is empty or not set");
+  }
   const baseStr = `${partnerId}${path}${timestamp}`;
+  console.log("HMAC debug:", { baseStr, keyLength: partnerKey.length, keyPrefix: partnerKey.substring(0, 8) });
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(partnerKey),
