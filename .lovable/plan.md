@@ -1,42 +1,34 @@
 
 
-## Fix: App não abre como aplicativo + ícone não aparece na tela de início
+## Adicionar botão "Integrar com Shopee" (em paralelo com CSV)
 
-### Problema
-Falta o arquivo `manifest.json` e as tags `<link>` para `apple-touch-icon` no `index.html`. Sem o manifest com `"display": "standalone"`, o navegador trata como site normal. Sem `apple-touch-icon`, o iOS usa um screenshot como ícone.
+### Contexto
+A integração via API da Shopee ainda está em análise/aprovação. O modelo atual de importação CSV deve continuar funcionando normalmente. Vamos adicionar um botão de integração que, por enquanto, mostra um estado "em breve" / "em análise", preparando a UI para quando a integração for aprovada.
 
-### Correção
+### Mudanças
 
-**1. Criar `public/manifest.json`**
-```json
-{
-  "name": "Skalify",
-  "short_name": "Skalify",
-  "description": "Precificação inteligente e gestão de Ads orientada por dados",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#0D1117",
-  "theme_color": "#F97316",
-  "icons": [
-    { "src": "/favicon.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/favicon.png", "sizes": "512x512", "type": "image/png" }
-  ]
-}
-```
+**1. Atualizar `src/components/roas/AdsEmptyState.tsx`**
+- Adicionar um segundo botão "Integrar com Shopee" abaixo do botão "Importar CSV"
+- O botão terá estilo outline com o logo/ícone da Shopee
+- Ao clicar, abre um modal/toast informando que a integração está em análise pela Shopee e que o usuário será notificado quando estiver disponível
+- Separar os dois botões com um divisor "ou" visual
 
-**2. Atualizar `index.html` — adicionar no `<head>`**
-- `<link rel="manifest" href="/manifest.json">`
-- `<link rel="apple-touch-icon" href="/favicon.png">`
-- `<meta name="apple-mobile-web-app-capable" content="yes">`
-- `<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">`
-- `<link rel="icon" href="/favicon.png" type="image/png">`
+**2. Atualizar `src/components/roas/AdsTab.tsx`**
+- No header onde aparece o botão "Atualizar CSV" (quando já tem dados), adicionar um botão secundário "Integrar com Shopee" ao lado
+- Mesmo comportamento: ao clicar, mostra aviso de "em análise"
 
-**3. Remover `public/favicon.ico`** — browsers solicitam `/favicon.ico` por padrão e ele pode sobrescrever o `.png`.
-
-### Nota importante
-- Não será adicionado service worker nem `vite-plugin-pwa` — apenas o manifest simples é suficiente para instalabilidade
-- O ícone usará o `favicon.png` já existente no projeto. Se quiser um ícone diferente/maior, envie a imagem desejada
+**3. Criar `src/components/roas/ShopeeIntegrationModal.tsx`**
+- Modal simples com:
+  - Ícone da Shopee
+  - Título: "Integração com Shopee"
+  - Texto explicando que a integração direta está em análise
+  - Badge "Em breve"
+  - Bullet points dos benefícios futuros (sync automático, dados em tempo real, sem CSV manual)
+  - Botão "Continuar com CSV" que fecha o modal
+  - Campo opcional de email/toggle para "Me avise quando estiver disponível"
 
 ### Resultado
-Ao adicionar à tela de início, o app abrirá em tela cheia (sem barra do navegador) e mostrará o ícone correto.
+- Usuário vê que integração direta está a caminho, gerando expectativa
+- CSV continua 100% funcional como método principal
+- Quando a API for aprovada, basta ativar a funcionalidade no modal sem mudar a estrutura
 
