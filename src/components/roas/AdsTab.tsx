@@ -1,11 +1,13 @@
 import { useState, useMemo, useRef } from 'react';
 import { useStore } from '@/contexts/StoreContext';
 import { useAdsData, EnrichedAdsData } from '@/hooks/useAdsData';
-import { Upload, Trash2, MapPin, Calendar } from 'lucide-react';
+import { Upload, Trash2, MapPin, Calendar, ShoppingBag } from 'lucide-react';
 import { parseShopeeAdsCSV, validateCSVSecurity } from '@/lib/shopeeAdsParser';
 import { AdsDetailFullView } from './AdsDetailFullView';
 import { AdsLinkModal } from './AdsLinkModal';
 import { QuickRegisterModal } from './QuickRegisterModal';
+import { ShopeeIntegrationModal } from './ShopeeIntegrationModal';
+import { AdsEmptyState } from './AdsEmptyState';
 import { toast } from 'sonner';
 import { FilterType } from './adsHelpers';
 import { cn } from '@/lib/utils';
@@ -50,6 +52,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const [positionTarget, setPositionTarget] = useState<string | undefined>();
   const positionFileRef = useRef<HTMLInputElement>(null);
   const [positionJustImported, setPositionJustImported] = useState(false);
+  const [showShopeeModal, setShowShopeeModal] = useState(false);
 
 
   const products = currentStore?.products || [];
@@ -176,27 +179,13 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
         />
       ) : (
         <>
-          {/* ═══ Empty State ═══ */}
-          {!hasData && (
-            <div className="flex flex-col items-center justify-center py-16 space-y-4">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-                <Upload className="w-7 h-7 text-primary" />
-              </div>
-              <div className="text-center space-y-1">
-                <p className="text-sm font-bold text-foreground">Importe seu relatório de Ads</p>
-                <p className="text-xs text-muted-foreground max-w-xs">
-                  Exporte o CSV de anúncios da Shopee e importe aqui para analisar ROAS, ACOS e performance.
-                </p>
-              </div>
-              <button
-                onClick={() => fileRef.current?.click()}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
-              >
-                <Upload className="w-4 h-4" />
-                Importar CSV
-              </button>
-            </div>
-          )}
+           {/* ═══ Empty State ═══ */}
+           {!hasData && (
+             <AdsEmptyState
+               onImport={() => fileRef.current?.click()}
+               onShopeeIntegration={() => setShowShopeeModal(true)}
+             />
+           )}
 
           {/* ═══ Header com botão discreto ═══ */}
           {hasData && (
@@ -207,13 +196,22 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
                   <p className="text-[11px] text-muted-foreground font-mono">{periodLabel}</p>
                 )}
               </div>
-              <button
-                onClick={() => fileRef.current?.click()}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-secondary hover:bg-secondary/80 text-[12px] font-semibold text-foreground transition-colors"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                Atualizar CSV
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowShopeeModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#EE4D2D]/30 text-[#EE4D2D] hover:bg-[#EE4D2D]/5 text-[12px] font-semibold transition-colors"
+                >
+                  <ShoppingBag className="w-3.5 h-3.5" />
+                  Integrar
+                </button>
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-secondary hover:bg-secondary/80 text-[12px] font-semibold text-foreground transition-colors"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  Atualizar CSV
+                </button>
+              </div>
             </div>
           )}
 
@@ -350,6 +348,9 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
           }}
         />
       )}
+
+      {/* Shopee Integration Modal */}
+      <ShopeeIntegrationModal open={showShopeeModal} onClose={() => setShowShopeeModal(false)} />
     </div>
   );
 }
