@@ -56,6 +56,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const [positionTarget, setPositionTarget] = useState<string | undefined>();
   const positionFileRef = useRef<HTMLInputElement>(null);
   const [positionJustImported, setPositionJustImported] = useState(false);
+  const [showShopeeModal, setShowShopeeModal] = useState(false);
 
 
   const products = currentStore?.products || [];
