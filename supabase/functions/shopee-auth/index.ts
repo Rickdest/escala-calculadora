@@ -8,8 +8,20 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function getPartnerId(): number {
+  const raw = (Deno.env.get("SHOPEE_PARTNER_ID") || "").trim();
+  if (!/^\d+$/.test(raw)) {
+    throw new Error(`SHOPEE_PARTNER_ID is not a valid integer: "${raw}"`);
+  }
+  const id = parseInt(raw, 10);
+  if (id < 0 || id > 4294967295) {
+    throw new Error(`SHOPEE_PARTNER_ID out of range: ${id}`);
+  }
+  return id;
+}
+
 async function hmacSign(path: string, timestamp: number): Promise<string> {
-  const partnerId = Deno.env.get("SHOPEE_PARTNER_ID")!;
+  const partnerId = getPartnerId();
   const partnerKey = Deno.env.get("SHOPEE_PARTNER_KEY")!;
   const baseStr = `${partnerId}${path}${timestamp}`;
   const key = await crypto.subtle.importKey(
@@ -61,7 +73,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const partnerId = Number(Deno.env.get("SHOPEE_PARTNER_ID")!);
+    const partnerId = getPartnerId();
     const { redirect_url } = await req.json();
     if (!redirect_url) {
       return new Response(JSON.stringify({ error: "redirect_url required" }), {
@@ -76,10 +88,13 @@ Deno.serve(async (req) => {
 
     const authUrl = `${SHOPEE_HOST}${path}?partner_id=${partnerId}&redirect=${encodeURIComponent(redirect_url)}&timestamp=${timestamp}&sign=${sign}`;
 
+    console.log("Generated auth_url with partner_id:", partnerId);
+
     return new Response(JSON.stringify({ auth_url: authUrl }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
+    console.error("shopee-auth error:", e);
     return new Response(JSON.stringify({ error: (e as Error).message }), {
       status: 500,
       headers: corsHeaders,

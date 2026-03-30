@@ -8,8 +8,20 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function getPartnerId(): number {
+  const raw = (Deno.env.get("SHOPEE_PARTNER_ID") || "").trim();
+  if (!/^\d+$/.test(raw)) {
+    throw new Error(`SHOPEE_PARTNER_ID is not a valid integer: "${raw}"`);
+  }
+  const id = parseInt(raw, 10);
+  if (id < 0 || id > 4294967295) {
+    throw new Error(`SHOPEE_PARTNER_ID out of range: ${id}`);
+  }
+  return id;
+}
+
 async function hmacSign(path: string, timestamp: number, accessToken: string, shopId: string): Promise<string> {
-  const partnerId = Deno.env.get("SHOPEE_PARTNER_ID")!;
+  const partnerId = getPartnerId();
   const partnerKey = Deno.env.get("SHOPEE_PARTNER_KEY")!;
   const baseStr = `${partnerId}${path}${timestamp}${accessToken}${shopId}`;
   const key = await crypto.subtle.importKey(
@@ -26,7 +38,7 @@ async function hmacSign(path: string, timestamp: number, accessToken: string, sh
 }
 
 async function shopeeGet(path: string, accessToken: string, shopId: string, extraParams: Record<string, string> = {}) {
-  const partnerId = Number(Deno.env.get("SHOPEE_PARTNER_ID")!);
+  const partnerId = getPartnerId();
   const timestamp = Math.floor(Date.now() / 1000);
   const sign = await hmacSign(path, timestamp, accessToken, shopId);
 
@@ -97,7 +109,7 @@ Deno.serve(async (req) => {
     let currentAccessToken = accessToken;
 
     if (tokenAge > (shopeeToken.expire_in - 300)) {
-      const partnerId = Number(Deno.env.get("SHOPEE_PARTNER_ID")!);
+      const partnerId = getPartnerId();
       const partnerKey = Deno.env.get("SHOPEE_PARTNER_KEY")!;
       const refreshPath = "/api/v2/auth/access_token/get";
       const timestamp = Math.floor(Date.now() / 1000);
