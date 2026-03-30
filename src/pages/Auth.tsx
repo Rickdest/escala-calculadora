@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Eye, EyeOff, TrendingUp, Target, Zap, BarChart3 } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { lovable } from '@/integrations/lovable/index';
 import { Button } from '@/components/ui/button';
@@ -24,12 +24,6 @@ function traduzirErro(mensagem: string): string {
   return 'Erro ao processar. Tente novamente.';
 }
 
-const featurePills = [
-  { icon: TrendingUp, label: 'Margem real' },
-  { icon: Target, label: 'ROAS ideal' },
-  { icon: Zap, label: 'Taxas auto' },
-  { icon: BarChart3, label: 'Multi-canal' },
-];
 
 export default function Auth() {
   const [email, setEmail] = useState('');
@@ -105,29 +99,13 @@ export default function Auth() {
     <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: '#0D1117' }}>
       <div className="w-full max-w-sm space-y-5">
         {/* Header */}
-        <div className="flex flex-col items-center text-center space-y-3">
-          <h1 className="text-[28px] font-bold tracking-tight" style={{ color: '#ffffff' }}>
+        <div className="flex flex-col items-center text-center space-y-4">
+          <h1 className="text-[36px] font-bold tracking-[-0.02em]" style={{ color: '#ffffff' }}>
             Skalify
           </h1>
-          <p className="text-[13px] leading-relaxed" style={{ color: '#888888' }}>
+          <p className="text-[15px] leading-relaxed max-w-[280px]" style={{ color: '#aaaaaa' }}>
             Precificação inteligente e gestão de Ads orientada por dados
           </p>
-          <div className="flex flex-wrap justify-center gap-2">
-            {featurePills.map(({ icon: Icon, label }) => (
-              <span
-                key={label}
-                className="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full"
-                style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid #252525',
-                  color: '#cccccc',
-                }}
-              >
-                <Icon className="w-3 h-3" style={{ color: '#e85d00' }} />
-                {label}
-              </span>
-            ))}
-          </div>
         </div>
 
         {/* Error banner */}
