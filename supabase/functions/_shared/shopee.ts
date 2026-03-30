@@ -2,16 +2,27 @@
 // Used by shopee-auth, shopee-callback, and shopee-sync
 
 export const SHOPEE_HOST = "https://partner.test-stable.shopeemobile.com";
-export const SHOPEE_PARTNER_ID = 1231044;
+
+const SANDBOX_PARTNER_ID = 1231044;
+const SANDBOX_PARTNER_KEY = "shpk764a7272526b4d7a5664794d744a57494d485650664e5a6778635968514d";
+
+export function getPartnerId(): number {
+  const envId = (Deno.env.get("SHOPEE_PARTNER_ID") || "").trim();
+  if (envId && /^\d+$/.test(envId)) {
+    console.log(`getPartnerId: source=env, value=${envId}`);
+    return Number(envId);
+  }
+  console.log(`getPartnerId: source=SANDBOX_FALLBACK, value=${SANDBOX_PARTNER_ID}`);
+  return SANDBOX_PARTNER_ID;
+}
+
+export const SHOPEE_PARTNER_ID = getPartnerId();
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
-
-// Sandbox fallback key – safe to hardcode for test environment only
-const SANDBOX_PARTNER_KEY = "shpk764a7272526b4d7a5664794d744a57494d485650664e5a6778635968514d";
 
 export function getPartnerKey(): string {
   const rawNew = (Deno.env.get("SHOPEE_KEY") || "").trim();
@@ -26,13 +37,31 @@ export function getPartnerKey(): string {
     return rawOld;
   }
 
-  console.log(`getPartnerKey: env vars invalid/missing, using SANDBOX fallback (length=${SANDBOX_PARTNER_KEY.length})`);
+  console.log(`getPartnerKey: source=SANDBOX_FALLBACK, length=${SANDBOX_PARTNER_KEY.length}`);
   return SANDBOX_PARTNER_KEY;
 }
 
+async function hmacSha256(key: string, message: string): Promise<string> {
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(key),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const sig = await crypto.subtle.sign(
+    "HMAC",
+    cryptoKey,
+    new TextEncoder().encode(message)
+  );
+  return Array.from(new Uint8Array(sig))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 /**
- * Generate HMAC-SHA256 signature for Shopee API v2.
- * Base string format: partnerId + path + timestamp [+ accessToken + shopId]
+ * Sign for /api/v2/shop/auth_partner — base string: partnerId + path + timestamp
+ * Note: Shopee docs say auth_partner uses the SAME format as other endpoints.
  */
 export async function hmacSign(
   path: string,
@@ -41,33 +70,48 @@ export async function hmacSign(
   shopId = ""
 ): Promise<string> {
   const partnerKey = getPartnerKey();
-  const baseStr = `${SHOPEE_PARTNER_ID}${path}${timestamp}${accessToken}${shopId}`;
+  const partnerId = SHOPEE_PARTNER_ID;
+  const baseStr = `${partnerId}${path}${timestamp}${accessToken}${shopId}`;
 
   console.log("HMAC sign:", {
     path,
     timestamp,
     baseStrLength: baseStr.length,
     keyLength: partnerKey.length,
-    keyPrefix: partnerKey.substring(0, 4) + "***",
+    keyPrefix: partnerKey.substring(0, 8) + "***",
     hasAccessToken: !!accessToken,
     hasShopId: !!shopId,
   });
 
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(partnerKey),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-  const sig = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    new TextEncoder().encode(baseStr)
-  );
-  return Array.from(new Uint8Array(sig))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+  return hmacSha256(partnerKey, baseStr);
+}
+
+/**
+ * Special signing for auth_partner: partnerId + path + timestamp
+ * Some sandbox environments need only partnerId + timestamp (no path).
+ * We try BOTH and return two URLs so the caller can pick.
+ */
+export async function signAuthPartner(timestamp: number): Promise<{ withPath: string; withoutPath: string }> {
+  const partnerKey = getPartnerKey();
+  const partnerId = SHOPEE_PARTNER_ID;
+
+  const baseWithPath = `${partnerId}/api/v2/shop/auth_partner${timestamp}`;
+  const baseWithoutPath = `${partnerId}${timestamp}`;
+
+  console.log("signAuthPartner:", {
+    timestamp,
+    partnerId,
+    baseWithPathLen: baseWithPath.length,
+    baseWithoutPathLen: baseWithoutPath.length,
+    keyPrefix: partnerKey.substring(0, 8) + "***",
+  });
+
+  const [signWithPath, signWithoutPath] = await Promise.all([
+    hmacSha256(partnerKey, baseWithPath),
+    hmacSha256(partnerKey, baseWithoutPath),
+  ]);
+
+  return { withPath: signWithPath, withoutPath: signWithoutPath };
 }
 
 /**

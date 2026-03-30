@@ -3,7 +3,7 @@ import {
   SHOPEE_HOST,
   SHOPEE_PARTNER_ID,
   corsHeaders,
-  hmacSign,
+  signAuthPartner,
   errorResponse,
   jsonResponse,
 } from "../_shared/shopee.ts";
@@ -47,13 +47,35 @@ Deno.serve(async (req) => {
 
     const path = "/api/v2/shop/auth_partner";
     const timestamp = Math.floor(Date.now() / 1000);
-    const sign = await hmacSign(path, timestamp);
 
-    const authUrl = `${SHOPEE_HOST}${path}?partner_id=${SHOPEE_PARTNER_ID}&redirect=${encodeURIComponent(redirect_url)}&timestamp=${timestamp}&sign=${sign}`;
+    // Get both signature variants
+    const signatures = await signAuthPartner(timestamp);
 
-    console.log("Generated auth_url with partner_id:", SHOPEE_PARTNER_ID);
+    // Primary: use standard format (partner_id + path + timestamp)
+    const authUrlWithPath = `${SHOPEE_HOST}${path}?partner_id=${SHOPEE_PARTNER_ID}&redirect=${encodeURIComponent(redirect_url)}&timestamp=${timestamp}&sign=${signatures.withPath}`;
 
-    return jsonResponse({ auth_url: authUrl });
+    // Fallback: use simplified format (partner_id + timestamp) — some sandbox envs need this
+    const authUrlWithoutPath = `${SHOPEE_HOST}${path}?partner_id=${SHOPEE_PARTNER_ID}&redirect=${encodeURIComponent(redirect_url)}&timestamp=${timestamp}&sign=${signatures.withoutPath}`;
+
+    console.log("Generated auth URLs:", {
+      partner_id: SHOPEE_PARTNER_ID,
+      timestamp,
+      redirect_url,
+      signWithPathPrefix: signatures.withPath.substring(0, 12) + "...",
+      signWithoutPathPrefix: signatures.withoutPath.substring(0, 12) + "...",
+    });
+
+    // Return the simplified signature URL (without path) as primary
+    // because logs show the standard one (with path) keeps failing with error_sign
+    return jsonResponse({
+      auth_url: authUrlWithoutPath,
+      auth_url_alt: authUrlWithPath,
+      debug: {
+        sign_type: "without_path (primary), with_path (alt)",
+        partner_id: SHOPEE_PARTNER_ID,
+        timestamp,
+      },
+    });
   } catch (e) {
     console.error("shopee-auth error:", e);
     return errorResponse((e as Error).message, 500);

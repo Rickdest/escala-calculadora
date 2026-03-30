@@ -44,7 +44,7 @@ export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClo
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm" aria-describedby="shopee-modal-desc">
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#EE4D2D]/10 flex items-center justify-center">
