@@ -24,12 +24,6 @@ function traduzirErro(mensagem: string): string {
   return 'Erro ao processar. Tente novamente.';
 }
 
-const featurePills = [
-  { icon: TrendingUp, label: 'Margem real' },
-  { icon: Target, label: 'ROAS ideal' },
-  { icon: Zap, label: 'Taxas auto' },
-  { icon: BarChart3, label: 'Multi-canal' },
-];
 
 export default function Auth() {
   const [email, setEmail] = useState('');
