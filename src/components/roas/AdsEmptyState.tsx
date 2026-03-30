@@ -39,6 +39,20 @@ export function AdsEmptyState({ onImport, onShopeeIntegration }: { onImport: () 
       <Button onClick={onImport} className="h-12 w-full max-w-md rounded-xl text-sm font-bold gap-2 mt-2">
         <Upload className="w-4 h-4" /> Importar CSV
       </Button>
+
+      <div className="flex items-center gap-3 w-full max-w-md">
+        <div className="flex-1 h-px bg-border" />
+        <span className="text-xs text-muted-foreground">ou</span>
+        <div className="flex-1 h-px bg-border" />
+      </div>
+
+      <Button
+        variant="outline"
+        onClick={onShopeeIntegration}
+        className="h-12 w-full max-w-md rounded-xl text-sm font-bold gap-2 border-[#EE4D2D]/30 text-[#EE4D2D] hover:bg-[#EE4D2D]/5 hover:text-[#EE4D2D]"
+      >
+        <ShoppingBag className="w-4 h-4" /> Integrar com Shopee
+      </Button>
     </div>
   );
 }
