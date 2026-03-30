@@ -1,45 +1,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const SHOPEE_HOST = "https://partner.test-stable.shopeemobile.com";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
-
-const SHOPEE_PARTNER_ID = 1231044;
-
-async function hmacSign(path: string, timestamp: number, accessToken: string, shopId: string): Promise<string> {
-  const partnerId = SHOPEE_PARTNER_ID;
-  const partnerKey = Deno.env.get("SHOPEE_PARTNER_KEY")!;
-  const baseStr = `${partnerId}${path}${timestamp}${accessToken}${shopId}`;
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(partnerKey),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(baseStr));
-  return Array.from(new Uint8Array(sig))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-}
-
-async function shopeeGet(path: string, accessToken: string, shopId: string, extraParams: Record<string, string> = {}) {
-  const partnerId = SHOPEE_PARTNER_ID;
-  const timestamp = Math.floor(Date.now() / 1000);
-  const sign = await hmacSign(path, timestamp, accessToken, shopId);
-
-  let url = `${SHOPEE_HOST}${path}?partner_id=${partnerId}&timestamp=${timestamp}&sign=${sign}&access_token=${accessToken}&shop_id=${shopId}`;
-  for (const [k, v] of Object.entries(extraParams)) {
-    url += `&${k}=${encodeURIComponent(v)}`;
-  }
-
-  const res = await fetch(url);
-  return res.json();
-}
+import {
+  SHOPEE_HOST,
+  SHOPEE_PARTNER_ID,
+  corsHeaders,
+  hmacSign,
+  shopeeGet,
+  errorResponse,
+  jsonResponse,
+} from "../_shared/shopee.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -49,10 +17,7 @@ Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: corsHeaders,
-      });
+      return errorResponse("Unauthorized", 401);
     }
 
     const supabase = createClient(
@@ -61,62 +26,47 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
     if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: corsHeaders,
-      });
+      return errorResponse("Unauthorized", 401);
     }
-    const userId = user.id;
 
-    const { data: isAdmin } = await supabase.rpc("has_role", { _role: "admin" });
+    const { data: isAdmin } = await supabase.rpc("has_role", {
+      _role: "admin",
+    });
     if (!isAdmin) {
-      return new Response(JSON.stringify({ error: "Admin only" }), {
-        status: 403,
-        headers: corsHeaders,
-      });
+      return errorResponse("Admin only", 403);
     }
 
     const { data: tokens } = await supabase
       .from("shopee_tokens")
       .select("*")
-      .eq("user_id", userId)
+      .eq("user_id", user.id)
       .limit(1);
 
     if (!tokens || tokens.length === 0) {
-      return new Response(JSON.stringify({ error: "No Shopee token found. Connect your shop first." }), {
-        status: 400,
-        headers: corsHeaders,
-      });
+      return errorResponse(
+        "No Shopee token found. Connect your shop first."
+      );
     }
 
     const shopeeToken = tokens[0];
     const shopId = String(shopeeToken.shop_id);
-    const accessToken = shopeeToken.access_token;
+    let currentAccessToken = shopeeToken.access_token;
 
-    const tokenAge = (Date.now() - new Date(shopeeToken.token_created_at).getTime()) / 1000;
-    let currentAccessToken = accessToken;
+    // Refresh token if near expiry
+    const tokenAge =
+      (Date.now() - new Date(shopeeToken.token_created_at).getTime()) / 1000;
 
-    if (tokenAge > (shopeeToken.expire_in - 300)) {
-      const partnerId = SHOPEE_PARTNER_ID;
-      const partnerKey = Deno.env.get("SHOPEE_PARTNER_KEY")!;
+    if (tokenAge > shopeeToken.expire_in - 300) {
       const refreshPath = "/api/v2/auth/access_token/get";
       const timestamp = Math.floor(Date.now() / 1000);
-      const baseStr = `${partnerId}${refreshPath}${timestamp}`;
-      const key = await crypto.subtle.importKey(
-        "raw",
-        new TextEncoder().encode(partnerKey),
-        { name: "HMAC", hash: "SHA-256" },
-        false,
-        ["sign"]
-      );
-      const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(baseStr));
-      const sign = Array.from(new Uint8Array(sig))
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
+      const sign = await hmacSign(refreshPath, timestamp);
 
-      const refreshUrl = `${SHOPEE_HOST}${refreshPath}?partner_id=${partnerId}&timestamp=${timestamp}&sign=${sign}`;
+      const refreshUrl = `${SHOPEE_HOST}${refreshPath}?partner_id=${SHOPEE_PARTNER_ID}&timestamp=${timestamp}&sign=${sign}`;
 
       const refreshRes = await fetch(refreshUrl, {
         method: "POST",
@@ -124,7 +74,7 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           refresh_token: shopeeToken.refresh_token,
           shop_id: Number(shopId),
-          partner_id: partnerId,
+          partner_id: SHOPEE_PARTNER_ID,
         }),
       });
 
@@ -155,22 +105,15 @@ Deno.serve(async (req) => {
       shopId
     );
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        shop_id: shopId,
-        ads_response: adsData,
-        message: "Sync completed. Check ads_response for raw data from Shopee API.",
-      }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    return jsonResponse({
+      success: true,
+      shop_id: shopId,
+      ads_response: adsData,
+      message:
+        "Sync completed. Check ads_response for raw data from Shopee API.",
+    });
   } catch (e) {
     console.error("Sync error:", e);
-    return new Response(JSON.stringify({ error: (e as Error).message }), {
-      status: 500,
-      headers: corsHeaders,
-    });
+    return errorResponse((e as Error).message, 500);
   }
 });
