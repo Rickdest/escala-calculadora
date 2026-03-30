@@ -1,45 +1,32 @@
 
 
-## Plano: Corrigir integração Shopee (ambiente Sandbox)
+## Plano: Corrigir integração Shopee (HMAC + Redirect URL)
 
-### Problema identificado
+### Problemas identificados
 
-O secret `SHOPEE_KEY` continua sendo salvo com um valor incorreto de 13 caracteres (prefixo `$#Rdlt***`), quando deveria ser a Partner Key de 64 caracteres (`shpk764a...`). Isso impede a geração da assinatura HMAC e bloqueia o fluxo OAuth inteiro. Após múltiplas tentativas de deletar/re-adicionar o secret, o valor correto nunca é persistido no runtime.
+1. **Partner Key incorreta**: A key hardcoded (`shpk764a...`) pode não ser a sua chave real do sandbox. Você precisa revelar a chave no painel da Shopee (clicando no olhinho) e confirmar se é a mesma.
 
-### Solução
+2. **Redirect URL não bate**: O código gera `https://ymliqayraprjwdcesvqc.supabase.co/functions/v1/shopee-callback`, mas na Shopee o domínio cadastrado é `https://app.richardaragao.com.br`. A Shopee rejeita quando não batem.
 
-Hardcodar temporariamente a Partner Key de sandbox diretamente no código, já que é uma chave de teste (não produção). Isso elimina a dependência do sistema de secrets para desbloquear o desenvolvimento.
+### Ações necessárias
 
-### Alterações
+**Ação 1 — Você (no painel da Shopee):**
+- Clique no olhinho ao lado de "Chave de parceiro da API de teste" e revele a chave completa
+- Se for diferente de `shpk764a7272526b4d7a5664794d744a57494d485650664e5a6778635968514d`, me envie a chave correta para atualizar no código
+- Altere o "Domínio de URL de redirecionamento de teste" para: `https://ymliqayraprjwdcesvqc.supabase.co`
 
-**1. Atualizar `supabase/functions/_shared/shopee.ts`**
-- Adicionar a Partner Key de sandbox como fallback hardcoded quando as variáveis de ambiente falharem
-- Manter a lógica de env vars para quando migrarmos para produção
-- Lógica: tentar `SHOPEE_KEY` env > `SHOPEE_PARTNER_KEY` env > fallback hardcoded sandbox key
+**Ação 2 — Eu (no código):**
+- Atualizar o `SANDBOX_PARTNER_KEY` no `_shared/shopee.ts` se a chave for diferente
+- Atualizar o secret `SHOPEE_KEY` com o valor correto
+- Redesplegar as edge functions
 
-```text
-getPartnerKey():
-  1. Try Deno.env.get("SHOPEE_KEY")
-  2. Try Deno.env.get("SHOPEE_PARTNER_KEY")  
-  3. If both empty or < 20 chars → use hardcoded sandbox key
-  4. Log which source was used
-```
+### Por que o Lovable Cloud funciona aqui
 
-**2. Verificar callback URL no `useShopeeToken.ts`**
-- O `redirect_url` enviado para `shopee-auth` aponta para o edge function `shopee-callback`
-- Confirmar que essa URL está registrada no painel Shopee Open Platform como redirect URL autorizada
+O outro Claude mencionou que "o Lovable não gerencia secrets" — isso não é correto. Eu consigo gerenciar os secrets das Edge Functions diretamente. O que preciso é o **valor correto** da sua Partner Key do sandbox.
 
-**3. Redesplegar as 3 edge functions**
-- `shopee-auth`, `shopee-callback`, `shopee-sync`
+### Próximo passo
 
-### Resultado esperado
-- Clicar em "Conectar Loja Shopee" redireciona para a página de login da Shopee (como na Upseller)
-- Após login, a Shopee redireciona de volta para o app com o token
-
-### Pré-requisito do usuário
-- No painel Shopee Open Platform, a **Redirect URL** do app deve incluir:
-  `https://ymliqayraprjwdcesvqc.supabase.co/functions/v1/shopee-callback`
-
-### Nota de segurança
-A key hardcoded é exclusivamente para o ambiente sandbox de testes. Antes de ir para produção, o código será atualizado para usar apenas secrets.
+Me envie:
+1. A Partner Key revelada do sandbox (clique no olhinho na Shopee)
+2. Confirmação de que alterou o redirect URL na Shopee para `https://ymliqayraprjwdcesvqc.supabase.co`
 
