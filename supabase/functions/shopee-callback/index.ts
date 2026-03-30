@@ -1,5 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const SHOPEE_HOST = "https://partner.test-stable.shopeemobile.com";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -37,12 +39,12 @@ Deno.serve(async (req) => {
       return new Response("Missing code or shop_id", { status: 400, headers: corsHeaders });
     }
 
-    const partnerId = Deno.env.get("SHOPEE_PARTNER_ID")!;
+    const partnerId = Number(Deno.env.get("SHOPEE_PARTNER_ID")!);
     const path = "/api/v2/auth/token/get";
     const timestamp = Math.floor(Date.now() / 1000);
     const sign = await hmacSign(path, timestamp);
 
-    const tokenUrl = `https://partner.shopeemobile.com${path}?partner_id=${parseInt(partnerId, 10)}&timestamp=${timestamp}&sign=${sign}`;
+    const tokenUrl = `${SHOPEE_HOST}${path}?partner_id=${partnerId}&timestamp=${timestamp}&sign=${sign}`;
 
     const tokenRes = await fetch(tokenUrl, {
       method: "POST",
@@ -50,7 +52,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         code,
         shop_id: Number(shopId),
-        partner_id: Number(partnerId),
+        partner_id: partnerId,
       }),
     });
 
@@ -62,14 +64,11 @@ Deno.serve(async (req) => {
       return Response.redirect(`${appUrl}/roas?shopee_error=token_failed`, 302);
     }
 
-    // Save tokens using service role
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Find admin user (the one who initiated the flow)
-    // For now we look for an existing admin in user_roles
     const { data: adminRoles } = await supabaseAdmin
       .from("user_roles")
       .select("user_id")

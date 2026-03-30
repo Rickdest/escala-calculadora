@@ -1,5 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const SHOPEE_HOST = "https://partner.test-stable.shopeemobile.com";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -43,16 +45,14 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: corsHeaders,
       });
     }
 
-    // Check admin role
     const { data: isAdmin } = await supabase.rpc("has_role", { _role: "admin" });
     if (!isAdmin) {
       return new Response(JSON.stringify({ error: "Admin only" }), {
@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const partnerId = Deno.env.get("SHOPEE_PARTNER_ID")!;
+    const partnerId = Number(Deno.env.get("SHOPEE_PARTNER_ID")!);
     const { redirect_url } = await req.json();
     if (!redirect_url) {
       return new Response(JSON.stringify({ error: "redirect_url required" }), {
@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
     const timestamp = Math.floor(Date.now() / 1000);
     const sign = await hmacSign(path, timestamp);
 
-    const authUrl = `https://partner.shopeemobile.com${path}?partner_id=${parseInt(partnerId, 10)}&redirect=${encodeURIComponent(redirect_url)}&timestamp=${timestamp}&sign=${sign}`;
+    const authUrl = `${SHOPEE_HOST}${path}?partner_id=${partnerId}&redirect=${encodeURIComponent(redirect_url)}&timestamp=${timestamp}&sign=${sign}`;
 
     return new Response(JSON.stringify({ auth_url: authUrl }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
