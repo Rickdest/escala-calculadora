@@ -11,14 +11,19 @@ export const corsHeaders = {
 };
 
 export function getPartnerKey(): string {
-  const raw = Deno.env.get("SHOPEE_PARTNER_KEY") || "";
+  // Try SHOPEE_KEY first, fall back to SHOPEE_PARTNER_KEY for backward compat
+  const rawNew = Deno.env.get("SHOPEE_KEY") || "";
+  const rawOld = Deno.env.get("SHOPEE_PARTNER_KEY") || "";
+  const raw = rawNew || rawOld;
   const key = raw.trim();
+  const source = rawNew ? "SHOPEE_KEY" : "SHOPEE_PARTNER_KEY";
+  console.log(`getPartnerKey: source=${source}, length=${key.length}, prefix=${key.substring(0, 6)}***`);
   if (!key) {
-    throw new Error("SHOPEE_PARTNER_KEY is empty or not set");
+    throw new Error("SHOPEE_KEY/SHOPEE_PARTNER_KEY is empty or not set");
   }
   if (key.length < 20) {
     throw new Error(
-      `SHOPEE_PARTNER_KEY looks invalid (length=${key.length}). Expected 30+ chars. Please re-save the correct key from Shopee Open Platform.`
+      `${source} looks invalid (length=${key.length}). Expected 30+ chars. Please re-save the correct key from Shopee Open Platform.`
     );
   }
   return key;
