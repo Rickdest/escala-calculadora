@@ -348,6 +348,9 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
           }}
         />
       )}
+
+      {/* Shopee Integration Modal */}
+      <ShopeeIntegrationModal open={showShopeeModal} onClose={() => setShowShopeeModal(false)} />
     </div>
   );
 }
