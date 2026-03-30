@@ -28,17 +28,12 @@ async function shopeeGet(path: string, accessToken: string, shopId: string, extr
   const timestamp = Math.floor(Date.now() / 1000);
   const sign = await hmacSign(path, timestamp, accessToken, shopId);
 
-  const url = new URL(`https://partner.shopeemobile.com${path}`);
-  url.searchParams.set("partner_id", partnerId);
-  url.searchParams.set("timestamp", String(timestamp));
-  url.searchParams.set("sign", sign);
-  url.searchParams.set("access_token", accessToken);
-  url.searchParams.set("shop_id", shopId);
+  let url = `https://partner.shopeemobile.com${path}?partner_id=${parseInt(partnerId, 10)}&timestamp=${timestamp}&sign=${sign}&access_token=${accessToken}&shop_id=${shopId}`;
   for (const [k, v] of Object.entries(extraParams)) {
-    url.searchParams.set(k, v);
+    url += `&${k}=${encodeURIComponent(v)}`;
   }
 
-  const res = await fetch(url.toString());
+  const res = await fetch(url);
   return res.json();
 }
 
