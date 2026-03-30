@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff, TrendingUp, Target, Zap, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { lovable } from '@/integrations/lovable/index';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,13 @@ function traduzirErro(mensagem: string): string {
   return 'Erro ao processar. Tente novamente.';
 }
 
+const featurePills = [
+  { icon: TrendingUp, label: 'Margem real' },
+  { icon: Target, label: 'ROAS ideal' },
+  { icon: Zap, label: 'Taxas auto' },
+  { icon: BarChart3, label: 'Multi-canal' },
+];
+
 export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,13 +42,10 @@ export default function Auth() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
-  
 
   useEffect(() => {
     if (errorMessage) {
-      const timer = setTimeout(() => {
-        setErrorMessage('');
-      }, 4000);
+      const timer = setTimeout(() => setErrorMessage(''), 4000);
       return () => clearTimeout(timer);
     }
   }, [errorMessage]);
@@ -52,9 +56,7 @@ export default function Auth() {
       const { error } = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
       });
-      if (error) {
-        setErrorMessage(traduzirErro(String(error)));
-      }
+      if (error) setErrorMessage(traduzirErro(String(error)));
     } catch (err: any) {
       setErrorMessage(traduzirErro(err?.message || 'network'));
     } finally {
@@ -100,51 +102,68 @@ export default function Auth() {
   const isLogin = activeTab === 'login';
 
   return (
-    <div className="min-h-screen bg-[#0D0F17] flex flex-col items-center justify-center px-4">
+    <div className="min-h-screen flex flex-col items-center justify-center px-4" style={{ background: '#0D1117' }}>
       <div className="w-full max-w-sm space-y-5">
         {/* Header */}
-        <div className="flex flex-col items-center text-center space-y-2">
-          <h1 className="text-5xl font-extrabold text-[#F97316] tracking-tight font-sans">Precify</h1>
-          <p className="text-[14px] font-normal text-[#8B92A5]">
-            Precificação Inteligente para Shopee
+        <div className="flex flex-col items-center text-center space-y-3">
+          <h1 className="text-[28px] font-bold tracking-tight" style={{ color: '#ffffff' }}>
+            Precify
+          </h1>
+          <p className="text-[13px] leading-relaxed" style={{ color: '#888888' }}>
+            Calcule margem, ROAS e taxas de marketplace em segundos
           </p>
-          <span className="inline-block text-[12px] font-medium text-[#F97316] border border-[#F97316] bg-transparent px-3 py-1 rounded-[20px]">
-            3 dias grátis · Sem cartão
-          </span>
+          <div className="flex flex-wrap justify-center gap-2">
+            {featurePills.map(({ icon: Icon, label }) => (
+              <span
+                key={label}
+                className="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full"
+                style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid #252525',
+                  color: '#cccccc',
+                }}
+              >
+                <Icon className="w-3 h-3" style={{ color: '#e85d00' }} />
+                {label}
+              </span>
+            ))}
+          </div>
         </div>
 
-        {/* Inline error banner */}
+        {/* Error banner */}
         {errorMessage && (
-          <div className="bg-[#EF4444] text-white text-[13px] px-4 py-2.5 rounded-lg h-11 flex items-center justify-center text-center">
+          <div className="text-white text-[13px] px-4 py-2.5 rounded-lg h-11 flex items-center justify-center text-center" style={{ background: '#EF4444' }}>
             {errorMessage}
           </div>
         )}
 
         {/* Card */}
-        <div className="bg-[#13161F] border border-[#1F2433] rounded-[14px] p-5">
+        <div className="p-5" style={{ background: '#111111', border: '1px solid #252525', borderRadius: '16px' }}>
           {/* Tabs */}
-          <div className="bg-[#13161F] rounded-[10px] p-1 flex mb-5">
+          <div className="flex p-1 rounded-lg mb-5" style={{ background: '#0D1117' }}>
             <button
               type="button"
               onClick={() => setActiveTab('signup')}
-              className={`flex-1 text-[13px] py-2 rounded-[8px] transition-all duration-150 ${
-                activeTab === 'signup'
-                  ? 'bg-[#1A1D27] border border-[#1F2433] text-[#F0F2F7] font-semibold'
-                  : 'bg-transparent border border-transparent text-[#4A5068] font-normal'
-              }`}
+              className="flex-1 text-[13px] py-2 rounded-md transition-all duration-150"
+              style={{
+                background: activeTab === 'signup' ? '#1a1a1a' : 'transparent',
+                color: activeTab === 'signup' ? '#ffffff' : '#555555',
+                fontWeight: activeTab === 'signup' ? 700 : 400,
+              }}
             >
               Criar conta
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('login')}
-              className={`flex-1 text-[13px] py-2 rounded-[8px] transition-all duration-150 ${
-                activeTab === 'login'
-                  ? 'bg-[#1A1D27] border border-[#1F2433] text-[#F0F2F7] font-semibold'
-                  : 'bg-transparent border border-transparent text-[#4A5068] font-normal'
-              }`}
+              className="flex-1 text-[13px] py-2 rounded-md transition-all duration-150"
+              style={{
+                background: activeTab === 'login' ? '#1a1a1a' : 'transparent',
+                color: activeTab === 'login' ? '#ffffff' : '#555555',
+                fontWeight: activeTab === 'login' ? 700 : 400,
+              }}
             >
-              Já tenho conta
+              Entrar
             </button>
           </div>
 
@@ -152,7 +171,7 @@ export default function Auth() {
           <form onSubmit={(e) => handleSubmit(e, isLogin)} className="space-y-4">
             {/* Email */}
             <div>
-              <label className="block uppercase text-[11px] tracking-[0.08em] font-medium text-[#8B92A5] mb-1.5">
+              <label className="block uppercase text-[11px] tracking-[0.08em] font-medium mb-1.5" style={{ color: '#888888' }}>
                 Email
               </label>
               <input
@@ -162,14 +181,21 @@ export default function Auth() {
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setErrorMessage(''); }}
                 placeholder="seu@email.com"
-                className="w-full h-12 bg-[#1A1D27] border border-[#1F2433] rounded-[8px] px-3 text-[15px] text-[#F0F2F7] placeholder:text-[#4A5068] focus:outline-none focus:border-[#F97316] transition-colors"
+                className="w-full h-12 rounded-lg px-3 text-[15px] focus:outline-none transition-colors"
+                style={{
+                  background: '#1a1a1a',
+                  border: '1px solid #252525',
+                  color: '#dddddd',
+                }}
+                onFocus={(e) => e.target.style.borderColor = '#e85d00'}
+                onBlur={(e) => e.target.style.borderColor = '#252525'}
                 required
               />
             </div>
 
             {/* Password */}
             <div>
-              <label className="block uppercase text-[11px] tracking-[0.08em] font-medium text-[#8B92A5] mb-1.5">
+              <label className="block uppercase text-[11px] tracking-[0.08em] font-medium mb-1.5" style={{ color: '#888888' }}>
                 Senha
               </label>
               <div className="relative">
@@ -179,14 +205,22 @@ export default function Auth() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="mínimo 8 caracteres"
-                  className="w-full h-12 bg-[#1A1D27] border border-[#1F2433] rounded-[8px] px-3 pr-11 text-[15px] text-[#F0F2F7] placeholder:text-[#4A5068] focus:outline-none focus:border-[#F97316] transition-colors"
+                  className="w-full h-12 rounded-lg px-3 pr-11 text-[15px] focus:outline-none transition-colors"
+                  style={{
+                    background: '#1a1a1a',
+                    border: '1px solid #252525',
+                    color: '#dddddd',
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#e85d00'}
+                  onBlur={(e) => e.target.style.borderColor = '#252525'}
                   required
                   minLength={8}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4A5068] hover:text-[#8B92A5] transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                  style={{ color: '#555555' }}
                 >
                   {showPassword ? <EyeOff className="w-[18px] h-[18px]" /> : <Eye className="w-[18px] h-[18px]" />}
                 </button>
@@ -200,36 +234,38 @@ export default function Auth() {
                   type="checkbox"
                   checked={acceptedTerms}
                   onChange={(e) => setAcceptedTerms(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 rounded border-[#1F2433] bg-[#1A1D27] accent-[#F97316] cursor-pointer"
+                  className="mt-0.5 w-4 h-4 rounded cursor-pointer"
+                  style={{ accentColor: '#e85d00', background: '#1a1a1a', borderColor: '#252525' }}
                 />
-                <span className="text-[12px] text-[#8B92A5] leading-tight">
+                <span className="text-[12px] leading-tight" style={{ color: '#888888' }}>
                   Li e aceito os{' '}
-                  <a href="#" className="text-[#F97316] underline">Termos de Uso</a>{' '}
+                  <a href="#" style={{ color: '#e85d00' }} className="underline">Termos de Uso</a>{' '}
                   e a{' '}
-                  <a href="#" className="text-[#F97316] underline">Política de Privacidade</a>
+                  <a href="#" style={{ color: '#e85d00' }} className="underline">Política de Privacidade</a>
                 </span>
               </label>
             )}
 
             {/* Submit */}
-            <Button
+            <button
               type="submit"
               disabled={loading || (!isLogin && !acceptedTerms)}
-              className="w-full h-12 text-[15px] font-semibold bg-[#F97316] hover:bg-[#EA6C0A] text-white rounded-[10px] active:scale-[0.98] transition-all"
+              className="w-full h-12 text-[15px] font-bold text-white rounded-xl active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
+              style={{ background: '#e85d00' }}
             >
               {loading ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{isLogin ? 'Entrando...' : 'Criando conta...'}</>
+                <><Loader2 className="w-4 h-4 animate-spin" />{isLogin ? 'Entrando...' : 'Criando conta...'}</>
               ) : (
-                isLogin ? 'Entrar' : 'Criar conta e começar grátis'
+                <>{isLogin ? 'Entrar' : 'Criar conta gratuita'} →</>
               )}
-            </Button>
+            </button>
           </form>
 
           {/* Divider */}
           <div className="flex items-center gap-3 my-5">
-            <div className="flex-1 h-px bg-[#1F2433]" />
-            <span className="text-[12px] text-[#4A5068]">ou</span>
-            <div className="flex-1 h-px bg-[#1F2433]" />
+            <div className="flex-1 h-px" style={{ background: '#252525' }} />
+            <span className="text-[12px]" style={{ color: '#555555' }}>ou</span>
+            <div className="flex-1 h-px" style={{ background: '#252525' }} />
           </div>
 
           {/* Google */}
@@ -237,10 +273,11 @@ export default function Auth() {
             type="button"
             onClick={handleGoogleLogin}
             disabled={googleLoading}
-            className="w-full h-12 flex items-center justify-center gap-3 bg-[#13161F] border border-[#1F2433] rounded-[10px] hover:bg-[#1A1D27] transition-colors disabled:opacity-50"
+            className="w-full h-12 flex items-center justify-center gap-3 rounded-xl transition-colors disabled:opacity-50"
+            style={{ background: '#0D1117', border: '1px solid #252525' }}
           >
             {googleLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin text-[#F0F2F7]" />
+              <Loader2 className="w-5 h-5 animate-spin" style={{ color: '#dddddd' }} />
             ) : (
               <>
                 <svg width="18" height="18" viewBox="0 0 24 24">
@@ -249,10 +286,26 @@ export default function Auth() {
                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
                   <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                 </svg>
-                <span className="text-[14px] font-medium text-[#F0F2F7]">Continuar com Google</span>
+                <span className="text-[14px] font-medium" style={{ color: '#dddddd' }}>Continuar com Google</span>
               </>
             )}
           </button>
+        </div>
+
+        {/* Social proof */}
+        <div className="flex items-center justify-center gap-2 pt-1">
+          <div className="flex -space-x-2">
+            {['#e85d00', '#3b82f6', '#22c55e'].map((color, i) => (
+              <div
+                key={i}
+                className="w-6 h-6 rounded-full"
+                style={{ background: color, border: '2px solid #0D1117', zIndex: 3 - i }}
+              />
+            ))}
+          </div>
+          <span className="text-[12px]" style={{ color: '#666666' }}>
+            +200 vendedores já usam o Precify
+          </span>
         </div>
       </div>
     </div>
