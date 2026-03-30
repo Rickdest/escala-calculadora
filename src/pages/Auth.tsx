@@ -281,11 +281,11 @@ export default function Auth() {
                 key={i}
                 src={item.src}
                 alt=""
-                className="w-7 h-7 rounded-full object-cover"
-                style={{ border: `2px solid ${item.color}`, zIndex: 3 - i }}
+                className="w-5 h-5 rounded-full object-cover"
+                style={{ border: `1.5px solid ${item.color}`, zIndex: 3 - i }}
                 loading="lazy"
-                width={28}
-                height={28}
+                width={20}
+                height={20}
               />
             ))}
           </div>
