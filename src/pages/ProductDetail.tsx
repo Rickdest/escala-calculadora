@@ -150,7 +150,7 @@ export default function ProductDetail() {
       `📈 Lucro por venda: ${fmt(calculation.netProfit)}`,
       `📉 Margem real: ${calculation.realMargin.toFixed(1)}%`,
       roas.roasEmpate ? `⚡ ROAS de empate: ${roas.roasEmpate.toFixed(2)}x` : '',
-      `— Calculado com Precify`,
+      `— Calculado com Skalify`,
     ].filter(Boolean).join('\n');
     try {
       await navigator.clipboard.writeText(text);

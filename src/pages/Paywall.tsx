@@ -28,7 +28,7 @@ export default function Paywall() {
         </div>
 
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold text-foreground">Desbloqueie o Precify</h1>
+          <h1 className="text-2xl font-bold text-foreground">Desbloqueie o Skalify</h1>
           <p className="text-sm text-muted-foreground leading-relaxed">
             Acesse todas as ferramentas para maximizar seus lucros na Shopee.
           </p>

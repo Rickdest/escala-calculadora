@@ -159,7 +159,7 @@ export default function Home() {
 
   return (
     <AppLayout>
-      <PageHeader title="Precify" />
+      <PageHeader title="Skalify" />
 
       {/* ══════════════════════════════════════════════
           MOBILE LAYOUT — identical to before

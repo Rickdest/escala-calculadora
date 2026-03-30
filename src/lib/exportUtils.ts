@@ -162,7 +162,7 @@ export function generatePDFContent(data: ExportData[], store: Store): string {
       </table>
       
       <div class="footer">
-        Gerado em ${new Date().toLocaleString('pt-BR')} | Precify
+        Gerado em ${new Date().toLocaleString('pt-BR')} | Skalify
       </div>
     </body>
     </html>

@@ -32,7 +32,7 @@ export function DesktopHeader() {
 
       {/* Store name */}
       <p className="text-sm font-semibold text-foreground truncate max-w-[200px]">
-        {currentStore?.name || 'Precify'}
+        {currentStore?.name || 'Skalify'}
       </p>
 
       <div className="flex-1" />

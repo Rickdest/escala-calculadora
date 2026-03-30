@@ -273,7 +273,7 @@ function SubscriptionSection() {
         <span className="text-sm text-foreground">{statusText}</span>
       </div>
       {status === 'active' && (
-        <p className="text-xs text-muted-foreground">Acesso completo ao Precify</p>
+        <p className="text-xs text-muted-foreground">Acesso completo ao Skalify</p>
       )}
       {showButton && (
         <button

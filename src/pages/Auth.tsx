@@ -304,7 +304,7 @@ export default function Auth() {
             ))}
           </div>
           <span className="text-[12px]" style={{ color: '#666666' }}>
-            +200 vendedores já usam o Precify
+            +200 vendedores já usam o Skalify
           </span>
         </div>
       </div>

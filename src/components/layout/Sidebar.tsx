@@ -47,7 +47,7 @@ export function Sidebar() {
           'font-bold text-foreground transition-all duration-200 whitespace-nowrap',
           collapsed ? 'text-base' : 'text-xl'
         )}>
-          {collapsed ? 'P' : 'Precify'}
+          {collapsed ? 'S' : 'Skalify'}
         </span>
       </div>
 

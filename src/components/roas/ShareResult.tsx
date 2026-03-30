@@ -30,7 +30,7 @@ export function ShareResult({ productName, salePrice, lucroBruto, roasEmpate, ro
       roasIdeal ? `🎯 ROAS Ideal: ${roasIdeal.toFixed(2)}x` : '',
       `📋 Status: ${statusLabel(status)}`,
       ``,
-      `— Calculado com Precify`,
+      `— Calculado com Skalify`,
     ].filter(Boolean).join('\n');
 
     try {
