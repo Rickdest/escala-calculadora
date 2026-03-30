@@ -145,7 +145,7 @@ export default function Settings() {
 
         {/* Suporte WhatsApp - visível no topo */}
         <a
-          href="https://api.whatsapp.com/send?phone=5511930291287&text=Ol%C3%A1%2C%20preciso%20de%20suporte%20no%20Precify"
+          href="https://api.whatsapp.com/send?phone=5511930291287&text=Ol%C3%A1%2C%20preciso%20de%20suporte%20no%20Skalify"
           target="_blank"
           rel="noopener noreferrer"
           className="glass-card p-3.5 flex items-center gap-3 hover:bg-secondary/50 transition-colors animate-fade-up"

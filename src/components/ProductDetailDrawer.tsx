@@ -135,7 +135,7 @@ export function ProductDetailDrawer({
       `📉 Margem real: ${editCalc.realMargin.toFixed(1)}%`,
       editRoas.roasEmpate ? `⚡ ROAS de empate: ${editRoas.roasEmpate.toFixed(2)}x` : '',
       ``,
-      `— Calculado com Precify`,
+      `— Calculado com Skalify`,
     ].filter(Boolean).join('\n');
     try {
       await navigator.clipboard.writeText(text);

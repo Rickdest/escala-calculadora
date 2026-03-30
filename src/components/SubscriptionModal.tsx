@@ -34,7 +34,7 @@ export const SubscriptionModal = React.forwardRef<HTMLDivElement, SubscriptionMo
         </button>
 
         <div className="text-center space-y-2 pt-2">
-          <h2 className="text-xl font-bold text-foreground">Desbloqueie o Precify</h2>
+          <h2 className="text-xl font-bold text-foreground">Desbloqueie o Skalify</h2>
           <p className="text-sm text-text-2">Para usar esta funcionalidade, ative sua assinatura.</p>
         </div>
 

@@ -21,14 +21,14 @@ export default function Paywall() {
     <AppLayout>
       <div className="py-8 space-y-6 max-w-sm mx-auto">
         <div className="flex flex-col items-center gap-3">
-          <img src={logoIcon} alt="Precify" className="w-10 h-10 rounded-xl opacity-60" />
+          <img src={logoIcon} alt="Skalify" className="w-10 h-10 rounded-xl opacity-60" />
           <div className="w-12 h-12 rounded-full border border-border/50 flex items-center justify-center">
             <Lock className="w-5 h-5 text-muted-foreground" strokeWidth={1.5} />
           </div>
         </div>
 
         <div className="text-center space-y-2">
-          <h1 className="text-2xl font-bold text-foreground">Desbloqueie o Precify</h1>
+          <h1 className="text-2xl font-bold text-foreground">Desbloqueie o Skalify</h1>
           <p className="text-sm text-muted-foreground leading-relaxed">
             Acesse todas as ferramentas para maximizar seus lucros na Shopee.
           </p>

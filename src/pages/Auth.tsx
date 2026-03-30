@@ -107,10 +107,10 @@ export default function Auth() {
         {/* Header */}
         <div className="flex flex-col items-center text-center space-y-3">
           <h1 className="text-[28px] font-bold tracking-tight" style={{ color: '#ffffff' }}>
-            Precify
+            Skalify
           </h1>
           <p className="text-[13px] leading-relaxed" style={{ color: '#888888' }}>
-            Calcule margem, ROAS e taxas de marketplace em segundos
+            Precificação inteligente e gestão de Ads orientada por dados
           </p>
           <div className="flex flex-wrap justify-center gap-2">
             {featurePills.map(({ icon: Icon, label }) => (
@@ -304,7 +304,7 @@ export default function Auth() {
             ))}
           </div>
           <span className="text-[12px]" style={{ color: '#666666' }}>
-            +200 vendedores já usam o Precify
+            +200 vendedores já usam o Skalify
           </span>
         </div>
       </div>
