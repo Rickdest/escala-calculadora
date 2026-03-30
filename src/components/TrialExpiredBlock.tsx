@@ -48,7 +48,7 @@ export function TrialExpiredBlock() {
       <div className="w-full max-w-sm" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {/* Logo */}
         <div className="flex justify-center">
-          <img src={logoIcon} alt="Precify" className="w-10 h-10 rounded-xl" />
+          <img src={logoIcon} alt="Skalify" className="w-10 h-10 rounded-xl" />
         </div>
 
         {/* Headline */}
