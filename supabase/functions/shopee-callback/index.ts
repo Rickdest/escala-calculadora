@@ -7,12 +7,17 @@ import {
 } from "../_shared/shopee.ts";
 
 Deno.serve(async (req) => {
+  console.log("[SHOPEE CALLBACK] Function invoked", {
+    url: req.url,
+    method: req.method,
+  });
+
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   const appUrl =
-    Deno.env.get("APP_URL") || "https://escala-calculadora.lovable.app";
+    Deno.env.get("APP_URL") || "https://app.richardaragao.com.br";
 
   try {
     const url = new URL(req.url);
