@@ -107,7 +107,7 @@ export default function Auth() {
         {/* Header */}
         <div className="flex flex-col items-center text-center space-y-3">
           <h1 className="text-[28px] font-bold tracking-tight" style={{ color: '#ffffff' }}>
-            Precify
+            Skalify
           </h1>
           <p className="text-[13px] leading-relaxed" style={{ color: '#888888' }}>
             Calcule margem, ROAS e taxas de marketplace em segundos
