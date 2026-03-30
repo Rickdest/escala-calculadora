@@ -74,13 +74,9 @@ Deno.serve(async (req) => {
     const timestamp = Math.floor(Date.now() / 1000);
     const sign = await hmacSign(path, timestamp);
 
-    const authUrl = new URL(`https://partner.shopeemobile.com${path}`);
-    authUrl.searchParams.set("partner_id", partnerId);
-    authUrl.searchParams.set("redirect", redirect_url);
-    authUrl.searchParams.set("timestamp", String(timestamp));
-    authUrl.searchParams.set("sign", sign);
+    const authUrl = `https://partner.shopeemobile.com${path}?partner_id=${parseInt(partnerId, 10)}&redirect=${encodeURIComponent(redirect_url)}&timestamp=${timestamp}&sign=${sign}`;
 
-    return new Response(JSON.stringify({ auth_url: authUrl.toString() }), {
+    return new Response(JSON.stringify({ auth_url: authUrl }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

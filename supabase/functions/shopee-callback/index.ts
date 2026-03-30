@@ -42,12 +42,9 @@ Deno.serve(async (req) => {
     const timestamp = Math.floor(Date.now() / 1000);
     const sign = await hmacSign(path, timestamp);
 
-    const tokenUrl = new URL(`https://partner.shopeemobile.com${path}`);
-    tokenUrl.searchParams.set("partner_id", partnerId);
-    tokenUrl.searchParams.set("timestamp", String(timestamp));
-    tokenUrl.searchParams.set("sign", sign);
+    const tokenUrl = `https://partner.shopeemobile.com${path}?partner_id=${parseInt(partnerId, 10)}&timestamp=${timestamp}&sign=${sign}`;
 
-    const tokenRes = await fetch(tokenUrl.toString(), {
+    const tokenRes = await fetch(tokenUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
