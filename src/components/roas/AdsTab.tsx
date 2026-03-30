@@ -196,13 +196,22 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
                   <p className="text-[11px] text-muted-foreground font-mono">{periodLabel}</p>
                 )}
               </div>
-              <button
-                onClick={() => fileRef.current?.click()}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-secondary hover:bg-secondary/80 text-[12px] font-semibold text-foreground transition-colors"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                Atualizar CSV
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowShopeeModal(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#EE4D2D]/30 text-[#EE4D2D] hover:bg-[#EE4D2D]/5 text-[12px] font-semibold transition-colors"
+                >
+                  <ShoppingBag className="w-3.5 h-3.5" />
+                  Integrar
+                </button>
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-secondary hover:bg-secondary/80 text-[12px] font-semibold text-foreground transition-colors"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  Atualizar CSV
+                </button>
+              </div>
             </div>
           )}
 
