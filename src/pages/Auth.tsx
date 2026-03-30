@@ -276,13 +276,13 @@ export default function Auth() {
         {/* Social proof */}
         <div className="flex items-center justify-center gap-2 pt-1">
           <div className="flex -space-x-2">
-            {[avatar1, avatar2, avatar3].map((src, i) => (
+            {[{ src: avatar1, color: '#e85d00' }, { src: avatar2, color: '#3b82f6' }, { src: avatar3, color: '#22c55e' }].map((item, i) => (
               <img
                 key={i}
-                src={src}
+                src={item.src}
                 alt=""
                 className="w-7 h-7 rounded-full object-cover"
-                style={{ border: '2px solid #0D1117', zIndex: 3 - i }}
+                style={{ border: `2px solid ${item.color}`, zIndex: 3 - i }}
                 loading="lazy"
                 width={28}
                 height={28}
