@@ -51,7 +51,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const { status, loading: subLoading } = useSubscription();
 
-  if (loading || subLoading) {
+  // Wait for both auth and subscription to fully resolve
+  if (loading || subLoading || status === 'loading') {
     return <PageLoader />;
   }
 
