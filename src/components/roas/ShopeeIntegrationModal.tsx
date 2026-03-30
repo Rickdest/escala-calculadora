@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingBag, Zap, RefreshCw, FileX, Loader2, CheckCircle2 } from 'lucide-react';
@@ -44,7 +44,7 @@ export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClo
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-sm" aria-describedby="shopee-modal-desc">
+      <DialogContent className="max-w-sm">
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#EE4D2D]/10 flex items-center justify-center">
@@ -52,6 +52,9 @@ export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClo
             </div>
             <div>
               <DialogTitle className="text-base">Integração com Shopee</DialogTitle>
+              <DialogDescription className="sr-only">
+                Conecte sua loja Shopee para sincronizar dados automaticamente
+              </DialogDescription>
               {isAdmin && isConnected ? (
                 <Badge className="mt-1 bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-[10px]">
                   Conectada
@@ -64,9 +67,9 @@ export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClo
             </div>
           </div>
         </DialogHeader>
-        <p id="shopee-modal-desc" className="sr-only">Modal de integração com a Shopee</p>
 
         {isAdmin ? (
+          <>
             {isConnected ? (
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-sm text-emerald-600">
