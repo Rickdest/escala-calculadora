@@ -1,11 +1,13 @@
 import { useState, useMemo, useRef } from 'react';
 import { useStore } from '@/contexts/StoreContext';
 import { useAdsData, EnrichedAdsData } from '@/hooks/useAdsData';
-import { Upload, Trash2, MapPin, Calendar } from 'lucide-react';
+import { Upload, Trash2, MapPin, Calendar, ShoppingBag } from 'lucide-react';
 import { parseShopeeAdsCSV, validateCSVSecurity } from '@/lib/shopeeAdsParser';
 import { AdsDetailFullView } from './AdsDetailFullView';
 import { AdsLinkModal } from './AdsLinkModal';
 import { QuickRegisterModal } from './QuickRegisterModal';
+import { ShopeeIntegrationModal } from './ShopeeIntegrationModal';
+import { AdsEmptyState } from './AdsEmptyState';
 import { toast } from 'sonner';
 import { FilterType } from './adsHelpers';
 import { cn } from '@/lib/utils';
@@ -14,6 +16,10 @@ import { FilterChips } from './FilterChips';
 import { AdsProductCard } from './AdsProductCard';
 import { AlertsSection } from './AlertsSection';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
