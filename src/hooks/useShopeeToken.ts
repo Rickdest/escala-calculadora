@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 export function useShopeeToken() {
   const { user } = useAuth();
@@ -32,8 +33,25 @@ export function useShopeeToken() {
       },
     });
 
-    if (res.error) throw res.error;
-    const { auth_url } = res.data;
+    if (res.error) {
+      const msg = res.error?.message || 'Erro ao iniciar integração Shopee';
+      toast.error(msg);
+      throw res.error;
+    }
+
+    const data = res.data;
+
+    if (data?.error) {
+      toast.error(`Erro Shopee: ${data.error}`);
+      throw new Error(data.error);
+    }
+
+    const { auth_url } = data;
+    if (!auth_url) {
+      toast.error('URL de autenticação não retornada pelo servidor.');
+      throw new Error('No auth_url returned');
+    }
+
     window.location.href = auth_url;
   };
 
@@ -44,7 +62,15 @@ export function useShopeeToken() {
         Authorization: `Bearer ${session.session?.access_token}`,
       },
     });
-    if (res.error) throw res.error;
+    if (res.error) {
+      const msg = res.error?.message || 'Erro ao sincronizar ads';
+      toast.error(msg);
+      throw res.error;
+    }
+    if (res.data?.error) {
+      toast.error(`Erro Shopee: ${res.data.error}`);
+      throw new Error(res.data.error);
+    }
     return res.data;
   };
 

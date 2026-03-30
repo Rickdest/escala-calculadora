@@ -5,6 +5,14 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { RoasAnalysis } from '@/components/charts/RoasAnalysis';
 import { toast } from 'sonner';
 
+const SHOPEE_ERROR_MESSAGES: Record<string, string> = {
+  token_failed: 'Falha ao obter token da Shopee. Tente novamente.',
+  no_admin: 'Nenhum administrador encontrado para vincular a loja.',
+  missing_params: 'Parâmetros de callback incompletos da Shopee.',
+  wrong_sign: 'Assinatura inválida. Verifique as credenciais da Shopee.',
+  unknown: 'Erro desconhecido ao conectar com a Shopee.',
+};
+
 export default function Roas() {
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -14,8 +22,12 @@ export default function Roas() {
       searchParams.delete('shopee_connected');
       setSearchParams(searchParams, { replace: true });
     }
-    if (searchParams.get('shopee_error')) {
-      toast.error('Erro ao conectar com a Shopee. Tente novamente.');
+    const shopeeError = searchParams.get('shopee_error');
+    if (shopeeError) {
+      const msg =
+        SHOPEE_ERROR_MESSAGES[shopeeError] ||
+        `Erro ao conectar com a Shopee: ${shopeeError}`;
+      toast.error(msg);
       searchParams.delete('shopee_error');
       setSearchParams(searchParams, { replace: true });
     }
