@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
-import { Upload, ExternalLink, BarChart3, Download } from 'lucide-react';
+import { Upload, ExternalLink, BarChart3, Download, ShoppingBag } from 'lucide-react';
 
-export function AdsEmptyState({ onImport }: { onImport: () => void }) {
+export function AdsEmptyState({ onImport, onShopeeIntegration }: { onImport: () => void; onShopeeIntegration: () => void }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 md:py-16 text-center space-y-6">
       <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
