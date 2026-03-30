@@ -1,11 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
-  SHOPEE_HOST,
-  SHOPEE_PARTNER_ID,
   corsHeaders,
-  signAuthPartner,
   errorResponse,
   jsonResponse,
+  getAuthUrl,
+  PARTNER_ID,
 } from "../_shared/shopee.ts";
 
 Deno.serve(async (req) => {
@@ -45,37 +44,15 @@ Deno.serve(async (req) => {
       return errorResponse("redirect_url required");
     }
 
-    const path = "/api/v2/shop/auth_partner";
-    const timestamp = Math.floor(Date.now() / 1000);
+    const authUrl = await getAuthUrl(redirect_url);
 
-    // Get both signature variants
-    const signatures = await signAuthPartner(timestamp);
-
-    // Primary: use standard format (partner_id + path + timestamp)
-    const authUrlWithPath = `${SHOPEE_HOST}${path}?partner_id=${SHOPEE_PARTNER_ID}&redirect=${encodeURIComponent(redirect_url)}&timestamp=${timestamp}&sign=${signatures.withPath}`;
-
-    // Fallback: use simplified format (partner_id + timestamp) — some sandbox envs need this
-    const authUrlWithoutPath = `${SHOPEE_HOST}${path}?partner_id=${SHOPEE_PARTNER_ID}&redirect=${encodeURIComponent(redirect_url)}&timestamp=${timestamp}&sign=${signatures.withoutPath}`;
-
-    console.log("Generated auth URLs:", {
-      partner_id: SHOPEE_PARTNER_ID,
-      timestamp,
+    console.log("[SHOPEE AUTH] Generated URL:", {
+      partner_id: PARTNER_ID,
       redirect_url,
-      signWithPathPrefix: signatures.withPath.substring(0, 12) + "...",
-      signWithoutPathPrefix: signatures.withoutPath.substring(0, 12) + "...",
+      auth_url_prefix: authUrl.substring(0, 100) + "...",
     });
 
-    // Return the simplified signature URL (without path) as primary
-    // because logs show the standard one (with path) keeps failing with error_sign
-    return jsonResponse({
-      auth_url: authUrlWithoutPath,
-      auth_url_alt: authUrlWithPath,
-      debug: {
-        sign_type: "without_path (primary), with_path (alt)",
-        partner_id: SHOPEE_PARTNER_ID,
-        timestamp,
-      },
-    });
+    return jsonResponse({ auth_url: authUrl });
   } catch (e) {
     console.error("shopee-auth error:", e);
     return errorResponse((e as Error).message, 500);

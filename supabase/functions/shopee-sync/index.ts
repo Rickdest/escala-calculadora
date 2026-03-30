@@ -1,9 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   SHOPEE_HOST,
-  SHOPEE_PARTNER_ID,
+  PARTNER_ID,
   corsHeaders,
-  hmacSign,
+  generateSign,
   shopeeGet,
   errorResponse,
   jsonResponse,
@@ -48,13 +48,11 @@ Deno.serve(async (req) => {
       .limit(1);
 
     if (!tokens || tokens.length === 0) {
-      return errorResponse(
-        "No Shopee token found. Connect your shop first."
-      );
+      return errorResponse("No Shopee token found. Connect your shop first.");
     }
 
     const shopeeToken = tokens[0];
-    const shopId = String(shopeeToken.shop_id);
+    const shopId = shopeeToken.shop_id;
     let currentAccessToken = shopeeToken.access_token;
 
     // Refresh token if near expiry
@@ -64,9 +62,9 @@ Deno.serve(async (req) => {
     if (tokenAge > shopeeToken.expire_in - 300) {
       const refreshPath = "/api/v2/auth/access_token/get";
       const timestamp = Math.floor(Date.now() / 1000);
-      const sign = await hmacSign(refreshPath, timestamp);
+      const sign = await generateSign(refreshPath, timestamp);
 
-      const refreshUrl = `${SHOPEE_HOST}${refreshPath}?partner_id=${SHOPEE_PARTNER_ID}&timestamp=${timestamp}&sign=${sign}`;
+      const refreshUrl = `${SHOPEE_HOST}${refreshPath}?partner_id=${PARTNER_ID}&timestamp=${timestamp}&sign=${sign}`;
 
       const refreshRes = await fetch(refreshUrl, {
         method: "POST",
@@ -74,7 +72,7 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           refresh_token: shopeeToken.refresh_token,
           shop_id: Number(shopId),
-          partner_id: SHOPEE_PARTNER_ID,
+          partner_id: PARTNER_ID,
         }),
       });
 
@@ -109,8 +107,7 @@ Deno.serve(async (req) => {
       success: true,
       shop_id: shopId,
       ads_response: adsData,
-      message:
-        "Sync completed. Check ads_response for raw data from Shopee API.",
+      message: "Sync completed.",
     });
   } catch (e) {
     console.error("Sync error:", e);
