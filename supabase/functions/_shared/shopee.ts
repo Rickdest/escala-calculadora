@@ -1,7 +1,9 @@
 // Shared Shopee configuration and HMAC signing logic
 // Official Shopee API v2 signing spec
 
-export const SHOPEE_HOST = "https://partner.test-stable.shopeemobile.com";
+export const SHOPEE_HOST = Deno.env.get("SHOPEE_ENV") === "production"
+  ? "https://partner.shopeemobile.com"
+  : "https://openplatform.sandbox.test-stable.shopee.io";
 
 export const PARTNER_ID: number = (() => {
   const envId = (Deno.env.get("SHOPEE_PARTNER_ID") || "").trim();
