@@ -56,8 +56,11 @@ export async function generateSign(
   const partnerKey = getPartnerKey();
 
   let baseString = `${PARTNER_ID}${path}${timestamp}`;
-  if (accessToken && shopId) {
-    baseString += `${accessToken}${shopId}`;
+  if (accessToken) {
+    baseString += `${accessToken}`;
+  }
+  if (shopId) {
+    baseString += `${shopId}`;
   }
 
   console.log("[SHOPEE DEBUG] path:", path);
