@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+import avatar1 from '@/assets/avatar1.jpg';
+import avatar2 from '@/assets/avatar2.jpg';
+import avatar3 from '@/assets/avatar3.jpg';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
