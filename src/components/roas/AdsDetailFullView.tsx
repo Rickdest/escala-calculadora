@@ -353,16 +353,17 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
           </div>
         </>
       )}
-      <div className="space-y-1 max-h-[300px] overflow-y-auto pr-1">
+      <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
+        <Sparkles className="w-3.5 h-3.5 text-warning" /> Impacto das Mudanças
+      </p>
+      <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
         {displayEvents.map((entry, i) => {
-          const fi = FIELD_ICONS[entry.field] || FIELD_ICONS.other;
-          const Icon = fi.icon;
           const typeStyles: Record<string, string> = {
-            roas_target: 'border-l-2 border-l-emerald-500/60 bg-emerald-500/[0.03]',
-            budget: 'border-l-2 border-l-blue-500/60 bg-blue-500/[0.03]',
-            quick_boost: 'border-l-2 border-l-amber-500/60 bg-amber-500/[0.03]',
-            campaign_created: 'border-l-2 border-l-emerald-500/60 bg-emerald-500/[0.03]',
-            other: 'border-l-2 border-l-border bg-surface-2/20',
+            roas_target: 'border-emerald-500/40 bg-emerald-500/[0.05]',
+            budget: 'border-blue-500/40 bg-blue-500/[0.05]',
+            quick_boost: 'border-amber-500/40 bg-amber-500/[0.05]',
+            campaign_created: 'border-emerald-500/40 bg-emerald-500/[0.05]',
+            other: 'border-border bg-surface-2/30',
           };
           const typeStyle = typeStyles[entry.field] || typeStyles.other;
           const typeLabelMap: Record<string, { label: string; color: string }> = {
@@ -375,29 +376,40 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
           const typeLabel = typeLabelMap[entry.field] || typeLabelMap.other;
           const impDelta = (entry as any).impressionsDelta;
           const salesDelta = (entry as any).salesValue;
+          const observation = getObservation(entry);
           return (
-            <div key={i} className={cn('rounded-lg px-3 py-2 flex items-start gap-2.5 transition-colors hover:bg-white/[0.02]', typeStyle)}>
-              <Icon className={cn('w-4 h-4 mt-0.5 flex-shrink-0', fi.color)} />
-              <div className="flex-1 min-w-0 space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <span className={cn('text-[8px] font-bold uppercase px-1.5 py-0.5 rounded', typeLabel.color)}>
-                    {typeLabel.label}
-                  </span>
-                  <span className="text-[10px] text-text-3 font-mono">{formatLogDate(entry.timestamp)}</span>
+            <div key={i} className={cn('rounded-xl border px-4 py-3 space-y-1.5 transition-colors hover:bg-white/[0.02]', typeStyle)}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className={cn('text-[9px] font-bold uppercase px-2 py-0.5 rounded-md', typeLabel.color)}>
+                      {typeLabel.label}
+                    </span>
+                    <span className="text-[11px] text-text-3 font-mono">{formatLogDate(entry.timestamp)}</span>
+                  </div>
+                  <p className="text-base text-foreground font-bold leading-snug">{formatLogLabel(entry)}</p>
+                  {observation && (
+                    <p className="text-[11px] text-text-2 leading-snug">{observation}</p>
+                  )}
                 </div>
-                <p className="text-[13px] text-foreground font-semibold leading-snug">{formatLogLabel(entry)}</p>
-              </div>
-              <div className="flex flex-col items-end gap-0.5 flex-shrink-0 ml-2">
-                {impDelta !== undefined && (
-                  <span className={cn('text-[10px] font-bold font-mono tabular-nums', String(impDelta).startsWith('-') ? 'text-destructive' : 'text-success')}>
-                    {impDelta}
-                  </span>
-                )}
-                {salesDelta !== undefined && (
-                  <span className={cn('text-[10px] font-bold font-mono tabular-nums', String(salesDelta).startsWith('-') ? 'text-destructive' : 'text-success')}>
-                    {salesDelta}
-                  </span>
-                )}
+                <div className="flex flex-col items-end gap-1 flex-shrink-0 pt-1">
+                  {impDelta !== undefined && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-[9px] text-text-3 uppercase">impressões</span>
+                      <span className={cn('text-xs font-bold font-mono tabular-nums', String(impDelta).startsWith('-') ? 'text-destructive' : 'text-success')}>
+                        {impDelta}
+                      </span>
+                    </div>
+                  )}
+                  {salesDelta !== undefined && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-[9px] text-text-3 uppercase">vendas</span>
+                      <span className={cn('text-xs font-bold font-mono tabular-nums', String(salesDelta).startsWith('-') ? 'text-destructive' : 'text-success')}>
+                        {salesDelta}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           );
