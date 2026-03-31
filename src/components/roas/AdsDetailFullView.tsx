@@ -354,62 +354,69 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
         </>
       )}
       <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
-        <Sparkles className="w-3.5 h-3.5 text-warning" /> Impacto das Mudanças
+        <Sparkles className="w-3.5 h-3.5 text-warning" /> Impacto das Mudanças ({displayEvents.length})
       </p>
-      <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+      <div className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
         {displayEvents.map((entry, i) => {
           const typeStyles: Record<string, string> = {
-            roas_target: 'border-emerald-500/40 bg-emerald-500/[0.05]',
-            budget: 'border-blue-500/40 bg-blue-500/[0.05]',
-            quick_boost: 'border-amber-500/40 bg-amber-500/[0.05]',
-            campaign_created: 'border-emerald-500/40 bg-emerald-500/[0.05]',
+            roas_target: 'border-emerald-500/50 bg-emerald-500/[0.06]',
+            budget: 'border-blue-500/50 bg-blue-500/[0.06]',
+            quick_boost: 'border-amber-500/50 bg-amber-500/[0.06]',
+            campaign_created: 'border-emerald-500/50 bg-emerald-500/[0.06]',
             other: 'border-border bg-surface-2/30',
           };
           const typeStyle = typeStyles[entry.field] || typeStyles.other;
           const typeLabelMap: Record<string, { label: string; color: string }> = {
-            roas_target: { label: 'META', color: 'bg-emerald-500/15 text-emerald-500' },
-            budget: { label: 'BUDGET', color: 'bg-blue-500/15 text-blue-500' },
-            quick_boost: { label: 'BOOST', color: 'bg-amber-500/15 text-amber-500' },
-            campaign_created: { label: 'NOVO', color: 'bg-emerald-500/15 text-emerald-500' },
+            roas_target: { label: 'META', color: 'bg-emerald-500/20 text-emerald-400' },
+            budget: { label: 'BUDGET', color: 'bg-blue-500/20 text-blue-400' },
+            quick_boost: { label: 'BOOST', color: 'bg-amber-500/20 text-amber-400' },
+            campaign_created: { label: 'NOVO', color: 'bg-emerald-500/20 text-emerald-400' },
             other: { label: 'OUTRO', color: 'bg-muted/50 text-text-3' },
           };
           const typeLabel = typeLabelMap[entry.field] || typeLabelMap.other;
-          const impDelta = (entry as any).impressionsDelta;
-          const salesDelta = (entry as any).salesValue;
+          const impDelta = (entry as any).impressionsDelta as string | undefined;
+          const salesDelta = (entry as any).salesValue as string | undefined;
           const observation = getObservation(entry);
+
+          // Determine observation color based on sentiment
+          const obsIsPositive = observation ? (observation.startsWith('📈') || observation.startsWith('💰') || observation.startsWith('🆕')) : false;
+          const obsColor = obsIsPositive ? 'text-emerald-400' : 'text-amber-400';
+
           return (
-            <div key={i} className={cn('rounded-xl border px-4 py-3 space-y-1.5 transition-colors hover:bg-white/[0.02]', typeStyle)}>
+            <div key={i} className={cn('rounded-xl border px-4 py-3.5 transition-colors', typeStyle)}>
               <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0 space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className={cn('text-[9px] font-bold uppercase px-2 py-0.5 rounded-md', typeLabel.color)}>
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <div className="flex items-center gap-2.5">
+                    <span className={cn('text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-md tracking-wide', typeLabel.color)}>
                       {typeLabel.label}
                     </span>
-                    <span className="text-[11px] text-text-3 font-mono">{formatLogDate(entry.timestamp)}</span>
+                    <span className="text-[12px] text-text-3 font-mono">{formatLogDate(entry.timestamp)}</span>
                   </div>
-                  <p className="text-base text-foreground font-bold leading-snug">{formatLogLabel(entry)}</p>
+                  <p className="text-lg text-foreground font-bold leading-snug">{formatLogLabel(entry)}</p>
                   {observation && (
-                    <p className="text-[11px] text-text-2 leading-snug">{observation}</p>
+                    <p className={cn('text-[12px] leading-snug', obsColor)}>{observation}</p>
                   )}
                 </div>
-                <div className="flex flex-col items-end gap-1 flex-shrink-0 pt-1">
-                  {impDelta !== undefined && (
-                    <div className="flex items-center gap-1">
-                      <span className="text-[9px] text-text-3 uppercase">impressões</span>
-                      <span className={cn('text-xs font-bold font-mono tabular-nums', String(impDelta).startsWith('-') ? 'text-destructive' : 'text-success')}>
-                        {impDelta}
-                      </span>
-                    </div>
-                  )}
-                  {salesDelta !== undefined && (
-                    <div className="flex items-center gap-1">
-                      <span className="text-[9px] text-text-3 uppercase">vendas</span>
-                      <span className={cn('text-xs font-bold font-mono tabular-nums', String(salesDelta).startsWith('-') ? 'text-destructive' : 'text-success')}>
-                        {salesDelta}
-                      </span>
-                    </div>
-                  )}
-                </div>
+                {(impDelta !== undefined || salesDelta !== undefined) && (
+                  <div className="flex flex-col items-end gap-1.5 flex-shrink-0 pt-1 text-right">
+                    {impDelta !== undefined && (
+                      <div>
+                        <span className={cn('text-sm font-bold font-mono tabular-nums', String(impDelta).startsWith('-') ? 'text-destructive' : 'text-emerald-400')}>
+                          {impDelta}
+                        </span>
+                        <p className="text-[9px] text-text-3 uppercase mt-0.5">impressões</p>
+                      </div>
+                    )}
+                    {salesDelta !== undefined && (
+                      <div>
+                        <span className={cn('text-sm font-bold font-mono tabular-nums', String(salesDelta).startsWith('-') ? 'text-destructive' : 'text-emerald-400')}>
+                          {salesDelta}
+                        </span>
+                        <p className="text-[9px] text-text-3 uppercase mt-0.5">vendas</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           );
