@@ -636,6 +636,44 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
 
   // ═══ Render ═══
 
+  // Load saved Excel data from database
+  useEffect(() => {
+    if (!user || excelData) return;
+    const loadExcel = async () => {
+      let query = supabase
+        .from('product_ads_metrics')
+        .select('excel_daily_data, excel_summary')
+        .eq('user_id', user.id);
+      if (ad.product_id) {
+        query = query.eq('product_id', ad.product_id);
+      } else if (ad.shopee_product_id) {
+        query = query.eq('shopee_product_id', ad.shopee_product_id);
+      } else {
+        return;
+      }
+      const { data } = await query.order('imported_at', { ascending: false }).limit(1) as any;
+      if (data && data.length > 0 && data[0].excel_daily_data) {
+        const saved = data[0];
+        const summary = saved.excel_summary || {};
+        setExcelData({
+          dataRange: { inicio: '', fim: '' },
+          dadosDiarios: saved.excel_daily_data,
+          totalDias: summary.totalDias || 0,
+          dataPrimeiraVenda: null,
+          totais: {
+            impressoes: summary.totalImpressions || 0,
+            vendasBrl: summary.totalGmv || 0,
+            compradores: summary.totalOrders || 0,
+          },
+          fontes: [],
+          produtoNome: ad.nome_produto_csv,
+          shopeeProductId: ad.shopee_product_id || '',
+        });
+      }
+    };
+    loadExcel();
+  }, [user, ad.product_id, ad.shopee_product_id]);
+
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0 });
   }, [ad]);
