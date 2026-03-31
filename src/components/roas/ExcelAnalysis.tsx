@@ -224,16 +224,16 @@ function ResultadoAposMudancaSection({ correlations, dadosDiarios }: { correlati
           const delta3d = compute3DayDelta(c.data);
 
           return (
-            <div key={i} className={cn('rounded-xl border px-4 py-3.5 transition-colors', borderStyle)}>
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0 space-y-1.5">
-                  <div className="flex items-center gap-2.5">
-                    <span className={cn('text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-md tracking-wide', typeLabel.color)}>
+            <div key={i} className={cn('rounded-lg md:rounded-xl border px-2.5 py-2 md:px-4 md:py-3.5 transition-colors', borderStyle)}>
+              <div className="flex items-start justify-between gap-2 md:gap-3">
+                <div className="flex-1 min-w-0 space-y-1 md:space-y-1.5">
+                  <div className="flex items-center gap-2 md:gap-2.5">
+                    <span className={cn('text-[9px] md:text-[10px] font-extrabold uppercase px-2 py-0.5 md:px-2.5 md:py-1 rounded-md tracking-wide', typeLabel.color)}>
                       {typeLabel.label}
                     </span>
-                    <span className="text-[12px] text-text-3 font-mono">{c.dataLabel}</span>
+                    <span className="text-[11px] md:text-[12px] text-text-3 font-mono">{c.dataLabel}</span>
                   </div>
-                  <p className="text-lg text-foreground font-bold leading-snug">{c.mudanca}</p>
+                  <p className="text-sm md:text-lg text-foreground font-bold leading-snug">{c.mudanca}</p>
                   {c.impacto.observacao && (
                     <p className={cn('text-[12px] leading-snug', isPositive ? 'text-emerald-400' : isNegative ? 'text-destructive' : 'text-amber-400')}>
                       {c.impacto.observacao}
