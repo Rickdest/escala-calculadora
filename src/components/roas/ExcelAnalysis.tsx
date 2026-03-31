@@ -193,10 +193,80 @@ function FontesTrafegoChart({ fontes }: { fontes: ExcelPerformanceData['fontes']
 }
 
 // ─── Correlations ───
+function ResultadoCard({ c, compute3DayDelta }: { c: Correlation; compute3DayDelta: (date: string) => { deltaImp: number; deltaSales: number } | null }) {
+  const [expanded, setExpanded] = useState(false);
+  const isPositive = c.resultado === 'positivo';
+  const isNegative = c.resultado === 'negativo';
+  const borderStyle = isPositive
+    ? 'border-emerald-500/50 bg-emerald-500/[0.06]'
+    : isNegative
+    ? 'border-destructive/50 bg-destructive/[0.06]'
+    : 'border-border bg-surface-2/30';
+
+  const mudLower = c.mudanca.toLowerCase();
+  const typeLabel = mudLower.includes('roas') || mudLower.includes('meta')
+    ? { label: 'META', color: 'bg-emerald-500/20 text-emerald-400' }
+    : mudLower.includes('orçamento') || mudLower.includes('budget')
+    ? { label: 'BUDGET', color: 'bg-blue-500/20 text-blue-400' }
+    : mudLower.includes('boost') || mudLower.includes('impulsão')
+    ? { label: 'BOOST', color: 'bg-amber-500/20 text-amber-400' }
+    : { label: 'OUTRO', color: 'bg-muted/50 text-text-3' };
+
+  const delta3d = compute3DayDelta(c.data);
+
+  return (
+    <div
+      className={cn('rounded-lg md:rounded-xl border px-2.5 py-2 md:px-4 md:py-3.5 transition-colors', borderStyle)}
+      onClick={() => setExpanded(prev => !prev)}
+    >
+      <div className="flex items-start justify-between gap-2 md:gap-3">
+        <div className="flex-1 min-w-0 space-y-0.5 md:space-y-1.5">
+          <div className="flex items-center gap-1.5 md:gap-2.5">
+            <span className={cn('text-[8px] md:text-[10px] font-extrabold uppercase px-1.5 py-0.5 md:px-2.5 md:py-1 rounded-md tracking-wide', typeLabel.color)}>
+              {typeLabel.label}
+            </span>
+            <span className="text-[10px] md:text-[12px] text-text-3 font-mono">{c.dataLabel}</span>
+            <ChevronDown className={cn('w-3 h-3 text-text-3 transition-transform md:hidden', expanded && 'rotate-180')} />
+          </div>
+          <p className={cn('text-xs md:text-lg text-foreground font-bold leading-snug md:line-clamp-none', !expanded && 'line-clamp-1')}>{c.mudanca}</p>
+          {c.impacto.observacao && (
+            <p className={cn('text-[10px] md:text-[12px] leading-snug md:line-clamp-none', !expanded && 'line-clamp-1', isPositive ? 'text-emerald-400' : isNegative ? 'text-destructive' : 'text-amber-400')}>
+              {c.impacto.observacao}
+            </p>
+          )}
+        </div>
+        <div className="flex flex-col items-end gap-1 flex-shrink-0 pt-0.5 text-right">
+          <div>
+            <span className={cn('text-xs md:text-sm font-bold font-mono tabular-nums', c.impacto.impressoesDelta >= 0 ? 'text-emerald-400' : 'text-destructive')}>
+              {c.impacto.impressoesDelta >= 0 ? '+' : ''}{fmtN(c.impacto.impressoesDelta)}
+              <span className="hidden md:inline">{c.impacto.impressoesPct !== 0 && ` (${c.impacto.impressoesPct}%)`}</span>
+            </span>
+            <p className="text-[8px] md:text-[9px] text-text-3 uppercase">imp</p>
+          </div>
+          <div>
+            <span className={cn('text-xs md:text-sm font-bold font-mono tabular-nums', c.impacto.vendasDelta >= 0 ? 'text-emerald-400' : 'text-destructive')}>
+              {c.impacto.vendasDelta >= 0 ? '+' : ''}{fmt(c.impacto.vendasDelta)}
+            </span>
+            <p className="text-[8px] md:text-[9px] text-text-3 uppercase">vendas</p>
+          </div>
+        </div>
+      </div>
+      {delta3d && (
+        <div className="mt-1 md:mt-1.5 rounded-md bg-surface-2/40 px-2 py-1 md:px-3 md:py-2 text-[9px] md:text-[11px] text-text-2">
+          <div className="flex gap-2 md:gap-4">
+            <span className="font-semibold text-foreground">📊 3d:</span>
+            <span>Imp: <span className={cn('font-bold font-mono', delta3d.deltaImp >= 0 ? 'text-success' : 'text-destructive')}>{delta3d.deltaImp >= 0 ? '+' : ''}{delta3d.deltaImp.toLocaleString()}</span></span>
+            <span>Vnd: <span className={cn('font-bold font-mono', delta3d.deltaSales >= 0 ? 'text-success' : 'text-destructive')}>{delta3d.deltaSales >= 0 ? '+' : ''}{delta3d.deltaSales}</span></span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ResultadoAposMudancaSection({ correlations, dadosDiarios }: { correlations: Correlation[]; dadosDiarios: DailyMetric[] }) {
   if (correlations.length === 0) return null;
 
-  // Helper: compute 3-day before/after delta
   function compute3DayDelta(eventDate: string) {
     const idx = dadosDiarios.findIndex(d => d.data === eventDate);
     if (idx < 0) return null;
@@ -218,72 +288,10 @@ function ResultadoAposMudancaSection({ correlations, dadosDiarios }: { correlati
       <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
         <GitCompareArrows className="w-3.5 h-3.5 text-primary dark:text-blue-400" /> Resultado Após Cada Mudança ({correlations.length})
       </p>
-      <div className="space-y-1.5 md:space-y-2.5 max-h-[250px] md:max-h-[420px] overflow-y-auto pr-1">
-        {correlations.map((c, i) => {
-          const isPositive = c.resultado === 'positivo';
-          const isNegative = c.resultado === 'negativo';
-          const borderStyle = isPositive
-            ? 'border-emerald-500/50 bg-emerald-500/[0.06]'
-            : isNegative
-            ? 'border-destructive/50 bg-destructive/[0.06]'
-            : 'border-border bg-surface-2/30';
-
-          const mudLower = c.mudanca.toLowerCase();
-          const typeLabel = mudLower.includes('roas') || mudLower.includes('meta')
-            ? { label: 'META', color: 'bg-emerald-500/20 text-emerald-400' }
-            : mudLower.includes('orçamento') || mudLower.includes('budget')
-            ? { label: 'BUDGET', color: 'bg-blue-500/20 text-blue-400' }
-            : mudLower.includes('boost') || mudLower.includes('impulsão')
-            ? { label: 'BOOST', color: 'bg-amber-500/20 text-amber-400' }
-            : { label: 'OUTRO', color: 'bg-muted/50 text-text-3' };
-
-          const delta3d = compute3DayDelta(c.data);
-
-          return (
-            <div key={i} className={cn('rounded-lg md:rounded-xl border px-2.5 py-2 md:px-4 md:py-3.5 transition-colors', borderStyle)}>
-              <div className="flex items-start justify-between gap-2 md:gap-3">
-                <div className="flex-1 min-w-0 space-y-0.5 md:space-y-1.5">
-                  <div className="flex items-center gap-1.5 md:gap-2.5">
-                    <span className={cn('text-[8px] md:text-[10px] font-extrabold uppercase px-1.5 py-0.5 md:px-2.5 md:py-1 rounded-md tracking-wide', typeLabel.color)}>
-                      {typeLabel.label}
-                    </span>
-                    <span className="text-[10px] md:text-[12px] text-text-3 font-mono">{c.dataLabel}</span>
-                  </div>
-                  <p className="text-xs md:text-lg text-foreground font-bold leading-snug line-clamp-2 md:line-clamp-none">{c.mudanca}</p>
-                  {c.impacto.observacao && (
-                    <p className={cn('text-[10px] md:text-[12px] leading-snug line-clamp-1 md:line-clamp-none', isPositive ? 'text-emerald-400' : isNegative ? 'text-destructive' : 'text-amber-400')}>
-                      {c.impacto.observacao}
-                    </p>
-                  )}
-                </div>
-                <div className="flex flex-col items-end gap-1 flex-shrink-0 pt-0.5 text-right">
-                  <div>
-                    <span className={cn('text-xs md:text-sm font-bold font-mono tabular-nums', c.impacto.impressoesDelta >= 0 ? 'text-emerald-400' : 'text-destructive')}>
-                      {c.impacto.impressoesDelta >= 0 ? '+' : ''}{fmtN(c.impacto.impressoesDelta)}
-                      <span className="hidden md:inline">{c.impacto.impressoesPct !== 0 && ` (${c.impacto.impressoesPct}%)`}</span>
-                    </span>
-                    <p className="text-[8px] md:text-[9px] text-text-3 uppercase">imp</p>
-                  </div>
-                  <div>
-                    <span className={cn('text-xs md:text-sm font-bold font-mono tabular-nums', c.impacto.vendasDelta >= 0 ? 'text-emerald-400' : 'text-destructive')}>
-                      {c.impacto.vendasDelta >= 0 ? '+' : ''}{fmt(c.impacto.vendasDelta)}
-                    </span>
-                    <p className="text-[8px] md:text-[9px] text-text-3 uppercase">vendas</p>
-                  </div>
-                </div>
-              </div>
-              {delta3d && (
-                <div className="mt-1 md:mt-1.5 rounded-md bg-surface-2/40 px-2 py-1 md:px-3 md:py-2 text-[9px] md:text-[11px] text-text-2">
-                  <div className="flex gap-2 md:gap-4">
-                    <span className="font-semibold text-foreground">📊 3d:</span>
-                    <span>Imp: <span className={cn('font-bold font-mono', delta3d.deltaImp >= 0 ? 'text-success' : 'text-destructive')}>{delta3d.deltaImp >= 0 ? '+' : ''}{delta3d.deltaImp.toLocaleString()}</span></span>
-                    <span>Vnd: <span className={cn('font-bold font-mono', delta3d.deltaSales >= 0 ? 'text-success' : 'text-destructive')}>{delta3d.deltaSales >= 0 ? '+' : ''}{delta3d.deltaSales}</span></span>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+      <div className="space-y-1.5 md:space-y-2.5 max-h-[300px] md:max-h-[420px] overflow-y-auto pr-1">
+        {correlations.map((c, i) => (
+          <ResultadoCard key={i} c={c} compute3DayDelta={compute3DayDelta} />
+        ))}
       </div>
     </div>
   );
