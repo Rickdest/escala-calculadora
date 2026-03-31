@@ -152,34 +152,41 @@ function FontesTrafegoChart({ fontes }: { fontes: ExcelPerformanceData['fontes']
       <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
         <Search className="w-3.5 h-3.5" /> Fontes de Tráfego
       </p>
-      <div className="h-[200px] w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-border" opacity={0.2} horizontal={false} />
-            <XAxis type="number" tick={{ fontSize: 10 }} className="fill-text-3" unit="%" />
-            <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} className="fill-text-3" width={110} />
-            <Tooltip
-              contentStyle={{ fontSize: 12, borderRadius: 12, border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))' }}
-              formatter={(value: number, name: string) => {
-                if (name === 'pct') return [`${value}%`, 'Participação'];
-                return [value, name];
-              }}
-            />
-            <Bar dataKey="pct" radius={[0, 6, 6, 0]} barSize={18}>
-              {chartData.map((entry, index) => (
-                <Cell key={index} fill={entry.fill} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-      <div className="flex flex-wrap gap-3 justify-center">
-        {chartData.map((d, i) => (
-          <span key={i} className="flex items-center gap-1.5 text-[11px] text-text-3">
-            <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: d.fill }} />
-            {d.name}: <span className="font-bold text-foreground">{d.pct}%</span>
-          </span>
-        ))}
+      <div className="flex items-center gap-6 flex-col md:flex-row">
+        <div className="h-[200px] w-[200px] flex-shrink-0">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={chartData}
+                cx="50%"
+                cy="50%"
+                innerRadius={50}
+                outerRadius={85}
+                dataKey="pct"
+                nameKey="name"
+                strokeWidth={2}
+                stroke="hsl(var(--card))"
+              >
+                {chartData.map((entry, index) => (
+                  <Cell key={index} fill={entry.fill} />
+                ))}
+              </Pie>
+              <Tooltip
+                contentStyle={{ fontSize: 12, borderRadius: 12, border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))' }}
+                formatter={(value: number) => [`${value}%`, 'Participação']}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="flex flex-col gap-2 flex-1 min-w-0">
+          {chartData.map((d, i) => (
+            <div key={i} className="flex items-center gap-2 text-[12px]">
+              <span className="w-3 h-3 rounded-full inline-block flex-shrink-0" style={{ background: d.fill }} />
+              <span className="text-text-3 truncate">{d.name}</span>
+              <span className="ml-auto font-bold text-foreground tabular-nums">{d.pct}%</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
