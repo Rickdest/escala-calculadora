@@ -1201,8 +1201,8 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                     
                     {/* Right: Recommendation card */}
                     <div className="md:w-[200px] flex-shrink-0 space-y-2">
-                      <div className="rounded-xl bg-surface-2/50 border border-border p-4 shadow-sm">
-                        <p className="text-sm text-foreground leading-relaxed">
+                      <div className="rounded-lg md:rounded-xl bg-surface-2/50 border border-border p-3 md:p-4 shadow-sm">
+                        <p className="text-xs md:text-sm text-foreground leading-relaxed">
                           {ad.posicao_media > 8 ? (
                             <>
                               💡 <strong className="text-warning">Você está na 2ª página.</strong>{' '}
