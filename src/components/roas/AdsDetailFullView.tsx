@@ -563,6 +563,8 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
     return `${f(ad.periodo_inicio)} – ${f(ad.periodo_fim)} (${dias} dias)`;
   })();
 
+  const { user } = useAuth();
+
   const handleExcelUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -573,12 +575,41 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
       const parsed = parseShopeeExcel(buffer);
       setExcelData(parsed);
       toast.success(`${parsed.totalDias} dias importados`);
+
+      // Persist Excel data to database
+      const productIdForSave = ad.product_id || null;
+      const shopeeIdForSave = ad.shopee_product_id || null;
+      if (user && (productIdForSave || shopeeIdForSave)) {
+        const savePayload = {
+          excel_daily_data: parsed.dadosDiarios as any,
+          excel_summary: {
+            totalDias: parsed.totalDias,
+            totalImpressions: parsed.totais.impressoes,
+            totalOrders: parsed.totais.compradores,
+            totalGmv: parsed.totais.vendasBrl,
+            importedAt: new Date().toISOString(),
+          } as any,
+        };
+        let updateQuery = supabase
+          .from('product_ads_metrics')
+          .update(savePayload)
+          .eq('user_id', user.id);
+        if (productIdForSave) {
+          updateQuery = updateQuery.eq('product_id', productIdForSave);
+        } else if (shopeeIdForSave) {
+          updateQuery = updateQuery.eq('shopee_product_id', shopeeIdForSave);
+        }
+        const { error: saveError } = await updateQuery;
+        if (saveError) {
+          console.error('Erro ao salvar Excel:', saveError.message);
+        }
+      }
     } catch (err: any) {
       toast.error(err?.message || 'Erro ao processar arquivo');
     } finally {
       if (excelInputRef.current) excelInputRef.current.value = '';
     }
-  }, []);
+  }, [user, ad.product_id, ad.shopee_product_id]);
 
   const effBarColor = efficiency.score >= 80 ? 'bg-success' : efficiency.score >= 60 ? 'bg-success/80' : efficiency.score >= 40 ? 'bg-warning' : 'bg-destructive';
 
@@ -604,6 +635,44 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
   const [selectedMeta, setSelectedMeta] = useState<'agressivo' | 'equilibrado' | 'conservador'>('equilibrado');
 
   // ═══ Render ═══
+
+  // Load saved Excel data from database
+  useEffect(() => {
+    if (!user || excelData) return;
+    const loadExcel = async () => {
+      let query = supabase
+        .from('product_ads_metrics')
+        .select('excel_daily_data, excel_summary')
+        .eq('user_id', user.id);
+      if (ad.product_id) {
+        query = query.eq('product_id', ad.product_id);
+      } else if (ad.shopee_product_id) {
+        query = query.eq('shopee_product_id', ad.shopee_product_id);
+      } else {
+        return;
+      }
+      const { data } = await query.order('imported_at', { ascending: false }).limit(1) as any;
+      if (data && data.length > 0 && data[0].excel_daily_data) {
+        const saved = data[0];
+        const summary = saved.excel_summary || {};
+        setExcelData({
+          dataRange: { inicio: '', fim: '' },
+          dadosDiarios: saved.excel_daily_data,
+          totalDias: summary.totalDias || 0,
+          dataPrimeiraVenda: null,
+          totais: {
+            impressoes: summary.totalImpressions || 0,
+            vendasBrl: summary.totalGmv || 0,
+            compradores: summary.totalOrders || 0,
+          },
+          fontes: [],
+          produtoNome: ad.nome_produto_csv,
+          shopeeProductId: ad.shopee_product_id || '',
+        });
+      }
+    };
+    loadExcel();
+  }, [user, ad.product_id, ad.shopee_product_id]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0 });
@@ -1082,9 +1151,17 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                   {/* Gradient top border accent */}
                   <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary via-purple-500 to-pink-500" />
                   
-                  <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-primary dark:text-blue-400" /> Posicionamento
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-primary dark:text-blue-400" /> Posicionamento
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <Button onClick={onImportPosition} size="sm" variant="ghost" className="h-6 text-[10px] gap-1 text-text-3 hover:text-foreground hover:bg-surface-2 px-2">
+                        <Upload className="w-3 h-3" /> Atualizar
+                      </Button>
+                      <span className="text-3xl font-black font-mono tabular-nums text-foreground">#{ad.posicao_media}</span>
+                    </div>
+                  </div>
                   
                   <div className="grid grid-cols-[1fr_auto] gap-6 items-start">
                     {/* Left: Big number + label + horizontal tiers */}

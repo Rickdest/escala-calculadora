@@ -462,6 +462,8 @@ export type Database = {
           ctr: number | null
           direct_acos: number | null
           direct_roas: number | null
+          excel_daily_data: Json | null
+          excel_summary: Json | null
           gmv: number | null
           id: string
           imported_at: string | null
@@ -488,6 +490,8 @@ export type Database = {
           ctr?: number | null
           direct_acos?: number | null
           direct_roas?: number | null
+          excel_daily_data?: Json | null
+          excel_summary?: Json | null
           gmv?: number | null
           id?: string
           imported_at?: string | null
@@ -514,6 +518,8 @@ export type Database = {
           ctr?: number | null
           direct_acos?: number | null
           direct_roas?: number | null
+          excel_daily_data?: Json | null
+          excel_summary?: Json | null
           gmv?: number | null
           id?: string
           imported_at?: string | null
