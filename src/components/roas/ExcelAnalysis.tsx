@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { ExcelPerformanceData, DailyMetric } from '@/lib/shopeeExcelParser';
 import { OperationLogEntry } from '@/lib/shopeeAdsParser';
-import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Area, BarChart, Bar, Cell } from 'recharts';
+import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Area, PieChart, Pie, Cell } from 'recharts';
 import { TrendingUp, TrendingDown, ArrowRight, Search, GitCompareArrows, BarChart3 } from 'lucide-react';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
