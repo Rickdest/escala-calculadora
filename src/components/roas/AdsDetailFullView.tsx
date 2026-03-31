@@ -1252,37 +1252,37 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                     </div>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm font-mono tabular-nums">
+                    <table className="w-full text-xs md:text-sm font-mono tabular-nums">
                       <thead>
                         <tr className="bg-surface-2">
-                          <th className="text-left py-2.5 px-3 font-normal text-[10px] uppercase tracking-wider text-text-2">Métrica</th>
-                          <th className="text-right py-2.5 px-3 font-normal text-[10px] uppercase tracking-wider text-text-2">Geral</th>
-                          <th className="text-right py-2.5 px-3 font-normal text-[10px] uppercase tracking-wider text-text-2">Direto</th>
-                          <th className="text-right py-2.5 px-3 font-normal text-[10px] uppercase tracking-wider text-text-2">Δ</th>
+                          <th className="text-left py-2 px-2 md:py-2.5 md:px-3 font-normal text-[9px] md:text-[10px] uppercase tracking-wider text-text-2">Métrica</th>
+                          <th className="text-right py-2 px-2 md:py-2.5 md:px-3 font-normal text-[9px] md:text-[10px] uppercase tracking-wider text-text-2">Geral</th>
+                          <th className="text-right py-2 px-2 md:py-2.5 md:px-3 font-normal text-[9px] md:text-[10px] uppercase tracking-wider text-text-2">Direto</th>
+                          <th className="text-right py-2 px-2 md:py-2.5 md:px-3 font-normal text-[9px] md:text-[10px] uppercase tracking-wider text-text-2">Δ</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr className="border-t border-border">
-                          <td className="py-2.5 px-3 text-text-2 font-bold">ROAS</td>
-                          <td className="py-2.5 px-3 text-right font-bold text-foreground">{ad.roas.toFixed(2)}</td>
-                          <td className="py-2.5 px-3 text-right font-bold text-success">{ad.roas_direto.toFixed(2)}</td>
-                          <td className={cn('py-2.5 px-3 text-right font-bold', ad.roas - ad.roas_direto > 0 ? 'text-success' : 'text-destructive')}>
+                          <td className="py-2 px-2 md:py-2.5 md:px-3 text-text-2 font-bold">ROAS</td>
+                          <td className="py-2 px-2 md:py-2.5 md:px-3 text-right font-bold text-foreground">{ad.roas.toFixed(2)}</td>
+                          <td className="py-2 px-2 md:py-2.5 md:px-3 text-right font-bold text-success">{ad.roas_direto.toFixed(2)}</td>
+                          <td className={cn('py-2 px-2 md:py-2.5 md:px-3 text-right font-bold', ad.roas - ad.roas_direto > 0 ? 'text-success' : 'text-destructive')}>
                             {(ad.roas - ad.roas_direto) > 0 ? '+' : ''}{(ad.roas - ad.roas_direto).toFixed(2)}
                           </td>
                         </tr>
                         <tr className="border-t border-border">
-                          <td className="py-2.5 px-3 text-text-2 font-bold">ACOS</td>
-                          <td className="py-2.5 px-3 text-right font-bold text-foreground">{ad.acos.toFixed(1)}%</td>
-                          <td className="py-2.5 px-3 text-right font-bold text-foreground">{acosDireto.toFixed(1)}%</td>
-                          <td className={cn('py-2.5 px-3 text-right font-bold', ad.acos - acosDireto < 0 ? 'text-success' : 'text-destructive')}>
+                          <td className="py-2 px-2 md:py-2.5 md:px-3 text-text-2 font-bold">ACOS</td>
+                          <td className="py-2 px-2 md:py-2.5 md:px-3 text-right font-bold text-foreground">{ad.acos.toFixed(1)}%</td>
+                          <td className="py-2 px-2 md:py-2.5 md:px-3 text-right font-bold text-foreground">{acosDireto.toFixed(1)}%</td>
+                          <td className={cn('py-2 px-2 md:py-2.5 md:px-3 text-right font-bold', ad.acos - acosDireto < 0 ? 'text-success' : 'text-destructive')}>
                             {(ad.acos - acosDireto).toFixed(1)}%
                           </td>
                         </tr>
                         <tr className="border-t border-border">
-                          <td className="py-2.5 px-3 text-text-2 font-bold">GMV</td>
-                          <td className="py-2.5 px-3 text-right font-bold text-foreground">{fmt(ad.gmv)}</td>
-                          <td className="py-2.5 px-3 text-right font-bold text-foreground">{fmt(ad.gmv_direto)}</td>
-                          <td className={cn('py-2.5 px-3 text-right font-bold', ad.gmv - ad.gmv_direto > 0 ? 'text-success' : 'text-text-2')}>
+                          <td className="py-2 px-2 md:py-2.5 md:px-3 text-text-2 font-bold">GMV</td>
+                          <td className="py-2 px-2 md:py-2.5 md:px-3 text-right font-bold text-foreground">{fmt(ad.gmv)}</td>
+                          <td className="py-2 px-2 md:py-2.5 md:px-3 text-right font-bold text-foreground">{fmt(ad.gmv_direto)}</td>
+                          <td className={cn('py-2 px-2 md:py-2.5 md:px-3 text-right font-bold', ad.gmv - ad.gmv_direto > 0 ? 'text-success' : 'text-text-2')}>
                             +{fmt(ad.gmv - ad.gmv_direto)}
                           </td>
                         </tr>
