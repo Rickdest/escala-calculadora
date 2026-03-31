@@ -356,7 +356,7 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
       <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
         <Sparkles className="w-3.5 h-3.5 text-warning" /> Impacto das Mudanças ({displayEvents.length})
       </p>
-      <div className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
+      <div className="space-y-1.5 md:space-y-2.5 max-h-[250px] md:max-h-[420px] overflow-y-auto pr-1">
         {displayEvents.map((entry, i) => {
           const typeStyles: Record<string, string> = {
             roas_target: 'border-emerald-500/50 bg-emerald-500/[0.06]',
@@ -378,23 +378,22 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
           const salesDelta = (entry as any).salesValue as string | undefined;
           const observation = getObservation(entry);
 
-          // Determine observation color based on sentiment
           const obsIsPositive = observation ? (observation.startsWith('📈') || observation.startsWith('💰') || observation.startsWith('🆕')) : false;
           const obsColor = obsIsPositive ? 'text-emerald-400' : 'text-amber-400';
 
           return (
-            <div key={i} className={cn('rounded-xl border px-4 py-3.5 transition-colors', typeStyle)}>
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0 space-y-1.5">
-                  <div className="flex items-center gap-2.5">
-                    <span className={cn('text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-md tracking-wide', typeLabel.color)}>
+            <div key={i} className={cn('rounded-lg md:rounded-xl border px-2.5 py-2 md:px-4 md:py-3.5 transition-colors', typeStyle)}>
+              <div className="flex items-start justify-between gap-2 md:gap-3">
+                <div className="flex-1 min-w-0 space-y-1 md:space-y-1.5">
+                  <div className="flex items-center gap-2 md:gap-2.5">
+                    <span className={cn('text-[9px] md:text-[10px] font-extrabold uppercase px-2 py-0.5 md:px-2.5 md:py-1 rounded-md tracking-wide', typeLabel.color)}>
                       {typeLabel.label}
                     </span>
-                    <span className="text-[12px] text-text-3 font-mono">{formatLogDate(entry.timestamp)}</span>
+                    <span className="text-[11px] md:text-[12px] text-text-3 font-mono">{formatLogDate(entry.timestamp)}</span>
                   </div>
-                  <p className="text-lg text-foreground font-bold leading-snug">{formatLogLabel(entry)}</p>
+                  <p className="text-sm md:text-lg text-foreground font-bold leading-snug">{formatLogLabel(entry)}</p>
                   {observation && (
-                    <p className={cn('text-[12px] leading-snug', obsColor)}>{observation}</p>
+                    <p className={cn('text-[11px] md:text-[12px] leading-snug', obsColor)}>{observation}</p>
                   )}
                 </div>
                 {(impDelta !== undefined || salesDelta !== undefined) && (
@@ -1144,7 +1143,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         <TabsContent value="metricas">
           <div className="space-y-4">
             {/* Posicionamento + Geral vs Direto — TOPO */}
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
               {/* Posicionamento */}
               {ad.posicao_media !== null && posInfo ? (
                 <div className="rounded-2xl border border-border bg-card p-5 md:p-6 shadow-lg relative overflow-hidden">
@@ -1160,7 +1159,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                       <Button onClick={onImportPosition} size="sm" variant="ghost" className="h-6 text-[10px] gap-1 text-text-3 hover:text-foreground hover:bg-surface-2 px-2">
                         <Upload className="w-3 h-3" /> Atualizar
                       </Button>
-                      <span className="text-3xl font-black font-mono tabular-nums text-foreground">#{ad.posicao_media}</span>
+                      <span className="text-xl md:text-3xl font-black font-mono tabular-nums text-foreground">#{ad.posicao_media}</span>
                     </div>
                   </div>
 
@@ -1169,10 +1168,10 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                     {/* Left: Big number + tier label + bars */}
                     <div className="flex-1 min-w-0 space-y-4">
                       <div>
-                        <span className="text-6xl md:text-7xl font-black font-mono tabular-nums leading-none text-foreground">
+                        <span className="text-5xl md:text-7xl font-black font-mono tabular-nums leading-none text-foreground">
                           #{ad.posicao_media}
                         </span>
-                        <p className={cn('text-xl md:text-2xl font-bold mt-1', ad.posicao_media <= 3 ? 'text-success' : ad.posicao_media <= 8 ? 'text-primary dark:text-blue-400' : ad.posicao_media <= 16 ? 'text-warning' : 'text-destructive')}>
+                        <p className={cn('text-lg md:text-2xl font-bold mt-1', ad.posicao_media <= 3 ? 'text-success' : ad.posicao_media <= 8 ? 'text-primary dark:text-blue-400' : ad.posicao_media <= 16 ? 'text-warning' : 'text-destructive')}>
                           {ad.posicao_media <= 3 ? 'Top 3' : ad.posicao_media <= 8 ? 'Primeira Página' : ad.posicao_media <= 16 ? 'Segunda Página' : 'Terceira Página+'}
                         </p>
                       </div>
@@ -1201,8 +1200,8 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                     
                     {/* Right: Recommendation card */}
                     <div className="md:w-[200px] flex-shrink-0 space-y-2">
-                      <div className="rounded-xl bg-surface-2/50 border border-border p-4 shadow-sm">
-                        <p className="text-sm text-foreground leading-relaxed">
+                      <div className="rounded-lg md:rounded-xl bg-surface-2/50 border border-border p-3 md:p-4 shadow-sm">
+                        <p className="text-xs md:text-sm text-foreground leading-relaxed">
                           {ad.posicao_media > 8 ? (
                             <>
                               💡 <strong className="text-warning">Você está na 2ª página.</strong>{' '}
@@ -1252,37 +1251,37 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                     </div>
                   </div>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-sm font-mono tabular-nums">
+                    <table className="w-full text-xs md:text-sm font-mono tabular-nums">
                       <thead>
                         <tr className="bg-surface-2">
-                          <th className="text-left py-2.5 px-3 font-normal text-[10px] uppercase tracking-wider text-text-2">Métrica</th>
-                          <th className="text-right py-2.5 px-3 font-normal text-[10px] uppercase tracking-wider text-text-2">Geral</th>
-                          <th className="text-right py-2.5 px-3 font-normal text-[10px] uppercase tracking-wider text-text-2">Direto</th>
-                          <th className="text-right py-2.5 px-3 font-normal text-[10px] uppercase tracking-wider text-text-2">Δ</th>
+                          <th className="text-left py-2 px-2 md:py-2.5 md:px-3 font-normal text-[9px] md:text-[10px] uppercase tracking-wider text-text-2">Métrica</th>
+                          <th className="text-right py-2 px-2 md:py-2.5 md:px-3 font-normal text-[9px] md:text-[10px] uppercase tracking-wider text-text-2">Geral</th>
+                          <th className="text-right py-2 px-2 md:py-2.5 md:px-3 font-normal text-[9px] md:text-[10px] uppercase tracking-wider text-text-2">Direto</th>
+                          <th className="text-right py-2 px-2 md:py-2.5 md:px-3 font-normal text-[9px] md:text-[10px] uppercase tracking-wider text-text-2">Δ</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr className="border-t border-border">
-                          <td className="py-2.5 px-3 text-text-2 font-bold">ROAS</td>
-                          <td className="py-2.5 px-3 text-right font-bold text-foreground">{ad.roas.toFixed(2)}</td>
-                          <td className="py-2.5 px-3 text-right font-bold text-success">{ad.roas_direto.toFixed(2)}</td>
-                          <td className={cn('py-2.5 px-3 text-right font-bold', ad.roas - ad.roas_direto > 0 ? 'text-success' : 'text-destructive')}>
+                          <td className="py-2 px-2 md:py-2.5 md:px-3 text-text-2 font-bold">ROAS</td>
+                          <td className="py-2 px-2 md:py-2.5 md:px-3 text-right font-bold text-foreground">{ad.roas.toFixed(2)}</td>
+                          <td className="py-2 px-2 md:py-2.5 md:px-3 text-right font-bold text-success">{ad.roas_direto.toFixed(2)}</td>
+                          <td className={cn('py-2 px-2 md:py-2.5 md:px-3 text-right font-bold', ad.roas - ad.roas_direto > 0 ? 'text-success' : 'text-destructive')}>
                             {(ad.roas - ad.roas_direto) > 0 ? '+' : ''}{(ad.roas - ad.roas_direto).toFixed(2)}
                           </td>
                         </tr>
                         <tr className="border-t border-border">
-                          <td className="py-2.5 px-3 text-text-2 font-bold">ACOS</td>
-                          <td className="py-2.5 px-3 text-right font-bold text-foreground">{ad.acos.toFixed(1)}%</td>
-                          <td className="py-2.5 px-3 text-right font-bold text-foreground">{acosDireto.toFixed(1)}%</td>
-                          <td className={cn('py-2.5 px-3 text-right font-bold', ad.acos - acosDireto < 0 ? 'text-success' : 'text-destructive')}>
+                          <td className="py-2 px-2 md:py-2.5 md:px-3 text-text-2 font-bold">ACOS</td>
+                          <td className="py-2 px-2 md:py-2.5 md:px-3 text-right font-bold text-foreground">{ad.acos.toFixed(1)}%</td>
+                          <td className="py-2 px-2 md:py-2.5 md:px-3 text-right font-bold text-foreground">{acosDireto.toFixed(1)}%</td>
+                          <td className={cn('py-2 px-2 md:py-2.5 md:px-3 text-right font-bold', ad.acos - acosDireto < 0 ? 'text-success' : 'text-destructive')}>
                             {(ad.acos - acosDireto).toFixed(1)}%
                           </td>
                         </tr>
                         <tr className="border-t border-border">
-                          <td className="py-2.5 px-3 text-text-2 font-bold">GMV</td>
-                          <td className="py-2.5 px-3 text-right font-bold text-foreground">{fmt(ad.gmv)}</td>
-                          <td className="py-2.5 px-3 text-right font-bold text-foreground">{fmt(ad.gmv_direto)}</td>
-                          <td className={cn('py-2.5 px-3 text-right font-bold', ad.gmv - ad.gmv_direto > 0 ? 'text-success' : 'text-text-2')}>
+                          <td className="py-2 px-2 md:py-2.5 md:px-3 text-text-2 font-bold">GMV</td>
+                          <td className="py-2 px-2 md:py-2.5 md:px-3 text-right font-bold text-foreground">{fmt(ad.gmv)}</td>
+                          <td className="py-2 px-2 md:py-2.5 md:px-3 text-right font-bold text-foreground">{fmt(ad.gmv_direto)}</td>
+                          <td className={cn('py-2 px-2 md:py-2.5 md:px-3 text-right font-bold', ad.gmv - ad.gmv_direto > 0 ? 'text-success' : 'text-text-2')}>
                             +{fmt(ad.gmv - ad.gmv_direto)}
                           </td>
                         </tr>

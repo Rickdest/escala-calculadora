@@ -198,11 +198,11 @@ function ResultadoAposMudancaSection({ correlations, dadosDiarios }: { correlati
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-lg space-y-4">
+    <div className="rounded-2xl border border-border bg-card p-3 md:p-5 shadow-lg space-y-3 md:space-y-4">
       <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
         <GitCompareArrows className="w-3.5 h-3.5 text-primary dark:text-blue-400" /> Resultado Após Cada Mudança ({correlations.length})
       </p>
-      <div className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
+      <div className="space-y-1.5 md:space-y-2.5 max-h-[250px] md:max-h-[420px] overflow-y-auto pr-1">
         {correlations.map((c, i) => {
           const isPositive = c.resultado === 'positivo';
           const isNegative = c.resultado === 'negativo';
@@ -224,16 +224,16 @@ function ResultadoAposMudancaSection({ correlations, dadosDiarios }: { correlati
           const delta3d = compute3DayDelta(c.data);
 
           return (
-            <div key={i} className={cn('rounded-xl border px-4 py-3.5 transition-colors', borderStyle)}>
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0 space-y-1.5">
-                  <div className="flex items-center gap-2.5">
-                    <span className={cn('text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-md tracking-wide', typeLabel.color)}>
+            <div key={i} className={cn('rounded-lg md:rounded-xl border px-2.5 py-2 md:px-4 md:py-3.5 transition-colors', borderStyle)}>
+              <div className="flex items-start justify-between gap-2 md:gap-3">
+                <div className="flex-1 min-w-0 space-y-1 md:space-y-1.5">
+                  <div className="flex items-center gap-2 md:gap-2.5">
+                    <span className={cn('text-[9px] md:text-[10px] font-extrabold uppercase px-2 py-0.5 md:px-2.5 md:py-1 rounded-md tracking-wide', typeLabel.color)}>
                       {typeLabel.label}
                     </span>
-                    <span className="text-[12px] text-text-3 font-mono">{c.dataLabel}</span>
+                    <span className="text-[11px] md:text-[12px] text-text-3 font-mono">{c.dataLabel}</span>
                   </div>
-                  <p className="text-lg text-foreground font-bold leading-snug">{c.mudanca}</p>
+                  <p className="text-sm md:text-lg text-foreground font-bold leading-snug">{c.mudanca}</p>
                   {c.impacto.observacao && (
                     <p className={cn('text-[12px] leading-snug', isPositive ? 'text-emerald-400' : isNegative ? 'text-destructive' : 'text-amber-400')}>
                       {c.impacto.observacao}
@@ -257,10 +257,10 @@ function ResultadoAposMudancaSection({ correlations, dadosDiarios }: { correlati
                 </div>
               </div>
               {delta3d && (
-                <div className="mt-1.5 rounded-lg bg-surface-2/40 px-3 py-2 text-[11px] text-text-2 space-y-0.5">
-                  <p className="font-semibold text-foreground text-xs">📊 Resultado após a mudança (3 dias):</p>
-                  <div className="flex gap-4">
-                    <span>Impressões: <span className={cn('font-bold font-mono', delta3d.deltaImp >= 0 ? 'text-success' : 'text-destructive')}>{delta3d.deltaImp >= 0 ? '+' : ''}{delta3d.deltaImp.toLocaleString()}</span></span>
+                <div className="mt-1.5 rounded-lg bg-surface-2/40 px-2 py-1.5 md:px-3 md:py-2 text-[10px] md:text-[11px] text-text-2 space-y-0.5">
+                  <p className="font-semibold text-foreground text-[11px] md:text-xs">📊 Resultado (3 dias):</p>
+                  <div className="flex flex-wrap gap-2 md:gap-4">
+                    <span>Imp: <span className={cn('font-bold font-mono', delta3d.deltaImp >= 0 ? 'text-success' : 'text-destructive')}>{delta3d.deltaImp >= 0 ? '+' : ''}{delta3d.deltaImp.toLocaleString()}</span></span>
                     <span>Vendas: <span className={cn('font-bold font-mono', delta3d.deltaSales >= 0 ? 'text-success' : 'text-destructive')}>{delta3d.deltaSales >= 0 ? '+' : ''}{delta3d.deltaSales}</span></span>
                   </div>
                 </div>
