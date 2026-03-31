@@ -80,6 +80,7 @@ function parseCampaignDetails(details: string): string[] {
   return pills;
 }
 
+function getObservation(entry: OperationLogEntry): string | null {
   if (entry.field === 'roas_target') {
     const from = parseFloat(entry.fromValue ?? '0');
     const to = parseFloat(entry.toValue ?? '0');
