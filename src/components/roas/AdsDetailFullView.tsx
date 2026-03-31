@@ -586,6 +586,8 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
             totalImpressions: parsed.totais.impressoes,
             totalOrders: parsed.totais.compradores,
             totalGmv: parsed.totais.vendasBrl,
+            dataPrimeiraVenda: parsed.dataPrimeiraVenda,
+            fontes: parsed.fontes,
             importedAt: new Date().toISOString(),
           } as any,
         };
