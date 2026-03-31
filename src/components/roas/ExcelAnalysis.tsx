@@ -134,42 +134,51 @@ function AntesVsDepois({ data }: { data: ExcelPerformanceData }) {
   );
 }
 
-// ─── Traffic Sources ───
-function FontesTrafego({ fontes }: { fontes: ExcelPerformanceData['fontes'] }) {
-  if (fontes.length === 0) return null;
-  const maxPct = Math.max(...fontes.map(f => f.pct));
+// ─── Traffic Sources Chart ───
+const TRAFFIC_COLORS = ['hsl(var(--primary))', '#3b82f6', '#f59e0b', '#a855f7', '#10b981', '#ec4899'];
 
-  const TRAFFIC_SOURCE_COLORS: Record<string, string> = {
-    'Pesquisar': 'bg-primary',
-    'Recomendação': 'bg-blue-500',
-    'Carrinho de Compras': 'bg-amber-500',
-    'Outros': 'bg-purple-500',
-    'Seguindo': 'bg-emerald-500',
-    'Meus Cupons': 'bg-pink-500',
-  };
+function FontesTrafegoChart({ fontes }: { fontes: ExcelPerformanceData['fontes'] }) {
+  if (fontes.length === 0) return null;
+
+  const chartData = fontes.map((f, i) => ({
+    name: f.fonte,
+    pct: Number(f.pct.toFixed(1)),
+    vendas: f.vendasBrl,
+    fill: TRAFFIC_COLORS[i % TRAFFIC_COLORS.length],
+  }));
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-lg space-y-4">
       <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
         <Search className="w-3.5 h-3.5" /> Fontes de Tráfego
       </p>
-      <div className="space-y-3">
-        {fontes.map((f, i) => (
-          <div key={i} className="space-y-1">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-text-2">{f.fonte}</span>
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-text-3">{fmt(f.vendasBrl)}</span>
-                <span className="font-bold font-mono tabular-nums text-foreground w-16 text-right">{f.pct.toFixed(1)}%</span>
-              </div>
-            </div>
-            <div className="w-full h-2 rounded-full bg-surface-2 overflow-hidden">
-              <div
-                className={cn('h-full rounded-full transition-all', TRAFFIC_SOURCE_COLORS[f.fonte] || 'bg-muted-foreground')}
-                style={{ width: `${(f.pct / maxPct) * 100}%` }}
-              />
-            </div>
-          </div>
+      <div className="h-[200px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" className="stroke-border" opacity={0.2} horizontal={false} />
+            <XAxis type="number" tick={{ fontSize: 10 }} className="fill-text-3" unit="%" />
+            <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} className="fill-text-3" width={110} />
+            <Tooltip
+              contentStyle={{ fontSize: 12, borderRadius: 12, border: '1px solid hsl(var(--border))', background: 'hsl(var(--card))' }}
+              formatter={(value: number, name: string) => {
+                if (name === 'pct') return [`${value}%`, 'Participação'];
+                return [value, name];
+              }}
+            />
+            <Bar dataKey="pct" radius={[0, 6, 6, 0]} barSize={18}>
+              {chartData.map((entry, index) => (
+                <Cell key={index} fill={entry.fill} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="flex flex-wrap gap-3 justify-center">
+        {chartData.map((d, i) => (
+          <span key={i} className="flex items-center gap-1.5 text-[11px] text-text-3">
+            <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ background: d.fill }} />
+            {d.name}: <span className="font-bold text-foreground">{d.pct}%</span>
+          </span>
         ))}
       </div>
     </div>
