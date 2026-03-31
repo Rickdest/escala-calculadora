@@ -267,7 +267,6 @@ function GraficoTendencia({ data, operationLog }: { data: ExcelPerformanceData; 
                 stroke="hsl(var(--warning))"
                 strokeDasharray="4 4"
                 strokeWidth={1.5}
-                label={{ value: e.mudanca, position: 'top', fontSize: 9, fill: 'hsl(var(--warning))' }}
               />
             ))}
             <Area yAxisId="left" type="monotone" dataKey="impressoes" fill="hsl(var(--primary) / 0.1)" stroke="hsl(var(--primary))" strokeWidth={2} name="impressoes" />
