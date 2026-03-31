@@ -57,9 +57,9 @@ function formatLogLabel(entry: OperationLogEntry): string {
   switch (entry.field) {
     case 'roas_target': return `ROAS meta: ${entry.fromValue ?? '?'} → ${entry.toValue ?? '?'}`;
     case 'budget': return `Orçamento: ${entry.fromValue ?? '?'} → ${entry.toValue ?? '?'}`;
-    case 'quick_boost': return `Impulsão Rápida: ${entry.details.replace(/^.*?:/, '').trim()}`;
-    case 'campaign_created': return `Campanha criada${entry.toValue ? ` · ROAS inicial ${entry.toValue}` : ''}`;
-    default: return entry.details.slice(0, 60);
+    case 'quick_boost': return `Impulsão Rápida: ${entry.details.replace(/^.*?:/, '').trim().slice(0, 40)}`;
+    case 'campaign_created': return `Campanha criada${entry.toValue ? ` · ROAS ${entry.toValue}` : ''}`;
+    default: return entry.details.slice(0, 50);
   }
 }
 
