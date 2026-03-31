@@ -139,6 +139,15 @@ function FontesTrafego({ fontes }: { fontes: ExcelPerformanceData['fontes'] }) {
   if (fontes.length === 0) return null;
   const maxPct = Math.max(...fontes.map(f => f.pct));
 
+  const TRAFFIC_SOURCE_COLORS: Record<string, string> = {
+    'Pesquisar': 'bg-primary',
+    'Recomendação': 'bg-blue-500',
+    'Carrinho de Compras': 'bg-amber-500',
+    'Outros': 'bg-purple-500',
+    'Seguindo': 'bg-emerald-500',
+    'Meus Cupons': 'bg-pink-500',
+  };
+
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-lg space-y-4">
       <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
@@ -156,7 +165,7 @@ function FontesTrafego({ fontes }: { fontes: ExcelPerformanceData['fontes'] }) {
             </div>
             <div className="w-full h-2 rounded-full bg-surface-2 overflow-hidden">
               <div
-                className={cn('h-full rounded-full transition-all', i === 0 ? 'bg-primary' : 'bg-primary/40')}
+                className={cn('h-full rounded-full transition-all', TRAFFIC_SOURCE_COLORS[f.fonte] || 'bg-muted-foreground')}
                 style={{ width: `${(f.pct / maxPct) * 100}%` }}
               />
             </div>

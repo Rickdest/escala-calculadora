@@ -1122,7 +1122,15 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
               {/* Geral vs Direto */}
               {ad.roas_direto > 0 && ad.gmv_direto > 0 && ad.gmv_direto !== ad.gmv ? (
                 <div className="rounded-2xl border border-border bg-card p-5 shadow-lg space-y-4">
-                  <p className="text-[10px] uppercase tracking-wider font-bold text-text-3">Geral vs Direto</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-[10px] uppercase tracking-wider font-bold text-text-3">Geral vs Direto</p>
+                    <div className="group relative">
+                      <Info className="w-3.5 h-3.5 text-text-3 cursor-help" />
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2.5 rounded-lg bg-card border border-border shadow-xl text-[11px] text-text-2 leading-relaxed opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
+                        <strong className="text-foreground">Geral</strong> inclui vendas orgânicas atribuídas ao anúncio. <strong className="text-foreground">Direto</strong> são apenas vendas que vieram diretamente do clique no anúncio. O Δ mostra o impacto indireto (halo).
+                      </div>
+                    </div>
+                  </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm font-mono tabular-nums">
                       <thead>
