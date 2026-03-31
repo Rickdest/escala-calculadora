@@ -202,7 +202,7 @@ function ResultadoAposMudancaSection({ correlations, dadosDiarios }: { correlati
       <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
         <GitCompareArrows className="w-3.5 h-3.5 text-primary dark:text-blue-400" /> Resultado Após Cada Mudança ({correlations.length})
       </p>
-      <div className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
+      <div className="space-y-1.5 md:space-y-2.5 max-h-[250px] md:max-h-[420px] overflow-y-auto pr-1">
         {correlations.map((c, i) => {
           const isPositive = c.resultado === 'positivo';
           const isNegative = c.resultado === 'negativo';
