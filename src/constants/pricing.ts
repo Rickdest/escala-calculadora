@@ -4,4 +4,6 @@ export const PRICING = {
   yearly: 197.00,
   yearlyLabel: "R$ 197,00",
   yearlySavingPct: 59,
+  checkoutYearly: "https://pay.cakto.com.br/3d2fqxo",
+  checkoutMonthly: "https://pay.cakto.com.br/secoc49_806849",
 } as const;

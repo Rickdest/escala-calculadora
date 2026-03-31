@@ -16,8 +16,13 @@ const benefits = [
 ];
 
 export default function Paywall() {
-  const { handleCheckout, refreshSubscription } = useBilling();
+  const { refreshSubscription } = useBilling();
   const [plan, setPlan] = useState<'monthly' | 'yearly'>('yearly');
+
+  const handlePlanCheckout = () => {
+    const url = plan === 'yearly' ? PRICING.checkoutYearly : PRICING.checkoutMonthly;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   const isYearly = plan === 'yearly';
   const monthlyEquiv = (PRICING.yearly / 12).toFixed(2).replace('.', ',');
