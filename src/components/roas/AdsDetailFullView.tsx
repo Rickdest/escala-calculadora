@@ -57,9 +57,9 @@ function formatLogLabel(entry: OperationLogEntry): string {
   switch (entry.field) {
     case 'roas_target': return `ROAS meta: ${entry.fromValue ?? '?'} → ${entry.toValue ?? '?'}`;
     case 'budget': return `Orçamento: ${entry.fromValue ?? '?'} → ${entry.toValue ?? '?'}`;
-    case 'quick_boost': return `Impulsão Rápida: ${entry.details.replace(/^.*?:/, '').trim()}`;
-    case 'campaign_created': return `Campanha criada${entry.toValue ? ` · ROAS inicial ${entry.toValue}` : ''}`;
-    default: return entry.details.slice(0, 60);
+    case 'quick_boost': return `Impulsão Rápida: ${entry.details.replace(/^.*?:/, '').trim().slice(0, 40)}`;
+    case 'campaign_created': return `Campanha criada${entry.toValue ? ` · ROAS ${entry.toValue}` : ''}`;
+    default: return entry.details.slice(0, 50);
   }
 }
 
@@ -335,42 +335,52 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
           </div>
         </>
       )}
-      <div className="space-y-1.5 max-h-[240px] overflow-y-auto">
+      <div className="space-y-1 max-h-[300px] overflow-y-auto pr-1">
         {displayEvents.map((entry, i) => {
           const fi = FIELD_ICONS[entry.field] || FIELD_ICONS.other;
           const Icon = fi.icon;
-          const bgMap: Record<string, string> = {
-            roas_target: 'bg-success/5 border-l-2 border-success/40',
-            budget: 'bg-blue-500/5 border-l-2 border-blue-500/40',
-            quick_boost: 'bg-warning/5 border-l-2 border-warning/40',
-            campaign_created: 'bg-success/5 border-l-2 border-success/40',
-            other: 'bg-surface-2/50 border-l-2 border-border',
+          const typeStyles: Record<string, string> = {
+            roas_target: 'border-l-2 border-l-emerald-500/60 bg-emerald-500/[0.03]',
+            budget: 'border-l-2 border-l-blue-500/60 bg-blue-500/[0.03]',
+            quick_boost: 'border-l-2 border-l-amber-500/60 bg-amber-500/[0.03]',
+            campaign_created: 'border-l-2 border-l-emerald-500/60 bg-emerald-500/[0.03]',
+            other: 'border-l-2 border-l-border bg-surface-2/20',
           };
-          const bg = bgMap[entry.field] || bgMap.other;
+          const typeStyle = typeStyles[entry.field] || typeStyles.other;
+          const typeLabelMap: Record<string, { label: string; color: string }> = {
+            roas_target: { label: 'META', color: 'bg-emerald-500/15 text-emerald-500' },
+            budget: { label: 'BUDGET', color: 'bg-blue-500/15 text-blue-500' },
+            quick_boost: { label: 'BOOST', color: 'bg-amber-500/15 text-amber-500' },
+            campaign_created: { label: 'NOVO', color: 'bg-emerald-500/15 text-emerald-500' },
+            other: { label: 'OUTRO', color: 'bg-muted/50 text-text-3' },
+          };
+          const typeLabel = typeLabelMap[entry.field] || typeLabelMap.other;
           const impDelta = (entry as any).impressionsDelta;
           const salesDelta = (entry as any).salesValue;
           return (
-            <div key={i} className={cn('flex items-start gap-2.5 py-2 px-3 rounded-lg', bg)}>
-              <Icon className={cn('w-3.5 h-3.5 mt-0.5 flex-shrink-0', fi.color)} />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs text-foreground font-medium truncate">{formatLogLabel(entry)}</p>
-                <p className="text-[10px] text-text-3 font-mono">{formatLogDate(entry.timestamp)}</p>
+            <div key={i} className={cn('rounded-lg px-3 py-2 flex items-start gap-2.5 transition-colors hover:bg-white/[0.02]', typeStyle)}>
+              <Icon className={cn('w-4 h-4 mt-0.5 flex-shrink-0', fi.color)} />
+              <div className="flex-1 min-w-0 space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <span className={cn('text-[8px] font-bold uppercase px-1.5 py-0.5 rounded', typeLabel.color)}>
+                    {typeLabel.label}
+                  </span>
+                  <span className="text-[10px] text-text-3 font-mono">{formatLogDate(entry.timestamp)}</span>
+                </div>
+                <p className="text-[13px] text-foreground font-semibold leading-snug">{formatLogLabel(entry)}</p>
               </div>
-              <div className="flex items-center gap-2 ml-auto flex-shrink-0">
+              <div className="flex flex-col items-end gap-0.5 flex-shrink-0 ml-2">
                 {impDelta !== undefined && (
-                  <span className={cn('text-[10px] font-bold font-mono', impDelta >= 0 ? 'text-success' : 'text-destructive')}>
-                    {impDelta >= 0 ? '+' : ''}{typeof impDelta === 'number' ? impDelta.toLocaleString() : impDelta}
+                  <span className={cn('text-[10px] font-bold font-mono tabular-nums', String(impDelta).startsWith('-') ? 'text-destructive' : 'text-success')}>
+                    {impDelta}
                   </span>
                 )}
                 {salesDelta !== undefined && (
-                  <span className={cn('text-[10px] font-bold font-mono', 'text-success')}>
+                  <span className={cn('text-[10px] font-bold font-mono tabular-nums', String(salesDelta).startsWith('-') ? 'text-destructive' : 'text-success')}>
                     {salesDelta}
                   </span>
                 )}
               </div>
-              {entry.details && entry.details.length > 60 && (
-                <TrendingUp className="w-3 h-3 text-text-3 flex-shrink-0 mt-0.5 cursor-pointer hover:text-foreground transition-colors" />
-              )}
             </div>
           );
         })}
@@ -1027,34 +1037,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         {/* ═══ Tab 2: Métricas & Histórico ═══ */}
         <TabsContent value="metricas">
           <div className="space-y-4">
-            {/* Histórico de Performance */}
-            <OperationLogTimeline adProductId={ad.product_id} adShopeeProductId={ad.shopee_product_id} roasEmpate={roasEmpate} onLogLoaded={setOpLog} />
-
-            {/* Excel Performance Analysis */}
-            <input ref={excelInputRef} type="file" accept=".xlsx" onChange={handleExcelUpload} className="hidden" />
-            {!excelData ? (
-              <div className="rounded-2xl border border-dashed border-border bg-card p-5 shadow-lg space-y-3">
-                <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
-                  <BarChart3 className="w-3.5 h-3.5" /> Análise de Performance Diária
-                </p>
-                <p className="text-sm text-text-2">Importe o Excel do Shopee Analytics para análise detalhada com gráficos, fontes de tráfego e correlação com ajustes.</p>
-                <Button onClick={() => excelInputRef.current?.click()} size="sm" variant="outline" className="gap-1.5 border-border text-text-2 hover:bg-surface-2">
-                  <Upload className="w-3.5 h-3.5" /> Importar Excel (.xlsx)
-                </Button>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-center justify-between">
-                  <p className="text-[10px] uppercase tracking-wider font-bold text-text-3">Análise de Performance ({excelData.totalDias} dias)</p>
-                  <Button onClick={() => excelInputRef.current?.click()} size="sm" variant="ghost" className="h-7 text-[11px] text-text-2 gap-1">
-                    <Upload className="w-3 h-3" /> Reimportar
-                  </Button>
-                </div>
-                <ExcelAnalysis data={excelData} operationLog={opLog.length > 0 ? opLog : undefined} />
-              </>
-            )}
-
-            {/* Linha 2: Posicionamento + Geral vs Direto */}
+            {/* Posicionamento + Geral vs Direto — TOPO */}
             <div className="grid md:grid-cols-2 gap-4">
               {/* Posicionamento */}
               {ad.posicao_media !== null && posInfo ? (
@@ -1183,6 +1166,33 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                 </div>
               )}
             </div>
+
+            {/* Histórico de Performance */}
+            <OperationLogTimeline adProductId={ad.product_id} adShopeeProductId={ad.shopee_product_id} roasEmpate={roasEmpate} onLogLoaded={setOpLog} />
+
+            {/* Excel Performance Analysis */}
+            <input ref={excelInputRef} type="file" accept=".xlsx" onChange={handleExcelUpload} className="hidden" />
+            {!excelData ? (
+              <div className="rounded-2xl border border-dashed border-border bg-card p-5 shadow-lg space-y-3">
+                <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
+                  <BarChart3 className="w-3.5 h-3.5" /> Análise de Performance Diária
+                </p>
+                <p className="text-sm text-text-2">Importe o Excel do Shopee Analytics para análise detalhada com gráficos, fontes de tráfego e correlação com ajustes.</p>
+                <Button onClick={() => excelInputRef.current?.click()} size="sm" variant="outline" className="gap-1.5 border-border text-text-2 hover:bg-surface-2">
+                  <Upload className="w-3.5 h-3.5" /> Importar Excel (.xlsx)
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] uppercase tracking-wider font-bold text-text-3">Análise de Performance ({excelData.totalDias} dias)</p>
+                  <Button onClick={() => excelInputRef.current?.click()} size="sm" variant="ghost" className="h-7 text-[11px] text-text-2 gap-1">
+                    <Upload className="w-3 h-3" /> Reimportar
+                  </Button>
+                </div>
+                <ExcelAnalysis data={excelData} operationLog={opLog.length > 0 ? opLog : undefined} />
+              </>
+            )}
           </div>
         </TabsContent>
       </Tabs>
