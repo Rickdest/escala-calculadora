@@ -1082,9 +1082,17 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                   {/* Gradient top border accent */}
                   <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary via-purple-500 to-pink-500" />
                   
-                  <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-primary dark:text-blue-400" /> Posicionamento
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-primary dark:text-blue-400" /> Posicionamento
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <Button onClick={onImportPosition} size="sm" variant="ghost" className="h-6 text-[10px] gap-1 text-text-3 hover:text-foreground hover:bg-surface-2 px-2">
+                        <Upload className="w-3 h-3" /> Atualizar
+                      </Button>
+                      <span className="text-3xl font-black font-mono tabular-nums text-foreground">#{ad.posicao_media}</span>
+                    </div>
+                  </div>
                   
                   <div className="grid grid-cols-[1fr_auto] gap-6 items-start">
                     {/* Left: Big number + label + horizontal tiers */}
