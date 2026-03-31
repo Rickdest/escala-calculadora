@@ -1,30 +1,39 @@
 
 
-## Plano: Ajustar Paywall.tsx para ficar pixel-perfect com a screenshot
+## Plano: Redesenhar layout do Impacto das Mudanças e Métricas para match com mockups
 
-Comparando o código atual com a screenshot, o layout já está muito próximo. As diferenças que identifiquei:
+Analisando os mockups vs código atual, as diferenças principais são:
 
-### Ajustes necessários
+### 1. Impacto das Mudanças (OperationLogTimeline) — linhas 338-387
 
-1. **CTA button** — Na screenshot o botão tem ícone de raio (✦) estilizado e o texto é "Assinar plano anual" com o ícone ✦ (não emoji ⚡). O botão parece ter um leve gradiente ou efeito de sombra laranja.
+**Mockup mostra:** Cards maiores com borda completa colorida (não apenas border-left), texto principal grande (~text-lg), e no lado direito: deltas de impressões com label "impressões"/"vendas" explícito. Abaixo do label principal, uma linha de observação contextual (ex: "⚠ Meta aumentada 10→20: algoritmo tende a reduzir volume").
 
-2. **Trust line** — Na screenshot usa "🔒 Pagamento seguro · Cancele quando quiser · Acesso imediato" com separadores de ponto (·), que já está no código. Parece correto.
+**Mudanças:**
+- Borda completa no card (border colorido ao redor, não só esquerda)
+- Texto do label maior (text-base/text-lg em vez de text-[13px])
+- Adicionar linha de observação contextual abaixo do label (lógica de análise do impacto baseada no campo e valores)
+- Deltas à direita com labels "impressões" e "vendas" visíveis
+- Remover ícone à esquerda (mockup não mostra ícones, só pills)
 
-3. **Benefits card** — Na screenshot o header "O QUE ESTÁ INCLUÍDO" tem um ícone de check laranja antes. Os checks são laranja/primary. Já está no código.
+### 2. Posicionamento card — linhas 1043-1102
 
-4. **"Cobrado como R$ 197,00/ano"** — Na screenshot mostra "Cobrado como R$ 197,00/ano". O código mostra "Cobrado como {PRICING.yearlyLabel}/ano". Parece correto.
+**Mockup mostra:** Layout de 2 colunas dentro do card: esquerda com #número grande + label + barras de tier, direita com caixa de recomendação. Texto "Posição importada via CSV individual" no canto inferior direito.
 
-5. **Toggle badge "-59%"** — Está posicionado no canto superior direito do botão "Anual" com fundo laranja. Já está no código.
+**Mudanças:**
+- Grid interno 2 colunas no card de posicionamento
+- Número em text-5xl/6xl (muito grande)
+- Label "Segunda Página" em text-xl bold
+- Recomendação como card separado à direita (não embaixo)
+- Adicionar "Posição importada via CSV individual" como nota
 
-O código atual já reproduz fielmente a screenshot. As únicas micro-diferenças possíveis são:
-- O emoji ⚡ no botão CTA vs um ícone vetorial ✦
-- Possível sombra/glow no botão CTA
+### 3. Ordem na tab Métricas permanece igual (já foi movido para topo)
 
-### Arquivo a editar
-- `src/pages/Paywall.tsx` — ajustes cosméticos mínimos no botão CTA (adicionar sombra laranja para efeito de glow)
+### Arquivo editado
+- `src/components/roas/AdsDetailFullView.tsx` — apenas UI, sem alteração de lógica/cálculos
 
 ### Detalhes técnicos
-- Adicionar `box-shadow` sutil no botão CTA para replicar o efeito de destaque visível na screenshot
-- Substituir emoji ⚡ por ✦ no CTA se necessário
-- Nenhuma mudança de lógica ou imports
+
+**Event cards (linhas 338-387):** Substituir `border-l-2` por `border` completo com opacidade. Aumentar font-size do label. Adicionar função helper `getObservation(entry)` que retorna texto contextual baseado no campo (roas_target aumentado = "⚠ Meta aumentada: algoritmo tende a reduzir volume", budget = sem obs, etc). Mostrar deltas com labels explícitos.
+
+**Posicionamento (linhas 1043-1102):** Wrap conteúdo em `grid grid-cols-[1fr_auto]` ou `flex`. Lado esquerdo: número + label + barras. Lado direito: recomendação em card com bg-card e border. Nota "Posição importada via CSV individual" em text-[10px] no canto.
 
