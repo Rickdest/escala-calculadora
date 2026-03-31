@@ -63,6 +63,24 @@ function formatLogLabel(entry: OperationLogEntry): string {
   }
 }
 
+function getObservation(entry: OperationLogEntry): string | null {
+  if (entry.field === 'roas_target') {
+    const from = parseFloat(entry.fromValue ?? '0');
+    const to = parseFloat(entry.toValue ?? '0');
+    if (to > from) return `⚠ Meta aumentada ${from}→${to}: algoritmo tende a reduzir volume de impressões`;
+    if (to < from) return `📈 Meta reduzida ${from}→${to}: espere aumento de impressões e volume`;
+  }
+  if (entry.field === 'budget') {
+    const from = parseFloat(entry.fromValue ?? '0');
+    const to = parseFloat(entry.toValue ?? '0');
+    if (to > from) return `💰 Orçamento aumentado: mais espaço para capturar vendas`;
+    if (to < from) return `⚠ Orçamento reduzido: pode limitar volume de impressões`;
+  }
+  if (entry.field === 'quick_boost') return `⚡ Impulsão ativa: pico temporário de impressões esperado`;
+  if (entry.field === 'campaign_created') return `🆕 Nova campanha: aguarde 3-5 dias para estabilizar`;
+  return null;
+}
+
 function formatLogDate(ts: string): string {
   const d = new Date(ts);
   const dd = String(d.getDate()).padStart(2, '0');
