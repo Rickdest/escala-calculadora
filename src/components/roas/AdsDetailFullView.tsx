@@ -356,7 +356,7 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
       <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
         <Sparkles className="w-3.5 h-3.5 text-warning" /> Impacto das Mudanças ({displayEvents.length})
       </p>
-      <div className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
+      <div className="space-y-1.5 md:space-y-2.5 max-h-[250px] md:max-h-[420px] overflow-y-auto pr-1">
         {displayEvents.map((entry, i) => {
           const typeStyles: Record<string, string> = {
             roas_target: 'border-emerald-500/50 bg-emerald-500/[0.06]',
@@ -378,23 +378,22 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
           const salesDelta = (entry as any).salesValue as string | undefined;
           const observation = getObservation(entry);
 
-          // Determine observation color based on sentiment
           const obsIsPositive = observation ? (observation.startsWith('📈') || observation.startsWith('💰') || observation.startsWith('🆕')) : false;
           const obsColor = obsIsPositive ? 'text-emerald-400' : 'text-amber-400';
 
           return (
-            <div key={i} className={cn('rounded-xl border px-4 py-3.5 transition-colors', typeStyle)}>
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0 space-y-1.5">
-                  <div className="flex items-center gap-2.5">
-                    <span className={cn('text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-md tracking-wide', typeLabel.color)}>
+            <div key={i} className={cn('rounded-lg md:rounded-xl border px-2.5 py-2 md:px-4 md:py-3.5 transition-colors', typeStyle)}>
+              <div className="flex items-start justify-between gap-2 md:gap-3">
+                <div className="flex-1 min-w-0 space-y-1 md:space-y-1.5">
+                  <div className="flex items-center gap-2 md:gap-2.5">
+                    <span className={cn('text-[9px] md:text-[10px] font-extrabold uppercase px-2 py-0.5 md:px-2.5 md:py-1 rounded-md tracking-wide', typeLabel.color)}>
                       {typeLabel.label}
                     </span>
-                    <span className="text-[12px] text-text-3 font-mono">{formatLogDate(entry.timestamp)}</span>
+                    <span className="text-[11px] md:text-[12px] text-text-3 font-mono">{formatLogDate(entry.timestamp)}</span>
                   </div>
-                  <p className="text-lg text-foreground font-bold leading-snug">{formatLogLabel(entry)}</p>
+                  <p className="text-sm md:text-lg text-foreground font-bold leading-snug">{formatLogLabel(entry)}</p>
                   {observation && (
-                    <p className={cn('text-[12px] leading-snug', obsColor)}>{observation}</p>
+                    <p className={cn('text-[11px] md:text-[12px] leading-snug', obsColor)}>{observation}</p>
                   )}
                 </div>
                 {(impDelta !== undefined || salesDelta !== undefined) && (

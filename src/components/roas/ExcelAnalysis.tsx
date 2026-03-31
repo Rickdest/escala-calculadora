@@ -257,10 +257,10 @@ function ResultadoAposMudancaSection({ correlations, dadosDiarios }: { correlati
                 </div>
               </div>
               {delta3d && (
-                <div className="mt-1.5 rounded-lg bg-surface-2/40 px-3 py-2 text-[11px] text-text-2 space-y-0.5">
-                  <p className="font-semibold text-foreground text-xs">📊 Resultado após a mudança (3 dias):</p>
-                  <div className="flex gap-4">
-                    <span>Impressões: <span className={cn('font-bold font-mono', delta3d.deltaImp >= 0 ? 'text-success' : 'text-destructive')}>{delta3d.deltaImp >= 0 ? '+' : ''}{delta3d.deltaImp.toLocaleString()}</span></span>
+                <div className="mt-1.5 rounded-lg bg-surface-2/40 px-2 py-1.5 md:px-3 md:py-2 text-[10px] md:text-[11px] text-text-2 space-y-0.5">
+                  <p className="font-semibold text-foreground text-[11px] md:text-xs">📊 Resultado (3 dias):</p>
+                  <div className="flex flex-wrap gap-2 md:gap-4">
+                    <span>Imp: <span className={cn('font-bold font-mono', delta3d.deltaImp >= 0 ? 'text-success' : 'text-destructive')}>{delta3d.deltaImp >= 0 ? '+' : ''}{delta3d.deltaImp.toLocaleString()}</span></span>
                     <span>Vendas: <span className={cn('font-bold font-mono', delta3d.deltaSales >= 0 ? 'text-success' : 'text-destructive')}>{delta3d.deltaSales >= 0 ? '+' : ''}{delta3d.deltaSales}</span></span>
                   </div>
                 </div>
