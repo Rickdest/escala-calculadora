@@ -392,6 +392,13 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
                     <span className="text-[11px] md:text-[12px] text-text-3 font-mono">{formatLogDate(entry.timestamp)}</span>
                   </div>
                   <p className="text-sm md:text-lg text-foreground font-bold leading-snug">{formatLogLabel(entry)}</p>
+                  {entry.field === 'campaign_created' && entry.details && (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {parseCampaignDetails(entry.details).map((pill, pi) => (
+                        <span key={pi} className="text-[9px] px-1.5 py-0.5 rounded bg-surface-2 text-text-2">{pill}</span>
+                      ))}
+                    </div>
+                  )}
                   {observation && (
                     <p className={cn('text-[11px] md:text-[12px] leading-snug', obsColor)}>{observation}</p>
                   )}

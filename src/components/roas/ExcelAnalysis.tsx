@@ -193,6 +193,23 @@ function FontesTrafegoChart({ fontes }: { fontes: ExcelPerformanceData['fontes']
 }
 
 // ─── Correlations ───
+function parseCampaignPills(text: string): string[] {
+  const pills: string[] = [];
+  const budgetMatch = text.match(/Orçamento diário[:\s]*([^\s,;|]+)/i) || text.match(/R\$\s*[\d.,]+\/dia/i);
+  if (budgetMatch) pills.push(budgetMatch[0].includes('R$') ? budgetMatch[0] : `R$ ${budgetMatch[1]}/dia`);
+  const roasMatch = text.match(/ROAS[:\s]*([\d.,]+)/i);
+  if (roasMatch) pills.push(`ROAS ${roasMatch[1]}`);
+  const boostMatch = text.match(/Impulsão[^:]*[:\s]*(ON|OFF|Lig|Des|Ativad|Desativad)/i);
+  if (boostMatch) pills.push(`Impulsão: ${boostMatch[1].startsWith('O') ? boostMatch[1] : (boostMatch[1].startsWith('L') || boostMatch[1].startsWith('A') ? 'ON' : 'OFF')}`);
+  const criativoMatch = text.match(/Criativo[^:]*[:\s]*(ON|OFF|Lig|Des|Ativad|Desativad)/i);
+  if (criativoMatch) pills.push(`Criativo: ${criativoMatch[1].startsWith('O') ? criativoMatch[1] : (criativoMatch[1].startsWith('L') || criativoMatch[1].startsWith('A') ? 'ON' : 'OFF')}`);
+  const lanceMatch = text.match(/lance otimizado[^:]*[:\s]*(ON|OFF|Lig|Des|Ativad|Desativad)/i);
+  if (lanceMatch) pills.push(`Lance: ${lanceMatch[1].startsWith('O') ? lanceMatch[1] : (lanceMatch[1].startsWith('L') || lanceMatch[1].startsWith('A') ? 'ON' : 'OFF')}`);
+  const focoMatch = text.match(/Tipo de Venda[:\s]*([^,;|]+)/i) || text.match(/Foco[:\s]*([^,;|]+)/i);
+  if (focoMatch) pills.push(`Foco: ${focoMatch[1].trim()}`);
+  return pills;
+}
+
 function ResultadoCard({ c, compute3DayDelta }: { c: Correlation; compute3DayDelta: (date: string) => { deltaImp: number; deltaSales: number } | null }) {
   const [expanded, setExpanded] = useState(false);
   const isPositive = c.resultado === 'positivo';
@@ -202,21 +219,27 @@ function ResultadoCard({ c, compute3DayDelta }: { c: Correlation; compute3DayDel
     : isNegative
     ? 'border-destructive/50 bg-destructive/[0.06]'
     : 'border-border bg-surface-2/30';
+  const expandedStyle = expanded ? 'ring-1 ring-primary/40 border-primary/50' : '';
 
   const mudLower = c.mudanca.toLowerCase();
+  const isCampaignCreated = mudLower.includes('campaign created') || mudLower.includes('campaign_created');
+  const campaignPills = isCampaignCreated ? parseCampaignPills(c.mudanca) : [];
+  
   const typeLabel = mudLower.includes('roas') || mudLower.includes('meta')
     ? { label: 'META', color: 'bg-emerald-500/20 text-emerald-400' }
     : mudLower.includes('orçamento') || mudLower.includes('budget')
     ? { label: 'BUDGET', color: 'bg-blue-500/20 text-blue-400' }
     : mudLower.includes('boost') || mudLower.includes('impulsão')
     ? { label: 'BOOST', color: 'bg-amber-500/20 text-amber-400' }
+    : isCampaignCreated
+    ? { label: 'NOVO', color: 'bg-emerald-500/20 text-emerald-400' }
     : { label: 'OUTRO', color: 'bg-muted/50 text-text-3' };
 
   const delta3d = compute3DayDelta(c.data);
 
   return (
     <div
-      className={cn('rounded-lg md:rounded-xl border px-2.5 py-2 md:px-4 md:py-3.5 transition-colors', borderStyle)}
+      className={cn('rounded-lg md:rounded-xl border px-2.5 py-2 md:px-4 md:py-3.5 transition-all cursor-pointer', borderStyle, expandedStyle)}
       onClick={() => setExpanded(prev => !prev)}
     >
       <div className="flex items-start justify-between gap-2 md:gap-3">
@@ -228,7 +251,15 @@ function ResultadoCard({ c, compute3DayDelta }: { c: Correlation; compute3DayDel
             <span className="text-[10px] md:text-[12px] text-text-3 font-mono">{c.dataLabel}</span>
             <ChevronDown className={cn('w-3 h-3 text-text-3 transition-transform md:hidden', expanded && 'rotate-180')} />
           </div>
-          <p className={cn('text-xs md:text-lg text-foreground font-bold leading-snug md:line-clamp-none', !expanded && 'line-clamp-1')}>{c.mudanca}</p>
+          {isCampaignCreated && campaignPills.length > 0 ? (
+            <div className="mt-1 flex flex-wrap gap-1">
+              {campaignPills.map((pill, pi) => (
+                <span key={pi} className="text-[9px] px-1.5 py-0.5 rounded bg-surface-2 text-text-2">{pill}</span>
+              ))}
+            </div>
+          ) : (
+            <p className={cn('text-xs md:text-lg text-foreground font-bold leading-snug md:line-clamp-none', !expanded && 'line-clamp-1')}>{c.mudanca}</p>
+          )}
           {c.impacto.observacao && (
             <p className={cn('text-[10px] md:text-[12px] leading-snug md:line-clamp-none', !expanded && 'line-clamp-1', isPositive ? 'text-emerald-400' : isNegative ? 'text-destructive' : 'text-amber-400')}>
               {c.impacto.observacao}
@@ -251,7 +282,7 @@ function ResultadoCard({ c, compute3DayDelta }: { c: Correlation; compute3DayDel
           </div>
         </div>
       </div>
-      {delta3d && (
+      {expanded && delta3d && (
         <div className="mt-1 md:mt-1.5 rounded-md bg-surface-2/40 px-2 py-1 md:px-3 md:py-2 text-[9px] md:text-[11px] text-text-2">
           <div className="flex gap-2 md:gap-4">
             <span className="font-semibold text-foreground">📊 3d:</span>
