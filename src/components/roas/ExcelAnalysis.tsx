@@ -344,7 +344,7 @@ export function ExcelAnalysis({ data, operationLog }: ExcelAnalysisProps) {
       <GraficoTendencia data={data} operationLog={operationLog} />
       <AntesVsDepois data={data} />
       <FontesTrafego fontes={data.fontes} />
-      {correlations.length > 0 && <CorrelacaoSection correlations={correlations} />}
+      {correlations.length > 0 && <ResultadoAposMudancaSection correlations={correlations} dadosDiarios={data.dadosDiarios} />}
     </div>
   );
 }
