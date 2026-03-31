@@ -339,13 +339,38 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
         {displayEvents.map((entry, i) => {
           const fi = FIELD_ICONS[entry.field] || FIELD_ICONS.other;
           const Icon = fi.icon;
+          const bgMap: Record<string, string> = {
+            roas_target: 'bg-success/5 border-l-2 border-success/40',
+            budget: 'bg-blue-500/5 border-l-2 border-blue-500/40',
+            quick_boost: 'bg-warning/5 border-l-2 border-warning/40',
+            campaign_created: 'bg-success/5 border-l-2 border-success/40',
+            other: 'bg-surface-2/50 border-l-2 border-border',
+          };
+          const bg = bgMap[entry.field] || bgMap.other;
+          const impDelta = (entry as any).impressionsDelta;
+          const salesDelta = (entry as any).salesValue;
           return (
-            <div key={i} className="flex items-start gap-2.5 py-1.5">
+            <div key={i} className={cn('flex items-start gap-2.5 py-2 px-3 rounded-lg', bg)}>
               <Icon className={cn('w-3.5 h-3.5 mt-0.5 flex-shrink-0', fi.color)} />
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-foreground font-medium truncate">{formatLogLabel(entry)}</p>
                 <p className="text-[10px] text-text-3 font-mono">{formatLogDate(entry.timestamp)}</p>
               </div>
+              <div className="flex items-center gap-2 ml-auto flex-shrink-0">
+                {impDelta !== undefined && (
+                  <span className={cn('text-[10px] font-bold font-mono', impDelta >= 0 ? 'text-success' : 'text-destructive')}>
+                    {impDelta >= 0 ? '+' : ''}{typeof impDelta === 'number' ? impDelta.toLocaleString() : impDelta}
+                  </span>
+                )}
+                {salesDelta !== undefined && (
+                  <span className={cn('text-[10px] font-bold font-mono', 'text-success')}>
+                    {salesDelta}
+                  </span>
+                )}
+              </div>
+              {entry.details && entry.details.length > 60 && (
+                <TrendingUp className="w-3 h-3 text-text-3 flex-shrink-0 mt-0.5 cursor-pointer hover:text-foreground transition-colors" />
+              )}
             </div>
           );
         })}
@@ -1060,9 +1085,27 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                       );
                     })}
                   </div>
-                  <p className={cn('text-sm font-bold', ad.posicao_media <= 3 ? 'text-primary dark:text-blue-400' : ad.posicao_media <= 8 ? 'text-primary/80 dark:text-blue-300' : ad.posicao_media <= 16 ? 'text-warning' : 'text-destructive')}>
-                    {posInfo.label}
-                  </p>
+                  {posInfo.label && (
+                    <p className={cn('text-sm font-bold', ad.posicao_media <= 3 ? 'text-primary dark:text-blue-400' : ad.posicao_media <= 8 ? 'text-primary/80 dark:text-blue-300' : ad.posicao_media <= 16 ? 'text-warning' : 'text-destructive')}>
+                      {posInfo.label}
+                    </p>
+                  )}
+                  {ad.posicao_media !== null && ad.posicao_media > 8 && (
+                    <div className="rounded-lg bg-warning/10 border border-warning/20 p-2.5 mt-2">
+                      <p className="text-xs text-warning font-medium">
+                        💡 {ad.posicao_media > 16 
+                          ? 'Posição muito baixa. Aumente o lance ou a meta de ROAS para subir para a 1ª página.' 
+                          : 'Você está na 2ª página. Um aumento moderado no lance pode colocá-lo na 1ª página e melhorar o CTR significativamente.'}
+                      </p>
+                    </div>
+                  )}
+                  {ad.posicao_media !== null && ad.posicao_media <= 3 && (
+                    <div className="rounded-lg bg-success/10 border border-success/20 p-2.5 mt-2">
+                      <p className="text-xs text-success font-medium">
+                        🏆 Excelente posição! Monitore o custo — avalie se pode reduzir o lance sem perder a posição.
+                      </p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="rounded-2xl border border-dashed border-border bg-card p-5 shadow-lg space-y-3">
@@ -1079,7 +1122,15 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
               {/* Geral vs Direto */}
               {ad.roas_direto > 0 && ad.gmv_direto > 0 && ad.gmv_direto !== ad.gmv ? (
                 <div className="rounded-2xl border border-border bg-card p-5 shadow-lg space-y-4">
-                  <p className="text-[10px] uppercase tracking-wider font-bold text-text-3">Geral vs Direto</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-[10px] uppercase tracking-wider font-bold text-text-3">Geral vs Direto</p>
+                    <div className="group relative">
+                      <Info className="w-3.5 h-3.5 text-text-3 cursor-help" />
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2.5 rounded-lg bg-card border border-border shadow-xl text-[11px] text-text-2 leading-relaxed opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none">
+                        <strong className="text-foreground">Geral</strong> inclui vendas orgânicas atribuídas ao anúncio. <strong className="text-foreground">Direto</strong> são apenas vendas que vieram diretamente do clique no anúncio. O Δ mostra o impacto indireto (halo).
+                      </div>
+                    </div>
+                  </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm font-mono tabular-nums">
                       <thead>
