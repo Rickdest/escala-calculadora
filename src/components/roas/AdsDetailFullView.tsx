@@ -63,6 +63,23 @@ function formatLogLabel(entry: OperationLogEntry): string {
   }
 }
 
+function parseCampaignDetails(details: string): string[] {
+  const pills: string[] = [];
+  const budgetMatch = details.match(/Orçamento diário[:\s]*([^\s,;|]+)/i) || details.match(/R\$\s*[\d.,]+\/dia/i);
+  if (budgetMatch) pills.push(budgetMatch[0].includes('R$') ? budgetMatch[0] : `R$ ${budgetMatch[1]}/dia`);
+  const roasMatch = details.match(/ROAS[:\s]*([\d.,]+)/i);
+  if (roasMatch) pills.push(`ROAS ${roasMatch[1]}`);
+  const boostMatch = details.match(/Impulsão[^:]*[:\s]*(ON|OFF|Ligad|Desligad|Ativad|Desativad)/i);
+  if (boostMatch) pills.push(`Impulsão: ${/^(O|L|A)/i.test(boostMatch[1]) && !boostMatch[1].startsWith('OF') ? 'ON' : 'OFF'}`);
+  const criativoMatch = details.match(/Criativo[^:]*[:\s]*(ON|OFF|Ligad|Desligad|Ativad|Desativad)/i);
+  if (criativoMatch) pills.push(`Criativo: ${/^(O|L|A)/i.test(criativoMatch[1]) && !criativoMatch[1].startsWith('OF') ? 'ON' : 'OFF'}`);
+  const lanceMatch = details.match(/lance otimizado[^:]*[:\s]*(ON|OFF|Ligad|Desligad|Ativad|Desativad)/i);
+  if (lanceMatch) pills.push(`Lance: ${/^(O|L|A)/i.test(lanceMatch[1]) && !lanceMatch[1].startsWith('OF') ? 'ON' : 'OFF'}`);
+  const focoMatch = details.match(/Tipo de Venda[:\s]*([^,;|]+)/i);
+  if (focoMatch) pills.push(`Foco: ${focoMatch[1].trim()}`);
+  return pills;
+}
+
 function getObservation(entry: OperationLogEntry): string | null {
   if (entry.field === 'roas_target') {
     const from = parseFloat(entry.fromValue ?? '0');
@@ -392,6 +409,13 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
                     <span className="text-[11px] md:text-[12px] text-text-3 font-mono">{formatLogDate(entry.timestamp)}</span>
                   </div>
                   <p className="text-sm md:text-lg text-foreground font-bold leading-snug">{formatLogLabel(entry)}</p>
+                  {entry.field === 'campaign_created' && entry.details && (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {parseCampaignDetails(entry.details).map((pill, pi) => (
+                        <span key={pi} className="text-[9px] px-1.5 py-0.5 rounded bg-surface-2 text-text-2">{pill}</span>
+                      ))}
+                    </div>
+                  )}
                   {observation && (
                     <p className={cn('text-[11px] md:text-[12px] leading-snug', obsColor)}>{observation}</p>
                   )}
