@@ -352,7 +352,7 @@ export function ExcelAnalysis({ data, operationLog }: ExcelAnalysisProps) {
     <div className="space-y-4">
       <GraficoTendencia data={data} operationLog={operationLog} />
       <AntesVsDepois data={data} />
-      <FontesTrafego fontes={data.fontes} />
+      <FontesTrafegoChart fontes={data.fontes} />
       {correlations.length > 0 && <ResultadoAposMudancaSection correlations={correlations} dadosDiarios={data.dadosDiarios} />}
     </div>
   );
