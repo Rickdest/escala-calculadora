@@ -95,8 +95,7 @@ Deno.serve(async (req) => {
     const encoder = new TextEncoder();
     const receivedBytes = encoder.encode(String(secret));
     const expectedBytes = encoder.encode(CAKTO_WEBHOOK_SECRET);
-    const isValid = receivedBytes.length === expectedBytes.length &&
-      crypto.subtle.timingSafeEqual(receivedBytes, expectedBytes);
+    const isValid = timingSafeEqual(receivedBytes, expectedBytes);
     if (!isValid) {
       console.error("Invalid webhook secret");
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
