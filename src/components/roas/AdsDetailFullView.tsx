@@ -660,13 +660,13 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
           dataRange: { inicio: '', fim: '' },
           dadosDiarios: saved.excel_daily_data,
           totalDias: summary.totalDias || 0,
-          dataPrimeiraVenda: null,
+          dataPrimeiraVenda: summary.dataPrimeiraVenda || null,
           totais: {
             impressoes: summary.totalImpressions || 0,
             vendasBrl: summary.totalGmv || 0,
             compradores: summary.totalOrders || 0,
           },
-          fontes: [],
+          fontes: summary.fontes || [],
           produtoNome: ad.nome_produto_csv,
           shopeeProductId: ad.shopee_product_id || '',
         });
