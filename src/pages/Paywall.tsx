@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useBilling } from '@/hooks/useBilling';
-import { Check, Zap, ShieldCheck } from 'lucide-react';
+import { Check } from 'lucide-react';
 import logoIcon from '@/assets/logo-icon.png';
 import { PRICING } from '@/constants/pricing';
 import { cn } from '@/lib/utils';
@@ -24,83 +24,95 @@ export default function Paywall() {
 
   return (
     <AppLayout>
-      <div className="py-6 space-y-6 max-w-sm mx-auto">
+      <div className="py-6 max-w-sm mx-auto" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
         {/* Logo */}
-        <div className="flex justify-center">
-          <img src={logoIcon} alt="Skalify" className="w-12 h-12 rounded-2xl" />
+        <div className="flex justify-center pt-2">
+          <img src={logoIcon} alt="Skalify" className="w-14 h-14 rounded-2xl" />
         </div>
 
         {/* Badge */}
         <div className="flex justify-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3.5 py-1.5">
-            <Zap className="w-3.5 h-3.5 text-primary" strokeWidth={2.5} />
-            <span className="text-xs font-semibold text-primary">Acesso completo desbloqueado</span>
+          <span
+            className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 border border-primary/25"
+            style={{ padding: '5px 14px', fontSize: '12px', fontWeight: 600, color: 'hsl(var(--primary))' }}
+          >
+            ⚡ Acesso completo desbloqueado
           </span>
         </div>
 
         {/* Hero */}
-        <div className="text-center space-y-3">
-          <h1 className="text-[26px] font-bold text-foreground leading-tight">
+        <div className="text-center" style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <h1 style={{ fontSize: '28px', lineHeight: '1.15', fontWeight: 400 }} className="text-foreground">
             Pare de chutar.
             <br />
-            <strong>Comece a lucrar
-            <br />
-            de verdade.</strong>
+            <strong style={{ fontWeight: 800 }}>
+              Comece a lucrar
+              <br />
+              de verdade.
+            </strong>
           </h1>
-          <p className="text-[13px] text-muted-foreground leading-relaxed px-2">
+          <p style={{ fontSize: '13px', lineHeight: '1.5' }} className="text-muted-foreground px-4">
             Vendedores Shopee que usam o Skalify tomam decisões com dados — e crescem até 3x mais rápido.
           </p>
         </div>
 
         {/* Toggle */}
-        <div className="flex items-center gap-1 rounded-xl bg-muted/50 p-1 mx-4">
+        <div
+          className="flex items-center rounded-[14px] border border-border/60 bg-muted/30 mx-6"
+          style={{ padding: '4px', gap: '4px' }}
+        >
           <button
             onClick={() => setPlan('monthly')}
             className={cn(
-              'flex-1 rounded-lg py-2.5 text-[13px] font-semibold transition-all',
+              'flex-1 rounded-[10px] transition-all',
               !isYearly
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground'
+                ? 'bg-card text-foreground border border-border/60 shadow-sm'
+                : 'text-muted-foreground border border-transparent'
             )}
+            style={{ padding: '10px 0', fontSize: '13px', fontWeight: 600 }}
           >
             Mensal
           </button>
           <button
             onClick={() => setPlan('yearly')}
             className={cn(
-              'flex-1 rounded-lg py-2.5 text-[13px] font-semibold transition-all relative',
+              'flex-1 rounded-[10px] transition-all relative',
               isYearly
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground'
+                ? 'bg-card text-foreground border border-border/60 shadow-sm'
+                : 'text-muted-foreground border border-transparent'
             )}
+            style={{ padding: '10px 0', fontSize: '13px', fontWeight: 600 }}
           >
             Anual
-            <span className="absolute -top-2.5 -right-1 text-[10px] font-bold bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 leading-none">
+            <span
+              className="absolute bg-primary text-primary-foreground rounded-full"
+              style={{ top: '-10px', right: '-6px', fontSize: '10px', fontWeight: 700, padding: '2px 7px', lineHeight: '1.2' }}
+            >
               -{PRICING.yearlySavingPct}%
             </span>
           </button>
         </div>
 
         {/* Price */}
-        <div className="text-center space-y-1">
+        <div className="text-center" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           {isYearly ? (
             <>
-              <p className="text-foreground font-bold font-mono" style={{ fontSize: '34px', lineHeight: '1.1' }}>
+              <p className="text-foreground font-bold font-mono" style={{ fontSize: '36px', lineHeight: '1.1' }}>
                 R$ {monthlyEquiv}
-                <span className="text-base font-normal font-sans text-muted-foreground"> /mês</span>
+                <span className="font-sans text-muted-foreground" style={{ fontSize: '16px', fontWeight: 400 }}> /mês</span>
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground" style={{ fontSize: '13px' }}>
                 Cobrado como {PRICING.yearlyLabel}/ano
               </p>
             </>
           ) : (
             <>
-              <p className="text-foreground font-bold font-mono" style={{ fontSize: '34px', lineHeight: '1.1' }}>
+              <p className="text-foreground font-bold font-mono" style={{ fontSize: '36px', lineHeight: '1.1' }}>
                 {PRICING.monthlyLabel}
-                <span className="text-base font-normal font-sans text-muted-foreground"> /mês</span>
+                <span className="font-sans text-muted-foreground" style={{ fontSize: '16px', fontWeight: 400 }}> /mês</span>
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-muted-foreground" style={{ fontSize: '13px' }}>
                 Ou {PRICING.yearlyLabel}/ano e economize {PRICING.yearlySavingPct}%
               </p>
             </>
@@ -108,35 +120,37 @@ export default function Paywall() {
         </div>
 
         {/* CTA */}
-        <div className="px-2">
+        <div className="px-3">
           <button
             onClick={handleCheckout}
-            className="w-full h-[52px] rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-[16px] transition-colors active:scale-[0.98] flex items-center justify-center gap-2"
+            className="w-full rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground transition-colors active:scale-[0.98]"
+            style={{ height: '54px', fontSize: '16px', fontWeight: 700, borderRadius: '14px' }}
           >
-            <Zap className="w-[18px] h-[18px]" />
-            {isYearly ? 'Assinar plano anual' : 'Assinar plano mensal'}
+            ⚡ {isYearly ? 'Assinar plano anual' : 'Assinar plano mensal'}
           </button>
         </div>
 
         {/* Trust */}
-        <p className="text-center text-[11px] text-muted-foreground/60 flex items-center justify-center gap-1.5 flex-wrap">
-          <ShieldCheck className="w-3.5 h-3.5 inline" />
-          Pagamento seguro · Cancele quando quiser · Acesso imediato
+        <p className="text-center text-muted-foreground/60" style={{ fontSize: '11px' }}>
+          🔒 Pagamento seguro · Cancele quando quiser · Acesso imediato
         </p>
 
         {/* Benefits */}
-        <div className="rounded-xl border border-border/40 bg-card/50 p-5 space-y-4 mx-1">
+        <div
+          className="rounded-2xl border border-border/40 bg-card/40 mx-1"
+          style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}
+        >
           <div className="flex items-center gap-2">
             <Check className="w-4 h-4 text-primary" strokeWidth={2.5} />
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+            <span className="text-muted-foreground uppercase" style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.08em' }}>
               O que está incluído
             </span>
           </div>
-          <div className="space-y-3">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {benefits.map((b) => (
               <div key={b} className="flex items-start gap-2.5">
                 <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" strokeWidth={2} />
-                <span className="text-[13px] text-foreground/80 leading-snug">{b}</span>
+                <span className="text-foreground/80" style={{ fontSize: '13px', lineHeight: '1.35' }}>{b}</span>
               </div>
             ))}
           </div>
@@ -145,7 +159,8 @@ export default function Paywall() {
         {/* Already subscribed */}
         <button
           onClick={refreshSubscription}
-          className="w-full text-center text-[13px] text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors pb-2"
+          className="w-full text-center text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+          style={{ fontSize: '13px', paddingBottom: '8px' }}
         >
           Já assinei → Verificar acesso
         </button>
