@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { ExcelPerformanceData, DailyMetric } from '@/lib/shopeeExcelParser';
 import { OperationLogEntry } from '@/lib/shopeeAdsParser';
 import { ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Area } from 'recharts';
-import { TrendingUp, TrendingDown, ArrowRight, Search, Users, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, ArrowRight, Search, GitCompareArrows, BarChart3 } from 'lucide-react';
 
 const fmt = (v: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 const fmtN = (v: number) => new Intl.NumberFormat('pt-BR').format(v);
