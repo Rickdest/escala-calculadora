@@ -198,7 +198,7 @@ function ResultadoAposMudancaSection({ correlations, dadosDiarios }: { correlati
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5 shadow-lg space-y-4">
+    <div className="rounded-2xl border border-border bg-card p-3 md:p-5 shadow-lg space-y-3 md:space-y-4">
       <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
         <GitCompareArrows className="w-3.5 h-3.5 text-primary dark:text-blue-400" /> Resultado Após Cada Mudança ({correlations.length})
       </p>
