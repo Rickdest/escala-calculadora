@@ -1085,9 +1085,27 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                       );
                     })}
                   </div>
-                  <p className={cn('text-sm font-bold', ad.posicao_media <= 3 ? 'text-primary dark:text-blue-400' : ad.posicao_media <= 8 ? 'text-primary/80 dark:text-blue-300' : ad.posicao_media <= 16 ? 'text-warning' : 'text-destructive')}>
-                    {posInfo.label}
-                  </p>
+                  {posInfo.label && (
+                    <p className={cn('text-sm font-bold', ad.posicao_media <= 3 ? 'text-primary dark:text-blue-400' : ad.posicao_media <= 8 ? 'text-primary/80 dark:text-blue-300' : ad.posicao_media <= 16 ? 'text-warning' : 'text-destructive')}>
+                      {posInfo.label}
+                    </p>
+                  )}
+                  {ad.posicao_media !== null && ad.posicao_media > 8 && (
+                    <div className="rounded-lg bg-warning/10 border border-warning/20 p-2.5 mt-2">
+                      <p className="text-xs text-warning font-medium">
+                        💡 {ad.posicao_media > 16 
+                          ? 'Posição muito baixa. Aumente o lance ou a meta de ROAS para subir para a 1ª página.' 
+                          : 'Você está na 2ª página. Um aumento moderado no lance pode colocá-lo na 1ª página e melhorar o CTR significativamente.'}
+                      </p>
+                    </div>
+                  )}
+                  {ad.posicao_media !== null && ad.posicao_media <= 3 && (
+                    <div className="rounded-lg bg-success/10 border border-success/20 p-2.5 mt-2">
+                      <p className="text-xs text-success font-medium">
+                        🏆 Excelente posição! Monitore o custo — avalie se pode reduzir o lance sem perder a posição.
+                      </p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="rounded-2xl border border-dashed border-border bg-card p-5 shadow-lg space-y-3">
