@@ -242,42 +242,42 @@ function ResultadoAposMudancaSection({ correlations, dadosDiarios }: { correlati
           return (
             <div key={i} className={cn('rounded-lg md:rounded-xl border px-2.5 py-2 md:px-4 md:py-3.5 transition-colors', borderStyle)}>
               <div className="flex items-start justify-between gap-2 md:gap-3">
-                <div className="flex-1 min-w-0 space-y-1 md:space-y-1.5">
-                  <div className="flex items-center gap-2 md:gap-2.5">
-                    <span className={cn('text-[9px] md:text-[10px] font-extrabold uppercase px-2 py-0.5 md:px-2.5 md:py-1 rounded-md tracking-wide', typeLabel.color)}>
+                <div className="flex-1 min-w-0 space-y-0.5 md:space-y-1.5">
+                  <div className="flex items-center gap-1.5 md:gap-2.5">
+                    <span className={cn('text-[8px] md:text-[10px] font-extrabold uppercase px-1.5 py-0.5 md:px-2.5 md:py-1 rounded-md tracking-wide', typeLabel.color)}>
                       {typeLabel.label}
                     </span>
-                    <span className="text-[11px] md:text-[12px] text-text-3 font-mono">{c.dataLabel}</span>
+                    <span className="text-[10px] md:text-[12px] text-text-3 font-mono">{c.dataLabel}</span>
                   </div>
-                  <p className="text-sm md:text-lg text-foreground font-bold leading-snug">{c.mudanca}</p>
+                  <p className="text-xs md:text-lg text-foreground font-bold leading-snug line-clamp-2 md:line-clamp-none">{c.mudanca}</p>
                   {c.impacto.observacao && (
-                    <p className={cn('text-[12px] leading-snug', isPositive ? 'text-emerald-400' : isNegative ? 'text-destructive' : 'text-amber-400')}>
+                    <p className={cn('text-[10px] md:text-[12px] leading-snug line-clamp-1 md:line-clamp-none', isPositive ? 'text-emerald-400' : isNegative ? 'text-destructive' : 'text-amber-400')}>
                       {c.impacto.observacao}
                     </p>
                   )}
                 </div>
-                <div className="flex flex-col items-end gap-1.5 flex-shrink-0 pt-1 text-right">
+                <div className="flex flex-col items-end gap-1 flex-shrink-0 pt-0.5 text-right">
                   <div>
-                    <span className={cn('text-sm font-bold font-mono tabular-nums', c.impacto.impressoesDelta >= 0 ? 'text-emerald-400' : 'text-destructive')}>
+                    <span className={cn('text-xs md:text-sm font-bold font-mono tabular-nums', c.impacto.impressoesDelta >= 0 ? 'text-emerald-400' : 'text-destructive')}>
                       {c.impacto.impressoesDelta >= 0 ? '+' : ''}{fmtN(c.impacto.impressoesDelta)}
-                      {c.impacto.impressoesPct !== 0 && ` (${c.impacto.impressoesPct}%)`}
+                      <span className="hidden md:inline">{c.impacto.impressoesPct !== 0 && ` (${c.impacto.impressoesPct}%)`}</span>
                     </span>
-                    <p className="text-[9px] text-text-3 uppercase mt-0.5">impressões</p>
+                    <p className="text-[8px] md:text-[9px] text-text-3 uppercase">imp</p>
                   </div>
                   <div>
-                    <span className={cn('text-sm font-bold font-mono tabular-nums', c.impacto.vendasDelta >= 0 ? 'text-emerald-400' : 'text-destructive')}>
+                    <span className={cn('text-xs md:text-sm font-bold font-mono tabular-nums', c.impacto.vendasDelta >= 0 ? 'text-emerald-400' : 'text-destructive')}>
                       {c.impacto.vendasDelta >= 0 ? '+' : ''}{fmt(c.impacto.vendasDelta)}
                     </span>
-                    <p className="text-[9px] text-text-3 uppercase mt-0.5">vendas</p>
+                    <p className="text-[8px] md:text-[9px] text-text-3 uppercase">vendas</p>
                   </div>
                 </div>
               </div>
               {delta3d && (
-                <div className="mt-1.5 rounded-lg bg-surface-2/40 px-2 py-1.5 md:px-3 md:py-2 text-[10px] md:text-[11px] text-text-2 space-y-0.5">
-                  <p className="font-semibold text-foreground text-[11px] md:text-xs">📊 Resultado (3 dias):</p>
-                  <div className="flex flex-wrap gap-2 md:gap-4">
+                <div className="mt-1 md:mt-1.5 rounded-md bg-surface-2/40 px-2 py-1 md:px-3 md:py-2 text-[9px] md:text-[11px] text-text-2">
+                  <div className="flex gap-2 md:gap-4">
+                    <span className="font-semibold text-foreground">📊 3d:</span>
                     <span>Imp: <span className={cn('font-bold font-mono', delta3d.deltaImp >= 0 ? 'text-success' : 'text-destructive')}>{delta3d.deltaImp >= 0 ? '+' : ''}{delta3d.deltaImp.toLocaleString()}</span></span>
-                    <span>Vendas: <span className={cn('font-bold font-mono', delta3d.deltaSales >= 0 ? 'text-success' : 'text-destructive')}>{delta3d.deltaSales >= 0 ? '+' : ''}{delta3d.deltaSales}</span></span>
+                    <span>Vnd: <span className={cn('font-bold font-mono', delta3d.deltaSales >= 0 ? 'text-success' : 'text-destructive')}>{delta3d.deltaSales >= 0 ? '+' : ''}{delta3d.deltaSales}</span></span>
                   </div>
                 </div>
               )}
