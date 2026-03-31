@@ -563,6 +563,8 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
     return `${f(ad.periodo_inicio)} – ${f(ad.periodo_fim)} (${dias} dias)`;
   })();
 
+  const { user } = useAuth();
+
   const handleExcelUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -573,12 +575,41 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
       const parsed = parseShopeeExcel(buffer);
       setExcelData(parsed);
       toast.success(`${parsed.totalDias} dias importados`);
+
+      // Persist Excel data to database
+      const productIdForSave = ad.product_id || null;
+      const shopeeIdForSave = ad.shopee_product_id || null;
+      if (user && (productIdForSave || shopeeIdForSave)) {
+        const savePayload = {
+          excel_daily_data: parsed.dadosDiarios as any,
+          excel_summary: {
+            totalDias: parsed.totalDias,
+            totalImpressions: parsed.totais.impressoes,
+            totalOrders: parsed.totais.compradores,
+            totalGmv: parsed.totais.vendasBrl,
+            importedAt: new Date().toISOString(),
+          } as any,
+        };
+        let updateQuery = supabase
+          .from('product_ads_metrics')
+          .update(savePayload)
+          .eq('user_id', user.id);
+        if (productIdForSave) {
+          updateQuery = updateQuery.eq('product_id', productIdForSave);
+        } else if (shopeeIdForSave) {
+          updateQuery = updateQuery.eq('shopee_product_id', shopeeIdForSave);
+        }
+        const { error: saveError } = await updateQuery;
+        if (saveError) {
+          console.error('Erro ao salvar Excel:', saveError.message);
+        }
+      }
     } catch (err: any) {
       toast.error(err?.message || 'Erro ao processar arquivo');
     } finally {
       if (excelInputRef.current) excelInputRef.current.value = '';
     }
-  }, []);
+  }, [user, ad.product_id, ad.shopee_product_id]);
 
   const effBarColor = efficiency.score >= 80 ? 'bg-success' : efficiency.score >= 60 ? 'bg-success/80' : efficiency.score >= 40 ? 'bg-warning' : 'bg-destructive';
 
