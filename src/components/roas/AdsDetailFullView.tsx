@@ -1169,10 +1169,10 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                     {/* Left: Big number + tier label + bars */}
                     <div className="flex-1 min-w-0 space-y-4">
                       <div>
-                        <span className="text-6xl md:text-7xl font-black font-mono tabular-nums leading-none text-foreground">
+                        <span className="text-5xl md:text-7xl font-black font-mono tabular-nums leading-none text-foreground">
                           #{ad.posicao_media}
                         </span>
-                        <p className={cn('text-xl md:text-2xl font-bold mt-1', ad.posicao_media <= 3 ? 'text-success' : ad.posicao_media <= 8 ? 'text-primary dark:text-blue-400' : ad.posicao_media <= 16 ? 'text-warning' : 'text-destructive')}>
+                        <p className={cn('text-lg md:text-2xl font-bold mt-1', ad.posicao_media <= 3 ? 'text-success' : ad.posicao_media <= 8 ? 'text-primary dark:text-blue-400' : ad.posicao_media <= 16 ? 'text-warning' : 'text-destructive')}>
                           {ad.posicao_media <= 3 ? 'Top 3' : ad.posicao_media <= 8 ? 'Primeira Página' : ad.posicao_media <= 16 ? 'Segunda Página' : 'Terceira Página+'}
                         </p>
                       </div>
