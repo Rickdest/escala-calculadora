@@ -177,13 +177,30 @@ function FontesTrafego({ fontes }: { fontes: ExcelPerformanceData['fontes'] }) {
 }
 
 // ─── Correlations ───
-function CorrelacaoSection({ correlations }: { correlations: Correlation[] }) {
+function ResultadoAposMudancaSection({ correlations, dadosDiarios }: { correlations: Correlation[]; dadosDiarios: DailyMetric[] }) {
   if (correlations.length === 0) return null;
+
+  // Helper: compute 3-day before/after delta
+  function compute3DayDelta(eventDate: string) {
+    const idx = dadosDiarios.findIndex(d => d.data === eventDate);
+    if (idx < 0) return null;
+    const before = dadosDiarios.slice(Math.max(0, idx - 3), idx);
+    const after = dadosDiarios.slice(idx + 1, idx + 4);
+    if (before.length < 2 || after.length < 2) return null;
+    const avgImpBefore = before.reduce((s, d) => s + d.impressoes, 0) / before.length;
+    const avgImpAfter = after.reduce((s, d) => s + d.impressoes, 0) / after.length;
+    const avgSalesBefore = before.reduce((s, d) => s + d.compradores, 0) / before.length;
+    const avgSalesAfter = after.reduce((s, d) => s + d.compradores, 0) / after.length;
+    return {
+      deltaImp: Math.round(avgImpAfter - avgImpBefore),
+      deltaSales: Math.round((avgSalesAfter - avgSalesBefore) * 10) / 10,
+    };
+  }
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-lg space-y-4">
       <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
-        <Users className="w-3.5 h-3.5 text-warning" /> Impacto das Mudanças ({correlations.length})
+        <GitCompareArrows className="w-3.5 h-3.5 text-primary dark:text-blue-400" /> Resultado Após Cada Mudança ({correlations.length})
       </p>
       <div className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
         {correlations.map((c, i) => {
@@ -195,7 +212,6 @@ function CorrelacaoSection({ correlations }: { correlations: Correlation[] }) {
             ? 'border-destructive/50 bg-destructive/[0.06]'
             : 'border-border bg-surface-2/30';
 
-          // Determine type from mudanca text
           const mudLower = c.mudanca.toLowerCase();
           const typeLabel = mudLower.includes('roas') || mudLower.includes('meta')
             ? { label: 'META', color: 'bg-emerald-500/20 text-emerald-400' }
@@ -204,6 +220,8 @@ function CorrelacaoSection({ correlations }: { correlations: Correlation[] }) {
             : mudLower.includes('boost') || mudLower.includes('impulsão')
             ? { label: 'BOOST', color: 'bg-amber-500/20 text-amber-400' }
             : { label: 'OUTRO', color: 'bg-muted/50 text-text-3' };
+
+          const delta3d = compute3DayDelta(c.data);
 
           return (
             <div key={i} className={cn('rounded-xl border px-4 py-3.5 transition-colors', borderStyle)}>
@@ -238,6 +256,15 @@ function CorrelacaoSection({ correlations }: { correlations: Correlation[] }) {
                   </div>
                 </div>
               </div>
+              {delta3d && (
+                <div className="mt-1.5 rounded-lg bg-surface-2/40 px-3 py-2 text-[11px] text-text-2 space-y-0.5">
+                  <p className="font-semibold text-foreground text-xs">📊 Resultado após a mudança (3 dias):</p>
+                  <div className="flex gap-4">
+                    <span>Impressões: <span className={cn('font-bold font-mono', delta3d.deltaImp >= 0 ? 'text-success' : 'text-destructive')}>{delta3d.deltaImp >= 0 ? '+' : ''}{delta3d.deltaImp.toLocaleString()}</span></span>
+                    <span>Vendas: <span className={cn('font-bold font-mono', delta3d.deltaSales >= 0 ? 'text-success' : 'text-destructive')}>{delta3d.deltaSales >= 0 ? '+' : ''}{delta3d.deltaSales}</span></span>
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}
