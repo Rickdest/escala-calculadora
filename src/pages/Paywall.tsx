@@ -44,7 +44,9 @@ export default function Paywall() {
           <h1 className="text-[26px] font-bold text-foreground leading-tight">
             Pare de chutar.
             <br />
-            <span className="text-primary">Comece a lucrar{'\n'}de verdade.</span>
+            <strong>Comece a lucrar
+            <br />
+            de verdade.</strong>
           </h1>
           <p className="text-[13px] text-muted-foreground leading-relaxed px-2">
             Vendedores Shopee que usam o Skalify tomam decisões com dados — e crescem até 3x mais rápido.
