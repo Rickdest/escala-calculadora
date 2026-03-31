@@ -21,6 +21,13 @@ const caktoPayloadSchema = z.object({
   }).optional(),
 });
 
+function timingSafeEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a[i] ^ b[i];
+  return diff === 0;
+}
+
 function maskEmail(email: string): string {
   const [user, domain] = email.split('@');
   return `${user.substring(0, 3)}***@${domain}`;
