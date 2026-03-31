@@ -63,7 +63,23 @@ function formatLogLabel(entry: OperationLogEntry): string {
   }
 }
 
-function getObservation(entry: OperationLogEntry): string | null {
+function parseCampaignDetails(details: string): string[] {
+  const pills: string[] = [];
+  const budgetMatch = details.match(/Orçamento diário[:\s]*([^\s,;|]+)/i) || details.match(/R\$\s*[\d.,]+\/dia/i);
+  if (budgetMatch) pills.push(budgetMatch[0].includes('R$') ? budgetMatch[0] : `R$ ${budgetMatch[1]}/dia`);
+  const roasMatch = details.match(/ROAS[:\s]*([\d.,]+)/i);
+  if (roasMatch) pills.push(`ROAS ${roasMatch[1]}`);
+  const boostMatch = details.match(/Impulsão[^:]*[:\s]*(ON|OFF|Ligad|Desligad|Ativad|Desativad)/i);
+  if (boostMatch) pills.push(`Impulsão: ${/^(O|L|A)/i.test(boostMatch[1]) && !boostMatch[1].startsWith('OF') ? 'ON' : 'OFF'}`);
+  const criativoMatch = details.match(/Criativo[^:]*[:\s]*(ON|OFF|Ligad|Desligad|Ativad|Desativad)/i);
+  if (criativoMatch) pills.push(`Criativo: ${/^(O|L|A)/i.test(criativoMatch[1]) && !criativoMatch[1].startsWith('OF') ? 'ON' : 'OFF'}`);
+  const lanceMatch = details.match(/lance otimizado[^:]*[:\s]*(ON|OFF|Ligad|Desligad|Ativad|Desativad)/i);
+  if (lanceMatch) pills.push(`Lance: ${/^(O|L|A)/i.test(lanceMatch[1]) && !lanceMatch[1].startsWith('OF') ? 'ON' : 'OFF'}`);
+  const focoMatch = details.match(/Tipo de Venda[:\s]*([^,;|]+)/i);
+  if (focoMatch) pills.push(`Foco: ${focoMatch[1].trim()}`);
+  return pills;
+}
+
   if (entry.field === 'roas_target') {
     const from = parseFloat(entry.fromValue ?? '0');
     const to = parseFloat(entry.toValue ?? '0');
