@@ -183,42 +183,64 @@ function CorrelacaoSection({ correlations }: { correlations: Correlation[] }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-lg space-y-4">
       <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
-        <Users className="w-3.5 h-3.5" /> Impacto das Mudanças ({correlations.length})
+        <Users className="w-3.5 h-3.5 text-warning" /> Impacto das Mudanças ({correlations.length})
       </p>
-      <div className="space-y-3">
-        {correlations.map((c, i) => (
-          <div key={i} className={cn(
-            'rounded-xl border p-3 space-y-2',
-            c.resultado === 'positivo' ? 'border-success/30 bg-success/5' :
-            c.resultado === 'negativo' ? 'border-destructive/30 bg-destructive/5' :
-            'border-border bg-surface-2/50'
-          )}>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-foreground">{c.dataLabel} — {c.mudanca}</span>
-              {c.resultado === 'positivo' ? <TrendingUp className="w-3.5 h-3.5 text-success" /> :
-               c.resultado === 'negativo' ? <TrendingDown className="w-3.5 h-3.5 text-destructive" /> : null}
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-[11px]">
-              <div>
-                <span className="text-text-3">Impressões: </span>
-                <span className={cn('font-bold font-mono', c.impacto.impressoesDelta >= 0 ? 'text-success' : 'text-destructive')}>
-                  {c.impacto.impressoesDelta >= 0 ? '+' : ''}{fmtN(c.impacto.impressoesDelta)}
-                  {c.impacto.impressoesPct !== 0 && ` (${c.impacto.impressoesPct}%)`}
-                </span>
+      <div className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
+        {correlations.map((c, i) => {
+          const isPositive = c.resultado === 'positivo';
+          const isNegative = c.resultado === 'negativo';
+          const borderStyle = isPositive
+            ? 'border-emerald-500/50 bg-emerald-500/[0.06]'
+            : isNegative
+            ? 'border-destructive/50 bg-destructive/[0.06]'
+            : 'border-border bg-surface-2/30';
+
+          // Determine type from mudanca text
+          const mudLower = c.mudanca.toLowerCase();
+          const typeLabel = mudLower.includes('roas') || mudLower.includes('meta')
+            ? { label: 'META', color: 'bg-emerald-500/20 text-emerald-400' }
+            : mudLower.includes('orçamento') || mudLower.includes('budget')
+            ? { label: 'BUDGET', color: 'bg-blue-500/20 text-blue-400' }
+            : mudLower.includes('boost') || mudLower.includes('impulsão')
+            ? { label: 'BOOST', color: 'bg-amber-500/20 text-amber-400' }
+            : { label: 'OUTRO', color: 'bg-muted/50 text-text-3' };
+
+          return (
+            <div key={i} className={cn('rounded-xl border px-4 py-3.5 transition-colors', borderStyle)}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0 space-y-1.5">
+                  <div className="flex items-center gap-2.5">
+                    <span className={cn('text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-md tracking-wide', typeLabel.color)}>
+                      {typeLabel.label}
+                    </span>
+                    <span className="text-[12px] text-text-3 font-mono">{c.dataLabel}</span>
+                  </div>
+                  <p className="text-lg text-foreground font-bold leading-snug">{c.mudanca}</p>
+                  {c.impacto.observacao && (
+                    <p className={cn('text-[12px] leading-snug', isPositive ? 'text-emerald-400' : isNegative ? 'text-destructive' : 'text-amber-400')}>
+                      {c.impacto.observacao}
+                    </p>
+                  )}
+                </div>
+                <div className="flex flex-col items-end gap-1.5 flex-shrink-0 pt-1 text-right">
+                  <div>
+                    <span className={cn('text-sm font-bold font-mono tabular-nums', c.impacto.impressoesDelta >= 0 ? 'text-emerald-400' : 'text-destructive')}>
+                      {c.impacto.impressoesDelta >= 0 ? '+' : ''}{fmtN(c.impacto.impressoesDelta)}
+                      {c.impacto.impressoesPct !== 0 && ` (${c.impacto.impressoesPct}%)`}
+                    </span>
+                    <p className="text-[9px] text-text-3 uppercase mt-0.5">impressões</p>
+                  </div>
+                  <div>
+                    <span className={cn('text-sm font-bold font-mono tabular-nums', c.impacto.vendasDelta >= 0 ? 'text-emerald-400' : 'text-destructive')}>
+                      {c.impacto.vendasDelta >= 0 ? '+' : ''}{fmt(c.impacto.vendasDelta)}
+                    </span>
+                    <p className="text-[9px] text-text-3 uppercase mt-0.5">vendas</p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <span className="text-text-3">Vendas: </span>
-                <span className={cn('font-bold font-mono', c.impacto.vendasDelta >= 0 ? 'text-success' : 'text-destructive')}>
-                  {c.impacto.vendasDelta >= 0 ? '+' : ''}{fmt(c.impacto.vendasDelta)}
-                </span>
-              </div>
             </div>
-            <p className={cn('text-[11px]',
-              c.resultado === 'positivo' ? 'text-success' :
-              c.resultado === 'negativo' ? 'text-destructive' : 'text-text-2'
-            )}>{c.impacto.observacao}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
