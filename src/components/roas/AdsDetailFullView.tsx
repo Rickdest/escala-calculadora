@@ -1147,11 +1147,12 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
             <div className="grid md:grid-cols-2 gap-4">
               {/* Posicionamento */}
               {ad.posicao_media !== null && posInfo ? (
-                <div className="rounded-2xl border border-border bg-card p-6 shadow-lg space-y-5 relative overflow-hidden">
+                <div className="rounded-2xl border border-border bg-card p-5 md:p-6 shadow-lg relative overflow-hidden">
                   {/* Gradient top border accent */}
                   <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary via-purple-500 to-pink-500" />
                   
-                  <div className="flex items-center justify-between">
+                  {/* Header row */}
+                  <div className="flex items-center justify-between mb-5">
                     <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-primary dark:text-blue-400" /> Posicionamento
                     </p>
@@ -1162,34 +1163,35 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                       <span className="text-3xl font-black font-mono tabular-nums text-foreground">#{ad.posicao_media}</span>
                     </div>
                   </div>
-                  
-                  <div className="grid grid-cols-[1fr_auto] gap-6 items-start">
-                    {/* Left: Big number + label + horizontal tiers */}
-                    <div className="space-y-4">
+
+                  {/* Content: 2 columns on md+, stacked on mobile */}
+                  <div className="flex flex-col md:flex-row md:items-start gap-5">
+                    {/* Left: Big number + tier label + bars */}
+                    <div className="flex-1 min-w-0 space-y-4">
                       <div>
-                        <span className="text-7xl font-black font-mono tabular-nums leading-none text-foreground">
+                        <span className="text-6xl md:text-7xl font-black font-mono tabular-nums leading-none text-foreground">
                           #{ad.posicao_media}
                         </span>
-                        <p className={cn('text-2xl font-bold mt-1', ad.posicao_media <= 3 ? 'text-success' : ad.posicao_media <= 8 ? 'text-primary dark:text-blue-400' : ad.posicao_media <= 16 ? 'text-warning' : 'text-destructive')}>
+                        <p className={cn('text-xl md:text-2xl font-bold mt-1', ad.posicao_media <= 3 ? 'text-success' : ad.posicao_media <= 8 ? 'text-primary dark:text-blue-400' : ad.posicao_media <= 16 ? 'text-warning' : 'text-destructive')}>
                           {ad.posicao_media <= 3 ? 'Top 3' : ad.posicao_media <= 8 ? 'Primeira Página' : ad.posicao_media <= 16 ? 'Segunda Página' : 'Terceira Página+'}
                         </p>
                       </div>
                       {/* Horizontal tier bars */}
-                      <div className="flex gap-1 items-end">
+                      <div className="flex gap-1.5 items-end">
                         {[
-                          { label: 'Top 3', range: [1, 3], color: 'bg-surface-2' },
-                          { label: 'Página 1 (4-8)', range: [4, 8], color: 'bg-surface-2' },
-                          { label: 'Página 2+ (9+)', range: [9, 99], color: 'bg-primary dark:bg-blue-500' },
+                          { label: 'Top 3', range: [1, 3] },
+                          { label: 'Página 1 (4-8)', range: [4, 8] },
+                          { label: 'Página 2+ (9+)', range: [9, 99] },
                         ].map(tier => {
                           const isActive = ad.posicao_media! >= tier.range[0] && ad.posicao_media! <= tier.range[1];
                           return (
                             <div key={tier.label} className="flex-1 space-y-1 text-center">
-                              <div className={cn('h-3 rounded-md', isActive ? 'bg-primary dark:bg-blue-500' : 'bg-surface-2')} />
-                              <p className={cn('text-[9px]', isActive ? 'text-foreground font-bold' : 'text-text-3')}>
+                              <div className={cn('h-3 rounded-md transition-colors', isActive ? 'bg-primary dark:bg-blue-500' : 'bg-surface-2')} />
+                              <p className={cn('text-[9px] leading-tight', isActive ? 'text-foreground font-bold' : 'text-text-3')}>
                                 {tier.label}
                               </p>
                               {isActive && (
-                                <span className="inline-block text-[9px] font-bold text-primary dark:text-blue-400 bg-primary/15 px-2 py-0.5 rounded-md">← VOCÊ</span>
+                                <span className="inline-block text-[9px] font-bold text-primary dark:text-blue-400 bg-primary/15 px-2 py-0.5 rounded-md whitespace-nowrap">← VOCÊ</span>
                               )}
                             </div>
                           );
@@ -1198,8 +1200,8 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                     </div>
                     
                     {/* Right: Recommendation card */}
-                    <div className="w-[200px] flex-shrink-0 flex flex-col justify-between h-full">
-                      <div className="rounded-xl bg-card border border-border p-4 space-y-2 shadow-md">
+                    <div className="md:w-[200px] flex-shrink-0 space-y-2">
+                      <div className="rounded-xl bg-surface-2/50 border border-border p-4 shadow-sm">
                         <p className="text-sm text-foreground leading-relaxed">
                           {ad.posicao_media > 8 ? (
                             <>
@@ -1221,7 +1223,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                           )}
                         </p>
                       </div>
-                      <p className="text-[9px] text-text-3 text-right mt-2">Posição importada via CSV individual</p>
+                      <p className="text-[9px] text-text-3 text-right">Posição importada via CSV individual</p>
                     </div>
                   </div>
                 </div>
