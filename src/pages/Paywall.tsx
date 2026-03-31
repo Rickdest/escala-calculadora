@@ -124,9 +124,9 @@ export default function Paywall() {
           <button
             onClick={handleCheckout}
             className="w-full rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground transition-colors active:scale-[0.98]"
-            style={{ height: '54px', fontSize: '16px', fontWeight: 700, borderRadius: '14px' }}
+            style={{ height: '54px', fontSize: '16px', fontWeight: 700, borderRadius: '14px', boxShadow: '0 4px 20px -4px hsl(var(--primary) / 0.5)' }}
           >
-            ⚡ {isYearly ? 'Assinar plano anual' : 'Assinar plano mensal'}
+            ✦ {isYearly ? 'Assinar plano anual' : 'Assinar plano mensal'}
           </button>
         </div>
 
