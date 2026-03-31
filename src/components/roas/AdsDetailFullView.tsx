@@ -1078,71 +1078,75 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
             <div className="grid md:grid-cols-2 gap-4">
               {/* Posicionamento */}
               {ad.posicao_media !== null && posInfo ? (
-                <div className="rounded-2xl border border-border bg-card p-5 shadow-lg space-y-4">
+                <div className="rounded-2xl border border-border bg-card p-6 shadow-lg space-y-5 relative overflow-hidden">
+                  {/* Gradient top border accent */}
+                  <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary via-purple-500 to-pink-500" />
+                  
                   <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-primary dark:text-blue-400" /> Posicionamento
                   </p>
-                  <div className="grid grid-cols-[1fr_auto] gap-4 items-start">
-                    {/* Left: Number + tiers */}
-                    <div className="space-y-3">
+                  
+                  <div className="grid grid-cols-[1fr_auto] gap-6 items-start">
+                    {/* Left: Big number + label + horizontal tiers */}
+                    <div className="space-y-4">
                       <div>
-                        <span className={cn('text-5xl font-black font-mono tabular-nums leading-none', ad.posicao_media <= 3 ? 'text-success' : ad.posicao_media <= 8 ? 'text-primary dark:text-blue-400' : ad.posicao_media <= 16 ? 'text-warning' : 'text-destructive')}>
+                        <span className="text-7xl font-black font-mono tabular-nums leading-none text-foreground">
                           #{ad.posicao_media}
                         </span>
-                        <p className={cn('text-lg font-bold mt-1', ad.posicao_media <= 3 ? 'text-success' : ad.posicao_media <= 8 ? 'text-primary dark:text-blue-400' : ad.posicao_media <= 16 ? 'text-warning' : 'text-destructive')}>
+                        <p className={cn('text-2xl font-bold mt-1', ad.posicao_media <= 3 ? 'text-success' : ad.posicao_media <= 8 ? 'text-primary dark:text-blue-400' : ad.posicao_media <= 16 ? 'text-warning' : 'text-destructive')}>
                           {ad.posicao_media <= 3 ? 'Top 3' : ad.posicao_media <= 8 ? 'Primeira Página' : ad.posicao_media <= 16 ? 'Segunda Página' : 'Terceira Página+'}
                         </p>
                       </div>
-                      <div className="space-y-1.5">
+                      {/* Horizontal tier bars */}
+                      <div className="flex gap-1 items-end">
                         {[
-                          { label: 'Top 3', range: [1, 3], color: 'bg-success' },
-                          { label: 'Pág 1 (4-8)', range: [4, 8], color: 'bg-primary dark:bg-blue-500' },
-                          { label: 'Pág 2+ (9+)', range: [9, 99], color: 'bg-muted-foreground' },
+                          { label: 'Top 3', range: [1, 3], color: 'bg-surface-2' },
+                          { label: 'Página 1 (4-8)', range: [4, 8], color: 'bg-surface-2' },
+                          { label: 'Página 2+ (9+)', range: [9, 99], color: 'bg-primary dark:bg-blue-500' },
                         ].map(tier => {
                           const isActive = ad.posicao_media! >= tier.range[0] && ad.posicao_media! <= tier.range[1];
                           return (
-                            <div key={tier.label} className="space-y-0.5">
-                              <div className="flex items-center justify-between text-[10px]">
-                                <span className={cn(isActive ? 'text-foreground font-bold' : 'text-text-3')}>{tier.label}</span>
-                                {isActive && <span className="text-primary dark:text-blue-400 font-bold">← VOCÊ</span>}
-                              </div>
-                              <div className="w-full h-1.5 rounded-full bg-surface-2 overflow-hidden">
-                                <div className={cn('h-full rounded-full transition-all', isActive ? tier.color : 'bg-surface-2')} style={{ width: isActive ? '100%' : '0%' }} />
-                              </div>
+                            <div key={tier.label} className="flex-1 space-y-1 text-center">
+                              <div className={cn('h-3 rounded-md', isActive ? 'bg-primary dark:bg-blue-500' : 'bg-surface-2')} />
+                              <p className={cn('text-[9px]', isActive ? 'text-foreground font-bold' : 'text-text-3')}>
+                                {tier.label}
+                              </p>
+                              {isActive && (
+                                <span className="inline-block text-[9px] font-bold text-primary dark:text-blue-400 bg-primary/15 px-2 py-0.5 rounded-md">← VOCÊ</span>
+                              )}
                             </div>
                           );
                         })}
                       </div>
                     </div>
-                    {/* Right: Recommendation */}
-                    <div className="w-[140px] flex-shrink-0">
-                      {ad.posicao_media > 8 ? (
-                        <div className="rounded-xl bg-warning/10 border border-warning/20 p-3 space-y-1">
-                          <p className="text-[10px] font-bold text-warning uppercase tracking-wide">Recomendação</p>
-                          <p className="text-[11px] text-warning/90 leading-snug">
-                            {ad.posicao_media > 16
-                              ? 'Aumente o lance para subir para a 1ª página.'
-                              : 'Aumento moderado no lance pode melhorar CTR.'}
-                          </p>
-                        </div>
-                      ) : ad.posicao_media <= 3 ? (
-                        <div className="rounded-xl bg-success/10 border border-success/20 p-3 space-y-1">
-                          <p className="text-[10px] font-bold text-success uppercase tracking-wide">Recomendação</p>
-                          <p className="text-[11px] text-success/90 leading-snug">
-                            Monitore o custo — avalie reduzir lance sem perder posição.
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="rounded-xl bg-primary/10 border border-primary/20 p-3 space-y-1">
-                          <p className="text-[10px] font-bold text-primary dark:text-blue-400 uppercase tracking-wide">Recomendação</p>
-                          <p className="text-[11px] text-primary/90 dark:text-blue-300 leading-snug">
-                            Boa posição. Monitore se o ROAS justifica o lance atual.
-                          </p>
-                        </div>
-                      )}
+                    
+                    {/* Right: Recommendation card */}
+                    <div className="w-[200px] flex-shrink-0 flex flex-col justify-between h-full">
+                      <div className="rounded-xl bg-card border border-border p-4 space-y-2 shadow-md">
+                        <p className="text-sm text-foreground leading-relaxed">
+                          {ad.posicao_media > 8 ? (
+                            <>
+                              💡 <strong className="text-warning">Você está na 2ª página.</strong>{' '}
+                              {ad.posicao_media > 16
+                                ? 'Aumente o lance para subir para a 1ª página e melhorar o CTR significativamente.'
+                                : 'Um aumento moderado no lance pode colocá-lo na 1ª página e melhorar o CTR significativamente.'}
+                            </>
+                          ) : ad.posicao_media <= 3 ? (
+                            <>
+                              🏆 <strong className="text-success">Excelente posição!</strong>{' '}
+                              Monitore o custo — avalie se pode reduzir o lance sem perder a posição.
+                            </>
+                          ) : (
+                            <>
+                              💡 <strong className="text-primary dark:text-blue-400">Boa posição.</strong>{' '}
+                              Monitore se o ROAS justifica o lance atual.
+                            </>
+                          )}
+                        </p>
+                      </div>
+                      <p className="text-[9px] text-text-3 text-right mt-2">Posição importada via CSV individual</p>
                     </div>
                   </div>
-                  <p className="text-[9px] text-text-3 text-right">Posição importada via CSV individual</p>
                 </div>
               ) : (
                 <div className="rounded-2xl border border-dashed border-border bg-card p-5 shadow-lg space-y-3">
