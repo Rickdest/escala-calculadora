@@ -63,6 +63,24 @@ function formatLogLabel(entry: OperationLogEntry): string {
   }
 }
 
+function getObservation(entry: OperationLogEntry): string | null {
+  if (entry.field === 'roas_target') {
+    const from = parseFloat(entry.fromValue ?? '0');
+    const to = parseFloat(entry.toValue ?? '0');
+    if (to > from) return `⚠ Meta aumentada ${from}→${to}: algoritmo tende a reduzir volume de impressões`;
+    if (to < from) return `📈 Meta reduzida ${from}→${to}: espere aumento de impressões e volume`;
+  }
+  if (entry.field === 'budget') {
+    const from = parseFloat(entry.fromValue ?? '0');
+    const to = parseFloat(entry.toValue ?? '0');
+    if (to > from) return `💰 Orçamento aumentado: mais espaço para capturar vendas`;
+    if (to < from) return `⚠ Orçamento reduzido: pode limitar volume de impressões`;
+  }
+  if (entry.field === 'quick_boost') return `⚡ Impulsão ativa: pico temporário de impressões esperado`;
+  if (entry.field === 'campaign_created') return `🆕 Nova campanha: aguarde 3-5 dias para estabilizar`;
+  return null;
+}
+
 function formatLogDate(ts: string): string {
   const d = new Date(ts);
   const dd = String(d.getDate()).padStart(2, '0');
@@ -335,16 +353,17 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
           </div>
         </>
       )}
-      <div className="space-y-1 max-h-[300px] overflow-y-auto pr-1">
+      <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
+        <Sparkles className="w-3.5 h-3.5 text-warning" /> Impacto das Mudanças
+      </p>
+      <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
         {displayEvents.map((entry, i) => {
-          const fi = FIELD_ICONS[entry.field] || FIELD_ICONS.other;
-          const Icon = fi.icon;
           const typeStyles: Record<string, string> = {
-            roas_target: 'border-l-2 border-l-emerald-500/60 bg-emerald-500/[0.03]',
-            budget: 'border-l-2 border-l-blue-500/60 bg-blue-500/[0.03]',
-            quick_boost: 'border-l-2 border-l-amber-500/60 bg-amber-500/[0.03]',
-            campaign_created: 'border-l-2 border-l-emerald-500/60 bg-emerald-500/[0.03]',
-            other: 'border-l-2 border-l-border bg-surface-2/20',
+            roas_target: 'border-emerald-500/40 bg-emerald-500/[0.05]',
+            budget: 'border-blue-500/40 bg-blue-500/[0.05]',
+            quick_boost: 'border-amber-500/40 bg-amber-500/[0.05]',
+            campaign_created: 'border-emerald-500/40 bg-emerald-500/[0.05]',
+            other: 'border-border bg-surface-2/30',
           };
           const typeStyle = typeStyles[entry.field] || typeStyles.other;
           const typeLabelMap: Record<string, { label: string; color: string }> = {
@@ -357,29 +376,40 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
           const typeLabel = typeLabelMap[entry.field] || typeLabelMap.other;
           const impDelta = (entry as any).impressionsDelta;
           const salesDelta = (entry as any).salesValue;
+          const observation = getObservation(entry);
           return (
-            <div key={i} className={cn('rounded-lg px-3 py-2 flex items-start gap-2.5 transition-colors hover:bg-white/[0.02]', typeStyle)}>
-              <Icon className={cn('w-4 h-4 mt-0.5 flex-shrink-0', fi.color)} />
-              <div className="flex-1 min-w-0 space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <span className={cn('text-[8px] font-bold uppercase px-1.5 py-0.5 rounded', typeLabel.color)}>
-                    {typeLabel.label}
-                  </span>
-                  <span className="text-[10px] text-text-3 font-mono">{formatLogDate(entry.timestamp)}</span>
+            <div key={i} className={cn('rounded-xl border px-4 py-3 space-y-1.5 transition-colors hover:bg-white/[0.02]', typeStyle)}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className={cn('text-[9px] font-bold uppercase px-2 py-0.5 rounded-md', typeLabel.color)}>
+                      {typeLabel.label}
+                    </span>
+                    <span className="text-[11px] text-text-3 font-mono">{formatLogDate(entry.timestamp)}</span>
+                  </div>
+                  <p className="text-base text-foreground font-bold leading-snug">{formatLogLabel(entry)}</p>
+                  {observation && (
+                    <p className="text-[11px] text-text-2 leading-snug">{observation}</p>
+                  )}
                 </div>
-                <p className="text-[13px] text-foreground font-semibold leading-snug">{formatLogLabel(entry)}</p>
-              </div>
-              <div className="flex flex-col items-end gap-0.5 flex-shrink-0 ml-2">
-                {impDelta !== undefined && (
-                  <span className={cn('text-[10px] font-bold font-mono tabular-nums', String(impDelta).startsWith('-') ? 'text-destructive' : 'text-success')}>
-                    {impDelta}
-                  </span>
-                )}
-                {salesDelta !== undefined && (
-                  <span className={cn('text-[10px] font-bold font-mono tabular-nums', String(salesDelta).startsWith('-') ? 'text-destructive' : 'text-success')}>
-                    {salesDelta}
-                  </span>
-                )}
+                <div className="flex flex-col items-end gap-1 flex-shrink-0 pt-1">
+                  {impDelta !== undefined && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-[9px] text-text-3 uppercase">impressões</span>
+                      <span className={cn('text-xs font-bold font-mono tabular-nums', String(impDelta).startsWith('-') ? 'text-destructive' : 'text-success')}>
+                        {impDelta}
+                      </span>
+                    </div>
+                  )}
+                  {salesDelta !== undefined && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-[9px] text-text-3 uppercase">vendas</span>
+                      <span className={cn('text-xs font-bold font-mono tabular-nums', String(salesDelta).startsWith('-') ? 'text-destructive' : 'text-success')}>
+                        {salesDelta}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           );
@@ -1042,53 +1072,70 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
               {/* Posicionamento */}
               {ad.posicao_media !== null && posInfo ? (
                 <div className="rounded-2xl border border-border bg-card p-5 shadow-lg space-y-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-primary dark:text-blue-400" /> Posicionamento
-                    </p>
-                    <span className="text-3xl font-black font-mono tabular-nums text-foreground">#{ad.posicao_media}</span>
-                  </div>
-                  <div className="space-y-2">
-                    {[
-                      { label: 'Top 3', range: [1, 3], color: 'bg-primary dark:bg-blue-500', pct: ad.posicao_media <= 3 ? 100 : 0 },
-                      { label: 'Página 1 (4-8)', range: [4, 8], color: 'bg-primary/80 dark:bg-blue-400', pct: ad.posicao_media > 3 && ad.posicao_media <= 8 ? 100 : 0 },
-                      { label: 'Página 2+ (9+)', range: [9, 99], color: 'bg-muted-foreground', pct: ad.posicao_media > 8 ? 100 : 0 },
-                    ].map(tier => {
-                      const isActive = ad.posicao_media! >= tier.range[0] && ad.posicao_media! <= tier.range[1];
-                      return (
-                        <div key={tier.label} className="space-y-1">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className={cn(isActive ? 'text-foreground font-bold' : 'text-text-3')}>{tier.label}</span>
-                            {isActive && <span className="text-primary dark:text-blue-400 font-bold text-xs">← VOCÊ</span>}
-                          </div>
-                          <div className="w-full h-2 rounded-full bg-surface-2 overflow-hidden">
-                            <div className={cn('h-full rounded-full transition-all', isActive ? tier.color : 'bg-surface-2')} style={{ width: isActive ? '100%' : '0%' }} />
-                          </div>
+                  <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-primary dark:text-blue-400" /> Posicionamento
+                  </p>
+                  <div className="grid grid-cols-[1fr_auto] gap-4 items-start">
+                    {/* Left: Number + tiers */}
+                    <div className="space-y-3">
+                      <div>
+                        <span className={cn('text-5xl font-black font-mono tabular-nums leading-none', ad.posicao_media <= 3 ? 'text-success' : ad.posicao_media <= 8 ? 'text-primary dark:text-blue-400' : ad.posicao_media <= 16 ? 'text-warning' : 'text-destructive')}>
+                          #{ad.posicao_media}
+                        </span>
+                        <p className={cn('text-lg font-bold mt-1', ad.posicao_media <= 3 ? 'text-success' : ad.posicao_media <= 8 ? 'text-primary dark:text-blue-400' : ad.posicao_media <= 16 ? 'text-warning' : 'text-destructive')}>
+                          {ad.posicao_media <= 3 ? 'Top 3' : ad.posicao_media <= 8 ? 'Primeira Página' : ad.posicao_media <= 16 ? 'Segunda Página' : 'Terceira Página+'}
+                        </p>
+                      </div>
+                      <div className="space-y-1.5">
+                        {[
+                          { label: 'Top 3', range: [1, 3], color: 'bg-success' },
+                          { label: 'Pág 1 (4-8)', range: [4, 8], color: 'bg-primary dark:bg-blue-500' },
+                          { label: 'Pág 2+ (9+)', range: [9, 99], color: 'bg-muted-foreground' },
+                        ].map(tier => {
+                          const isActive = ad.posicao_media! >= tier.range[0] && ad.posicao_media! <= tier.range[1];
+                          return (
+                            <div key={tier.label} className="space-y-0.5">
+                              <div className="flex items-center justify-between text-[10px]">
+                                <span className={cn(isActive ? 'text-foreground font-bold' : 'text-text-3')}>{tier.label}</span>
+                                {isActive && <span className="text-primary dark:text-blue-400 font-bold">← VOCÊ</span>}
+                              </div>
+                              <div className="w-full h-1.5 rounded-full bg-surface-2 overflow-hidden">
+                                <div className={cn('h-full rounded-full transition-all', isActive ? tier.color : 'bg-surface-2')} style={{ width: isActive ? '100%' : '0%' }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    {/* Right: Recommendation */}
+                    <div className="w-[140px] flex-shrink-0">
+                      {ad.posicao_media > 8 ? (
+                        <div className="rounded-xl bg-warning/10 border border-warning/20 p-3 space-y-1">
+                          <p className="text-[10px] font-bold text-warning uppercase tracking-wide">Recomendação</p>
+                          <p className="text-[11px] text-warning/90 leading-snug">
+                            {ad.posicao_media > 16
+                              ? 'Aumente o lance para subir para a 1ª página.'
+                              : 'Aumento moderado no lance pode melhorar CTR.'}
+                          </p>
                         </div>
-                      );
-                    })}
+                      ) : ad.posicao_media <= 3 ? (
+                        <div className="rounded-xl bg-success/10 border border-success/20 p-3 space-y-1">
+                          <p className="text-[10px] font-bold text-success uppercase tracking-wide">Recomendação</p>
+                          <p className="text-[11px] text-success/90 leading-snug">
+                            Monitore o custo — avalie reduzir lance sem perder posição.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="rounded-xl bg-primary/10 border border-primary/20 p-3 space-y-1">
+                          <p className="text-[10px] font-bold text-primary dark:text-blue-400 uppercase tracking-wide">Recomendação</p>
+                          <p className="text-[11px] text-primary/90 dark:text-blue-300 leading-snug">
+                            Boa posição. Monitore se o ROAS justifica o lance atual.
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  {posInfo.label && (
-                    <p className={cn('text-sm font-bold', ad.posicao_media <= 3 ? 'text-primary dark:text-blue-400' : ad.posicao_media <= 8 ? 'text-primary/80 dark:text-blue-300' : ad.posicao_media <= 16 ? 'text-warning' : 'text-destructive')}>
-                      {posInfo.label}
-                    </p>
-                  )}
-                  {ad.posicao_media !== null && ad.posicao_media > 8 && (
-                    <div className="rounded-lg bg-warning/10 border border-warning/20 p-2.5 mt-2">
-                      <p className="text-xs text-warning font-medium">
-                        💡 {ad.posicao_media > 16 
-                          ? 'Posição muito baixa. Aumente o lance ou a meta de ROAS para subir para a 1ª página.' 
-                          : 'Você está na 2ª página. Um aumento moderado no lance pode colocá-lo na 1ª página e melhorar o CTR significativamente.'}
-                      </p>
-                    </div>
-                  )}
-                  {ad.posicao_media !== null && ad.posicao_media <= 3 && (
-                    <div className="rounded-lg bg-success/10 border border-success/20 p-2.5 mt-2">
-                      <p className="text-xs text-success font-medium">
-                        🏆 Excelente posição! Monitore o custo — avalie se pode reduzir o lance sem perder a posição.
-                      </p>
-                    </div>
-                  )}
+                  <p className="text-[9px] text-text-3 text-right">Posição importada via CSV individual</p>
                 </div>
               ) : (
                 <div className="rounded-2xl border border-dashed border-border bg-card p-5 shadow-lg space-y-3">
