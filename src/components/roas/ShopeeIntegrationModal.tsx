@@ -18,8 +18,6 @@ interface SyncReport {
   product_details?: any;
   order_list?: any;
   order_details?: any;
-  campaigns?: any;
-  
 }
 
 function ReportSection({ title, icon: Icon, children, defaultOpen = false }: { title: string; icon: any; children: React.ReactNode; defaultOpen?: boolean }) {
