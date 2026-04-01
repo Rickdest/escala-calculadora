@@ -192,34 +192,7 @@ Deno.serve(async (req) => {
       errors.orders = (e as Error).message;
     }
 
-    // 5. Marketing / Ads — try multiple endpoints
-    console.log("[SHOPEE SYNC] Fetching ads campaigns...");
-    try {
-      const campaigns = await shopeeGet(
-        "/api/v2/marketing/get_shop_campaigns",
-        currentAccessToken,
-        shopId
-      );
-      console.log("[SHOPEE SYNC] get_shop_campaigns FULL response:", JSON.stringify(campaigns));
-
-      if (campaigns?.error && campaigns.error !== "") {
-        console.log("[SHOPEE SYNC] get_shop_campaigns failed, trying ads/get_all_campaign...");
-        const altCampaigns = await shopeeGet(
-          "/api/v2/ads/get_all_campaign",
-          currentAccessToken,
-          shopId
-        );
-        console.log("[SHOPEE SYNC] ads/get_all_campaign FULL response:", JSON.stringify(altCampaigns));
-        results.campaigns = altCampaigns;
-      } else {
-        results.campaigns = campaigns;
-      }
-    } catch (e) {
-      console.error("[SHOPEE SYNC] Campaigns error:", e);
-      errors.campaigns = (e as Error).message;
-    }
-
-    // Performance endpoint removed — not available for this app
+    // Marketing/Ads endpoints removed — not available for this app
 
     console.log("[SHOPEE SYNC] === SYNC COMPLETE ===");
     console.log(`[SHOPEE SYNC] Endpoints OK: ${Object.keys(results).length}, Errors: ${Object.keys(errors).length}`);

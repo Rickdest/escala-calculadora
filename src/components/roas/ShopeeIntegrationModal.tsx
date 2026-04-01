@@ -233,11 +233,6 @@ export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClo
                   </ReportSection>
                 )}
 
-                {report.campaigns && (
-                  <ReportSection title="Campanhas de Ads" icon={BarChart3}>
-                    <CampaignsReport data={report.campaigns} />
-                  </ReportSection>
-                )}
 
 
                 {syncErrors && Object.keys(syncErrors).length > 0 && (
