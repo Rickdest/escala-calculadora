@@ -82,7 +82,7 @@ function ProductListReport({ listData, detailsData }: { listData: any; detailsDa
               <div className="min-w-0 flex-1">
                 <p className="text-[11px] font-medium text-foreground truncate">{p.item_name}</p>
                 <div className="flex gap-2 text-[10px] text-muted-foreground">
-                  <span>Preço: {p.price_info?.[0]?.current_price ? `R$ ${(p.price_info[0].current_price / 100000).toFixed(2)}` : '—'}</span>
+                  <span>Preço: {(() => { const pi = p.price_info?.[0]; const price = pi?.current_price || pi?.original_price || pi?.inflated_price_of_current_price; return price ? `R$ ${(price > 1000 ? price / 100000 : price).toFixed(2)}` : '—'; })()}</span>
                   <span>Estoque: {p.stock_info_v2?.summary_info?.total_available_stock ?? '—'}</span>
                   <span>Vendas: {p.sale_info?.historical_sold ?? '—'}</span>
                 </div>
