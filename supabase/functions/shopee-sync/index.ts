@@ -9,6 +9,235 @@ import {
   jsonResponse,
 } from "../_shared/shopee.ts";
 
+async function refreshTokenIfNeeded(shopeeToken: any, supabase: any) {
+  const tokenAge =
+    (Date.now() - new Date(shopeeToken.token_created_at).getTime()) / 1000;
+
+  if (tokenAge <= shopeeToken.expire_in - 300) {
+    return shopeeToken.access_token;
+  }
+
+  console.log("[SHOPEE SYNC] Token near expiry, refreshing...");
+  const refreshPath = "/api/v2/auth/access_token/get";
+  const timestamp = Math.floor(Date.now() / 1000);
+  const sign = await generateSign(refreshPath, timestamp);
+
+  const refreshUrl = `${SHOPEE_HOST}${refreshPath}?partner_id=${PARTNER_ID}&timestamp=${timestamp}&sign=${sign}`;
+
+  const refreshRes = await fetch(refreshUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      refresh_token: shopeeToken.refresh_token,
+      shop_id: Number(shopeeToken.shop_id),
+      partner_id: PARTNER_ID,
+    }),
+  });
+
+  const refreshData = await refreshRes.json();
+  if (refreshData.access_token) {
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+    await supabaseAdmin
+      .from("shopee_tokens")
+      .update({
+        access_token: refreshData.access_token,
+        refresh_token: refreshData.refresh_token,
+        expire_in: refreshData.expire_in || 0,
+        token_created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", shopeeToken.id);
+    return refreshData.access_token;
+  }
+  return shopeeToken.access_token;
+}
+
+async function fetchProductsWithModels(
+  accessToken: string,
+  shopId: string | number
+) {
+  const productList = await shopeeGet(
+    "/api/v2/product/get_item_list",
+    accessToken,
+    shopId,
+    { offset: "0", page_size: "50", item_status: "NORMAL" }
+  );
+
+  const items = productList?.response?.item || [];
+  let productDetails: any = null;
+  const modelsMap: Record<string, any> = {};
+
+  if (items.length > 0) {
+    const itemIds = items.slice(0, 20).map((i: any) => i.item_id);
+    productDetails = await shopeeGet(
+      "/api/v2/product/get_item_base_info",
+      accessToken,
+      shopId,
+      {
+        item_id_list: itemIds.join(","),
+        need_tax_info: "true",
+        response_optional_fields:
+          "price_info,stock_info_v2,sale_info,item_status",
+      }
+    );
+
+    const detailItems = productDetails?.response?.item_list || [];
+    const itemsWithModels = detailItems.filter((p: any) => p.has_model);
+    console.log(
+      `[SHOPEE SYNC] Products with models: ${itemsWithModels.length}`
+    );
+
+    for (const product of itemsWithModels.slice(0, 20)) {
+      try {
+        const modelData = await shopeeGet(
+          "/api/v2/product/get_model_list",
+          accessToken,
+          shopId,
+          { item_id: String(product.item_id) }
+        );
+        const models = modelData?.response?.model || [];
+        if (models.length > 0) {
+          modelsMap[product.item_id] = models;
+        }
+      } catch (e) {
+        console.error(
+          `[SHOPEE SYNC] get_model_list error for ${product.item_id}:`,
+          e
+        );
+      }
+    }
+  }
+
+  return { productList, productDetails, modelsMap };
+}
+
+async function fetchOrdersWithAggregation(
+  accessToken: string,
+  shopId: string | number
+) {
+  const now = Math.floor(Date.now() / 1000);
+  const ninetyDaysAgo = now - 90 * 24 * 60 * 60;
+
+  // Paginate order list (max ~200 orders)
+  let allOrders: any[] = [];
+  let cursor = "";
+  let hasMore = true;
+  let pageCount = 0;
+
+  while (hasMore && pageCount < 4) {
+    const params: Record<string, string> = {
+      time_range_field: "create_time",
+      time_from: String(ninetyDaysAgo),
+      time_to: String(now),
+      page_size: "50",
+    };
+    if (cursor) params.cursor = cursor;
+
+    const orderList = await shopeeGet(
+      "/api/v2/order/get_order_list",
+      accessToken,
+      shopId,
+      params
+    );
+
+    const orders = orderList?.response?.order_list || [];
+    allOrders = allOrders.concat(orders);
+    hasMore = orderList?.response?.more === true;
+    cursor = orderList?.response?.next_cursor || "";
+    pageCount++;
+    console.log(
+      `[SHOPEE SYNC] Orders page ${pageCount}: ${orders.length} orders, more=${hasMore}`
+    );
+  }
+
+  console.log(`[SHOPEE SYNC] Total orders fetched: ${allOrders.length}`);
+
+  // Fetch order details in batches of 50
+  let allDetails: any[] = [];
+  for (let i = 0; i < allOrders.length; i += 50) {
+    const batch = allOrders.slice(i, i + 50).map((o: any) => o.order_sn);
+    try {
+      const orderDetails = await shopeeGet(
+        "/api/v2/order/get_order_detail",
+        accessToken,
+        shopId,
+        {
+          order_sn_list: batch.join(","),
+          response_optional_fields:
+            "item_list,buyer_user_id,pay_time,total_amount,order_status",
+        }
+      );
+      const details = orderDetails?.response?.order_list || [];
+      allDetails = allDetails.concat(details);
+    } catch (e) {
+      console.error(`[SHOPEE SYNC] Order detail batch error:`, e);
+    }
+  }
+
+  // Aggregate product sales
+  const productSales: Record<
+    string,
+    {
+      name: string;
+      total_qty: number;
+      total_revenue: number;
+      variants: Record<string, { qty: number; revenue: number }>;
+    }
+  > = {};
+
+  const statusCounts: Record<string, number> = {};
+  let totalRevenue = 0;
+
+  for (const order of allDetails) {
+    const status = order.order_status || "UNKNOWN";
+    statusCounts[status] = (statusCounts[status] || 0) + 1;
+    totalRevenue += Number(order.total_amount || 0);
+
+    const items = order.item_list || [];
+    for (const item of items) {
+      const itemId = String(item.item_id);
+      if (!productSales[itemId]) {
+        productSales[itemId] = {
+          name: item.item_name || `Item ${itemId}`,
+          total_qty: 0,
+          total_revenue: 0,
+          variants: {},
+        };
+      }
+      const qty = item.model_quantity_purchased || 1;
+      const price = Number(item.model_discounted_price || 0);
+      const rev = qty * price;
+
+      productSales[itemId].total_qty += qty;
+      productSales[itemId].total_revenue += rev;
+
+      const variantName = item.model_name || "Único";
+      if (!productSales[itemId].variants[variantName]) {
+        productSales[itemId].variants[variantName] = { qty: 0, revenue: 0 };
+      }
+      productSales[itemId].variants[variantName].qty += qty;
+      productSales[itemId].variants[variantName].revenue += rev;
+    }
+  }
+
+  const summary = {
+    total_orders: allOrders.length,
+    total_revenue: totalRevenue,
+    avg_ticket: allOrders.length > 0 ? totalRevenue / allOrders.length : 0,
+    status_counts: statusCounts,
+    period_days: 90,
+  };
+
+  return {
+    order_list: { response: { order_list: allOrders, total_count: allOrders.length } },
+    order_details: { response: { order_list: allDetails } },
+    order_performance: { product_sales: productSales, summary },
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -46,181 +275,45 @@ Deno.serve(async (req) => {
 
     const shopeeToken = tokens[0];
     const shopId = shopeeToken.shop_id;
-    let currentAccessToken = shopeeToken.access_token;
-
-    // Refresh token if near expiry
-    const tokenAge =
-      (Date.now() - new Date(shopeeToken.token_created_at).getTime()) / 1000;
-
-    if (tokenAge > shopeeToken.expire_in - 300) {
-      console.log("[SHOPEE SYNC] Token near expiry, refreshing...");
-      const refreshPath = "/api/v2/auth/access_token/get";
-      const timestamp = Math.floor(Date.now() / 1000);
-      const sign = await generateSign(refreshPath, timestamp);
-
-      const refreshUrl = `${SHOPEE_HOST}${refreshPath}?partner_id=${PARTNER_ID}&timestamp=${timestamp}&sign=${sign}`;
-
-      const refreshRes = await fetch(refreshUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          refresh_token: shopeeToken.refresh_token,
-          shop_id: Number(shopId),
-          partner_id: PARTNER_ID,
-        }),
-      });
-
-      const refreshData = await refreshRes.json();
-      console.log("[SHOPEE SYNC] Refresh response:", JSON.stringify(refreshData));
-
-      if (refreshData.access_token) {
-        currentAccessToken = refreshData.access_token;
-
-        const supabaseAdmin = createClient(
-          Deno.env.get("SUPABASE_URL")!,
-          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-        );
-        await supabaseAdmin
-          .from("shopee_tokens")
-          .update({
-            access_token: refreshData.access_token,
-            refresh_token: refreshData.refresh_token,
-            expire_in: refreshData.expire_in || 0,
-            token_created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", shopeeToken.id);
-      }
-    }
+    const currentAccessToken = await refreshTokenIfNeeded(shopeeToken, supabase);
 
     const results: Record<string, unknown> = {};
     const errors: Record<string, string> = {};
 
     // 1. Shop Info
-    console.log("[SHOPEE SYNC] Fetching shop info...");
     try {
-      const shopInfo = await shopeeGet(
+      results.shop_info = await shopeeGet(
         "/api/v2/shop/get_shop_info",
         currentAccessToken,
         shopId
       );
-      console.log("[SHOPEE SYNC] Shop info FULL response:", JSON.stringify(shopInfo));
-      results.shop_info = shopInfo;
     } catch (e) {
-      console.error("[SHOPEE SYNC] Shop info error:", e);
       errors.shop_info = (e as Error).message;
     }
 
-    // 2. Product list (first 50)
-    console.log("[SHOPEE SYNC] Fetching product list...");
+    // 2. Products + Models
     try {
-      const productList = await shopeeGet(
-        "/api/v2/product/get_item_list",
-        currentAccessToken,
-        shopId,
-        { offset: "0", page_size: "50", item_status: "NORMAL" }
-      );
-      console.log("[SHOPEE SYNC] Product list response:", JSON.stringify(productList).substring(0, 500));
+      const { productList, productDetails, modelsMap } =
+        await fetchProductsWithModels(currentAccessToken, shopId);
       results.product_list = productList;
-
-      // 3. Get details for first 20 products if available
-      const items = productList?.response?.item || [];
-      if (items.length > 0) {
-        const itemIds = items.slice(0, 20).map((i: any) => i.item_id);
-        console.log(`[SHOPEE SYNC] Fetching details for ${itemIds.length} products...`);
-        const productDetails = await shopeeGet(
-          "/api/v2/product/get_item_base_info",
-          currentAccessToken,
-          shopId,
-          {
-            item_id_list: itemIds.join(","),
-            need_tax_info: "true",
-            response_optional_fields: "price_info,stock_info_v2,sale_info,item_status",
-          }
-        );
-        const detailItems = productDetails?.response?.item_list || [];
-        if (detailItems.length > 0) {
-          console.log("[SHOPEE SYNC] FIRST PRODUCT FULL STRUCTURE:", JSON.stringify(detailItems[0]));
-        }
-        console.log("[SHOPEE SYNC] Product details count:", detailItems.length);
-
-        // 3b. Fetch model list for products with variations (has_model: true)
-        const modelsMap: Record<string, any> = {};
-        const itemsWithModels = detailItems.filter((p: any) => p.has_model);
-        console.log(`[SHOPEE SYNC] Products with models: ${itemsWithModels.length}`);
-
-        for (const product of itemsWithModels.slice(0, 20)) {
-          try {
-            const modelData = await shopeeGet(
-              "/api/v2/product/get_model_list",
-              currentAccessToken,
-              shopId,
-              { item_id: String(product.item_id) }
-            );
-            const models = modelData?.response?.model || [];
-            if (models.length > 0) {
-              console.log(`[SHOPEE SYNC] Item ${product.item_id}: ${models.length} models found`);
-              modelsMap[product.item_id] = models;
-            }
-          } catch (e) {
-            console.error(`[SHOPEE SYNC] get_model_list error for ${product.item_id}:`, e);
-          }
-        }
-
-        results.product_details = productDetails;
-        results.product_models = modelsMap;
-      }
+      results.product_details = productDetails;
+      results.product_models = modelsMap;
     } catch (e) {
-      console.error("[SHOPEE SYNC] Product list error:", e);
       errors.product_list = (e as Error).message;
     }
 
-    // 4. Orders (last 15 days) — no order_status param (Shopee doesn't accept "ALL")
-    console.log("[SHOPEE SYNC] Fetching orders...");
+    // 3. Orders (90 days) + Performance aggregation
     try {
-      const now = Math.floor(Date.now() / 1000);
-      const fifteenDaysAgo = now - 15 * 24 * 60 * 60;
-      const orderList = await shopeeGet(
-        "/api/v2/order/get_order_list",
-        currentAccessToken,
-        shopId,
-        {
-          time_range_field: "create_time",
-          time_from: String(fifteenDaysAgo),
-          time_to: String(now),
-          page_size: "50",
-        }
-      );
-      console.log("[SHOPEE SYNC] Order list FULL response:", JSON.stringify(orderList));
-      results.order_list = orderList;
-
-      // Get order details for first 20
-      const orders = orderList?.response?.order_list || [];
-      if (orders.length > 0) {
-        const orderSns = orders.slice(0, 20).map((o: any) => o.order_sn);
-        console.log(`[SHOPEE SYNC] Fetching details for ${orderSns.length} orders...`);
-        const orderDetails = await shopeeGet(
-          "/api/v2/order/get_order_detail",
-          currentAccessToken,
-          shopId,
-          {
-            order_sn_list: orderSns.join(","),
-            response_optional_fields: "item_list,buyer_user_id,pay_time,total_amount",
-          }
-        );
-        console.log("[SHOPEE SYNC] Order details response:", JSON.stringify(orderDetails).substring(0, 1000));
-        results.order_details = orderDetails;
-      }
+      const { order_list, order_details, order_performance } =
+        await fetchOrdersWithAggregation(currentAccessToken, shopId);
+      results.order_list = order_list;
+      results.order_details = order_details;
+      results.order_performance = order_performance;
     } catch (e) {
-      console.error("[SHOPEE SYNC] Orders error:", e);
       errors.orders = (e as Error).message;
     }
 
-    // Marketing/Ads endpoints removed — not available for this app
-
     console.log("[SHOPEE SYNC] === SYNC COMPLETE ===");
-    console.log(`[SHOPEE SYNC] Endpoints OK: ${Object.keys(results).length}, Errors: ${Object.keys(errors).length}`);
-
     return jsonResponse({
       success: true,
       shop_id: shopId,
