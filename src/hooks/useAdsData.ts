@@ -62,7 +62,6 @@ function similarity(a: string, b: string): number {
   if (!a || !b) return 0;
   const lenA = a.length;
   const lenB = b.length;
-  // LCS-based similarity
   const dp: number[][] = Array.from({ length: lenA + 1 }, () => Array(lenB + 1).fill(0));
   for (let i = 1; i <= lenA; i++) {
     for (let j = 1; j <= lenB; j++) {
@@ -74,12 +73,21 @@ function similarity(a: string, b: string): number {
 
 const MATCH_THRESHOLD = 0.75;
 
-function findMatch(csvName: string, products: Product[]): Product | undefined {
+function findMatch(csvName: string, products: Product[], shopeeProductId?: string | null): Product | undefined {
+  // 1) Match by shopee_product_id (exact numeric match)
+  if (shopeeProductId) {
+    const byShopeeId = products.find(p => {
+      const pShopeeId = (p as any).shopeeProductId || String((p as any).shopeeItemId || '');
+      return pShopeeId === shopeeProductId || String(p.shopeeItemId) === shopeeProductId;
+    });
+    if (byShopeeId) return byShopeeId;
+  }
+  
   const n = normalize(csvName);
-  // 1) Exact match
+  // 2) Exact name match
   const exact = products.find(p => normalize(p.name) === n);
   if (exact) return exact;
-  // 2) Similarity-based match (must exceed threshold)
+  // 3) Similarity-based match (must exceed threshold)
   let best: Product | undefined;
   let bestScore = 0;
   for (const p of products) {
