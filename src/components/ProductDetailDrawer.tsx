@@ -1,13 +1,11 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
-import { X, Trash2, Share2, Pencil, Package, Save, ChevronDown } from 'lucide-react';
+import { X, Trash2, Share2, Pencil, Package, ChevronDown } from 'lucide-react';
 import { Product, ProductCalculation, StoreConfig, getShopeeFeeForPrice } from '@/types/store';
 import { calculateProduct } from '@/lib/calculateProduct';
 import { calcFullRoas } from '@/lib/roasUtils';
-import { calcOutrosCanais } from '@/lib/outrosCanaisUtils';
 import { cn, getMarginStatus } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Slider } from '@/components/ui/slider';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const fmt = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
