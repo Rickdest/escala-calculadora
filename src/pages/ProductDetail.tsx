@@ -46,22 +46,8 @@ export default function ProductDetail() {
     }
   }, [product, currentStore, navigate]);
 
-  // Edit state
-  const [editName, setEditName] = useState('');
-  const [editCost, setEditCost] = useState('');
-  const [editSale, setEditSale] = useState('');
-  const [editPkg, setEditPkg] = useState('');
   const [monthlySales, setMonthlySales] = useState(50);
-  const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    if (product) {
-      setEditName(product.name);
-      setEditCost(product.costPrice.toString());
-      setEditSale(product.salePrice.toString());
-      setEditPkg(product.packagingCost.toString());
-    }
-  }, [product?.id]);
+  const [showProductForm, setShowProductForm] = useState(false);
 
   if (!product || !config) {
     return (
