@@ -169,6 +169,22 @@ export default function Products() {
       />
 
       <div className="pt-2 pb-24 md:pb-6 space-y-2.5 md:pt-6">
+        {/* Draft filter banner */}
+        {draftFilter === 'draft' && (
+          <div className="flex items-center gap-2 text-sm text-warning bg-warning/10 border border-warning/20 rounded-lg px-4 py-3">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span className="flex-1">
+              Estes produtos foram criados automaticamente ao importar o CSV de Ads. 
+              Preencha o custo para calcular margem e ROAS.
+            </span>
+            <button 
+              onClick={() => setSearchParams({})}
+              className="text-xs underline whitespace-nowrap text-muted-foreground hover:text-foreground"
+            >
+              Ver todos →
+            </button>
+          </div>
+        )}
         {/* Shopee import + cost chip */}
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2 flex-wrap">
