@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, SlidersHorizontal, Package, TrendingUp, TrendingDown, Percent, DollarSign, Download, FileSpreadsheet, FileText, ArrowUpDown, ChevronRight } from 'lucide-react';
+import { Plus, Search, SlidersHorizontal, Package, TrendingUp, TrendingDown, Percent, DollarSign, Download, FileSpreadsheet, FileText, ArrowUpDown, ChevronRight, ShoppingBag, Loader2, AlertCircle } from 'lucide-react';
 import { useProductAdsMetrics } from '@/hooks/useProductAdsMetrics';
 import { useStore } from '@/contexts/StoreContext';
 import { Product, ProductCalculation, SortOption } from '@/types/store';
