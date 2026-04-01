@@ -12,6 +12,7 @@ import { MarginDistributionChart, TopProductsChart, ProfitSummaryChart } from '@
 import { ProductThumbnail } from '@/components/ProductThumbnail';
 import { ProductDetailDrawer } from '@/components/ProductDetailDrawer';
 import { useShopeeProducts } from '@/hooks/useShopeeProducts';
+import { ShopeeImportModal, type ShopeeProduct } from '@/components/produtos/ShopeeImportModal';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
