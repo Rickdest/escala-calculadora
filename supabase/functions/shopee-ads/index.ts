@@ -163,49 +163,11 @@ async function fetchAdsPerformance(
   let allEntries: any[] = [];
   let wasRateLimited = false;
 
-  // Strategy 1: Try get_product_campaign_daily_performance first (GET, may have separate rate limit)
-  console.log("[SHOPEE ADS] === Trying endpoint 1: get_product_campaign_daily_performance ===");
-  const campaign = await tryProductCampaignAds(accessToken, shopId, startDate, endDate);
-  
-  if (campaign.entries.length > 0) {
-    console.log(`[SHOPEE ADS] product_campaign returned ${campaign.entries.length} entries — using these`);
-    allEntries = campaign.entries;
-  } else {
-    // Strategy 2: Fallback to get_all_cpc_ads_daily_performance with 7-day chunks
-    console.log("[SHOPEE ADS] === Fallback: get_all_cpc_ads_daily_performance in 7-day chunks ===");
-    
-    if (campaign.rateLimited) {
-      console.log("[SHOPEE ADS] product_campaign was rate limited, waiting 10s before fallback...");
-      await sleep(10000);
-    }
-
-    const chunks: { start: string; end: string }[] = [];
-    let cursor = thirtyDaysAgo;
-    while (cursor < now) {
-      const chunkEnd = Math.min(cursor + 7 * 24 * 60 * 60, now);
-      chunks.push({ start: toDateStr(cursor), end: toDateStr(chunkEnd) });
-      cursor = chunkEnd;
-    }
-
-    for (let i = 0; i < chunks.length; i++) {
-      const chunk = chunks[i];
-      const { entries, rateLimited } = await tryAllCpcAds(accessToken, shopId, chunk.start, chunk.end);
-      
-      if (rateLimited) {
-        wasRateLimited = true;
-        console.log(`[SHOPEE ADS] Chunk ${chunk.start}-${chunk.end} rate-limited, stopping further chunks`);
-        break; // Don't burn more rate limit
-      }
-
-      allEntries = allEntries.concat(entries);
-
-      // 5s delay between chunks
-      if (i < chunks.length - 1) {
-        console.log("[SHOPEE ADS] Waiting 5s between chunks...");
-        await sleep(5000);
-      }
-    }
-  }
+  // Single 30-day request to minimize rate limit consumption
+  console.log("[SHOPEE ADS] === Single request: get_all_cpc_ads_daily_performance (30 days) ===");
+  const { entries, rateLimited } = await tryAllCpcAds(accessToken, shopId, startDate, endDate);
+  allEntries = entries;
+  wasRateLimited = rateLimited;
 
   // Get total balance (separate rate limit)
   let totalBalance: any = null;
