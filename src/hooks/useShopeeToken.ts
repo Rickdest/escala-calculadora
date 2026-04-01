@@ -23,11 +23,8 @@ export function useShopeeToken() {
   });
 
   const startOAuth = async () => {
-    const callbackUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/shopee-callback`;
-
     const { data: session } = await supabase.auth.getSession();
     const res = await supabase.functions.invoke('shopee-auth', {
-      body: { redirect_url: callbackUrl },
       headers: {
         Authorization: `Bearer ${session.session?.access_token}`,
       },

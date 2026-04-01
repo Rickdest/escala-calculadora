@@ -27,6 +27,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const AdminBanners = lazy(() => import("./pages/AdminBanners"));
 const Calculators = lazy(() => import("./pages/Calculators"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const ShopeeCallback = lazy(() => import("./pages/ShopeeCallback"));
 
 
 const queryClient = new QueryClient({
@@ -123,6 +124,7 @@ const App = () => (
                   <Route path="/stock" element={<ProtectedRoute><Stock /></ProtectedRoute>} />
                   <Route path="/roas" element={<ProtectedRoute><Roas /></ProtectedRoute>} />
                   <Route path="/paywall" element={<Paywall />} />
+                  <Route path="/shopee-callback" element={<ShopeeCallback />} />
                   <Route path="/admin/banners" element={<AdminRoute><AdminBanners /></AdminRoute>} />
                   <Route path="/calculadoras" element={<ProtectedRoute><Calculators /></ProtectedRoute>} />
                   <Route path="*" element={<NotFound />} />
