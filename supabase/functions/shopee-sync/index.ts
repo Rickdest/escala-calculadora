@@ -34,7 +34,6 @@ Deno.serve(async (req) => {
       return errorResponse("Unauthorized", 401);
     }
 
-    // User can only sync their own tokens (RLS enforced)
     const { data: tokens } = await supabase
       .from("shopee_tokens")
       .select("*")
@@ -54,6 +53,7 @@ Deno.serve(async (req) => {
       (Date.now() - new Date(shopeeToken.token_created_at).getTime()) / 1000;
 
     if (tokenAge > shopeeToken.expire_in - 300) {
+      console.log("[SHOPEE SYNC] Token near expiry, refreshing...");
       const refreshPath = "/api/v2/auth/access_token/get";
       const timestamp = Math.floor(Date.now() / 1000);
       const sign = await generateSign(refreshPath, timestamp);
@@ -71,6 +71,8 @@ Deno.serve(async (req) => {
       });
 
       const refreshData = await refreshRes.json();
+      console.log("[SHOPEE SYNC] Refresh response:", JSON.stringify(refreshData));
+
       if (refreshData.access_token) {
         currentAccessToken = refreshData.access_token;
 
@@ -91,20 +93,139 @@ Deno.serve(async (req) => {
       }
     }
 
-    const adsData = await shopeeGet(
-      "/api/v2/marketing/get_shop_campaigns",
-      currentAccessToken,
-      shopId
-    );
+    const results: Record<string, unknown> = {};
+    const errors: Record<string, string> = {};
+
+    // 1. Shop Info
+    console.log("[SHOPEE SYNC] Fetching shop info...");
+    try {
+      const shopInfo = await shopeeGet(
+        "/api/v2/shop/get_shop_info",
+        currentAccessToken,
+        shopId
+      );
+      console.log("[SHOPEE SYNC] Shop info response:", JSON.stringify(shopInfo).substring(0, 500));
+      results.shop_info = shopInfo;
+    } catch (e) {
+      console.error("[SHOPEE SYNC] Shop info error:", e);
+      errors.shop_info = (e as Error).message;
+    }
+
+    // 2. Product list (first 50)
+    console.log("[SHOPEE SYNC] Fetching product list...");
+    try {
+      const productList = await shopeeGet(
+        "/api/v2/product/get_item_list",
+        currentAccessToken,
+        shopId,
+        { offset: "0", page_size: "50", item_status: "NORMAL" }
+      );
+      console.log("[SHOPEE SYNC] Product list response:", JSON.stringify(productList).substring(0, 500));
+      results.product_list = productList;
+
+      // 3. Get details for first 20 products if available
+      const items = productList?.response?.item || [];
+      if (items.length > 0) {
+        const itemIds = items.slice(0, 20).map((i: any) => i.item_id);
+        console.log(`[SHOPEE SYNC] Fetching details for ${itemIds.length} products...`);
+        const productDetails = await shopeeGet(
+          "/api/v2/product/get_item_base_info",
+          currentAccessToken,
+          shopId,
+          { item_id_list: itemIds.join(",") }
+        );
+        console.log("[SHOPEE SYNC] Product details response:", JSON.stringify(productDetails).substring(0, 1000));
+        results.product_details = productDetails;
+      }
+    } catch (e) {
+      console.error("[SHOPEE SYNC] Product list error:", e);
+      errors.product_list = (e as Error).message;
+    }
+
+    // 4. Orders (last 15 days)
+    console.log("[SHOPEE SYNC] Fetching orders...");
+    try {
+      const now = Math.floor(Date.now() / 1000);
+      const fifteenDaysAgo = now - 15 * 24 * 60 * 60;
+      const orderList = await shopeeGet(
+        "/api/v2/order/get_order_list",
+        currentAccessToken,
+        shopId,
+        {
+          time_range_field: "create_time",
+          time_from: String(fifteenDaysAgo),
+          time_to: String(now),
+          page_size: "50",
+          order_status: "ALL",
+        }
+      );
+      console.log("[SHOPEE SYNC] Order list response:", JSON.stringify(orderList).substring(0, 500));
+      results.order_list = orderList;
+
+      // Get order details for first 20
+      const orders = orderList?.response?.order_list || [];
+      if (orders.length > 0) {
+        const orderSns = orders.slice(0, 20).map((o: any) => o.order_sn);
+        console.log(`[SHOPEE SYNC] Fetching details for ${orderSns.length} orders...`);
+        const orderDetails = await shopeeGet(
+          "/api/v2/order/get_order_detail",
+          currentAccessToken,
+          shopId,
+          {
+            order_sn_list: orderSns.join(","),
+            response_optional_fields: "item_list,buyer_user_id,pay_time,total_amount",
+          }
+        );
+        console.log("[SHOPEE SYNC] Order details response:", JSON.stringify(orderDetails).substring(0, 1000));
+        results.order_details = orderDetails;
+      }
+    } catch (e) {
+      console.error("[SHOPEE SYNC] Orders error:", e);
+      errors.orders = (e as Error).message;
+    }
+
+    // 5. Marketing / Ads campaigns
+    console.log("[SHOPEE SYNC] Fetching ads campaigns...");
+    try {
+      const campaigns = await shopeeGet(
+        "/api/v2/marketing/get_shop_campaigns",
+        currentAccessToken,
+        shopId
+      );
+      console.log("[SHOPEE SYNC] Campaigns response:", JSON.stringify(campaigns).substring(0, 500));
+      results.campaigns = campaigns;
+    } catch (e) {
+      console.error("[SHOPEE SYNC] Campaigns error:", e);
+      errors.campaigns = (e as Error).message;
+    }
+
+    // 6. Shop performance (if available)
+    console.log("[SHOPEE SYNC] Fetching shop performance...");
+    try {
+      const performance = await shopeeGet(
+        "/api/v2/account_health/shop_performance",
+        currentAccessToken,
+        shopId
+      );
+      console.log("[SHOPEE SYNC] Performance response:", JSON.stringify(performance).substring(0, 500));
+      results.performance = performance;
+    } catch (e) {
+      console.error("[SHOPEE SYNC] Performance error:", e);
+      errors.performance = (e as Error).message;
+    }
+
+    console.log("[SHOPEE SYNC] === SYNC COMPLETE ===");
+    console.log(`[SHOPEE SYNC] Endpoints OK: ${Object.keys(results).length}, Errors: ${Object.keys(errors).length}`);
 
     return jsonResponse({
       success: true,
       shop_id: shopId,
-      ads_response: adsData,
+      results,
+      errors: Object.keys(errors).length > 0 ? errors : undefined,
       message: "Sync completed.",
     });
   } catch (e) {
-    console.error("Sync error:", e);
+    console.error("[SHOPEE SYNC] Fatal error:", e);
     return errorResponse((e as Error).message, 500);
   }
 });
