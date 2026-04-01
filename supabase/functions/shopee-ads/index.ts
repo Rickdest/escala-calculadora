@@ -65,18 +65,21 @@ async function refreshTokenIfNeeded(shopeeToken: any, supabase: any) {
   return shopeeToken.access_token;
 }
 
-async function fetchAdsChunkWithRetry(
+/**
+ * Try endpoint 1: get_all_cpc_ads_daily_performance (POST)
+ * with aggressive retry delays
+ */
+async function tryAllCpcAds(
   accessToken: string,
   shopId: string | number,
   startDate: string,
   endDate: string,
-  maxRetries = 3
-): Promise<{ data: any; rateLimited: boolean }> {
-  const delays = [3000, 8000, 15000]; // More aggressive delays for dedicated function
+): Promise<{ entries: any[]; rateLimited: boolean; rawResponse: any }> {
+  const delays = [10000, 20000, 30000];
 
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+  for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      console.log(`[SHOPEE ADS] Chunk ${startDate}-${endDate} attempt ${attempt}/${maxRetries}`);
+      console.log(`[SHOPEE ADS] get_all_cpc attempt ${attempt}/3: ${startDate} → ${endDate}`);
       const result = await shopeePost(
         "/api/v2/ads/get_all_cpc_ads_daily_performance",
         accessToken,
@@ -84,35 +87,64 @@ async function fetchAdsChunkWithRetry(
         { start_date: startDate, end_date: endDate }
       );
 
-      console.log(`[SHOPEE ADS] Response error field: ${result?.error || result?.msg || "none"}`);
-      console.log(`[SHOPEE ADS] Response keys: ${Object.keys(result || {}).join(", ")}`);
+      if (attempt === 1) {
+        console.log(`[SHOPEE ADS] FULL RESPONSE (attempt 1): ${JSON.stringify(result).substring(0, 2000)}`);
+      }
 
       const err = result?.error || result?.msg || "";
       if (typeof err === "string" && err.toLowerCase().includes("rate_limit")) {
-        const delayMs = delays[attempt - 1] || 15000;
-        console.log(`[SHOPEE ADS] Rate limited, waiting ${delayMs}ms before retry...`);
-        if (attempt < maxRetries) {
-          await sleep(delayMs);
+        console.log(`[SHOPEE ADS] Rate limited, waiting ${delays[attempt - 1]}ms...`);
+        if (attempt < 3) {
+          await sleep(delays[attempt - 1]);
           continue;
         }
-        return { data: result, rateLimited: true };
+        return { entries: [], rateLimited: true, rawResponse: result };
       }
 
-      // Check if response has actual data
       const entries = result?.response?.entry_list || result?.response?.data || [];
-      console.log(`[SHOPEE ADS] Chunk returned ${entries.length} entries`);
-
-      return { data: result, rateLimited: false };
+      return { entries, rateLimited: false, rawResponse: result };
     } catch (e) {
-      console.error(`[SHOPEE ADS] Chunk error attempt ${attempt}:`, e);
-      if (attempt < maxRetries) {
-        await sleep(delays[attempt - 1] || 15000);
+      console.error(`[SHOPEE ADS] get_all_cpc error attempt ${attempt}:`, e);
+      if (attempt < 3) {
+        await sleep(delays[attempt - 1]);
         continue;
       }
-      return { data: null, rateLimited: false };
     }
   }
-  return { data: null, rateLimited: false };
+  return { entries: [], rateLimited: true, rawResponse: null };
+}
+
+/**
+ * Try endpoint 2: get_product_campaign_daily_performance (GET)
+ */
+async function tryProductCampaignAds(
+  accessToken: string,
+  shopId: string | number,
+  startDate: string,
+  endDate: string,
+): Promise<{ entries: any[]; rateLimited: boolean; rawResponse: any }> {
+  try {
+    console.log(`[SHOPEE ADS] get_product_campaign: ${startDate} → ${endDate}`);
+    const result = await shopeeGet(
+      "/api/v2/ads/get_product_campaign_daily_performance",
+      accessToken,
+      shopId,
+      { start_date: startDate, end_date: endDate }
+    );
+
+    console.log(`[SHOPEE ADS] product_campaign FULL RESPONSE: ${JSON.stringify(result).substring(0, 2000)}`);
+
+    const err = result?.error || result?.msg || "";
+    if (typeof err === "string" && err.toLowerCase().includes("rate_limit")) {
+      return { entries: [], rateLimited: true, rawResponse: result };
+    }
+
+    const entries = result?.response?.entry_list || result?.response?.data || [];
+    return { entries, rateLimited: false, rawResponse: result };
+  } catch (e) {
+    console.error(`[SHOPEE ADS] get_product_campaign error:`, e);
+    return { entries: [], rateLimited: false, rawResponse: null };
+  }
 }
 
 async function fetchAdsPerformance(
@@ -121,50 +153,61 @@ async function fetchAdsPerformance(
 ) {
   const now = Math.floor(Date.now() / 1000);
   const thirtyDaysAgo = now - 30 * 24 * 60 * 60;
+  const startDate = toDateStr(thirtyDaysAgo);
+  const endDate = toDateStr(now);
 
-  // Build 15-day chunks (only 2 calls instead of 5)
-  const chunks: { start: string; end: string }[] = [];
-  let cursor = thirtyDaysAgo;
-  while (cursor < now) {
-    const chunkEnd = Math.min(cursor + 15 * 24 * 60 * 60, now);
-    chunks.push({ start: toDateStr(cursor), end: toDateStr(chunkEnd) });
-    cursor = chunkEnd;
-  }
-
-  console.log(`[SHOPEE ADS] Fetching in ${chunks.length} chunks (15-day windows)`);
+  // Initial delay to avoid collisions with any recent shopee-sync calls
+  console.log("[SHOPEE ADS] Initial 2s delay before first API call...");
+  await sleep(2000);
 
   let allEntries: any[] = [];
   let wasRateLimited = false;
 
-  for (let i = 0; i < chunks.length; i++) {
-    const chunk = chunks[i];
-    console.log(`[SHOPEE ADS] Chunk ${i + 1}/${chunks.length}: ${chunk.start} → ${chunk.end}`);
-
-    const { data, rateLimited } = await fetchAdsChunkWithRetry(
-      accessToken,
-      shopId,
-      chunk.start,
-      chunk.end
-    );
-
-    if (rateLimited) {
-      wasRateLimited = true;
-      console.log(`[SHOPEE ADS] Chunk ${chunk.start}-${chunk.end} rate-limited after all retries`);
+  // Strategy 1: Try get_product_campaign_daily_performance first (GET, may have separate rate limit)
+  console.log("[SHOPEE ADS] === Trying endpoint 1: get_product_campaign_daily_performance ===");
+  const campaign = await tryProductCampaignAds(accessToken, shopId, startDate, endDate);
+  
+  if (campaign.entries.length > 0) {
+    console.log(`[SHOPEE ADS] product_campaign returned ${campaign.entries.length} entries — using these`);
+    allEntries = campaign.entries;
+  } else {
+    // Strategy 2: Fallback to get_all_cpc_ads_daily_performance with 7-day chunks
+    console.log("[SHOPEE ADS] === Fallback: get_all_cpc_ads_daily_performance in 7-day chunks ===");
+    
+    if (campaign.rateLimited) {
+      console.log("[SHOPEE ADS] product_campaign was rate limited, waiting 10s before fallback...");
+      await sleep(10000);
     }
 
-    if (data) {
-      const entries = data?.response?.entry_list || data?.response?.data || [];
+    const chunks: { start: string; end: string }[] = [];
+    let cursor = thirtyDaysAgo;
+    while (cursor < now) {
+      const chunkEnd = Math.min(cursor + 7 * 24 * 60 * 60, now);
+      chunks.push({ start: toDateStr(cursor), end: toDateStr(chunkEnd) });
+      cursor = chunkEnd;
+    }
+
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      const { entries, rateLimited } = await tryAllCpcAds(accessToken, shopId, chunk.start, chunk.end);
+      
+      if (rateLimited) {
+        wasRateLimited = true;
+        console.log(`[SHOPEE ADS] Chunk ${chunk.start}-${chunk.end} rate-limited, stopping further chunks`);
+        break; // Don't burn more rate limit
+      }
+
       allEntries = allEntries.concat(entries);
-    }
 
-    // 3s delay between chunks
-    if (i < chunks.length - 1) {
-      console.log("[SHOPEE ADS] Waiting 3s between chunks...");
-      await sleep(3000);
+      // 5s delay between chunks
+      if (i < chunks.length - 1) {
+        console.log("[SHOPEE ADS] Waiting 5s between chunks...");
+        await sleep(5000);
+      }
     }
   }
 
-  // Also try get_total_balance
+  // Get total balance (separate rate limit)
   let totalBalance: any = null;
   try {
     totalBalance = await shopeeGet(
@@ -223,8 +266,8 @@ async function fetchAdsPerformance(
   return {
     ads_by_product: Object.values(productAds),
     total_balance: totalBalance?.response?.total_balance ?? null,
-    period_start: toDateStr(thirtyDaysAgo),
-    period_end: toDateStr(now),
+    period_start: startDate,
+    period_end: endDate,
     raw_entry_count: allEntries.length,
     ads_rate_limited: wasRateLimited,
   };
