@@ -168,14 +168,10 @@ export default function Products() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={async () => {
-                  const result = await importProducts();
-                  if (result) retryLoad();
-                }}
-                disabled={importing}
+                onClick={() => setImportModalOpen(true)}
                 className="border-[#EE4D2D]/30 text-[#EE4D2D] hover:bg-[#EE4D2D]/5 text-xs"
               >
-                {importing ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <ShoppingBag className="w-3.5 h-3.5 mr-1.5" />}
+                <ShoppingBag className="w-3.5 h-3.5 mr-1.5" />
                 Importar da Shopee
               </Button>
             )}
