@@ -55,6 +55,7 @@ export function useShopeeProducts() {
               image_url: p.image_url || null,
               shopee_synced_at: new Date().toISOString(),
               shopee_product_id: String(p.item_id),
+              shopee_item_id: p.item_id,
             }).eq('id', existing.id);
           } else {
             await (supabase.from('products').insert as any)({
