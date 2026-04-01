@@ -31,9 +31,9 @@ Deno.serve(async (req) => {
       return errorResponse("Unauthorized", 401);
     }
 
-    const { redirect_url } = await req.json();
-    if (!redirect_url) {
-      return errorResponse("redirect_url required");
+    const appUrl = Deno.env.get("APP_URL");
+    if (!appUrl) {
+      return errorResponse("APP_URL not configured", 500);
     }
 
     // Generate a state token and save it linked to this user
