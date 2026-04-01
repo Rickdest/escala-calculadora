@@ -1,39 +1,53 @@
 
 
-## Plano: Fix expand visual + formatar campaign_created em pills
+## Plano: Migrar Integração Shopee para Produção
 
-### Problema 1: Clique não mostra visualmente que está selecionado/expandido
-O `ResultadoCard` no `ExcelAnalysis.tsx` expande o texto mas não tem feedback visual. O card precisa de um indicador claro de estado expandido.
+### O que muda
 
-### Problema 2: campaign_created mostra texto enorme ilegível
-O `entry.details` de `campaign_created` vem como string longa ("Create Campaign: Status do Anúncio: Em Andamento Orçamento total: Ilimitado..."). Isso aparece tanto no `AdsDetailFullView.tsx` (Impacto das Mudanças) quanto no `ExcelAnalysis.tsx` (Resultado Após Cada Mudança).
+A API foi aprovada. Precisamos: atualizar credenciais, apontar para o host de produção, e liberar para todos os usuários (não só admin).
 
-### Solução
+### Etapas
 
-**Arquivo 1: `src/components/roas/AdsDetailFullView.tsx`**
+**1. Atualizar secrets no backend**
 
-1. Criar função `parseCampaignDetails(details: string)` que extrai key-values da string longa e retorna array de `{label, value}` (ex: "R$ 10.00/dia", "ROAS 0.0", "Impulsão: ON", etc.)
-2. No `.map` de `displayEvents` (linha ~394), quando `entry.field === 'campaign_created'`, renderizar pills em `flex-wrap` ao invés do `<p>` com texto completo
-3. Manter o `formatLogLabel` existente como título principal ("Campanha criada · ROAS 0.0")
+Você precisará fornecer os novos valores para 3 secrets:
+- `SHOPEE_PARTNER_ID` → novo Partner ID de produção
+- `SHOPEE_KEY` → nova Partner Key de produção  
+- `SHOPEE_ENV` → setar como `production` (muda o host de sandbox para `partner.shopeemobile.com`)
 
-**Arquivo 2: `src/components/roas/ExcelAnalysis.tsx`**
+**2. Remover fallback de sandbox no código**
 
-1. No `ResultadoCard`, adicionar borda mais visível quando expandido (ex: `border-primary/50` ou aumentar opacidade da borda)
-2. Aplicar mesma lógica de `parseCampaignDetails` quando `c.mudanca` contém "CAMPAIGN CREATED" — mostrar pills ao invés de texto longo
-3. Garantir que o chevron rotaciona e o card muda de estilo ao expandir
+No arquivo `supabase/functions/_shared/shopee.ts`:
+- Remover o fallback hardcoded `1231044` do Partner ID — se o secret não estiver configurado, lançar erro ao invés de usar valor de teste
+- Reduzir logs de debug (não logar prefixos de chave em produção)
 
-### Função parseCampaignDetails
+**3. Liberar para todos os usuários**
 
-Extrai da string campos como:
-- Orçamento diário → "R$ 10.00/dia"
-- ROAS de destino → "ROAS 0.0"
-- Impulsão Rápida → "Impulsão: ON/OFF"
-- Criativo do Produto → "Criativo: ON/OFF"
-- Preço de lance otimizado → "Lance Otimizado: ON/OFF"
-- Tipo de Venda → "Foco: Vendas"
+Atualmente `shopee-auth` e `shopee-sync` verificam `has_role('admin')` e bloqueiam usuários normais. Mudanças:
+
+- **`shopee-auth/index.ts`**: Remover check de admin. Qualquer usuário autenticado pode iniciar OAuth
+- **`shopee-sync/index.ts`**: Remover check de admin. Qualquer usuário autenticado pode sincronizar seus próprios dados
+- **`shopee-callback/index.ts`**: Ao salvar o token, vincular ao usuário que iniciou o OAuth (não mais buscar admin). Passar `user_id` via state parameter no fluxo OAuth
+- **`ShopeeIntegrationModal.tsx`**: Remover a lógica condicional `isAdmin` — todos veem o botão "Conectar Loja Shopee"
+
+**4. Fluxo OAuth — identificar o usuário no callback**
+
+Problema: o callback da Shopee não sabe qual usuário iniciou o fluxo. Solução:
+- No `shopee-auth`, gerar um `state` token (UUID) e salvá-lo temporariamente no banco vinculado ao `user_id`
+- Passar esse `state` como parâmetro na URL de redirect da Shopee
+- No `shopee-callback`, recuperar o `user_id` a partir do `state` recebido
+
+Isso requer uma tabela auxiliar simples `shopee_auth_states` (id, user_id, state, created_at) com TTL.
+
+**5. Atualizar UI**
+
+- `ShopeeIntegrationModal.tsx`: Remover branch `isAdmin` / "Em análise". Todos os usuários veem a mesma interface de conexão
+- Badge muda de "Em análise" para "Disponível" ou desaparece
 
 ### Detalhes técnicos
-- `parseCampaignDetails` usa regex/split para extrair pares do texto bruto
-- Pills: `text-[9px] px-1.5 py-0.5 rounded bg-surface-2 text-text-2`
-- Expand visual: borda do card fica mais intensa + leve scale ou shadow
+
+- Migration SQL: criar tabela `shopee_auth_states` com RLS (insert/select own, auto-cleanup via função)
+- Edge functions editadas: `_shared/shopee.ts`, `shopee-auth`, `shopee-callback`, `shopee-sync`
+- Frontend editado: `ShopeeIntegrationModal.tsx`, `useShopeeToken.ts`
+- Secrets atualizados via ferramenta `add_secret`: `SHOPEE_PARTNER_ID`, `SHOPEE_KEY`, `SHOPEE_ENV`
 
