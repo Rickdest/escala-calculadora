@@ -55,6 +55,7 @@ export default function Products() {
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [analysisSortBy, setAnalysisSortBy] = useState<SortOption>('margin-high');
   const [detailProduct, setDetailProduct] = useState<{ product: Product; calc: ProductCalculation } | null>(null);
+  const [importModalOpen, setImportModalOpen] = useState(false);
 
   const products = useMemo(() => {
     if (!currentStore) return [];
