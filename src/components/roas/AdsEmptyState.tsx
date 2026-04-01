@@ -49,16 +49,11 @@ export function AdsEmptyState({ onImport, onShopeeIntegration }: { onImport: () 
 
       <Button
         variant="outline"
-        disabled
-        className="h-12 w-full max-w-md rounded-xl text-sm font-bold gap-2 border-[#EE4D2D]/20 text-[#EE4D2D]/50 cursor-not-allowed"
+        onClick={onShopeeIntegration}
+        className="h-12 w-full max-w-md rounded-xl text-sm font-bold gap-2 border-[#EE4D2D]/30 text-[#EE4D2D] hover:bg-[#EE4D2D]/5 hover:text-[#EE4D2D]"
       >
         <ShoppingBag className="w-4 h-4" /> Sincronizar via Shopee API
-        <Badge variant="secondary" className="ml-1 text-[9px] px-1.5 py-0">em breve</Badge>
       </Button>
-
-      <p className="text-xs text-muted-foreground max-w-sm">
-        A integração direta puxa os dados automaticamente. Por enquanto, o CSV garante todos os dados disponíveis.
-      </p>
     </div>
   );
 }
