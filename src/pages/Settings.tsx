@@ -25,6 +25,7 @@ export default function Settings() {
   const { theme, setTheme } = useTheme();
   const { user } = useAuth();
   const { handleSignOut } = useSignOut();
+  const { token, isConnected: shopeeConnected, startOAuth, isLoading: shopeeLoading } = useShopeeToken();
 
   // Section 1: Minha Loja
   const [desiredMargin, setDesiredMargin] = useState(currentStore?.config.desiredMargin?.toString() || '17');
