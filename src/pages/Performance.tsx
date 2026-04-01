@@ -4,9 +4,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useShopeeToken } from '@/hooks/useShopeeToken';
-import { FEATURES } from '@/config/features';
-import { RefreshCw, Loader2, ShoppingBag, TrendingUp, ShoppingCart, Package, Settings } from 'lucide-react';
+import { RefreshCw, Loader2, ShoppingBag, TrendingUp, ShoppingCart, Package } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface PerformanceData {
