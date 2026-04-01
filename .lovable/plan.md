@@ -1,47 +1,42 @@
 
 
-## Plano: Buscar preços/estoque via get_model_list e melhorar relatório
+## Plano: Aba de Performance de Produtos com dados de Pedidos expandidos
 
-### Problema
-- Produtos com variações (`has_model: true`) não retornam `price_info`/`stock_info_v2` no `get_item_base_info`
-- Precisa chamar `/api/v2/product/get_model_list` para obter preços e estoque por variação
-- Dados de Ads não estão disponíveis via API (restrição da Shopee) — CSV continua necessário
+### O que a API da Shopee permite
+
+**Período de pedidos**: A Shopee permite até **90 dias** no `get_order_list` (não apenas 15). Vamos expandir.
+
+**Dados por pedido** (`get_order_detail` com `response_optional_fields`):
+- `item_list` — cada item do pedido com `item_id`, `model_id`, `model_name`, `model_quantity_purchased`, `model_discounted_price`
+- `total_amount`, `pay_time`, `order_status`
+- Com isso conseguimos calcular: **variações mais vendidas**, **faturamento por produto**, **ticket médio**, **volume de vendas por período**
+
+**O que NÃO conseguimos**: dados de conversão (visitas → vendas), impressões, ou ranking de mercado — isso é do Seller Center, não da API.
 
 ### Alterações
 
-**Arquivo 1: `supabase/functions/shopee-sync/index.ts`**
+**1. Edge Function `shopee-sync/index.ts`**
+- Expandir período de 15 para **90 dias**
+- Paginar pedidos (loop com `cursor` enquanto `more === true`, máximo 200 pedidos)
+- Buscar detalhes de todos os pedidos (batches de 50 order_sn)
+- Agregar no backend:
+  - `product_sales`: mapa `item_id → { name, total_qty, total_revenue, variants: { model_name, qty, revenue }[] }`
+  - `summary`: total de pedidos, faturamento total, ticket médio, pedidos por status
 
-Após buscar `get_item_base_info`, para cada produto com `has_model: true`, chamar:
-```
-GET /api/v2/product/get_model_list?item_id={item_id}
-```
-Retorna `model[]` com `price_info` (preço por variação) e `stock_info` (estoque por variação). Agregar os dados e anexar ao produto no resultado.
+**2. Frontend — Nova aba "Performance" no relatório do modal**
 
-Limitar a 20 produtos para não exceder rate limits. Fazer chamadas sequenciais.
+Seções:
+- **Resumo**: total pedidos (90d), faturamento, ticket médio
+- **Ranking de Produtos**: tabela ordenada por quantidade vendida, com faturamento
+- **Variações mais vendidas**: dentro de cada produto, listar models ordenados por qty
+- **Pedidos por status**: mini gráfico ou contadores (COMPLETED, SHIPPED, CANCELLED etc.)
 
-**Arquivo 2: `src/components/roas/ShopeeIntegrationModal.tsx`**
+**3. Arquivos envolvidos**
+- `supabase/functions/shopee-sync/index.ts` — expandir período, paginar, agregar dados
+- `src/components/roas/ShopeeIntegrationModal.tsx` — nova seção "Performance de Produtos" no relatório
 
-- Atualizar `ProductListReport` para ler preços e estoque dos models quando `price_info` do item estiver ausente
-- Mostrar faixa de preço (min-max) quando houver múltiplas variações
-- Somar estoque de todas as variações
-- Adicionar nota clara na seção de Ads explicando que dados de Ads só vêm via CSV (limitação do App na Shopee)
-
-### Estrutura esperada do get_model_list
-```json
-{
-  "response": {
-    "model": [
-      {
-        "model_id": 123,
-        "model_name": "P / Preto",
-        "price_info": [{ "current_price": 49.90, "original_price": 59.90 }],
-        "stock_info_v2": { "summary_info": { "total_available_stock": 10 } }
-      }
-    ]
-  }
-}
-```
-
-### Sem alteração para Ads
-Dados de Ads (ROAS, ACOS, impressões, cliques, gastos) **continuam vindo exclusivamente via CSV**. Para ter acesso via API, seria necessário solicitar à Shopee a aprovação do escopo `shop_marketing` no painel de parceiro.
+### Limitações
+- Máximo ~200 pedidos por sync (rate limit da API)
+- Sem dados de visitas/conversão (não disponível na API Seller v2)
+- Variações só aparecem se houver pedidos no período
 
