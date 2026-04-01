@@ -1,61 +1,45 @@
 
 
-## Plano: Corrigir sincronização de Ads via API Shopee
+## Plano: Criar Edge Function dedicada para Ads + botão "Importar Ads"
 
 ### Problema raiz
 
-Os logs da Edge Function mostram claramente:
+A API `get_all_cpc_ads_daily_performance` retorna **rate limit em 100% das tentativas** porque a Edge Function `shopee-sync` faz 4 chamadas pesadas antes (shop_info, products com models, orders com paginação, e só depois ads). Quando chega nos Ads, o rate limit global já foi atingido.
 
-```
-Ads daily performance response error: ads_rate_limit_total_api
-Ads entries count: 0
-```
+### Solução
 
-A API `v2.ads.get_all_cpc_ads_daily_performance` está retornando erro de **rate limit**, resultando em 0 anúncios. O código não faz retry e simplesmente retorna dados vazios.
+**1. Nova Edge Function `shopee-ads` (isolada)**
+- Função dedicada que **só** busca dados de Ads
+- Não faz shop_info, products, orders — vai direto ao ponto
+- Retry com delays mais longos (3s, 8s, 15s)
+- Usa chunks de 15 dias (2 chamadas em vez de 5)
+- Também busca `get_total_balance`
 
-### Correções
+**2. Botão "Importar Ads" no header da aba**
+- Substituir "Sincronizar" por **"Importar Ads"** (com ícone Shopee)
+- Manter "Atualizar CSV" como fallback
+- Ao clicar, chama a nova função `shopee-ads` (não `shopee-sync`)
 
-**1. Adicionar retry com backoff na Edge Function `shopee-sync/index.ts`**
+**3. Hook `useShopeeToken` — novo método `syncAdsOnly`**
+- Invoca `shopee-ads` em vez de `shopee-sync`
+- Resposta mais rápida (sem esperar sync completo)
 
-Na função `fetchAdsPerformance`, implementar retry (até 3 tentativas com delay de 2s, 4s) quando o erro for `ads_rate_limit_total_api`. A API de Ads tem limites agressivos.
-
-**2. Dividir o range de datas em chunks menores**
-
-Em vez de pedir 30 dias de uma vez, dividir em blocos de 7 dias (4 chamadas). Isso reduz a chance de rate limit e permite obter dados parciais mesmo se uma chamada falhar.
-
-**3. Tentar endpoint alternativo como fallback**
-
-Se `get_all_cpc_ads_daily_performance` continuar falhando, usar `v2.ads.get_product_campaign_daily_performance` como fallback, que pode ter limites separados.
-
-**4. Retornar erro claro ao frontend quando rate-limited**
-
-Atualmente o frontend mostra "sem dados de Ads disponíveis" — deveria mostrar "API limitada temporariamente, tente novamente em alguns minutos".
-
-### Arquivos modificados
+### Arquivos
 
 | Arquivo | Ação |
 |---------|------|
-| `supabase/functions/shopee-sync/index.ts` | Retry com backoff + chunks de 7 dias + erro explícito |
-| `src/components/roas/AdsTab.tsx` | Mostrar mensagem clara quando rate-limited |
+| `supabase/functions/shopee-ads/index.ts` | **Novo** — Edge Function dedicada |
+| `src/hooks/useShopeeToken.ts` | Adicionar `syncAdsOnly()` |
+| `src/components/roas/AdsTab.tsx` | Botão "Importar Ads" chama `syncAdsOnly` |
 
 ### Detalhes técnicos
 
-```text
-fetchAdsPerformance():
-  Para cada chunk de 7 dias:
-    Tentativa 1 → POST get_all_cpc_ads_daily_performance
-    Se ads_rate_limit → sleep 2s → Tentativa 2
-    Se ads_rate_limit → sleep 4s → Tentativa 3
-    Se ainda falhar → marcar ads_rate_limited = true no response
-  
-  Agregar todos os chunks por item_id
-  Retornar { ads_by_product, ads_rate_limited: bool }
-```
+A nova function `shopee-ads`:
+- Autentica via JWT (mesmo padrão do shopee-sync)
+- Refresh token se necessário
+- Chama `get_all_cpc_ads_daily_performance` em 2 chunks de 15 dias
+- Delays de 3s entre chunks + retry com backoff (3s, 8s, 15s)
+- Retorna `{ ads_by_product, period_start, period_end, ads_rate_limited }`
 
-No frontend:
-```text
-if (result.results.ads_performance?.ads_rate_limited) {
-  toast.warning('API de Ads temporariamente limitada. Tente novamente em 2-3 minutos.');
-}
-```
+O frontend processa a resposta via `importFromApi` (já existente).
 
