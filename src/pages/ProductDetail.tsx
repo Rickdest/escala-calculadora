@@ -65,15 +65,6 @@ export default function ProductDetail() {
   const marginDiff = calculation.marginDifference;
   const fee = getShopeeFeeForPrice(product.salePrice);
 
-  // Live edit preview
-  const editCalc = (() => {
-    const sp = parseFloat(editSale) || 0;
-    const cp = parseFloat(editCost) || 0;
-    const pkg = parseFloat(editPkg) || 0;
-    if (sp <= 0 || cp <= 0) return null;
-    const draft = { ...product, costPrice: cp, salePrice: sp, packagingCost: pkg, name: editName };
-    return calculateProductFn(draft, config);
-  })();
 
   const allPlatformMargins = PLATFORM_FEES.map(p => ({
     ...p,
