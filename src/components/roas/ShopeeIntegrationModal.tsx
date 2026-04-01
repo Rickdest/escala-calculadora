@@ -268,7 +268,7 @@ export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClo
 
                 {report.product_list && (
                   <ReportSection title="Produtos" icon={Package} defaultOpen>
-                    <ProductListReport listData={report.product_list} detailsData={report.product_details} />
+                    <ProductListReport listData={report.product_list} detailsData={report.product_details} modelsMap={report.product_models} />
                   </ReportSection>
                 )}
 
@@ -277,6 +277,16 @@ export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClo
                     <OrderReport listData={report.order_list} detailsData={report.order_details} />
                   </ReportSection>
                 )}
+
+                <div className="rounded-lg border border-border bg-muted/30 p-2.5 flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">Dados de Ads (ROAS, ACOS, gastos)</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      Métricas de anúncios não estão disponíveis via API para este app. Continue importando via CSV na aba de Ads.
+                    </p>
+                  </div>
+                </div>
 
 
 
