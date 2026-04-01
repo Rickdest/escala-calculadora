@@ -187,7 +187,7 @@ export function useAdsData() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const importGeneralCSV = useCallback(async (csvText: string) => {
-    if (!user) return;
+    if (!user || !currentStore) return;
     if (!acquireLock()) { toast.error('Operação em andamento...'); return; }
     if (!checkRateLimit()) { releaseLock(); return; }
     try {
@@ -200,16 +200,49 @@ export function useAdsData() {
     const periodStart = parsed.metrics[0].periodStart;
     const periodEnd = parsed.metrics[0].periodEnd;
 
-    const rows = parsed.metrics.map((m: ParsedAdMetric) => {
-      const matched = findMatch(m.shopeeProductName, products);
+    let linkedCount = 0;
+    let autoCreatedCount = 0;
+    let noMatchCount = 0;
+
+    const rows = [];
+    for (const m of parsed.metrics) {
+      let matched = findMatch(m.shopeeProductName, products, m.shopeeProductId);
+      
+      // Auto-create draft product if shopeeProductId exists but no match
+      if (!matched && m.shopeeProductId && currentStore) {
+        try {
+          const { data: newProd } = await supabase.from('products').insert({
+            store_id: currentStore.id,
+            user_id: user.id,
+            name: m.shopeeProductName || `Produto ${m.shopeeProductId}`,
+            cost_price: 0,
+            sale_price: m.gmv && m.itemsSold > 0 ? Math.round((m.gmv / m.itemsSold) * 100) / 100 : 0,
+            shopee_product_id: m.shopeeProductId,
+            draft: true,
+            source: 'ads_csv',
+          } as any).select('id').single();
+          
+          if (newProd) {
+            matched = { id: newProd.id, name: m.shopeeProductName, storeId: currentStore.id } as Product;
+            autoCreatedCount++;
+          }
+        } catch { /* ignore auto-create failures */ }
+      }
+
+      if (matched) {
+        linkedCount++;
+      } else {
+        noMatchCount++;
+      }
+
       let roasEmpate: number | null = null;
       let margemContribuicao: number | null = null;
       let classificacao: string | null = null;
-
       const effectiveRoas = m.directRoas && m.directRoas > 0 ? m.directRoas : m.roas;
 
       if (matched && config) {
-        const emp = calcularRoasEmpate(matched, config);
+        const realProduct = products.find(p => p.id === matched!.id) || matched;
+        const emp = calcularRoasEmpate(realProduct, config);
         if (emp.roasEmpate !== Infinity && emp.roasEmpate > 0) {
           roasEmpate = emp.roasEmpate;
           margemContribuicao = emp.margemContribuicao;
@@ -218,7 +251,7 @@ export function useAdsData() {
         }
       }
 
-      return {
+      rows.push({
         user_id: user.id,
         product_id: matched?.id || null,
         nome_produto_csv: m.shopeeProductName || `Produto ${m.shopeeProductId || 'Desconhecido'}`,
@@ -250,8 +283,8 @@ export function useAdsData() {
         classificacao,
         periodo_inicio: m.periodStart,
         periodo_fim: m.periodEnd,
-      };
-    });
+      });
+    }
 
     // Deduplicate within the CSV by shopee_product_id or nome_produto_csv
     const uniqueRows = Object.values(
@@ -295,11 +328,31 @@ export function useAdsData() {
       toast.error('Erro ao salvar dados');
       console.error(error);
     } else {
-      toast.success(`${uniqueRows.length} produtos processados com sucesso`);
+      const parts = [`${uniqueRows.length} produtos processados`];
+      if (linkedCount > 0) parts.push(`${linkedCount} vinculados`);
+      toast.success(parts.join(' · '));
+      
+      if (autoCreatedCount > 0) {
+        toast.info(
+          `${autoCreatedCount} produto${autoCreatedCount > 1 ? 's' : ''} novo${autoCreatedCount > 1 ? 's' : ''} criado${autoCreatedCount > 1 ? 's' : ''} automaticamente. Preencha o custo para calcular a margem real.`,
+          {
+            action: {
+              label: 'Ver produtos →',
+              onClick: () => window.location.href = '/products?filter=draft',
+            },
+            duration: 8000,
+          }
+        );
+      }
+      
+      if (noMatchCount > 0 && autoCreatedCount === 0) {
+        toast.warning(`${noMatchCount} anúncio${noMatchCount > 1 ? 's' : ''} sem vínculo. Use o relatório por produto para vincular automaticamente.`);
+      }
+      
       await fetchData();
     }
     } finally { releaseLock(); }
-  }, [user, products, config, fetchData, acquireLock, releaseLock, checkRateLimit]);
+  }, [user, currentStore, products, config, fetchData, acquireLock, releaseLock, checkRateLimit]);
 
   const importProductCSV = useCallback(async (csvText: string, targetAdsDataId?: string) => {
     if (!user) return;
