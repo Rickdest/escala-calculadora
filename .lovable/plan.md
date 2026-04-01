@@ -1,46 +1,37 @@
 
 
-## Plano: Corrigir assinatura do token/get da Shopee
+## Plano: Corrigir parsing e dados do shopee-sync
 
-### Causa raiz
+### Problemas identificados nos logs
 
-O erro `error_sign` (Wrong sign) acontece porque o `shopee-callback` está incluindo o `shop_id` no cálculo da assinatura para o endpoint `/api/v2/auth/token/get`.
+1. **Shop Info**: dados estão na raiz (`data.shop_name`), não em `data.response`
+2. **Produtos**: `price_info`, `stock_info_v2`, `sale_info` não vêm sem `response_optional_fields`
+3. **Pedidos**: funcionando, mas precisa mensagem amigável quando vazio
+4. **Campanhas**: endpoint indisponível para este app — remover completamente
 
-Segundo a documentação da Shopee, o endpoint de troca de token (`/api/v2/auth/token/get`) **não inclui** `shop_id` nem `access_token` na base string da assinatura. A base string correta é apenas:
+### Alterações
 
-```text
-partner_id + path + timestamp
-```
+**Arquivo 1: `supabase/functions/shopee-sync/index.ts`**
 
-Hoje o código faz:
-```typescript
-const sign = await generateSign(path, timestamp, undefined, Number(shopId));
-// Gera: 2032223/api/v2/auth/token/get1775008945438579808  ← ERRADO
-```
+- Na chamada `get_item_base_info` (linha 131-135), adicionar `need_tax_info: "true"` e `response_optional_fields: "price_info,stock_info_v2,sale_info,item_status"`
+- Remover todo o bloco de Marketing/Ads (linhas 191-216) — não incluir `campaigns` nos resultados
 
-O correto é:
-```typescript
-const sign = await generateSign(path, timestamp);
-// Gera: 2032223/api/v2/auth/token/get1775008945  ← CORRETO
-```
+**Arquivo 2: `src/components/roas/ShopeeIntegrationModal.tsx`**
 
-### Alteração
+- **ShopInfoReport** (linhas 50-62): ler campos direto de `data` em vez de `data.response` — `data.shop_name`, `data.region`, `data.status`, `data.is_sip`, `data.shop_fulfillment_flag`
+- **OrderReport** (linha 109-111): remover estilo de erro quando `listData.error` é string vazia (Shopee retorna `error: ""` como sucesso)
+- Remover `CampaignsReport` component (linhas 136-162)
+- Remover `campaigns` do `SyncReport` interface (linha 21)
+- Remover seção de campanhas do JSX do relatório (linhas 266-270)
+- Remover import `BarChart3` (não mais usado)
 
-**Arquivo:** `supabase/functions/shopee-callback/index.ts`
+### Resumo das mudanças
 
-Remover o `shopId` da chamada `generateSign` na linha do token exchange. Mudar de:
-```typescript
-const sign = await generateSign(path, timestamp, undefined, Number(shopId));
-```
-Para:
-```typescript
-const sign = await generateSign(path, timestamp);
-```
-
-O `shop_id` continua sendo enviado no **body** do POST (isso está correto), apenas não participa da assinatura neste endpoint específico.
-
-### Nenhuma outra alteração necessária
-
-- O `shopee-auth` (auth_partner) já assina corretamente sem shop_id
-- O `shopee-sync` (refresh + get_shop_campaigns) usa shop_id na assinatura corretamente, pois são endpoints autenticados
+| O que | Antes | Depois |
+|-------|-------|--------|
+| Shop Info parsing | `data.response.shop_name` | `data.shop_name` |
+| Product details | sem campos opcionais | `response_optional_fields` com price/stock/sale |
+| Campanhas | 2 endpoints tentados, ambos falham | removido completamente |
+| Pedidos vazios | exibe normalmente | mantém igual (já funciona) |
+| OrderReport erro | trata `error: ""` como erro | ignora string vazia |
 
