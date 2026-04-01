@@ -11,6 +11,7 @@ import { ProductForm } from '@/components/forms/ProductForm';
 import { MarginDistributionChart, TopProductsChart, ProfitSummaryChart } from '@/components/charts/AnalyticsCharts';
 import { ProductThumbnail } from '@/components/ProductThumbnail';
 import { ProductDetailDrawer } from '@/components/ProductDetailDrawer';
+import { useShopeeProducts } from '@/hooks/useShopeeProducts';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
