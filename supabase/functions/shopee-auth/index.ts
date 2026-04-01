@@ -4,7 +4,6 @@ import {
   errorResponse,
   jsonResponse,
   getAuthUrl,
-  PARTNER_ID,
 } from "../_shared/shopee.ts";
 
 Deno.serve(async (req) => {
@@ -32,25 +31,31 @@ Deno.serve(async (req) => {
       return errorResponse("Unauthorized", 401);
     }
 
-    const { data: isAdmin } = await supabase.rpc("has_role", {
-      _role: "admin",
-    });
-    if (!isAdmin) {
-      return errorResponse("Admin only", 403);
-    }
-
     const { redirect_url } = await req.json();
     if (!redirect_url) {
       return errorResponse("redirect_url required");
     }
 
-    const authUrl = await getAuthUrl(redirect_url);
+    // Generate a state token and save it linked to this user
+    const state = crypto.randomUUID();
 
-    console.log("[SHOPEE AUTH] Generated URL:", {
-      partner_id: PARTNER_ID,
-      redirect_url,
-      auth_url_prefix: authUrl.substring(0, 100) + "...",
-    });
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const { error: stateError } = await supabaseAdmin
+      .from("shopee_auth_states")
+      .insert({ user_id: user.id, state });
+
+    if (stateError) {
+      console.error("[SHOPEE AUTH] State insert error:", stateError);
+      return errorResponse("Failed to create auth state", 500);
+    }
+
+    // Append state to redirect_url so callback receives it
+    const callbackWithState = `${redirect_url}?state=${state}`;
+    const authUrl = await getAuthUrl(callbackWithState);
 
     return jsonResponse({ auth_url: authUrl });
   } catch (e) {

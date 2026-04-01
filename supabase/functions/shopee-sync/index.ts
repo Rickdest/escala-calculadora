@@ -34,13 +34,7 @@ Deno.serve(async (req) => {
       return errorResponse("Unauthorized", 401);
     }
 
-    const { data: isAdmin } = await supabase.rpc("has_role", {
-      _role: "admin",
-    });
-    if (!isAdmin) {
-      return errorResponse("Admin only", 403);
-    }
-
+    // User can only sync their own tokens (RLS enforced)
     const { data: tokens } = await supabase
       .from("shopee_tokens")
       .select("*")

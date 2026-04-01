@@ -7,11 +7,6 @@ import {
 } from "../_shared/shopee.ts";
 
 Deno.serve(async (req) => {
-  console.log("[SHOPEE CALLBACK] Function invoked", {
-    url: req.url,
-    method: req.method,
-  });
-
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -23,47 +18,60 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const code = url.searchParams.get("code");
     const shopId = url.searchParams.get("shop_id");
-
-    console.log("[SHOPEE CALLBACK] received:", {
-      code: code ? `${code.substring(0, 8)}...` : null,
-      shop_id: shopId,
-      all_params: Object.fromEntries(url.searchParams.entries()),
-    });
+    const state = url.searchParams.get("state");
 
     if (!code || !shopId) {
-      console.error("[SHOPEE CALLBACK] Missing params:", { code: !!code, shopId: !!shopId });
       return Response.redirect(`${appUrl}/roas?shopee_error=missing_params`, 302);
     }
 
-    // Token exchange - official v2 format
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    // Resolve user_id from state token
+    let userId: string | null = null;
+
+    if (state) {
+      const { data: stateRow } = await supabaseAdmin
+        .from("shopee_auth_states")
+        .select("user_id")
+        .eq("state", state)
+        .maybeSingle();
+
+      if (stateRow) {
+        userId = stateRow.user_id;
+        // Delete used state
+        await supabaseAdmin
+          .from("shopee_auth_states")
+          .delete()
+          .eq("state", state);
+      }
+    }
+
+    if (!userId) {
+      console.error("[SHOPEE CALLBACK] No valid state/user found");
+      return Response.redirect(`${appUrl}/roas?shopee_error=invalid_state`, 302);
+    }
+
+    // Token exchange
     const path = "/api/v2/auth/token/get";
     const timestamp = Math.floor(Date.now() / 1000);
     const sign = await generateSign(path, timestamp, undefined, Number(shopId));
 
     const tokenUrl = `${SHOPEE_HOST}${path}?partner_id=${PARTNER_ID}&timestamp=${timestamp}&sign=${sign}`;
 
-    const tokenBody = {
-      code,
-      shop_id: Number(shopId),
-      partner_id: PARTNER_ID,
-    };
-
-    console.log("[SHOPEE CALLBACK] Token exchange:", {
-      url: tokenUrl.substring(0, 80) + "...",
-      shop_id: shopId,
-    });
-
     const tokenRes = await fetch(tokenUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(tokenBody),
+      body: JSON.stringify({
+        code,
+        shop_id: Number(shopId),
+        partner_id: PARTNER_ID,
+      }),
     });
 
     const tokenText = await tokenRes.text();
-    console.log("[SHOPEE CALLBACK] Token response:", {
-      status: tokenRes.status,
-      body: tokenText.substring(0, 500),
-    });
 
     if (!tokenRes.ok) {
       return Response.redirect(`${appUrl}/roas?shopee_error=token_exchange_http_error`, 302);
@@ -81,27 +89,11 @@ Deno.serve(async (req) => {
       return Response.redirect(`${appUrl}/roas?shopee_error=token_failed`, 302);
     }
 
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
-    const { data: adminRoles } = await supabaseAdmin
-      .from("user_roles")
-      .select("user_id")
-      .eq("role", "admin")
-      .limit(1);
-
-    const adminUserId = adminRoles?.[0]?.user_id;
-    if (!adminUserId) {
-      return Response.redirect(`${appUrl}/roas?shopee_error=no_admin`, 302);
-    }
-
     const { error: upsertError } = await supabaseAdmin
       .from("shopee_tokens")
       .upsert(
         {
-          user_id: adminUserId,
+          user_id: userId,
           shop_id: Number(shopId),
           access_token: tokenData.access_token as string,
           refresh_token: tokenData.refresh_token as string,
@@ -117,7 +109,6 @@ Deno.serve(async (req) => {
       return Response.redirect(`${appUrl}/roas?shopee_error=token_upsert_failed`, 302);
     }
 
-    console.log("[SHOPEE CALLBACK] Token saved for shop:", shopId);
     return Response.redirect(`${appUrl}/roas?shopee_connected=true`, 302);
   } catch (e) {
     console.error("[SHOPEE CALLBACK] Error:", e);

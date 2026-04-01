@@ -8,28 +8,23 @@ export const SHOPEE_HOST = Deno.env.get("SHOPEE_ENV") === "production"
 export const PARTNER_ID: number = (() => {
   const envId = (Deno.env.get("SHOPEE_PARTNER_ID") || "").trim();
   if (envId && /^\d+$/.test(envId)) {
-    console.log(`[SHOPEE] partner_id source=env, value=${envId}`);
     return Number(envId);
   }
-  console.log(`[SHOPEE] partner_id source=SANDBOX_FALLBACK, value=1231044`);
-  return 1231044;
+  throw new Error("SHOPEE_PARTNER_ID secret não configurado. Configure no backend.");
 })();
 
-// Alias for backward compat
 export const SHOPEE_PARTNER_ID = PARTNER_ID;
 
 function getPartnerKey(): string {
   const key = (Deno.env.get("SHOPEE_KEY") || "").trim();
   if (key && key.length >= 20) {
-    console.log(`[SHOPEE] partner_key source=SHOPEE_KEY, length=${key.length}`);
     return key;
   }
   const keyOld = (Deno.env.get("SHOPEE_PARTNER_KEY") || "").trim();
   if (keyOld && keyOld.length >= 20) {
-    console.log(`[SHOPEE] partner_key source=SHOPEE_PARTNER_KEY, length=${keyOld.length}`);
     return keyOld;
   }
-  throw new Error("SHOPEE_KEY secret não configurado ou inválido. Configure no Supabase.");
+  throw new Error("SHOPEE_KEY secret não configurado ou inválido.");
 }
 
 export const corsHeaders = {
@@ -40,12 +35,6 @@ export const corsHeaders = {
 
 /**
  * Official Shopee API v2 HMAC-SHA256 signing.
- *
- * Auth URL (no access_token):
- *   base_string = partner_id + path + timestamp
- *
- * Authenticated calls:
- *   base_string = partner_id + path + timestamp + access_token + shop_id
  */
 export async function generateSign(
   path: string,
@@ -63,13 +52,6 @@ export async function generateSign(
     baseString += `${shopId}`;
   }
 
-  console.log("[SHOPEE DEBUG] path:", path);
-  console.log("[SHOPEE DEBUG] timestamp:", timestamp);
-  console.log("[SHOPEE DEBUG] base_string:", baseString);
-  console.log("[SHOPEE DEBUG] base_string_length:", baseString.length);
-  console.log("[SHOPEE DEBUG] key_length:", partnerKey.length);
-  console.log("[SHOPEE DEBUG] key_prefix:", partnerKey.substring(0, 8) + "***");
-
   const keyData = new TextEncoder().encode(partnerKey);
   const msgData = new TextEncoder().encode(baseString);
 
@@ -82,20 +64,15 @@ export async function generateSign(
   );
 
   const signature = await crypto.subtle.sign("HMAC", cryptoKey, msgData);
-  const sign = Array.from(new Uint8Array(signature))
+  return Array.from(new Uint8Array(signature))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
-
-  console.log("[SHOPEE DEBUG] sign:", sign);
-  return sign;
 }
 
-// Legacy aliases
 export const hmacSign = generateSign;
 
 /**
  * Build the Shopee OAuth authorization URL.
- * base_string for auth_partner = partner_id + path + timestamp (NO access_token)
  */
 export async function getAuthUrl(redirectUrl: string): Promise<string> {
   const path = "/api/v2/shop/auth_partner";
