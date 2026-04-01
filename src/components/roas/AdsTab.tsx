@@ -106,14 +106,14 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const [showShopeeModal, setShowShopeeModal] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
-  const handleShopeeSync = async () => {
+  const handleImportAds = async () => {
     if (!isConnected) {
       setShowShopeeModal(true);
       return;
     }
     setSyncing(true);
     try {
-      const result = await syncAds();
+      const result = await syncAdsOnly();
       const adsPerfData = result?.results?.ads_performance;
       if (adsPerfData?.ads_rate_limited && (adsPerfData?.ads_by_product?.length || 0) === 0) {
         toast.warning('API de Ads temporariamente limitada pela Shopee. Tente novamente em 2-3 minutos.');
@@ -123,10 +123,10 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
         }
         await importFromApi(adsPerfData);
       } else {
-        toast.info('Sincronização concluída, mas sem dados de Ads disponíveis.');
+        toast.info('Nenhum dado de Ads disponível na API.');
       }
     } catch {
-      // Error already shown by syncAds
+      // Error already shown by syncAdsOnly
     } finally {
       setSyncing(false);
     }
