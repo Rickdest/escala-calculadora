@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingBag, Zap, RefreshCw, FileX, Loader2, CheckCircle2, Package, ShoppingCart, BarChart3, ChevronDown, ChevronUp } from 'lucide-react';
+import { ShoppingBag, Zap, RefreshCw, FileX, Loader2, CheckCircle2, Package, ShoppingCart, ChevronDown, ChevronUp } from 'lucide-react';
 import { useShopeeToken } from '@/hooks/useShopeeToken';
 import { toast } from 'sonner';
 
@@ -18,8 +18,6 @@ interface SyncReport {
   product_details?: any;
   order_list?: any;
   order_details?: any;
-  campaigns?: any;
-  
 }
 
 function ReportSection({ title, icon: Icon, children, defaultOpen = false }: { title: string; icon: any; children: React.ReactNode; defaultOpen?: boolean }) {
@@ -48,16 +46,14 @@ function StatRow({ label, value }: { label: string; value: string | number | und
 }
 
 function ShopInfoReport({ data }: { data: any }) {
-  const r = data?.response;
-  if (!r) return <p className="text-xs text-muted-foreground">Sem dados disponíveis (error: {data?.error || data?.message || 'unknown'})</p>;
+  if (!data?.shop_name) return <p className="text-xs text-muted-foreground">Sem dados disponíveis</p>;
   return (
     <div>
-      <StatRow label="Nome da loja" value={r.shop_name} />
-      <StatRow label="Região" value={r.region} />
-      <StatRow label="Status" value={r.status} />
-      <StatRow label="Descrição" value={r.description ? (r.description.length > 60 ? r.description.substring(0, 60) + '...' : r.description) : '—'} />
-      <StatRow label="Item Limit" value={r.item_limit} />
-      <StatRow label="Loja verificada" value={r.is_sip ? 'Sim' : 'Não'} />
+      <StatRow label="Nome da loja" value={data.shop_name} />
+      <StatRow label="Região" value={data.region} />
+      <StatRow label="Status" value={data.status} />
+      <StatRow label="Fulfillment" value={data.shop_fulfillment_flag} />
+      <StatRow label="Loja verificada" value={data.is_sip ? 'Sim' : 'Não'} />
     </div>
   );
 }
@@ -106,7 +102,7 @@ function OrderReport({ listData, detailsData }: { listData: any; detailsData?: a
   const details = detailsData?.response?.order_list || [];
   const more = listData?.response?.more;
 
-  if (listData?.error) {
+  if (listData?.error && listData.error !== "") {
     return <p className="text-xs text-muted-foreground">Erro: {listData.error} - {listData.message}</p>;
   }
 
@@ -133,33 +129,7 @@ function OrderReport({ listData, detailsData }: { listData: any; detailsData?: a
   );
 }
 
-function CampaignsReport({ data }: { data: any }) {
-  if (data?.error) {
-    return <p className="text-xs text-muted-foreground">Erro: {data.error} - {data.message}</p>;
-  }
-  const campaigns = data?.response?.campaign_list || data?.response?.campaigns || [];
-  return (
-    <div>
-      <StatRow label="Campanhas encontradas" value={Array.isArray(campaigns) ? campaigns.length : 0} />
-      {Array.isArray(campaigns) && campaigns.length > 0 && (
-        <div className="mt-2 space-y-1">
-          {campaigns.slice(0, 5).map((c: any, i: number) => (
-            <div key={i} className="p-1.5 rounded bg-surface-2/50 text-[11px]">
-              <p className="font-medium text-foreground">{c.campaign_name || `Campaign #${c.campaign_id}`}</p>
-              <div className="flex gap-2 text-[10px] text-muted-foreground">
-                <span>Status: {c.state || c.status}</span>
-                <span>Tipo: {c.campaign_type}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      {(!Array.isArray(campaigns) || campaigns.length === 0) && (
-        <p className="text-xs text-muted-foreground mt-1">Nenhuma campanha ativa. Dados brutos: {JSON.stringify(data?.response || data).substring(0, 200)}</p>
-      )}
-    </div>
-  );
-}
+
 
 
 export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -263,11 +233,6 @@ export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClo
                   </ReportSection>
                 )}
 
-                {report.campaigns && (
-                  <ReportSection title="Campanhas de Ads" icon={BarChart3}>
-                    <CampaignsReport data={report.campaigns} />
-                  </ReportSection>
-                )}
 
 
                 {syncErrors && Object.keys(syncErrors).length > 0 && (
