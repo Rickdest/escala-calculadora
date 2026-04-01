@@ -1,59 +1,72 @@
 
 
-## Plano: Verificação de bugs e melhorias
+## Plano: Integração Ads via API Shopee (substituir CSV)
 
-### Bugs encontrados
+### Contexto
+As 25 APIs de Ads estão aprovadas no app Shopee. As mais relevantes para o Skalify:
 
-**1. Flag `PERFORMANCE_CONNECTED_REAL_ACCOUNT` morta**
-- Declarada em `features.ts` mas não importada em nenhum arquivo (foi removida do Performance.tsx na última edição)
-- **Ação**: Remover da `features.ts`
+```text
+v2.ads.get_all_cpc_ads_daily_performance  → Performance diária de todos os anúncios
+v2.ads.get_product_campaign_daily_performance → Performance por campanha de produto
+v2.ads.get_total_balance → Saldo de Ads
+v2.ads.get_shop_toggle_info → Status do Ads na loja
+v2.ads.get_product_level_campaign_id_list → Listar campanhas por produto
+```
 
-**2. `mapDbProduct` usa `(p as any).draft` e `(p as any).source`**
-- As colunas `draft` e `source` existem no banco mas o tipo gerado `Tables<'products'>` não foi atualizado automaticamente
-- O `as any` funciona em runtime mas perde type-safety
-- **Ação**: Verificar se o tipo já reflete as colunas; se não, manter o cast (tipos são auto-gerados)
+### O que fazer
 
-**3. Performance: dados não persistem entre navegações**
-- O state `data` é local (`useState`), perdido ao sair da página
-- Não é um bug crítico, mas o usuário precisa re-sincronizar cada vez que volta
-- **Ação**: Sem mudança por enquanto (é esperado para dados de API)
+**1. Expandir a Edge Function `shopee-sync`**
+- Adicionar seção "4. Ads" que chama:
+  - `v2.ads.get_all_cpc_ads_daily_performance` (últimos 30 dias)
+  - `v2.ads.get_total_balance` (saldo)
+- Agregar dados diários em métricas por produto (impressões, cliques, GMV, spend, ROAS)
+- Retornar no campo `results.ads_performance`
 
-**4. `useShopeeProducts`: import de produtos não atualiza `shopee_item_id` para produtos existentes**
-- No update path (linha 51-58), o `shopee_item_id` (bigint) não é setado, apenas `shopee_product_id` (text)
-- Se o produto foi criado pelo CSV de Ads com `shopee_product_id` mas sem `shopee_item_id`, o match no modal de import pode falhar
-- **Ação**: Adicionar `shopee_item_id: p.item_id` no update path
+**2. Adicionar helper `shopeePost` no `_shared/shopee.ts`**
+- Algumas APIs de Ads usam POST (body JSON). Criar `shopeePost(path, accessToken, shopId, body)` com mesma lógica de signing
 
-**5. `useAdsData.importGeneralCSV`: auto-criação de draft com `cost_price: 0`**
-- Insere `cost_price: 0` em vez de `null`, impedindo que o filtro `cost_price.is.null` capture esses produtos
-- O filtro na Products page usa `or('cost_price.is.null,cost_price.eq.0')`, então funciona, mas semanticamente `null` seria melhor
-- **Ação menor**: Nenhuma mudança necessária, o filtro já cobre ambos os casos
+**3. Processar resposta no frontend (`useAdsData` ou `AdsTab`)**
+- Quando o botão "Sincronizar" é clicado e `SHOPEE_ADS_API_READY === true`:
+  - Chamar `shopee-sync` (já existente)
+  - Extrair `results.ads_performance` da resposta
+  - Converter para o formato `ads_data` existente
+  - Fazer upsert no banco com auto-link por `shopee_item_id`
+  - Recarregar a aba
 
-**6. `ShopeeImportModal`: não fecha modal nem recarrega lista após import**
-- Após importar, `setImporting(false)` roda mas o modal não fecha — o `onClose` é chamado pelo parent em `Products.tsx` (linha 479)
-- ✅ Funciona corretamente — parent fecha o modal
+**4. Auto-link com produtos existentes**
+- Usar mesma lógica já implementada: match por `shopee_item_id` → link direto, senão cria draft
 
-**7. Sidebar: ícones repetidos**
-- `Calculator` usado para "Início" e "Calculadoras"
-- `TrendingUp` usado para "Ads" e "Performance"
-- **Ação**: Usar ícones distintos (ex: `BarChart2` para Ads no Sidebar, `TrendingUp` para Performance)
+### Arquivos modificados
 
-### Resumo de ações
+| Arquivo | Ação |
+|---------|------|
+| `supabase/functions/_shared/shopee.ts` | Adicionar `shopeePost` |
+| `supabase/functions/shopee-sync/index.ts` | Adicionar `fetchAdsPerformance()` |
+| `src/hooks/useAdsData.ts` | Adicionar `importFromApi(apiResponse)` |
+| `src/components/roas/AdsTab.tsx` | Botão "Sincronizar" chama API real |
 
-| # | Arquivo | Ação | Prioridade |
-|---|---------|------|------------|
-| 1 | `features.ts` | Remover `PERFORMANCE_CONNECTED_REAL_ACCOUNT` | Baixa |
-| 2 | `useShopeeProducts.ts` | Adicionar `shopee_item_id` no update | Média |
-| 3 | `Sidebar.tsx` | Ícones distintos para Ads e Performance | Baixa |
-| 4 | Nenhum bug crítico bloqueante encontrado | — | — |
+### Detalhes técnicos
 
-### Verificações sem problemas
-- ✅ Rotas no `App.tsx` corretas (Performance registrada)
-- ✅ `BottomNavigation` tem Performance
-- ✅ ProductForm detecta `isShopeeProduct` corretamente
-- ✅ ProductDetail abre ProductForm modal (não inline)
-- ✅ ProductDetailDrawer usa `onEdit` → ProductForm
-- ✅ Ads import com auto-criação de drafts funciona
-- ✅ Filtro `?filter=draft` em Products funciona
-- ✅ ShopeeImportModal com seleção granular funciona
-- ✅ Campos 🔒 para produtos Shopee no ProductForm
+**API de Ads — request format:**
+```text
+POST /api/v2/ads/get_all_cpc_ads_daily_performance
+Body: { start_date, end_date }
+Sign: partner_id + path + timestamp + access_token + shop_id
+```
+
+**Response contém por anúncio:**
+- `item_id`, `campaign_id`, `impressions`, `clicks`, `expense`, `gmv`, `orders`, `ctr`, `roas`
+
+**Mapeamento para `ads_data`:**
+- `expense` → `despesas`
+- `gmv` → `gmv`  
+- `orders` → `itens_vendidos`
+- `item_id` → `shopee_item_id` (para auto-link)
+
+### Fluxo do usuário
+1. Clica "Sincronizar" na aba Ads
+2. Edge function busca performance dos últimos 30 dias
+3. Dados são processados e salvos em `ads_data` com link automático
+4. Toast: "X anúncios sincronizados via API"
+5. Se houver produtos novos, toast info com link para completar custo
 
