@@ -68,16 +68,16 @@ export function useShopeeProducts() {
 
         if (existing) {
           // Update without touching cost_price
-          await supabase
+          await (supabase
             .from('products')
-            .update({
+            .update as any)({
               name: p.item_name,
               sale_price: salePrice,
               stock_quantity: stockQty,
               image_url: imageUrl,
               shopee_synced_at: new Date().toISOString(),
               shopee_product_id: String(itemId),
-            } as any)
+            })
             .eq('id', existing.id);
         } else {
           // Insert new
