@@ -16,6 +16,7 @@ interface SyncReport {
   shop_info?: any;
   product_list?: any;
   product_details?: any;
+  product_models?: Record<string, any[]>;
   order_list?: any;
   order_details?: any;
 }
