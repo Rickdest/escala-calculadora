@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Upload, ExternalLink, BarChart3, Download, ShoppingBag } from 'lucide-react';
 
-export function AdsEmptyState({ onImport, onShopeeIntegration }: { onImport: () => void; onShopeeIntegration: () => void }) {
+export function AdsEmptyState({ onImport, onShopeeIntegration, onImportAds, isConnected, syncing }: { onImport: () => void; onShopeeIntegration: () => void; onImportAds?: () => void; isConnected?: boolean; syncing?: boolean }) {
   return (
     <div className="flex flex-col items-center justify-center py-12 md:py-16 text-center space-y-6">
       <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
@@ -47,13 +47,25 @@ export function AdsEmptyState({ onImport, onShopeeIntegration }: { onImport: () 
         <div className="flex-1 h-px bg-border" />
       </div>
 
-      <Button
-        variant="outline"
-        onClick={onShopeeIntegration}
-        className="h-12 w-full max-w-md rounded-xl text-sm font-bold gap-2 border-[#EE4D2D]/30 text-[#EE4D2D] hover:bg-[#EE4D2D]/5 hover:text-[#EE4D2D]"
-      >
-        <ShoppingBag className="w-4 h-4" /> Sincronizar via Shopee API
-      </Button>
+      {isConnected ? (
+        <Button
+          variant="outline"
+          onClick={onImportAds}
+          disabled={syncing}
+          className="h-12 w-full max-w-md rounded-xl text-sm font-bold gap-2 border-[#EE4D2D]/30 text-[#EE4D2D] hover:bg-[#EE4D2D]/5 hover:text-[#EE4D2D]"
+        >
+          <Download className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+          {syncing ? 'Importando Ads...' : 'Importar Ads via Shopee API'}
+        </Button>
+      ) : (
+        <Button
+          variant="outline"
+          onClick={onShopeeIntegration}
+          className="h-12 w-full max-w-md rounded-xl text-sm font-bold gap-2 border-[#EE4D2D]/30 text-[#EE4D2D] hover:bg-[#EE4D2D]/5 hover:text-[#EE4D2D]"
+        >
+          <ShoppingBag className="w-4 h-4" /> Conectar Shopee para importar Ads
+        </Button>
+      )}
     </div>
   );
 }

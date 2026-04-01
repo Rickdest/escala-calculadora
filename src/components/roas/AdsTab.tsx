@@ -257,11 +257,14 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
         <>
            {/* ═══ Empty State ═══ */}
            {!hasData && (
-             <AdsEmptyState
-               onImport={() => fileRef.current?.click()}
-               onShopeeIntegration={() => setShowShopeeModal(true)}
-             />
-           )}
+              <AdsEmptyState
+                onImport={() => fileRef.current?.click()}
+                onShopeeIntegration={() => setShowShopeeModal(true)}
+                onImportAds={handleImportAds}
+                isConnected={isConnected}
+                syncing={syncing}
+              />
+            )}
 
           {/* ═══ Header com botão discreto ═══ */}
           {hasData && (
