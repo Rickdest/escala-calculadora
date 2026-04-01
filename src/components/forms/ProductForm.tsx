@@ -28,6 +28,7 @@ interface ProductFormProps {
 export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
   const { currentStore } = useStore();
   const config = currentStore?.config;
+  const isShopeeProduct = !!(product as any)?.shopeeItemId || !!(product as any)?.shopeeProductId;
 
   const [name, setName] = useState(product?.name || '');
   const [costPrice, setCostPrice] = useState(product?.costPrice?.toString() || '');
