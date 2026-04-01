@@ -122,41 +122,65 @@ async function fetchOrdersWithAggregation(
   const now = Math.floor(Date.now() / 1000);
   const ninetyDaysAgo = now - 90 * 24 * 60 * 60;
 
-  // Paginate order list (max ~200 orders)
-  let allOrders: any[] = [];
-  let cursor = "";
-  let hasMore = true;
-  let pageCount = 0;
+  const fetchOrderWindow = async (timeRangeField: "create_time" | "update_time") => {
+    const allOrders: any[] = [];
+    const windows: Array<{ from: number; to: number }> = [];
 
-  while (hasMore && pageCount < 4) {
-    const params: Record<string, string> = {
-      time_range_field: "create_time",
-      time_from: String(ninetyDaysAgo),
-      time_to: String(now),
-      page_size: "50",
-    };
-    if (cursor) params.cursor = cursor;
+    let windowStart = ninetyDaysAgo;
+    while (windowStart < now) {
+      const windowEnd = Math.min(windowStart + 15 * 24 * 60 * 60 - 1, now);
+      windows.push({ from: windowStart, to: windowEnd });
+      windowStart = windowEnd + 1;
+    }
 
-    const orderList = await shopeeGet(
-      "/api/v2/order/get_order_list",
-      accessToken,
-      shopId,
-      params
+    for (let i = 0; i < windows.length; i++) {
+      const window = windows[i];
+      let cursor = "";
+      let hasMore = true;
+      let pageCount = 0;
+
+      while (hasMore && pageCount < 10) {
+        const params: Record<string, string> = {
+          time_range_field: timeRangeField,
+          time_from: String(window.from),
+          time_to: String(window.to),
+          page_size: "50",
+        };
+        if (cursor) params.cursor = cursor;
+
+        const orderList = await shopeeGet(
+          "/api/v2/order/get_order_list",
+          accessToken,
+          shopId,
+          params
+        );
+
+        const orders = orderList?.response?.order_list || [];
+        allOrders.push(...orders);
+        hasMore = orderList?.response?.more === true;
+        cursor = orderList?.response?.next_cursor || "";
+        pageCount++;
+
+        console.log(
+          `[SHOPEE SYNC] Orders ${timeRangeField} window ${i + 1}/${windows.length} page ${pageCount}: ${orders.length} orders, more=${hasMore}`
+        );
+      }
+    }
+
+    return Array.from(
+      new Map(allOrders.map((order: any) => [order.order_sn, order])).values()
     );
+  };
 
-    const orders = orderList?.response?.order_list || [];
-    allOrders = allOrders.concat(orders);
-    hasMore = orderList?.response?.more === true;
-    cursor = orderList?.response?.next_cursor || "";
-    pageCount++;
-    console.log(
-      `[SHOPEE SYNC] Orders page ${pageCount}: ${orders.length} orders, more=${hasMore}`
-    );
+  let allOrders = await fetchOrderWindow("create_time");
+
+  if (allOrders.length === 0) {
+    console.log("[SHOPEE SYNC] No orders found with create_time, retrying with update_time...");
+    allOrders = await fetchOrderWindow("update_time");
   }
 
-  console.log(`[SHOPEE SYNC] Total orders fetched: ${allOrders.length}`);
+  console.log(`[SHOPEE SYNC] Total unique orders fetched: ${allOrders.length}`);
 
-  // Fetch order details in batches of 50
   let allDetails: any[] = [];
   for (let i = 0; i < allOrders.length; i += 50) {
     const batch = allOrders.slice(i, i + 50).map((o: any) => o.order_sn);
@@ -178,7 +202,6 @@ async function fetchOrdersWithAggregation(
     }
   }
 
-  // Aggregate product sales
   const productSales: Record<
     string,
     {
