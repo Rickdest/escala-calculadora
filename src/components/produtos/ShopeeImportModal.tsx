@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, ShoppingBag, Check } from 'lucide-react';
+import { Loader2, ShoppingBag, Check, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useShopeeToken } from '@/hooks/useShopeeToken';
@@ -51,7 +51,6 @@ export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportMod
         return;
       }
 
-      // Get existing products
       const { data: existing } = await supabase
         .from('products')
         .select('shopee_product_id, shopee_item_id, sale_price')
@@ -107,7 +106,6 @@ export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportMod
 
       setProducts(mapped);
 
-      // Pre-select new ones + ones with price changes
       const autoSelect = mapped
         .filter(p => !p.already_imported || p.price_changed)
         .map(p => p.item_id);
@@ -151,11 +149,10 @@ export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportMod
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden">
-        {/* Header */}
-        <DialogHeader className="p-5 pb-4 border-b border-border">
+      <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden max-h-[85vh] flex flex-col">
+        <DialogHeader className="p-5 pb-4 border-b border-border shrink-0">
           <DialogTitle className="flex items-center gap-2 text-base">
-            <ShoppingBag className="w-5 h-5 text-[#EE4D2D]" />
+            <ShoppingBag className="w-5 h-5 text-primary" />
             Importar da Shopee
           </DialogTitle>
           <DialogDescription className="text-xs">
@@ -165,8 +162,7 @@ export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportMod
           </DialogDescription>
         </DialogHeader>
 
-        {/* Body */}
-        <div className="px-5 py-4">
+        <div className="px-5 py-4 flex-1 min-h-0 overflow-hidden">
           {loading ? (
             <div className="py-12 text-center">
               <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground mb-2" />
@@ -180,7 +176,6 @@ export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportMod
             </div>
           ) : (
             <>
-              {/* Select all */}
               <button
                 type="button"
                 onClick={toggleAll}
@@ -189,19 +184,18 @@ export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportMod
                 <div className={cn(
                   'w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-all',
                   allImportableSelected
-                    ? 'bg-[#EE4D2D] border-[#EE4D2D]'
+                    ? 'bg-primary border-primary text-primary-foreground'
                     : 'border-border'
                 )}>
-                  {allImportableSelected && <Check className="w-3 h-3 text-white" />}
+                  {allImportableSelected && <Check className="w-3 h-3" />}
                 </div>
                 <span>Selecionar todos</span>
-                <span className="ml-auto text-[11px] text-[#EE4D2D]">
+                <span className="ml-auto text-[11px] text-primary">
                   {selected.size} selecionado{selected.size !== 1 ? 's' : ''}
                 </span>
               </button>
 
-              {/* Product list */}
-              <div className="flex flex-col gap-1.5 max-h-72 overflow-y-auto pr-1">
+              <div className="flex flex-col gap-1.5 h-full max-h-72 overflow-y-auto pr-1">
                 {products.map(product => {
                   const isDisabled = product.already_imported && !product.price_changed;
                   const isSelected = selected.has(product.item_id);
@@ -215,46 +209,43 @@ export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportMod
                         isDisabled
                           ? 'opacity-50 cursor-not-allowed border-border'
                           : isSelected
-                            ? 'border-[#EE4D2D]/40 bg-[#EE4D2D]/5 cursor-pointer'
+                            ? 'border-primary/40 bg-primary/5 cursor-pointer'
                             : 'border-border hover:border-muted-foreground/30 cursor-pointer'
                       )}
                     >
-                      {/* Checkbox */}
                       <div className={cn(
                         'w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-all',
                         isSelected && !isDisabled
-                          ? 'bg-[#EE4D2D] border-[#EE4D2D]'
+                          ? 'bg-primary border-primary text-primary-foreground'
                           : 'border-border'
                       )}>
-                        {isSelected && !isDisabled && <Check className="w-3 h-3 text-white" />}
+                        {isSelected && !isDisabled && <Check className="w-3 h-3" />}
                       </div>
 
-                      {/* Thumbnail */}
                       {product.image_url ? (
                         <img
                           src={product.image_url}
-                          alt=""
+                          alt={product.item_name}
                           className="w-9 h-9 rounded-md object-cover border border-border flex-shrink-0"
                         />
                       ) : (
-                        <div className="w-9 h-9 rounded-md bg-surface-2 border border-border flex items-center justify-center flex-shrink-0 text-sm">
+                        <div className="w-9 h-9 rounded-md bg-muted border border-border flex items-center justify-center flex-shrink-0 text-sm">
                           📦
                         </div>
                       )}
 
-                      {/* Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
                           <p className="text-xs font-medium truncate text-foreground">
                             {product.item_name}
                           </p>
                           {!product.already_imported && (
-                            <span className="text-[10px] bg-emerald-500/15 text-emerald-500 rounded px-1.5 py-0.5 flex-shrink-0">
+                            <span className="text-[10px] bg-emerald-500/15 text-emerald-600 rounded px-1.5 py-0.5 flex-shrink-0">
                               novo
                             </span>
                           )}
                           {product.price_changed && (
-                            <span className="text-[10px] bg-[#EE4D2D]/15 text-[#EE4D2D] rounded px-1.5 py-0.5 flex-shrink-0">
+                            <span className="text-[10px] bg-primary/15 text-primary rounded px-1.5 py-0.5 flex-shrink-0">
                               atualizar preço
                             </span>
                           )}
@@ -271,22 +262,32 @@ export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportMod
                 })}
               </div>
 
-              {/* Note */}
-              <div className="text-[11px] text-muted-foreground bg-surface-2 rounded-md p-2.5 mt-3 leading-relaxed">
+              <div className="text-[11px] text-muted-foreground bg-muted rounded-md p-2.5 mt-3 leading-relaxed">
                 🔒 Preço de venda e estoque serão importados como somente leitura. Você preencherá o custo depois.
               </div>
             </>
           )}
         </div>
 
-        {/* Footer */}
-        {!loading && products.length > 0 && (
-          <DialogFooter className="px-5 py-4 border-t border-border gap-2">
-            <Button variant="outline" onClick={onClose}>Cancelar</Button>
+        <DialogFooter className="px-5 py-4 border-t border-border gap-2 shrink-0">
+          <Button variant="outline" onClick={onClose}>
+            Fechar
+          </Button>
+
+          {loading ? (
+            <Button disabled>
+              <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+              Carregando...
+            </Button>
+          ) : error || products.length === 0 ? (
+            <Button onClick={fetchShopeeProducts} className="gap-1.5">
+              <RefreshCw className="w-4 h-4" />
+              Tentar novamente
+            </Button>
+          ) : (
             <Button
               onClick={handleImport}
               disabled={selected.size === 0 || importing}
-              className="bg-[#EE4D2D] hover:bg-[#EE4D2D]/90 text-white"
             >
               {importing ? (
                 <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" />Importando...</>
@@ -294,9 +295,10 @@ export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportMod
                 `Importar ${selected.size} produto${selected.size !== 1 ? 's' : ''} →`
               )}
             </Button>
-          </DialogFooter>
-        )}
+          )}
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
