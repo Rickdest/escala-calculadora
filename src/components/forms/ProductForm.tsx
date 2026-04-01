@@ -230,6 +230,13 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 pb-20 space-y-4">
+          {/* Shopee cost alert */}
+          {isShopeeProduct && (!product?.costPrice || product.costPrice === 0) && (
+            <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+              Preencha o custo para ver margem real e ROAS de empate
+            </div>
+          )}
           {/* Image Upload */}
           <div className="flex justify-center">
             <label className="cursor-pointer group">
