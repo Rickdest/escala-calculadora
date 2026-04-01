@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { calculateProduct as calculateProductFn } from '@/lib/calculateProduct';
 import { calcOutrosCanais, getBestChannel } from '@/lib/outrosCanaisUtils';
-import { X, Camera, Calculator, TrendingUp, TrendingDown, AlertTriangle, Save, Loader2, ChevronDown, CalendarDays, Settings2, Info, ExternalLink } from 'lucide-react';
+import { X, Camera, Calculator, TrendingUp, TrendingDown, AlertTriangle, Save, Loader2, ChevronDown, CalendarDays, Settings2, Info, ExternalLink, Lock } from 'lucide-react';
 import { ProductAdsSection } from '@/components/forms/ProductAdsSection';
 import { Product, ShopeeAceleraOption, getShopeeFeeForPrice, OutrosCanais } from '@/types/store';
 import { AMAZON_CATEGORIES } from '@/lib/amazonUtils';
