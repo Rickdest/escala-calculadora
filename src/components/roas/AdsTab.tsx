@@ -114,8 +114,14 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
     setSyncing(true);
     try {
       const result = await syncAds();
-      if (result?.results?.ads_performance) {
-        await importFromApi(result.results.ads_performance);
+      const adsPerfData = result?.results?.ads_performance;
+      if (adsPerfData?.ads_rate_limited && (adsPerfData?.ads_by_product?.length || 0) === 0) {
+        toast.warning('API de Ads temporariamente limitada pela Shopee. Tente novamente em 2-3 minutos.');
+      } else if (adsPerfData?.ads_by_product?.length > 0) {
+        if (adsPerfData.ads_rate_limited) {
+          toast.warning('Alguns dados podem estar incompletos (limite temporário da API). Dados parciais foram importados.');
+        }
+        await importFromApi(adsPerfData);
       } else {
         toast.info('Sincronização concluída, mas sem dados de Ads disponíveis.');
       }
