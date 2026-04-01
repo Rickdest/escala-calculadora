@@ -1,44 +1,46 @@
 
 
-## Plano: Corrigir erro "Wrong sign" na troca de token da Shopee
+## Plano: Corrigir assinatura do token/get da Shopee
 
-### Diagnóstico
+### Causa raiz
 
-Os logs mostram:
-- OAuth redirect: OK (code e shop_id recebidos)
-- State/user_id: OK (resolvido corretamente)
-- Token exchange: **403 - Wrong sign**
+O erro `error_sign` (Wrong sign) acontece porque o `shopee-callback` está incluindo o `shop_id` no cálculo da assinatura para o endpoint `/api/v2/auth/token/get`.
 
-A assinatura é gerada em `generateSign()` no arquivo `_shared/shopee.ts`. O base string atual para token/get é:
-```
-partner_id + path + timestamp + shop_id
+Segundo a documentação da Shopee, o endpoint de troca de token (`/api/v2/auth/token/get`) **não inclui** `shop_id` nem `access_token` na base string da assinatura. A base string correta é apenas:
+
+```text
+partner_id + path + timestamp
 ```
 
-Isso está correto conforme a documentação da Shopee. Portanto, o problema mais provável é que o valor do secret `SHOPEE_KEY` não corresponde ao `SHOPEE_PARTNER_ID` de produção.
+Hoje o código faz:
+```typescript
+const sign = await generateSign(path, timestamp, undefined, Number(shopId));
+// Gera: 2032223/api/v2/auth/token/get1775008945438579808  ← ERRADO
+```
 
-### Etapas
+O correto é:
+```typescript
+const sign = await generateSign(path, timestamp);
+// Gera: 2032223/api/v2/auth/token/get1775008945  ← CORRETO
+```
 
-**1. Adicionar log de debug do base string e da chave**
+### Alteração
 
-No `_shared/shopee.ts`, dentro de `generateSign()`, logar:
-- O `baseString` completo usado para assinar
-- O comprimento e os primeiros 4 caracteres da `partnerKey`
-- O `PARTNER_ID` usado
+**Arquivo:** `supabase/functions/shopee-callback/index.ts`
 
-Isso permite que você compare exatamente o que está sendo assinado com o que a Shopee espera.
+Remover o `shopId` da chamada `generateSign` na linha do token exchange. Mudar de:
+```typescript
+const sign = await generateSign(path, timestamp, undefined, Number(shopId));
+```
+Para:
+```typescript
+const sign = await generateSign(path, timestamp);
+```
 
-**2. Verificar/reatualizar o secret SHOPEE_KEY**
+O `shop_id` continua sendo enviado no **body** do POST (isso está correto), apenas não participa da assinatura neste endpoint específico.
 
-Se os logs confirmarem que a chave está errada ou truncada, será necessário atualizar o secret com o valor correto do painel de produção da Shopee.
+### Nenhuma outra alteração necessária
 
-### Arquivos envolvidos
-
-- `supabase/functions/_shared/shopee.ts` — adicionar logs na função `generateSign`
-
-### O que você precisa fazer depois
-
-Após o deploy, testar o fluxo OAuth novamente e me enviar os novos logs. Com o base string visível, poderemos confirmar se:
-1. A chave está correta (comprimento e prefixo)
-2. O partner_id no base string bate com o do console da Shopee
-3. O formato do base string está correto
+- O `shopee-auth` (auth_partner) já assina corretamente sem shop_id
+- O `shopee-sync` (refresh + get_shop_campaigns) usa shop_id na assinatura corretamente, pois são endpoints autenticados
 
