@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Percent, DollarSign, Save, Check, Loader2, Moon, Sun, LogOut, Store, User, Info, Users, Megaphone, UserCheck, MessageCircle, ChevronRight } from 'lucide-react';
+import { Percent, DollarSign, Save, Check, Loader2, Moon, Sun, LogOut, Store, User, Info, Users, Megaphone, UserCheck, MessageCircle, ChevronRight, ShoppingBag, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { useTheme } from '@/contexts/ThemeContext';
