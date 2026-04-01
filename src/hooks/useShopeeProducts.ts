@@ -58,12 +58,12 @@ export function useShopeeProducts() {
 
         const imageUrl = p.image?.image_url_list?.[0] || null;
 
-        // Check if product already exists by shopee_item_id
+        // Check if product already exists by shopee_product_id
         const { data: existing } = await supabase
           .from('products')
           .select('id, cost_price')
           .eq('user_id', user.id)
-          .eq('shopee_item_id' as any, itemId)
+          .eq('shopee_product_id', String(itemId))
           .maybeSingle();
 
         if (existing) {
