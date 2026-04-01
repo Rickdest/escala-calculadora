@@ -204,7 +204,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
 
   const isValid =
     name.trim().length > 0 &&
-    parseFloat(costPrice) > 0 &&
+    (isShopeeProduct ? true : parseFloat(costPrice) > 0) &&
     parseFloat(salePrice) > 0;
 
   return (

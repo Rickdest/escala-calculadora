@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useShopeeToken } from '@/hooks/useShopeeToken';
-import { RefreshCw, Loader2, ShoppingBag, TrendingUp, ShoppingCart, Package } from 'lucide-react';
+import { FEATURES } from '@/config/features';
+import { RefreshCw, Loader2, ShoppingBag, TrendingUp, ShoppingCart, Package, Settings } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface PerformanceData {
@@ -35,6 +37,7 @@ const statusLabels: Record<string, string> = {
 
 export default function Performance() {
   const { isConnected, startOAuth, syncAds, isLoading: tokenLoading } = useShopeeToken();
+  const navigate = useNavigate();
   const [syncing, setSyncing] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [data, setData] = useState<PerformanceData | null>(null);
@@ -53,13 +56,12 @@ export default function Performance() {
           toast.success(`${perf.summary.total_orders} pedidos carregados!`);
         }
       } else {
-        // Maybe the structure is flat
         const flatPerf = result?.order_performance;
         if (flatPerf) {
           setData(flatPerf);
           toast.success('Dados carregados!');
         } else {
-          toast.info('Nenhum dado de performance disponível. Verifique o console para detalhes.');
+          toast.info('Nenhum dado de performance disponível.');
         }
       }
     } catch (err) {
@@ -81,6 +83,7 @@ export default function Performance() {
 
   const formatCurrency = (v: number) => v > 0 ? `R$ ${v.toFixed(2)}` : '—';
 
+  // Not connected
   if (!isConnected) {
     return (
       <AppLayout>
@@ -109,18 +112,78 @@ export default function Performance() {
       <PageHeader title="Performance" subtitle="Dados de vendas · Shopee (90 dias)" />
 
       <div className="pt-6 pb-24 md:pb-6 space-y-4">
-        <Button onClick={handleSync} disabled={syncing} className="w-full h-12">
-          {syncing ? (
-            <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sincronizando...</>
-          ) : (
-            <><RefreshCw className="w-4 h-4 mr-2" /> {data ? 'Atualizar Dados' : 'Carregar Performance'}</>
-          )}
-        </Button>
+        {/* Test account state — no real data */}
+        {!FEATURES.PERFORMANCE_CONNECTED_REAL_ACCOUNT && !data ? (
+          <div className="flex flex-col items-center text-center py-12 gap-5 px-4">
+            <div className="w-14 h-14 rounded-full bg-[#EE4D2D]/10 flex items-center justify-center text-2xl">
+              📊
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-foreground mb-2">Performance da Loja</h3>
+              <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">
+                Dados de pedidos e faturamento via API da Shopee.
+              </p>
+            </div>
 
-        {!data && !syncing && (
-          <div className="text-center py-12 text-muted-foreground text-sm">
-            Clique acima para carregar os dados de performance da sua loja.
+            {/* Dimmed metrics preview */}
+            <div className="grid grid-cols-3 gap-3 w-full max-w-md opacity-40">
+              <div className="glass-card p-4 text-center">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Pedidos</p>
+                <p className="text-2xl font-bold text-foreground font-mono">—</p>
+              </div>
+              <div className="glass-card p-4 text-center">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Faturamento</p>
+                <p className="text-xl font-bold text-foreground font-mono">—</p>
+              </div>
+              <div className="glass-card p-4 text-center">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Ticket Médio</p>
+                <p className="text-xl font-bold text-foreground font-mono">—</p>
+              </div>
+            </div>
+
+            <div className="text-xs text-muted-foreground bg-[#EE4D2D]/5 border border-[#EE4D2D]/20 rounded-lg p-4 max-w-sm text-left leading-relaxed space-y-2">
+              <p><strong className="text-foreground">⚡ O que fazer com a aba Performance?</strong></p>
+              <p>
+                A API retorna "sem pedidos nos últimos 90 dias" porque a conta de <strong className="text-foreground">teste</strong> usada na conexão OAuth não tem histórico de vendas reais.
+              </p>
+              <p>
+                <strong className="text-foreground">Opção A (recomendada):</strong> Conecte sua conta real da Shopee. Quando conectar, os pedidos aparecerão automaticamente.
+              </p>
+              <p>
+                <strong className="text-foreground">Opção B:</strong> Clique em "Carregar Performance" para testar a conexão.
+              </p>
+              <p className="text-muted-foreground/60 text-[11px]">
+                Quando conectar a conta real via Go Live, os pedidos aparecerão automaticamente — nenhuma mudança de código necessária.
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => navigate('/settings')}>
+                <Settings className="w-3.5 h-3.5 mr-1.5" />
+                Configurações
+              </Button>
+              <Button size="sm" onClick={handleSync} disabled={syncing}>
+                {syncing ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5 mr-1.5" />}
+                Carregar Performance
+              </Button>
+            </div>
           </div>
+        ) : (
+          <>
+            <Button onClick={handleSync} disabled={syncing} className="w-full h-12">
+              {syncing ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sincronizando...</>
+              ) : (
+                <><RefreshCw className="w-4 h-4 mr-2" /> {data ? 'Atualizar Dados' : 'Carregar Performance'}</>
+              )}
+            </Button>
+
+            {!data && !syncing && (
+              <div className="text-center py-12 text-muted-foreground text-sm">
+                Clique acima para carregar os dados de performance da sua loja.
+              </div>
+            )}
+          </>
         )}
 
         {data && (
