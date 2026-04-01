@@ -27,6 +27,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const AdminBanners = lazy(() => import("./pages/AdminBanners"));
 const Calculators = lazy(() => import("./pages/Calculators"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
+const ShopeeCallback = lazy(() => import("./pages/ShopeeCallback"));
 
 
 const queryClient = new QueryClient({
