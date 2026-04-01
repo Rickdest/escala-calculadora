@@ -266,18 +266,33 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
           {/* Custo + Venda */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="section-label">Preço de Custo *</label>
+              <label className="section-label flex items-center gap-1.5">
+                {isShopeeProduct ? '✏ ' : ''}Preço de Custo *
+                {isShopeeProduct && <span className="text-[9px] bg-[#EE4D2D]/15 text-[#EE4D2D] rounded px-1.5 py-0.5">editável</span>}
+              </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-2">R$</span>
-                <Input type="number" inputMode="decimal" step="0.01" min="0" value={costPrice} onChange={(e) => setCostPrice(e.target.value)} placeholder="0,00" className="pl-12 h-12 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num" required />
+                <Input type="number" inputMode="decimal" step="0.01" min="0" value={costPrice} onChange={(e) => setCostPrice(e.target.value)} placeholder="0,00" className={cn("pl-12 h-12 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num", isShopeeProduct && "border-l-2 border-l-[#EE4D2D]/40 bg-[#EE4D2D]/[0.03]")} required />
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="section-label">Preço de Venda *</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-2">R$</span>
-                <Input type="number" inputMode="decimal" step="0.01" min="0" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} placeholder="0,00" className="pl-12 h-12 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num" required />
-              </div>
+              <label className="section-label flex items-center gap-1.5">
+                Preço de Venda *
+                {isShopeeProduct && <span className="text-[9px] bg-muted/60 text-muted-foreground/60 rounded px-1.5 py-0.5 flex items-center gap-0.5"><Lock className="w-2.5 h-2.5" /> Shopee</span>}
+              </label>
+              {isShopeeProduct ? (
+                <div className="relative h-12 bg-muted/30 border border-border rounded-lg flex items-center px-3 cursor-not-allowed">
+                  <span className="text-sm font-medium text-muted-foreground font-mono font-mono-num">
+                    R$ {(parseFloat(salePrice) || 0).toFixed(2).replace('.', ',')}
+                  </span>
+                  <span className="absolute right-3 text-[10px] text-muted-foreground/50">Editar no Seller Center</span>
+                </div>
+              ) : (
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-2">R$</span>
+                  <Input type="number" inputMode="decimal" step="0.01" min="0" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} placeholder="0,00" className="pl-12 h-12 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num" required />
+                </div>
+              )}
             </div>
           </div>
 
