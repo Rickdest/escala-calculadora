@@ -58,9 +58,16 @@ export default function Products() {
   const [detailProduct, setDetailProduct] = useState<{ product: Product; calc: ProductCalculation } | null>(null);
   const [importModalOpen, setImportModalOpen] = useState(false);
 
+  const draftFilter = searchParams.get('filter');
+
   const products = useMemo(() => {
     if (!currentStore) return [];
     let filtered = currentStore.products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    if (draftFilter === 'draft') {
+      filtered = filtered.filter(p => p.draft === true);
+    } else if (draftFilter === 'sem-custo') {
+      filtered = filtered.filter(p => !p.costPrice || p.costPrice === 0);
+    }
     const withCalc = filtered.map(p => ({ product: p, calc: calculateProduct(p, currentStore.config) }));
     switch (sortBy) {
       case 'margin-high': return withCalc.sort((a, b) => b.calc.realMargin - a.calc.realMargin);
@@ -71,7 +78,7 @@ export default function Products() {
       case 'recent':
       default: return withCalc.sort((a, b) => new Date(b.product.createdAt).getTime() - new Date(a.product.createdAt).getTime());
     }
-  }, [currentStore, searchQuery, sortBy, calculateProduct]);
+  }, [currentStore, searchQuery, sortBy, calculateProduct, draftFilter]);
 
   const { stats, analysisProducts, summary } = useMemo(() => {
     if (!currentStore) return { stats: null, analysisProducts: [], summary: null };
