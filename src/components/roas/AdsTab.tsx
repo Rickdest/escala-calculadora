@@ -269,7 +269,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
              <AdsHeader
                periodLabel={periodLabel}
                onImportCSV={() => fileRef.current?.click()}
-               onShopeeSync={handleShopeeSync}
+               onImportAds={handleImportAds}
                syncing={syncing}
              />
           )}
