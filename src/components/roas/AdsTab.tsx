@@ -39,7 +39,7 @@ function formatPeriodLabel(inicio: string, fim: string) {
   return `${fShort(inicio)} – ${fFull(fim)}`;
 }
 
-function AdsHeader({ periodLabel, onImportCSV, onShopeeSync }: { periodLabel: string; onImportCSV: () => void; onShopeeSync: () => void }) {
+function AdsHeader({ periodLabel, onImportCSV, onShopeeSync, syncing }: { periodLabel: string; onImportCSV: () => void; onShopeeSync: () => void; syncing?: boolean }) {
   const { isConnected, token } = useShopeeToken();
 
   const syncAgo = token?.updated_at
@@ -70,13 +70,14 @@ function AdsHeader({ periodLabel, onImportCSV, onShopeeSync }: { periodLabel: st
           <Upload className="w-3.5 h-3.5" />
           Atualizar CSV
         </button>
-        {FEATURES.SHOPEE_ADS_API_READY && (
+        {FEATURES.SHOPEE_ADS_API_READY && isConnected && (
           <button
             onClick={onShopeeSync}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#EE4D2D]/30 text-[#EE4D2D] hover:bg-[#EE4D2D]/5 text-[12px] font-semibold transition-colors"
+            disabled={syncing}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#EE4D2D]/30 text-[#EE4D2D] hover:bg-[#EE4D2D]/5 text-[12px] font-semibold transition-colors disabled:opacity-50"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
-            Sincronizar
+            <RefreshCw className={cn("w-3.5 h-3.5", syncing && "animate-spin")} />
+            {syncing ? 'Sincronizando...' : 'Sincronizar'}
           </button>
         )}
       </div>
