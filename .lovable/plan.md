@@ -1,30 +1,59 @@
 
+Plano: trocar o OAuth da Shopee para um callback no domínio público da app
 
-## Plano: Corrigir domínio de redirect da Shopee
+Problema confirmado
+- Hoje o frontend monta o `redirect` da Shopee com `VITE_SUPABASE_URL/functions/v1/shopee-callback` em `src/hooks/useShopeeToken.ts`.
+- A Shopee valida esse domínio antes de autorizar. O erro acontece antes mesmo do callback rodar.
+- O `APP_URL` atual só é usado depois, no redirecionamento final do backend, então ele não resolve a rejeição inicial.
 
-### Problema
+O que vou implementar
+1. Parar de usar o domínio do backend como `redirect`
+- Em `supabase/functions/shopee-auth/index.ts`, o backend passa a montar o redirect sozinho a partir de `APP_URL`.
+- O redirect enviado para a Shopee passa a ser algo como:
+  `https://app.richardaragao.com.br/shopee-callback`
+- O frontend deixa de enviar `redirect_url` manual.
 
-A Shopee rejeita o OAuth porque o domínio da URL de redirect (`ymliqayraprjwdcesvqc.supabase.co`) não está cadastrado no console da Shopee como "Redirect URL Domain".
+2. Criar uma rota pública de callback na app
+- Adicionar uma página/rota React como `/shopee-callback`.
+- Essa tela só mostra “finalizando conexão...” e repassa os query params para a edge function já existente:
+  `.../functions/v1/shopee-callback?code=...&shop_id=...&state=...`
+- Essa rota fica fora do `ProtectedRoute`, para não ser bloqueada por auth/subscription no retorno da Shopee.
 
-### Solução
+3. Manter o processamento seguro no backend
+- Reaproveitar `supabase/functions/shopee-callback/index.ts` para:
+  - validar `state`
+  - localizar `user_id`
+  - trocar o código por token
+  - salvar em `shopee_tokens`
+  - redirecionar para `APP_URL/roas?shopee_connected=true` ou `shopee_error=...`
 
-Você precisa cadastrar o domínio correto no **Console de Parceiro da Shopee**:
+4. Ajustar quem inicia o OAuth
+- Em `src/hooks/useShopeeToken.ts`, `startOAuth()` passa a chamar `shopee-auth` sem montar callback com `VITE_SUPABASE_URL`.
+- Assim o fluxo usa sempre o domínio oficial, em vez de depender de preview ou da URL do backend.
 
-1. Acesse o painel de desenvolvedor da Shopee (https://open.shopee.com)
-2. Vá em **App Management** → sua app → **App Settings**
-3. No campo **Redirect URL** (ou "Redirect URL Domain"), adicione:
-   ```
-   https://ymliqayraprjwdcesvqc.supabase.co
-   ```
-4. Salve as alterações
+5. Alinhar a configuração da Shopee
+- No console da Shopee, o domínio autorizado deve ser o mesmo de `APP_URL`.
+- Se pedir domínio: `https://app.richardaragao.com.br`
+- Se pedir URL completa: `https://app.richardaragao.com.br/shopee-callback`
+- Depois dessa mudança, não faz mais sentido usar `*.supabase.co` como domínio oficial do OAuth.
 
-### Importante
+Arquivos envolvidos
+- `src/hooks/useShopeeToken.ts`
+- `src/App.tsx`
+- nova página em `src/pages/...`
+- `supabase/functions/shopee-auth/index.ts`
+- `supabase/functions/shopee-callback/index.ts`
 
-- O domínio cadastrado deve ser **exatamente** `https://ymliqayraprjwdcesvqc.supabase.co` (sem barra final, sem path)
-- Se a Shopee pedir a URL completa ao invés do domínio, use: `https://ymliqayraprjwdcesvqc.supabase.co/functions/v1/shopee-callback`
-- Não é necessária nenhuma alteração no código — apenas a configuração no console da Shopee
+Detalhes técnicos
+- A correção principal é arquitetural: a Shopee precisa validar um domínio público estável, então o primeiro callback deve cair na própria app.
+- `APP_URL` vira a fonte única do domínio de OAuth.
+- O `state` atual continua sendo o vínculo seguro entre o retorno da Shopee e o usuário correto.
+- Não preciso mexer no fluxo de gravação do token; só no ponto de entrada do callback.
 
-### Sem alteração de código
-
-O código já está correto. O problema é exclusivamente de configuração no painel da Shopee.
-
+Validação depois da implementação
+- Clicar em “Conectar Loja Shopee”
+- Conferir que a URL de autorização usa o domínio público da app
+- Autorizar a loja
+- Verificar retorno em `/shopee-callback`
+- Confirmar gravação em `shopee_tokens`
+- Confirmar toast de sucesso em `/roas`
