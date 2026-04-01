@@ -65,7 +65,7 @@ Deno.serve(async (req) => {
     // Token exchange
     const path = "/api/v2/auth/token/get";
     const timestamp = Math.floor(Date.now() / 1000);
-    const sign = await generateSign(path, timestamp, undefined, Number(shopId));
+    const sign = await generateSign(path, timestamp);
 
     const tokenUrl = `${SHOPEE_HOST}${path}?partner_id=${PARTNER_ID}&timestamp=${timestamp}&sign=${sign}`;
     const tokenBody = {
