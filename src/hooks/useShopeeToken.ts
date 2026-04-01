@@ -71,12 +71,32 @@ export function useShopeeToken() {
     return res.data;
   };
 
+  const syncAdsOnly = async () => {
+    const { data: session } = await supabase.auth.getSession();
+    const res = await supabase.functions.invoke('shopee-ads', {
+      headers: {
+        Authorization: `Bearer ${session.session?.access_token}`,
+      },
+    });
+    if (res.error) {
+      const msg = res.error?.message || 'Erro ao importar ads';
+      toast.error(msg);
+      throw res.error;
+    }
+    if (res.data?.error) {
+      toast.error(`Erro Shopee: ${res.data.error}`);
+      throw new Error(res.data.error);
+    }
+    return res.data;
+  };
+
   return {
     token,
     isConnected: !!token,
     isLoading,
     startOAuth,
     syncAds,
+    syncAdsOnly,
     refetch,
   };
 }
