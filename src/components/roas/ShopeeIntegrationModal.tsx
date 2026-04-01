@@ -46,16 +46,14 @@ function StatRow({ label, value }: { label: string; value: string | number | und
 }
 
 function ShopInfoReport({ data }: { data: any }) {
-  const r = data?.response;
-  if (!r) return <p className="text-xs text-muted-foreground">Sem dados disponíveis (error: {data?.error || data?.message || 'unknown'})</p>;
+  if (!data?.shop_name) return <p className="text-xs text-muted-foreground">Sem dados disponíveis</p>;
   return (
     <div>
-      <StatRow label="Nome da loja" value={r.shop_name} />
-      <StatRow label="Região" value={r.region} />
-      <StatRow label="Status" value={r.status} />
-      <StatRow label="Descrição" value={r.description ? (r.description.length > 60 ? r.description.substring(0, 60) + '...' : r.description) : '—'} />
-      <StatRow label="Item Limit" value={r.item_limit} />
-      <StatRow label="Loja verificada" value={r.is_sip ? 'Sim' : 'Não'} />
+      <StatRow label="Nome da loja" value={data.shop_name} />
+      <StatRow label="Região" value={data.region} />
+      <StatRow label="Status" value={data.status} />
+      <StatRow label="Fulfillment" value={data.shop_fulfillment_flag} />
+      <StatRow label="Loja verificada" value={data.is_sip ? 'Sim' : 'Não'} />
     </div>
   );
 }
