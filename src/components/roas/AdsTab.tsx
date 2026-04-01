@@ -260,11 +260,12 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
 
           {/* ═══ Header com botão discreto ═══ */}
           {hasData && (
-            <AdsHeader
-              periodLabel={periodLabel}
-              onImportCSV={() => fileRef.current?.click()}
-              onShopeeSync={() => setShowShopeeModal(true)}
-            />
+             <AdsHeader
+               periodLabel={periodLabel}
+               onImportCSV={() => fileRef.current?.click()}
+               onShopeeSync={handleShopeeSync}
+               syncing={syncing}
+             />
           )}
 
           {hasData && (
