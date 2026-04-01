@@ -314,16 +314,7 @@ Deno.serve(async (req) => {
       errors.orders = (e as Error).message;
     }
 
-    // 4. Ads Performance (30 days)
-    try {
-      const adsPerformance = await fetchAdsPerformance(currentAccessToken, shopId);
-      results.ads_performance = adsPerformance;
-      console.log(`[SHOPEE SYNC] Ads: ${adsPerformance.ads_by_product.length} products, ${adsPerformance.raw_entry_count} daily entries`);
-    } catch (e) {
-      errors.ads = (e as Error).message;
-    }
-
-    console.log("[SHOPEE SYNC] === SYNC COMPLETE ===");
+    console.log("[SHOPEE SYNC] === SYNC COMPLETE (no ads — use shopee-ads) ===");
     return jsonResponse({
       success: true,
       shop_id: shopId,
