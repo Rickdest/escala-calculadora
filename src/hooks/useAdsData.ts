@@ -316,10 +316,11 @@ export function useAdsData() {
 
     // Delete existing data for this period, then insert fresh
     if (uniqueRows.length > 0) {
+      const firstRow = uniqueRows[0] as typeof rows[0];
       await supabase.from('ads_data' as any).delete()
         .eq('user_id', user.id)
-        .eq('periodo_inicio', uniqueRows[0].periodo_inicio)
-        .eq('periodo_fim', uniqueRows[0].periodo_fim);
+        .eq('periodo_inicio', firstRow.periodo_inicio)
+        .eq('periodo_fim', firstRow.periodo_fim);
     }
 
     const { error } = await supabase.from('ads_data' as any).insert(uniqueRows);
