@@ -53,8 +53,8 @@ Deno.serve(async (req) => {
       return errorResponse("Failed to create auth state", 500);
     }
 
-    // Append state to redirect_url so callback receives it
-    const callbackWithState = `${redirect_url}?state=${state}`;
+    // Use APP_URL domain so Shopee validates the registered domain
+    const callbackWithState = `${appUrl}/shopee-callback?state=${state}`;
     const authUrl = await getAuthUrl(callbackWithState);
 
     return jsonResponse({ auth_url: authUrl });
