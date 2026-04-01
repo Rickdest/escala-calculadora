@@ -81,9 +81,9 @@ export function useShopeeProducts() {
             .eq('id', existing.id);
         } else {
           // Insert new
-          await supabase
+          await (supabase
             .from('products')
-            .insert({
+            .insert as any)({
               user_id: user.id,
               store_id: currentStore.id,
               name: p.item_name,
