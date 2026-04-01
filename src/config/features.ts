@@ -1,5 +1,5 @@
 export const FEATURES = {
-  SHOPEE_ADS_API_READY: false,
+  SHOPEE_ADS_API_READY: true,
   SHOPEE_AUTO_SYNC_READY: true,
   SHOPEE_PRODUCTS_IMPORT_READY: true,
 };
