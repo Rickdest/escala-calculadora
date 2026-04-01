@@ -129,33 +129,7 @@ function OrderReport({ listData, detailsData }: { listData: any; detailsData?: a
   );
 }
 
-function CampaignsReport({ data }: { data: any }) {
-  if (data?.error) {
-    return <p className="text-xs text-muted-foreground">Erro: {data.error} - {data.message}</p>;
-  }
-  const campaigns = data?.response?.campaign_list || data?.response?.campaigns || [];
-  return (
-    <div>
-      <StatRow label="Campanhas encontradas" value={Array.isArray(campaigns) ? campaigns.length : 0} />
-      {Array.isArray(campaigns) && campaigns.length > 0 && (
-        <div className="mt-2 space-y-1">
-          {campaigns.slice(0, 5).map((c: any, i: number) => (
-            <div key={i} className="p-1.5 rounded bg-surface-2/50 text-[11px]">
-              <p className="font-medium text-foreground">{c.campaign_name || `Campaign #${c.campaign_id}`}</p>
-              <div className="flex gap-2 text-[10px] text-muted-foreground">
-                <span>Status: {c.state || c.status}</span>
-                <span>Tipo: {c.campaign_type}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      {(!Array.isArray(campaigns) || campaigns.length === 0) && (
-        <p className="text-xs text-muted-foreground mt-1">Nenhuma campanha ativa. Dados brutos: {JSON.stringify(data?.response || data).substring(0, 200)}</p>
-      )}
-    </div>
-  );
-}
+
 
 
 export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClose: () => void }) {
