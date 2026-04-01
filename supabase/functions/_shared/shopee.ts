@@ -126,6 +126,36 @@ export async function shopeeGet(
   return res.json();
 }
 
+/**
+ * Make a POST request to a Shopee API endpoint with proper signing.
+ * Used by Ads APIs that require JSON body.
+ */
+export async function shopeePost(
+  path: string,
+  accessToken: string,
+  shopId: string | number,
+  body: Record<string, unknown> = {}
+) {
+  const timestamp = Math.floor(Date.now() / 1000);
+  const sign = await generateSign(path, timestamp, accessToken, Number(shopId));
+
+  const params = new URLSearchParams({
+    partner_id: String(PARTNER_ID),
+    timestamp: String(timestamp),
+    sign,
+    access_token: accessToken,
+    shop_id: String(shopId),
+  });
+
+  const url = `${SHOPEE_HOST}${path}?${params.toString()}`;
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return res.json();
+}
+
 export function errorResponse(message: string, status = 400): Response {
   return new Response(JSON.stringify({ error: message }), {
     status,

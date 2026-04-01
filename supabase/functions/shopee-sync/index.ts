@@ -5,6 +5,7 @@ import {
   corsHeaders,
   generateSign,
   shopeeGet,
+  shopeePost,
   errorResponse,
   jsonResponse,
 } from "../_shared/shopee.ts";
@@ -238,6 +239,112 @@ async function fetchOrdersWithAggregation(
   };
 }
 
+async function fetchAdsPerformance(
+  accessToken: string,
+  shopId: string | number
+) {
+  const now = Math.floor(Date.now() / 1000);
+  const thirtyDaysAgo = now - 30 * 24 * 60 * 60;
+
+  // Convert to YYYY-MM-DD format for Ads API
+  const toDateStr = (ts: number) => {
+    const d = new Date(ts * 1000);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+
+  const startDate = toDateStr(thirtyDaysAgo);
+  const endDate = toDateStr(now);
+
+  console.log(`[SHOPEE SYNC] Fetching Ads performance: ${startDate} to ${endDate}`);
+
+  let dailyPerformance: any = null;
+  let totalBalance: any = null;
+
+  // 1. Get all CPC ads daily performance
+  try {
+    dailyPerformance = await shopeePost(
+      "/api/v2/ads/get_all_cpc_ads_daily_performance",
+      accessToken,
+      shopId,
+      { start_date: startDate, end_date: endDate }
+    );
+    console.log(`[SHOPEE SYNC] Ads daily performance response error: ${dailyPerformance?.error || 'none'}`);
+  } catch (e) {
+    console.error("[SHOPEE SYNC] Ads daily performance error:", e);
+  }
+
+  // 2. Get total balance
+  try {
+    totalBalance = await shopeeGet(
+      "/api/v2/ads/get_total_balance",
+      accessToken,
+      shopId
+    );
+    console.log(`[SHOPEE SYNC] Ads balance response error: ${totalBalance?.error || 'none'}`);
+  } catch (e) {
+    console.error("[SHOPEE SYNC] Ads balance error:", e);
+  }
+
+  // 3. Aggregate daily data by item_id
+  const productAds: Record<string, {
+    item_id: number;
+    item_name: string;
+    impressions: number;
+    clicks: number;
+    expense: number;
+    gmv: number;
+    orders: number;
+    ctr: number;
+    roas: number;
+    days: number;
+  }> = {};
+
+  const entries = dailyPerformance?.response?.entry_list || dailyPerformance?.response?.data || [];
+  console.log(`[SHOPEE SYNC] Ads entries count: ${entries.length}`);
+
+  for (const entry of entries) {
+    const itemId = String(entry.item_id || entry.campaign?.item_id || "");
+    if (!itemId || itemId === "0") continue;
+
+    if (!productAds[itemId]) {
+      productAds[itemId] = {
+        item_id: Number(itemId),
+        item_name: entry.title || entry.item_name || `Item ${itemId}`,
+        impressions: 0,
+        clicks: 0,
+        expense: 0,
+        gmv: 0,
+        orders: 0,
+        ctr: 0,
+        roas: 0,
+        days: 0,
+      };
+    }
+
+    const p = productAds[itemId];
+    p.impressions += Number(entry.impression || entry.impressions || 0);
+    p.clicks += Number(entry.click || entry.clicks || 0);
+    p.expense += Number(entry.expense || entry.cost || 0);
+    p.gmv += Number(entry.broad_order_amount || entry.gmv || 0);
+    p.orders += Number(entry.broad_order_num || entry.orders || 0);
+    p.days++;
+  }
+
+  // Calculate derived metrics
+  for (const p of Object.values(productAds)) {
+    p.ctr = p.impressions > 0 ? (p.clicks / p.impressions) * 100 : 0;
+    p.roas = p.expense > 0 ? p.gmv / p.expense : 0;
+  }
+
+  return {
+    ads_by_product: Object.values(productAds),
+    total_balance: totalBalance?.response?.total_balance ?? null,
+    period_start: startDate,
+    period_end: endDate,
+    raw_entry_count: entries.length,
+  };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -311,6 +418,15 @@ Deno.serve(async (req) => {
       results.order_performance = order_performance;
     } catch (e) {
       errors.orders = (e as Error).message;
+    }
+
+    // 4. Ads Performance (30 days)
+    try {
+      const adsPerformance = await fetchAdsPerformance(currentAccessToken, shopId);
+      results.ads_performance = adsPerformance;
+      console.log(`[SHOPEE SYNC] Ads: ${adsPerformance.ads_by_product.length} products, ${adsPerformance.raw_entry_count} daily entries`);
+    } catch (e) {
+      errors.ads = (e as Error).message;
     }
 
     console.log("[SHOPEE SYNC] === SYNC COMPLETE ===");
