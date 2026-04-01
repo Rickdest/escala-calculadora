@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingBag, Zap, RefreshCw, FileX, Loader2, CheckCircle2, Package, ShoppingCart, BarChart3, Activity, ChevronDown, ChevronUp } from 'lucide-react';
+import { ShoppingBag, Zap, RefreshCw, FileX, Loader2, CheckCircle2, Package, ShoppingCart, BarChart3, ChevronDown, ChevronUp } from 'lucide-react';
 import { useShopeeToken } from '@/hooks/useShopeeToken';
 import { toast } from 'sonner';
 
@@ -19,7 +19,7 @@ interface SyncReport {
   order_list?: any;
   order_details?: any;
   campaigns?: any;
-  performance?: any;
+  
 }
 
 function ReportSection({ title, icon: Icon, children, defaultOpen = false }: { title: string; icon: any; children: React.ReactNode; defaultOpen?: boolean }) {
@@ -82,7 +82,7 @@ function ProductListReport({ listData, detailsData }: { listData: any; detailsDa
               <div className="min-w-0 flex-1">
                 <p className="text-[11px] font-medium text-foreground truncate">{p.item_name}</p>
                 <div className="flex gap-2 text-[10px] text-muted-foreground">
-                  <span>Preço: {p.price_info?.[0]?.current_price ? `R$ ${(p.price_info[0].current_price / 100000).toFixed(2)}` : '—'}</span>
+                  <span>Preço: {(() => { const pi = p.price_info?.[0]; const price = pi?.current_price || pi?.original_price || pi?.inflated_price_of_current_price; return price ? `R$ ${(price > 1000 ? price / 100000 : price).toFixed(2)}` : '—'; })()}</span>
                   <span>Estoque: {p.stock_info_v2?.summary_info?.total_available_stock ?? '—'}</span>
                   <span>Vendas: {p.sale_info?.historical_sold ?? '—'}</span>
                 </div>
@@ -161,21 +161,6 @@ function CampaignsReport({ data }: { data: any }) {
   );
 }
 
-function PerformanceReport({ data }: { data: any }) {
-  if (data?.error) {
-    return <p className="text-xs text-muted-foreground">Erro: {data.error} - {data.message}</p>;
-  }
-  const r = data?.response;
-  if (!r) return <p className="text-xs text-muted-foreground">Sem dados de performance disponíveis.</p>;
-
-  return (
-    <div>
-      <StatRow label="Penalty Points" value={r.penalty_points} />
-      <StatRow label="Overall Performance" value={r.overall_performance} />
-      <p className="text-[10px] text-muted-foreground mt-1 break-all">Dados: {JSON.stringify(r).substring(0, 300)}</p>
-    </div>
-  );
-}
 
 export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { isConnected, startOAuth, syncAds, isLoading: tokenLoading } = useShopeeToken();
@@ -284,11 +269,6 @@ export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClo
                   </ReportSection>
                 )}
 
-                {report.performance && (
-                  <ReportSection title="Performance da Loja" icon={Activity}>
-                    <PerformanceReport data={report.performance} />
-                  </ReportSection>
-                )}
 
                 {syncErrors && Object.keys(syncErrors).length > 0 && (
                   <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-2.5">

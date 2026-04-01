@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
         currentAccessToken,
         shopId
       );
-      console.log("[SHOPEE SYNC] Shop info response:", JSON.stringify(shopInfo).substring(0, 500));
+      console.log("[SHOPEE SYNC] Shop info FULL response:", JSON.stringify(shopInfo));
       results.shop_info = shopInfo;
     } catch (e) {
       console.error("[SHOPEE SYNC] Shop info error:", e);
@@ -134,7 +134,12 @@ Deno.serve(async (req) => {
           shopId,
           { item_id_list: itemIds.join(",") }
         );
-        console.log("[SHOPEE SYNC] Product details response:", JSON.stringify(productDetails).substring(0, 1000));
+        // Log first product FULL structure for debugging
+        const detailItems = productDetails?.response?.item_list || [];
+        if (detailItems.length > 0) {
+          console.log("[SHOPEE SYNC] FIRST PRODUCT FULL STRUCTURE:", JSON.stringify(detailItems[0]));
+        }
+        console.log("[SHOPEE SYNC] Product details count:", detailItems.length);
         results.product_details = productDetails;
       }
     } catch (e) {
@@ -142,7 +147,7 @@ Deno.serve(async (req) => {
       errors.product_list = (e as Error).message;
     }
 
-    // 4. Orders (last 15 days)
+    // 4. Orders (last 15 days) — no order_status param (Shopee doesn't accept "ALL")
     console.log("[SHOPEE SYNC] Fetching orders...");
     try {
       const now = Math.floor(Date.now() / 1000);
@@ -156,10 +161,9 @@ Deno.serve(async (req) => {
           time_from: String(fifteenDaysAgo),
           time_to: String(now),
           page_size: "50",
-          order_status: "ALL",
         }
       );
-      console.log("[SHOPEE SYNC] Order list response:", JSON.stringify(orderList).substring(0, 500));
+      console.log("[SHOPEE SYNC] Order list FULL response:", JSON.stringify(orderList));
       results.order_list = orderList;
 
       // Get order details for first 20
@@ -184,7 +188,7 @@ Deno.serve(async (req) => {
       errors.orders = (e as Error).message;
     }
 
-    // 5. Marketing / Ads campaigns
+    // 5. Marketing / Ads — try multiple endpoints
     console.log("[SHOPEE SYNC] Fetching ads campaigns...");
     try {
       const campaigns = await shopeeGet(
@@ -192,27 +196,26 @@ Deno.serve(async (req) => {
         currentAccessToken,
         shopId
       );
-      console.log("[SHOPEE SYNC] Campaigns response:", JSON.stringify(campaigns).substring(0, 500));
-      results.campaigns = campaigns;
+      console.log("[SHOPEE SYNC] get_shop_campaigns FULL response:", JSON.stringify(campaigns));
+
+      if (campaigns?.error && campaigns.error !== "") {
+        console.log("[SHOPEE SYNC] get_shop_campaigns failed, trying ads/get_all_campaign...");
+        const altCampaigns = await shopeeGet(
+          "/api/v2/ads/get_all_campaign",
+          currentAccessToken,
+          shopId
+        );
+        console.log("[SHOPEE SYNC] ads/get_all_campaign FULL response:", JSON.stringify(altCampaigns));
+        results.campaigns = altCampaigns;
+      } else {
+        results.campaigns = campaigns;
+      }
     } catch (e) {
       console.error("[SHOPEE SYNC] Campaigns error:", e);
       errors.campaigns = (e as Error).message;
     }
 
-    // 6. Shop performance (if available)
-    console.log("[SHOPEE SYNC] Fetching shop performance...");
-    try {
-      const performance = await shopeeGet(
-        "/api/v2/account_health/shop_performance",
-        currentAccessToken,
-        shopId
-      );
-      console.log("[SHOPEE SYNC] Performance response:", JSON.stringify(performance).substring(0, 500));
-      results.performance = performance;
-    } catch (e) {
-      console.error("[SHOPEE SYNC] Performance error:", e);
-      errors.performance = (e as Error).message;
-    }
+    // Performance endpoint removed — not available for this app
 
     console.log("[SHOPEE SYNC] === SYNC COMPLETE ===");
     console.log(`[SHOPEE SYNC] Endpoints OK: ${Object.keys(results).length}, Errors: ${Object.keys(errors).length}`);
