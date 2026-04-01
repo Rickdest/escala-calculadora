@@ -213,6 +213,16 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="text-base font-bold text-foreground">{product ? 'Editar Produto' : 'Novo Produto'}</h2>
+          {isShopeeProduct && (
+            <span className="text-[11px] text-[#EE4D2D] flex items-center gap-1 ml-2">
+              🛍 Importado da Shopee
+              {(product as any)?.shopeeSyncedAt && (
+                <span className="text-muted-foreground/60">
+                  · sync {new Date((product as any).shopeeSyncedAt).toLocaleDateString('pt-BR')}
+                </span>
+              )}
+            </span>
+          )}
           <button onClick={onClose} className="p-2 hover:bg-surface-2 rounded-lg transition-colors">
             <X className="w-5 h-5 text-text-2" />
           </button>
