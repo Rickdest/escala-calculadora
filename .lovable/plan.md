@@ -1,36 +1,59 @@
 
 
-## Plano: Corrigir edição de taxas de marketplaces na página de produto
+## Plano: Verificação de bugs e melhorias
 
-### Problema
+### Bugs encontrados
 
-Ao clicar para editar um produto (desktop `/products/:id` ou drawer mobile), **não há seção "Outros Canais"** — os campos de TikTok, Shein, Amazon e Mercado Livre simplesmente não existem nessas telas. Eles só aparecem no modal de criação/edição (`ProductForm`).
+**1. Flag `PERFORMANCE_CONNECTED_REAL_ACCOUNT` morta**
+- Declarada em `features.ts` mas não importada em nenhum arquivo (foi removida do Performance.tsx na última edição)
+- **Ação**: Remover da `features.ts`
 
-Além disso, o `handleSave` do ProductDetail salva apenas `name`, `costPrice`, `salePrice`, `packagingCost` — mesmo que houvesse campos de outros canais, os dados não seriam persistidos.
+**2. `mapDbProduct` usa `(p as any).draft` e `(p as any).source`**
+- As colunas `draft` e `source` existem no banco mas o tipo gerado `Tables<'products'>` não foi atualizado automaticamente
+- O `as any` funciona em runtime mas perde type-safety
+- **Ação**: Verificar se o tipo já reflete as colunas; se não, manter o cast (tipos são auto-gerados)
 
-### Solução
+**3. Performance: dados não persistem entre navegações**
+- O state `data` é local (`useState`), perdido ao sair da página
+- Não é um bug crítico, mas o usuário precisa re-sincronizar cada vez que volta
+- **Ação**: Sem mudança por enquanto (é esperado para dados de API)
 
-Em vez de duplicar toda a lógica de "Outros Canais" no ProductDetail e no Drawer, a abordagem é:
+**4. `useShopeeProducts`: import de produtos não atualiza `shopee_item_id` para produtos existentes**
+- No update path (linha 51-58), o `shopee_item_id` (bigint) não é setado, apenas `shopee_product_id` (text)
+- Se o produto foi criado pelo CSV de Ads com `shopee_product_id` mas sem `shopee_item_id`, o match no modal de import pode falhar
+- **Ação**: Adicionar `shopee_item_id: p.item_id` no update path
 
-**Na página ProductDetail (desktop)**: Ao clicar "Editar produto", abrir o `ProductForm` (modal completo que já tem todos os campos, incluindo Outros Canais, Ads, etc.) em vez de usar o formulário inline simplificado.
+**5. `useAdsData.importGeneralCSV`: auto-criação de draft com `cost_price: 0`**
+- Insere `cost_price: 0` em vez de `null`, impedindo que o filtro `cost_price.is.null` capture esses produtos
+- O filtro na Products page usa `or('cost_price.is.null,cost_price.eq.0')`, então funciona, mas semanticamente `null` seria melhor
+- **Ação menor**: Nenhuma mudança necessária, o filtro já cobre ambos os casos
 
-**No ProductDetailDrawer (mobile)**: O botão "Editar" já chama `onEdit(product)` que abre o `ProductForm`. O problema é que a aba "edit" inline do drawer também não tem esses campos. Vamos remover a aba "edit" redundante do drawer e manter apenas o botão que abre o ProductForm completo.
+**6. `ShopeeImportModal`: não fecha modal nem recarrega lista após import**
+- Após importar, `setImporting(false)` roda mas o modal não fecha — o `onClose` é chamado pelo parent em `Products.tsx` (linha 479)
+- ✅ Funciona corretamente — parent fecha o modal
 
-### Alterações
+**7. Sidebar: ícones repetidos**
+- `Calculator` usado para "Início" e "Calculadoras"
+- `TrendingUp` usado para "Ads" e "Performance"
+- **Ação**: Usar ícones distintos (ex: `BarChart2` para Ads no Sidebar, `TrendingUp` para Performance)
 
-**1. `src/pages/ProductDetail.tsx`**
-- Adicionar estado `showProductForm` e importar `ProductForm`
-- Substituir o formulário inline (campos nome/custo/venda/embalagem + botão salvar) por um botão "Editar Produto" que abre o `ProductForm` modal
-- Manter toda a área de visualização (métricas, breakdown, ROAS, canais, projeção) como está
-- Quando o `ProductForm` salva, atualizar o produto e fechar o modal
+### Resumo de ações
 
-**2. `src/components/ProductDetailDrawer.tsx`**
-- Remover a aba "edit" inline (que só tem 4 campos)
-- Manter botão "Editar" no header que chama `onEdit(product)` → abre ProductForm
-- A aba fica só "info" (visualização)
+| # | Arquivo | Ação | Prioridade |
+|---|---------|------|------------|
+| 1 | `features.ts` | Remover `PERFORMANCE_CONNECTED_REAL_ACCOUNT` | Baixa |
+| 2 | `useShopeeProducts.ts` | Adicionar `shopee_item_id` no update | Média |
+| 3 | `Sidebar.tsx` | Ícones distintos para Ads e Performance | Baixa |
+| 4 | Nenhum bug crítico bloqueante encontrado | — | — |
 
-### Resultado
-- O usuário consegue editar TODOS os campos (incluindo TikTok, Shein, Amazon, ML) de qualquer ponto do app
-- Código DRY: um único formulário de edição (`ProductForm`) em vez de 3 versões diferentes
-- Dados de `outrosCanais` são corretamente persistidos via o `handleSubmit` do ProductForm que já inclui `outrosCanais` no save
+### Verificações sem problemas
+- ✅ Rotas no `App.tsx` corretas (Performance registrada)
+- ✅ `BottomNavigation` tem Performance
+- ✅ ProductForm detecta `isShopeeProduct` corretamente
+- ✅ ProductDetail abre ProductForm modal (não inline)
+- ✅ ProductDetailDrawer usa `onEdit` → ProductForm
+- ✅ Ads import com auto-criação de drafts funciona
+- ✅ Filtro `?filter=draft` em Products funciona
+- ✅ ShopeeImportModal com seleção granular funciona
+- ✅ Campos 🔒 para produtos Shopee no ProductForm
 
