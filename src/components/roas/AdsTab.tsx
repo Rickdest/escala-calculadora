@@ -88,7 +88,8 @@ function AdsHeader({ periodLabel, onImportCSV, onShopeeSync, syncing }: { period
 /* ═══ Main AdsTab ═══ */
 export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => void }) {
   const { currentStore } = useStore();
-  const { data, loading, operating, importGeneralCSV, importProductCSV, linkProduct, unlinkProduct, reload, deleteAdsData, deleteAll } = useAdsData();
+  const { data, loading, operating, importGeneralCSV, importProductCSV, importFromApi, linkProduct, unlinkProduct, reload, deleteAdsData, deleteAll } = useAdsData();
+  const { isConnected, syncAds } = useShopeeToken();
   const [selectedDetail, setSelectedDetailRaw] = useState<EnrichedAdsData | null>(null);
   const setSelectedDetail = (ad: EnrichedAdsData | null) => {
     setSelectedDetailRaw(ad);
@@ -103,7 +104,27 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const positionFileRef = useRef<HTMLInputElement>(null);
   const [positionJustImported, setPositionJustImported] = useState(false);
   const [showShopeeModal, setShowShopeeModal] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
+  const handleShopeeSync = async () => {
+    if (!isConnected) {
+      setShowShopeeModal(true);
+      return;
+    }
+    setSyncing(true);
+    try {
+      const result = await syncAds();
+      if (result?.results?.ads_performance) {
+        await importFromApi(result.results.ads_performance);
+      } else {
+        toast.info('Sincronização concluída, mas sem dados de Ads disponíveis.');
+      }
+    } catch {
+      // Error already shown by syncAds
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const products = currentStore?.products || [];
 
