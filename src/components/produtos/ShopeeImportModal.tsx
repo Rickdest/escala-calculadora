@@ -144,8 +144,7 @@ export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportMod
     }
   };
 
-  const formatPrice = (v: number) =>
-    `R$ ${v.toFixed(2).replace('.', ',')}`;
+  const formatPrice = (v: number) => `R$ ${v.toFixed(2).replace('.', ',')}`;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -240,7 +239,7 @@ export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportMod
                             {product.item_name}
                           </p>
                           {!product.already_imported && (
-                            <span className="text-[10px] bg-emerald-500/15 text-emerald-600 rounded px-1.5 py-0.5 flex-shrink-0">
+                            <span className="text-[10px] bg-accent text-accent-foreground rounded px-1.5 py-0.5 flex-shrink-0">
                               novo
                             </span>
                           )}
