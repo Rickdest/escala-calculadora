@@ -174,6 +174,10 @@ export interface Product {
   variations: ProductVariation[];
   shopeeAcelera: ShopeeAceleraOption;
   outrosCanais?: OutrosCanais;
+  shopeeItemId?: number;
+  shopeeProductId?: string;
+  draft?: boolean;
+  source?: string;
   createdAt: Date;
   updatedAt: Date;
 }
