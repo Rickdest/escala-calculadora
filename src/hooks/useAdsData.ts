@@ -544,9 +544,142 @@ export function useAdsData() {
     toast.info('Todos os dados de Ads removidos');
   }, [user]);
 
+  const importFromApi = useCallback(async (adsPerformance: any) => {
+    if (!user || !currentStore) return;
+    if (!acquireLock()) { toast.error('Operação em andamento...'); return; }
+    try {
+      const adsByProduct = adsPerformance?.ads_by_product || [];
+      if (adsByProduct.length === 0) {
+        toast.info('Nenhum dado de Ads retornado pela API.');
+        return;
+      }
+
+      const periodStart = adsPerformance.period_start;
+      const periodEnd = adsPerformance.period_end;
+
+      let linkedCount = 0;
+      let autoCreatedCount = 0;
+
+      const rows = [];
+      for (const ad of adsByProduct) {
+        const itemId = String(ad.item_id);
+        
+        // Match by shopee_item_id
+        let matched = products.find(p => String(p.shopeeItemId) === itemId);
+        
+        // Also try shopee_product_id
+        if (!matched) {
+          matched = products.find(p => (p as any).shopeeProductId === itemId);
+        }
+
+        // Auto-create draft if no match
+        if (!matched && currentStore) {
+          try {
+            const { data: newProd } = await supabase.from('products').insert({
+              store_id: currentStore.id,
+              user_id: user.id,
+              name: ad.item_name || `Produto ${itemId}`,
+              cost_price: 0,
+              sale_price: ad.orders > 0 ? Math.round((ad.gmv / ad.orders) * 100) / 100 : 0,
+              shopee_item_id: ad.item_id,
+              shopee_product_id: itemId,
+              draft: true,
+              source: 'ads_api',
+            } as any).select('id').single();
+            
+            if (newProd) {
+              matched = { id: newProd.id, name: ad.item_name, storeId: currentStore.id } as Product;
+              autoCreatedCount++;
+            }
+          } catch { /* ignore */ }
+        }
+
+        if (matched) linkedCount++;
+
+        let roasEmpate: number | null = null;
+        let margemContribuicao: number | null = null;
+        let classificacao: string | null = null;
+
+        if (matched && config) {
+          const realProduct = products.find(p => p.id === matched!.id) || matched;
+          const emp = calcularRoasEmpate(realProduct, config);
+          if (emp.roasEmpate !== Infinity && emp.roasEmpate > 0) {
+            roasEmpate = emp.roasEmpate;
+            margemContribuicao = emp.margemContribuicao;
+            const cls = classificarAnuncio(ad.roas, emp.roasEmpate);
+            classificacao = cls.classificacao;
+          }
+        }
+
+        rows.push({
+          user_id: user.id,
+          product_id: matched?.id || null,
+          nome_produto_csv: ad.item_name || `Produto ${itemId}`,
+          shopee_product_id: itemId,
+          impressoes: ad.impressions,
+          cliques: ad.clicks,
+          ctr: ad.ctr,
+          conversoes: ad.orders,
+          taxa_conversao: ad.clicks > 0 ? (ad.orders / ad.clicks) * 100 : 0,
+          itens_vendidos: ad.orders,
+          gmv: ad.gmv,
+          despesas: ad.expense,
+          roas: ad.roas,
+          acos: ad.gmv > 0 ? (ad.expense / ad.gmv) * 100 : 0,
+          roas_direto: ad.roas,
+          acos_direto: ad.gmv > 0 ? (ad.expense / ad.gmv) * 100 : 0,
+          gmv_direto: ad.gmv,
+          custo_por_conversao: ad.orders > 0 ? ad.expense / ad.orders : 0,
+          itens_vendidos_diretos: ad.orders,
+          conversoes_diretas: ad.orders,
+          metodo_lance: 'CPC',
+          status_anuncio: 'active',
+          posicao_importada: false,
+          roas_empate: roasEmpate,
+          margem_contribuicao: margemContribuicao,
+          classificacao,
+          periodo_inicio: periodStart,
+          periodo_fim: periodEnd,
+        });
+      }
+
+      // Delete existing data for this API period, then insert
+      if (rows.length > 0) {
+        await supabase.from('ads_data' as any).delete()
+          .eq('user_id', user.id)
+          .eq('periodo_inicio', periodStart)
+          .eq('periodo_fim', periodEnd);
+      }
+
+      const { error } = await supabase.from('ads_data' as any).insert(rows);
+
+      if (error) {
+        toast.error('Erro ao salvar dados de Ads da API');
+        console.error(error);
+      } else {
+        toast.success(`${rows.length} anúncios sincronizados via API · ${linkedCount} vinculados`);
+        
+        if (autoCreatedCount > 0) {
+          toast.info(
+            `${autoCreatedCount} produto${autoCreatedCount > 1 ? 's' : ''} novo${autoCreatedCount > 1 ? 's' : ''} criado${autoCreatedCount > 1 ? 's' : ''} automaticamente. Preencha o custo.`,
+            {
+              action: {
+                label: 'Ver produtos →',
+                onClick: () => window.location.href = '/products?filter=draft',
+              },
+              duration: 8000,
+            }
+          );
+        }
+        
+        await fetchData();
+      }
+    } finally { releaseLock(); }
+  }, [user, currentStore, products, config, fetchData, acquireLock, releaseLock]);
+
   return {
     data, loading, operating, reload: fetchData,
-    importGeneralCSV, importProductCSV,
+    importGeneralCSV, importProductCSV, importFromApi,
     linkProduct, unlinkProduct,
     deleteAdsData, deleteAll,
   };
