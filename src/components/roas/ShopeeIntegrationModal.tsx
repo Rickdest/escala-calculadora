@@ -102,7 +102,7 @@ function OrderReport({ listData, detailsData }: { listData: any; detailsData?: a
   const details = detailsData?.response?.order_list || [];
   const more = listData?.response?.more;
 
-  if (listData?.error) {
+  if (listData?.error && listData.error !== "") {
     return <p className="text-xs text-muted-foreground">Erro: {listData.error} - {listData.message}</p>;
   }
 
