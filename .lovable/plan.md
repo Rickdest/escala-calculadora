@@ -1,99 +1,36 @@
 
 
-## Plano: Reestruturar Integração Shopee em 3 abas + Nova página Performance
+## Plano: Corrigir edição de taxas de marketplaces na página de produto
 
-### Visão Geral
+### Problema
 
-Reorganizar a integração Shopee seguindo o mockup fornecido:
-1. **Aba Ads** — ajustar estados (vazio e com dados) com botão API desabilitado + chip de status
-2. **Página Produtos** — importação Shopee, campos com 🔒, chip "sem custo"  
-3. **Página Settings** — card de integração Shopee + seção Ads
-4. **Nova página Performance** — dados de pedidos/vendas por produto (90 dias), acessível como guia no nav
-5. **Feature flags** — arquivo centralizado de controle
+Ao clicar para editar um produto (desktop `/products/:id` ou drawer mobile), **não há seção "Outros Canais"** — os campos de TikTok, Shein, Amazon e Mercado Livre simplesmente não existem nessas telas. Eles só aparecem no modal de criação/edição (`ProductForm`).
 
-### Alterações por arquivo
+Além disso, o `handleSave` do ProductDetail salva apenas `name`, `costPrice`, `salePrice`, `packagingCost` — mesmo que houvesse campos de outros canais, os dados não seriam persistidos.
 
-**1. `src/config/features.ts`** (novo)
-- Flags: `SHOPEE_ADS_API_READY: false`, `SHOPEE_AUTO_SYNC_READY: true`, `SHOPEE_PRODUCTS_IMPORT_READY: true`
+### Solução
 
-**2. Migração SQL** — adicionar colunas em `products`
-```sql
-ALTER TABLE products 
-  ADD COLUMN IF NOT EXISTS shopee_item_id bigint,
-  ADD COLUMN IF NOT EXISTS shopee_synced_at timestamptz;
-CREATE UNIQUE INDEX IF NOT EXISTS products_shopee_item_id_idx 
-  ON products(shopee_item_id) WHERE shopee_item_id IS NOT NULL;
-```
-- A tabela já tem `image_url`, `stock_quantity`, `sale_price`, `cost_price` — não precisa adicionar
+Em vez de duplicar toda a lógica de "Outros Canais" no ProductDetail e no Drawer, a abordagem é:
 
-**3. `src/components/roas/AdsEmptyState.tsx`** — modificar
-- Botão "Sincronizar via Shopee API" fica `disabled` com badge "em breve"
-- Texto explicativo abaixo sobre CSV ser o fluxo garantido
+**Na página ProductDetail (desktop)**: Ao clicar "Editar produto", abrir o `ProductForm` (modal completo que já tem todos os campos, incluindo Outros Canais, Ads, etc.) em vez de usar o formulário inline simplificado.
 
-**4. `src/components/roas/AdsTab.tsx`** — modificar header
-- Quando `hasData`: mostrar chip de status "Shopee conectada · sync há Xh" (se conectada)
-- Botão "Atualizar CSV" sempre visível
-- Botão "Sincronizar" só aparece quando `FEATURES.SHOPEE_ADS_API_READY === true` (hoje escondido)
-- Remover botão "Integrar" atual
+**No ProductDetailDrawer (mobile)**: O botão "Editar" já chama `onEdit(product)` que abre o `ProductForm`. O problema é que a aba "edit" inline do drawer também não tem esses campos. Vamos remover a aba "edit" redundante do drawer e manter apenas o botão que abre o ProductForm completo.
 
-**5. `src/pages/Settings.tsx`** — adicionar seção
-- Card "Integração Shopee": status de conexão, nome da loja, expiração do token, botões reconectar/desconectar
-- Toggle de sync automático (visual, controlado por flag)
-- Nota somente leitura
-- Seção separada "Shopee Ads" explicando CSV como fluxo atual
+### Alterações
 
-**6. `src/pages/Products.tsx`** — modificar
-- Header: botão "Importar da Shopee" (chama sync de produtos)
-- Chip "⚠ X sem custo" quando há produtos sem `cost_price`
-- Cards de produtos importados da Shopee: campos preço/estoque com badge 🔒 e tooltip
-- Campo custo editável com borda colorida (laranja = tem, vermelho = sem)
-- Nota rodapé somente leitura
+**1. `src/pages/ProductDetail.tsx`**
+- Adicionar estado `showProductForm` e importar `ProductForm`
+- Substituir o formulário inline (campos nome/custo/venda/embalagem + botão salvar) por um botão "Editar Produto" que abre o `ProductForm` modal
+- Manter toda a área de visualização (métricas, breakdown, ROAS, canais, projeção) como está
+- Quando o `ProductForm` salva, atualizar o produto e fechar o modal
 
-**7. `src/hooks/useShopeeProducts.ts`** (novo)
-- Função `importarProdutosDaShopee()`: chama `shopee-sync`, faz upsert nos `products` via Supabase
-- Upsert por `shopee_item_id`, SEM sobrescrever `cost_price`
-- Retorna contagem de importados e sem custo
+**2. `src/components/ProductDetailDrawer.tsx`**
+- Remover a aba "edit" inline (que só tem 4 campos)
+- Manter botão "Editar" no header que chama `onEdit(product)` → abre ProductForm
+- A aba fica só "info" (visualização)
 
-**8. Nova página `src/pages/Performance.tsx`**
-- Dados de performance de vendas (90 dias) via Shopee sync
-- Resumo: total pedidos, faturamento, ticket médio
-- Ranking de produtos por vendas
-- Variações mais vendidas
-- Pedidos por status
-- Reutiliza lógica do `PerformanceReport` já existente no modal
-
-**9. `src/App.tsx`** — adicionar rota `/performance`
-
-**10. `src/components/layout/BottomNavigation.tsx`** — adicionar item "Performance" (ícone TrendingUp)
-
-**11. `src/components/layout/Sidebar.tsx`** — adicionar item "Performance"
-
-### Regras de negócio
-
-- O app NUNCA escreve na Shopee (somente leitura)
-- `cost_price` é o único campo editável pelo usuário nos produtos importados
-- Upsert de sync exclui `cost_price` da query para preservar valor do usuário
-- Feature flags controlam visibilidade dos botões de API
-
-### Detalhes técnicos
-
-| Item | Tipo | Complexidade |
-|------|------|-------------|
-| Feature flags | Novo arquivo | Baixa |
-| Migração SQL | 2 colunas + index | Baixa |
-| AdsEmptyState | Edição | Baixa |
-| AdsTab header | Edição | Média |
-| Settings Shopee | Edição | Média |
-| Products Shopee | Edição | Alta |
-| useShopeeProducts | Novo hook | Média |
-| Performance page | Nova página | Média |
-| Nav updates | Edição (2 arquivos) | Baixa |
-
-### Ordem de implementação
-1. Feature flags + migração SQL
-2. AdsEmptyState + AdsTab header
-3. Settings (card Shopee)
-4. Performance page + rotas + nav
-5. Products (importação + campos lock)
-6. useShopeeProducts hook
+### Resultado
+- O usuário consegue editar TODOS os campos (incluindo TikTok, Shein, Amazon, ML) de qualquer ponto do app
+- Código DRY: um único formulário de edição (`ProductForm`) em vez de 3 versões diferentes
+- Dados de `outrosCanais` são corretamente persistidos via o `handleSubmit` do ProductForm que já inclui `outrosCanais` no save
 
