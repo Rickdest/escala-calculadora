@@ -18,10 +18,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 const navItems = [
-  { icon: Calculator, label: 'Início', path: '/' },
+  { icon: Home, label: 'Início', path: '/' },
   { icon: ShoppingBag, label: 'Produtos', path: '/products' },
   { icon: Calculator, label: 'Calculadoras', path: '/calculadoras' },
-  { icon: TrendingUp, label: 'Ads', path: '/roas' },
+  { icon: BarChart2, label: 'Ads', path: '/roas' },
   { icon: TrendingUp, label: 'Performance', path: '/performance' },
   { icon: Boxes, label: 'Estoque', path: '/stock' },
   { icon: Store, label: 'Lojas', path: '/stores' },
