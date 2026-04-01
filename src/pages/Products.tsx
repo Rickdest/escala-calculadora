@@ -285,6 +285,14 @@ export default function Products() {
                 )}
               </div>
             )}
+
+            {/* Readonly note for Shopee products */}
+            {shopeeConnected && products.length > 0 && (
+              <div className="rounded-lg bg-muted/30 border border-border p-3 text-xs text-muted-foreground mt-2">
+                🔒 Preço de venda e estoque são sincronizados da Shopee (somente leitura).
+                Para editar, acesse o Shopee Seller Center. Apenas o custo do produto é gerenciado aqui.
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="analysis" className="space-y-4 mt-3">
