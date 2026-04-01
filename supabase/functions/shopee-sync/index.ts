@@ -5,6 +5,7 @@ import {
   corsHeaders,
   generateSign,
   shopeeGet,
+  shopeePost,
   errorResponse,
   jsonResponse,
 } from "../_shared/shopee.ts";
