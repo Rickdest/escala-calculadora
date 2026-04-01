@@ -284,11 +284,6 @@ export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClo
                   </ReportSection>
                 )}
 
-                {report.performance && (
-                  <ReportSection title="Performance da Loja" icon={Activity}>
-                    <PerformanceReport data={report.performance} />
-                  </ReportSection>
-                )}
 
                 {syncErrors && Object.keys(syncErrors).length > 0 && (
                   <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-2.5">
