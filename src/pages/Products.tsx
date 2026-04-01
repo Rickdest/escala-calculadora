@@ -46,6 +46,7 @@ export default function Products() {
   const { currentStore, addProduct, updateProduct, deleteProduct, duplicateProduct, calculateProduct, getStoreStats, isLoading, loadError, retryLoad } = useStore();
   const { metricsMap, reload: reloadAds } = useProductAdsMetrics();
   const navigate = useNavigate();
+  const { importProducts, importing, isConnected: shopeeConnected } = useShopeeProducts();
   
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
