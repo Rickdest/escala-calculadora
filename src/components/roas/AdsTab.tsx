@@ -1,7 +1,11 @@
 import { useState, useMemo, useRef } from 'react';
 import { useStore } from '@/contexts/StoreContext';
 import { useAdsData, EnrichedAdsData } from '@/hooks/useAdsData';
-import { Upload, Trash2, MapPin, Calendar, ShoppingBag } from 'lucide-react';
+import { useShopeeToken } from '@/hooks/useShopeeToken';
+import { FEATURES } from '@/config/features';
+import { Upload, Trash2, MapPin, Calendar, ShoppingBag, CheckCircle2, RefreshCw } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { parseShopeeAdsCSV, validateCSVSecurity } from '@/lib/shopeeAdsParser';
 import { AdsDetailFullView } from './AdsDetailFullView';
 import { AdsLinkModal } from './AdsLinkModal';
