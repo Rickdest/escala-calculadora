@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Trash2, Share2, Save, Package, Camera } from 'lucide-react';
+import { ArrowLeft, Trash2, Share2, Package, Pencil } from 'lucide-react';
 import { useStore } from '@/contexts/StoreContext';
 import { Product, StoreConfig, getShopeeFeeForPrice } from '@/types/store';
 import { calculateProduct as calculateProductFn } from '@/lib/calculateProduct';
@@ -9,6 +9,7 @@ import { calcOutrosCanais, getBestChannel } from '@/lib/outrosCanaisUtils';
 import { cn, getMarginStatus } from '@/lib/utils';
 import { Slider } from '@/components/ui/slider';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { ProductForm } from '@/components/forms/ProductForm';
 import { toast } from 'sonner';
 
 const fmt = (v: number) =>
