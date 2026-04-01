@@ -37,6 +37,10 @@ export function mapDbProduct(p: Tables<'products'>): Product {
     variations,
     shopeeAcelera: (p.shopee_acelera as ShopeeAceleraOption) ?? 'none',
     outrosCanais: (p.outros_canais as unknown as Product['outrosCanais']) ?? undefined,
+    shopeeItemId: p.shopee_item_id ? Number(p.shopee_item_id) : undefined,
+    shopeeProductId: p.shopee_product_id || undefined,
+    draft: (p as any).draft ?? false,
+    source: (p as any).source || 'manual',
     createdAt: new Date(p.created_at),
     updatedAt: new Date(p.updated_at),
   };

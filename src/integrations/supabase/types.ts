@@ -555,6 +555,7 @@ export type Database = {
           cost_price: number
           created_at: string
           description: string | null
+          draft: boolean | null
           has_variations: boolean | null
           id: string
           image_url: string | null
@@ -567,6 +568,7 @@ export type Database = {
           shopee_item_id: number | null
           shopee_product_id: string | null
           shopee_synced_at: string | null
+          source: string | null
           stock_quantity: number | null
           store_id: string
           updated_at: string
@@ -581,6 +583,7 @@ export type Database = {
           cost_price: number
           created_at?: string
           description?: string | null
+          draft?: boolean | null
           has_variations?: boolean | null
           id?: string
           image_url?: string | null
@@ -593,6 +596,7 @@ export type Database = {
           shopee_item_id?: number | null
           shopee_product_id?: string | null
           shopee_synced_at?: string | null
+          source?: string | null
           stock_quantity?: number | null
           store_id: string
           updated_at?: string
@@ -607,6 +611,7 @@ export type Database = {
           cost_price?: number
           created_at?: string
           description?: string | null
+          draft?: boolean | null
           has_variations?: boolean | null
           id?: string
           image_url?: string | null
@@ -619,6 +624,7 @@ export type Database = {
           shopee_item_id?: number | null
           shopee_product_id?: string | null
           shopee_synced_at?: string | null
+          source?: string | null
           stock_quantity?: number | null
           store_id?: string
           updated_at?: string

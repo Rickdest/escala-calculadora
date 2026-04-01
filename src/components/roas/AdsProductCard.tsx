@@ -94,6 +94,19 @@ export function AdsProductCard({
           </div>
         </div>
 
+        {/* Draft product warning */}
+        {isLinked && ad.product?.draft && (
+          <div className="flex items-center gap-1.5 text-[11px] text-warning bg-warning/10 border border-warning/20 rounded px-2 py-1">
+            ⚠ Produto sem custo · 
+            <button 
+              onClick={(e) => { e.stopPropagation(); window.location.href = `/products/${ad.product_id}`; }}
+              className="underline underline-offset-2 hover:text-warning/80"
+            >
+              preencher →
+            </button>
+          </div>
+        )}
+
         {/* ── PRIMARY METRICS: ROAS + GMV + Gasto ── */}
         <div className="grid grid-cols-3 gap-3">
           <div className="text-center">
