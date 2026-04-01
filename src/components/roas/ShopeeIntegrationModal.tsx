@@ -161,21 +161,6 @@ function CampaignsReport({ data }: { data: any }) {
   );
 }
 
-function PerformanceReport({ data }: { data: any }) {
-  if (data?.error) {
-    return <p className="text-xs text-muted-foreground">Erro: {data.error} - {data.message}</p>;
-  }
-  const r = data?.response;
-  if (!r) return <p className="text-xs text-muted-foreground">Sem dados de performance disponíveis.</p>;
-
-  return (
-    <div>
-      <StatRow label="Penalty Points" value={r.penalty_points} />
-      <StatRow label="Overall Performance" value={r.overall_performance} />
-      <p className="text-[10px] text-muted-foreground mt-1 break-all">Dados: {JSON.stringify(r).substring(0, 300)}</p>
-    </div>
-  );
-}
 
 export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { isConnected, startOAuth, syncAds, isLoading: tokenLoading } = useShopeeToken();
