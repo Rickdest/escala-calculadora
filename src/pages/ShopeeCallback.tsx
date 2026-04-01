@@ -6,9 +6,13 @@ export default function ShopeeCallback() {
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
+    console.log('[ShopeeCallback] Full URL:', window.location.href);
     const code = searchParams.get('code');
     const shopId = searchParams.get('shop_id');
     const state = searchParams.get('state');
+    console.log('[ShopeeCallback] code:', code);
+    console.log('[ShopeeCallback] shop_id:', shopId);
+    console.log('[ShopeeCallback] state:', state);
 
     // Forward params to the edge function for secure token exchange
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
