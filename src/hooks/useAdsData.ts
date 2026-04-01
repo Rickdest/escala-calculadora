@@ -412,7 +412,7 @@ export function useAdsData() {
         } : {}),
       }).eq('id', targetAdsDataId).eq('user_id', user.id);
     } else {
-      const matched = findMatch(m.shopeeProductName, products);
+      const matched = findMatch(m.shopeeProductName, products, m.shopeeProductId);
       const derived = calcDerived(matched?.id || null);
 
       // Fetch existing records for this user to find overlapping periods
