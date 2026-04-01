@@ -239,6 +239,61 @@ async function fetchOrdersWithAggregation(
   };
 }
 
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+const toDateStr = (ts: number) => {
+  const d = new Date(ts * 1000);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+async function fetchAdsChunkWithRetry(
+  accessToken: string,
+  shopId: string | number,
+  startDate: string,
+  endDate: string,
+  maxRetries = 3
+): Promise<{ data: any; rateLimited: boolean }> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const result = await shopeePost(
+        "/api/v2/ads/get_all_cpc_ads_daily_performance",
+        accessToken,
+        shopId,
+        { start_date: startDate, end_date: endDate }
+      );
+      const err = result?.error || result?.msg || "";
+      if (
+        typeof err === "string" &&
+        err.toLowerCase().includes("rate_limit")
+      ) {
+        const delayMs = Math.pow(2, attempt) * 1000; // 2s, 4s, 8s
+        console.log(
+          `[SHOPEE SYNC] Ads rate limited (attempt ${attempt}/${maxRetries}), waiting ${delayMs}ms...`
+        );
+        if (attempt < maxRetries) {
+          await sleep(delayMs);
+          continue;
+        }
+        return { data: result, rateLimited: true };
+      }
+      return { data: result, rateLimited: false };
+    } catch (e) {
+      console.error(
+        `[SHOPEE SYNC] Ads chunk ${startDate}-${endDate} attempt ${attempt} error:`,
+        e
+      );
+      if (attempt < maxRetries) {
+        await sleep(Math.pow(2, attempt) * 1000);
+        continue;
+      }
+      return { data: null, rateLimited: false };
+    }
+  }
+  return { data: null, rateLimited: false };
+}
+
 async function fetchAdsPerformance(
   accessToken: string,
   shopId: string | number
@@ -246,63 +301,82 @@ async function fetchAdsPerformance(
   const now = Math.floor(Date.now() / 1000);
   const thirtyDaysAgo = now - 30 * 24 * 60 * 60;
 
-  // Convert to YYYY-MM-DD format for Ads API
-  const toDateStr = (ts: number) => {
-    const d = new Date(ts * 1000);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-  };
-
-  const startDate = toDateStr(thirtyDaysAgo);
-  const endDate = toDateStr(now);
-
-  console.log(`[SHOPEE SYNC] Fetching Ads performance: ${startDate} to ${endDate}`);
-
-  let dailyPerformance: any = null;
-  let totalBalance: any = null;
-
-  // 1. Get all CPC ads daily performance
-  try {
-    dailyPerformance = await shopeePost(
-      "/api/v2/ads/get_all_cpc_ads_daily_performance",
-      accessToken,
-      shopId,
-      { start_date: startDate, end_date: endDate }
-    );
-    console.log(`[SHOPEE SYNC] Ads daily performance response error: ${dailyPerformance?.error || 'none'}`);
-  } catch (e) {
-    console.error("[SHOPEE SYNC] Ads daily performance error:", e);
+  // Build 7-day chunks
+  const chunks: { start: string; end: string }[] = [];
+  let cursor = thirtyDaysAgo;
+  while (cursor < now) {
+    const chunkEnd = Math.min(cursor + 7 * 24 * 60 * 60, now);
+    chunks.push({ start: toDateStr(cursor), end: toDateStr(chunkEnd) });
+    cursor = chunkEnd;
   }
 
-  // 2. Get total balance
+  console.log(
+    `[SHOPEE SYNC] Fetching Ads in ${chunks.length} chunks (7-day windows)`
+  );
+
+  let allEntries: any[] = [];
+  let wasRateLimited = false;
+
+  for (const chunk of chunks) {
+    console.log(`[SHOPEE SYNC] Ads chunk: ${chunk.start} → ${chunk.end}`);
+    const { data, rateLimited } = await fetchAdsChunkWithRetry(
+      accessToken,
+      shopId,
+      chunk.start,
+      chunk.end
+    );
+    if (rateLimited) {
+      wasRateLimited = true;
+      console.log(
+        `[SHOPEE SYNC] Chunk ${chunk.start}-${chunk.end} rate-limited after retries`
+      );
+    }
+    if (data) {
+      const entries =
+        data?.response?.entry_list || data?.response?.data || [];
+      allEntries = allEntries.concat(entries);
+    }
+    // Small delay between chunks to avoid rate limiting
+    if (chunks.indexOf(chunk) < chunks.length - 1) {
+      await sleep(500);
+    }
+  }
+
+  // Get total balance (separate endpoint, usually not rate-limited)
+  let totalBalance: any = null;
   try {
     totalBalance = await shopeeGet(
       "/api/v2/ads/get_total_balance",
       accessToken,
       shopId
     );
-    console.log(`[SHOPEE SYNC] Ads balance response error: ${totalBalance?.error || 'none'}`);
+    console.log(
+      `[SHOPEE SYNC] Ads balance response error: ${totalBalance?.error || "none"}`
+    );
   } catch (e) {
     console.error("[SHOPEE SYNC] Ads balance error:", e);
   }
 
-  // 3. Aggregate daily data by item_id
-  const productAds: Record<string, {
-    item_id: number;
-    item_name: string;
-    impressions: number;
-    clicks: number;
-    expense: number;
-    gmv: number;
-    orders: number;
-    ctr: number;
-    roas: number;
-    days: number;
-  }> = {};
+  console.log(`[SHOPEE SYNC] Total Ads entries collected: ${allEntries.length}`);
 
-  const entries = dailyPerformance?.response?.entry_list || dailyPerformance?.response?.data || [];
-  console.log(`[SHOPEE SYNC] Ads entries count: ${entries.length}`);
+  // Aggregate by item_id
+  const productAds: Record<
+    string,
+    {
+      item_id: number;
+      item_name: string;
+      impressions: number;
+      clicks: number;
+      expense: number;
+      gmv: number;
+      orders: number;
+      ctr: number;
+      roas: number;
+      days: number;
+    }
+  > = {};
 
-  for (const entry of entries) {
+  for (const entry of allEntries) {
     const itemId = String(entry.item_id || entry.campaign?.item_id || "");
     if (!itemId || itemId === "0") continue;
 
@@ -339,9 +413,10 @@ async function fetchAdsPerformance(
   return {
     ads_by_product: Object.values(productAds),
     total_balance: totalBalance?.response?.total_balance ?? null,
-    period_start: startDate,
-    period_end: endDate,
-    raw_entry_count: entries.length,
+    period_start: toDateStr(thirtyDaysAgo),
+    period_end: toDateStr(now),
+    raw_entry_count: allEntries.length,
+    ads_rate_limited: wasRateLimited,
   };
 }
 
