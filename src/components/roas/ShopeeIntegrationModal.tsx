@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingBag, Zap, RefreshCw, FileX, Loader2, CheckCircle2, Package, ShoppingCart, ChevronDown, ChevronUp } from 'lucide-react';
+import { ShoppingBag, Zap, RefreshCw, FileX, Loader2, CheckCircle2, Package, ShoppingCart, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { useShopeeToken } from '@/hooks/useShopeeToken';
 import { toast } from 'sonner';
 
@@ -16,6 +16,7 @@ interface SyncReport {
   shop_info?: any;
   product_list?: any;
   product_details?: any;
+  product_models?: Record<string, any[]>;
   order_list?: any;
   order_details?: any;
 }
@@ -58,7 +59,47 @@ function ShopInfoReport({ data }: { data: any }) {
   );
 }
 
-function ProductListReport({ listData, detailsData }: { listData: any; detailsData?: any }) {
+function getProductPriceAndStock(p: any, modelsMap?: Record<string, any[]>) {
+  const models = modelsMap?.[p.item_id];
+  
+  // Try models first (for products with variations)
+  if (models && models.length > 0) {
+    const prices = models
+      .map((m: any) => {
+        const pi = m.price_info?.[0];
+        const raw = pi?.current_price || pi?.original_price || 0;
+        return raw > 1000 ? raw / 100000 : raw;
+      })
+      .filter((p: number) => p > 0);
+    
+    const stocks = models.reduce((sum: number, m: any) => {
+      return sum + (m.stock_info_v2?.summary_info?.total_available_stock ?? m.stock_info?.total_available_stock ?? 0);
+    }, 0);
+
+    let priceStr = '—';
+    if (prices.length > 0) {
+      const min = Math.min(...prices);
+      const max = Math.max(...prices);
+      priceStr = min === max ? `R$ ${min.toFixed(2)}` : `R$ ${min.toFixed(2)} - ${max.toFixed(2)}`;
+    }
+
+    return { price: priceStr, stock: stocks, variants: models.length };
+  }
+
+  // Fallback to item-level price_info
+  const pi = p.price_info?.[0];
+  const rawPrice = pi?.current_price || pi?.original_price || pi?.inflated_price_of_current_price || 0;
+  const price = rawPrice > 1000 ? rawPrice / 100000 : rawPrice;
+  const stock = p.stock_info_v2?.summary_info?.total_available_stock;
+  
+  return {
+    price: price > 0 ? `R$ ${price.toFixed(2)}` : '—',
+    stock: stock ?? '—',
+    variants: 0,
+  };
+}
+
+function ProductListReport({ listData, detailsData, modelsMap }: { listData: any; detailsData?: any; modelsMap?: Record<string, any[]> }) {
   const items = listData?.response?.item || [];
   const details = detailsData?.response?.item_list || [];
   const total = listData?.response?.total_count ?? items.length;
@@ -70,21 +111,25 @@ function ProductListReport({ listData, detailsData }: { listData: any; detailsDa
       {details.length > 0 && (
         <div className="mt-2 space-y-1.5">
           <p className="text-xs font-semibold text-foreground">Primeiros produtos:</p>
-          {details.slice(0, 10).map((p: any, i: number) => (
-            <div key={i} className="flex items-start gap-2 p-1.5 rounded bg-surface-2/50">
-              {p.image?.image_url_list?.[0] && (
-                <img src={p.image.image_url_list[0]} alt="" className="w-8 h-8 rounded object-cover flex-shrink-0" />
-              )}
-              <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-medium text-foreground truncate">{p.item_name}</p>
-                <div className="flex gap-2 text-[10px] text-muted-foreground">
-                  <span>Preço: {(() => { const pi = p.price_info?.[0]; const price = pi?.current_price || pi?.original_price || pi?.inflated_price_of_current_price; return price ? `R$ ${(price > 1000 ? price / 100000 : price).toFixed(2)}` : '—'; })()}</span>
-                  <span>Estoque: {p.stock_info_v2?.summary_info?.total_available_stock ?? '—'}</span>
-                  <span>Vendas: {p.sale_info?.historical_sold ?? '—'}</span>
+          {details.slice(0, 10).map((p: any, i: number) => {
+            const info = getProductPriceAndStock(p, modelsMap);
+            return (
+              <div key={i} className="flex items-start gap-2 p-1.5 rounded bg-surface-2/50">
+                {p.image?.image_url_list?.[0] && (
+                  <img src={p.image.image_url_list[0]} alt="" className="w-8 h-8 rounded object-cover flex-shrink-0" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-[11px] font-medium text-foreground truncate">{p.item_name}</p>
+                  <div className="flex gap-2 text-[10px] text-muted-foreground flex-wrap">
+                    <span>Preço: {info.price}</span>
+                    <span>Estoque: {info.stock}</span>
+                    <span>Vendas: {p.sale_info?.historical_sold ?? '—'}</span>
+                    {info.variants > 0 && <span className="text-primary">({info.variants} variações)</span>}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
       {details.length === 0 && items.length > 0 && (
@@ -223,7 +268,7 @@ export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClo
 
                 {report.product_list && (
                   <ReportSection title="Produtos" icon={Package} defaultOpen>
-                    <ProductListReport listData={report.product_list} detailsData={report.product_details} />
+                    <ProductListReport listData={report.product_list} detailsData={report.product_details} modelsMap={report.product_models} />
                   </ReportSection>
                 )}
 
@@ -232,6 +277,16 @@ export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClo
                     <OrderReport listData={report.order_list} detailsData={report.order_details} />
                   </ReportSection>
                 )}
+
+                <div className="rounded-lg border border-border bg-muted/30 p-2.5 flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">Dados de Ads (ROAS, ACOS, gastos)</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      Métricas de anúncios não estão disponíveis via API para este app. Continue importando via CSV na aba de Ads.
+                    </p>
+                  </div>
+                </div>
 
 
 

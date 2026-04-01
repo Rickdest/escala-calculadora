@@ -138,13 +138,37 @@ Deno.serve(async (req) => {
             response_optional_fields: "price_info,stock_info_v2,sale_info,item_status",
           }
         );
-        // Log first product FULL structure for debugging
         const detailItems = productDetails?.response?.item_list || [];
         if (detailItems.length > 0) {
           console.log("[SHOPEE SYNC] FIRST PRODUCT FULL STRUCTURE:", JSON.stringify(detailItems[0]));
         }
         console.log("[SHOPEE SYNC] Product details count:", detailItems.length);
+
+        // 3b. Fetch model list for products with variations (has_model: true)
+        const modelsMap: Record<string, any> = {};
+        const itemsWithModels = detailItems.filter((p: any) => p.has_model);
+        console.log(`[SHOPEE SYNC] Products with models: ${itemsWithModels.length}`);
+
+        for (const product of itemsWithModels.slice(0, 20)) {
+          try {
+            const modelData = await shopeeGet(
+              "/api/v2/product/get_model_list",
+              currentAccessToken,
+              shopId,
+              { item_id: String(product.item_id) }
+            );
+            const models = modelData?.response?.model || [];
+            if (models.length > 0) {
+              console.log(`[SHOPEE SYNC] Item ${product.item_id}: ${models.length} models found`);
+              modelsMap[product.item_id] = models;
+            }
+          } catch (e) {
+            console.error(`[SHOPEE SYNC] get_model_list error for ${product.item_id}:`, e);
+          }
+        }
+
         results.product_details = productDetails;
+        results.product_models = modelsMap;
       }
     } catch (e) {
       console.error("[SHOPEE SYNC] Product list error:", e);
