@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Percent, DollarSign, Save, Check, Loader2, Moon, Sun, LogOut, Store, User, Info, Users, Megaphone, UserCheck, MessageCircle, ChevronRight } from 'lucide-react';
+import { Percent, DollarSign, Save, Check, Loader2, Moon, Sun, LogOut, Store, User, Info, Users, Megaphone, UserCheck, MessageCircle, ChevronRight, ShoppingBag, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSignOut } from '@/hooks/useSignOut';
+import { useShopeeToken } from '@/hooks/useShopeeToken';
+import { FEATURES } from '@/config/features';
 import { SHOPEE_FEE_RANGES, ShopeeAceleraOption } from '@/types/store';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -12,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { storeSettingsSchema, validateForm } from '@/lib/validations';
 import { cn } from '@/lib/utils';
@@ -22,6 +25,7 @@ export default function Settings() {
   const { theme, setTheme } = useTheme();
   const { user } = useAuth();
   const { handleSignOut } = useSignOut();
+  const { token, isConnected: shopeeConnected, startOAuth, isLoading: shopeeLoading } = useShopeeToken();
 
   // Section 1: Minha Loja
   const [desiredMargin, setDesiredMargin] = useState(currentStore?.config.desiredMargin?.toString() || '17');
@@ -412,6 +416,65 @@ export default function Settings() {
             <><Save className="w-5 h-5 mr-2" />Salvar Configurações</>
           )}
         </Button>
+
+        {/* ═══════ INTEGRAÇÃO SHOPEE ═══════ */}
+        <div className="space-y-1 pt-4">
+          <h3 className="section-label">Integração Shopee</h3>
+        </div>
+
+        <div className="glass-card p-4 space-y-4">
+          {shopeeConnected && token ? (
+            <>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#EE4D2D]/10 flex items-center justify-center">
+                    <ShoppingBag className="w-5 h-5 text-[#EE4D2D]" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-foreground">Shopee</p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                      <span className="text-[11px] text-emerald-600 font-medium">Conectada</span>
+                    </div>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => startOAuth()}>
+                  Reconectar
+                </Button>
+              </div>
+
+              <div className="rounded-lg bg-surface-2 p-3 space-y-1 text-xs text-muted-foreground">
+                <p>🔒 <strong className="text-foreground">Somente leitura</strong>: O Skalify nunca altera dados na Shopee.</p>
+                <p>Preço, estoque e nome são importados apenas para leitura. Apenas o custo é gerenciado aqui.</p>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col items-center gap-3 py-2">
+              <p className="text-sm text-muted-foreground text-center">
+                Conecte sua loja para importar produtos automaticamente
+              </p>
+              <Button onClick={() => startOAuth()} disabled={shopeeLoading} className="bg-[#EE4D2D] hover:bg-[#EE4D2D]/90 text-white">
+                <ShoppingBag className="w-4 h-4 mr-2" />
+                Conectar com Shopee
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Shopee Ads info */}
+        <div className="glass-card p-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-500" />
+            <p className="text-sm font-semibold text-foreground">Shopee Ads</p>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Os dados de Ads (ROAS, GMV, Gasto) ainda não estão disponíveis via API direta.
+            Continue usando o CSV do Seller Center para importar relatórios de campanha.
+          </p>
+          <p className="text-[10px] text-muted-foreground/70">
+            Quando a sincronização de Ads estiver disponível, ela aparecerá aqui automaticamente.
+          </p>
+        </div>
 
         {/* ═══════ SEÇÃO 3 — TABELA DE TAXAS DA SHOPEE ═══════ */}
         <div className="space-y-1 pt-4">

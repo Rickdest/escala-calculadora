@@ -22,6 +22,7 @@ const navItems = [
   { icon: ShoppingBag, label: 'Produtos', path: '/products' },
   { icon: Calculator, label: 'Calculadoras', path: '/calculadoras' },
   { icon: TrendingUp, label: 'Ads', path: '/roas' },
+  { icon: TrendingUp, label: 'Performance', path: '/performance' },
   { icon: Boxes, label: 'Estoque', path: '/stock' },
   { icon: Store, label: 'Lojas', path: '/stores' },
   { icon: UserCircle, label: 'Perfil', path: '/profile' },

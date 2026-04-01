@@ -1,7 +1,11 @@
 import { useState, useMemo, useRef } from 'react';
 import { useStore } from '@/contexts/StoreContext';
 import { useAdsData, EnrichedAdsData } from '@/hooks/useAdsData';
-import { Upload, Trash2, MapPin, Calendar, ShoppingBag } from 'lucide-react';
+import { useShopeeToken } from '@/hooks/useShopeeToken';
+import { FEATURES } from '@/config/features';
+import { Upload, Trash2, MapPin, Calendar, ShoppingBag, CheckCircle2, RefreshCw } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { parseShopeeAdsCSV, validateCSVSecurity } from '@/lib/shopeeAdsParser';
 import { AdsDetailFullView } from './AdsDetailFullView';
 import { AdsLinkModal } from './AdsLinkModal';
@@ -33,6 +37,51 @@ function formatPeriodLabel(inicio: string, fim: string) {
   const fShort = (d: string) => { const p = d.split('-'); return `${p[2]}/${p[1]}`; };
   const fFull = (d: string) => { const p = d.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
   return `${fShort(inicio)} – ${fFull(fim)}`;
+}
+
+function AdsHeader({ periodLabel, onImportCSV, onShopeeSync }: { periodLabel: string; onImportCSV: () => void; onShopeeSync: () => void }) {
+  const { isConnected, token } = useShopeeToken();
+
+  const syncAgo = token?.updated_at
+    ? formatDistanceToNow(new Date(token.updated_at), { addSuffix: false, locale: ptBR })
+    : null;
+
+  return (
+    <div className="flex items-center justify-between flex-wrap gap-2">
+      <div>
+        <p className="text-sm font-bold text-foreground">Análise de Ads</p>
+        {periodLabel && (
+          <p className="text-[11px] text-muted-foreground font-mono">{periodLabel}</p>
+        )}
+      </div>
+      <div className="flex items-center gap-2 flex-wrap">
+        {isConnected && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+            <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+            <span className="text-[10px] font-medium text-emerald-600">
+              Shopee conectada{syncAgo ? ` · sync há ${syncAgo}` : ''}
+            </span>
+          </div>
+        )}
+        <button
+          onClick={onImportCSV}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-secondary hover:bg-secondary/80 text-[12px] font-semibold text-foreground transition-colors"
+        >
+          <Upload className="w-3.5 h-3.5" />
+          Atualizar CSV
+        </button>
+        {FEATURES.SHOPEE_ADS_API_READY && (
+          <button
+            onClick={onShopeeSync}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#EE4D2D]/30 text-[#EE4D2D] hover:bg-[#EE4D2D]/5 text-[12px] font-semibold transition-colors"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Sincronizar
+          </button>
+        )}
+      </div>
+    </div>
+  );
 }
 
 /* ═══ Main AdsTab ═══ */
@@ -189,30 +238,11 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
 
           {/* ═══ Header com botão discreto ═══ */}
           {hasData && (
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-bold text-foreground">Análise de Ads</p>
-                {periodLabel && (
-                  <p className="text-[11px] text-muted-foreground font-mono">{periodLabel}</p>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowShopeeModal(true)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#EE4D2D]/30 text-[#EE4D2D] hover:bg-[#EE4D2D]/5 text-[12px] font-semibold transition-colors"
-                >
-                  <ShoppingBag className="w-3.5 h-3.5" />
-                  Integrar
-                </button>
-                <button
-                  onClick={() => fileRef.current?.click()}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-secondary hover:bg-secondary/80 text-[12px] font-semibold text-foreground transition-colors"
-                >
-                  <Upload className="w-3.5 h-3.5" />
-                  Atualizar CSV
-                </button>
-              </div>
-            </div>
+            <AdsHeader
+              periodLabel={periodLabel}
+              onImportCSV={() => fileRef.current?.click()}
+              onShopeeSync={() => setShowShopeeModal(true)}
+            />
           )}
 
           {hasData && (

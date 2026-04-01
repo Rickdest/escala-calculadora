@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, SlidersHorizontal, Package, TrendingUp, TrendingDown, Percent, DollarSign, Download, FileSpreadsheet, FileText, ArrowUpDown, ChevronRight } from 'lucide-react';
+import { Plus, Search, SlidersHorizontal, Package, TrendingUp, TrendingDown, Percent, DollarSign, Download, FileSpreadsheet, FileText, ArrowUpDown, ChevronRight, ShoppingBag, Loader2, AlertCircle } from 'lucide-react';
 import { useProductAdsMetrics } from '@/hooks/useProductAdsMetrics';
 import { useStore } from '@/contexts/StoreContext';
 import { Product, ProductCalculation, SortOption } from '@/types/store';
@@ -11,6 +11,7 @@ import { ProductForm } from '@/components/forms/ProductForm';
 import { MarginDistributionChart, TopProductsChart, ProfitSummaryChart } from '@/components/charts/AnalyticsCharts';
 import { ProductThumbnail } from '@/components/ProductThumbnail';
 import { ProductDetailDrawer } from '@/components/ProductDetailDrawer';
+import { useShopeeProducts } from '@/hooks/useShopeeProducts';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,6 +46,7 @@ export default function Products() {
   const { currentStore, addProduct, updateProduct, deleteProduct, duplicateProduct, calculateProduct, getStoreStats, isLoading, loadError, retryLoad } = useStore();
   const { metricsMap, reload: reloadAds } = useProductAdsMetrics();
   const navigate = useNavigate();
+  const { importProducts, importing, isConnected: shopeeConnected } = useShopeeProducts();
   
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -157,6 +159,36 @@ export default function Products() {
       />
 
       <div className="pt-2 pb-24 md:pb-6 space-y-2.5 md:pt-6">
+        {/* Shopee import + cost chip */}
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {shopeeConnected && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  const result = await importProducts();
+                  if (result) retryLoad();
+                }}
+                disabled={importing}
+                className="border-[#EE4D2D]/30 text-[#EE4D2D] hover:bg-[#EE4D2D]/5 text-xs"
+              >
+                {importing ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <ShoppingBag className="w-3.5 h-3.5 mr-1.5" />}
+                Importar da Shopee
+              </Button>
+            )}
+            {(() => {
+              const noCost = currentStore?.products?.filter(p => !p.costPrice || p.costPrice === 0).length || 0;
+              if (noCost === 0) return null;
+              return (
+                <span className="flex items-center gap-1.5 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-full px-3 py-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {noCost} sem custo
+                </span>
+              );
+            })()}
+          </div>
+        </div>
         <Tabs defaultValue="products" className="w-full">
           <div className="flex items-center gap-2">
             <TabsList className="flex-1 grid grid-cols-2 h-11 rounded-xl bg-secondary/80 border border-border p-1">
@@ -251,6 +283,14 @@ export default function Products() {
                     <Plus className="w-4 h-4 mr-2" />Adicionar Produto
                   </Button>
                 )}
+              </div>
+            )}
+
+            {/* Readonly note for Shopee products */}
+            {shopeeConnected && products.length > 0 && (
+              <div className="rounded-lg bg-muted/30 border border-border p-3 text-xs text-muted-foreground mt-2">
+                🔒 Preço de venda e estoque são sincronizados da Shopee (somente leitura).
+                Para editar, acesse o Shopee Seller Center. Apenas o custo do produto é gerenciado aqui.
               </div>
             )}
           </TabsContent>
