@@ -1,37 +1,47 @@
 
 
-## Plano: Corrigir parsing e dados do shopee-sync
+## Plano: Buscar preços/estoque via get_model_list e melhorar relatório
 
-### Problemas identificados nos logs
-
-1. **Shop Info**: dados estão na raiz (`data.shop_name`), não em `data.response`
-2. **Produtos**: `price_info`, `stock_info_v2`, `sale_info` não vêm sem `response_optional_fields`
-3. **Pedidos**: funcionando, mas precisa mensagem amigável quando vazio
-4. **Campanhas**: endpoint indisponível para este app — remover completamente
+### Problema
+- Produtos com variações (`has_model: true`) não retornam `price_info`/`stock_info_v2` no `get_item_base_info`
+- Precisa chamar `/api/v2/product/get_model_list` para obter preços e estoque por variação
+- Dados de Ads não estão disponíveis via API (restrição da Shopee) — CSV continua necessário
 
 ### Alterações
 
 **Arquivo 1: `supabase/functions/shopee-sync/index.ts`**
 
-- Na chamada `get_item_base_info` (linha 131-135), adicionar `need_tax_info: "true"` e `response_optional_fields: "price_info,stock_info_v2,sale_info,item_status"`
-- Remover todo o bloco de Marketing/Ads (linhas 191-216) — não incluir `campaigns` nos resultados
+Após buscar `get_item_base_info`, para cada produto com `has_model: true`, chamar:
+```
+GET /api/v2/product/get_model_list?item_id={item_id}
+```
+Retorna `model[]` com `price_info` (preço por variação) e `stock_info` (estoque por variação). Agregar os dados e anexar ao produto no resultado.
+
+Limitar a 20 produtos para não exceder rate limits. Fazer chamadas sequenciais.
 
 **Arquivo 2: `src/components/roas/ShopeeIntegrationModal.tsx`**
 
-- **ShopInfoReport** (linhas 50-62): ler campos direto de `data` em vez de `data.response` — `data.shop_name`, `data.region`, `data.status`, `data.is_sip`, `data.shop_fulfillment_flag`
-- **OrderReport** (linha 109-111): remover estilo de erro quando `listData.error` é string vazia (Shopee retorna `error: ""` como sucesso)
-- Remover `CampaignsReport` component (linhas 136-162)
-- Remover `campaigns` do `SyncReport` interface (linha 21)
-- Remover seção de campanhas do JSX do relatório (linhas 266-270)
-- Remover import `BarChart3` (não mais usado)
+- Atualizar `ProductListReport` para ler preços e estoque dos models quando `price_info` do item estiver ausente
+- Mostrar faixa de preço (min-max) quando houver múltiplas variações
+- Somar estoque de todas as variações
+- Adicionar nota clara na seção de Ads explicando que dados de Ads só vêm via CSV (limitação do App na Shopee)
 
-### Resumo das mudanças
+### Estrutura esperada do get_model_list
+```json
+{
+  "response": {
+    "model": [
+      {
+        "model_id": 123,
+        "model_name": "P / Preto",
+        "price_info": [{ "current_price": 49.90, "original_price": 59.90 }],
+        "stock_info_v2": { "summary_info": { "total_available_stock": 10 } }
+      }
+    ]
+  }
+}
+```
 
-| O que | Antes | Depois |
-|-------|-------|--------|
-| Shop Info parsing | `data.response.shop_name` | `data.shop_name` |
-| Product details | sem campos opcionais | `response_optional_fields` com price/stock/sale |
-| Campanhas | 2 endpoints tentados, ambos falham | removido completamente |
-| Pedidos vazios | exibe normalmente | mantém igual (já funciona) |
-| OrderReport erro | trata `error: ""` como erro | ignora string vazia |
+### Sem alteração para Ads
+Dados de Ads (ROAS, ACOS, impressões, cliques, gastos) **continuam vindo exclusivamente via CSV**. Para ter acesso via API, seria necessário solicitar à Shopee a aprovação do escopo `shop_marketing` no painel de parceiro.
 
