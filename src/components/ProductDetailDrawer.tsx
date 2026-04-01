@@ -50,7 +50,6 @@ export function ProductDetailDrawer({
 }: ProductDetailDrawerProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [monthlySales, setMonthlySales] = useState(50);
-  const [activeTab, setActiveTab] = useState<'info' | 'edit'>('info');
 
   // Edit state
   const [editName, setEditName] = useState(product.name);
