@@ -132,7 +132,11 @@ Deno.serve(async (req) => {
           "/api/v2/product/get_item_base_info",
           currentAccessToken,
           shopId,
-          { item_id_list: itemIds.join(",") }
+          {
+            item_id_list: itemIds.join(","),
+            need_tax_info: "true",
+            response_optional_fields: "price_info,stock_info_v2,sale_info,item_status",
+          }
         );
         // Log first product FULL structure for debugging
         const detailItems = productDetails?.response?.item_list || [];
