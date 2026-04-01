@@ -52,6 +52,14 @@ export async function generateSign(
     baseString += `${shopId}`;
   }
 
+  console.log(`[SHOPEE SIGN] PARTNER_ID: ${PARTNER_ID}`);
+  console.log(`[SHOPEE SIGN] path: ${path}`);
+  console.log(`[SHOPEE SIGN] timestamp: ${timestamp}`);
+  console.log(`[SHOPEE SIGN] accessToken present: ${!!accessToken}`);
+  console.log(`[SHOPEE SIGN] shopId: ${shopId}`);
+  console.log(`[SHOPEE SIGN] baseString: ${baseString}`);
+  console.log(`[SHOPEE SIGN] key length: ${partnerKey.length}, prefix: ${partnerKey.substring(0, 4)}..., suffix: ...${partnerKey.substring(partnerKey.length - 4)}`);
+
   const keyData = new TextEncoder().encode(partnerKey);
   const msgData = new TextEncoder().encode(baseString);
 
@@ -64,9 +72,12 @@ export async function generateSign(
   );
 
   const signature = await crypto.subtle.sign("HMAC", cryptoKey, msgData);
-  return Array.from(new Uint8Array(signature))
+  const hex = Array.from(new Uint8Array(signature))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
+
+  console.log(`[SHOPEE SIGN] generated sign: ${hex}`);
+  return hex;
 }
 
 export const hmacSign = generateSign;
