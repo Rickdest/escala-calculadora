@@ -564,7 +564,9 @@ export type Database = {
           packaging_cost: number | null
           sale_price: number
           shopee_acelera: string | null
+          shopee_item_id: number | null
           shopee_product_id: string | null
+          shopee_synced_at: string | null
           stock_quantity: number | null
           store_id: string
           updated_at: string
@@ -588,7 +590,9 @@ export type Database = {
           packaging_cost?: number | null
           sale_price: number
           shopee_acelera?: string | null
+          shopee_item_id?: number | null
           shopee_product_id?: string | null
+          shopee_synced_at?: string | null
           stock_quantity?: number | null
           store_id: string
           updated_at?: string
@@ -612,7 +616,9 @@ export type Database = {
           packaging_cost?: number | null
           sale_price?: number
           shopee_acelera?: string | null
+          shopee_item_id?: number | null
           shopee_product_id?: string | null
+          shopee_synced_at?: string | null
           stock_quantity?: number | null
           store_id?: string
           updated_at?: string
