@@ -2,8 +2,7 @@ import { useState, useMemo, useRef } from 'react';
 import { useStore } from '@/contexts/StoreContext';
 import { useAdsData, EnrichedAdsData } from '@/hooks/useAdsData';
 import { useShopeeToken } from '@/hooks/useShopeeToken';
-import { FEATURES } from '@/config/features';
-import { Upload, Trash2, MapPin, Calendar, ShoppingBag, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Upload, Trash2, MapPin, Calendar, ShoppingBag, CheckCircle2, Download } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { parseShopeeAdsCSV, validateCSVSecurity } from '@/lib/shopeeAdsParser';
@@ -39,7 +38,7 @@ function formatPeriodLabel(inicio: string, fim: string) {
   return `${fShort(inicio)} – ${fFull(fim)}`;
 }
 
-function AdsHeader({ periodLabel, onImportCSV, onShopeeSync, syncing }: { periodLabel: string; onImportCSV: () => void; onShopeeSync: () => void; syncing?: boolean }) {
+function AdsHeader({ periodLabel, onImportCSV, onImportAds, syncing }: { periodLabel: string; onImportCSV: () => void; onImportAds: () => void; syncing?: boolean }) {
   const { isConnected, token } = useShopeeToken();
 
   const syncAgo = token?.updated_at
@@ -70,14 +69,14 @@ function AdsHeader({ periodLabel, onImportCSV, onShopeeSync, syncing }: { period
           <Upload className="w-3.5 h-3.5" />
           Atualizar CSV
         </button>
-        {FEATURES.SHOPEE_ADS_API_READY && isConnected && (
+        {isConnected && (
           <button
-            onClick={onShopeeSync}
+            onClick={onImportAds}
             disabled={syncing}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#EE4D2D]/30 text-[#EE4D2D] hover:bg-[#EE4D2D]/5 text-[12px] font-semibold transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#EE4D2D]/30 bg-[#EE4D2D]/5 text-[#EE4D2D] hover:bg-[#EE4D2D]/10 text-[12px] font-semibold transition-colors disabled:opacity-50"
           >
-            <RefreshCw className={cn("w-3.5 h-3.5", syncing && "animate-spin")} />
-            {syncing ? 'Sincronizando...' : 'Sincronizar'}
+            <Download className={cn("w-3.5 h-3.5", syncing && "animate-spin")} />
+            {syncing ? 'Importando...' : 'Importar Ads'}
           </button>
         )}
       </div>
@@ -89,7 +88,7 @@ function AdsHeader({ periodLabel, onImportCSV, onShopeeSync, syncing }: { period
 export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => void }) {
   const { currentStore } = useStore();
   const { data, loading, operating, importGeneralCSV, importProductCSV, importFromApi, linkProduct, unlinkProduct, reload, deleteAdsData, deleteAll } = useAdsData();
-  const { isConnected, syncAds } = useShopeeToken();
+  const { isConnected, syncAdsOnly } = useShopeeToken();
   const [selectedDetail, setSelectedDetailRaw] = useState<EnrichedAdsData | null>(null);
   const setSelectedDetail = (ad: EnrichedAdsData | null) => {
     setSelectedDetailRaw(ad);
@@ -106,14 +105,14 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const [showShopeeModal, setShowShopeeModal] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
-  const handleShopeeSync = async () => {
+  const handleImportAds = async () => {
     if (!isConnected) {
       setShowShopeeModal(true);
       return;
     }
     setSyncing(true);
     try {
-      const result = await syncAds();
+      const result = await syncAdsOnly();
       const adsPerfData = result?.results?.ads_performance;
       if (adsPerfData?.ads_rate_limited && (adsPerfData?.ads_by_product?.length || 0) === 0) {
         toast.warning('API de Ads temporariamente limitada pela Shopee. Tente novamente em 2-3 minutos.');
@@ -123,10 +122,10 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
         }
         await importFromApi(adsPerfData);
       } else {
-        toast.info('Sincronização concluída, mas sem dados de Ads disponíveis.');
+        toast.info('Nenhum dado de Ads disponível na API.');
       }
     } catch {
-      // Error already shown by syncAds
+      // Error already shown by syncAdsOnly
     } finally {
       setSyncing(false);
     }
@@ -269,7 +268,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
              <AdsHeader
                periodLabel={periodLabel}
                onImportCSV={() => fileRef.current?.click()}
-               onShopeeSync={handleShopeeSync}
+               onImportAds={handleImportAds}
                syncing={syncing}
              />
           )}
