@@ -444,6 +444,18 @@ export default function Products() {
           }}
         />
       )}
+
+      {importModalOpen && (
+        <ShopeeImportModal
+          isOpen={importModalOpen}
+          onClose={() => setImportModalOpen(false)}
+          onImport={async (selectedIds, shopeeProducts) => {
+            const result = await importProducts(selectedIds, shopeeProducts);
+            if (result) retryLoad();
+            setImportModalOpen(false);
+          }}
+        />
+      )}
     </AppLayout>
   );
 }
