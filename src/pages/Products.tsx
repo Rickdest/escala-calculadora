@@ -12,6 +12,7 @@ import { MarginDistributionChart, TopProductsChart, ProfitSummaryChart } from '@
 import { ProductThumbnail } from '@/components/ProductThumbnail';
 import { ProductDetailDrawer } from '@/components/ProductDetailDrawer';
 import { useShopeeProducts } from '@/hooks/useShopeeProducts';
+import { ShopeeImportModal, type ShopeeProduct } from '@/components/produtos/ShopeeImportModal';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,6 +55,7 @@ export default function Products() {
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [analysisSortBy, setAnalysisSortBy] = useState<SortOption>('margin-high');
   const [detailProduct, setDetailProduct] = useState<{ product: Product; calc: ProductCalculation } | null>(null);
+  const [importModalOpen, setImportModalOpen] = useState(false);
 
   const products = useMemo(() => {
     if (!currentStore) return [];
@@ -166,14 +168,10 @@ export default function Products() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={async () => {
-                  const result = await importProducts();
-                  if (result) retryLoad();
-                }}
-                disabled={importing}
+                onClick={() => setImportModalOpen(true)}
                 className="border-[#EE4D2D]/30 text-[#EE4D2D] hover:bg-[#EE4D2D]/5 text-xs"
               >
-                {importing ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <ShoppingBag className="w-3.5 h-3.5 mr-1.5" />}
+                <ShoppingBag className="w-3.5 h-3.5 mr-1.5" />
                 Importar da Shopee
               </Button>
             )}
@@ -443,6 +441,18 @@ export default function Products() {
             await updateProduct(detailProduct.product.id, data);
             setDetailProduct(null);
             toast.success('Produto atualizado!');
+          }}
+        />
+      )}
+
+      {importModalOpen && (
+        <ShopeeImportModal
+          isOpen={importModalOpen}
+          onClose={() => setImportModalOpen(false)}
+          onImport={async (selectedIds, shopeeProducts) => {
+            const result = await importProducts(selectedIds, shopeeProducts);
+            if (result) retryLoad();
+            setImportModalOpen(false);
           }}
         />
       )}
