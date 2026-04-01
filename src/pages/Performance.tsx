@@ -43,13 +43,27 @@ export default function Performance() {
     try {
       setSyncing(true);
       const result = await syncAds();
-      if (result?.results?.order_performance) {
-        setData(result.results.order_performance);
-        toast.success('Dados de performance atualizados!');
+      console.log('[Performance] sync result:', JSON.stringify(result, null, 2));
+      const perf = result?.results?.order_performance;
+      if (perf) {
+        setData(perf);
+        if (perf.summary?.total_orders === 0) {
+          toast.info('Sua loja não tem pedidos nos últimos 90 dias.');
+        } else {
+          toast.success(`${perf.summary.total_orders} pedidos carregados!`);
+        }
       } else {
-        toast.info('Nenhum dado de performance disponível');
+        // Maybe the structure is flat
+        const flatPerf = result?.order_performance;
+        if (flatPerf) {
+          setData(flatPerf);
+          toast.success('Dados carregados!');
+        } else {
+          toast.info('Nenhum dado de performance disponível. Verifique o console para detalhes.');
+        }
       }
-    } catch {
+    } catch (err) {
+      console.error('[Performance] sync error:', err);
       toast.error('Erro ao sincronizar');
     } finally {
       setSyncing(false);
