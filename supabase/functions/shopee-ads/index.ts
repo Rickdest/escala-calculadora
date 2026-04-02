@@ -66,8 +66,9 @@ async function fetchAdsPerformance(
   shopId: string | number
 ) {
   const now = Math.floor(Date.now() / 1000);
-  const thirtyDaysAgo = now - 30 * 24 * 60 * 60;
-  const startDate = toDateStr(thirtyDaysAgo);
+  // Use 28 days to never cross 2 calendar months (API rejects > 1 month)
+  const startTs = now - 28 * 24 * 60 * 60;
+  const startDate = toDateStr(startTs);
   const endDate = toDateStr(now);
 
   // 1. Get campaign ID list
@@ -83,14 +84,12 @@ async function fetchAdsPerformance(
     );
     console.log(`[SHOPEE ADS] campaign_id_list FULL RESPONSE: ${JSON.stringify(campaignList).substring(0, 3000)}`);
 
-    // Primary: response.campaign_list[].campaign_id (real Shopee shape)
     const campaignListArr = campaignList?.response?.campaign_list;
     if (Array.isArray(campaignListArr) && campaignListArr.length > 0) {
       campaignIds = campaignListArr.map((c: any) => c.campaign_id).filter(Boolean);
     }
-    // Fallback: response.campaign_id_list (old shape)
     if (campaignIds.length === 0) {
-      const fallback = campaignList?.response?.campaign_id_list || campaignList?.response?.data?.campaign_id_list || [];
+      const fallback = campaignList?.response?.campaign_id_list || [];
       if (Array.isArray(fallback)) campaignIds = fallback;
     }
 
@@ -99,7 +98,10 @@ async function fetchAdsPerformance(
     console.error("[SHOPEE ADS] get_product_level_campaign_id_list error:", e);
   }
 
-  // 2. Get campaign settings/details
+  // 2. Get campaign settings/details — requires info_type_list
+  // Build campaign_id → item_id map for cross-referencing with performance data
+  const campaignToItem: Record<number, number> = {};
+
   if (campaignIds.length > 0) {
     console.log("[SHOPEE ADS] === Step 2: get_product_level_campaign_setting_info ===");
     for (let i = 0; i < campaignIds.length; i += 20) {
@@ -109,18 +111,26 @@ async function fetchAdsPerformance(
           "/api/v2/ads/get_product_level_campaign_setting_info",
           accessToken,
           shopId,
-          { campaign_id_list: batch.join(",") }
+          { campaign_id_list: batch.join(","), info_type_list: "1" }
         );
         console.log(`[SHOPEE ADS] campaign_setting_info batch ${Math.floor(i / 20) + 1} RESPONSE: ${JSON.stringify(details).substring(0, 3000)}`);
         const items = details?.response?.data || details?.response?.campaign_list || [];
-        if (Array.isArray(items)) campaignDetails.push(...items);
+        if (Array.isArray(items)) {
+          campaignDetails.push(...items);
+          for (const d of items) {
+            if (d.campaign_id && d.item_id) {
+              campaignToItem[d.campaign_id] = d.item_id;
+            }
+          }
+        }
       } catch (e) {
         console.error(`[SHOPEE ADS] campaign_setting_info batch error:`, e);
       }
     }
+    console.log(`[SHOPEE ADS] campaignToItem map size: ${Object.keys(campaignToItem).length}`);
   }
 
-  // 3. Get daily performance (last 30 days) — DD-MM-YYYY format
+  // 3. Get daily performance (28 days) — DD-MM-YYYY format
   let allEntries: any[] = [];
   let wasRateLimited = false;
 
@@ -157,7 +167,7 @@ async function fetchAdsPerformance(
     console.error("[SHOPEE ADS] Balance error:", e);
   }
 
-  // Aggregate by item_id
+  // Aggregate by item_id — use campaignToItem to enrich entries without item_id
   const productAds: Record<string, {
     item_id: number;
     item_name: string;
@@ -172,7 +182,14 @@ async function fetchAdsPerformance(
   }> = {};
 
   for (const entry of allEntries) {
-    const itemId = String(entry.item_id || entry.campaign?.item_id || "");
+    let itemId = String(entry.item_id || entry.campaign?.item_id || "");
+
+    // Cross-reference with campaign details if item_id missing
+    if ((!itemId || itemId === "0" || itemId === "") && entry.campaign_id) {
+      const mapped = campaignToItem[entry.campaign_id];
+      if (mapped) itemId = String(mapped);
+    }
+
     if (!itemId || itemId === "0") continue;
 
     if (!productAds[itemId]) {
@@ -204,7 +221,7 @@ async function fetchAdsPerformance(
     ads_by_product: Object.values(productAds),
     campaign_ids: campaignIds,
     campaign_details: campaignDetails,
-    total_balance: totalBalance?.response?.total_balance ?? null,
+    total_balance: totalBalance?.response?.total_balance ?? totalBalance?.response?.data_timestamp ? totalBalance?.response : null,
     period_start: startDate,
     period_end: endDate,
     raw_entry_count: allEntries.length,
