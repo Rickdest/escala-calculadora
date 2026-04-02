@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef } from 'react';
+import { ApiAdsDashboard } from './ApiAdsDashboard';
 import { useStore } from '@/contexts/StoreContext';
 import { useAdsData, EnrichedAdsData } from '@/hooks/useAdsData';
 import { useShopeeToken } from '@/hooks/useShopeeToken';
@@ -105,6 +106,8 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const [showShopeeModal, setShowShopeeModal] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
+  const [apiAdsData, setApiAdsData] = useState<any>(null);
+
   const handleImportAds = async () => {
     if (!isConnected) {
       setShowShopeeModal(true);
@@ -114,22 +117,33 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
     try {
       const result = await syncAdsOnly();
       const adsPerfData = result?.results?.ads_performance;
-      if (adsPerfData?.ads_rate_limited && !adsPerfData?.shop_summary?.impressions) {
+      if (adsPerfData?.ads_rate_limited && !adsPerfData?.summary?.total_impressions) {
         toast.warning('API de Ads temporariamente limitada pela Shopee. Tente novamente em 2-3 minutos.');
       } else if (adsPerfData?.perf_api_error) {
         toast.error(`Erro da API Shopee: ${adsPerfData.perf_api_message || adsPerfData.perf_api_error}`);
-      } else if (adsPerfData?.shop_summary?.impressions > 0 || adsPerfData?.ads_by_product?.length > 0) {
-        // We have real data — import it
-        if (adsPerfData.ads_rate_limited) {
-          toast.warning('Alguns dados podem estar incompletos (limite temporário da API). Dados parciais foram importados.');
-        }
-        await importFromApi(adsPerfData);
-      } else if ((adsPerfData?.campaign_count || 0) > 0 && (adsPerfData?.raw_entry_count || 0) === 0) {
-        toast.info(`${adsPerfData.campaign_count} campanhas encontradas, mas sem métricas de performance no período.`);
-      } else if ((adsPerfData?.campaign_count || 0) === 0) {
-        toast.info('Nenhuma campanha de Ads encontrada na sua loja Shopee.');
+      } else if (adsPerfData?.summary?.total_impressions > 0) {
+        setApiAdsData(adsPerfData);
+        // Also save summary as a single ads_data row for persistence
+        await importFromApi({
+          ads_by_product: [{
+            item_id: 0,
+            item_name: 'Total da Loja (Ads API)',
+            impressions: adsPerfData.summary.total_impressions,
+            clicks: adsPerfData.summary.total_clicks,
+            expense: adsPerfData.summary.total_expense,
+            gmv: adsPerfData.summary.total_gmv,
+            orders: adsPerfData.summary.total_orders,
+            ctr: adsPerfData.summary.ctr,
+            roas: adsPerfData.summary.roas_geral,
+          }],
+          period_start: adsPerfData.period_start,
+          period_end: adsPerfData.period_end,
+        });
+        toast.success(`Ads importados: ${adsPerfData.summary.days} dias · ROAS ${adsPerfData.summary.roas_geral.toFixed(2)}`);
+      } else if ((adsPerfData?.campaign_count || 0) > 0) {
+        toast.info(`${adsPerfData.campaign_count} campanhas encontradas, mas sem métricas no período.`);
       } else {
-        toast.info('Nenhum dado de Ads disponível na API.');
+        toast.info('Nenhuma campanha de Ads encontrada na sua loja Shopee.');
       }
     } catch {
       // Error already shown by syncAdsOnly
@@ -196,6 +210,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   }, [periodFiltered, filter]);
 
   const hasData = data.length > 0;
+  const hasAnyContent = hasData || !!apiAdsData;
 
   const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -263,7 +278,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       ) : (
         <>
            {/* ═══ Empty State ═══ */}
-           {!hasData && (
+           {!hasAnyContent && (
               <AdsEmptyState
                 onImport={() => fileRef.current?.click()}
                 onShopeeIntegration={() => setShowShopeeModal(true)}
@@ -273,8 +288,21 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
               />
             )}
 
-          {/* ═══ Header com botão discreto ═══ */}
-          {hasData && (
+          {/* ═══ API Ads Dashboard ═══ */}
+          {apiAdsData && (
+            <>
+              <AdsHeader
+                periodLabel={`${apiAdsData.period_start} – ${apiAdsData.period_end}`}
+                onImportCSV={() => fileRef.current?.click()}
+                onImportAds={handleImportAds}
+                syncing={syncing}
+              />
+              <ApiAdsDashboard data={apiAdsData} />
+            </>
+          )}
+
+          {/* ═══ Header com botão discreto (CSV data) ═══ */}
+          {hasData && !apiAdsData && (
              <AdsHeader
                periodLabel={periodLabel}
                onImportCSV={() => fileRef.current?.click()}
