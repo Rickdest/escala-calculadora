@@ -301,10 +301,10 @@ function processCampaignEntries(campaign: any, entries: any[], result: any[], id
     });
   }
 
-  const statusVal = campaign.status;
-  const isOngoing = statusVal === 1 || statusVal === "ongoing";
+  // campaign.status is already mapped to 'active'|'paused'|'ended' in Step 2
+  const statusStr = campaign.status || 'ended';
 
-  console.log(`[SHOPEE ADS] Campaign ${idx}/${total}: id=${campaign.campaign_id} item_id=${campaign.item_id} expense=${totExp.toFixed(2)} entries=${entries.length}`);
+  console.log(`[SHOPEE ADS] Campaign ${idx}/${total}: id=${campaign.campaign_id} item_id=${campaign.item_id} status=${statusStr} expense=${totExp.toFixed(2)} entries=${entries.length}`);
 
   // Always include the campaign even with zero data - shows in frontend with name/status
   result.push({
