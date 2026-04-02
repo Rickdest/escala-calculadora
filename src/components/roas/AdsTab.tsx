@@ -407,7 +407,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
                 onImportAds={handleImportAds}
                 syncing={syncing}
               />
-              <ApiAdsDashboard data={effectiveApiData} onRefreshProduct={handleRefreshProduct} onCampaignSelect={handleCampaignSelect} />
+              <ApiAdsDashboard data={effectiveApiData} products={products} onRefreshProduct={handleRefreshProduct} onCampaignSelect={handleCampaignSelect} />
             </>
           )}
 
