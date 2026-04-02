@@ -302,7 +302,7 @@ export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClo
       setSyncing(true);
       setReport(null);
       setSyncErrors(null);
-      const result = await syncAds();
+      const result = await syncStoreData();
       console.log('Shopee sync full result:', result);
       if (result?.results) setReport(result.results);
       if (result?.errors) setSyncErrors(result.errors);

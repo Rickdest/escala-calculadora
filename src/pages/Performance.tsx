@@ -44,7 +44,7 @@ export default function Performance() {
   const handleSync = async () => {
     try {
       setSyncing(true);
-      const result = await syncAds();
+      const result = await syncStoreData();
       console.log('[Performance] sync result:', JSON.stringify(result, null, 2));
       const perf = result?.results?.order_performance;
       if (perf) {
