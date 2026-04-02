@@ -1,63 +1,73 @@
 
 
-## Correção: Dados zerados nos Ads e botão "Atualizar Dados" não funciona
+## Plano: Deduplicar campanhas, persistir dados, corrigir refresh individual
 
-### Diagnóstico
+### Diagnóstico dos logs
 
-**3 problemas confirmados nos logs:**
+**API está funcionando** — os dados gerais estão chegando corretamente (28 dias, ROAS 10.07, R$23.244 GMV). Os problemas são no frontend e na persistência:
 
-1. **`console.log('[SHOPEE SIGN]')` na linha 72 de `_shared/shopee.ts` ainda existe** — cada chamada de API gera 1 log de sign. Com 5 estratégias × 21 campanhas = 105+ chamadas = 105+ linhas de SIGN que estouram o buffer de 100 linhas do Supabase, escondendo TODOS os logs `[DEBUG]`, `Step 1/2/3/4` e erros.
+1. **Campanhas duplicadas**: React warning "two children with same key `67478404`". O upsert no DB usa chave `(user_id, campaign_id, period_start)` — se o período muda entre imports, cria linhas duplicadas para o mesmo campaign_id. O `buildApiAdsDataFromRows` não deduplica.
 
-2. **Datas com janela de 365 dias provavelmente causam rejeição silenciosa** — a Shopee API de performance diária normalmente aceita no máximo 30 dias por request. Enviar `2025-04-02 → 2026-04-01` (365 dias) faz a API retornar vazio sem erro.
+2. **Dados não persistem**: `useApiAdsData` carrega do DB mas `buildApiAdsDataFromRows` não deduplica por campaign_id, gerando cards repetidos e potencialmente sobrescrevendo o summary.
 
-3. **Botão "Atualizar Dados"** chama `syncAdsOnly(itemId)`, que roda Steps 1-3 inteiros antes de filtrar no Step 4 — desperdiça tempo. Além disso, o resultado atualiza `apiAdsData` mas NÃO atualiza o `selectedDetail` (o `EnrichedAdsData` que o detail view está mostrando), então a UI permanece com os dados antigos.
+3. **Refresh individual falha**: O request com `item_id: 58255919585` retorna `ads_by_campaign: []` porque nenhuma campanha no Step 4 gerou entries. Isso acontece porque `get_product_campaign_daily_performance` pode exigir `campaign_id_list` (array) em vez de `campaign_id` (singular). Além disso, quando o refresh retorna vazio mas os dados gerais existem, o toast mostra "nenhum dado" incorretamente.
 
-### Plano de correção
+### Correções
 
-#### 1. `_shared/shopee.ts` — Remover log do SIGN completamente
+#### 1. `src/hooks/useApiAdsData.ts` — Deduplicar por campaign_id
 
-Linha 72: remover `console.log('[SHOPEE SIGN] generated sign: ${hex}')`. Isso libera ~100% do buffer para logs úteis.
-
-#### 2. `shopee-ads/index.ts` — Dividir janela de datas em chunks de 30 dias
-
-Em vez de enviar 365 dias de uma vez (que a Shopee rejeita silenciosamente), dividir em blocos de 30 dias e concatenar os resultados. Isso se aplica ao Step 3 (shop-level daily) e Step 4 (per-campaign daily).
-
-```text
-Antes: 1 request com 365 dias → vazio
-Depois: ~12 requests de 30 dias cada → dados reais
-```
-
-Também: reduzir `ADS_LOOKBACK_DAYS` de 365 para 90 (máximo útil), e no Step 3 e `fetchCampaignDaily`, fazer chunks de 30 dias.
-
-#### 3. `shopee-ads/index.ts` — Reduzir estratégias de fallback
-
-Atualmente são 5 estratégias por campanha (POST daily, GET daily, Unix TS, hourly, GMS). Cada uma gera 1+ chamadas de API. Com 21 campanhas, são ~100+ chamadas desnecessárias.
-
-Simplificar para: POST daily (chunks de 30d). Se falhar, GET daily (chunks de 30d). Remover unix-ts, hourly e GMS como estratégias padrão — são experimentais e nenhuma retornou dados nos logs.
-
-#### 4. `AdsTab.tsx` — Atualizar detail view após refresh
-
-No `handleRefreshProduct`, após atualizar `apiAdsData`, também atualizar o `selectedDetail` com os novos dados da campanha correspondente.
+Em `buildApiAdsDataFromRows`, antes de construir o resultado, deduplicar rows por `campaign_id`, mantendo apenas a row com `updated_at` mais recente:
 
 ```typescript
-// Após atualizar apiAdsData, atualizar detail view
-const updatedCampaign = adsPerfData.ads_by_campaign?.find(
-  (c: any) => String(c.item_id) === String(itemId)
-);
-if (updatedCampaign) {
-  setSelectedDetail(campaignToEnrichedAds(updatedCampaign));
+// Deduplicate by campaign_id, keep most recent
+const deduped = new Map<string, any>();
+for (const r of rows) {
+  const key = String(r.campaign_id);
+  const existing = deduped.get(key);
+  if (!existing || r.updated_at > existing.updated_at) {
+    deduped.set(key, r);
+  }
 }
+const uniqueRows = Array.from(deduped.values());
+// Use uniqueRows instead of rows for all calculations
 ```
 
-#### 5. `shopee-ads/index.ts` — Usar summary metrics do Step 2 como dados do produto
+#### 2. `shopee-ads/index.ts` — Limpar dados antigos antes do upsert
 
-O Step 2 já extrai métricas via `extractCampaignSummaryMetrics` (impressions, clicks, expense, gmv, etc). Quando o Step 4 retorna entries vazias, essas métricas do summary JÁ são usadas como fallback (`processCampaignEntries` linha 404). Porém, se `hasData` é false, nada é salvo. Garantir que campanhas com `summary_metrics.hasData === true` sejam incluídas no resultado mesmo com entries vazias (já faz isso, mas confirmar que `info_type_list: "1,2"` retorna performance).
+Antes de fazer upsert das campanhas, deletar registros antigos do mesmo user_id que NÃO correspondem ao período atual. Isso evita acúmulo de períodos antigos:
+
+```typescript
+// Delete old period data for this user before upserting
+await supabaseAdmin
+  .from("shopee_ads_by_product")
+  .delete()
+  .eq("user_id", user.id)
+  .neq("period_start", adsPerformance.period_start);
+```
+
+#### 3. `shopee-ads/index.ts` — Corrigir parâmetro Step 4
+
+Testar com `campaign_id_list` como array em vez de `campaign_id` singular, pois a API pode exigir esse formato:
+
+```typescript
+// POST body
+{ campaign_id_list: [campaignId], start_date: chunk.startAPI, end_date: chunk.endAPI }
+
+// GET params  
+{ campaign_id_list: String(campaignId), start_date: chunk.startAPI, end_date: chunk.endAPI }
+```
+
+Se falhar, fallback para formato singular.
+
+#### 4. `AdsTab.tsx` — Melhorar feedback do refresh individual
+
+Quando o refresh individual retorna `ads_by_campaign` vazio, verificar se há dados no summary antes de mostrar "nenhum dado". Também invalidar o cache do DB para recarregar dados persistidos.
 
 ### Arquivos alterados
 
 ```text
-supabase/functions/_shared/shopee.ts       — remover console.log do SIGN (1 linha)
-supabase/functions/shopee-ads/index.ts     — chunks de 30d, reduzir strategies, ADS_LOOKBACK_DAYS=90
-src/components/roas/AdsTab.tsx             — atualizar selectedDetail após refresh
+src/hooks/useApiAdsData.ts                — deduplicar por campaign_id
+supabase/functions/shopee-ads/index.ts     — limpar períodos antigos, testar campaign_id_list
+src/components/roas/AdsTab.tsx             — melhorar feedback do refresh
 ```
 
