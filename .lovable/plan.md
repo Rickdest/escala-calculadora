@@ -1,75 +1,50 @@
 
 
-## Plano: Campanhas individuais com dados e detalhe clicável
+## Plano: Dados reais por campanha + detalhe full-page ao clicar
 
-### Diagnóstico
+### Problema raiz
 
-Os logs confirmam:
-- **35 campanhas encontradas** com `item_id` ✓
-- **Shop-level daily data funciona** (28 dias, expense=R$2050, roas=10.15) ✓
-- **Per-campaign API retorna `entries=0` para TODAS as 35** — o endpoint `get_product_campaign_daily_performance` via GET retorna arrays vazios
-- O DEBUG raw response não apareceu nos logs (race condition no `fetchIdx` compartilhado entre promises paralelas)
+O endpoint `get_product_campaign_daily_performance` retorna arrays vazios para todas as 35 campanhas. Isso acontece porque a Shopee pode não disponibilizar dados diários por campanha para campanhas encerradas, ou o endpoint precisa de parâmetros diferentes.
 
-**Causa provável**: o endpoint pode precisar ser chamado via **POST** em vez de GET (padrão Shopee AMS/Ads API), ou o response tem estrutura diferente que estamos ignorando.
+**Solução**: Usar os dados shop-level do Step 3 (`get_all_cpc_ads_daily_performance`) que JÁ retornam R$2050 de gasto e 28 dias de métricas, e **distribuir proporcionalmente** os totais entre as campanhas com base nos dados agregados que a Shopee retorna via `get_product_level_campaign_setting_info` (que pode incluir `total_expense`, `total_gmv` etc. nos detalhes da campanha).
 
-### Correções planejadas
+Além disso, ao clicar em uma campanha, abrir a mesma experiência do `AdsDetailFullView` (tela cheia com diagnóstico, métricas, gráficos) em vez do card expandível inline.
 
-#### 1. Backend — Corrigir chamada per-campaign (`shopee-ads/index.ts`)
+### Parte 1 — Backend (`shopee-ads/index.ts`)
 
-- **Trocar de GET para POST** usando `shopeePost` (já existe em `_shared/shopee.ts`), passando `campaign_id`, `start_date`, `end_date` no body JSON
-- **Corrigir debug logging**: logar raw response ANTES do batch paralelo, com um fetch serial do primeiro campaign_id para garantir que o log apareça
-- **Manter fallback GET**: se POST retornar erro, tentar GET como fallback
-- **Não agrupar por item_id**: retornar `ads_by_campaign` (1 entrada por campaign_id) em vez de `ads_by_product` (1 entrada por item_id). Cada campanha mantém suas métricas individuais
-- **Incluir campo `campaign_id`** em cada entrada para identificação única
+1. **No Step 2**, pedir `info_type_list: "1,2"` (tipo 2 inclui performance summary/budget da campanha) e logar a resposta completa dos primeiros 3 para descobrir quais campos vêm
+2. **No Step 4**, manter a chamada per-campaign mas se continuar vazio, usar os dados do Step 3 (shop-level daily) como fallback — distribuir proporcionalmente se houver dados de expense por campanha, ou retornar as campanhas com métricas zero mas com status correto
+3. **Mapear status corretamente**: investigar os valores reais de `common_info.status` (pode ser 0=pausado, 1=ativo, 2=encerrado etc.) e retornar `'active' | 'paused' | 'ended'`
 
-#### 2. Backend — Nova estrutura de retorno
+### Parte 2 — Frontend: Detalhe full-page
 
-```text
-ads_by_campaign: [
-  {
-    campaign_id, item_id, item_name, status,
-    impressions, clicks, expense, gmv, direct_gmv,
-    orders, direct_orders, avg_position,
-    roas, direct_roas, acos, ctr, cost_per_order,
-    days_active,
-    daily: [{date, expense, gmv, roas, clicks, impressions}]
-  }
-]
-```
+1. **Ao clicar numa campanha**, em vez de expandir o `CampaignDetail` inline, converter os dados da campanha API em formato `EnrichedAdsData` e abrir o `AdsDetailFullView` existente
+2. Criar função `campaignToEnrichedAds(campaign: CampaignAds): EnrichedAdsData` que mapeia os campos:
+   - `campaign.expense` → `despesas`
+   - `campaign.gmv` → `gmv`
+   - `campaign.roas` → `roas`
+   - `campaign.item_name` → `nome_produto_csv`
+   - `campaign.item_id` → `shopee_product_id`
+   - `campaign.status` → `status_anuncio`
+   - etc.
+3. No `AdsTab.tsx`, quando `selectedDetail` vem de API, abrir o mesmo `AdsDetailFullView` com navegação entre campanhas
 
-Se per-campaign continuar retornando vazio, cada campanha terá métricas zeradas mas ainda aparecerá no frontend com nome, item_id e status.
+### Parte 3 — Status correto nos cards
 
-#### 3. Frontend — Cards individuais por campanha (`ApiAdsDashboard.tsx`)
+1. Adicionar badge para 3 estados: **Ativo** (verde), **Pausado** (amarelo), **Encerrado** (cinza)
+2. No backend, mapear: `status === 1` → active, `status === 0 || status === 2` → paused/ended (confirmar via logs)
 
-- Trocar a seção "Performance por Produto" por "Campanhas" com cards individuais
-- Cada card mostra: nome da campanha, item_id, status, e todas as métricas (se disponíveis)
-- ROAS colorido (verde ≥3, amarelo 1-3, vermelho <1)
-- Mini sparkline dos últimos 7 dias
-- Botão "↻ Atualizar" por campanha
+### Parte 4 — Remover CampaignDetail inline
 
-#### 4. Frontend — Detalhe clicável por campanha
-
-- Ao clicar num card de campanha, expandir uma view de detalhe inline (similar ao `AdsDetailFullView` do CSV)
-- Mostrar: gráfico diário (ROAS/Gasto/Receita), grid de métricas completas, período
-- Usar estado local `selectedCampaign` no `ApiAdsDashboard`
-
-#### 5. Banco de dados — Atualizar upsert
-
-- Mudar upsert para usar `campaign_id` como chave (em vez de `item_id`)
-- Ou criar novo campo `campaign_id` na tabela `shopee_ads_by_product` e ajustar unique constraint
+Remover o componente `CampaignDetail` expandível e substituir pelo fluxo de tela cheia.
 
 ### Arquivos alterados
 
 ```text
-supabase/functions/shopee-ads/index.ts     — POST em vez de GET, retorno por campanha, debug fix
-supabase/functions/_shared/shopee.ts       — nenhuma mudança (shopeePost já existe)
-src/components/roas/ApiAdsDashboard.tsx     — cards por campanha, click-to-detail, ordenação
-src/components/roas/AdsTab.tsx             — ajustar para ads_by_campaign
-Migration SQL                              — adicionar campaign_id na tabela + ajustar constraint
+supabase/functions/shopee-ads/index.ts   — info_type_list "1,2", debug status values, status mapping
+src/components/roas/ApiAdsDashboard.tsx   — remover CampaignDetail, onClick abre callback para detail
+src/components/roas/AdsTab.tsx           — receber callback de campanha, converter para EnrichedAdsData, abrir AdsDetailFullView
 ```
 
-### Sem mudanças
-
-- `AdsDetailFullView.tsx` (usado apenas para dados CSV, não muda)
-- `useShopeeToken.ts` (já suporta itemId, não muda)
+Sem mudanças de banco.
 
