@@ -10,10 +10,6 @@ import {
   jsonResponse,
 } from "../_shared/shopee.ts";
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 const toDateStr = (ts: number) => {
   const d = new Date(ts * 1000);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -65,88 +61,6 @@ async function refreshTokenIfNeeded(shopeeToken: any, supabase: any) {
   return shopeeToken.access_token;
 }
 
-/**
- * Try endpoint 1: get_all_cpc_ads_daily_performance (POST)
- * with aggressive retry delays
- */
-async function tryAllCpcAds(
-  accessToken: string,
-  shopId: string | number,
-  startDate: string,
-  endDate: string,
-): Promise<{ entries: any[]; rateLimited: boolean; rawResponse: any }> {
-  const delays = [10000, 20000, 30000];
-
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      console.log(`[SHOPEE ADS] get_all_cpc attempt ${attempt}/3: ${startDate} → ${endDate}`);
-      const result = await shopeePost(
-        "/api/v2/ads/get_all_cpc_ads_daily_performance",
-        accessToken,
-        shopId,
-        { start_date: startDate, end_date: endDate }
-      );
-
-      if (attempt === 1) {
-        console.log(`[SHOPEE ADS] FULL RESPONSE (attempt 1): ${JSON.stringify(result).substring(0, 2000)}`);
-      }
-
-      const err = result?.error || result?.msg || "";
-      if (typeof err === "string" && err.toLowerCase().includes("rate_limit")) {
-        console.log(`[SHOPEE ADS] Rate limited, waiting ${delays[attempt - 1]}ms...`);
-        if (attempt < 3) {
-          await sleep(delays[attempt - 1]);
-          continue;
-        }
-        return { entries: [], rateLimited: true, rawResponse: result };
-      }
-
-      const entries = result?.response?.entry_list || result?.response?.data || [];
-      return { entries, rateLimited: false, rawResponse: result };
-    } catch (e) {
-      console.error(`[SHOPEE ADS] get_all_cpc error attempt ${attempt}:`, e);
-      if (attempt < 3) {
-        await sleep(delays[attempt - 1]);
-        continue;
-      }
-    }
-  }
-  return { entries: [], rateLimited: true, rawResponse: null };
-}
-
-/**
- * Try endpoint 2: get_product_campaign_daily_performance (GET)
- */
-async function tryProductCampaignAds(
-  accessToken: string,
-  shopId: string | number,
-  startDate: string,
-  endDate: string,
-): Promise<{ entries: any[]; rateLimited: boolean; rawResponse: any }> {
-  try {
-    console.log(`[SHOPEE ADS] get_product_campaign: ${startDate} → ${endDate}`);
-    const result = await shopeeGet(
-      "/api/v2/ads/get_product_campaign_daily_performance",
-      accessToken,
-      shopId,
-      { start_date: startDate, end_date: endDate }
-    );
-
-    console.log(`[SHOPEE ADS] product_campaign FULL RESPONSE: ${JSON.stringify(result).substring(0, 2000)}`);
-
-    const err = result?.error || result?.msg || "";
-    if (typeof err === "string" && err.toLowerCase().includes("rate_limit")) {
-      return { entries: [], rateLimited: true, rawResponse: result };
-    }
-
-    const entries = result?.response?.entry_list || result?.response?.data || [];
-    return { entries, rateLimited: false, rawResponse: result };
-  } catch (e) {
-    console.error(`[SHOPEE ADS] get_product_campaign error:`, e);
-    return { entries: [], rateLimited: false, rawResponse: null };
-  }
-}
-
 async function fetchAdsPerformance(
   accessToken: string,
   shopId: string | number
@@ -156,20 +70,70 @@ async function fetchAdsPerformance(
   const startDate = toDateStr(thirtyDaysAgo);
   const endDate = toDateStr(now);
 
-  // Initial delay to avoid collisions with any recent shopee-sync calls
-  console.log("[SHOPEE ADS] Initial 2s delay before first API call...");
-  await sleep(2000);
+  // 1. Get campaign ID list
+  let campaignIds: number[] = [];
+  let campaignDetails: any[] = [];
 
+  try {
+    console.log("[SHOPEE ADS] === Step 1: get_product_level_campaign_id_list ===");
+    const campaignList = await shopeeGet(
+      "/api/v2/ads/get_product_level_campaign_id_list",
+      accessToken,
+      shopId
+    );
+    console.log(`[SHOPEE ADS] campaign_id_list RESPONSE: ${JSON.stringify(campaignList).substring(0, 3000)}`);
+    campaignIds = campaignList?.response?.campaign_id_list || campaignList?.response?.data?.campaign_id_list || [];
+    console.log(`[SHOPEE ADS] Found ${campaignIds.length} campaign IDs`);
+  } catch (e) {
+    console.error("[SHOPEE ADS] get_product_level_campaign_id_list error:", e);
+  }
+
+  // 2. Get campaign settings/details
+  if (campaignIds.length > 0) {
+    console.log("[SHOPEE ADS] === Step 2: get_product_level_campaign_setting_info ===");
+    for (let i = 0; i < campaignIds.length; i += 20) {
+      const batch = campaignIds.slice(i, i + 20);
+      try {
+        const details = await shopeeGet(
+          "/api/v2/ads/get_product_level_campaign_setting_info",
+          accessToken,
+          shopId,
+          { campaign_id_list: batch.join(",") }
+        );
+        console.log(`[SHOPEE ADS] campaign_setting_info batch ${Math.floor(i / 20) + 1} RESPONSE: ${JSON.stringify(details).substring(0, 3000)}`);
+        const items = details?.response?.data || details?.response?.campaign_list || [];
+        if (Array.isArray(items)) campaignDetails.push(...items);
+      } catch (e) {
+        console.error(`[SHOPEE ADS] campaign_setting_info batch error:`, e);
+      }
+    }
+  }
+
+  // 3. Get daily performance (last 30 days)
   let allEntries: any[] = [];
   let wasRateLimited = false;
 
-  // Single 30-day request to minimize rate limit consumption
-  console.log("[SHOPEE ADS] === Single request: get_all_cpc_ads_daily_performance (30 days) ===");
-  const { entries, rateLimited } = await tryAllCpcAds(accessToken, shopId, startDate, endDate);
-  allEntries = entries;
-  wasRateLimited = rateLimited;
+  try {
+    console.log(`[SHOPEE ADS] === Step 3: get_all_cpc_ads_daily_performance ${startDate} → ${endDate} ===`);
+    const result = await shopeeGet(
+      "/api/v2/ads/get_all_cpc_ads_daily_performance",
+      accessToken,
+      shopId,
+      { start_date: startDate, end_date: endDate }
+    );
+    console.log(`[SHOPEE ADS] daily_performance RESPONSE: ${JSON.stringify(result).substring(0, 3000)}`);
 
-  // Get total balance (separate rate limit)
+    const err = result?.error || result?.msg || "";
+    if (typeof err === "string" && err.toLowerCase().includes("rate_limit")) {
+      wasRateLimited = true;
+    } else {
+      allEntries = result?.response?.entry_list || result?.response?.data || [];
+    }
+  } catch (e) {
+    console.error("[SHOPEE ADS] get_all_cpc_ads_daily_performance error:", e);
+  }
+
+  // 4. Get total balance
   let totalBalance: any = null;
   try {
     totalBalance = await shopeeGet(
@@ -182,7 +146,7 @@ async function fetchAdsPerformance(
     console.error("[SHOPEE ADS] Balance error:", e);
   }
 
-  console.log(`[SHOPEE ADS] Total entries collected: ${allEntries.length}`);
+  console.log(`[SHOPEE ADS] Total entries: ${allEntries.length}, Campaigns: ${campaignIds.length}, Details: ${campaignDetails.length}`);
 
   // Aggregate by item_id
   const productAds: Record<string, {
@@ -227,6 +191,8 @@ async function fetchAdsPerformance(
 
   return {
     ads_by_product: Object.values(productAds),
+    campaign_ids: campaignIds,
+    campaign_details: campaignDetails,
     total_balance: totalBalance?.response?.total_balance ?? null,
     period_start: startDate,
     period_end: endDate,
@@ -273,7 +239,7 @@ Deno.serve(async (req) => {
     const shopId = shopeeToken.shop_id;
     const currentAccessToken = await refreshTokenIfNeeded(shopeeToken, supabase);
 
-    console.log(`[SHOPEE ADS] Starting ads-only sync for shop ${shopId}`);
+    console.log(`[SHOPEE ADS] Starting ads sync for shop ${shopId}`);
 
     const adsPerformance = await fetchAdsPerformance(currentAccessToken, shopId);
 
