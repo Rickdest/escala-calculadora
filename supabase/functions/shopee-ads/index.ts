@@ -352,14 +352,13 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
             accessToken, shopId,
             {
               campaign_id_list: String(c.campaign_id),
-              start_date: isoToDDMMYYYY(startDateISO),
-              end_date: isoToDDMMYYYY(endDateISO),
+              performance_date: isoToDDMMYYYY(endDateISO),
             }
           );
 
           // Log first campaign response for debug
           if (i === 0 && batchIdx === 0) {
-            console.log('[SHOPEE ADS] hourly sample:', JSON.stringify(res).substring(0, 1000));
+            console.log('[SHOPEE ADS] hourly sample:', JSON.stringify(res).substring(0, 2000));
           }
 
           // Try to extract avg_position from response
