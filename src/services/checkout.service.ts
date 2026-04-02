@@ -5,16 +5,22 @@
 
 const CHECKOUT_URL = import.meta.env.VITE_CAKTO_URL ?? '';
 
-export function buildCheckoutUrl(email?: string): string {
-  const url = new URL(CHECKOUT_URL);
-  if (email) url.searchParams.set('email', email);
-  return url.toString();
+export function buildCheckoutUrl(email?: string): string | null {
+  if (!CHECKOUT_URL) return null;
+  try {
+    const url = new URL(CHECKOUT_URL);
+    if (email) url.searchParams.set('email', email);
+    return url.toString();
+  } catch {
+    return null;
+  }
 }
 
 export function openCheckout(email?: string) {
-  if (!CHECKOUT_URL) {
-    console.error('VITE_CAKTO_URL não configurado');
+  const url = buildCheckoutUrl(email);
+  if (!url) {
+    console.error('VITE_CAKTO_URL não configurado ou inválido');
     return;
   }
-  window.open(buildCheckoutUrl(email), '_blank', 'noopener,noreferrer');
+  window.open(url, '_blank', 'noopener,noreferrer');
 }
