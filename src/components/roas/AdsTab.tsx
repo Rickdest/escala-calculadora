@@ -114,16 +114,15 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       const result = await syncAdsOnly(itemId);
       const adsPerfData = result?.results?.ads_performance;
       if (adsPerfData) {
-        // Merge updated product into existing apiAdsData
         setApiAdsData((prev: any) => {
           if (!prev) return adsPerfData;
-          const updatedProducts = [...(prev.ads_by_product || [])];
-          for (const newP of adsPerfData.ads_by_product || []) {
-            const idx = updatedProducts.findIndex((p: any) => p.item_id === newP.item_id);
-            if (idx >= 0) updatedProducts[idx] = newP;
-            else updatedProducts.push(newP);
+          const updatedCampaigns = [...(prev.ads_by_campaign || [])];
+          for (const newC of adsPerfData.ads_by_campaign || []) {
+            const idx = updatedCampaigns.findIndex((c: any) => c.campaign_id === newC.campaign_id);
+            if (idx >= 0) updatedCampaigns[idx] = newC;
+            else updatedCampaigns.push(newC);
           }
-          return { ...prev, ads_by_product: updatedProducts };
+          return { ...prev, ads_by_campaign: updatedCampaigns };
         });
         toast.success('Produto atualizado!');
       }
