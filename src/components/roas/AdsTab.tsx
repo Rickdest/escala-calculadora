@@ -108,6 +108,30 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
 
   const [apiAdsData, setApiAdsData] = useState<any>(null);
 
+  const handleRefreshProduct = async (itemId: number) => {
+    try {
+      toast.info('Atualizando dados do produto...');
+      const result = await syncAdsOnly(itemId);
+      const adsPerfData = result?.results?.ads_performance;
+      if (adsPerfData) {
+        // Merge updated product into existing apiAdsData
+        setApiAdsData((prev: any) => {
+          if (!prev) return adsPerfData;
+          const updatedProducts = [...(prev.ads_by_product || [])];
+          for (const newP of adsPerfData.ads_by_product || []) {
+            const idx = updatedProducts.findIndex((p: any) => p.item_id === newP.item_id);
+            if (idx >= 0) updatedProducts[idx] = newP;
+            else updatedProducts.push(newP);
+          }
+          return { ...prev, ads_by_product: updatedProducts };
+        });
+        toast.success('Produto atualizado!');
+      }
+    } catch {
+      toast.error('Erro ao atualizar produto');
+    }
+  };
+
   const handleImportAds = async () => {
     if (!isConnected) {
       setShowShopeeModal(true);
