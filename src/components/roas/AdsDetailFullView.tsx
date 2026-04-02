@@ -491,7 +491,7 @@ function KpiCard({ label, value, sub, subColor, icon: Icon, highlight, colorClas
 
 // ═══ Main Component ═══
 
-export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPosition, onLink, onQuickRegister, onReimport, onUnlink, onChangeLink }: Props) {
+export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPosition, onLink, onQuickRegister, onReimport, onUnlink, onChangeLink, onRefreshProduct }: Props) {
   const { currentStore } = useStore();
   const isMobile = useIsMobile();
   const config = currentStore?.config;
