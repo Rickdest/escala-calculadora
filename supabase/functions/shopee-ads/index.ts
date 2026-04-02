@@ -675,6 +675,7 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
     hourly_performance: hourlyPerformance,
     recommended_items: recommendedItems,
     shop_toggles: shopToggles,
+    discovery_results: disc,
     period_start: startDateISO, period_end: endDateISO, campaign_count: campaignIds.length,
   };
 }
