@@ -41,6 +41,7 @@ interface Props {
   onReimport?: () => void;
   onUnlink?: () => void;
   onChangeLink?: () => void;
+  onRefreshProduct?: (itemId: number) => void;
 }
 
 // ═══ Operation Log Timeline ═══
