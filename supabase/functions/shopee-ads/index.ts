@@ -258,8 +258,8 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
   const nowBR = new Date();
   const yesterdayBR = new Date(nowBR.getTime() - 24 * 60 * 60 * 1000);
   const startBR = new Date(nowBR.getTime() - ADS_LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
-  const startDate = toDateStrBR(startBR);
-  const endDate = toDateStrBR(yesterdayBR);
+  const startDate = toISODateBR(startBR);
+  const endDate = toISODateBR(yesterdayBR);
   const periodStartISO = toISODateBR(startBR);
   const periodEndISO = toISODateBR(yesterdayBR);
 
