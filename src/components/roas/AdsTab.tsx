@@ -123,8 +123,8 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
 
     // Auto-link by shopee_item_id
     const matchedProduct = products.find(p =>
-      p.shopee_item_id && campaign.item_id &&
-      String(p.shopee_item_id) === String(campaign.item_id)
+      (p as any).shopeeItemId && campaign.item_id &&
+      String((p as any).shopeeItemId) === String(campaign.item_id)
     );
 
     // Calculate classification if linked
@@ -133,8 +133,8 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
     let margemContribuicao: number | null = null;
 
     if (matchedProduct && campaign.expense > 0) {
-      const salePrice = matchedProduct.sale_price || 0;
-      const costPrice = matchedProduct.cost_price || 0;
+      const salePrice = (matchedProduct as any).salePrice || 0;
+      const costPrice = (matchedProduct as any).costPrice || 0;
       const margin = salePrice > 0 ? ((salePrice - costPrice) / salePrice) : 0;
       margemContribuicao = margin * 100;
       roasEmpate = margin > 0 ? (1 / margin) : null;

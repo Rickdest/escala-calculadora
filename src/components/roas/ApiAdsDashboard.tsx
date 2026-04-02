@@ -43,7 +43,7 @@ function MiniSparkline({ data }: { data?: Array<{ roas: number }> }) {
   );
 }
 
-function CampaignCard({ campaign, onRefresh, onSelect, isSelected }: { campaign: CampaignAds; onRefresh?: (itemId: number) => void; onSelect: () => void; isSelected: boolean }) {
+function CampaignCard({ campaign, onRefresh, onSelect, isSelected, linkedProduct }: { campaign: CampaignAds; onRefresh?: (itemId: number) => void; onSelect: () => void; isSelected: boolean; linkedProduct?: any }) {
   const profit = campaign.gmv - campaign.expense;
   const roasColor = getRoasColor(campaign.roas);
 
