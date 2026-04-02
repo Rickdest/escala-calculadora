@@ -290,10 +290,10 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
           date: e.date || null,
           impressions: Number(e.impression || e.impressions || 0),
           clicks: Number(e.click || e.clicks || 0),
-          expense: Number(e.expense || e.cost || 0),
-          gmv: Number(e.broad_order_amount || e.broad_gmv || e.gmv || 0),
-          orders: Number(e.broad_order_num || e.broad_order || e.orders || 0),
-          roas: Number(e.broad_roas || e.roas || 0),
+      expense: Number(e.expense || e.cost || 0),
+      gmv: Number(e.broad_gmv || e.broad_order_amount || e.gmv || 0),
+      orders: Number(e.broad_order || e.broad_order_num || e.orders || 0),
+      roas: Number(e.broad_roi || e.broad_roas || e.roas || 0),
         });
       }
     }
