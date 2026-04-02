@@ -149,30 +149,40 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
   const campaignToItem = new Map<number, { item_id: number; ad_name: string; status: number | null }>();
 
   if (campaignIds.length > 0) {
-    console.log("[SHOPEE ADS] === Step 2: campaign settings ===");
+    console.log("[SHOPEE ADS] === Step 2: campaign settings (info_type 1,2) ===");
     for (let i = 0; i < campaignIds.length; i += 20) {
       const batch = campaignIds.slice(i, i + 20);
       try {
         const res = await shopeeGet(
           "/api/v2/ads/get_product_level_campaign_setting_info",
           accessToken, shopId,
-          { campaign_id_list: batch.join(","), info_type_list: "1" }
+          { campaign_id_list: batch.join(","), info_type_list: "1,2" }
         );
+        // Log first batch raw response for debugging
+        if (i === 0) {
+          console.log(`[SHOPEE ADS] [DEBUG] Step 2 raw (first 3):`, JSON.stringify(res?.response?.campaign_list?.slice(0, 3)).substring(0, 3000));
+        }
         const items = res?.response?.campaign_list || res?.response?.data || [];
         if (Array.isArray(items)) {
           for (const d of items) {
             const itemId = d.common_info?.item_id_list?.[0] || d.item_id || null;
             const adName = d.common_info?.ad_name || d.title || "";
-            const status = d.common_info?.status ?? d.status ?? null;
-            campaignDetails.push({ campaign_id: d.campaign_id, item_id: itemId, ad_name: adName, status });
+            const rawStatus = d.common_info?.status ?? d.status ?? null;
+            // Map status: 1=active, 2=paused, others=ended
+            let mappedStatus: string;
+            if (rawStatus === 1 || rawStatus === 'ongoing') mappedStatus = 'active';
+            else if (rawStatus === 2 || rawStatus === 'paused') mappedStatus = 'paused';
+            else mappedStatus = 'ended';
+            campaignDetails.push({ campaign_id: d.campaign_id, item_id: itemId, ad_name: adName, status: mappedStatus, raw_status: rawStatus });
             if (itemId) {
-              campaignToItem.set(d.campaign_id, { item_id: itemId, ad_name: adName, status });
+              campaignToItem.set(d.campaign_id, { item_id: itemId, ad_name: adName, status: rawStatus });
             }
           }
         }
       } catch (e) { console.error("[SHOPEE ADS] Step 2 batch error:", e); }
     }
     console.log(`[SHOPEE ADS] ${campaignDetails.length} campaign details, ${campaignToItem.size} with item_id`);
+    console.log(`[SHOPEE ADS] [DEBUG] statuses:`, JSON.stringify(campaignDetails.slice(0, 5).map(c => ({ id: c.campaign_id, status: c.status, raw: c.raw_status }))));
   }
 
   // Step 3: Daily performance (shop-level)
@@ -291,17 +301,17 @@ function processCampaignEntries(campaign: any, entries: any[], result: any[], id
     });
   }
 
-  const statusVal = campaign.status;
-  const isOngoing = statusVal === 1 || statusVal === "ongoing";
+  // campaign.status is already mapped to 'active'|'paused'|'ended' in Step 2
+  const statusStr = campaign.status || 'ended';
 
-  console.log(`[SHOPEE ADS] Campaign ${idx}/${total}: id=${campaign.campaign_id} item_id=${campaign.item_id} expense=${totExp.toFixed(2)} entries=${entries.length}`);
+  console.log(`[SHOPEE ADS] Campaign ${idx}/${total}: id=${campaign.campaign_id} item_id=${campaign.item_id} status=${statusStr} expense=${totExp.toFixed(2)} entries=${entries.length}`);
 
   // Always include the campaign even with zero data - shows in frontend with name/status
   result.push({
     campaign_id: campaign.campaign_id,
     item_id: campaign.item_id,
     item_name: campaign.ad_name || `Item #${campaign.item_id}`,
-    status: isOngoing ? 'active' : 'ended',
+    status: statusStr,
     impressions: totImp,
     clicks: totClk,
     expense: Math.round(totExp * 100) / 100,

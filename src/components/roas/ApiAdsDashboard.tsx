@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 interface DailyEntry { date: string | null; impressions: number; clicks: number; expense: number; gmv: number; orders: number; roas: number; }
 interface CampaignAds {
-  campaign_id: number; item_id: number; item_name: string; status: 'active' | 'ended';
+  campaign_id: number; item_id: number; item_name: string; status: 'active' | 'paused' | 'ended';
   impressions: number; clicks: number; expense: number; gmv: number; direct_gmv: number;
   orders: number; direct_orders: number; avg_position: number | null;
   roas: number; direct_roas: number; acos: number; ctr: number; cost_per_order: number;
@@ -57,9 +57,11 @@ function CampaignCard({ campaign, onRefresh, onSelect, isSelected }: { campaign:
           <div className="flex items-center gap-2">
             <p className="text-sm font-bold text-foreground truncate">{campaign.item_name}</p>
             <span className={cn('text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0',
-              campaign.status === 'active' ? 'text-success bg-success/10' : 'text-muted-foreground bg-muted'
+              campaign.status === 'active' ? 'text-success bg-success/10' :
+              campaign.status === 'paused' ? 'text-warning bg-warning/10' :
+              'text-muted-foreground bg-muted'
             )}>
-              {campaign.status === 'active' ? 'Ativo' : 'Encerrado'}
+              {campaign.status === 'active' ? 'Ativo' : campaign.status === 'paused' ? 'Pausado' : 'Encerrado'}
             </span>
           </div>
           <p className="text-[10px] text-muted-foreground font-mono">
@@ -182,12 +184,11 @@ function CampaignDetail({ campaign, onClose }: { campaign: CampaignAds; onClose:
   );
 }
 
-export function ApiAdsDashboard({ data, onRefreshProduct }: { data: ApiAdsData; onRefreshProduct?: (itemId: number) => void }) {
+export function ApiAdsDashboard({ data, onRefreshProduct, onCampaignSelect }: { data: ApiAdsData; onRefreshProduct?: (itemId: number) => void; onCampaignSelect?: (campaign: CampaignAds) => void }) {
   const { summary, daily_entries, campaign_details, ads_by_campaign = [], total_balance } = data;
   // Support legacy ads_by_product field
   const campaigns: CampaignAds[] = ads_by_campaign.length > 0 ? ads_by_campaign : ((data as any).ads_by_product || []);
   const [sortBy, setSortBy] = useState<string>('roas');
-  const [selectedCampaignId, setSelectedCampaignId] = useState<number | null>(null);
 
   const chartData = useMemo(() =>
     daily_entries.filter(e => e.date).sort((a, b) => (a.date || '').localeCompare(b.date || '')).map(e => ({
@@ -206,11 +207,6 @@ export function ApiAdsDashboard({ data, onRefreshProduct }: { data: ApiAdsData; 
       default: return arr;
     }
   }, [campaigns, sortBy]);
-
-  const selectedCampaign = useMemo(() =>
-    campaigns.find(c => c.campaign_id === selectedCampaignId) || null,
-    [campaigns, selectedCampaignId]
-  );
 
   const balance = total_balance?.total_balance ?? total_balance?.balance ?? null;
 
@@ -297,11 +293,6 @@ export function ApiAdsDashboard({ data, onRefreshProduct }: { data: ApiAdsData; 
         </div>
       )}
 
-      {/* Campaign Detail (expanded) */}
-      {selectedCampaign && (
-        <CampaignDetail campaign={selectedCampaign} onClose={() => setSelectedCampaignId(null)} />
-      )}
-
       {/* Campaigns list */}
       {campaigns.length > 0 && (
         <div className="space-y-3">
@@ -328,8 +319,8 @@ export function ApiAdsDashboard({ data, onRefreshProduct }: { data: ApiAdsData; 
                 key={c.campaign_id}
                 campaign={c}
                 onRefresh={onRefreshProduct}
-                onSelect={() => setSelectedCampaignId(selectedCampaignId === c.campaign_id ? null : c.campaign_id)}
-                isSelected={selectedCampaignId === c.campaign_id}
+                onSelect={() => onCampaignSelect?.(c)}
+                isSelected={false}
               />
             ))}
           </div>
