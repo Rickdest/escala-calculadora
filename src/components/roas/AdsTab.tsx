@@ -168,19 +168,21 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       toast.info('Atualizando dados do produto...');
       const result = await syncAdsOnly(itemId);
       const adsPerfData = result?.results?.ads_performance;
-      if (adsPerfData) {
+      if (adsPerfData && adsPerfData.ads_by_campaign?.length > 0) {
+        // Only merge the specific campaigns — never overwrite summary/daily_entries
         setApiAdsData((prev: any) => {
           if (!prev) return adsPerfData;
           const updatedCampaigns = [...(prev.ads_by_campaign || [])];
-          for (const newC of adsPerfData.ads_by_campaign || []) {
+          for (const newC of adsPerfData.ads_by_campaign) {
             const idx = updatedCampaigns.findIndex((c: any) => c.campaign_id === newC.campaign_id);
             if (idx >= 0) updatedCampaigns[idx] = newC;
             else updatedCampaigns.push(newC);
           }
+          // Keep original summary, daily_entries, period — only update ads_by_campaign
           return { ...prev, ads_by_campaign: updatedCampaigns };
         });
-        // Update detail view with refreshed data
-        const updatedCampaign = adsPerfData.ads_by_campaign?.find(
+        // Update detail view with refreshed campaign data
+        const updatedCampaign = adsPerfData.ads_by_campaign.find(
           (c: any) => String(c.item_id) === String(itemId)
         );
         if (updatedCampaign) {
@@ -188,6 +190,8 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
         }
         invalidatePersistedAds();
         toast.success('Produto atualizado!');
+      } else {
+        toast.info('Nenhum dado novo encontrado para este produto.');
       }
     } catch {
       toast.error('Erro ao atualizar produto');
