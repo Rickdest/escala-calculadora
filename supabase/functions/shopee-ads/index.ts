@@ -399,7 +399,124 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
     console.log(`[SHOPEE ADS] Step 5: found avg_position for ${hourlyFound}/${activeCampaignsWithData.length} campaigns`);
   }
 
-  // Step 6: Balance
+  // Step 6: Discovery — test all read endpoints for useful data (temporary diagnostic)
+  const discoveryResults: Record<string, any> = {};
+  try {
+    console.log("[SHOPEE ADS] === Step 6: Discovery endpoints ===");
+    const firstActive = activeCampaignsWithData[0] || adsByCampaign.find((c: any) => c.status === 'active') || adsByCampaign[0];
+    const discoveryItemId = firstActive?.item_id ? String(firstActive.item_id) : null;
+    const discoveryCampaignId = firstActive?.campaign_id ? String(firstActive.campaign_id) : null;
+    const discoveryStartAPI = isoToDDMMYYYY(startDateISO);
+    const discoveryEndAPI = isoToDDMMYYYY(endDateISO);
+
+    // 1. Shop toggle info
+    await delay(500);
+    try {
+      const res = await shopeeGet("/api/v2/ads/get_shop_toggle_info", accessToken, shopId);
+      console.log(`[DISCOVERY] get_shop_toggle_info: ` + JSON.stringify(res).substring(0, 800));
+      discoveryResults.shop_toggle_info = res;
+    } catch (e) { discoveryResults.shop_toggle_info = { error: String(e) }; }
+
+    // 2. Recommended ROI target
+    if (discoveryItemId) {
+      await delay(500);
+      try {
+        const res = await shopeeGet("/api/v2/ads/get_product_recommended_roi_target", accessToken, shopId, { item_id_list: discoveryItemId });
+        console.log(`[DISCOVERY] get_product_recommended_roi_target: ` + JSON.stringify(res).substring(0, 800));
+        discoveryResults.recommended_roi_target = res;
+      } catch (e) { discoveryResults.recommended_roi_target = { error: String(e) }; }
+    }
+
+    // 3. Budget suggestion
+    if (discoveryItemId) {
+      await delay(500);
+      try {
+        const res = await shopeeGet("/api/v2/ads/get_create_product_ad_budget_suggestion", accessToken, shopId, { item_id: discoveryItemId });
+        console.log(`[DISCOVERY] get_create_product_ad_budget_suggestion: ` + JSON.stringify(res).substring(0, 800));
+        discoveryResults.budget_suggestion = res;
+      } catch (e) { discoveryResults.budget_suggestion = { error: String(e) }; }
+    }
+
+    // 4. Recommended keywords
+    if (discoveryItemId) {
+      await delay(500);
+      try {
+        const res = await shopeeGet("/api/v2/ads/get_recommended_keyword_list", accessToken, shopId, { item_id: discoveryItemId });
+        console.log(`[DISCOVERY] get_recommended_keyword_list: ` + JSON.stringify(res).substring(0, 800));
+        discoveryResults.recommended_keywords = res;
+      } catch (e) { discoveryResults.recommended_keywords = { error: String(e) }; }
+    }
+
+    // 5. Recommended items for Ads
+    await delay(500);
+    try {
+      const res = await shopeeGet("/api/v2/ads/get_recommended_item_list", accessToken, shopId);
+      console.log(`[DISCOVERY] get_recommended_item_list: ` + JSON.stringify(res).substring(0, 800));
+      discoveryResults.recommended_items = res;
+    } catch (e) { discoveryResults.recommended_items = { error: String(e) }; }
+
+    // 6. GMS campaign performance
+    if (discoveryCampaignId) {
+      await delay(500);
+      try {
+        const res = await shopeeGet("/api/v2/ads/get_gms_campaign_performance", accessToken, shopId, {
+          campaign_id_list: discoveryCampaignId, start_date: discoveryStartAPI, end_date: discoveryEndAPI,
+        });
+        console.log(`[DISCOVERY] get_gms_campaign_performance: ` + JSON.stringify(res).substring(0, 800));
+        discoveryResults.gms_campaign_performance = res;
+      } catch (e) { discoveryResults.gms_campaign_performance = { error: String(e) }; }
+    }
+
+    // 7. GMS eligibility check
+    if (discoveryItemId) {
+      await delay(500);
+      try {
+        const res = await shopeeGet("/api/v2/ads/check_create_gms_product_campaign_eligibility", accessToken, shopId, { item_id_list: discoveryItemId });
+        console.log(`[DISCOVERY] check_create_gms_product_campaign_eligibility: ` + JSON.stringify(res).substring(0, 800));
+        discoveryResults.gms_eligibility = res;
+      } catch (e) { discoveryResults.gms_eligibility = { error: String(e) }; }
+    }
+
+    // 8. GMS deleted items
+    await delay(500);
+    try {
+      const res = await shopeeGet("/api/v2/ads/list_gms_user_deleted_item", accessToken, shopId);
+      console.log(`[DISCOVERY] list_gms_user_deleted_item: ` + JSON.stringify(res).substring(0, 800));
+      discoveryResults.gms_deleted_items = res;
+    } catch (e) { discoveryResults.gms_deleted_items = { error: String(e) }; }
+
+    // 9. Ads fácil rate
+    await delay(500);
+    try {
+      const res = await shopeeGet("/api/v2/ads/get_ads_fácil_shop_rate", accessToken, shopId);
+      console.log(`[DISCOVERY] get_ads_fácil_shop_rate: ` + JSON.stringify(res).substring(0, 800));
+      discoveryResults.ads_facil_rate = res;
+    } catch (e) { discoveryResults.ads_facil_rate = { error: String(e) }; }
+
+    // 10. Hourly shop performance (yesterday)
+    await delay(500);
+    try {
+      const res = await shopeeGet("/api/v2/ads/get_all_cpc_ads_hourly_performance", accessToken, shopId, { performance_date: discoveryEndAPI });
+      console.log(`[DISCOVERY] get_all_cpc_ads_hourly_performance: ` + JSON.stringify(res).substring(0, 800));
+      discoveryResults.hourly_shop_performance = res;
+    } catch (e) { discoveryResults.hourly_shop_performance = { error: String(e) }; }
+
+    // 11. Hourly campaign performance (yesterday, first active)
+    if (discoveryCampaignId) {
+      await delay(500);
+      try {
+        const res = await shopeeGet("/api/v2/ads/get_product_campaign_hourly_performance", accessToken, shopId, {
+          campaign_id_list: discoveryCampaignId, performance_date: discoveryEndAPI,
+        });
+        console.log(`[DISCOVERY] get_product_campaign_hourly_performance: ` + JSON.stringify(res).substring(0, 800));
+        discoveryResults.hourly_campaign_performance = res;
+      } catch (e) { discoveryResults.hourly_campaign_performance = { error: String(e) }; }
+    }
+
+    console.log(`[SHOPEE ADS] Discovery done. ${Object.keys(discoveryResults).length} endpoints tested.`);
+  } catch (e) { console.error("[SHOPEE ADS] Step 6 discovery error:", e); }
+
+  // Step 7: Balance
   let totalBalance: any = null;
   try {
     const res = await shopeeGet("/api/v2/ads/get_total_balance", accessToken, shopId);
@@ -439,6 +556,7 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
   return {
     daily_entries: dailyEntries, summary, campaign_details: campaignDetails,
     ads_by_campaign: adsByCampaign, total_balance: totalBalance,
+    discovery_results: discoveryResults,
     period_start: startDateISO, period_end: endDateISO, campaign_count: campaignIds.length,
   };
 }
