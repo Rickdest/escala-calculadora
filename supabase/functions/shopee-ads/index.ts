@@ -9,7 +9,6 @@ import {
   jsonResponse,
 } from "../_shared/shopee.ts";
 
-/** DD-MM-YYYY format required by Shopee Ads API, using Brazil timezone */
 const toDateStrBR = (date: Date) => {
   const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
   const y = parts.find(p => p.type === "year")!.value;
@@ -18,7 +17,6 @@ const toDateStrBR = (date: Date) => {
   return `${d}-${m}-${y}`;
 };
 
-/** YYYY-MM-DD for database/frontend */
 const toISODateBR = (date: Date) => {
   const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
   const y = parts.find(p => p.type === "year")!.value;
@@ -26,6 +24,8 @@ const toISODateBR = (date: Date) => {
   const d = parts.find(p => p.type === "day")!.value;
   return `${y}-${m}-${d}`;
 };
+
+const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 async function refreshTokenIfNeeded(shopeeToken: any, _supabase: any) {
   const tokenAge = (Date.now() - new Date(shopeeToken.token_created_at).getTime()) / 1000;
@@ -65,7 +65,7 @@ async function refreshTokenIfNeeded(shopeeToken: any, _supabase: any) {
   return shopeeToken.access_token;
 }
 
-async function fetchAdsPerformance(accessToken: string, shopId: string | number) {
+async function fetchAdsPerformance(accessToken: string, shopId: string | number, filterItemId?: number) {
   const nowBR = new Date();
   const yesterdayBR = new Date(nowBR.getTime() - 24 * 60 * 60 * 1000);
   const startBR = new Date(nowBR.getTime() - 28 * 24 * 60 * 60 * 1000);
@@ -74,12 +74,11 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number)
   const periodStartISO = toISODateBR(startBR);
   const periodEndISO = toISODateBR(yesterdayBR);
 
-  // 1. Campaign IDs
+  // Step 1: Campaign IDs
   let campaignIds: number[] = [];
   try {
     console.log("[SHOPEE ADS] === Step 1: get_product_level_campaign_id_list ===");
     const res = await shopeeGet("/api/v2/ads/get_product_level_campaign_id_list", accessToken, shopId);
-    console.log(`[SHOPEE ADS] campaign_id_list: ${JSON.stringify(res).substring(0, 2000)}`);
     const arr = res?.response?.campaign_list;
     if (Array.isArray(arr)) campaignIds = arr.map((c: any) => c.campaign_id).filter(Boolean);
     if (campaignIds.length === 0) {
@@ -89,8 +88,10 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number)
     console.log(`[SHOPEE ADS] ${campaignIds.length} campaign IDs`);
   } catch (e) { console.error("[SHOPEE ADS] Step 1 error:", e); }
 
-  // 2. Campaign details → item_id map
+  // Step 2: Campaign details → item_id map
   const campaignDetails: any[] = [];
+  const campaignToItem = new Map<number, { item_id: number; ad_name: string; status: number | null }>();
+
   if (campaignIds.length > 0) {
     console.log("[SHOPEE ADS] === Step 2: campaign settings ===");
     for (let i = 0; i < campaignIds.length; i += 20) {
@@ -101,32 +102,25 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number)
           accessToken, shopId,
           { campaign_id_list: batch.join(","), info_type_list: "1" }
         );
-        console.log(`[SHOPEE ADS] settings batch ${Math.floor(i / 20) + 1}: ${JSON.stringify(res).substring(0, 2000)}`);
         const items = res?.response?.campaign_list || res?.response?.data || [];
         if (Array.isArray(items)) {
           for (const d of items) {
             const itemId = d.common_info?.item_id_list?.[0] || d.item_id || null;
             const adName = d.common_info?.ad_name || d.title || "";
             const status = d.common_info?.status ?? d.status ?? null;
-            campaignDetails.push({
-              campaign_id: d.campaign_id,
-              item_id: itemId,
-              ad_name: adName,
-              status,
-            });
+            campaignDetails.push({ campaign_id: d.campaign_id, item_id: itemId, ad_name: adName, status });
+            if (itemId) {
+              campaignToItem.set(d.campaign_id, { item_id: itemId, ad_name: adName, status });
+            }
           }
         }
       } catch (e) { console.error("[SHOPEE ADS] Step 2 batch error:", e); }
     }
-    console.log(`[SHOPEE ADS] ${campaignDetails.length} campaign details parsed`);
+    console.log(`[SHOPEE ADS] ${campaignDetails.length} campaign details, ${campaignToItem.size} with item_id`);
   }
 
-  // 3. Daily performance (shop-level, no item_id)
+  // Step 3: Daily performance (shop-level)
   let dailyEntries: any[] = [];
-  let perfApiError = "";
-  let perfApiMessage = "";
-  let wasRateLimited = false;
-
   try {
     console.log(`[SHOPEE ADS] === Step 3: daily_performance ${startDate} → ${endDate} ===`);
     const res = await shopeeGet(
@@ -134,43 +128,161 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number)
       accessToken, shopId,
       { start_date: startDate, end_date: endDate }
     );
-    console.log(`[SHOPEE ADS] daily_performance: ${JSON.stringify(res).substring(0, 3000)}`);
-
-    const err = res?.error || res?.msg || "";
-    if (typeof err === "string" && err.toLowerCase().includes("rate_limit")) {
-      wasRateLimited = true;
-    } else if (err && err !== "") {
-      perfApiError = err;
-      perfApiMessage = res?.message || "";
-    } else {
-      const resp = res?.response;
-      const raw = Array.isArray(resp) ? resp : (resp?.entry_list || resp?.data || []);
-      dailyEntries = raw.map((e: any) => ({
-        date: e.date || null,
-        impressions: Number(e.impression || e.impressions || 0),
-        clicks: Number(e.click || e.clicks || 0),
-        expense: Number(e.expense || e.cost || 0),
-        gmv: Number(e.broad_order_amount || e.broad_gmv || e.gmv || 0),
-        orders: Number(e.broad_order_num || e.broad_order || e.orders || 0),
-        roas: Number(e.broad_roas || e.roas || 0),
-      }));
-    }
-  } catch (e) {
-    console.error("[SHOPEE ADS] Step 3 error:", e);
-    perfApiError = (e as Error).message;
-  }
-
+    const resp = res?.response;
+    const raw = Array.isArray(resp) ? resp : (resp?.entry_list || resp?.data || []);
+    dailyEntries = raw.map((e: any) => ({
+      date: e.date || null,
+      impressions: Number(e.impression || e.impressions || 0),
+      clicks: Number(e.click || e.clicks || 0),
+      expense: Number(e.expense || e.cost || 0),
+      gmv: Number(e.broad_order_amount || e.broad_gmv || e.gmv || 0),
+      orders: Number(e.broad_order_num || e.broad_order || e.orders || 0),
+      roas: Number(e.broad_roas || e.roas || 0),
+    }));
+  } catch (e) { console.error("[SHOPEE ADS] Step 3 error:", e); }
   console.log(`[SHOPEE ADS] ${dailyEntries.length} daily entries parsed`);
 
-  // 4. Balance
+  // Step 4: Per-campaign daily performance → aggregate by item_id
+  const adsByProduct: any[] = [];
+  const activeCampaigns = campaignDetails.filter(c => {
+    if (filterItemId && c.item_id !== filterItemId) return false;
+    return c.status === 1 || c.status === "ongoing";
+  });
+  console.log(`[SHOPEE ADS] === Step 4: per-campaign performance for ${activeCampaigns.length} active campaigns ===`);
+
+  // Group campaigns by item_id
+  const itemCampaigns = new Map<number, { ad_name: string; campaign_ids: number[] }>();
+  for (const c of activeCampaigns) {
+    if (!c.item_id) continue;
+    const existing = itemCampaigns.get(c.item_id);
+    if (existing) {
+      existing.campaign_ids.push(c.campaign_id);
+    } else {
+      itemCampaigns.set(c.item_id, { ad_name: c.ad_name, campaign_ids: [c.campaign_id] });
+    }
+  }
+
+  // Fetch per-campaign daily data in batches of 5
+  const allCampaignDailyData = new Map<number, any[]>(); // campaign_id → daily entries
+  const campaignIdsToFetch = activeCampaigns.filter(c => c.item_id).map(c => c.campaign_id);
+
+  for (let i = 0; i < campaignIdsToFetch.length; i += 5) {
+    const batch = campaignIdsToFetch.slice(i, i + 5);
+    const promises = batch.map(async (cid: number) => {
+      try {
+        const res = await shopeeGet(
+          "/api/v2/ads/get_product_campaign_daily_performance",
+          accessToken, shopId,
+          { campaign_id: String(cid), start_date: startDate, end_date: endDate }
+        );
+        const resp = res?.response;
+        const raw = Array.isArray(resp) ? resp : (resp?.entry_list || resp?.data || []);
+        allCampaignDailyData.set(cid, raw);
+      } catch (e) {
+        console.error(`[SHOPEE ADS] Step 4 campaign ${cid} error:`, e);
+      }
+    });
+    await Promise.all(promises);
+    if (i + 5 < campaignIdsToFetch.length) await delay(200);
+  }
+  console.log(`[SHOPEE ADS] Fetched daily data for ${allCampaignDailyData.size} campaigns`);
+
+  // Aggregate by item_id
+  for (const [itemId, info] of itemCampaigns.entries()) {
+    const dailyMap = new Map<string, { impressions: number; clicks: number; expense: number; gmv: number; direct_gmv: number; orders: number; direct_orders: number; positionWeighted: number; positionImpressions: number }>();
+
+    for (const cid of info.campaign_ids) {
+      const entries = allCampaignDailyData.get(cid) || [];
+      for (const e of entries) {
+        const date = e.date || "unknown";
+        const imp = Number(e.impression || e.impressions || 0);
+        const clk = Number(e.click || e.clicks || 0);
+        const exp = Number(e.expense || e.cost || 0);
+        const gm = Number(e.broad_order_amount || e.broad_gmv || e.gmv || 0);
+        const dgm = Number(e.direct_order_amount || e.direct_gmv || 0);
+        const ord = Number(e.broad_order_num || e.broad_order || e.orders || 0);
+        const dord = Number(e.direct_order_num || e.direct_orders || 0);
+        const pos = Number(e.average_position || e.avg_position || 0);
+
+        const existing = dailyMap.get(date);
+        if (existing) {
+          existing.impressions += imp;
+          existing.clicks += clk;
+          existing.expense += exp;
+          existing.gmv += gm;
+          existing.direct_gmv += dgm;
+          existing.orders += ord;
+          existing.direct_orders += dord;
+          if (pos > 0) { existing.positionWeighted += pos * imp; existing.positionImpressions += imp; }
+        } else {
+          dailyMap.set(date, {
+            impressions: imp, clicks: clk, expense: exp, gmv: gm, direct_gmv: dgm,
+            orders: ord, direct_orders: dord,
+            positionWeighted: pos > 0 ? pos * imp : 0,
+            positionImpressions: pos > 0 ? imp : 0,
+          });
+        }
+      }
+    }
+
+    // Build totals
+    let totImp = 0, totClk = 0, totExp = 0, totGmv = 0, totDgmv = 0, totOrd = 0, totDord = 0;
+    let posWeighted = 0, posImp = 0, daysActive = 0;
+    const daily: any[] = [];
+
+    for (const [date, d] of dailyMap.entries()) {
+      totImp += d.impressions; totClk += d.clicks; totExp += d.expense;
+      totGmv += d.gmv; totDgmv += d.direct_gmv; totOrd += d.orders; totDord += d.direct_orders;
+      posWeighted += d.positionWeighted; posImp += d.positionImpressions;
+      if (d.expense > 0) daysActive++;
+      daily.push({
+        date, impressions: d.impressions, clicks: d.clicks,
+        expense: Math.round(d.expense * 100) / 100,
+        gmv: Math.round(d.gmv * 100) / 100,
+        roas: d.expense > 0 ? Math.round((d.gmv / d.expense) * 100) / 100 : 0,
+      });
+    }
+
+    if (totImp === 0 && totExp === 0) continue; // skip products with no data
+
+    adsByProduct.push({
+      item_id: itemId,
+      item_name: info.ad_name,
+      campaign_ids: info.campaign_ids,
+      campaign_count: info.campaign_ids.length,
+      impressions: totImp,
+      clicks: totClk,
+      expense: Math.round(totExp * 100) / 100,
+      gmv: Math.round(totGmv * 100) / 100,
+      direct_gmv: Math.round(totDgmv * 100) / 100,
+      orders: totOrd,
+      direct_orders: totDord,
+      avg_position: posImp > 0 ? Math.round((posWeighted / posImp) * 10) / 10 : null,
+      roas: totExp > 0 ? Math.round((totGmv / totExp) * 100) / 100 : 0,
+      direct_roas: totExp > 0 ? Math.round((totDgmv / totExp) * 100) / 100 : 0,
+      acos: totGmv > 0 ? Math.round((totExp / totGmv) * 10000) / 100 : 0,
+      ctr: totImp > 0 ? Math.round((totClk / totImp) * 10000) / 100 : 0,
+      cost_per_order: totOrd > 0 ? Math.round((totExp / totOrd) * 100) / 100 : 0,
+      days_active: daysActive,
+      daily: daily.sort((a, b) => (a.date || "").localeCompare(b.date || "")),
+    });
+  }
+
+  // Log top products
+  if (adsByProduct.length > 0) {
+    const topSpend = adsByProduct.reduce((a, b) => a.expense > b.expense ? a : b);
+    const topRoas = adsByProduct.reduce((a, b) => a.roas > b.roas ? a : b);
+    console.log(`[SHOPEE ADS] ${adsByProduct.length} products with data. Top spend: ${topSpend.item_name} (R$${topSpend.expense}). Top ROAS: ${topRoas.item_name} (${topRoas.roas})`);
+  }
+
+  // Step 5: Balance
   let totalBalance: any = null;
   try {
     const res = await shopeeGet("/api/v2/ads/get_total_balance", accessToken, shopId);
     totalBalance = res?.response || null;
-    console.log(`[SHOPEE ADS] Balance: ${JSON.stringify(totalBalance)}`);
   } catch (e) { console.error("[SHOPEE ADS] Balance error:", e); }
 
-  // Aggregate summary
+  // Aggregate summary from shop-level daily
   const summary = {
     total_impressions: 0, total_clicks: 0, total_expense: 0,
     total_gmv: 0, total_orders: 0, roas_geral: 0, ctr: 0, days: dailyEntries.length,
@@ -185,19 +297,17 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number)
   summary.roas_geral = summary.total_expense > 0 ? summary.total_gmv / summary.total_expense : 0;
   summary.ctr = summary.total_impressions > 0 ? (summary.total_clicks / summary.total_impressions) * 100 : 0;
 
-  console.log(`[SHOPEE ADS] === DONE === campaigns=${campaignIds.length} days=${dailyEntries.length} expense=${summary.total_expense} gmv=${summary.total_gmv} roas=${summary.roas_geral.toFixed(2)}`);
+  console.log(`[SHOPEE ADS] === DONE === campaigns=${campaignIds.length} days=${dailyEntries.length} products=${adsByProduct.length} expense=${summary.total_expense} roas=${summary.roas_geral.toFixed(2)}`);
 
   return {
     daily_entries: dailyEntries,
     summary,
     campaign_details: campaignDetails,
+    ads_by_product: adsByProduct,
     total_balance: totalBalance,
     period_start: periodStartISO,
     period_end: periodEndISO,
     campaign_count: campaignIds.length,
-    ads_rate_limited: wasRateLimited,
-    perf_api_error: perfApiError || null,
-    perf_api_message: perfApiMessage || null,
   };
 }
 
@@ -226,7 +336,52 @@ Deno.serve(async (req) => {
     const shopeeToken = tokens[0];
     const currentAccessToken = await refreshTokenIfNeeded(shopeeToken, supabase);
 
-    const adsPerformance = await fetchAdsPerformance(currentAccessToken, shopeeToken.shop_id);
+    // Check for item_id filter from request body
+    let filterItemId: number | undefined;
+    try {
+      if (req.method === "POST") {
+        const body = await req.json().catch(() => ({}));
+        if (body?.item_id) filterItemId = Number(body.item_id);
+      }
+    } catch { /* ignore */ }
+
+    const adsPerformance = await fetchAdsPerformance(currentAccessToken, shopeeToken.shop_id, filterItemId);
+
+    // Upsert ads_by_product to database using service role
+    if (adsPerformance.ads_by_product.length > 0) {
+      const supabaseAdmin = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      );
+      for (const p of adsPerformance.ads_by_product) {
+        await supabaseAdmin.from("shopee_ads_by_product").upsert({
+          user_id: user.id,
+          shop_id: Number(shopeeToken.shop_id),
+          item_id: p.item_id,
+          item_name: p.item_name,
+          period_start: adsPerformance.period_start,
+          period_end: adsPerformance.period_end,
+          impressions: p.impressions,
+          clicks: p.clicks,
+          expense: p.expense,
+          gmv: p.gmv,
+          direct_gmv: p.direct_gmv,
+          orders: p.orders,
+          direct_orders: p.direct_orders,
+          avg_position: p.avg_position,
+          roas: p.roas,
+          direct_roas: p.direct_roas,
+          acos: p.acos,
+          ctr: p.ctr,
+          cost_per_order: p.cost_per_order,
+          days_active: p.days_active,
+          daily_data: p.daily,
+          campaign_ids: p.campaign_ids,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id,item_id,period_start" });
+      }
+      console.log(`[SHOPEE ADS] Upserted ${adsPerformance.ads_by_product.length} product records`);
+    }
 
     return jsonResponse({ success: true, results: { ads_performance: adsPerformance } });
   } catch (e) {
