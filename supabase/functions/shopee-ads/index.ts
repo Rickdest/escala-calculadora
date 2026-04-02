@@ -144,11 +144,9 @@ function buildDateChunks(startDateISO: string, endDateISO: string): Array<{ star
 
 /**
  * Fetch per-campaign performance with cascading strategies.
- * 1. POST with campaign_id (singular)
- * 2. GET with campaign_id (singular)
- * 3. POST with campaign_id_list (array)
- * 4. GET with campaign_id_list (string)
- * 5. GMS fallback endpoint
+ * 1. GET with campaign_id_list (confirmed working)
+ * 2. GET with campaign_id (singular fallback)
+ * 3. GMS fallback endpoint
  */
 async function fetchCampaignDaily(
   accessToken: string,
@@ -184,15 +182,15 @@ async function fetchCampaignDaily(
     return allEntries;
   };
 
-  // Strategy 1: POST with campaign_id (singular integer)
-  let entries = await tryStrategy("S1-POST-singular", (chunk) =>
-    shopeePost(dailyPath, accessToken, shopId, {
-      campaign_id: campaignId, start_date: chunk.startAPI, end_date: chunk.endAPI,
+  // Strategy 1: GET with campaign_id_list (confirmed working)
+  let entries = await tryStrategy("S1-GET-list", (chunk) =>
+    shopeeGet(dailyPath, accessToken, shopId, {
+      campaign_id_list: String(campaignId), start_date: chunk.startAPI, end_date: chunk.endAPI,
     })
   );
   if (entries.length > 0) return entries;
 
-  // Strategy 2: GET with campaign_id (singular)
+  // Strategy 2: GET with campaign_id (singular fallback)
   entries = await tryStrategy("S2-GET-singular", (chunk) =>
     shopeeGet(dailyPath, accessToken, shopId, {
       campaign_id: String(campaignId), start_date: chunk.startAPI, end_date: chunk.endAPI,
@@ -200,24 +198,8 @@ async function fetchCampaignDaily(
   );
   if (entries.length > 0) return entries;
 
-  // Strategy 3: POST with campaign_id_list (array)
-  entries = await tryStrategy("S3-POST-list", (chunk) =>
-    shopeePost(dailyPath, accessToken, shopId, {
-      campaign_id_list: [campaignId], start_date: chunk.startAPI, end_date: chunk.endAPI,
-    })
-  );
-  if (entries.length > 0) return entries;
-
-  // Strategy 4: GET with campaign_id_list (string)
-  entries = await tryStrategy("S4-GET-list", (chunk) =>
-    shopeeGet(dailyPath, accessToken, shopId, {
-      campaign_id_list: String(campaignId), start_date: chunk.startAPI, end_date: chunk.endAPI,
-    })
-  );
-  if (entries.length > 0) return entries;
-
-  // Strategy 5: GMS endpoint fallback
-  entries = await tryStrategy("S5-GMS", (chunk) =>
+  // Strategy 3: GMS endpoint fallback
+  entries = await tryStrategy("S3-GMS", (chunk) =>
     shopeeGet(gmsPath, accessToken, shopId, {
       campaign_id_list: String(campaignId), start_date: chunk.startAPI, end_date: chunk.endAPI,
     })
