@@ -323,15 +323,15 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       {selectedDetail ? (
         <AdsDetailFullView
           ad={selectedDetail}
-          allAds={filtered}
+          allAds={selectedDetail.id.startsWith('api-campaign-') ? (apiAdsData?.ads_by_campaign || []).map(campaignToEnrichedAds) : filtered}
           onClose={() => setSelectedDetail(null)}
           onNavigate={(ad) => setSelectedDetail(ad)}
-          onImportPosition={() => { setPositionTarget(selectedDetail.id); setSelectedDetail(null); positionFileRef.current?.click(); }}
-          onLink={() => { setLinkTarget(selectedDetail.id); setSelectedDetail(null); }}
-          onQuickRegister={() => { setQuickRegTarget(selectedDetail); setSelectedDetail(null); }}
-          onReimport={() => { setPositionTarget(selectedDetail.id); positionFileRef.current?.click(); }}
-          onUnlink={() => { unlinkProduct(selectedDetail.id); setSelectedDetail(null); }}
-          onChangeLink={() => { setLinkTarget(selectedDetail.id); }}
+          onImportPosition={() => { if (!selectedDetail.id.startsWith('api-campaign-')) { setPositionTarget(selectedDetail.id); setSelectedDetail(null); positionFileRef.current?.click(); } }}
+          onLink={() => { if (!selectedDetail.id.startsWith('api-campaign-')) { setLinkTarget(selectedDetail.id); setSelectedDetail(null); } }}
+          onQuickRegister={() => { if (!selectedDetail.id.startsWith('api-campaign-')) { setQuickRegTarget(selectedDetail); setSelectedDetail(null); } }}
+          onReimport={() => { if (!selectedDetail.id.startsWith('api-campaign-')) { setPositionTarget(selectedDetail.id); positionFileRef.current?.click(); } }}
+          onUnlink={() => { if (!selectedDetail.id.startsWith('api-campaign-')) { unlinkProduct(selectedDetail.id); setSelectedDetail(null); } }}
+          onChangeLink={() => { if (!selectedDetail.id.startsWith('api-campaign-')) { setLinkTarget(selectedDetail.id); } }}
         />
       ) : (
         <>
