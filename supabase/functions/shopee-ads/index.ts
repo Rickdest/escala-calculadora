@@ -444,6 +444,16 @@ Deno.serve(async (req) => {
     // Upsert ads_by_campaign to database (uses ISO dates for period_start/end)
     if (adsPerformance.ads_by_campaign.length > 0) {
       const supabaseAdmin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+      // Clean old period data to avoid duplicates across different import windows
+      if (!filterItemId) {
+        await supabaseAdmin
+          .from("shopee_ads_by_product")
+          .delete()
+          .eq("user_id", user.id)
+          .neq("period_start", adsPerformance.period_start);
+      }
+
       for (const c of adsPerformance.ads_by_campaign) {
         await supabaseAdmin.from("shopee_ads_by_product").upsert({
           user_id: user.id, shop_id: Number(shopeeToken.shop_id),
