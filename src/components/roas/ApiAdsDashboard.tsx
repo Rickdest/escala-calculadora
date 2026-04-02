@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { fmt, fmtShort, getRoasColor } from './adsHelpers';
-import { DollarSign, TrendingUp, BarChart3, Eye, MousePointerClick, ShoppingCart, ArrowUpDown, RefreshCw, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { DollarSign, TrendingUp, BarChart3, Eye, MousePointerClick, ShoppingCart, ArrowUpDown, RefreshCw, ChevronDown, ChevronUp, X, Link2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { getClassCor } from './adsHelpers';
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -41,7 +43,7 @@ function MiniSparkline({ data }: { data?: Array<{ roas: number }> }) {
   );
 }
 
-function CampaignCard({ campaign, onRefresh, onSelect, isSelected }: { campaign: CampaignAds; onRefresh?: (itemId: number) => void; onSelect: () => void; isSelected: boolean }) {
+function CampaignCard({ campaign, onRefresh, onSelect, isSelected, linkedProduct }: { campaign: CampaignAds; onRefresh?: (itemId: number) => void; onSelect: () => void; isSelected: boolean; linkedProduct?: any }) {
   const profit = campaign.gmv - campaign.expense;
   const roasColor = getRoasColor(campaign.roas);
 
@@ -64,6 +66,12 @@ function CampaignCard({ campaign, onRefresh, onSelect, isSelected }: { campaign:
             )}>
               {campaign.status === 'active' ? 'Ativo' : campaign.status === 'paused' ? 'Pausado' : 'Encerrado'}
             </span>
+            {linkedProduct && (
+              <Badge variant="secondary" className="text-[8px] px-1.5 py-0 gap-0.5 shrink-0 bg-primary/10 text-primary border-primary/20">
+                <Link2 className="w-2.5 h-2.5" />
+                Vinculado
+              </Badge>
+            )}
           </div>
           <p className="text-[10px] text-muted-foreground font-mono">
             Campanha #{campaign.campaign_id} · Item #{campaign.item_id} · {campaign.days_active} dias ativos
@@ -204,7 +212,7 @@ function CampaignDetail({ campaign, onClose, onRefresh }: { campaign: CampaignAd
   );
 }
 
-export function ApiAdsDashboard({ data, onRefreshProduct, onCampaignSelect }: { data: ApiAdsData; onRefreshProduct?: (itemId: number) => void; onCampaignSelect?: (campaign: CampaignAds) => void }) {
+export function ApiAdsDashboard({ data, products = [], onRefreshProduct, onCampaignSelect }: { data: ApiAdsData; products?: any[]; onRefreshProduct?: (itemId: number) => void; onCampaignSelect?: (campaign: CampaignAds) => void }) {
   const { summary, daily_entries = [], campaign_details, ads_by_campaign = [], total_balance } = data || {};
   // Support legacy ads_by_product field
   const campaigns: CampaignAds[] = ads_by_campaign.length > 0 ? ads_by_campaign : ((data as any).ads_by_product || []);
@@ -334,15 +342,22 @@ export function ApiAdsDashboard({ data, onRefreshProduct, onCampaignSelect }: { 
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {sortedCampaigns.map(c => (
-              <CampaignCard
-                key={c.campaign_id}
-                campaign={c}
-                onRefresh={onRefreshProduct}
-                onSelect={() => onCampaignSelect?.(c)}
-                isSelected={false}
-              />
-            ))}
+            {sortedCampaigns.map(c => {
+              const linked = products.find((p: any) =>
+                (p.shopeeItemId || p.shopee_item_id) && c.item_id &&
+                String(p.shopeeItemId || p.shopee_item_id) === String(c.item_id)
+              );
+              return (
+                <CampaignCard
+                  key={c.campaign_id}
+                  campaign={c}
+                  onRefresh={onRefreshProduct}
+                  onSelect={() => onCampaignSelect?.(c)}
+                  isSelected={false}
+                  linkedProduct={linked}
+                />
+              );
+            })}
           </div>
         </div>
       )}

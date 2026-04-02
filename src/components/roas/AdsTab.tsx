@@ -120,10 +120,37 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   // Convert API campaign to EnrichedAdsData for detail view
   const campaignToEnrichedAds = (campaign: any): EnrichedAdsData => {
     const now = new Date().toISOString();
+
+    // Auto-link by shopee_item_id
+    const matchedProduct = products.find(p =>
+      (p as any).shopeeItemId && campaign.item_id &&
+      String((p as any).shopeeItemId) === String(campaign.item_id)
+    );
+
+    // Calculate classification if linked
+    let classificacao: string | null = null;
+    let roasEmpate: number | null = null;
+    let margemContribuicao: number | null = null;
+
+    if (matchedProduct && campaign.expense > 0) {
+      const salePrice = (matchedProduct as any).salePrice || 0;
+      const costPrice = (matchedProduct as any).costPrice || 0;
+      const margin = salePrice > 0 ? ((salePrice - costPrice) / salePrice) : 0;
+      margemContribuicao = margin * 100;
+      roasEmpate = margin > 0 ? (1 / margin) : null;
+      const roas = campaign.roas || 0;
+      if (roasEmpate !== null) {
+        if (roas >= roasEmpate * 1.5) classificacao = 'LUCRATIVO';
+        else if (roas >= roasEmpate) classificacao = 'MARGEM_APERTADA';
+        else if (roas >= roasEmpate * 0.5) classificacao = 'ABAIXO_EMPATE';
+        else classificacao = 'PREJUIZO';
+      }
+    }
+
     return {
       id: `api-campaign-${campaign.campaign_id}`,
       user_id: '',
-      product_id: null,
+      product_id: matchedProduct?.id || null,
       nome_produto_csv: campaign.item_name || `Campanha #${campaign.campaign_id}`,
       shopee_product_id: campaign.item_id ? String(campaign.item_id) : null,
       impressoes: campaign.impressions || 0,
@@ -148,9 +175,9 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       cliques_produto: null,
       posicao_media: campaign.avg_position,
       posicao_importada: false,
-      roas_empate: null,
-      margem_contribuicao: null,
-      classificacao: null,
+      roas_empate: roasEmpate,
+      margem_contribuicao: margemContribuicao,
+      classificacao,
       periodo_inicio: effectiveApiData?.period_start || '',
       periodo_fim: effectiveApiData?.period_end || '',
       importado_em: now,
@@ -380,7 +407,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
                 onImportAds={handleImportAds}
                 syncing={syncing}
               />
-              <ApiAdsDashboard data={effectiveApiData} onRefreshProduct={handleRefreshProduct} onCampaignSelect={handleCampaignSelect} />
+              <ApiAdsDashboard data={effectiveApiData} products={products} onRefreshProduct={handleRefreshProduct} onCampaignSelect={handleCampaignSelect} />
             </>
           )}
 
