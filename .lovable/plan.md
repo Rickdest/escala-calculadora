@@ -1,81 +1,72 @@
 
-Objetivo
 
-Corrigir o motivo real de o botão “Importar Ads” continuar trazendo “Nenhum dado”, sem misturar produtos/pedidos no fluxo.
+## Diagnóstico: por que 35 campanhas mas 0 produtos
 
-O que já confirmei no código e nos logs
+Analisei os logs da API Shopee e encontrei **2 bugs no parsing da resposta**:
 
-- O botão de Ads já está isolado corretamente:
-  - `AdsTab` chama `handleImportAds`
-  - `handleImportAds` chama `syncAdsOnly()`
-  - `syncAdsOnly()` invoca apenas `shopee-ads`
-- Ou seja: hoje o botão “Importar Ads” já ignora o restante. O problema não está no botão nem no `shopee-sync`.
-- Os logs mostram 2 bugs restantes no backend:
-  1. `get_product_level_campaign_setting_info` retorna `common_info.item_id_list`, mas o código lê `d.item_id`, então o mapa `campaign_id -> item_id` fica vazio.
-  2. `get_all_cpc_ads_daily_performance` está falhando com `ads.performance.error_date_in_future`, então a função termina com `Entries: 0, Products: 0` e a UI mostra a mensagem genérica.
+### Bug 1 — `response` é um array, não um objeto
 
-Plano de correção
+A API `get_all_cpc_ads_daily_performance` retorna:
+```json
+{"response": [{"date":"10-03-2026","impression":2305,"clicks":46,...}, ...]}
+```
 
-1. Corrigir `supabase/functions/shopee-ads/index.ts`
-- Ajustar o parsing dos detalhes da campanha para ler:
-  - `campaign_id`
-  - `common_info.item_id_list[0]`
-  - `common_info.ad_name`
-- Montar um mapa correto `campaign_id -> item_id` e usar esse mapa na agregação por produto.
-- Corrigir o cálculo do período:
-  - parar de usar a data “de hoje” em UTC como base direta
-  - gerar `start_date` e `end_date` em data local segura da loja/BR
-  - usar `end_date` conservador para evitar `error_date_in_future`
-  - manter o intervalo dentro do limite aceito pela API
+O código atual tenta ler `result.response.entry_list` e `result.response.data`, que são `undefined` porque `response` já É o array. Resultado: `allEntries = []` (fallback para array vazio).
 
-2. Melhorar o retorno do backend
-- Não tratar erro da API como “lista vazia”.
-- Incluir no payload campos claros como:
-  - `api_error`
-  - `api_message`
-  - `campaign_count`
-  - `campaign_to_item_count`
-  - `raw_entry_count`
-- Diferenciar estes casos:
-  - campanhas encontradas, mas API rejeitou a data
-  - campanhas encontradas, mas sem performance no período
-  - nenhuma campanha encontrada
-  - rate limit
+### Bug 2 — dados são agregados por dia (shop-level), sem `item_id`
 
-3. Ajustar a UI de Ads
-- Em `src/components/roas/AdsTab.tsx`, manter o botão chamando só `syncAdsOnly()`.
-- Trocar o toast genérico “Nenhum dado de Ads disponível na API.” por mensagens baseadas no erro real vindo do backend.
-- Exemplo de comportamento:
-  - erro de data -> mostrar erro específico
-  - campanhas > 0 e entries = 0 -> avisar “sem métricas no período”
-  - campaigns = 0 -> avisar “nenhuma campanha encontrada”
+Mesmo corrigindo o Bug 1, os entries são totais diários da loja inteira — não têm `item_id` nem `campaign_id`. O loop de agregação por produto descarta tudo.
 
-4. Ajuste leve no hook
-- Em `src/hooks/useShopeeToken.ts`, manter o fluxo atual, mas propagar melhor erro estruturado se `shopee-ads` responder com falha de API em vez de dados.
+**Dados reais nos logs**: há métricas reais (impressions: 2305, clicks: 46, gmv: 49.9, expense: 11.01 no dia 10-03-2026, e valores maiores nos dias seguintes). Os dados existem, só não estão sendo lidos.
 
-Verificação após implementar
+### Plano de correção
 
-- Logs esperados:
-  - `campaignToItem map size > 0`
-  - resposta de `daily_performance` sem `error_date_in_future`
-  - `Entries > 0` quando houver performance
-- UI esperada:
-  - “Importar Ads” continua importando só Ads
-  - não aparece mais o toast enganoso de “Nenhum dado...” quando o problema for data/API
-  - se houver métricas, `importFromApi` salva em `ads_data`
+**1. Corrigir parsing do response (shopee-ads/index.ts)**
 
-Detalhes técnicos
+```typescript
+// De:
+allEntries = result?.response?.entry_list || result?.response?.data || [];
+// Para:
+const resp = result?.response;
+allEntries = Array.isArray(resp) ? resp : (resp?.entry_list || resp?.data || []);
+```
+
+**2. Mudar a estratégia de agregação**
+
+Como `get_all_cpc_ads_daily_performance` retorna dados shop-level sem `item_id`, precisamos de uma abordagem diferente:
+
+- Usar os dados diários como **totais da loja** (impressions, clicks, expense, gmv por dia)
+- Para dados **por produto**, usar o mapa `campaignToItem` que já temos (35 campanhas com nomes e item_ids) e combinar com os totais diários
+- Criar um registro "shop_total" com a soma dos 28 dias para que o frontend tenha dados para exibir
+- Manter os campaign_details (nome do produto, item_id, status, budget) como informação complementar
+
+**3. Estrutura do retorno atualizado**
 
 ```text
-Fluxo correto já existente:
-AdsTab -> syncAdsOnly -> shopee-ads -> importFromApi
+ads_performance:
+  daily_totals: [...] ← array de {date, impressions, clicks, expense, gmv, orders}
+  ads_by_product: [...] ← campanhas ativas com info do campaign_details  
+  shop_summary: {impressions, clicks, expense, gmv, orders, roas, ctr} ← soma do período
+  campaign_details: [...] ← detalhes das 35 campanhas (nome, item_id, status)
+```
 
-Bug restante:
-campaign_details.common_info.item_id_list[]
-em vez de d.item_id
+**4. Ajustar frontend (AdsTab.tsx)**
 
-+
-end_date gerada de forma que a Shopee enxerga como data futura
+- Se `ads_by_product` estiver vazio mas `shop_summary` tiver métricas, exibir resumo da loja com toast de sucesso
+- O toast "sem métricas de performance" só aparece quando `shop_summary` também estiver zerado
+
+### Detalhes técnicos
+
+```text
+Arquivo: supabase/functions/shopee-ads/index.ts
+  - Corrigir leitura: Array.isArray(result.response)
+  - Agregar daily totals em shop_summary
+  - Enriquecer campaigns com status/budget como "ads_by_product"
+
+Arquivo: src/components/roas/AdsTab.tsx  
+  - Aceitar shop_summary como dados válidos para exibição
+  - Ajustar condição de "sem dados"
 ```
 
 Sem mudanças de banco.
+
