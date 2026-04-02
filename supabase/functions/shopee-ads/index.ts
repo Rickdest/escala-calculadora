@@ -63,9 +63,9 @@ function extractCampaignSummaryMetrics(detail: any) {
   const impressions = toFiniteNumber(perf?.impression, perf?.impressions, perf?.total_impression, perf?.total_impressions, detail?.impression, detail?.impressions, detail?.total_impression, detail?.total_impressions);
   const clicks = toFiniteNumber(perf?.click, perf?.clicks, perf?.total_click, perf?.total_clicks, detail?.click, detail?.clicks, detail?.total_click, detail?.total_clicks);
   const expense = toFiniteNumber(perf?.expense, perf?.cost, perf?.ad_spend, perf?.total_expense, perf?.total_cost, detail?.expense, detail?.cost, detail?.total_expense, detail?.total_cost);
-  const gmv = toFiniteNumber(perf?.broad_order_amount, perf?.broad_gmv, perf?.gmv, perf?.total_gmv, perf?.total_broad_gmv, detail?.broad_order_amount, detail?.broad_gmv, detail?.gmv, detail?.total_gmv);
-  const directGmv = toFiniteNumber(perf?.direct_order_amount, perf?.direct_gmv, perf?.total_direct_gmv, detail?.direct_order_amount, detail?.direct_gmv, detail?.total_direct_gmv);
-  const orders = toFiniteNumber(perf?.broad_order_num, perf?.broad_order, perf?.orders, perf?.total_orders, perf?.total_broad_orders, detail?.broad_order_num, detail?.broad_order, detail?.orders, detail?.total_orders);
+  const gmv = toFiniteNumber(perf?.broad_gmv, perf?.broad_order_amount, perf?.gmv, perf?.total_gmv, perf?.total_broad_gmv, detail?.broad_gmv, detail?.broad_order_amount, detail?.gmv, detail?.total_gmv);
+  const directGmv = toFiniteNumber(perf?.direct_gmv, perf?.direct_order_amount, perf?.total_direct_gmv, detail?.direct_gmv, detail?.direct_order_amount, detail?.total_direct_gmv);
+  const orders = toFiniteNumber(perf?.broad_order, perf?.broad_order_num, perf?.orders, perf?.total_orders, perf?.total_broad_orders, detail?.broad_order, detail?.broad_order_num, detail?.orders, detail?.total_orders);
   const directOrders = toFiniteNumber(perf?.direct_order_num, perf?.direct_orders, perf?.total_direct_orders, detail?.direct_order_num, detail?.direct_orders, detail?.total_direct_orders);
   const avgPosition = (() => {
     const value = toFiniteNumber(perf?.average_position, perf?.avg_position, detail?.average_position, detail?.avg_position);
