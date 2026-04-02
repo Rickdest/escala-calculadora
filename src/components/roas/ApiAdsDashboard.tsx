@@ -70,7 +70,7 @@ function CampaignCard({ campaign, onRefresh, onSelect, isSelected }: { campaign:
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <MiniSparkline data={campaign.daily} />
+          <MiniSparkline data={campaign.daily || (campaign as any).daily_data} />
           {onRefresh && (
             <button onClick={(e) => { e.stopPropagation(); onRefresh(campaign.item_id); }} className="p-1 rounded-lg hover:bg-secondary transition-colors" title="Atualizar">
               <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
