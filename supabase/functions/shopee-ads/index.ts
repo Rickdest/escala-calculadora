@@ -340,8 +340,12 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
   const adsByCampaign: any[] = [];
   const campaignsForStep4 = campaignDetails.filter(c => {
     if (filterItemId && c.item_id !== filterItemId) return false;
-    return !!c.item_id;
+    if (!c.item_id) return false;
+    if (c.status === "ended" && c.campaign_id < 50000000) return false;
+    return true;
   });
+  const skippedOld = campaignDetails.filter(c => c.status === "ended" && c.campaign_id < 50000000).length;
+  if (skippedOld > 0) console.log(`[SHOPEE ADS] Skipped ${skippedOld} old ended campaigns (id < 50M)`);
   console.log(`[SHOPEE ADS] === Step 4: per-campaign performance for ${campaignsForStep4.length} campaigns ===`);
   console.log(`[SHOPEE ADS] [DEBUG] sample:`, JSON.stringify(campaignsForStep4.slice(0, 3).map(c => ({ id: c.campaign_id, item_id: c.item_id, status: c.status }))));
 
