@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { fmt, fmtShort, getRoasColor } from './adsHelpers';
-import { DollarSign, TrendingUp, BarChart3, Eye, MousePointerClick, ShoppingCart, ArrowUpDown, RefreshCw, ChevronDown, ChevronUp, X, Link2 } from 'lucide-react';
+import { DollarSign, TrendingUp, BarChart3, Eye, MousePointerClick, ShoppingCart, ArrowUpDown, RefreshCw, X, Link2, Clock, Search, Zap, ZapOff, Lightbulb } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getClassCor } from './adsHelpers';
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
+interface Keyword { keyword: string; search_volume: number; suggested_bid: number; quality_score?: number; }
+interface HourlyEntry { hour: number; impressions: number; clicks: number; expense: number; gmv: number; orders?: number; }
 interface DailyEntry { date: string | null; impressions: number; clicks: number; expense: number; gmv: number; orders: number; roas: number; }
 interface CampaignAds {
   campaign_id: number; item_id: number; item_name: string; status: 'active' | 'paused' | 'ended';
@@ -14,10 +16,14 @@ interface CampaignAds {
   orders: number; direct_orders: number; avg_position: number | null;
   roas: number; direct_roas: number; acos: number; ctr: number; cost_per_order: number;
   days_active: number; daily: Array<{ date: string; expense: number; gmv: number; roas: number; clicks: number; impressions: number }>;
+  keywords?: Keyword[];
 }
 interface ApiAdsData {
   daily_entries: DailyEntry[]; summary: { total_impressions: number; total_clicks: number; total_expense: number; total_gmv: number; total_orders: number; roas_geral: number; ctr: number; days: number; };
   campaign_details: any[]; ads_by_campaign: CampaignAds[]; total_balance: any; period_start: string; period_end: string;
+  hourly_performance?: HourlyEntry[];
+  recommended_items?: Array<{ item_id: number; item_name: string }>;
+  shop_toggles?: { auto_top_up: boolean; campaign_surge: boolean };
 }
 
 function shortDate(d: string | null): string {
@@ -39,6 +45,80 @@ function MiniSparkline({ data }: { data?: Array<{ roas: number }> }) {
           <Line type="monotone" dataKey="roas" stroke="hsl(var(--primary))" strokeWidth={1.5} dot={false} />
         </LineChart>
       </ResponsiveContainer>
+    </div>
+  );
+}
+
+function HourlyHeatmap({ data }: { data: HourlyEntry[] }) {
+  if (!data || data.length === 0) return null;
+  const maxClicks = Math.max(...data.map(h => h.clicks), 1);
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Clock className="w-4 h-4 text-primary" />
+        <p className="text-sm font-bold text-foreground">Melhores Horários (ontem)</p>
+      </div>
+      <div className="grid grid-cols-12 gap-1">
+        {Array.from({ length: 24 }, (_, h) => {
+          const entry = data.find(e => e.hour === h);
+          const clicks = entry?.clicks || 0;
+          const intensity = clicks / maxClicks;
+          const orders = entry?.orders || 0;
+          return (
+            <div key={h} className="text-center" title={`${h}h: ${clicks} cliques, ${orders} pedidos, ${fmt(entry?.expense || 0)} gasto`}>
+              <div
+                className="w-full aspect-square rounded-md transition-colors"
+                style={{
+                  backgroundColor: intensity > 0.7
+                    ? 'hsl(var(--primary))'
+                    : intensity > 0.4
+                    ? 'hsl(var(--primary) / 0.5)'
+                    : intensity > 0.1
+                    ? 'hsl(var(--primary) / 0.2)'
+                    : 'hsl(var(--secondary))',
+                }}
+              />
+              <p className="text-[8px] text-muted-foreground mt-0.5">{h}h</p>
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex items-center gap-3 mt-2 text-[9px] text-muted-foreground">
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-secondary inline-block" /> Baixo</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm inline-block" style={{ backgroundColor: 'hsl(var(--primary) / 0.2)' }} /> Médio</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm inline-block" style={{ backgroundColor: 'hsl(var(--primary) / 0.5)' }} /> Alto</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm inline-block" style={{ backgroundColor: 'hsl(var(--primary))' }} /> Pico</span>
+      </div>
+    </div>
+  );
+}
+
+function KeywordsList({ keywords }: { keywords: Keyword[] }) {
+  if (!keywords || keywords.length === 0) return null;
+  return (
+    <div className="mt-3">
+      <div className="flex items-center gap-2 mb-2">
+        <Search className="w-3.5 h-3.5 text-primary" />
+        <p className="text-xs font-bold text-foreground">Palavras-chave Recomendadas</p>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
+        {keywords.map((kw, i) => (
+          <div key={i} className="flex items-center justify-between rounded-lg bg-secondary/50 px-2.5 py-1.5">
+            <span className="text-xs text-foreground truncate flex-1">{kw.keyword}</span>
+            <div className="flex items-center gap-2 shrink-0 ml-2">
+              {kw.search_volume > 0 && (
+                <span className="text-[10px] text-muted-foreground">{kw.search_volume.toLocaleString('pt-BR')} buscas</span>
+              )}
+              {kw.suggested_bid > 0 && (
+                <Badge variant="secondary" className="text-[9px] px-1.5 py-0">{fmt(kw.suggested_bid)}</Badge>
+              )}
+              {kw.quality_score != null && (
+                <Badge variant="outline" className="text-[9px] px-1 py-0">QS {kw.quality_score}</Badge>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -101,6 +181,13 @@ function CampaignCard({ campaign, onRefresh, onSelect, isSelected, linkedProduct
           <p className={cn('text-lg font-bold font-mono tabular-nums', profit >= 0 ? 'text-success' : 'text-destructive')}>{fmt(profit)}</p>
         </div>
       </div>
+
+      {campaign.keywords && campaign.keywords.length > 0 && (
+        <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
+          <Search className="w-3 h-3" />
+          <span>{campaign.keywords.length} palavras-chave</span>
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-2">
         {[
@@ -188,6 +275,9 @@ function CampaignDetail({ campaign, onClose, onRefresh }: { campaign: CampaignAd
         ))}
       </div>
 
+      {/* Keywords */}
+      <KeywordsList keywords={campaign.keywords || []} />
+
       {/* Daily chart */}
       {chartData.length > 1 && (
         <div>
@@ -213,7 +303,7 @@ function CampaignDetail({ campaign, onClose, onRefresh }: { campaign: CampaignAd
 }
 
 export function ApiAdsDashboard({ data, products = [], onRefreshProduct, onCampaignSelect }: { data: ApiAdsData; products?: any[]; onRefreshProduct?: (itemId: number) => void; onCampaignSelect?: (campaign: CampaignAds) => void }) {
-  const { summary, daily_entries = [], campaign_details, ads_by_campaign = [], total_balance } = data || {};
+  const { summary, daily_entries = [], campaign_details, ads_by_campaign = [], total_balance, hourly_performance, recommended_items, shop_toggles } = data || {};
   // Support legacy ads_by_product field
   const campaigns: CampaignAds[] = ads_by_campaign.length > 0 ? ads_by_campaign : ((data as any).ads_by_product || []);
   const [sortBy, setSortBy] = useState<string>('roas');
@@ -256,6 +346,20 @@ export function ApiAdsDashboard({ data, products = [], onRefreshProduct, onCampa
 
   return (
     <div className="space-y-4">
+      {/* Shop Toggles */}
+      {shop_toggles && (
+        <div className="flex items-center gap-2 flex-wrap">
+          <Badge variant={shop_toggles.auto_top_up ? "default" : "secondary"} className="gap-1 text-xs">
+            {shop_toggles.auto_top_up ? <Zap className="w-3 h-3" /> : <ZapOff className="w-3 h-3" />}
+            Auto-recarga {shop_toggles.auto_top_up ? 'Ativa' : 'Inativa'}
+          </Badge>
+          <Badge variant={shop_toggles.campaign_surge ? "default" : "secondary"} className="gap-1 text-xs">
+            {shop_toggles.campaign_surge ? <Zap className="w-3 h-3" /> : <ZapOff className="w-3 h-3" />}
+            Campaign Surge {shop_toggles.campaign_surge ? 'Ativo' : 'Inativo'}
+          </Badge>
+        </div>
+      )}
+
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
         {kpis.map(({ label, value, icon: Icon, color, iconColor }, idx) => (
@@ -317,6 +421,27 @@ export function ApiAdsDashboard({ data, products = [], onRefreshProduct, onCampa
                 <Line yAxisId="roas" type="monotone" dataKey="ROAS" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
               </ComposedChart>
             </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* Hourly Heatmap */}
+      <HourlyHeatmap data={hourly_performance || []} />
+
+      {/* Recommended Items */}
+      {recommended_items && recommended_items.length > 0 && (
+        <div className="rounded-2xl border border-border bg-card p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Lightbulb className="w-4 h-4 text-warning" />
+            <p className="text-sm font-bold text-foreground">Produtos Recomendados para Ads</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {recommended_items.map((item) => (
+              <div key={item.item_id} className="flex items-center justify-between rounded-lg bg-secondary/50 px-3 py-2">
+                <span className="text-xs text-foreground truncate">{item.item_name}</span>
+                <span className="text-[10px] text-muted-foreground font-mono shrink-0 ml-2">#{item.item_id}</span>
+              </div>
+            ))}
           </div>
         </div>
       )}
