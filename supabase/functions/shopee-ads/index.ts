@@ -18,6 +18,15 @@ const toDateStrBR = (date: Date) => {
   return `${d}-${m}-${y}`;
 };
 
+/** YYYY-MM-DD for database storage */
+const toISODateBR = (date: Date) => {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+  const y = parts.find(p => p.type === "year")!.value;
+  const m = parts.find(p => p.type === "month")!.value;
+  const d = parts.find(p => p.type === "day")!.value;
+  return `${y}-${m}-${d}`;
+};
+
 async function refreshTokenIfNeeded(shopeeToken: any, supabase: any) {
   const tokenAge =
     (Date.now() - new Date(shopeeToken.token_created_at).getTime()) / 1000;
@@ -74,6 +83,8 @@ async function fetchAdsPerformance(
   const startBR = new Date(nowBR.getTime() - 28 * 24 * 60 * 60 * 1000);
   const startDate = toDateStrBR(startBR);
   const endDate = toDateStrBR(yesterdayBR);
+  const periodStartISO = toISODateBR(startBR);
+  const periodEndISO = toISODateBR(yesterdayBR);
 
   // 1. Get campaign ID list
   let campaignIds: number[] = [];
@@ -102,9 +113,9 @@ async function fetchAdsPerformance(
     console.error("[SHOPEE ADS] get_product_level_campaign_id_list error:", e);
   }
 
-  // 2. Get campaign settings/details — requires info_type_list
-  // Build campaign_id → item_id map for cross-referencing with performance data
+  // 2. Get campaign settings/details — build campaign_id → item_id map
   const campaignToItem: Record<number, number> = {};
+  const campaignToName: Record<number, string> = {};
 
   if (campaignIds.length > 0) {
     console.log("[SHOPEE ADS] === Step 2: get_product_level_campaign_setting_info ===");
@@ -123,8 +134,10 @@ async function fetchAdsPerformance(
           campaignDetails.push(...items);
           for (const d of items) {
             const itemId = d.common_info?.item_id_list?.[0] || d.item_id;
+            const adName = d.common_info?.ad_name || d.title || "";
             if (d.campaign_id && itemId) {
               campaignToItem[d.campaign_id] = itemId;
+              campaignToName[d.campaign_id] = adName;
             }
           }
         }
@@ -135,7 +148,7 @@ async function fetchAdsPerformance(
     console.log(`[SHOPEE ADS] campaignToItem map size: ${Object.keys(campaignToItem).length}`);
   }
 
-  // 3. Get daily performance (28 days) — DD-MM-YYYY format
+  // 3. Get daily performance (28 days)
   let allEntries: any[] = [];
   let wasRateLimited = false;
   let perfApiError = "";
@@ -158,12 +171,18 @@ async function fetchAdsPerformance(
       perfApiError = err;
       perfApiMessage = result?.message || "";
     } else {
-      allEntries = result?.response?.entry_list || result?.response?.data || [];
+      // BUG FIX: response can be the array directly, not an object with entry_list
+      const resp = result?.response;
+      allEntries = Array.isArray(resp)
+        ? resp
+        : (resp?.entry_list || resp?.data || []);
     }
   } catch (e) {
     console.error("[SHOPEE ADS] get_all_cpc_ads_daily_performance error:", e);
     perfApiError = (e as Error).message;
   }
+
+  console.log(`[SHOPEE ADS] Raw entries parsed: ${allEntries.length}`);
 
   // 4. Get total balance
   let totalBalance: any = null;
@@ -178,63 +197,78 @@ async function fetchAdsPerformance(
     console.error("[SHOPEE ADS] Balance error:", e);
   }
 
-  // Aggregate by item_id — use campaignToItem to enrich entries without item_id
-  const productAds: Record<string, {
-    item_id: number;
-    item_name: string;
-    impressions: number;
-    clicks: number;
-    expense: number;
-    gmv: number;
-    orders: number;
-    ctr: number;
-    roas: number;
-    days: number;
-  }> = {};
+  // === Aggregation ===
+  // Daily entries are shop-level totals (no item_id/campaign_id).
+  // We aggregate them into daily_totals + shop_summary.
+
+  const dailyTotals: any[] = [];
+  let shopSummary = {
+    impressions: 0, clicks: 0, expense: 0, gmv: 0, orders: 0,
+    ctr: 0, roas: 0, days: 0,
+  };
 
   for (const entry of allEntries) {
-    let itemId = String(entry.item_id || entry.campaign?.item_id || "");
+    const impressions = Number(entry.impression || entry.impressions || 0);
+    const clicks = Number(entry.click || entry.clicks || 0);
+    const expense = Number(entry.expense || entry.cost || 0);
+    const gmv = Number(entry.broad_order_amount || entry.gmv || 0);
+    const orders = Number(entry.broad_order_num || entry.orders || 0);
 
-    // Cross-reference with campaign details if item_id missing
-    if ((!itemId || itemId === "0" || itemId === "") && entry.campaign_id) {
-      const mapped = campaignToItem[entry.campaign_id];
-      if (mapped) itemId = String(mapped);
-    }
+    dailyTotals.push({
+      date: entry.date || null,
+      impressions, clicks, expense, gmv, orders,
+    });
 
-    if (!itemId || itemId === "0") continue;
-
-    if (!productAds[itemId]) {
-      productAds[itemId] = {
-        item_id: Number(itemId),
-        item_name: entry.title || entry.item_name || `Item ${itemId}`,
-        impressions: 0, clicks: 0, expense: 0, gmv: 0, orders: 0,
-        ctr: 0, roas: 0, days: 0,
-      };
-    }
-
-    const p = productAds[itemId];
-    p.impressions += Number(entry.impression || entry.impressions || 0);
-    p.clicks += Number(entry.click || entry.clicks || 0);
-    p.expense += Number(entry.expense || entry.cost || 0);
-    p.gmv += Number(entry.broad_order_amount || entry.gmv || 0);
-    p.orders += Number(entry.broad_order_num || entry.orders || 0);
-    p.days++;
+    shopSummary.impressions += impressions;
+    shopSummary.clicks += clicks;
+    shopSummary.expense += expense;
+    shopSummary.gmv += gmv;
+    shopSummary.orders += orders;
+    shopSummary.days++;
   }
 
-  for (const p of Object.values(productAds)) {
-    p.ctr = p.impressions > 0 ? (p.clicks / p.impressions) * 100 : 0;
-    p.roas = p.expense > 0 ? p.gmv / p.expense : 0;
+  shopSummary.ctr = shopSummary.impressions > 0
+    ? (shopSummary.clicks / shopSummary.impressions) * 100 : 0;
+  shopSummary.roas = shopSummary.expense > 0
+    ? shopSummary.gmv / shopSummary.expense : 0;
+
+  // Build ads_by_product from campaign details (enriched with item_id)
+  // Since daily perf is shop-level, we distribute proportionally or just list campaigns
+  const uniqueItems = new Map<number, { item_id: number; item_name: string; campaign_ids: number[] }>();
+  for (const [cid, itemId] of Object.entries(campaignToItem)) {
+    const cidNum = Number(cid);
+    if (!uniqueItems.has(itemId)) {
+      uniqueItems.set(itemId, {
+        item_id: itemId,
+        item_name: campaignToName[cidNum] || `Item ${itemId}`,
+        campaign_ids: [],
+      });
+    }
+    uniqueItems.get(itemId)!.campaign_ids.push(cidNum);
   }
 
-  console.log(`[SHOPEE ADS] === DONE === Campaigns: ${campaignIds.length}, Details: ${campaignDetails.length}, Entries: ${allEntries.length}, Products: ${Object.keys(productAds).length}, RateLimited: ${wasRateLimited}`);
+  // Create ads_by_product entries from campaign details
+  // We can't split shop-level metrics per product, so we set them as campaign info
+  const adsByProduct = Array.from(uniqueItems.values()).map(item => ({
+    item_id: item.item_id,
+    item_name: item.item_name,
+    campaign_ids: item.campaign_ids,
+    // No per-product metrics available from this endpoint
+    impressions: 0, clicks: 0, expense: 0, gmv: 0, orders: 0,
+    ctr: 0, roas: 0, days: shopSummary.days,
+  }));
+
+  console.log(`[SHOPEE ADS] === DONE === Campaigns: ${campaignIds.length}, Details: ${campaignDetails.length}, DailyEntries: ${allEntries.length}, ShopSummary: imp=${shopSummary.impressions} clicks=${shopSummary.clicks} expense=${shopSummary.expense} gmv=${shopSummary.gmv}, UniqueProducts: ${uniqueItems.size}, RateLimited: ${wasRateLimited}`);
 
   return {
-    ads_by_product: Object.values(productAds),
+    ads_by_product: adsByProduct,
+    daily_totals: dailyTotals,
+    shop_summary: shopSummary,
     campaign_ids: campaignIds,
     campaign_details: campaignDetails,
     total_balance: totalBalance?.response?.total_balance ?? totalBalance?.response?.data_timestamp ? totalBalance?.response : null,
-    period_start: startDate,
-    period_end: endDate,
+    period_start: periodStartISO,
+    period_end: periodEndISO,
     raw_entry_count: allEntries.length,
     ads_rate_limited: wasRateLimited,
     campaign_count: campaignIds.length,
@@ -288,7 +322,7 @@ Deno.serve(async (req) => {
 
     const adsPerformance = await fetchAdsPerformance(currentAccessToken, shopId);
 
-    console.log(`[SHOPEE ADS] === FUNCTION END === Products: ${adsPerformance.ads_by_product.length}, Rate limited: ${adsPerformance.ads_rate_limited}`);
+    console.log(`[SHOPEE ADS] === FUNCTION END === Products: ${adsPerformance.ads_by_product.length}, ShopSummary: ${JSON.stringify(adsPerformance.shop_summary)}, Rate limited: ${adsPerformance.ads_rate_limited}`);
 
     return jsonResponse({
       success: true,
