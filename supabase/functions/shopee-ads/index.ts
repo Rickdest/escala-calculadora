@@ -311,7 +311,7 @@ function processCampaignEntries(campaign: any, entries: any[], result: any[], id
     campaign_id: campaign.campaign_id,
     item_id: campaign.item_id,
     item_name: campaign.ad_name || `Item #${campaign.item_id}`,
-    status: isOngoing ? 'active' : 'ended',
+    status: statusStr,
     impressions: totImp,
     clicks: totClk,
     expense: Math.round(totExp * 100) / 100,
