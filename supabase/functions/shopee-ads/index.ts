@@ -5,14 +5,14 @@ import {
   corsHeaders,
   generateSign,
   shopeeGet,
-  shopeePost,
   errorResponse,
   jsonResponse,
 } from "../_shared/shopee.ts";
 
+/** DD-MM-YYYY format required by Shopee Ads API */
 const toDateStr = (ts: number) => {
   const d = new Date(ts * 1000);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return `${String(d.getDate()).padStart(2, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${d.getFullYear()}`;
 };
 
 async function refreshTokenIfNeeded(shopeeToken: any, supabase: any) {
@@ -81,9 +81,20 @@ async function fetchAdsPerformance(
       accessToken,
       shopId
     );
-    console.log(`[SHOPEE ADS] campaign_id_list RESPONSE: ${JSON.stringify(campaignList).substring(0, 3000)}`);
-    campaignIds = campaignList?.response?.campaign_id_list || campaignList?.response?.data?.campaign_id_list || [];
-    console.log(`[SHOPEE ADS] Found ${campaignIds.length} campaign IDs`);
+    console.log(`[SHOPEE ADS] campaign_id_list FULL RESPONSE: ${JSON.stringify(campaignList).substring(0, 3000)}`);
+
+    // Primary: response.campaign_list[].campaign_id (real Shopee shape)
+    const campaignListArr = campaignList?.response?.campaign_list;
+    if (Array.isArray(campaignListArr) && campaignListArr.length > 0) {
+      campaignIds = campaignListArr.map((c: any) => c.campaign_id).filter(Boolean);
+    }
+    // Fallback: response.campaign_id_list (old shape)
+    if (campaignIds.length === 0) {
+      const fallback = campaignList?.response?.campaign_id_list || campaignList?.response?.data?.campaign_id_list || [];
+      if (Array.isArray(fallback)) campaignIds = fallback;
+    }
+
+    console.log(`[SHOPEE ADS] Parsed ${campaignIds.length} campaign IDs`);
   } catch (e) {
     console.error("[SHOPEE ADS] get_product_level_campaign_id_list error:", e);
   }
@@ -109,7 +120,7 @@ async function fetchAdsPerformance(
     }
   }
 
-  // 3. Get daily performance (last 30 days)
+  // 3. Get daily performance (last 30 days) — DD-MM-YYYY format
   let allEntries: any[] = [];
   let wasRateLimited = false;
 
@@ -121,7 +132,7 @@ async function fetchAdsPerformance(
       shopId,
       { start_date: startDate, end_date: endDate }
     );
-    console.log(`[SHOPEE ADS] daily_performance RESPONSE: ${JSON.stringify(result).substring(0, 3000)}`);
+    console.log(`[SHOPEE ADS] daily_performance FULL RESPONSE: ${JSON.stringify(result).substring(0, 3000)}`);
 
     const err = result?.error || result?.msg || "";
     if (typeof err === "string" && err.toLowerCase().includes("rate_limit")) {
@@ -145,8 +156,6 @@ async function fetchAdsPerformance(
   } catch (e) {
     console.error("[SHOPEE ADS] Balance error:", e);
   }
-
-  console.log(`[SHOPEE ADS] Total entries: ${allEntries.length}, Campaigns: ${campaignIds.length}, Details: ${campaignDetails.length}`);
 
   // Aggregate by item_id
   const productAds: Record<string, {
@@ -189,6 +198,8 @@ async function fetchAdsPerformance(
     p.roas = p.expense > 0 ? p.gmv / p.expense : 0;
   }
 
+  console.log(`[SHOPEE ADS] === DONE === Campaigns: ${campaignIds.length}, Details: ${campaignDetails.length}, Entries: ${allEntries.length}, Products: ${Object.keys(productAds).length}, RateLimited: ${wasRateLimited}`);
+
   return {
     ads_by_product: Object.values(productAds),
     campaign_ids: campaignIds,
@@ -207,6 +218,8 @@ Deno.serve(async (req) => {
   }
 
   try {
+    console.log("[SHOPEE ADS] === FUNCTION START ===");
+
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return errorResponse("Unauthorized", 401);
@@ -243,7 +256,7 @@ Deno.serve(async (req) => {
 
     const adsPerformance = await fetchAdsPerformance(currentAccessToken, shopId);
 
-    console.log(`[SHOPEE ADS] Done. Products: ${adsPerformance.ads_by_product.length}, Rate limited: ${adsPerformance.ads_rate_limited}`);
+    console.log(`[SHOPEE ADS] === FUNCTION END === Products: ${adsPerformance.ads_by_product.length}, Rate limited: ${adsPerformance.ads_rate_limited}`);
 
     return jsonResponse({
       success: true,

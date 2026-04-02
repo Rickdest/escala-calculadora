@@ -25,7 +25,7 @@ interface ShopeeImportModalProps {
 
 export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportModalProps) {
   const { user } = useAuth();
-  const { syncAds } = useShopeeToken();
+  const { syncStoreData } = useShopeeToken();
   const [products, setProducts] = useState<ShopeeProduct[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -41,7 +41,7 @@ export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportMod
     setLoading(true);
     setError(null);
     try {
-      const result = await syncAds();
+      const result = await syncStoreData();
       const details = result?.results?.product_details?.response?.item_list || [];
       const modelsMap = result?.results?.product_models || {};
 

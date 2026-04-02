@@ -52,7 +52,8 @@ export function useShopeeToken() {
     window.location.href = auth_url;
   };
 
-  const syncAds = async () => {
+  /** Sync store data: shop info, products, orders (shopee-sync) */
+  const syncStoreData = async () => {
     const { data: session } = await supabase.auth.getSession();
     const res = await supabase.functions.invoke('shopee-sync', {
       headers: {
@@ -60,7 +61,7 @@ export function useShopeeToken() {
       },
     });
     if (res.error) {
-      const msg = res.error?.message || 'Erro ao sincronizar ads';
+      const msg = res.error?.message || 'Erro ao sincronizar dados da loja';
       toast.error(msg);
       throw res.error;
     }
@@ -71,6 +72,7 @@ export function useShopeeToken() {
     return res.data;
   };
 
+  /** Sync ads only: campaigns, daily performance, balance (shopee-ads) */
   const syncAdsOnly = async () => {
     const { data: session } = await supabase.auth.getSession();
     const res = await supabase.functions.invoke('shopee-ads', {
@@ -95,7 +97,7 @@ export function useShopeeToken() {
     isConnected: !!token,
     isLoading,
     startOAuth,
-    syncAds,
+    syncStoreData,
     syncAdsOnly,
     refetch,
   };

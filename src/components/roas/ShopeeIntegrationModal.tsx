@@ -281,7 +281,7 @@ function PerformanceReport({ data }: { data: SyncReport['order_performance'] }) 
 }
 
 export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { isConnected, startOAuth, syncAds, isLoading: tokenLoading } = useShopeeToken();
+  const { isConnected, startOAuth, syncStoreData, isLoading: tokenLoading } = useShopeeToken();
   const [syncing, setSyncing] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [report, setReport] = useState<SyncReport | null>(null);
@@ -302,7 +302,7 @@ export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClo
       setSyncing(true);
       setReport(null);
       setSyncErrors(null);
-      const result = await syncAds();
+      const result = await syncStoreData();
       console.log('Shopee sync full result:', result);
       if (result?.results) setReport(result.results);
       if (result?.errors) setSyncErrors(result.errors);

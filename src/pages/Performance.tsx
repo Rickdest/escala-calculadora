@@ -35,7 +35,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function Performance() {
-  const { isConnected, startOAuth, syncAds, isLoading: tokenLoading } = useShopeeToken();
+  const { isConnected, startOAuth, syncStoreData, isLoading: tokenLoading } = useShopeeToken();
   const navigate = useNavigate();
   const [syncing, setSyncing] = useState(false);
   const [connecting, setConnecting] = useState(false);
@@ -44,7 +44,7 @@ export default function Performance() {
   const handleSync = async () => {
     try {
       setSyncing(true);
-      const result = await syncAds();
+      const result = await syncStoreData();
       console.log('[Performance] sync result:', JSON.stringify(result, null, 2));
       const perf = result?.results?.order_performance;
       if (perf) {
