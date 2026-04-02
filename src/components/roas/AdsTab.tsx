@@ -278,7 +278,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       ) : (
         <>
            {/* ═══ Empty State ═══ */}
-           {!hasData && (
+           {!hasAnyContent && (
               <AdsEmptyState
                 onImport={() => fileRef.current?.click()}
                 onShopeeIntegration={() => setShowShopeeModal(true)}
@@ -288,8 +288,21 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
               />
             )}
 
-          {/* ═══ Header com botão discreto ═══ */}
-          {hasData && (
+          {/* ═══ API Ads Dashboard ═══ */}
+          {apiAdsData && (
+            <>
+              <AdsHeader
+                periodLabel={`${apiAdsData.period_start} – ${apiAdsData.period_end}`}
+                onImportCSV={() => fileRef.current?.click()}
+                onImportAds={handleImportAds}
+                syncing={syncing}
+              />
+              <ApiAdsDashboard data={apiAdsData} />
+            </>
+          )}
+
+          {/* ═══ Header com botão discreto (CSV data) ═══ */}
+          {hasData && !apiAdsData && (
              <AdsHeader
                periodLabel={periodLabel}
                onImportCSV={() => fileRef.current?.click()}
