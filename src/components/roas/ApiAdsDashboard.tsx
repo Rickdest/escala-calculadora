@@ -26,7 +26,8 @@ function shortDate(d: string | null): string {
   return d;
 }
 
-function MiniSparkline({ data }: { data: Array<{ roas: number }> }) {
+function MiniSparkline({ data }: { data?: Array<{ roas: number }> }) {
+  if (!data || !Array.isArray(data)) return null;
   const last7 = data.slice(-7);
   if (last7.length < 2) return null;
   return (
@@ -69,7 +70,7 @@ function CampaignCard({ campaign, onRefresh, onSelect, isSelected }: { campaign:
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <MiniSparkline data={campaign.daily} />
+          <MiniSparkline data={campaign.daily || (campaign as any).daily_data} />
           {onRefresh && (
             <button onClick={(e) => { e.stopPropagation(); onRefresh(campaign.item_id); }} className="p-1 rounded-lg hover:bg-secondary transition-colors" title="Atualizar">
               <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
@@ -111,9 +112,9 @@ function CampaignCard({ campaign, onRefresh, onSelect, isSelected }: { campaign:
 
 function CampaignDetail({ campaign, onClose }: { campaign: CampaignAds; onClose: () => void }) {
   const chartData = useMemo(() =>
-    campaign.daily.map(e => ({
+    (campaign.daily || (campaign as any).daily_data || []).map((e: any) => ({
       date: shortDate(e.date), Gasto: e.expense, Receita: e.gmv, ROAS: e.roas,
-    })), [campaign.daily]
+    })), [campaign.daily, (campaign as any).daily_data]
   );
 
   const profit = campaign.gmv - campaign.expense;
@@ -185,7 +186,7 @@ function CampaignDetail({ campaign, onClose }: { campaign: CampaignAds; onClose:
 }
 
 export function ApiAdsDashboard({ data, onRefreshProduct, onCampaignSelect }: { data: ApiAdsData; onRefreshProduct?: (itemId: number) => void; onCampaignSelect?: (campaign: CampaignAds) => void }) {
-  const { summary, daily_entries, campaign_details, ads_by_campaign = [], total_balance } = data;
+  const { summary, daily_entries = [], campaign_details, ads_by_campaign = [], total_balance } = data || {};
   // Support legacy ads_by_product field
   const campaigns: CampaignAds[] = ads_by_campaign.length > 0 ? ads_by_campaign : ((data as any).ads_by_product || []);
   const [sortBy, setSortBy] = useState<string>('roas');
