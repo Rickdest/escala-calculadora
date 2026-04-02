@@ -145,25 +145,18 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
         toast.warning('API de Ads temporariamente limitada pela Shopee. Tente novamente em 2-3 minutos.');
       } else if (adsPerfData?.perf_api_error) {
         toast.error(`Erro da API Shopee: ${adsPerfData.perf_api_message || adsPerfData.perf_api_error}`);
-      } else if (adsPerfData?.summary?.total_impressions > 0) {
+      } else if (adsPerfData?.summary?.total_impressions > 0 || (adsPerfData?.ads_by_product?.length || 0) > 0) {
         setApiAdsData(adsPerfData);
-        // Also save summary as a single ads_data row for persistence
-        await importFromApi({
-          ads_by_product: [{
-            item_id: 0,
-            item_name: 'Total da Loja (Ads API)',
-            impressions: adsPerfData.summary.total_impressions,
-            clicks: adsPerfData.summary.total_clicks,
-            expense: adsPerfData.summary.total_expense,
-            gmv: adsPerfData.summary.total_gmv,
-            orders: adsPerfData.summary.total_orders,
-            ctr: adsPerfData.summary.ctr,
-            roas: adsPerfData.summary.roas_geral,
-          }],
-          period_start: adsPerfData.period_start,
-          period_end: adsPerfData.period_end,
-        });
-        toast.success(`Ads importados: ${adsPerfData.summary.days} dias · ROAS ${adsPerfData.summary.roas_geral.toFixed(2)}`);
+        // Save real product data via importFromApi
+        if (adsPerfData.ads_by_product?.length > 0) {
+          await importFromApi({
+            ads_by_product: adsPerfData.ads_by_product,
+            period_start: adsPerfData.period_start,
+            period_end: adsPerfData.period_end,
+          });
+        }
+        const productCount = adsPerfData.ads_by_product?.length || 0;
+        toast.success(`Ads importados: ${productCount} produto${productCount !== 1 ? 's' : ''} · ${adsPerfData.summary.days} dias · ROAS ${adsPerfData.summary.roas_geral.toFixed(2)}`);
       } else if ((adsPerfData?.campaign_count || 0) > 0) {
         toast.info(`${adsPerfData.campaign_count} campanhas encontradas, mas sem métricas no período.`);
       } else {

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 interface DailyEntry { date: string | null; impressions: number; clicks: number; expense: number; gmv: number; orders: number; roas: number; }
 interface ProductAds {
   item_id: number; item_name: string; campaign_ids: number[]; campaign_count: number;
+  status: 'active' | 'ended';
   impressions: number; clicks: number; expense: number; gmv: number; direct_gmv: number;
   orders: number; direct_orders: number; avg_position: number | null;
   roas: number; direct_roas: number; acos: number; ctr: number; cost_per_order: number;
@@ -55,9 +56,16 @@ function ProductCard({ product, onRefresh }: { product: ProductAds; onRefresh?: 
       {/* Header */}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-foreground truncate">{product.item_name || `Item #${product.item_id}`}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-bold text-foreground truncate">{product.item_name || `Item #${product.item_id}`}</p>
+            <span className={cn('text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0',
+              product.status === 'active' ? 'text-success bg-success/10' : 'text-muted-foreground bg-muted'
+            )}>
+              {product.status === 'active' ? 'Ativo' : 'Encerrado'}
+            </span>
+          </div>
           <p className="text-[10px] text-muted-foreground font-mono">
-            {product.campaign_count} campanha{product.campaign_count > 1 ? 's' : ''} · {product.days_active} dias ativos
+            {product.campaign_count} campanha{product.campaign_count > 1 ? 's' : ''} · {product.days_active} dias ativos · Item #{product.item_id}
           </p>
         </div>
         <div className="flex items-center gap-2">

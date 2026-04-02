@@ -143,32 +143,36 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
   console.log(`[SHOPEE ADS] ${dailyEntries.length} daily entries parsed`);
 
   // Step 4: Per-campaign daily performance → aggregate by item_id
+  // Include ALL campaigns (active, paused, ended) for full history
   const adsByProduct: any[] = [];
-  const activeCampaigns = campaignDetails.filter(c => {
+  const campaignsForStep4 = campaignDetails.filter(c => {
     if (filterItemId && c.item_id !== filterItemId) return false;
-    return c.status === 1 || c.status === "ongoing";
+    return !!c.item_id; // only need item_id, include all statuses
   });
-  console.log(`[SHOPEE ADS] === Step 4: per-campaign performance for ${activeCampaigns.length} active campaigns ===`);
+  console.log(`[SHOPEE ADS] === Step 4: per-campaign performance for ${campaignsForStep4.length} campaigns (all statuses) ===`);
 
-  // Group campaigns by item_id
-  const itemCampaigns = new Map<number, { ad_name: string; campaign_ids: number[] }>();
-  for (const c of activeCampaigns) {
-    if (!c.item_id) continue;
+  // Group campaigns by item_id, track if any is ongoing
+  const itemCampaigns = new Map<number, { ad_name: string; campaign_ids: number[]; has_ongoing: boolean }>();
+  for (const c of campaignsForStep4) {
     const existing = itemCampaigns.get(c.item_id);
+    const isOngoing = c.status === 1 || c.status === "ongoing";
     if (existing) {
       existing.campaign_ids.push(c.campaign_id);
+      if (isOngoing) existing.has_ongoing = true;
     } else {
-      itemCampaigns.set(c.item_id, { ad_name: c.ad_name, campaign_ids: [c.campaign_id] });
+      itemCampaigns.set(c.item_id, { ad_name: c.ad_name, campaign_ids: [c.campaign_id], has_ongoing: isOngoing });
     }
   }
 
-  // Fetch per-campaign daily data in batches of 5
-  const allCampaignDailyData = new Map<number, any[]>(); // campaign_id → daily entries
-  const campaignIdsToFetch = activeCampaigns.filter(c => c.item_id).map(c => c.campaign_id);
+  // Fetch per-campaign daily data in batches of 5 with 300ms delay
+  const allCampaignDailyData = new Map<number, any[]>();
+  const campaignIdsToFetch = campaignsForStep4.map(c => c.campaign_id);
+  let fetchIdx = 0;
 
   for (let i = 0; i < campaignIdsToFetch.length; i += 5) {
     const batch = campaignIdsToFetch.slice(i, i + 5);
     const promises = batch.map(async (cid: number) => {
+      fetchIdx++;
       try {
         const res = await shopeeGet(
           "/api/v2/ads/get_product_campaign_daily_performance",
@@ -178,14 +182,17 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
         const resp = res?.response;
         const raw = Array.isArray(resp) ? resp : (resp?.entry_list || resp?.data || []);
         allCampaignDailyData.set(cid, raw);
+        const info = campaignToItem.get(cid);
+        const totalExp = raw.reduce((s: number, e: any) => s + Number(e.expense || e.cost || 0), 0);
+        console.log(`[SHOPEE ADS] Campaign ${fetchIdx}/${campaignIdsToFetch.length}: id=${cid} item_id=${info?.item_id} expense=${totalExp.toFixed(2)} entries=${raw.length}`);
       } catch (e) {
         console.error(`[SHOPEE ADS] Step 4 campaign ${cid} error:`, e);
       }
     });
     await Promise.all(promises);
-    if (i + 5 < campaignIdsToFetch.length) await delay(200);
+    if (i + 5 < campaignIdsToFetch.length) await delay(300);
   }
-  console.log(`[SHOPEE ADS] Fetched daily data for ${allCampaignDailyData.size} campaigns`);
+  console.log(`[SHOPEE ADS] Fetched daily data for ${allCampaignDailyData.size}/${campaignIdsToFetch.length} campaigns`);
 
   // Aggregate by item_id
   for (const [itemId, info] of itemCampaigns.entries()) {
@@ -250,6 +257,7 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
       item_name: info.ad_name,
       campaign_ids: info.campaign_ids,
       campaign_count: info.campaign_ids.length,
+      status: info.has_ongoing ? 'active' : 'ended',
       impressions: totImp,
       clicks: totClk,
       expense: Math.round(totExp * 100) / 100,
