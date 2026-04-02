@@ -8,7 +8,7 @@ import {
   TrendingUp, TrendingDown, AlertTriangle, Target, Zap, MapPin,
   Eye, MousePointerClick, ShoppingCart, DollarSign, Percent, Upload,
   Link2, BarChart3, Info, Clock, Wallet, Package, Plus, LineChart,
-  History, Settings, Sparkles, ArrowRight,
+  History, Settings, Sparkles, ArrowRight, RefreshCw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,7 @@ interface Props {
   onReimport?: () => void;
   onUnlink?: () => void;
   onChangeLink?: () => void;
+  onRefreshProduct?: (itemId: number) => void;
 }
 
 // ═══ Operation Log Timeline ═══
@@ -490,13 +491,23 @@ function KpiCard({ label, value, sub, subColor, icon: Icon, highlight, colorClas
 
 // ═══ Main Component ═══
 
-export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPosition, onLink, onQuickRegister, onReimport, onUnlink, onChangeLink }: Props) {
+export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPosition, onLink, onQuickRegister, onReimport, onUnlink, onChangeLink, onRefreshProduct }: Props) {
   const { currentStore } = useStore();
   const isMobile = useIsMobile();
   const config = currentStore?.config;
   const [excelData, setExcelData] = useState<ExcelPerformanceData | null>(null);
   const [opLog, setOpLog] = useState<OperationLogEntry[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
   const excelInputRef = useRef<HTMLInputElement>(null);
+
+  const isApiCampaign = ad.id.startsWith('api-campaign-');
+  const itemId = ad.shopee_product_id ? Number(ad.shopee_product_id) : null;
+
+  const handleRefreshProduct = async () => {
+    if (!onRefreshProduct || !itemId) return;
+    setRefreshing(true);
+    try { await onRefreshProduct(itemId); } finally { setRefreshing(false); }
+  };
 
   const roasDireto = ad.roas_direto && ad.roas_direto > 0 ? ad.roas_direto : ad.roas;
   const product = ad.product;
@@ -754,6 +765,12 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
           <span className="text-[11px] text-success font-mono tabular-nums hidden md:block">{periodLabel}</span>
         </div>
         <div className="flex items-center gap-2 flex-wrap mt-3 relative">
+          {isApiCampaign && onRefreshProduct && itemId && (
+            <Button onClick={handleRefreshProduct} disabled={refreshing} variant="outline" size="sm" className="gap-1 text-xs font-bold h-8 border-primary/30 text-primary hover:bg-primary/10">
+              <RefreshCw className={cn("w-3.5 h-3.5", refreshing && "animate-spin")} />
+              {refreshing ? 'Atualizando...' : 'Atualizar Dados'}
+            </Button>
+          )}
           {onReimport && (
             <Button onClick={onReimport} variant="outline" size="sm" className="gap-1 text-xs font-bold h-8 border-border text-text-2 hover:bg-surface-2">
               <Upload className="w-3.5 h-3.5" /> CSV

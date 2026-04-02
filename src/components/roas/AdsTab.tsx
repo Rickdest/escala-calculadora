@@ -338,6 +338,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
           onReimport={() => { if (!selectedDetail.id.startsWith('api-campaign-')) { setPositionTarget(selectedDetail.id); positionFileRef.current?.click(); } }}
           onUnlink={() => { if (!selectedDetail.id.startsWith('api-campaign-')) { unlinkProduct(selectedDetail.id); setSelectedDetail(null); } }}
           onChangeLink={() => { if (!selectedDetail.id.startsWith('api-campaign-')) { setLinkTarget(selectedDetail.id); } }}
+          onRefreshProduct={selectedDetail.id.startsWith('api-campaign-') ? (itemId: number) => handleRefreshProduct(itemId) : undefined}
         />
       ) : (
         <>

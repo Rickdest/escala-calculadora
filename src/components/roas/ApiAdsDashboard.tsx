@@ -110,7 +110,8 @@ function CampaignCard({ campaign, onRefresh, onSelect, isSelected }: { campaign:
   );
 }
 
-function CampaignDetail({ campaign, onClose }: { campaign: CampaignAds; onClose: () => void }) {
+function CampaignDetail({ campaign, onClose, onRefresh }: { campaign: CampaignAds; onClose: () => void; onRefresh?: (itemId: number) => void }) {
+  const [refreshing, setRefreshing] = useState(false);
   const chartData = useMemo(() =>
     (campaign.daily || (campaign as any).daily_data || []).map((e: any) => ({
       date: shortDate(e.date), Gasto: e.expense, Receita: e.gmv, ROAS: e.roas,
@@ -119,6 +120,12 @@ function CampaignDetail({ campaign, onClose }: { campaign: CampaignAds; onClose:
 
   const profit = campaign.gmv - campaign.expense;
   const roasColor = getRoasColor(campaign.roas);
+
+  const handleRefresh = async () => {
+    if (!onRefresh) return;
+    setRefreshing(true);
+    try { await onRefresh(campaign.item_id); } finally { setRefreshing(false); }
+  };
 
   return (
     <div className="rounded-2xl border border-primary/30 bg-card p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
@@ -129,9 +136,21 @@ function CampaignDetail({ campaign, onClose }: { campaign: CampaignAds; onClose:
             Campanha #{campaign.campaign_id} · Item #{campaign.item_id}
           </p>
         </div>
-        <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
-          <X className="w-4 h-4 text-muted-foreground" />
-        </button>
+        <div className="flex items-center gap-1.5">
+          {onRefresh && (
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors text-xs font-medium text-primary disabled:opacity-50"
+            >
+              <RefreshCw className={cn("w-3.5 h-3.5", refreshing && "animate-spin")} />
+              {refreshing ? 'Atualizando...' : 'Atualizar Dados'}
+            </button>
+          )}
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
+            <X className="w-4 h-4 text-muted-foreground" />
+          </button>
+        </div>
       </div>
 
       {/* Full metrics grid */}
