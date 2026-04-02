@@ -342,15 +342,22 @@ export function ApiAdsDashboard({ data, products = [], onRefreshProduct, onCampa
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {sortedCampaigns.map(c => (
-              <CampaignCard
-                key={c.campaign_id}
-                campaign={c}
-                onRefresh={onRefreshProduct}
-                onSelect={() => onCampaignSelect?.(c)}
-                isSelected={false}
-              />
-            ))}
+            {sortedCampaigns.map(c => {
+              const linked = products.find((p: any) =>
+                (p.shopeeItemId || p.shopee_item_id) && c.item_id &&
+                String(p.shopeeItemId || p.shopee_item_id) === String(c.item_id)
+              );
+              return (
+                <CampaignCard
+                  key={c.campaign_id}
+                  campaign={c}
+                  onRefresh={onRefreshProduct}
+                  onSelect={() => onCampaignSelect?.(c)}
+                  isSelected={false}
+                  linkedProduct={linked}
+                />
+              );
+            })}
           </div>
         </div>
       )}
