@@ -114,16 +114,15 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       const result = await syncAdsOnly(itemId);
       const adsPerfData = result?.results?.ads_performance;
       if (adsPerfData) {
-        // Merge updated product into existing apiAdsData
         setApiAdsData((prev: any) => {
           if (!prev) return adsPerfData;
-          const updatedProducts = [...(prev.ads_by_product || [])];
-          for (const newP of adsPerfData.ads_by_product || []) {
-            const idx = updatedProducts.findIndex((p: any) => p.item_id === newP.item_id);
-            if (idx >= 0) updatedProducts[idx] = newP;
-            else updatedProducts.push(newP);
+          const updatedCampaigns = [...(prev.ads_by_campaign || [])];
+          for (const newC of adsPerfData.ads_by_campaign || []) {
+            const idx = updatedCampaigns.findIndex((c: any) => c.campaign_id === newC.campaign_id);
+            if (idx >= 0) updatedCampaigns[idx] = newC;
+            else updatedCampaigns.push(newC);
           }
-          return { ...prev, ads_by_product: updatedProducts };
+          return { ...prev, ads_by_campaign: updatedCampaigns };
         });
         toast.success('Produto atualizado!');
       }
@@ -145,18 +144,10 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
         toast.warning('API de Ads temporariamente limitada pela Shopee. Tente novamente em 2-3 minutos.');
       } else if (adsPerfData?.perf_api_error) {
         toast.error(`Erro da API Shopee: ${adsPerfData.perf_api_message || adsPerfData.perf_api_error}`);
-      } else if (adsPerfData?.summary?.total_impressions > 0 || (adsPerfData?.ads_by_product?.length || 0) > 0) {
+    } else if (adsPerfData?.summary?.total_impressions > 0 || (adsPerfData?.ads_by_campaign?.length || 0) > 0) {
         setApiAdsData(adsPerfData);
-        // Save real product data via importFromApi
-        if (adsPerfData.ads_by_product?.length > 0) {
-          await importFromApi({
-            ads_by_product: adsPerfData.ads_by_product,
-            period_start: adsPerfData.period_start,
-            period_end: adsPerfData.period_end,
-          });
-        }
-        const productCount = adsPerfData.ads_by_product?.length || 0;
-        toast.success(`Ads importados: ${productCount} produto${productCount !== 1 ? 's' : ''} · ${adsPerfData.summary.days} dias · ROAS ${adsPerfData.summary.roas_geral.toFixed(2)}`);
+        const campaignCount = adsPerfData.ads_by_campaign?.length || 0;
+        toast.success(`Ads importados: ${campaignCount} campanha${campaignCount !== 1 ? 's' : ''} · ${adsPerfData.summary.days} dias · ROAS ${adsPerfData.summary.roas_geral.toFixed(2)}`);
       } else if ((adsPerfData?.campaign_count || 0) > 0) {
         toast.info(`${adsPerfData.campaign_count} campanhas encontradas, mas sem métricas no período.`);
       } else {
