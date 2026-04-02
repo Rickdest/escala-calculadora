@@ -208,11 +208,6 @@ export function ApiAdsDashboard({ data, onRefreshProduct, onCampaignSelect }: { 
     }
   }, [campaigns, sortBy]);
 
-  const selectedCampaign = useMemo(() =>
-    campaigns.find(c => c.campaign_id === selectedCampaignId) || null,
-    [campaigns, selectedCampaignId]
-  );
-
   const balance = total_balance?.total_balance ?? total_balance?.balance ?? null;
 
   const kpis = [
