@@ -497,7 +497,17 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
   const config = currentStore?.config;
   const [excelData, setExcelData] = useState<ExcelPerformanceData | null>(null);
   const [opLog, setOpLog] = useState<OperationLogEntry[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
   const excelInputRef = useRef<HTMLInputElement>(null);
+
+  const isApiCampaign = ad.id.startsWith('api-campaign-');
+  const itemId = ad.shopee_product_id ? Number(ad.shopee_product_id) : null;
+
+  const handleRefreshProduct = async () => {
+    if (!onRefreshProduct || !itemId) return;
+    setRefreshing(true);
+    try { await onRefreshProduct(itemId); } finally { setRefreshing(false); }
+  };
 
   const roasDireto = ad.roas_direto && ad.roas_direto > 0 ? ad.roas_direto : ad.roas;
   const product = ad.product;
