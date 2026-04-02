@@ -274,7 +274,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   }, [periodFiltered, filter]);
 
   const hasData = data.length > 0;
-  const hasAnyContent = hasData || !!apiAdsData;
+  const hasAnyContent = hasData || !!effectiveApiData;
 
   const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
