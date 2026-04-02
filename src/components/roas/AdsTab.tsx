@@ -353,15 +353,15 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
             )}
 
           {/* ═══ API Ads Dashboard ═══ */}
-          {apiAdsData && (
+          {effectiveApiData && (
             <>
               <AdsHeader
-                periodLabel={`${apiAdsData.period_start} – ${apiAdsData.period_end}`}
+                periodLabel={`${effectiveApiData.period_start} – ${effectiveApiData.period_end}`}
                 onImportCSV={() => fileRef.current?.click()}
                 onImportAds={handleImportAds}
                 syncing={syncing}
               />
-              <ApiAdsDashboard data={apiAdsData} onRefreshProduct={handleRefreshProduct} onCampaignSelect={handleCampaignSelect} />
+              <ApiAdsDashboard data={effectiveApiData} onRefreshProduct={handleRefreshProduct} onCampaignSelect={handleCampaignSelect} />
             </>
           )}
 
