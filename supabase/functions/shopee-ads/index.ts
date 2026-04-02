@@ -399,122 +399,94 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
     console.log(`[SHOPEE ADS] Step 5: found avg_position for ${hourlyFound}/${activeCampaignsWithData.length} campaigns`);
   }
 
-  // Step 6: Discovery — test all read endpoints for useful data (temporary diagnostic)
-  const discoveryResults: Record<string, any> = {};
-  try {
-    console.log("[SHOPEE ADS] === Step 6: Discovery endpoints ===");
-    const firstActive = activeCampaignsWithData[0] || adsByCampaign.find((c: any) => c.status === 'active') || adsByCampaign[0];
-    const discoveryItemId = firstActive?.item_id ? String(firstActive.item_id) : null;
-    const discoveryCampaignId = firstActive?.campaign_id ? String(firstActive.campaign_id) : null;
-    const discoveryStartAPI = isoToDDMMYYYY(startDateISO);
-    const discoveryEndAPI = isoToDDMMYYYY(endDateISO);
+  // Step 6: Enrichment — keywords, hourly shop performance, recommended items, shop toggles
+  let hourlyPerformance: any[] = [];
+  let recommendedItems: any[] = [];
+  let shopToggles: any = null;
 
-    // 1. Shop toggle info
+  try {
+    console.log("[SHOPEE ADS] === Step 6: Enrichment (keywords, hourly, recommendations, toggles) ===");
+
+    // 6A: Recommended keywords for active campaigns (batch of 3, 2s delay)
+    const activeCampaignsForKw = adsByCampaign.filter((c: any) => c.status === 'active' && c.item_id);
+    if (activeCampaignsForKw.length > 0) {
+      console.log(`[SHOPEE ADS] Step 6A: keywords for ${activeCampaignsForKw.length} active campaigns`);
+      for (let i = 0; i < activeCampaignsForKw.length; i += 3) {
+        if (i > 0) await delay(2000);
+        const batch = activeCampaignsForKw.slice(i, i + 3);
+        const promises = batch.map(async (c: any, batchIdx: number) => {
+          try {
+            const res = await shopeeGet("/api/v2/ads/get_recommended_keyword_list", accessToken, shopId, { item_id: String(c.item_id) });
+            if (i === 0 && batchIdx === 0) {
+              console.log(`[SHOPEE ADS] keywords sample: ${JSON.stringify(res).substring(0, 600)}`);
+            }
+            const kwList = res?.response?.keyword_list || res?.response?.data || [];
+            if (Array.isArray(kwList) && kwList.length > 0) {
+              c.keywords = kwList.slice(0, 10).map((kw: any) => ({
+                keyword: kw.keyword || kw.search_term || kw.word || '',
+                search_volume: Number(kw.search_volume || kw.volume || 0),
+                suggested_bid: Number(kw.suggested_bid || kw.bid || kw.recommended_bid || 0),
+                quality_score: kw.quality_score != null ? Number(kw.quality_score) : undefined,
+              }));
+            }
+          } catch (e) { console.error(`[SHOPEE ADS] keywords error for item ${c.item_id}:`, e); }
+        });
+        await Promise.all(promises);
+      }
+      const withKw = adsByCampaign.filter((c: any) => c.keywords?.length > 0).length;
+      console.log(`[SHOPEE ADS] Step 6A: ${withKw}/${activeCampaignsForKw.length} campaigns got keywords`);
+    }
+
+    // 6B: Hourly shop performance (yesterday)
     await delay(500);
     try {
-      const res = await shopeeGet("/api/v2/ads/get_shop_toggle_info", accessToken, shopId);
-      console.log(`[DISCOVERY] get_shop_toggle_info: ` + JSON.stringify(res).substring(0, 800));
-      discoveryResults.shop_toggle_info = res;
-    } catch (e) { discoveryResults.shop_toggle_info = { error: String(e) }; }
+      const res = await shopeeGet("/api/v2/ads/get_all_cpc_ads_hourly_performance", accessToken, shopId, {
+        performance_date: isoToDDMMYYYY(endDateISO),
+      });
+      console.log(`[SHOPEE ADS] Step 6B hourly shop: ${JSON.stringify(res).substring(0, 600)}`);
+      const entries = extractEntries(res);
+      if (entries.length > 0) {
+        hourlyPerformance = entries.map((e: any) => ({
+          hour: Number(e.hour ?? e.time ?? 0),
+          impressions: Number(e.impression || e.impressions || 0),
+          clicks: Number(e.click || e.clicks || 0),
+          expense: Number(e.expense || e.cost || 0),
+          gmv: Number(e.broad_gmv || e.broad_order_amount || e.gmv || 0),
+          orders: Number(e.broad_order || e.orders || 0),
+        }));
+      }
+    } catch (e) { console.error("[SHOPEE ADS] Step 6B hourly error:", e); }
 
-    // 2. Recommended ROI target
-    if (discoveryItemId) {
-      await delay(500);
-      try {
-        const res = await shopeeGet("/api/v2/ads/get_product_recommended_roi_target", accessToken, shopId, { item_id_list: discoveryItemId });
-        console.log(`[DISCOVERY] get_product_recommended_roi_target: ` + JSON.stringify(res).substring(0, 800));
-        discoveryResults.recommended_roi_target = res;
-      } catch (e) { discoveryResults.recommended_roi_target = { error: String(e) }; }
-    }
-
-    // 3. Budget suggestion
-    if (discoveryItemId) {
-      await delay(500);
-      try {
-        const res = await shopeeGet("/api/v2/ads/get_create_product_ad_budget_suggestion", accessToken, shopId, { item_id: discoveryItemId });
-        console.log(`[DISCOVERY] get_create_product_ad_budget_suggestion: ` + JSON.stringify(res).substring(0, 800));
-        discoveryResults.budget_suggestion = res;
-      } catch (e) { discoveryResults.budget_suggestion = { error: String(e) }; }
-    }
-
-    // 4. Recommended keywords
-    if (discoveryItemId) {
-      await delay(500);
-      try {
-        const res = await shopeeGet("/api/v2/ads/get_recommended_keyword_list", accessToken, shopId, { item_id: discoveryItemId });
-        console.log(`[DISCOVERY] get_recommended_keyword_list: ` + JSON.stringify(res).substring(0, 800));
-        discoveryResults.recommended_keywords = res;
-      } catch (e) { discoveryResults.recommended_keywords = { error: String(e) }; }
-    }
-
-    // 5. Recommended items for Ads
+    // 6C: Recommended items for Ads
     await delay(500);
     try {
       const res = await shopeeGet("/api/v2/ads/get_recommended_item_list", accessToken, shopId);
-      console.log(`[DISCOVERY] get_recommended_item_list: ` + JSON.stringify(res).substring(0, 800));
-      discoveryResults.recommended_items = res;
-    } catch (e) { discoveryResults.recommended_items = { error: String(e) }; }
+      console.log(`[SHOPEE ADS] Step 6C recommended items: ${JSON.stringify(res).substring(0, 600)}`);
+      const items = res?.response?.item_list || res?.response?.data || [];
+      if (Array.isArray(items)) {
+        recommendedItems = items.slice(0, 10).map((it: any) => ({
+          item_id: Number(it.item_id || 0),
+          item_name: it.item_name || it.name || `Item #${it.item_id}`,
+        }));
+      }
+    } catch (e) { console.error("[SHOPEE ADS] Step 6C recommended items error:", e); }
 
-    // 6. GMS campaign performance
-    if (discoveryCampaignId) {
-      await delay(500);
-      try {
-        const res = await shopeeGet("/api/v2/ads/get_gms_campaign_performance", accessToken, shopId, {
-          campaign_id_list: discoveryCampaignId, start_date: discoveryStartAPI, end_date: discoveryEndAPI,
-        });
-        console.log(`[DISCOVERY] get_gms_campaign_performance: ` + JSON.stringify(res).substring(0, 800));
-        discoveryResults.gms_campaign_performance = res;
-      } catch (e) { discoveryResults.gms_campaign_performance = { error: String(e) }; }
-    }
-
-    // 7. GMS eligibility check
-    if (discoveryItemId) {
-      await delay(500);
-      try {
-        const res = await shopeeGet("/api/v2/ads/check_create_gms_product_campaign_eligibility", accessToken, shopId, { item_id_list: discoveryItemId });
-        console.log(`[DISCOVERY] check_create_gms_product_campaign_eligibility: ` + JSON.stringify(res).substring(0, 800));
-        discoveryResults.gms_eligibility = res;
-      } catch (e) { discoveryResults.gms_eligibility = { error: String(e) }; }
-    }
-
-    // 8. GMS deleted items
+    // 6D: Shop toggle info
     await delay(500);
     try {
-      const res = await shopeeGet("/api/v2/ads/list_gms_user_deleted_item", accessToken, shopId);
-      console.log(`[DISCOVERY] list_gms_user_deleted_item: ` + JSON.stringify(res).substring(0, 800));
-      discoveryResults.gms_deleted_items = res;
-    } catch (e) { discoveryResults.gms_deleted_items = { error: String(e) }; }
+      const res = await shopeeGet("/api/v2/ads/get_shop_toggle_info", accessToken, shopId);
+      console.log(`[SHOPEE ADS] Step 6D shop toggles: ${JSON.stringify(res).substring(0, 400)}`);
+      const resp = res?.response;
+      if (resp) {
+        shopToggles = {
+          auto_top_up: resp.auto_top_up ?? resp.auto_recharge ?? false,
+          campaign_surge: resp.campaign_surge ?? resp.surge ?? false,
+        };
+      }
+    } catch (e) { console.error("[SHOPEE ADS] Step 6D toggle error:", e); }
 
-    // 9. Ads fácil rate
-    await delay(500);
-    try {
-      const res = await shopeeGet("/api/v2/ads/get_ads_fácil_shop_rate", accessToken, shopId);
-      console.log(`[DISCOVERY] get_ads_fácil_shop_rate: ` + JSON.stringify(res).substring(0, 800));
-      discoveryResults.ads_facil_rate = res;
-    } catch (e) { discoveryResults.ads_facil_rate = { error: String(e) }; }
-
-    // 10. Hourly shop performance (yesterday)
-    await delay(500);
-    try {
-      const res = await shopeeGet("/api/v2/ads/get_all_cpc_ads_hourly_performance", accessToken, shopId, { performance_date: discoveryEndAPI });
-      console.log(`[DISCOVERY] get_all_cpc_ads_hourly_performance: ` + JSON.stringify(res).substring(0, 800));
-      discoveryResults.hourly_shop_performance = res;
-    } catch (e) { discoveryResults.hourly_shop_performance = { error: String(e) }; }
-
-    // 11. Hourly campaign performance (yesterday, first active)
-    if (discoveryCampaignId) {
-      await delay(500);
-      try {
-        const res = await shopeeGet("/api/v2/ads/get_product_campaign_hourly_performance", accessToken, shopId, {
-          campaign_id_list: discoveryCampaignId, performance_date: discoveryEndAPI,
-        });
-        console.log(`[DISCOVERY] get_product_campaign_hourly_performance: ` + JSON.stringify(res).substring(0, 800));
-        discoveryResults.hourly_campaign_performance = res;
-      } catch (e) { discoveryResults.hourly_campaign_performance = { error: String(e) }; }
-    }
-
-    console.log(`[SHOPEE ADS] Discovery done. ${Object.keys(discoveryResults).length} endpoints tested.`);
-  } catch (e) { console.error("[SHOPEE ADS] Step 6 discovery error:", e); }
+    console.log(`[SHOPEE ADS] Step 6 done: hourly=${hourlyPerformance.length} recommended=${recommendedItems.length} toggles=${!!shopToggles}`);
+  } catch (e) { console.error("[SHOPEE ADS] Step 6 error:", e); }
 
   // Step 7: Balance
   let totalBalance: any = null;
