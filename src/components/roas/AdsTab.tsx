@@ -329,7 +329,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       {selectedDetail ? (
         <AdsDetailFullView
           ad={selectedDetail}
-          allAds={selectedDetail.id.startsWith('api-campaign-') ? (apiAdsData?.ads_by_campaign || []).map(campaignToEnrichedAds) : filtered}
+          allAds={selectedDetail.id.startsWith('api-campaign-') ? (effectiveApiData?.ads_by_campaign || []).map(campaignToEnrichedAds) : filtered}
           onClose={() => setSelectedDetail(null)}
           onNavigate={(ad) => setSelectedDetail(ad)}
           onImportPosition={() => { if (!selectedDetail.id.startsWith('api-campaign-')) { setPositionTarget(selectedDetail.id); setSelectedDetail(null); positionFileRef.current?.click(); } }}
