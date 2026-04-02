@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 interface DailyEntry { date: string | null; impressions: number; clicks: number; expense: number; gmv: number; orders: number; roas: number; }
 interface ProductAds {
   item_id: number; item_name: string; campaign_ids: number[]; campaign_count: number;
+  status: 'active' | 'ended';
   impressions: number; clicks: number; expense: number; gmv: number; direct_gmv: number;
   orders: number; direct_orders: number; avg_position: number | null;
   roas: number; direct_roas: number; acos: number; ctr: number; cost_per_order: number;
