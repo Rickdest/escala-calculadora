@@ -352,8 +352,7 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
             accessToken, shopId,
             {
               campaign_id_list: String(c.campaign_id),
-              start_date: isoToDDMMYYYY(startDateISO),
-              end_date: isoToDDMMYYYY(endDateISO),
+              performance_date: isoToDDMMYYYY(endDateISO),
             }
           );
 
