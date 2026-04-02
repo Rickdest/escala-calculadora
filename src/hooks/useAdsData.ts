@@ -549,13 +549,31 @@ export function useAdsData() {
     if (!acquireLock()) { toast.error('Operação em andamento...'); return; }
     try {
       const adsByProduct = adsPerformance?.ads_by_product || [];
-      if (adsByProduct.length === 0) {
+      const shopSummary = adsPerformance?.shop_summary;
+      
+      // If no per-product data AND no shop summary, nothing to import
+      if (adsByProduct.length === 0 && (!shopSummary || shopSummary.impressions === 0)) {
         toast.info('Nenhum dado de Ads retornado pela API.');
         return;
       }
 
       const periodStart = adsPerformance.period_start;
       const periodEnd = adsPerformance.period_end;
+      
+      // If we have shop summary but no per-product breakdown, create a single "Loja Total" entry
+      const effectiveAdsByProduct = adsByProduct.length > 0
+        ? adsByProduct
+        : [{
+            item_id: 0,
+            item_name: 'Total da Loja (Ads)',
+            impressions: shopSummary.impressions,
+            clicks: shopSummary.clicks,
+            expense: shopSummary.expense,
+            gmv: shopSummary.gmv,
+            orders: shopSummary.orders,
+            ctr: shopSummary.ctr,
+            roas: shopSummary.roas,
+          }];
 
       let linkedCount = 0;
       let autoCreatedCount = 0;
