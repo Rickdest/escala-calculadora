@@ -63,9 +63,9 @@ function extractCampaignSummaryMetrics(detail: any) {
   const impressions = toFiniteNumber(perf?.impression, perf?.impressions, perf?.total_impression, perf?.total_impressions, detail?.impression, detail?.impressions, detail?.total_impression, detail?.total_impressions);
   const clicks = toFiniteNumber(perf?.click, perf?.clicks, perf?.total_click, perf?.total_clicks, detail?.click, detail?.clicks, detail?.total_click, detail?.total_clicks);
   const expense = toFiniteNumber(perf?.expense, perf?.cost, perf?.ad_spend, perf?.total_expense, perf?.total_cost, detail?.expense, detail?.cost, detail?.total_expense, detail?.total_cost);
-  const gmv = toFiniteNumber(perf?.broad_order_amount, perf?.broad_gmv, perf?.gmv, perf?.total_gmv, perf?.total_broad_gmv, detail?.broad_order_amount, detail?.broad_gmv, detail?.gmv, detail?.total_gmv);
-  const directGmv = toFiniteNumber(perf?.direct_order_amount, perf?.direct_gmv, perf?.total_direct_gmv, detail?.direct_order_amount, detail?.direct_gmv, detail?.total_direct_gmv);
-  const orders = toFiniteNumber(perf?.broad_order_num, perf?.broad_order, perf?.orders, perf?.total_orders, perf?.total_broad_orders, detail?.broad_order_num, detail?.broad_order, detail?.orders, detail?.total_orders);
+  const gmv = toFiniteNumber(perf?.broad_gmv, perf?.broad_order_amount, perf?.gmv, perf?.total_gmv, perf?.total_broad_gmv, detail?.broad_gmv, detail?.broad_order_amount, detail?.gmv, detail?.total_gmv);
+  const directGmv = toFiniteNumber(perf?.direct_gmv, perf?.direct_order_amount, perf?.total_direct_gmv, detail?.direct_gmv, detail?.direct_order_amount, detail?.total_direct_gmv);
+  const orders = toFiniteNumber(perf?.broad_order, perf?.broad_order_num, perf?.orders, perf?.total_orders, perf?.total_broad_orders, detail?.broad_order, detail?.broad_order_num, detail?.orders, detail?.total_orders);
   const directOrders = toFiniteNumber(perf?.direct_order_num, perf?.direct_orders, perf?.total_direct_orders, detail?.direct_order_num, detail?.direct_orders, detail?.total_direct_orders);
   const avgPosition = (() => {
     const value = toFiniteNumber(perf?.average_position, perf?.avg_position, detail?.average_position, detail?.avg_position);
@@ -144,11 +144,9 @@ function buildDateChunks(startDateISO: string, endDateISO: string): Array<{ star
 
 /**
  * Fetch per-campaign performance with cascading strategies.
- * 1. POST with campaign_id (singular)
- * 2. GET with campaign_id (singular)
- * 3. POST with campaign_id_list (array)
- * 4. GET with campaign_id_list (string)
- * 5. GMS fallback endpoint
+ * 1. GET with campaign_id_list (confirmed working)
+ * 2. GET with campaign_id (singular fallback)
+ * 3. GMS fallback endpoint
  */
 async function fetchCampaignDaily(
   accessToken: string,
@@ -184,15 +182,15 @@ async function fetchCampaignDaily(
     return allEntries;
   };
 
-  // Strategy 1: POST with campaign_id (singular integer)
-  let entries = await tryStrategy("S1-POST-singular", (chunk) =>
-    shopeePost(dailyPath, accessToken, shopId, {
-      campaign_id: campaignId, start_date: chunk.startAPI, end_date: chunk.endAPI,
+  // Strategy 1: GET with campaign_id_list (confirmed working)
+  let entries = await tryStrategy("S1-GET-list", (chunk) =>
+    shopeeGet(dailyPath, accessToken, shopId, {
+      campaign_id_list: String(campaignId), start_date: chunk.startAPI, end_date: chunk.endAPI,
     })
   );
   if (entries.length > 0) return entries;
 
-  // Strategy 2: GET with campaign_id (singular)
+  // Strategy 2: GET with campaign_id (singular fallback)
   entries = await tryStrategy("S2-GET-singular", (chunk) =>
     shopeeGet(dailyPath, accessToken, shopId, {
       campaign_id: String(campaignId), start_date: chunk.startAPI, end_date: chunk.endAPI,
@@ -200,24 +198,8 @@ async function fetchCampaignDaily(
   );
   if (entries.length > 0) return entries;
 
-  // Strategy 3: POST with campaign_id_list (array)
-  entries = await tryStrategy("S3-POST-list", (chunk) =>
-    shopeePost(dailyPath, accessToken, shopId, {
-      campaign_id_list: [campaignId], start_date: chunk.startAPI, end_date: chunk.endAPI,
-    })
-  );
-  if (entries.length > 0) return entries;
-
-  // Strategy 4: GET with campaign_id_list (string)
-  entries = await tryStrategy("S4-GET-list", (chunk) =>
-    shopeeGet(dailyPath, accessToken, shopId, {
-      campaign_id_list: String(campaignId), start_date: chunk.startAPI, end_date: chunk.endAPI,
-    })
-  );
-  if (entries.length > 0) return entries;
-
-  // Strategy 5: GMS endpoint fallback
-  entries = await tryStrategy("S5-GMS", (chunk) =>
+  // Strategy 3: GMS endpoint fallback
+  entries = await tryStrategy("S3-GMS", (chunk) =>
     shopeeGet(gmsPath, accessToken, shopId, {
       campaign_id_list: String(campaignId), start_date: chunk.startAPI, end_date: chunk.endAPI,
     })
@@ -308,10 +290,10 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
           date: e.date || null,
           impressions: Number(e.impression || e.impressions || 0),
           clicks: Number(e.click || e.clicks || 0),
-          expense: Number(e.expense || e.cost || 0),
-          gmv: Number(e.broad_order_amount || e.broad_gmv || e.gmv || 0),
-          orders: Number(e.broad_order_num || e.broad_order || e.orders || 0),
-          roas: Number(e.broad_roas || e.roas || 0),
+      expense: Number(e.expense || e.cost || 0),
+      gmv: Number(e.broad_gmv || e.broad_order_amount || e.gmv || 0),
+      orders: Number(e.broad_order || e.broad_order_num || e.orders || 0),
+      roas: Number(e.broad_roi || e.broad_roas || e.roas || 0),
         });
       }
     }
@@ -407,10 +389,11 @@ function processCampaignEntries(campaign: any, entries: any[], result: any[], id
     const imp = Number(e.impression || e.impressions || 0);
     const clk = Number(e.click || e.clicks || 0);
     const exp = Number(e.expense || e.cost || 0);
-    const gm = Number(e.broad_order_amount || e.broad_gmv || e.gmv || 0);
-    const dgm = Number(e.direct_order_amount || e.direct_gmv || 0);
-    const ord = Number(e.broad_order_num || e.broad_order || e.orders || 0);
-    const dord = Number(e.direct_order_num || e.direct_orders || 0);
+    const gm = Number(e.broad_gmv || e.broad_order_amount || e.gmv || 0);
+    const dgm = Number(e.direct_gmv || e.direct_order_amount || 0);
+    const ord = Number(e.broad_order || e.broad_order_num || e.orders || 0);
+    const dord = Number(e.direct_order || e.direct_order_num || e.direct_orders || 0);
+    const apiBroadRoi = Number(e.broad_roi || 0);
     const pos = Number(e.average_position || e.avg_position || 0);
 
     totImp += imp; totClk += clk; totExp += exp; totGmv += gm; totDgmv += dgm; totOrd += ord; totDord += dord;
@@ -435,6 +418,7 @@ function processCampaignEntries(campaign: any, entries: any[], result: any[], id
     direct_gmv: Math.round(totDgmv * 100) / 100, orders: totOrd, direct_orders: totDord,
     avg_position: posImp > 0 ? Math.round((posWeighted / posImp) * 10) / 10 : (fallbackMetrics?.avg_position ?? null),
     roas: totExp > 0 ? Math.round((totGmv / totExp) * 100) / 100 : Math.round((fallbackMetrics?.roas ?? 0) * 100) / 100,
+    broad_roi: entries.length > 0 ? Math.round(entries.reduce((s: number, e: any) => s + Number(e.broad_roi || 0), 0) / Math.max(entries.length, 1) * 100) / 100 : null,
     direct_roas: totExp > 0 ? Math.round((totDgmv / totExp) * 100) / 100 : Math.round((fallbackMetrics?.direct_roas ?? 0) * 100) / 100,
     acos: totGmv > 0 ? Math.round((totExp / totGmv) * 10000) / 100 : Math.round((fallbackMetrics?.acos ?? 0) * 100) / 100,
     ctr: totImp > 0 ? Math.round((totClk / totImp) * 10000) / 100 : Math.round((fallbackMetrics?.ctr ?? 0) * 100) / 100,
