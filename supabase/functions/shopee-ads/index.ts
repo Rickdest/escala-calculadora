@@ -10,6 +10,7 @@ import {
   jsonResponse,
 } from "../_shared/shopee.ts";
 
+/** YYYY-MM-DD — for database storage only */
 const toISODateBR = (date: Date) => {
   const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
   const y = parts.find(p => p.type === "year")!.value;
@@ -18,10 +19,25 @@ const toISODateBR = (date: Date) => {
   return `${y}-${m}-${d}`;
 };
 
+/** DD-MM-YYYY — required by Shopee API */
+const toDateStrBR = (date: Date) => {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+  const y = parts.find(p => p.type === "year")!.value;
+  const m = parts.find(p => p.type === "month")!.value;
+  const d = parts.find(p => p.type === "day")!.value;
+  return `${d}-${m}-${y}`;
+};
+
+/** Convert ISO YYYY-MM-DD to DD-MM-YYYY for Shopee API */
+const isoToDDMMYYYY = (iso: string) => {
+  const [y, m, d] = iso.split("-");
+  return `${d}-${m}-${y}`;
+};
+
 const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
 
-const ADS_LOOKBACK_DAYS = 90;
-const MAX_CHUNK_DAYS = 30;
+const ADS_LOOKBACK_DAYS = 28;
+const MAX_CHUNK_DAYS = 28;
 
 type CampaignStatus = "active" | "paused" | "ended";
 
@@ -97,17 +113,21 @@ function extractEntries(res: any): any[] {
   return resp?.entry_list || resp?.data || [];
 }
 
-/** Build date chunks of MAX_CHUNK_DAYS from start to end */
-function buildDateChunks(startDate: string, endDate: string): Array<{ start: string; end: string }> {
-  const chunks: Array<{ start: string; end: string }> = [];
-  let cur = new Date(startDate + "T12:00:00Z");
-  const end = new Date(endDate + "T12:00:00Z");
+/** Build date chunks of MAX_CHUNK_DAYS. Returns ISO dates (YYYY-MM-DD) for internal use. */
+function buildDateChunks(startDateISO: string, endDateISO: string): Array<{ startISO: string; endISO: string; startAPI: string; endAPI: string }> {
+  const chunks: Array<{ startISO: string; endISO: string; startAPI: string; endAPI: string }> = [];
+  let cur = new Date(startDateISO + "T12:00:00Z");
+  const end = new Date(endDateISO + "T12:00:00Z");
   while (cur <= end) {
     const chunkEnd = new Date(cur.getTime() + (MAX_CHUNK_DAYS - 1) * 86400000);
     const actualEnd = chunkEnd > end ? end : chunkEnd;
+    const sISO = cur.toISOString().substring(0, 10);
+    const eISO = actualEnd.toISOString().substring(0, 10);
     chunks.push({
-      start: cur.toISOString().substring(0, 10),
-      end: actualEnd.toISOString().substring(0, 10),
+      startISO: sISO,
+      endISO: eISO,
+      startAPI: isoToDDMMYYYY(sISO),
+      endAPI: isoToDDMMYYYY(eISO),
     });
     cur = new Date(actualEnd.getTime() + 86400000);
   }
@@ -115,20 +135,20 @@ function buildDateChunks(startDate: string, endDate: string): Array<{ start: str
 }
 
 /**
- * Fetch per-campaign performance with 30-day chunks.
- * Strategy 1: POST daily (chunked)
- * Strategy 2: GET daily (chunked) — fallback
+ * Fetch per-campaign performance with chunked dates.
+ * Strategy 1: POST daily (chunked, DD-MM-YYYY)
+ * Strategy 2: GET daily (chunked, DD-MM-YYYY) — fallback
  */
 async function fetchCampaignDaily(
   accessToken: string,
   shopId: string | number,
   campaignId: number,
-  startDate: string,
-  endDate: string,
+  startDateISO: string,
+  endDateISO: string,
   isFirst: boolean,
 ): Promise<any[]> {
   const dailyPath = "/api/v2/ads/get_product_campaign_daily_performance";
-  const chunks = buildDateChunks(startDate, endDate);
+  const chunks = buildDateChunks(startDateISO, endDateISO);
 
   // === Strategy 1: POST daily (chunked) ===
   const allEntries: any[] = [];
@@ -136,9 +156,9 @@ async function fetchCampaignDaily(
   for (const chunk of chunks) {
     try {
       const res = await shopeePost(dailyPath, accessToken, shopId, {
-        campaign_id: campaignId, start_date: chunk.start, end_date: chunk.end,
+        campaign_id: campaignId, start_date: chunk.startAPI, end_date: chunk.endAPI,
       });
-      if (isFirst && chunks.indexOf(chunk) === 0) console.log(`[SHOPEE ADS] [DEBUG] POST raw campaign ${campaignId} (${chunk.start}→${chunk.end}): ${JSON.stringify(res).substring(0, 800)}`);
+      if (isFirst && chunks.indexOf(chunk) === 0) console.log(`[SHOPEE ADS] [DEBUG] POST campaign ${campaignId} (${chunk.startAPI}→${chunk.endAPI}): ${JSON.stringify(res).substring(0, 800)}`);
       const entries = extractEntries(res);
       if (entries.length > 0) allEntries.push(...entries);
       if (res?.error) { postFailed = true; break; }
@@ -156,9 +176,9 @@ async function fetchCampaignDaily(
     for (const chunk of chunks) {
       try {
         const res = await shopeeGet(dailyPath, accessToken, shopId, {
-          campaign_id: String(campaignId), start_date: chunk.start, end_date: chunk.end,
+          campaign_id: String(campaignId), start_date: chunk.startAPI, end_date: chunk.endAPI,
         });
-        if (isFirst && chunks.indexOf(chunk) === 0) console.log(`[SHOPEE ADS] [DEBUG] GET raw campaign ${campaignId} (${chunk.start}→${chunk.end}): ${JSON.stringify(res).substring(0, 800)}`);
+        if (isFirst && chunks.indexOf(chunk) === 0) console.log(`[SHOPEE ADS] [DEBUG] GET campaign ${campaignId} (${chunk.startAPI}→${chunk.endAPI}): ${JSON.stringify(res).substring(0, 800)}`);
         const entries = extractEntries(res);
         if (entries.length > 0) getEntries.push(...entries);
       } catch (e) { if (isFirst) console.error(`[SHOPEE ADS] GET exception:`, e); }
@@ -173,8 +193,12 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
   const nowBR = new Date();
   const yesterdayBR = new Date(nowBR.getTime() - 24 * 60 * 60 * 1000);
   const startBR = new Date(nowBR.getTime() - ADS_LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
-  const startDate = toISODateBR(startBR);
-  const endDate = toISODateBR(yesterdayBR);
+  // ISO dates for DB storage
+  const startDateISO = toISODateBR(startBR);
+  const endDateISO = toISODateBR(yesterdayBR);
+  // DD-MM-YYYY for Shopee API
+  const startDateAPI = toDateStrBR(startBR);
+  const endDateAPI = toDateStrBR(yesterdayBR);
 
   // Step 1: Campaign IDs
   let campaignIds: number[] = [];
@@ -226,19 +250,19 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
     console.log(`[SHOPEE ADS] [DEBUG] statuses:`, JSON.stringify(campaignDetails.slice(0, 5).map(c => ({ id: c.campaign_id, status: c.status, raw: c.raw_status, hasData: c.summary_metrics?.hasData }))));
   }
 
-  // Step 3: Daily performance (shop-level) — chunked in 30-day blocks
+  // Step 3: Daily performance (shop-level) — chunked, DD-MM-YYYY for API
   let dailyEntries: any[] = [];
-  const chunks = buildDateChunks(startDate, endDate);
+  const chunks = buildDateChunks(startDateISO, endDateISO);
   try {
-    console.log(`[SHOPEE ADS] === Step 3: daily_performance ${startDate} → ${endDate} (${chunks.length} chunks) ===`);
+    console.log(`[SHOPEE ADS] === Step 3: daily_performance ${startDateAPI} → ${endDateAPI} (${chunks.length} chunks) ===`);
     for (const chunk of chunks) {
       const res = await shopeeGet(
         "/api/v2/ads/get_all_cpc_ads_daily_performance",
         accessToken, shopId,
-        { start_date: chunk.start, end_date: chunk.end }
+        { start_date: chunk.startAPI, end_date: chunk.endAPI }
       );
       if (chunks.indexOf(chunk) === 0) {
-        console.log(`[SHOPEE ADS] [DEBUG] Step 3 chunk1 raw: ${JSON.stringify(res).substring(0, 1200)}`);
+        console.log(`[SHOPEE ADS] [DEBUG] Step 3 chunk1 raw (${chunk.startAPI}→${chunk.endAPI}): ${JSON.stringify(res).substring(0, 1200)}`);
       }
       const raw = extractEntries(res);
       for (const e of raw) {
@@ -271,19 +295,19 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
   // Fetch first campaign serially for debug logs
   if (campaignsForStep4.length > 0) {
     const first = campaignsForStep4[0];
-    const entries = await fetchCampaignDaily(accessToken, shopId, first.campaign_id, startDate, endDate, true);
+    const entries = await fetchCampaignDaily(accessToken, shopId, first.campaign_id, startDateISO, endDateISO, true);
     processCampaignEntries(first, entries, adsByCampaign, 1, campaignsForStep4.length);
   }
 
-  // Fetch remaining in batches of 5
-  for (let i = 1; i < campaignsForStep4.length; i += 5) {
-    const batch = campaignsForStep4.slice(i, i + 5);
+  // Fetch remaining in batches of 3 with 1000ms delay
+  for (let i = 1; i < campaignsForStep4.length; i += 3) {
+    const batch = campaignsForStep4.slice(i, i + 3);
     const promises = batch.map(async (c, batchIdx) => {
-      const entries = await fetchCampaignDaily(accessToken, shopId, c.campaign_id, startDate, endDate, false);
+      const entries = await fetchCampaignDaily(accessToken, shopId, c.campaign_id, startDateISO, endDateISO, false);
       processCampaignEntries(c, entries, adsByCampaign, i + batchIdx + 1, campaignsForStep4.length);
     });
     await Promise.all(promises);
-    if (i + 5 < campaignsForStep4.length) await delay(300);
+    if (i + 3 < campaignsForStep4.length) await delay(1000);
   }
 
   console.log(`[SHOPEE ADS] ${adsByCampaign.length} campaigns with data out of ${campaignsForStep4.length}`);
@@ -310,7 +334,6 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
       summary.total_orders += d.orders;
     }
   } else if (adsByCampaign.length > 0) {
-    // Fallback: aggregate from per-campaign data
     for (const c of adsByCampaign) {
       summary.total_impressions += c.impressions || 0;
       summary.total_clicks += c.clicks || 0;
@@ -329,7 +352,7 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
   return {
     daily_entries: dailyEntries, summary, campaign_details: campaignDetails,
     ads_by_campaign: adsByCampaign, total_balance: totalBalance,
-    period_start: startDate, period_end: endDate, campaign_count: campaignIds.length,
+    period_start: startDateISO, period_end: endDateISO, campaign_count: campaignIds.length,
   };
 }
 
@@ -415,7 +438,7 @@ Deno.serve(async (req) => {
 
     const adsPerformance = await fetchAdsPerformance(currentAccessToken, shopeeToken.shop_id, filterItemId);
 
-    // Upsert ads_by_campaign to database
+    // Upsert ads_by_campaign to database (uses ISO dates for period_start/end)
     if (adsPerformance.ads_by_campaign.length > 0) {
       const supabaseAdmin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
       for (const c of adsPerformance.ads_by_campaign) {
