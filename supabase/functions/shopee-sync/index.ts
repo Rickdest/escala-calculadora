@@ -262,6 +262,83 @@ async function fetchOrdersWithAggregation(
   };
 }
 
+const toDateStr = (ts: number) => {
+  const d = new Date(ts * 1000);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+async function fetchAdsData(
+  accessToken: string,
+  shopId: string | number
+) {
+  const adsResults: Record<string, any> = {};
+
+  // 1. Get campaign ID list
+  try {
+    console.log("[SHOPEE SYNC] === Step 1: get_product_level_campaign_id_list ===");
+    const campaignList = await shopeeGet(
+      "/api/v2/ads/get_product_level_campaign_id_list",
+      accessToken,
+      shopId
+    );
+    console.log(`[SHOPEE SYNC] campaign_id_list RESPONSE: ${JSON.stringify(campaignList).substring(0, 3000)}`);
+    adsResults.campaign_list = campaignList;
+
+    const campaignIds: number[] = campaignList?.response?.campaign_id_list || campaignList?.response?.data?.campaign_id_list || [];
+    console.log(`[SHOPEE SYNC] Found ${campaignIds.length} campaign IDs`);
+
+    // 2. Get campaign settings/details (batches of 20)
+    if (campaignIds.length > 0) {
+      console.log("[SHOPEE SYNC] === Step 2: get_product_level_campaign_setting_info ===");
+      const allDetails: any[] = [];
+      for (let i = 0; i < campaignIds.length; i += 20) {
+        const batch = campaignIds.slice(i, i + 20);
+        try {
+          const details = await shopeeGet(
+            "/api/v2/ads/get_product_level_campaign_setting_info",
+            accessToken,
+            shopId,
+            { campaign_id_list: batch.join(",") }
+          );
+          console.log(`[SHOPEE SYNC] campaign_setting_info batch ${Math.floor(i / 20) + 1} RESPONSE: ${JSON.stringify(details).substring(0, 3000)}`);
+          const items = details?.response?.data || details?.response?.campaign_list || [];
+          allDetails.push(...(Array.isArray(items) ? items : []));
+        } catch (e) {
+          console.error(`[SHOPEE SYNC] campaign_setting_info batch error:`, e);
+        }
+      }
+      adsResults.campaign_details = allDetails;
+    }
+  } catch (e) {
+    console.error("[SHOPEE SYNC] get_product_level_campaign_id_list error:", e);
+    adsResults.campaign_list_error = (e as Error).message;
+  }
+
+  // 3. Get daily performance (last 30 days)
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    const thirtyDaysAgo = now - 30 * 24 * 60 * 60;
+    const startDate = toDateStr(thirtyDaysAgo);
+    const endDate = toDateStr(now);
+
+    console.log(`[SHOPEE SYNC] === Step 3: get_all_cpc_ads_daily_performance ${startDate} → ${endDate} ===`);
+    const performance = await shopeeGet(
+      "/api/v2/ads/get_all_cpc_ads_daily_performance",
+      accessToken,
+      shopId,
+      { start_date: startDate, end_date: endDate }
+    );
+    console.log(`[SHOPEE SYNC] daily_performance RESPONSE: ${JSON.stringify(performance).substring(0, 3000)}`);
+    adsResults.daily_performance = performance;
+    adsResults.period_start = startDate;
+    adsResults.period_end = endDate;
+  } catch (e) {
+    console.error("[SHOPEE SYNC] get_all_cpc_ads_daily_performance error:", e);
+    adsResults.daily_performance_error = (e as Error).message;
+  }
+
+  return adsResults;
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -337,7 +414,20 @@ Deno.serve(async (req) => {
       errors.orders = (e as Error).message;
     }
 
-    console.log("[SHOPEE SYNC] === SYNC COMPLETE (no ads — use shopee-ads) ===");
+    // 4. Ads (campaigns + performance)
+    try {
+      const adsData = await fetchAdsData(currentAccessToken, shopId);
+      results.ads_campaigns = adsData.campaign_list;
+      results.ads_campaign_details = adsData.campaign_details;
+      results.ads_performance = adsData.daily_performance;
+      results.ads_period = { start: adsData.period_start, end: adsData.period_end };
+      if (adsData.campaign_list_error) errors.ads_campaigns = adsData.campaign_list_error;
+      if (adsData.daily_performance_error) errors.ads_performance = adsData.daily_performance_error;
+    } catch (e) {
+      errors.ads = (e as Error).message;
+    }
+
+    console.log("[SHOPEE SYNC] === SYNC COMPLETE ===");
     return jsonResponse({
       success: true,
       shop_id: shopId,
