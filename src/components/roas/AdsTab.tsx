@@ -366,7 +366,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
           )}
 
           {/* ═══ Header com botão discreto (CSV data) ═══ */}
-          {hasData && !apiAdsData && (
+          {hasData && !effectiveApiData && (
              <AdsHeader
                periodLabel={periodLabel}
                onImportCSV={() => fileRef.current?.click()}
