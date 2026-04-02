@@ -821,8 +821,8 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         <KpiCard icon={DollarSign} label="GMV" value={fmtShort(ad.gmv)} />
       </div>
 
-      {/* Unlinked product warning */}
-      {!product && (
+      {/* Unlinked product warning — hide for API campaigns */}
+      {!product && !ad.id.startsWith('api-campaign-') && (
         <div className="rounded-2xl border-2 border-dashed border-warning/30 bg-warning/10 p-6 space-y-4 mb-5">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-warning" />
