@@ -335,7 +335,72 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
 
   console.log(`[SHOPEE ADS] ${adsByCampaign.length} campaigns with data out of ${campaignsForStep4.length}`);
 
-  // Step 5: Balance
+  // Step 5: Hourly performance for avg_position (active campaigns only)
+  const activeCampaignsWithData = adsByCampaign.filter((c: any) => c.status === 'active' && c.expense > 0);
+  if (activeCampaignsWithData.length > 0) {
+    console.log(`[SHOPEE ADS] === Step 5: hourly performance for avg_position (${activeCampaignsWithData.length} active campaigns) ===`);
+    await delay(1000);
+    let hourlyFound = 0;
+
+    for (let i = 0; i < activeCampaignsWithData.length; i += 3) {
+      if (i > 0) await delay(2000);
+      const batch = activeCampaignsWithData.slice(i, i + 3);
+      const promises = batch.map(async (c: any, batchIdx: number) => {
+        try {
+          const res = await shopeeGet(
+            "/api/v2/ads/get_product_campaign_hourly_performance",
+            accessToken, shopId,
+            {
+              campaign_id_list: String(c.campaign_id),
+              start_date: isoToDDMMYYYY(startDateISO),
+              end_date: isoToDDMMYYYY(endDateISO),
+            }
+          );
+
+          // Log first campaign response for debug
+          if (i === 0 && batchIdx === 0) {
+            console.log('[SHOPEE ADS] hourly sample:', JSON.stringify(res).substring(0, 1000));
+          }
+
+          // Try to extract avg_position from response
+          const resp = res?.response;
+          let avgPos: number | null = null;
+
+          // Check various possible response structures
+          if (resp?.campaign_list && Array.isArray(resp.campaign_list)) {
+            for (const camp of resp.campaign_list) {
+              const pos = Number(camp?.average_position || camp?.avg_position || camp?.position || camp?.ranking || 0);
+              if (pos > 0) { avgPos = pos; break; }
+              // Check inside metrics_list
+              if (Array.isArray(camp?.metrics_list)) {
+                let posSum = 0, posCount = 0;
+                for (const m of camp.metrics_list) {
+                  const mPos = Number(m?.average_position || m?.avg_position || m?.position || m?.ranking || 0);
+                  if (mPos > 0) { posSum += mPos; posCount++; }
+                }
+                if (posCount > 0) { avgPos = Math.round((posSum / posCount) * 10) / 10; break; }
+              }
+            }
+          } else if (resp) {
+            // Direct response fields
+            const pos = Number(resp.average_position || resp.avg_position || resp.position || resp.ranking || 0);
+            if (pos > 0) avgPos = pos;
+          }
+
+          if (avgPos !== null && avgPos > 0) {
+            c.avg_position = avgPos;
+            hourlyFound++;
+          }
+        } catch (e) {
+          console.error(`[SHOPEE ADS] Step 5 hourly error for campaign ${c.campaign_id}:`, e);
+        }
+      });
+      await Promise.all(promises);
+    }
+    console.log(`[SHOPEE ADS] Step 5: found avg_position for ${hourlyFound}/${activeCampaignsWithData.length} campaigns`);
+  }
+
+  // Step 6: Balance
   let totalBalance: any = null;
   try {
     const res = await shopeeGet("/api/v2/ads/get_total_balance", accessToken, shopId);
