@@ -151,8 +151,8 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       roas_empate: null,
       margem_contribuicao: null,
       classificacao: null,
-      periodo_inicio: apiAdsData?.period_start || '',
-      periodo_fim: apiAdsData?.period_end || '',
+      periodo_inicio: effectiveApiData?.period_start || '',
+      periodo_fim: effectiveApiData?.period_end || '',
       importado_em: now,
       created_at: now,
     };
