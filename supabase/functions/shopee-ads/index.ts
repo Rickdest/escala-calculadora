@@ -237,6 +237,10 @@ async function fetchAdsPerformance(
     period_end: endDate,
     raw_entry_count: allEntries.length,
     ads_rate_limited: wasRateLimited,
+    campaign_count: campaignIds.length,
+    campaign_to_item_count: Object.keys(campaignToItem).length,
+    perf_api_error: perfApiError || null,
+    perf_api_message: perfApiMessage || null,
   };
 }
 
