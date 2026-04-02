@@ -152,9 +152,6 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
 
   const handleCampaignSelect = (campaign: any) => {
     const enriched = campaignToEnrichedAds(campaign);
-    // Build allAds list for navigation
-    const allEnriched = apiCampaignList.map(campaignToEnrichedAds);
-    setApiCampaignList(apiAdsData?.ads_by_campaign || []);
     setSelectedDetail(enriched);
   };
 

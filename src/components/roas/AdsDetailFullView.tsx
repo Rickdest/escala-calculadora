@@ -779,6 +779,20 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         <span className="text-[11px] text-success font-mono tabular-nums md:hidden block mt-2">{periodLabel}</span>
       </div>
 
+      {/* API campaign info banner */}
+      {ad.id.startsWith('api-campaign-') && ad.despesas === 0 && ad.impressoes === 0 && (
+        <div className="rounded-xl border border-border bg-muted/50 p-4 mb-3 flex items-start gap-3">
+          <Info className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-bold text-foreground">Dados individuais indisponíveis</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              A API da Shopee não retornou métricas detalhadas para esta campanha no período.
+              Os dados agregados da loja (gasto total, ROAS geral) estão disponíveis no painel principal.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* KPIs grid — Row 1: Posição, ROAS, Custo/Un */}
       <div className="grid grid-cols-3 gap-1.5 md:gap-2 mb-1.5 overflow-hidden">
         {(() => {
@@ -807,8 +821,8 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         <KpiCard icon={DollarSign} label="GMV" value={fmtShort(ad.gmv)} />
       </div>
 
-      {/* Unlinked product warning */}
-      {!product && (
+      {/* Unlinked product warning — hide for API campaigns */}
+      {!product && !ad.id.startsWith('api-campaign-') && (
         <div className="rounded-2xl border-2 border-dashed border-warning/30 bg-warning/10 p-6 space-y-4 mb-5">
           <div className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-warning" />
