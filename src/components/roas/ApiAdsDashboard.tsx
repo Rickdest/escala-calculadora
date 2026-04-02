@@ -185,7 +185,7 @@ function CampaignDetail({ campaign, onClose }: { campaign: CampaignAds; onClose:
 }
 
 export function ApiAdsDashboard({ data, onRefreshProduct, onCampaignSelect }: { data: ApiAdsData; onRefreshProduct?: (itemId: number) => void; onCampaignSelect?: (campaign: CampaignAds) => void }) {
-  const { summary, daily_entries, campaign_details, ads_by_campaign = [], total_balance } = data;
+  const { summary, daily_entries = [], campaign_details, ads_by_campaign = [], total_balance } = data || {};
   // Support legacy ads_by_product field
   const campaigns: CampaignAds[] = ads_by_campaign.length > 0 ? ads_by_campaign : ((data as any).ads_by_product || []);
   const [sortBy, setSortBy] = useState<string>('roas');

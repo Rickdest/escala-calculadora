@@ -49,6 +49,9 @@ export function buildApiAdsDataFromRows(rows: any[]) {
       ctr: totalImpressions > 0 ? (totalClicks / totalImpressions) * 100 : 0,
       days: 0,
     },
+    daily_entries: [],
+    campaign_details: [],
+    total_balance: null,
     ads_by_campaign: rows.map(r => ({
       campaign_id: r.campaign_id,
       item_id: r.item_id,
