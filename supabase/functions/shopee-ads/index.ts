@@ -389,10 +389,11 @@ function processCampaignEntries(campaign: any, entries: any[], result: any[], id
     const imp = Number(e.impression || e.impressions || 0);
     const clk = Number(e.click || e.clicks || 0);
     const exp = Number(e.expense || e.cost || 0);
-    const gm = Number(e.broad_order_amount || e.broad_gmv || e.gmv || 0);
-    const dgm = Number(e.direct_order_amount || e.direct_gmv || 0);
-    const ord = Number(e.broad_order_num || e.broad_order || e.orders || 0);
-    const dord = Number(e.direct_order_num || e.direct_orders || 0);
+    const gm = Number(e.broad_gmv || e.broad_order_amount || e.gmv || 0);
+    const dgm = Number(e.direct_gmv || e.direct_order_amount || 0);
+    const ord = Number(e.broad_order || e.broad_order_num || e.orders || 0);
+    const dord = Number(e.direct_order || e.direct_order_num || e.direct_orders || 0);
+    const apiBroadRoi = Number(e.broad_roi || 0);
     const pos = Number(e.average_position || e.avg_position || 0);
 
     totImp += imp; totClk += clk; totExp += exp; totGmv += gm; totDgmv += dgm; totOrd += ord; totDord += dord;
