@@ -35,7 +35,7 @@ const statusLabels: Record<string, string> = {
 };
 
 export default function Performance() {
-  const { isConnected, startOAuth, syncAds, isLoading: tokenLoading } = useShopeeToken();
+  const { isConnected, startOAuth, syncStoreData, isLoading: tokenLoading } = useShopeeToken();
   const navigate = useNavigate();
   const [syncing, setSyncing] = useState(false);
   const [connecting, setConnecting] = useState(false);
