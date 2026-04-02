@@ -20,7 +20,7 @@ const toISODateBR = (date: Date) => {
 
 const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
 
-const ADS_LOOKBACK_DAYS = 90;
+const ADS_LOOKBACK_DAYS = 365;
 
 type CampaignStatus = "active" | "paused" | "ended";
 
