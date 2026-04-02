@@ -138,6 +138,8 @@ async function fetchAdsPerformance(
   // 3. Get daily performance (28 days) — DD-MM-YYYY format
   let allEntries: any[] = [];
   let wasRateLimited = false;
+  let perfApiError = "";
+  let perfApiMessage = "";
 
   try {
     console.log(`[SHOPEE ADS] === Step 3: get_all_cpc_ads_daily_performance ${startDate} → ${endDate} ===`);
@@ -152,11 +154,15 @@ async function fetchAdsPerformance(
     const err = result?.error || result?.msg || "";
     if (typeof err === "string" && err.toLowerCase().includes("rate_limit")) {
       wasRateLimited = true;
+    } else if (err && err !== "") {
+      perfApiError = err;
+      perfApiMessage = result?.message || "";
     } else {
       allEntries = result?.response?.entry_list || result?.response?.data || [];
     }
   } catch (e) {
     console.error("[SHOPEE ADS] get_all_cpc_ads_daily_performance error:", e);
+    perfApiError = (e as Error).message;
   }
 
   // 4. Get total balance
