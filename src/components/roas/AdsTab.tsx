@@ -107,6 +107,56 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const [syncing, setSyncing] = useState(false);
 
   const [apiAdsData, setApiAdsData] = useState<any>(null);
+  const [apiCampaignList, setApiCampaignList] = useState<any[]>([]);
+
+  // Convert API campaign to EnrichedAdsData for detail view
+  const campaignToEnrichedAds = (campaign: any): EnrichedAdsData => {
+    const now = new Date().toISOString();
+    return {
+      id: `api-campaign-${campaign.campaign_id}`,
+      user_id: '',
+      product_id: null,
+      nome_produto_csv: campaign.item_name || `Campanha #${campaign.campaign_id}`,
+      shopee_product_id: campaign.item_id ? String(campaign.item_id) : null,
+      impressoes: campaign.impressions || 0,
+      cliques: campaign.clicks || 0,
+      ctr: campaign.ctr || 0,
+      conversoes: campaign.orders || 0,
+      taxa_conversao: campaign.clicks > 0 ? (campaign.orders / campaign.clicks) * 100 : 0,
+      itens_vendidos: campaign.orders || 0,
+      gmv: campaign.gmv || 0,
+      despesas: campaign.expense || 0,
+      roas: campaign.roas || 0,
+      acos: campaign.acos || 0,
+      roas_direto: campaign.direct_roas || 0,
+      acos_direto: campaign.expense > 0 && campaign.direct_gmv > 0 ? (campaign.expense / campaign.direct_gmv) * 100 : 0,
+      gmv_direto: campaign.direct_gmv || 0,
+      custo_por_conversao: campaign.cost_per_order || 0,
+      itens_vendidos_diretos: campaign.direct_orders || 0,
+      conversoes_diretas: campaign.direct_orders || 0,
+      metodo_lance: null,
+      status_anuncio: campaign.status === 'active' ? 'Ativo' : campaign.status === 'paused' ? 'Pausado' : 'Encerrado',
+      impressoes_produto: null,
+      cliques_produto: null,
+      posicao_media: campaign.avg_position,
+      posicao_importada: false,
+      roas_empate: null,
+      margem_contribuicao: null,
+      classificacao: null,
+      periodo_inicio: apiAdsData?.period_start || '',
+      periodo_fim: apiAdsData?.period_end || '',
+      importado_em: now,
+      created_at: now,
+    };
+  };
+
+  const handleCampaignSelect = (campaign: any) => {
+    const enriched = campaignToEnrichedAds(campaign);
+    // Build allAds list for navigation
+    const allEnriched = apiCampaignList.map(campaignToEnrichedAds);
+    setApiCampaignList(apiAdsData?.ads_by_campaign || []);
+    setSelectedDetail(enriched);
+  };
 
   const handleRefreshProduct = async (itemId: number) => {
     try {
