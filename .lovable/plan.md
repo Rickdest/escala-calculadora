@@ -1,54 +1,38 @@
 
 
-## Plano: Corrigir importação de Ads — usar endpoint alternativo + eliminar conflito de rate limit
+## Plano: Adicionar Ads ao `shopee-sync` com endpoints corretos
 
-### Diagnóstico
+### O que muda
 
-O erro `ads_rate_limit_total_api` acontece porque:
+O `shopee-sync` atualmente NÃO busca dados de Ads. Vamos adicionar uma seção "4. Ads" com os 3 endpoints corretos, e também atualizar o `shopee-ads` para usar a mesma lógica.
 
-1. **`shopee-sync` TAMBÉM chama a mesma API de Ads** (linha 497-504 do shopee-sync), consumindo o rate limit global antes que `shopee-ads` consiga usar
-2. O rate limit da Shopee é compartilhado entre TODOS os endpoints de Ads — chamadas em `shopee-sync` + `shopee-ads` competem pelo mesmo quota
-3. Os retries dentro do rate limit window só pioram (cada retry conta como nova chamada)
+### Alterações
 
-### Solução em 3 partes
+**1. `supabase/functions/shopee-sync/index.ts`** — Adicionar função `fetchAdsData`:
 
-**1. Remover chamadas de Ads do `shopee-sync`**
-- Remover a seção "4. Ads Performance" (linhas ~497-504) do `shopee-sync/index.ts`
-- Remover as funções `fetchAdsChunkWithRetry` e `fetchAdsPerformance` do mesmo arquivo
-- O `shopee-sync` passa a fazer APENAS: shop_info, products, orders
-- Isso libera o rate limit inteiro para o `shopee-ads`
+- **Passo 1**: `GET /api/v2/ads/get_product_level_campaign_id_list` → lista de campaign_ids
+- **Passo 2**: `GET /api/v2/ads/get_product_level_campaign_setting_info` com `campaign_id_list` → detalhes de cada campanha
+- **Passo 3**: `GET /api/v2/ads/get_all_cpc_ads_daily_performance` com `start_date` (30 dias atrás) e `end_date` (hoje) → performance diária
+- Logar resposta completa de cada endpoint (primeiros 3000 chars)
+- Adicionar seção "4. Ads" no handler principal, salvando em `results.ads_campaigns`, `results.ads_campaign_details`, `results.ads_performance`
+- Nenhum endpoint antigo existe no arquivo atual (já foram removidos antes)
 
-**2. Usar endpoint alternativo no `shopee-ads`**
-- Trocar de `get_all_cpc_ads_daily_performance` para `get_product_campaign_daily_performance`
-- Este endpoint busca por campanha individual e pode ter rate limit separado
-- Se também falhar, tentar `get_gms_campaign_performance` como fallback
-- Usar chunks menores (7 dias) com delays de 5s entre cada
-- Adicionar log do response COMPLETO na primeira tentativa para debug
+**2. `supabase/functions/shopee-ads/index.ts`** — Substituir lógica:
 
-**3. Delay inicial de 2s no `shopee-ads`**
-- Antes da primeira chamada, esperar 2s para garantir que não há chamadas concorrentes recentes
-- Retries com delays maiores: 10s, 20s, 30s (em vez de 3s, 8s, 15s)
-
-### Arquivos
-
-| Arquivo | Ação |
-|---------|------|
-| `supabase/functions/shopee-sync/index.ts` | Remover toda lógica de Ads (~100 linhas) |
-| `supabase/functions/shopee-ads/index.ts` | Trocar endpoint + delays maiores + log completo |
+- Remover `tryProductCampaignAds` (endpoint inexistente `get_product_campaign_daily_performance`)
+- Atualizar `fetchAdsPerformance` para usar os mesmos 3 endpoints:
+  1. `get_product_level_campaign_id_list`
+  2. `get_product_level_campaign_setting_info`
+  3. `get_all_cpc_ads_daily_performance`
+- Manter aggregação por item_id e balance
 
 ### Detalhes técnicos
 
-Estratégia de endpoints (fallback chain):
-```text
-1. GET /api/v2/ads/get_product_campaign_daily_performance
-   → Params: start_date, end_date (via query string, não POST body)
-   → Se retornar dados → usar
+Formato das datas: `YYYY-MM-DD` (string). Exemplo: `2026-03-03` a `2026-04-02`.
 
-2. Se rate_limit → esperar 10s → POST /api/v2/ads/get_all_cpc_ads_daily_performance  
-   → Mesma lógica atual mas com 1 chunk único de 30 dias
-   
-3. Se ambos falharem → retornar ads_rate_limited: true com mensagem clara
-```
+Para `get_product_level_campaign_setting_info`, o parâmetro `campaign_id_list` é passado como string de IDs separados por vírgula no query string (via `shopeeGet`).
 
-O `get_total_balance` (GET) continuará funcionando pois tem rate limit separado e já está retornando R$ 891,36 nos logs.
+Para `get_all_cpc_ads_daily_performance`, os parâmetros `start_date` e `end_date` são passados como query string params (via `shopeeGet`, não POST).
+
+Todos os responses serão logados com `JSON.stringify(result).substring(0, 3000)` para debug.
 
