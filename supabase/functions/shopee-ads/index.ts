@@ -150,6 +150,8 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
     return !!c.item_id; // only need item_id, include all statuses
   });
   console.log(`[SHOPEE ADS] === Step 4: per-campaign performance for ${campaignsForStep4.length} campaigns (all statuses) ===`);
+  // Debug: log first 3 campaign statuses
+  console.log(`[SHOPEE ADS] [DEBUG] campaign statuses sample:`, JSON.stringify(campaignsForStep4.slice(0, 3).map(c => ({ id: c.campaign_id, item_id: c.item_id, status: c.status, type: typeof c.status }))));
 
   // Group campaigns by item_id, track if any is ongoing
   const itemCampaigns = new Map<number, { ad_name: string; campaign_ids: number[]; has_ongoing: boolean }>();
@@ -179,6 +181,10 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
           accessToken, shopId,
           { campaign_id: String(cid), start_date: startDate, end_date: endDate }
         );
+        // Debug: log first campaign's full raw response
+        if (fetchIdx <= 2) {
+          console.log(`[SHOPEE ADS] [DEBUG] Raw response campaign ${cid}: ${JSON.stringify(res).substring(0, 1500)}`);
+        }
         const resp = res?.response;
         const raw = Array.isArray(resp) ? resp : (resp?.entry_list || resp?.data || []);
         allCampaignDailyData.set(cid, raw);
