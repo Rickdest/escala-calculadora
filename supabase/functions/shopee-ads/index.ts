@@ -418,6 +418,7 @@ function processCampaignEntries(campaign: any, entries: any[], result: any[], id
     direct_gmv: Math.round(totDgmv * 100) / 100, orders: totOrd, direct_orders: totDord,
     avg_position: posImp > 0 ? Math.round((posWeighted / posImp) * 10) / 10 : (fallbackMetrics?.avg_position ?? null),
     roas: totExp > 0 ? Math.round((totGmv / totExp) * 100) / 100 : Math.round((fallbackMetrics?.roas ?? 0) * 100) / 100,
+    broad_roi: entries.length > 0 ? Math.round(entries.reduce((s: number, e: any) => s + Number(e.broad_roi || 0), 0) / Math.max(entries.length, 1) * 100) / 100 : null,
     direct_roas: totExp > 0 ? Math.round((totDgmv / totExp) * 100) / 100 : Math.round((fallbackMetrics?.direct_roas ?? 0) * 100) / 100,
     acos: totGmv > 0 ? Math.round((totExp / totGmv) * 10000) / 100 : Math.round((fallbackMetrics?.acos ?? 0) * 100) / 100,
     ctr: totImp > 0 ? Math.round((totClk / totImp) * 10000) / 100 : Math.round((fallbackMetrics?.ctr ?? 0) * 100) / 100,
