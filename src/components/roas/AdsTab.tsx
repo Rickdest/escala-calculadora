@@ -1,8 +1,9 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { ApiAdsDashboard } from './ApiAdsDashboard';
 import { useStore } from '@/contexts/StoreContext';
 import { useAdsData, EnrichedAdsData } from '@/hooks/useAdsData';
 import { useShopeeToken } from '@/hooks/useShopeeToken';
+import { useApiAdsData, buildApiAdsDataFromRows } from '@/hooks/useApiAdsData';
 import { Upload, Trash2, MapPin, Calendar, ShoppingBag, CheckCircle2, Download } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -109,6 +110,13 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const [apiAdsData, setApiAdsData] = useState<any>(null);
   const [apiCampaignList, setApiCampaignList] = useState<any[]>([]);
 
+  // Load persisted data from database as fallback
+  const { data: persistedRows, invalidate: invalidatePersistedAds } = useApiAdsData();
+  const persistedApiData = useMemo(() => buildApiAdsDataFromRows(persistedRows || []), [persistedRows]);
+
+  // Use in-memory data if available, otherwise fall back to persisted DB data
+  const effectiveApiData = apiAdsData || persistedApiData;
+
   // Convert API campaign to EnrichedAdsData for detail view
   const campaignToEnrichedAds = (campaign: any): EnrichedAdsData => {
     const now = new Date().toISOString();
@@ -143,8 +151,8 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       roas_empate: null,
       margem_contribuicao: null,
       classificacao: null,
-      periodo_inicio: apiAdsData?.period_start || '',
-      periodo_fim: apiAdsData?.period_end || '',
+      periodo_inicio: effectiveApiData?.period_start || '',
+      periodo_fim: effectiveApiData?.period_end || '',
       importado_em: now,
       created_at: now,
     };
@@ -193,6 +201,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
         toast.error(`Erro da API Shopee: ${adsPerfData.perf_api_message || adsPerfData.perf_api_error}`);
     } else if (adsPerfData?.summary?.total_impressions > 0 || (adsPerfData?.ads_by_campaign?.length || 0) > 0) {
         setApiAdsData(adsPerfData);
+        invalidatePersistedAds();
         const campaignCount = adsPerfData.ads_by_campaign?.length || 0;
         toast.success(`Ads importados: ${campaignCount} campanha${campaignCount !== 1 ? 's' : ''} · ${adsPerfData.summary.days} dias · ROAS ${adsPerfData.summary.roas_geral.toFixed(2)}`);
       } else if ((adsPerfData?.campaign_count || 0) > 0) {
@@ -265,7 +274,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   }, [periodFiltered, filter]);
 
   const hasData = data.length > 0;
-  const hasAnyContent = hasData || !!apiAdsData;
+  const hasAnyContent = hasData || !!effectiveApiData;
 
   const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -320,7 +329,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       {selectedDetail ? (
         <AdsDetailFullView
           ad={selectedDetail}
-          allAds={selectedDetail.id.startsWith('api-campaign-') ? (apiAdsData?.ads_by_campaign || []).map(campaignToEnrichedAds) : filtered}
+          allAds={selectedDetail.id.startsWith('api-campaign-') ? (effectiveApiData?.ads_by_campaign || []).map(campaignToEnrichedAds) : filtered}
           onClose={() => setSelectedDetail(null)}
           onNavigate={(ad) => setSelectedDetail(ad)}
           onImportPosition={() => { if (!selectedDetail.id.startsWith('api-campaign-')) { setPositionTarget(selectedDetail.id); setSelectedDetail(null); positionFileRef.current?.click(); } }}
@@ -344,20 +353,20 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
             )}
 
           {/* ═══ API Ads Dashboard ═══ */}
-          {apiAdsData && (
+          {effectiveApiData && (
             <>
               <AdsHeader
-                periodLabel={`${apiAdsData.period_start} – ${apiAdsData.period_end}`}
+                periodLabel={`${effectiveApiData.period_start} – ${effectiveApiData.period_end}`}
                 onImportCSV={() => fileRef.current?.click()}
                 onImportAds={handleImportAds}
                 syncing={syncing}
               />
-              <ApiAdsDashboard data={apiAdsData} onRefreshProduct={handleRefreshProduct} onCampaignSelect={handleCampaignSelect} />
+              <ApiAdsDashboard data={effectiveApiData} onRefreshProduct={handleRefreshProduct} onCampaignSelect={handleCampaignSelect} />
             </>
           )}
 
           {/* ═══ Header com botão discreto (CSV data) ═══ */}
-          {hasData && !apiAdsData && (
+          {hasData && !effectiveApiData && (
              <AdsHeader
                periodLabel={periodLabel}
                onImportCSV={() => fileRef.current?.click()}

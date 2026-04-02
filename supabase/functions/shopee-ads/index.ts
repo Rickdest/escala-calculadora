@@ -324,6 +324,7 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
       accessToken, shopId,
       { start_date: startDate, end_date: endDate }
     );
+    console.log(`[SHOPEE ADS] [DEBUG] Step 3 raw: ${JSON.stringify(res).substring(0, 1000)}`);
     const resp = res?.response;
     const raw = Array.isArray(resp) ? resp : (resp?.entry_list || resp?.data || []);
     dailyEntries = raw.map((e: any) => ({

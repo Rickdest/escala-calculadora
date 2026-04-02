@@ -123,6 +123,11 @@ export async function shopeeGet(
 
   const url = `${SHOPEE_HOST}${path}?${params.toString()}`;
   const res = await fetch(url);
+  if (!res.ok) {
+    const text = await res.text();
+    console.error(`[SHOPEE HTTP] ${res.status} ${res.statusText} — ${path} — body: ${text.substring(0, 500)}`);
+    return { error: `HTTP ${res.status}`, message: text.substring(0, 200) };
+  }
   return res.json();
 }
 
@@ -153,6 +158,11 @@ export async function shopeePost(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+  if (!res.ok) {
+    const text = await res.text();
+    console.error(`[SHOPEE HTTP] ${res.status} ${res.statusText} — ${path} — body: ${text.substring(0, 500)}`);
+    return { error: `HTTP ${res.status}`, message: text.substring(0, 200) };
+  }
   return res.json();
 }
 
