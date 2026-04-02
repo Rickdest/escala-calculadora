@@ -528,7 +528,9 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
   return {
     daily_entries: dailyEntries, summary, campaign_details: campaignDetails,
     ads_by_campaign: adsByCampaign, total_balance: totalBalance,
-    discovery_results: discoveryResults,
+    hourly_performance: hourlyPerformance,
+    recommended_items: recommendedItems,
+    shop_toggles: shopToggles,
     period_start: startDateISO, period_end: endDateISO, campaign_count: campaignIds.length,
   };
 }
