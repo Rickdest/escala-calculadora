@@ -579,7 +579,7 @@ export function useAdsData() {
       let autoCreatedCount = 0;
 
       const rows = [];
-      for (const ad of adsByProduct) {
+      for (const ad of effectiveAdsByProduct) {
         const itemId = String(ad.item_id);
         
         // Match by shopee_item_id
