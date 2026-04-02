@@ -1,66 +1,59 @@
 
 
-## Correção: Mapeamento de campos e reordenação de estratégias no Step 4
+## Plano: Vincular automaticamente campanhas da API a produtos cadastrados
 
 ### Problema
 
-1. **Campos errados no `processCampaignEntries`**: A API retorna `broad_gmv` para GMV e `broad_roi` para ROAS, mas o código lê `broad_order_amount` primeiro (que é valor total de pedidos, não GMV). Resultado: métricas incorretas nos cards individuais.
+Quando campanhas são importadas via API, cada uma traz um `item_id` da Shopee. Produtos cadastrados (importados via Shopee ou manualmente) já têm `shopee_item_id` salvo. Mas hoje o dashboard de API (`ApiAdsDashboard`) exibe as campanhas sem tentar vincular ao produto correspondente.
 
-2. **Ordem das estratégias desperdiça chamadas**: S1-POST-singular e S3-POST-list nunca funcionam e consomem rate limit antes de chegar à S4-GET-list que é a que retorna dados.
+### Solução
 
-### Correções
+Ao carregar/importar dados de Ads via API, cruzar `item_id` de cada campanha com `shopee_item_id` dos produtos cadastrados. Se houver match, enriquecer a campanha com `product_id`, `product_name`, e dados financeiros do produto (custo, margem) para calcular classificação e ROAS de empate automaticamente.
 
-#### 1. `processCampaignEntries` — corrigir ordem de leitura dos campos (linha 406-413)
+### Alterações
 
+#### 1. `src/components/roas/AdsTab.tsx` — enriquecer campanhas com dados de produtos
+
+No `campaignToEnrichedAds`, buscar o produto pelo `item_id` da campanha:
 ```typescript
-// GMV: broad_gmv primeiro, broad_order_amount como fallback
-const gm = Number(e.broad_gmv || e.broad_order_amount || e.gmv || 0);
-// Direct GMV: direct_gmv primeiro
-const dgm = Number(e.direct_gmv || e.direct_order_amount || 0);
-// Pedidos: broad_order primeiro (campo real da API)
-const ord = Number(e.broad_order || e.broad_order_num || e.orders || 0);
-const dord = Number(e.direct_order || e.direct_order_num || e.direct_orders || 0);
+// Dentro de campaignToEnrichedAds, antes de retornar:
+const matchedProduct = products.find(p => 
+  String((p as any).shopeeItemId || (p as any).shopee_item_id) === String(campaign.item_id)
+);
+// Se encontrou, preencher product_id e calcular classificação
 ```
 
-Também capturar `broad_roi` da API quando disponível e usar no cálculo de ROAS do card (linhas 437-438):
-```typescript
-// Se a API fornece broad_roi, usar diretamente
-const apiRoas = Number(e.broad_roi || 0);
-// Acumular para usar como fallback se calculado dá zero
-```
+Isso faz com que:
+- O card da campanha mostre que está vinculado (cor de classificação)
+- ROAS de empate e margem de contribuição sejam calculados
+- O botão "Vincular" não apareça para campanhas já vinculadas
 
-#### 2. `extractCampaignSummaryMetrics` — mesma correção de prioridade (linha 66-68)
+#### 2. `src/components/roas/ApiAdsDashboard.tsx` — mostrar indicador de vínculo
 
-```typescript
-// GMV: broad_gmv antes de broad_order_amount
-const gmv = toFiniteNumber(perf?.broad_gmv, perf?.broad_order_amount, ...);
-const directGmv = toFiniteNumber(perf?.direct_gmv, perf?.direct_order_amount, ...);
-const orders = toFiniteNumber(perf?.broad_order, perf?.broad_order_num, ...);
-```
+Passar `products` como prop e no `CampaignCard`:
+- Mostrar badge "Vinculado" se o `item_id` tem match
+- Mostrar nome do produto cadastrado se diferir do nome da campanha
+- Mostrar classificação (Lucrativo/Prejuízo) quando vinculado
 
-#### 3. `fetchCampaignDaily` — reordenar estratégias (linhas 187-227)
+#### 3. `src/hooks/useAdsData.ts` — importFromApi já faz linking
 
-Remover S1-POST-singular e S3-POST-list. Nova ordem:
-1. **S1-GET-list** (antigo S4) — a que funciona
-2. **S2-GET-singular** (antigo S2) — fallback
-3. **S3-GMS** (antigo S5) — fallback final
+O fluxo de `importFromApi` (linha 582-613) já faz match por `shopeeItemId` e cria drafts. Isso continuará funcionando para dados CSV. A mudança principal é no dashboard de API que hoje opera separado.
 
-Isso reduz de 5 para 3 tentativas, cortando ~40% das chamadas e evitando rate limit.
+### Fluxo resultante
 
-#### 4. Step 3 `dailyEntries` — mesma correção de campos (linhas 310-314)
-
-```typescript
-gmv: Number(e.broad_gmv || e.broad_order_amount || e.gmv || 0),
-orders: Number(e.broad_order || e.broad_order_num || e.orders || 0),
+```text
+Produto Shopee importado → shopee_item_id = 12345
+Campanha Ads API → item_id = 12345
+                  ↓
+Auto-match por item_id === shopee_item_id
+                  ↓
+Card mostra: vinculado, classificação, ROAS empate
 ```
 
 ### Arquivos alterados
 
 ```text
-supabase/functions/shopee-ads/index.ts
-  - processCampaignEntries: reordenar broad_gmv antes de broad_order_amount
-  - extractCampaignSummaryMetrics: mesma reordenação
-  - fetchCampaignDaily: remover POST strategies, GET-list primeiro
-  - Step 3 dailyEntries: reordenar campos
+src/components/roas/AdsTab.tsx          — enriquecer campaignToEnrichedAds com match de produto
+src/components/roas/ApiAdsDashboard.tsx  — receber products, mostrar badge de vínculo e classificação
 ```
 
