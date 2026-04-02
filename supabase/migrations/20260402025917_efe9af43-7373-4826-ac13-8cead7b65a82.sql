@@ -1,0 +1,1 @@
+ALTER TABLE public.shopee_ads_by_product ADD CONSTRAINT shopee_ads_by_product_user_campaign_period_key UNIQUE (user_id, campaign_id, period_start);
