@@ -112,9 +112,9 @@ function CampaignCard({ campaign, onRefresh, onSelect, isSelected }: { campaign:
 
 function CampaignDetail({ campaign, onClose }: { campaign: CampaignAds; onClose: () => void }) {
   const chartData = useMemo(() =>
-    campaign.daily.map(e => ({
+    (campaign.daily || (campaign as any).daily_data || []).map((e: any) => ({
       date: shortDate(e.date), Gasto: e.expense, Receita: e.gmv, ROAS: e.roas,
-    })), [campaign.daily]
+    })), [campaign.daily, (campaign as any).daily_data]
   );
 
   const profit = campaign.gmv - campaign.expense;
