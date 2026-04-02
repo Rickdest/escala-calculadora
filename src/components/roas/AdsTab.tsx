@@ -168,14 +168,18 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       toast.info('Atualizando dados do produto...');
       const result = await syncAdsOnly(itemId);
       const adsPerfData = result?.results?.ads_performance;
+      
       if (adsPerfData && adsPerfData.ads_by_campaign?.length > 0) {
-        // Only merge the specific campaigns — never overwrite summary/daily_entries
+        // Merge only the specific campaigns by campaign_id
         setApiAdsData((prev: any) => {
           const base = prev || effectiveApiData;
           if (!base) return adsPerfData;
           const updatedCampaigns = [...(base.ads_by_campaign || [])];
           for (const newC of adsPerfData.ads_by_campaign) {
-            const idx = updatedCampaigns.findIndex((c: any) => c.campaign_id === newC.campaign_id);
+            const idx = updatedCampaigns.findIndex((c: any) => 
+              c.campaign_id === newC.campaign_id || 
+              (!c.campaign_id && String(c.item_id) === String(newC.item_id))
+            );
             if (idx >= 0) updatedCampaigns[idx] = newC;
             else updatedCampaigns.push(newC);
           }
@@ -189,11 +193,11 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
           setSelectedDetail(campaignToEnrichedAds(updatedCampaign));
         }
         invalidatePersistedAds();
-        toast.success('Produto atualizado!');
+        toast.success(`Produto atualizado! ${adsPerfData.ads_by_campaign.length} campanha(s)`);
       } else {
-        // Even if no new data from API, invalidate cache to reload persisted data
+        // No new data from API — invalidate cache to reload persisted data
         invalidatePersistedAds();
-        toast.info('Dados atualizados do banco. Nenhuma métrica nova da API.');
+        toast.info('Nenhuma métrica individual retornada pela API para este item. Os dados gerais da loja permanecem salvos.');
       }
     } catch {
       toast.error('Erro ao atualizar produto');
