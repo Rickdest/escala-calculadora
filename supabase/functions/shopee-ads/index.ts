@@ -68,11 +68,12 @@ async function fetchAdsPerformance(
   accessToken: string,
   shopId: string | number
 ) {
-  const now = Math.floor(Date.now() / 1000);
-  // Use 28 days to never cross 2 calendar months (API rejects > 1 month)
-  const startTs = now - 28 * 24 * 60 * 60;
-  const startDate = toDateStr(startTs);
-  const endDate = toDateStr(now);
+  // Use yesterday (Brazil TZ) as end to avoid "date_in_future" error
+  const nowBR = new Date();
+  const yesterdayBR = new Date(nowBR.getTime() - 24 * 60 * 60 * 1000);
+  const startBR = new Date(nowBR.getTime() - 28 * 24 * 60 * 60 * 1000);
+  const startDate = toDateStrBR(startBR);
+  const endDate = toDateStrBR(yesterdayBR);
 
   // 1. Get campaign ID list
   let campaignIds: number[] = [];
