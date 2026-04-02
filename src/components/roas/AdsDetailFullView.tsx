@@ -765,6 +765,12 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
           <span className="text-[11px] text-success font-mono tabular-nums hidden md:block">{periodLabel}</span>
         </div>
         <div className="flex items-center gap-2 flex-wrap mt-3 relative">
+          {isApiCampaign && onRefreshProduct && itemId && (
+            <Button onClick={handleRefreshProduct} disabled={refreshing} variant="outline" size="sm" className="gap-1 text-xs font-bold h-8 border-primary/30 text-primary hover:bg-primary/10">
+              <RefreshCw className={cn("w-3.5 h-3.5", refreshing && "animate-spin")} />
+              {refreshing ? 'Atualizando...' : 'Atualizar Dados'}
+            </Button>
+          )}
           {onReimport && (
             <Button onClick={onReimport} variant="outline" size="sm" className="gap-1 text-xs font-bold h-8 border-border text-text-2 hover:bg-surface-2">
               <Upload className="w-3.5 h-3.5" /> CSV
