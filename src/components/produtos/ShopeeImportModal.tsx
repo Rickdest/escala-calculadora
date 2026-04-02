@@ -25,7 +25,7 @@ interface ShopeeImportModalProps {
 
 export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportModalProps) {
   const { user } = useAuth();
-  const { syncAds } = useShopeeToken();
+  const { syncStoreData } = useShopeeToken();
   const [products, setProducts] = useState<ShopeeProduct[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
