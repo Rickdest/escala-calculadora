@@ -1,104 +1,75 @@
 
 
-## Plano: Performance por produto via `get_product_campaign_daily_performance`
+## Plano: Campanhas individuais com dados e detalhe clicável
 
-### Resumo
+### Diagnóstico
 
-Adicionar Step 4 no backend que busca performance diária **por campanha** (com `campaign_id`), agrega por `item_id`, e retorna `ads_by_product` com métricas reais por produto. No frontend, exibir cards por produto com sparkline, ordenação e botão de refresh individual.
+Os logs confirmam:
+- **35 campanhas encontradas** com `item_id` ✓
+- **Shop-level daily data funciona** (28 dias, expense=R$2050, roas=10.15) ✓
+- **Per-campaign API retorna `entries=0` para TODAS as 35** — o endpoint `get_product_campaign_daily_performance` via GET retorna arrays vazios
+- O DEBUG raw response não apareceu nos logs (race condition no `fetchIdx` compartilhado entre promises paralelas)
 
-### Parte 1 — Backend (`supabase/functions/shopee-ads/index.ts`)
+**Causa provável**: o endpoint pode precisar ser chamado via **POST** em vez de GET (padrão Shopee AMS/Ads API), ou o response tem estrutura diferente que estamos ignorando.
 
-**Novo Step 4** após Step 3 (daily_performance shop-level):
+### Correções planejadas
 
-- Filtrar `campaignDetails` para status "ongoing" (status === 1 ou "ongoing")
-- Agrupar por `item_id` usando o mapa já existente
-- Para cada campanha ativa, chamar `shopeeGet("/api/v2/ads/get_product_campaign_daily_performance", ...)` com `campaign_id`, `start_date`, `end_date`
-- **Rate limit**: batches de 5 chamadas, delay 200ms entre batches
-- Parsear resposta: `result.response` (array) com campos `impression/impressions`, `click/clicks`, `expense/cost`, `broad_order_amount/gmv`, `broad_roas/roas`, `direct_order_amount/direct_gmv`, `average_position/avg_position`, `ctr`
-- Agregar por `item_id`:
-  - Somar: impressions, clicks, expense, gmv, direct_gmv, orders, direct_orders
-  - Média ponderada por impressões: avg_position
-  - Calcular: roas, direct_roas, acos, ctr, cost_per_order, days_active
-  - Guardar `daily[]` array para sparkline
-- Logar: total de produtos com dados, produto com maior gasto, produto com maior ROAS
+#### 1. Backend — Corrigir chamada per-campaign (`shopee-ads/index.ts`)
 
-**Aceitar query param `?item_id=XXX`**: quando presente, filtrar campanhas para apenas as que têm aquele item_id, permitindo refresh individual.
+- **Trocar de GET para POST** usando `shopeePost` (já existe em `_shared/shopee.ts`), passando `campaign_id`, `start_date`, `end_date` no body JSON
+- **Corrigir debug logging**: logar raw response ANTES do batch paralelo, com um fetch serial do primeiro campaign_id para garantir que o log apareça
+- **Manter fallback GET**: se POST retornar erro, tentar GET como fallback
+- **Não agrupar por item_id**: retornar `ads_by_campaign` (1 entrada por campaign_id) em vez de `ads_by_product` (1 entrada por item_id). Cada campanha mantém suas métricas individuais
+- **Incluir campo `campaign_id`** em cada entrada para identificação única
 
-**Retorno atualizado**: `ads_by_product` deixa de ser `campaignDetails` e passa a ser o array agregado por produto com a estrutura especificada.
+#### 2. Backend — Nova estrutura de retorno
 
-### Parte 2 — Frontend
-
-**2a. `ApiAdsDashboard.tsx`** — Seção de produtos:
-- Abaixo do gráfico diário, renderizar lista de cards por produto vindos de `ads_by_product`
-- Cada card mostra: nome, ROAS (colorido), ROAS Direto, Gasto, GMV, Lucro estimado, Cliques, Impressões, CTR, Posição média, ACOS%, Custo/pedido, Pedidos, Dias ativos
-- Mini sparkline (recharts `LineChart` pequeno, ~40px altura) dos últimos 7 dias de ROAS se `daily[]` tiver dados
-
-**2b. Botão "↻ Atualizar"** por produto:
-- No card, botão que chama `shopee-ads?item_id=XXX` 
-- No `AdsTab.tsx`, nova função `handleRefreshProduct(itemId)` que invoca `syncAdsOnly` com param
-
-**2c. Dropdown de ordenação**:
-- Acima da lista de produtos, select com opções: ROAS, Gasto, GMV, Posição
-- Estado local `sortBy`, aplicar `.sort()` antes de renderizar
-
-**2d. `useShopeeToken.ts`** — Ajustar `syncAdsOnly`:
-- Aceitar parâmetro opcional `itemId` para passar como body/query ao invocar `shopee-ads`
-
-### Parte 3 — Banco de Dados
-
-Criar tabela `shopee_ads_by_product` via migration:
-
-```sql
-CREATE TABLE public.shopee_ads_by_product (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  shop_id bigint NOT NULL,
-  item_id bigint NOT NULL,
-  item_name text,
-  period_start date NOT NULL,
-  period_end date NOT NULL,
-  impressions integer DEFAULT 0,
-  clicks integer DEFAULT 0,
-  expense numeric DEFAULT 0,
-  gmv numeric DEFAULT 0,
-  direct_gmv numeric DEFAULT 0,
-  orders integer DEFAULT 0,
-  direct_orders integer DEFAULT 0,
-  avg_position numeric,
-  roas numeric DEFAULT 0,
-  direct_roas numeric DEFAULT 0,
-  acos numeric DEFAULT 0,
-  ctr numeric DEFAULT 0,
-  cost_per_order numeric DEFAULT 0,
-  days_active integer DEFAULT 0,
-  daily_data jsonb DEFAULT '[]',
-  campaign_ids jsonb DEFAULT '[]',
-  updated_at timestamptz DEFAULT now(),
-  created_at timestamptz DEFAULT now(),
-  UNIQUE (user_id, item_id, period_start)
-);
-
-ALTER TABLE public.shopee_ads_by_product ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can view own" ON public.shopee_ads_by_product
-  FOR SELECT TO authenticated USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own" ON public.shopee_ads_by_product
-  FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id AND has_active_subscription());
-CREATE POLICY "Users can update own" ON public.shopee_ads_by_product
-  FOR UPDATE TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can delete own" ON public.shopee_ads_by_product
-  FOR DELETE TO authenticated USING (auth.uid() = user_id);
+```text
+ads_by_campaign: [
+  {
+    campaign_id, item_id, item_name, status,
+    impressions, clicks, expense, gmv, direct_gmv,
+    orders, direct_orders, avg_position,
+    roas, direct_roas, acos, ctr, cost_per_order,
+    days_active,
+    daily: [{date, expense, gmv, roas, clicks, impressions}]
+  }
+]
 ```
 
-O backend faz upsert (`ON CONFLICT (user_id, item_id, period_start) DO UPDATE`) após agregar os dados.
+Se per-campaign continuar retornando vazio, cada campanha terá métricas zeradas mas ainda aparecerá no frontend com nome, item_id e status.
+
+#### 3. Frontend — Cards individuais por campanha (`ApiAdsDashboard.tsx`)
+
+- Trocar a seção "Performance por Produto" por "Campanhas" com cards individuais
+- Cada card mostra: nome da campanha, item_id, status, e todas as métricas (se disponíveis)
+- ROAS colorido (verde ≥3, amarelo 1-3, vermelho <1)
+- Mini sparkline dos últimos 7 dias
+- Botão "↻ Atualizar" por campanha
+
+#### 4. Frontend — Detalhe clicável por campanha
+
+- Ao clicar num card de campanha, expandir uma view de detalhe inline (similar ao `AdsDetailFullView` do CSV)
+- Mostrar: gráfico diário (ROAS/Gasto/Receita), grid de métricas completas, período
+- Usar estado local `selectedCampaign` no `ApiAdsDashboard`
+
+#### 5. Banco de dados — Atualizar upsert
+
+- Mudar upsert para usar `campaign_id` como chave (em vez de `item_id`)
+- Ou criar novo campo `campaign_id` na tabela `shopee_ads_by_product` e ajustar unique constraint
 
 ### Arquivos alterados
 
 ```text
-supabase/functions/shopee-ads/index.ts   — Step 4 + item_id filter + upsert
-src/components/roas/ApiAdsDashboard.tsx   — cards por produto + sparkline + ordenação
-src/components/roas/AdsTab.tsx            — handleRefreshProduct + passar dados
-src/hooks/useShopeeToken.ts              — syncAdsOnly com itemId opcional
-Migration SQL                            — nova tabela shopee_ads_by_product
+supabase/functions/shopee-ads/index.ts     — POST em vez de GET, retorno por campanha, debug fix
+supabase/functions/_shared/shopee.ts       — nenhuma mudança (shopeePost já existe)
+src/components/roas/ApiAdsDashboard.tsx     — cards por campanha, click-to-detail, ordenação
+src/components/roas/AdsTab.tsx             — ajustar para ads_by_campaign
+Migration SQL                              — adicionar campaign_id na tabela + ajustar constraint
 ```
+
+### Sem mudanças
+
+- `AdsDetailFullView.tsx` (usado apenas para dados CSV, não muda)
+- `useShopeeToken.ts` (já suporta itemId, não muda)
 
