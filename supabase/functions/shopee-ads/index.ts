@@ -9,10 +9,13 @@ import {
   jsonResponse,
 } from "../_shared/shopee.ts";
 
-/** DD-MM-YYYY format required by Shopee Ads API */
-const toDateStr = (ts: number) => {
-  const d = new Date(ts * 1000);
-  return `${String(d.getDate()).padStart(2, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${d.getFullYear()}`;
+/** DD-MM-YYYY format required by Shopee Ads API, using Brazil timezone */
+const toDateStrBR = (date: Date) => {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+  const y = parts.find(p => p.type === "year")!.value;
+  const m = parts.find(p => p.type === "month")!.value;
+  const d = parts.find(p => p.type === "day")!.value;
+  return `${d}-${m}-${y}`;
 };
 
 async function refreshTokenIfNeeded(shopeeToken: any, supabase: any) {
