@@ -28,6 +28,139 @@ const toISODateBR = (date: Date) => {
 
 const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
 
+const ADS_LOOKBACK_DAYS = 90;
+
+type CampaignStatus = "active" | "paused" | "ended";
+
+const toFiniteNumber = (...values: unknown[]) => {
+  for (const value of values) {
+    const parsed = typeof value === "string" && value.trim() === "" ? Number.NaN : Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return 0;
+};
+
+function mapCampaignStatus(rawStatus: unknown): CampaignStatus {
+  const normalized = typeof rawStatus === "string" ? rawStatus.trim().toLowerCase() : rawStatus;
+
+  if (normalized === 1 || normalized === "1" || normalized === "ongoing" || normalized === "active" || normalized === "running") {
+    return "active";
+  }
+
+  if (normalized === 0 || normalized === "0" || normalized === 2 || normalized === "2" || normalized === "paused" || normalized === "pause" || normalized === "suspended") {
+    return "paused";
+  }
+
+  if (normalized === 3 || normalized === "3" || normalized === 4 || normalized === "4" || normalized === "ended" || normalized === "closed" || normalized === "close" || normalized === "finished") {
+    return "ended";
+  }
+
+  return "ended";
+}
+
+function extractCampaignSummaryMetrics(detail: any) {
+  const perf = detail?.performance_info ?? detail?.performance ?? detail?.report_info ?? detail?.stats ?? detail?.data ?? null;
+
+  const impressions = toFiniteNumber(
+    perf?.impression,
+    perf?.impressions,
+    perf?.total_impression,
+    perf?.total_impressions,
+    detail?.impression,
+    detail?.impressions,
+    detail?.total_impression,
+    detail?.total_impressions,
+  );
+  const clicks = toFiniteNumber(
+    perf?.click,
+    perf?.clicks,
+    perf?.total_click,
+    perf?.total_clicks,
+    detail?.click,
+    detail?.clicks,
+    detail?.total_click,
+    detail?.total_clicks,
+  );
+  const expense = toFiniteNumber(
+    perf?.expense,
+    perf?.cost,
+    perf?.ad_spend,
+    perf?.total_expense,
+    perf?.total_cost,
+    detail?.expense,
+    detail?.cost,
+    detail?.total_expense,
+    detail?.total_cost,
+  );
+  const gmv = toFiniteNumber(
+    perf?.broad_order_amount,
+    perf?.broad_gmv,
+    perf?.gmv,
+    perf?.total_gmv,
+    perf?.total_broad_gmv,
+    detail?.broad_order_amount,
+    detail?.broad_gmv,
+    detail?.gmv,
+    detail?.total_gmv,
+  );
+  const directGmv = toFiniteNumber(
+    perf?.direct_order_amount,
+    perf?.direct_gmv,
+    perf?.total_direct_gmv,
+    detail?.direct_order_amount,
+    detail?.direct_gmv,
+    detail?.total_direct_gmv,
+  );
+  const orders = toFiniteNumber(
+    perf?.broad_order_num,
+    perf?.broad_order,
+    perf?.orders,
+    perf?.total_orders,
+    perf?.total_broad_orders,
+    detail?.broad_order_num,
+    detail?.broad_order,
+    detail?.orders,
+    detail?.total_orders,
+  );
+  const directOrders = toFiniteNumber(
+    perf?.direct_order_num,
+    perf?.direct_orders,
+    perf?.total_direct_orders,
+    detail?.direct_order_num,
+    detail?.direct_orders,
+    detail?.total_direct_orders,
+  );
+  const avgPosition = (() => {
+    const value = toFiniteNumber(
+      perf?.average_position,
+      perf?.avg_position,
+      detail?.average_position,
+      detail?.avg_position,
+    );
+    return value > 0 ? value : null;
+  })();
+  const daysActive = toFiniteNumber(perf?.days_active, perf?.active_days, detail?.days_active, detail?.active_days);
+  const hasData = [impressions, clicks, expense, gmv, directGmv, orders, directOrders].some((value) => value > 0);
+
+  return {
+    impressions,
+    clicks,
+    expense,
+    gmv,
+    direct_gmv: directGmv,
+    orders,
+    direct_orders: directOrders,
+    avg_position: avgPosition,
+    roas: expense > 0 ? gmv / expense : 0,
+    direct_roas: expense > 0 ? directGmv / expense : 0,
+    acos: gmv > 0 ? (expense / gmv) * 100 : 0,
+    ctr: impressions > 0 ? (clicks / impressions) * 100 : 0,
+    cost_per_order: orders > 0 ? expense / orders : 0,
+    days_active: daysActive,
+    hasData,
+  };
+}
+
 async function refreshTokenIfNeeded(shopeeToken: any, _supabase: any) {
   const tokenAge = (Date.now() - new Date(shopeeToken.token_created_at).getTime()) / 1000;
   if (tokenAge <= shopeeToken.expire_in - 300) return shopeeToken.access_token;
@@ -124,7 +257,7 @@ async function fetchCampaignDaily(
 async function fetchAdsPerformance(accessToken: string, shopId: string | number, filterItemId?: number) {
   const nowBR = new Date();
   const yesterdayBR = new Date(nowBR.getTime() - 24 * 60 * 60 * 1000);
-  const startBR = new Date(nowBR.getTime() - 28 * 24 * 60 * 60 * 1000);
+  const startBR = new Date(nowBR.getTime() - ADS_LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
   const startDate = toDateStrBR(startBR);
   const endDate = toDateStrBR(yesterdayBR);
   const periodStartISO = toISODateBR(startBR);
@@ -167,13 +300,10 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
           for (const d of items) {
             const itemId = d.common_info?.item_id_list?.[0] || d.item_id || null;
             const adName = d.common_info?.ad_name || d.title || "";
-            const rawStatus = d.common_info?.status ?? d.status ?? null;
-            // Map status: 1=active, 2=paused, others=ended
-            let mappedStatus: string;
-            if (rawStatus === 1 || rawStatus === 'ongoing') mappedStatus = 'active';
-            else if (rawStatus === 2 || rawStatus === 'paused') mappedStatus = 'paused';
-            else mappedStatus = 'ended';
-            campaignDetails.push({ campaign_id: d.campaign_id, item_id: itemId, ad_name: adName, status: mappedStatus, raw_status: rawStatus });
+            const rawStatus = d.common_info?.campaign_status ?? d.common_info?.status ?? d.campaign_status ?? d.status ?? d.state ?? null;
+            const mappedStatus = mapCampaignStatus(rawStatus);
+            const summaryMetrics = extractCampaignSummaryMetrics(d);
+            campaignDetails.push({ campaign_id: d.campaign_id, item_id: itemId, ad_name: adName, status: mappedStatus, raw_status: rawStatus, summary_metrics: summaryMetrics });
             if (itemId) {
               campaignToItem.set(d.campaign_id, { item_id: itemId, ad_name: adName, status: rawStatus });
             }
@@ -274,8 +404,9 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
 }
 
 function processCampaignEntries(campaign: any, entries: any[], result: any[], idx: number, total: number) {
-  let totImp = 0, totClk = 0, totExp = 0, totGmv = 0, totDgmv = 0, totOrd = 0, totDord = 0;
-  let posWeighted = 0, posImp = 0, daysActive = 0;
+  const fallbackMetrics = entries.length === 0 && campaign.summary_metrics?.hasData ? campaign.summary_metrics : null;
+  let totImp = fallbackMetrics?.impressions ?? 0, totClk = fallbackMetrics?.clicks ?? 0, totExp = fallbackMetrics?.expense ?? 0, totGmv = fallbackMetrics?.gmv ?? 0, totDgmv = fallbackMetrics?.direct_gmv ?? 0, totOrd = fallbackMetrics?.orders ?? 0, totDord = fallbackMetrics?.direct_orders ?? 0;
+  let posWeighted = 0, posImp = 0, daysActive = fallbackMetrics?.days_active ?? 0;
   const daily: any[] = [];
 
   for (const e of entries) {
@@ -304,7 +435,7 @@ function processCampaignEntries(campaign: any, entries: any[], result: any[], id
   // campaign.status is already mapped to 'active'|'paused'|'ended' in Step 2
   const statusStr = campaign.status || 'ended';
 
-  console.log(`[SHOPEE ADS] Campaign ${idx}/${total}: id=${campaign.campaign_id} item_id=${campaign.item_id} status=${statusStr} expense=${totExp.toFixed(2)} entries=${entries.length}`);
+  console.log(`[SHOPEE ADS] Campaign ${idx}/${total}: id=${campaign.campaign_id} item_id=${campaign.item_id} status=${statusStr} expense=${totExp.toFixed(2)} entries=${entries.length}${fallbackMetrics ? ' source=summary' : ''}`);
 
   // Always include the campaign even with zero data - shows in frontend with name/status
   result.push({
@@ -319,12 +450,12 @@ function processCampaignEntries(campaign: any, entries: any[], result: any[], id
     direct_gmv: Math.round(totDgmv * 100) / 100,
     orders: totOrd,
     direct_orders: totDord,
-    avg_position: posImp > 0 ? Math.round((posWeighted / posImp) * 10) / 10 : null,
-    roas: totExp > 0 ? Math.round((totGmv / totExp) * 100) / 100 : 0,
-    direct_roas: totExp > 0 ? Math.round((totDgmv / totExp) * 100) / 100 : 0,
-    acos: totGmv > 0 ? Math.round((totExp / totGmv) * 10000) / 100 : 0,
-    ctr: totImp > 0 ? Math.round((totClk / totImp) * 10000) / 100 : 0,
-    cost_per_order: totOrd > 0 ? Math.round((totExp / totOrd) * 100) / 100 : 0,
+    avg_position: posImp > 0 ? Math.round((posWeighted / posImp) * 10) / 10 : (fallbackMetrics?.avg_position ?? null),
+    roas: totExp > 0 ? Math.round((totGmv / totExp) * 100) / 100 : Math.round((fallbackMetrics?.roas ?? 0) * 100) / 100,
+    direct_roas: totExp > 0 ? Math.round((totDgmv / totExp) * 100) / 100 : Math.round((fallbackMetrics?.direct_roas ?? 0) * 100) / 100,
+    acos: totGmv > 0 ? Math.round((totExp / totGmv) * 10000) / 100 : Math.round((fallbackMetrics?.acos ?? 0) * 100) / 100,
+    ctr: totImp > 0 ? Math.round((totClk / totImp) * 10000) / 100 : Math.round((fallbackMetrics?.ctr ?? 0) * 100) / 100,
+    cost_per_order: totOrd > 0 ? Math.round((totExp / totOrd) * 100) / 100 : Math.round((fallbackMetrics?.cost_per_order ?? 0) * 100) / 100,
     days_active: daysActive,
     daily: daily.sort((a, b) => (a.date || "").localeCompare(b.date || "")),
   });
