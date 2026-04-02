@@ -693,6 +693,7 @@ export type Database = {
         Row: {
           acos: number | null
           avg_position: number | null
+          campaign_id: number | null
           campaign_ids: Json | null
           clicks: number | null
           cost_per_order: number | null
@@ -720,6 +721,7 @@ export type Database = {
         Insert: {
           acos?: number | null
           avg_position?: number | null
+          campaign_id?: number | null
           campaign_ids?: Json | null
           clicks?: number | null
           cost_per_order?: number | null
@@ -747,6 +749,7 @@ export type Database = {
         Update: {
           acos?: number | null
           avg_position?: number | null
+          campaign_id?: number | null
           campaign_ids?: Json | null
           clicks?: number | null
           cost_per_order?: number | null
