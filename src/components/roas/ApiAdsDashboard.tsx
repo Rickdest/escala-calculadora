@@ -66,6 +66,12 @@ function CampaignCard({ campaign, onRefresh, onSelect, isSelected, linkedProduct
             )}>
               {campaign.status === 'active' ? 'Ativo' : campaign.status === 'paused' ? 'Pausado' : 'Encerrado'}
             </span>
+            {linkedProduct && (
+              <Badge variant="secondary" className="text-[8px] px-1.5 py-0 gap-0.5 shrink-0 bg-primary/10 text-primary border-primary/20">
+                <Link2 className="w-2.5 h-2.5" />
+                Vinculado
+              </Badge>
+            )}
           </div>
           <p className="text-[10px] text-muted-foreground font-mono">
             Campanha #{campaign.campaign_id} · Item #{campaign.item_id} · {campaign.days_active} dias ativos
