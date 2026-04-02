@@ -179,6 +179,14 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
           }
           return { ...prev, ads_by_campaign: updatedCampaigns };
         });
+        // Update detail view with refreshed data
+        const updatedCampaign = adsPerfData.ads_by_campaign?.find(
+          (c: any) => String(c.item_id) === String(itemId)
+        );
+        if (updatedCampaign) {
+          setSelectedDetail(campaignToEnrichedAds(updatedCampaign));
+        }
+        invalidatePersistedAds();
         toast.success('Produto atualizado!');
       }
     } catch {
