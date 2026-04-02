@@ -319,8 +319,8 @@ export function ApiAdsDashboard({ data, onRefreshProduct, onCampaignSelect }: { 
                 key={c.campaign_id}
                 campaign={c}
                 onRefresh={onRefreshProduct}
-                onSelect={() => setSelectedCampaignId(selectedCampaignId === c.campaign_id ? null : c.campaign_id)}
-                isSelected={selectedCampaignId === c.campaign_id}
+                onSelect={() => onCampaignSelect?.(c)}
+                isSelected={false}
               />
             ))}
           </div>
