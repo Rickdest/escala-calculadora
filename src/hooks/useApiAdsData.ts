@@ -29,14 +29,25 @@ export function useApiAdsData() {
 export function buildApiAdsDataFromRows(rows: any[]) {
   if (!rows || rows.length === 0) return null;
 
-  const totalExpense = rows.reduce((s, r) => s + Number(r.expense || 0), 0);
-  const totalGmv = rows.reduce((s, r) => s + Number(r.gmv || 0), 0);
-  const totalImpressions = rows.reduce((s, r) => s + Number(r.impressions || 0), 0);
-  const totalClicks = rows.reduce((s, r) => s + Number(r.clicks || 0), 0);
-  const totalOrders = rows.reduce((s, r) => s + Number(r.orders || 0), 0);
+  // Deduplicate by campaign_id, keep most recent updated_at
+  const deduped = new Map<string, any>();
+  for (const r of rows) {
+    const key = String(r.campaign_id ?? r.item_id ?? r.id);
+    const existing = deduped.get(key);
+    if (!existing || (r.updated_at || '') > (existing.updated_at || '')) {
+      deduped.set(key, r);
+    }
+  }
+  const uniqueRows = Array.from(deduped.values());
 
-  const periodStart = rows.reduce((min, r) => r.period_start < min ? r.period_start : min, rows[0].period_start);
-  const periodEnd = rows.reduce((max, r) => r.period_end > max ? r.period_end : max, rows[0].period_end);
+  const totalExpense = uniqueRows.reduce((s, r) => s + Number(r.expense || 0), 0);
+  const totalGmv = uniqueRows.reduce((s, r) => s + Number(r.gmv || 0), 0);
+  const totalImpressions = uniqueRows.reduce((s, r) => s + Number(r.impressions || 0), 0);
+  const totalClicks = uniqueRows.reduce((s, r) => s + Number(r.clicks || 0), 0);
+  const totalOrders = uniqueRows.reduce((s, r) => s + Number(r.orders || 0), 0);
+
+  const periodStart = uniqueRows.reduce((min, r) => r.period_start < min ? r.period_start : min, uniqueRows[0].period_start);
+  const periodEnd = uniqueRows.reduce((max, r) => r.period_end > max ? r.period_end : max, uniqueRows[0].period_end);
 
   return {
     summary: {
@@ -52,7 +63,7 @@ export function buildApiAdsDataFromRows(rows: any[]) {
     daily_entries: [],
     campaign_details: [],
     total_balance: null,
-    ads_by_campaign: rows.map(r => ({
+    ads_by_campaign: uniqueRows.map(r => ({
       campaign_id: r.campaign_id,
       item_id: r.item_id,
       item_name: r.item_name || `Item #${r.item_id}`,
@@ -75,6 +86,6 @@ export function buildApiAdsDataFromRows(rows: any[]) {
     })),
     period_start: periodStart,
     period_end: periodEnd,
-    campaign_count: rows.length,
+    campaign_count: uniqueRows.length,
   };
 }

@@ -176,7 +176,7 @@ async function fetchCampaignDaily(
     for (const chunk of chunks) {
       try {
         const res = await shopeeGet(dailyPath, accessToken, shopId, {
-          campaign_id: String(campaignId), start_date: chunk.startAPI, end_date: chunk.endAPI,
+          campaign_id_list: String(campaignId), start_date: chunk.startAPI, end_date: chunk.endAPI,
         });
         if (isFirst && chunks.indexOf(chunk) === 0) console.log(`[SHOPEE ADS] [DEBUG] GET campaign ${campaignId} (${chunk.startAPI}→${chunk.endAPI}): ${JSON.stringify(res).substring(0, 800)}`);
         const entries = extractEntries(res);
