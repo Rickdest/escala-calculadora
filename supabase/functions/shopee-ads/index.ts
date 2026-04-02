@@ -110,6 +110,14 @@ function extractEntries(res: any): any[] {
   const resp = res?.response;
   if (!resp) return [];
   if (Array.isArray(resp)) return resp;
+  // Handle campaign_list[].metrics_list format from GET endpoint
+  if (resp?.campaign_list && Array.isArray(resp.campaign_list)) {
+    const allMetrics: any[] = [];
+    for (const c of resp.campaign_list) {
+      if (Array.isArray(c?.metrics_list)) allMetrics.push(...c.metrics_list);
+    }
+    if (allMetrics.length > 0) return allMetrics;
+  }
   return resp?.entry_list || resp?.data || [];
 }
 
@@ -135,9 +143,12 @@ function buildDateChunks(startDateISO: string, endDateISO: string): Array<{ star
 }
 
 /**
- * Fetch per-campaign performance with chunked dates.
- * Strategy 1: POST daily (chunked, DD-MM-YYYY)
- * Strategy 2: GET daily (chunked, DD-MM-YYYY) — fallback
+ * Fetch per-campaign performance with cascading strategies.
+ * 1. POST with campaign_id (singular)
+ * 2. GET with campaign_id (singular)
+ * 3. POST with campaign_id_list (array)
+ * 4. GET with campaign_id_list (string)
+ * 5. GMS fallback endpoint
  */
 async function fetchCampaignDaily(
   accessToken: string,
@@ -148,43 +159,70 @@ async function fetchCampaignDaily(
   isFirst: boolean,
 ): Promise<any[]> {
   const dailyPath = "/api/v2/ads/get_product_campaign_daily_performance";
+  const gmsPath = "/api/v2/ads/get_gms_campaign_performance";
   const chunks = buildDateChunks(startDateISO, endDateISO);
 
-  // === Strategy 1: POST daily (chunked) ===
-  const allEntries: any[] = [];
-  let postFailed = false;
-  for (const chunk of chunks) {
-    try {
-      const res = await shopeePost(dailyPath, accessToken, shopId, {
-        campaign_id_list: [campaignId], start_date: chunk.startAPI, end_date: chunk.endAPI,
-      });
-      if (isFirst && chunks.indexOf(chunk) === 0) console.log(`[SHOPEE ADS] [DEBUG] POST campaign ${campaignId} (${chunk.startAPI}→${chunk.endAPI}): ${JSON.stringify(res).substring(0, 800)}`);
-      const entries = extractEntries(res);
-      if (entries.length > 0) allEntries.push(...entries);
-      if (res?.error) { postFailed = true; break; }
-    } catch (e) {
-      if (isFirst) console.log(`[SHOPEE ADS] POST exception:`, e);
-      postFailed = true;
-      break;
-    }
-  }
-  if (allEntries.length > 0) return allEntries;
-
-  // === Strategy 2: GET daily (chunked) — only if POST failed ===
-  if (postFailed) {
-    const getEntries: any[] = [];
+  // Helper to try a strategy across all chunks
+  const tryStrategy = async (
+    label: string,
+    fn: (chunk: any) => Promise<any>,
+  ): Promise<any[]> => {
+    const allEntries: any[] = [];
     for (const chunk of chunks) {
       try {
-        const res = await shopeeGet(dailyPath, accessToken, shopId, {
-          campaign_id_list: String(campaignId), start_date: chunk.startAPI, end_date: chunk.endAPI,
-        });
-        if (isFirst && chunks.indexOf(chunk) === 0) console.log(`[SHOPEE ADS] [DEBUG] GET campaign ${campaignId} (${chunk.startAPI}→${chunk.endAPI}): ${JSON.stringify(res).substring(0, 800)}`);
+        const res = await fn(chunk);
+        if (isFirst && chunks.indexOf(chunk) === 0) {
+          console.log(`[SHOPEE ADS] [DEBUG] ${label} ${campaignId} (${chunk.startAPI}→${chunk.endAPI}): ${JSON.stringify(res).substring(0, 600)}`);
+        }
+        if (res?.error) return []; // API error, try next strategy
         const entries = extractEntries(res);
-        if (entries.length > 0) getEntries.push(...entries);
-      } catch (e) { if (isFirst) console.error(`[SHOPEE ADS] GET exception:`, e); }
+        if (entries.length > 0) allEntries.push(...entries);
+      } catch {
+        return []; // Exception, try next strategy
+      }
     }
-    if (getEntries.length > 0) return getEntries;
-  }
+    return allEntries;
+  };
+
+  // Strategy 1: POST with campaign_id (singular integer)
+  let entries = await tryStrategy("S1-POST-singular", (chunk) =>
+    shopeePost(dailyPath, accessToken, shopId, {
+      campaign_id: campaignId, start_date: chunk.startAPI, end_date: chunk.endAPI,
+    })
+  );
+  if (entries.length > 0) return entries;
+
+  // Strategy 2: GET with campaign_id (singular)
+  entries = await tryStrategy("S2-GET-singular", (chunk) =>
+    shopeeGet(dailyPath, accessToken, shopId, {
+      campaign_id: String(campaignId), start_date: chunk.startAPI, end_date: chunk.endAPI,
+    })
+  );
+  if (entries.length > 0) return entries;
+
+  // Strategy 3: POST with campaign_id_list (array)
+  entries = await tryStrategy("S3-POST-list", (chunk) =>
+    shopeePost(dailyPath, accessToken, shopId, {
+      campaign_id_list: [campaignId], start_date: chunk.startAPI, end_date: chunk.endAPI,
+    })
+  );
+  if (entries.length > 0) return entries;
+
+  // Strategy 4: GET with campaign_id_list (string)
+  entries = await tryStrategy("S4-GET-list", (chunk) =>
+    shopeeGet(dailyPath, accessToken, shopId, {
+      campaign_id_list: String(campaignId), start_date: chunk.startAPI, end_date: chunk.endAPI,
+    })
+  );
+  if (entries.length > 0) return entries;
+
+  // Strategy 5: GMS endpoint fallback
+  entries = await tryStrategy("S5-GMS", (chunk) =>
+    shopeeGet(gmsPath, accessToken, shopId, {
+      campaign_id_list: String(campaignId), start_date: chunk.startAPI, end_date: chunk.endAPI,
+    })
+  );
+  if (entries.length > 0) return entries;
 
   return [];
 }
