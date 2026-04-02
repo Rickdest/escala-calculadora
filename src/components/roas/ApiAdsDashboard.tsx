@@ -293,11 +293,6 @@ export function ApiAdsDashboard({ data, onRefreshProduct, onCampaignSelect }: { 
         </div>
       )}
 
-      {/* Campaign Detail (expanded) */}
-      {selectedCampaign && (
-        <CampaignDetail campaign={selectedCampaign} onClose={() => setSelectedCampaignId(null)} />
-      )}
-
       {/* Campaigns list */}
       {campaigns.length > 0 && (
         <div className="space-y-3">
