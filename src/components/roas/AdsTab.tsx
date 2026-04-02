@@ -171,15 +171,15 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       if (adsPerfData && adsPerfData.ads_by_campaign?.length > 0) {
         // Only merge the specific campaigns — never overwrite summary/daily_entries
         setApiAdsData((prev: any) => {
-          if (!prev) return adsPerfData;
-          const updatedCampaigns = [...(prev.ads_by_campaign || [])];
+          const base = prev || effectiveApiData;
+          if (!base) return adsPerfData;
+          const updatedCampaigns = [...(base.ads_by_campaign || [])];
           for (const newC of adsPerfData.ads_by_campaign) {
             const idx = updatedCampaigns.findIndex((c: any) => c.campaign_id === newC.campaign_id);
             if (idx >= 0) updatedCampaigns[idx] = newC;
             else updatedCampaigns.push(newC);
           }
-          // Keep original summary, daily_entries, period — only update ads_by_campaign
-          return { ...prev, ads_by_campaign: updatedCampaigns };
+          return { ...base, ads_by_campaign: updatedCampaigns };
         });
         // Update detail view with refreshed campaign data
         const updatedCampaign = adsPerfData.ads_by_campaign.find(
@@ -191,7 +191,9 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
         invalidatePersistedAds();
         toast.success('Produto atualizado!');
       } else {
-        toast.info('Nenhum dado novo encontrado para este produto.');
+        // Even if no new data from API, invalidate cache to reload persisted data
+        invalidatePersistedAds();
+        toast.info('Dados atualizados do banco. Nenhuma métrica nova da API.');
       }
     } catch {
       toast.error('Erro ao atualizar produto');
