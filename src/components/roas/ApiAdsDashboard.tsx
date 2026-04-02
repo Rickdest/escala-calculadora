@@ -57,9 +57,11 @@ function CampaignCard({ campaign, onRefresh, onSelect, isSelected }: { campaign:
           <div className="flex items-center gap-2">
             <p className="text-sm font-bold text-foreground truncate">{campaign.item_name}</p>
             <span className={cn('text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0',
-              campaign.status === 'active' ? 'text-success bg-success/10' : 'text-muted-foreground bg-muted'
+              campaign.status === 'active' ? 'text-success bg-success/10' :
+              campaign.status === 'paused' ? 'text-warning bg-warning/10' :
+              'text-muted-foreground bg-muted'
             )}>
-              {campaign.status === 'active' ? 'Ativo' : 'Encerrado'}
+              {campaign.status === 'active' ? 'Ativo' : campaign.status === 'paused' ? 'Pausado' : 'Encerrado'}
             </span>
           </div>
           <p className="text-[10px] text-muted-foreground font-mono">
