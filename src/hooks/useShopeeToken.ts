@@ -73,12 +73,13 @@ export function useShopeeToken() {
   };
 
   /** Sync ads only: campaigns, daily performance, balance (shopee-ads) */
-  const syncAdsOnly = async () => {
+  const syncAdsOnly = async (itemId?: number) => {
     const { data: session } = await supabase.auth.getSession();
     const res = await supabase.functions.invoke('shopee-ads', {
       headers: {
         Authorization: `Bearer ${session.session?.access_token}`,
       },
+      body: itemId ? { item_id: itemId } : undefined,
     });
     if (res.error) {
       const msg = res.error?.message || 'Erro ao importar ads';

@@ -689,6 +689,90 @@ export type Database = {
         }
         Relationships: []
       }
+      shopee_ads_by_product: {
+        Row: {
+          acos: number | null
+          avg_position: number | null
+          campaign_ids: Json | null
+          clicks: number | null
+          cost_per_order: number | null
+          created_at: string | null
+          ctr: number | null
+          daily_data: Json | null
+          days_active: number | null
+          direct_gmv: number | null
+          direct_orders: number | null
+          direct_roas: number | null
+          expense: number | null
+          gmv: number | null
+          id: string
+          impressions: number | null
+          item_id: number
+          item_name: string | null
+          orders: number | null
+          period_end: string
+          period_start: string
+          roas: number | null
+          shop_id: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          acos?: number | null
+          avg_position?: number | null
+          campaign_ids?: Json | null
+          clicks?: number | null
+          cost_per_order?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          daily_data?: Json | null
+          days_active?: number | null
+          direct_gmv?: number | null
+          direct_orders?: number | null
+          direct_roas?: number | null
+          expense?: number | null
+          gmv?: number | null
+          id?: string
+          impressions?: number | null
+          item_id: number
+          item_name?: string | null
+          orders?: number | null
+          period_end: string
+          period_start: string
+          roas?: number | null
+          shop_id: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          acos?: number | null
+          avg_position?: number | null
+          campaign_ids?: Json | null
+          clicks?: number | null
+          cost_per_order?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          daily_data?: Json | null
+          days_active?: number | null
+          direct_gmv?: number | null
+          direct_orders?: number | null
+          direct_roas?: number | null
+          expense?: number | null
+          gmv?: number | null
+          id?: string
+          impressions?: number | null
+          item_id?: number
+          item_name?: string | null
+          orders?: number | null
+          period_end?: string
+          period_start?: string
+          roas?: number | null
+          shop_id?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       shopee_auth_states: {
         Row: {
           created_at: string
