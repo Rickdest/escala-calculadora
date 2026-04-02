@@ -26,7 +26,8 @@ function shortDate(d: string | null): string {
   return d;
 }
 
-function MiniSparkline({ data }: { data: Array<{ roas: number }> }) {
+function MiniSparkline({ data }: { data?: Array<{ roas: number }> }) {
+  if (!data || !Array.isArray(data)) return null;
   const last7 = data.slice(-7);
   if (last7.length < 2) return null;
   return (
