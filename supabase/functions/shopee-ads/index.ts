@@ -556,6 +556,7 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
   return {
     daily_entries: dailyEntries, summary, campaign_details: campaignDetails,
     ads_by_campaign: adsByCampaign, total_balance: totalBalance,
+    discovery_results: discoveryResults,
     period_start: startDateISO, period_end: endDateISO, campaign_count: campaignIds.length,
   };
 }
