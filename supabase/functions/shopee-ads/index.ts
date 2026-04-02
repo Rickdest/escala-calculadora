@@ -292,6 +292,9 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
   if (skippedOld > 0) console.log(`[SHOPEE ADS] Skipped ${skippedOld} old ended campaigns (id < 50M)`);
   console.log(`[SHOPEE ADS] === Step 4: per-campaign performance for ${campaignsForStep4.length} campaigns ===`);
 
+  // Initial delay to avoid rate limit from Steps 1-3
+  await delay(500);
+
   // Fetch first campaign serially for debug logs
   if (campaignsForStep4.length > 0) {
     const first = campaignsForStep4[0];
@@ -299,15 +302,15 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
     processCampaignEntries(first, entries, adsByCampaign, 1, campaignsForStep4.length);
   }
 
-  // Fetch remaining in batches of 3 with 1000ms delay
+  // Fetch remaining in batches of 3 with 2000ms delay
   for (let i = 1; i < campaignsForStep4.length; i += 3) {
+    await delay(2000);
     const batch = campaignsForStep4.slice(i, i + 3);
     const promises = batch.map(async (c, batchIdx) => {
       const entries = await fetchCampaignDaily(accessToken, shopId, c.campaign_id, startDateISO, endDateISO, false);
       processCampaignEntries(c, entries, adsByCampaign, i + batchIdx + 1, campaignsForStep4.length);
     });
     await Promise.all(promises);
-    if (i + 3 < campaignsForStep4.length) await delay(1000);
   }
 
   console.log(`[SHOPEE ADS] ${adsByCampaign.length} campaigns with data out of ${campaignsForStep4.length}`);
