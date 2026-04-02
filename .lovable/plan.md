@@ -1,37 +1,42 @@
 
 
-## Correções no fluxo de importação de Ads via Shopee API
+## Plano: Reduzir verbosidade de logs, expandir janela e pular campanhas antigas
 
-### 1. Formato de data — JÁ CORRIGIDO ✓
-Linhas 261-262 de `shopee-ads/index.ts` já usam `toISODateBR`. Nenhuma mudança necessária.
+### Problema
 
-### 2. Logging de erros HTTP em `_shared/shopee.ts`
-Em `shopeeGet` (linha 125-126) e `shopeePost` (linha 151-156), adicionar verificação de `res.ok` antes de `.json()`. Se `!res.ok`, logar status + body e retornar objeto de erro.
+Os 8 `console.log` em `generateSign` (linhas 55-61 e 79 de `_shared/shopee.ts`) consomem ~8 linhas por chamada de API. Com ~35 campanhas x ~5 estratégias = ~175 chamadas, gera ~1400 linhas de log SIGN que estouram o buffer do Supabase e escondem os `[DEBUG]` importantes.
 
-### 3. Logging do response bruto no Step 3
-Em `shopee-ads/index.ts`, após a chamada do Step 3 (linha 326), adicionar log do response bruto antes do parsing (linha 327).
+### Mudanças
 
-### 4. Persistência — Frontend lê de `shopee_ads_by_product`
+#### 1. `_shared/shopee.ts` — Reduzir logs do SIGN (linhas 55-61)
 
-**4a. Criar `src/hooks/useApiAdsData.ts`**
-- Hook React Query que busca `shopee_ads_by_product` filtrado por `user_id`
-- Retorna dados persistidos + função `invalidate`
+Remover as 7 linhas de log individuais (PARTNER_ID, path, timestamp, accessToken, shopId, baseString, key length). Manter apenas a linha final `console.log('[SHOPEE SIGN] sign:', hex)` na linha 79.
 
-**4b. Modificar `AdsTab.tsx`**
-- Importar `useApiAdsData` e `useQueryClient`
-- Se `apiAdsData` (memória) estiver null, usar dados do banco como fallback, montando o objeto `ApiAdsData` (summary + ads_by_campaign) a partir das rows
-- Após `syncAdsOnly` bem-sucedido, chamar `queryClient.invalidateQueries(['shopee-ads-by-product'])`
-- Isso garante que ao recarregar a página, os dados aparecem imediatamente
+#### 2. `shopee-ads/index.ts` linha 23 — Expandir janela para 365 dias
 
-### 5. Redeploy
-As edge functions `shopee-ads` e `_shared/shopee.ts` serão redeployadas automaticamente.
+```
+const ADS_LOOKBACK_DAYS = 365;
+```
 
-### Arquivos alterados
+#### 3. `shopee-ads/index.ts` — Pular campanhas ended antigas no Step 4
+
+No filtro `campaignsForStep4` (linha 341-344), adicionar condição: se `status === "ended"` e `campaign_id < 50000000`, excluir (não fazer request). Logar quantas foram puladas.
+
+```typescript
+const campaignsForStep4 = campaignDetails.filter(c => {
+  if (filterItemId && c.item_id !== filterItemId) return false;
+  if (!c.item_id) return false;
+  if (c.status === "ended" && c.campaign_id < 50000000) return false;
+  return true;
+});
+const skippedOld = campaignDetails.filter(c => c.status === "ended" && c.campaign_id < 50000000).length;
+if (skippedOld > 0) console.log(`[SHOPEE ADS] Skipped ${skippedOld} old ended campaigns (id < 50M)`);
+```
+
+### Arquivos
 
 ```text
-supabase/functions/_shared/shopee.ts       — HTTP error logging em shopeeGet/shopeePost
-supabase/functions/shopee-ads/index.ts     — log bruto Step 3
-src/hooks/useApiAdsData.ts                 — NOVO hook para ler shopee_ads_by_product
-src/components/roas/AdsTab.tsx             — usar dados persistidos como fallback
+supabase/functions/_shared/shopee.ts       — remover 7 linhas de log verbose
+supabase/functions/shopee-ads/index.ts     — ADS_LOOKBACK_DAYS=365, filtro campanhas antigas
 ```
 
