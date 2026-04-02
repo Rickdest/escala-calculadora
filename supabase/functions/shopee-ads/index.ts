@@ -488,6 +488,150 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
     console.log(`[SHOPEE ADS] Step 6 done: hourly=${hourlyPerformance.length} recommended=${recommendedItems.length} toggles=${!!shopToggles}`);
   } catch (e) { console.error("[SHOPEE ADS] Step 6 error:", e); }
 
+  // === DISCOVERY (temporary) — test all unused read endpoints ===
+  const disc: Record<string, any> = {};
+  try {
+    console.log("[SHOPEE ADS] === DISCOVERY: testing all unused endpoints ===");
+    const firstActiveItem = adsByCampaign.find((c: any) => c.status === 'active' && c.item_id)?.item_id;
+    const firstKeyword = adsByCampaign.find((c: any) => c.keywords?.length > 0)?.keywords?.[0]?.keyword;
+
+    // 1. Keyword Ads — campaign ID list
+    await delay(500);
+    const kwIds = await shopeeGet("/api/v2/ads/get_keyword_level_campaign_id_list", accessToken, shopId);
+    disc.keyword_ids = kwIds;
+    console.log(`[DISCOVERY] keyword_ids: ${JSON.stringify(kwIds).substring(0, 1000)}`);
+
+    // 2-4. If keyword campaigns exist, get settings + daily + hourly
+    const kwCampaignList = kwIds?.response?.campaign_list || kwIds?.response?.campaign_id_list || [];
+    const firstKwId = Array.isArray(kwCampaignList) ? (kwCampaignList[0]?.campaign_id || kwCampaignList[0]) : null;
+    if (firstKwId) {
+      await delay(500);
+      const kwSettings = await shopeeGet("/api/v2/ads/get_keyword_level_campaign_setting_info", accessToken, shopId, { campaign_id_list: String(firstKwId), info_type_list: "1,2" });
+      disc.keyword_settings = kwSettings;
+      console.log(`[DISCOVERY] keyword_settings: ${JSON.stringify(kwSettings).substring(0, 1000)}`);
+
+      await delay(500);
+      const kwDaily = await shopeeGet("/api/v2/ads/get_keyword_campaign_daily_performance", accessToken, shopId, { campaign_id_list: String(firstKwId), start_date: startDateAPI, end_date: endDateAPI });
+      disc.keyword_daily = kwDaily;
+      console.log(`[DISCOVERY] keyword_daily: ${JSON.stringify(kwDaily).substring(0, 1000)}`);
+
+      await delay(500);
+      const kwHourly = await shopeeGet("/api/v2/ads/get_keyword_campaign_hourly_performance", accessToken, shopId, { campaign_id_list: String(firstKwId), performance_date: isoToDDMMYYYY(endDateISO) });
+      disc.keyword_hourly = kwHourly;
+      console.log(`[DISCOVERY] keyword_hourly: ${JSON.stringify(kwHourly).substring(0, 1000)}`);
+    }
+
+    // 5. Shop Ads — campaign ID list
+    await delay(500);
+    const shopAdsIds = await shopeeGet("/api/v2/ads/get_shop_level_campaign_id_list", accessToken, shopId);
+    disc.shop_ads_ids = shopAdsIds;
+    console.log(`[DISCOVERY] shop_ads_ids: ${JSON.stringify(shopAdsIds).substring(0, 1000)}`);
+
+    // 6-8. If shop campaigns exist, get settings + daily + hourly
+    const shopCampaignList = shopAdsIds?.response?.campaign_list || shopAdsIds?.response?.campaign_id_list || [];
+    const firstShopId = Array.isArray(shopCampaignList) ? (shopCampaignList[0]?.campaign_id || shopCampaignList[0]) : null;
+    if (firstShopId) {
+      await delay(500);
+      const shopSettings = await shopeeGet("/api/v2/ads/get_shop_level_campaign_setting_info", accessToken, shopId, { campaign_id_list: String(firstShopId), info_type_list: "1,2" });
+      disc.shop_settings = shopSettings;
+      console.log(`[DISCOVERY] shop_settings: ${JSON.stringify(shopSettings).substring(0, 1000)}`);
+
+      await delay(500);
+      const shopDaily = await shopeeGet("/api/v2/ads/get_shop_campaign_daily_performance", accessToken, shopId, { campaign_id_list: String(firstShopId), start_date: startDateAPI, end_date: endDateAPI });
+      disc.shop_daily = shopDaily;
+      console.log(`[DISCOVERY] shop_daily: ${JSON.stringify(shopDaily).substring(0, 1000)}`);
+
+      await delay(500);
+      const shopHourly = await shopeeGet("/api/v2/ads/get_shop_campaign_hourly_performance", accessToken, shopId, { campaign_id_list: String(firstShopId), performance_date: isoToDDMMYYYY(endDateISO) });
+      disc.shop_hourly = shopHourly;
+      console.log(`[DISCOVERY] shop_hourly: ${JSON.stringify(shopHourly).substring(0, 1000)}`);
+    }
+
+    // 9. Discovery Ads — campaign ID list
+    await delay(500);
+    const discAdsIds = await shopeeGet("/api/v2/ads/get_discovery_ads_campaign_id_list", accessToken, shopId);
+    disc.discovery_ids = discAdsIds;
+    console.log(`[DISCOVERY] discovery_ids: ${JSON.stringify(discAdsIds).substring(0, 1000)}`);
+
+    // 10-12. If discovery campaigns exist, get settings + daily + hourly
+    const discCampaignList = discAdsIds?.response?.campaign_list || discAdsIds?.response?.campaign_id_list || [];
+    const firstDiscId = Array.isArray(discCampaignList) ? (discCampaignList[0]?.campaign_id || discCampaignList[0]) : null;
+    if (firstDiscId) {
+      await delay(500);
+      const discSettings = await shopeeGet("/api/v2/ads/get_discovery_ads_campaign_setting_info", accessToken, shopId, { campaign_id_list: String(firstDiscId), info_type_list: "1,2" });
+      disc.discovery_settings = discSettings;
+      console.log(`[DISCOVERY] discovery_settings: ${JSON.stringify(discSettings).substring(0, 1000)}`);
+
+      await delay(500);
+      const discDaily = await shopeeGet("/api/v2/ads/get_discovery_campaign_daily_performance", accessToken, shopId, { campaign_id_list: String(firstDiscId), start_date: startDateAPI, end_date: endDateAPI });
+      disc.discovery_daily = discDaily;
+      console.log(`[DISCOVERY] discovery_daily: ${JSON.stringify(discDaily).substring(0, 1000)}`);
+
+      await delay(500);
+      const discHourly = await shopeeGet("/api/v2/ads/get_discovery_campaign_hourly_performance", accessToken, shopId, { campaign_id_list: String(firstDiscId), performance_date: isoToDDMMYYYY(endDateISO) });
+      disc.discovery_hourly = discHourly;
+      console.log(`[DISCOVERY] discovery_hourly: ${JSON.stringify(discHourly).substring(0, 1000)}`);
+    }
+
+    // 13. ROI target recommendation (per item)
+    if (firstActiveItem) {
+      await delay(500);
+      const roiTarget = await shopeeGet("/api/v2/ads/get_product_recommended_roi_target", accessToken, shopId, { item_id: String(firstActiveItem) });
+      disc.roi_target = roiTarget;
+      console.log(`[DISCOVERY] roi_target (item ${firstActiveItem}): ${JSON.stringify(roiTarget).substring(0, 1000)}`);
+    }
+
+    // 14. Keyword bid suggestion
+    if (firstActiveItem && firstKeyword) {
+      await delay(500);
+      const bidSuggestion = await shopeeGet("/api/v2/ads/get_keyword_bid_suggestion", accessToken, shopId, { item_id: String(firstActiveItem), keyword: firstKeyword });
+      disc.bid_suggestion = bidSuggestion;
+      console.log(`[DISCOVERY] bid_suggestion (item ${firstActiveItem}, kw "${firstKeyword}"): ${JSON.stringify(bidSuggestion).substring(0, 1000)}`);
+    }
+
+    // 15. Budget suggestion
+    if (firstActiveItem) {
+      await delay(500);
+      const budgetSuggestion = await shopeeGet("/api/v2/ads/get_create_product_ad_budget_suggestion", accessToken, shopId, { item_id: String(firstActiveItem) });
+      disc.budget_suggestion = budgetSuggestion;
+      console.log(`[DISCOVERY] budget_suggestion (item ${firstActiveItem}): ${JSON.stringify(budgetSuggestion).substring(0, 1000)}`);
+    }
+
+    // 16. GMS eligibility check
+    if (firstActiveItem) {
+      await delay(500);
+      const gmsElig = await shopeeGet("/api/v2/ads/check_create_gms_product_campaign_eligibility", accessToken, shopId, { item_id_list: String(firstActiveItem) });
+      disc.gms_eligibility = gmsElig;
+      console.log(`[DISCOVERY] gms_eligibility: ${JSON.stringify(gmsElig).substring(0, 1000)}`);
+    }
+
+    // 17. AMS targeting tag list
+    await delay(500);
+    const amsTags = await shopeeGet("/api/v2/ams/get_targeting_tag_list", accessToken, shopId);
+    disc.ams_targeting_tags = amsTags;
+    console.log(`[DISCOVERY] ams_targeting_tags: ${JSON.stringify(amsTags).substring(0, 1000)}`);
+
+    // 18. AMS campaign list
+    await delay(500);
+    const amsCampaigns = await shopeeGet("/api/v2/ams/get_campaign_list", accessToken, shopId);
+    disc.ams_campaigns = amsCampaigns;
+    console.log(`[DISCOVERY] ams_campaigns: ${JSON.stringify(amsCampaigns).substring(0, 1000)}`);
+
+    // 19. GMS deleted items
+    await delay(500);
+    const gmsDeleted = await shopeeGet("/api/v2/ads/list_gms_user_deleted_item", accessToken, shopId);
+    disc.gms_deleted_items = gmsDeleted;
+    console.log(`[DISCOVERY] gms_deleted_items: ${JSON.stringify(gmsDeleted).substring(0, 1000)}`);
+
+    // 20. Ads facil shop rate
+    await delay(500);
+    const adsFacil = await shopeeGet("/api/v2/ads/get_ads_facil_shop_rate", accessToken, shopId);
+    disc.ads_facil_shop_rate = adsFacil;
+    console.log(`[DISCOVERY] ads_facil_shop_rate: ${JSON.stringify(adsFacil).substring(0, 1000)}`);
+
+    console.log(`[SHOPEE ADS] === DISCOVERY DONE === tested ${Object.keys(disc).length} endpoints`);
+  } catch (e) { console.error("[SHOPEE ADS] Discovery error:", e); }
+
   // Step 7: Balance
   let totalBalance: any = null;
   try {
