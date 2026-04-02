@@ -116,11 +116,17 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       const adsPerfData = result?.results?.ads_performance;
       if (adsPerfData?.ads_rate_limited && (adsPerfData?.ads_by_product?.length || 0) === 0) {
         toast.warning('API de Ads temporariamente limitada pela Shopee. Tente novamente em 2-3 minutos.');
+      } else if (adsPerfData?.perf_api_error) {
+        toast.error(`Erro da API Shopee: ${adsPerfData.perf_api_message || adsPerfData.perf_api_error}`);
       } else if (adsPerfData?.ads_by_product?.length > 0) {
         if (adsPerfData.ads_rate_limited) {
           toast.warning('Alguns dados podem estar incompletos (limite temporário da API). Dados parciais foram importados.');
         }
         await importFromApi(adsPerfData);
+      } else if ((adsPerfData?.campaign_count || 0) > 0 && (adsPerfData?.raw_entry_count || 0) === 0) {
+        toast.info(`${adsPerfData.campaign_count} campanhas encontradas, mas sem métricas de performance no período.`);
+      } else if ((adsPerfData?.campaign_count || 0) === 0) {
+        toast.info('Nenhuma campanha de Ads encontrada na sua loja Shopee.');
       } else {
         toast.info('Nenhum dado de Ads disponível na API.');
       }

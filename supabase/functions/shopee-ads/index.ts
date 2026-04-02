@@ -9,10 +9,13 @@ import {
   jsonResponse,
 } from "../_shared/shopee.ts";
 
-/** DD-MM-YYYY format required by Shopee Ads API */
-const toDateStr = (ts: number) => {
-  const d = new Date(ts * 1000);
-  return `${String(d.getDate()).padStart(2, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${d.getFullYear()}`;
+/** DD-MM-YYYY format required by Shopee Ads API, using Brazil timezone */
+const toDateStrBR = (date: Date) => {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+  const y = parts.find(p => p.type === "year")!.value;
+  const m = parts.find(p => p.type === "month")!.value;
+  const d = parts.find(p => p.type === "day")!.value;
+  return `${d}-${m}-${y}`;
 };
 
 async function refreshTokenIfNeeded(shopeeToken: any, supabase: any) {
@@ -65,11 +68,12 @@ async function fetchAdsPerformance(
   accessToken: string,
   shopId: string | number
 ) {
-  const now = Math.floor(Date.now() / 1000);
-  // Use 28 days to never cross 2 calendar months (API rejects > 1 month)
-  const startTs = now - 28 * 24 * 60 * 60;
-  const startDate = toDateStr(startTs);
-  const endDate = toDateStr(now);
+  // Use yesterday (Brazil TZ) as end to avoid "date_in_future" error
+  const nowBR = new Date();
+  const yesterdayBR = new Date(nowBR.getTime() - 24 * 60 * 60 * 1000);
+  const startBR = new Date(nowBR.getTime() - 28 * 24 * 60 * 60 * 1000);
+  const startDate = toDateStrBR(startBR);
+  const endDate = toDateStrBR(yesterdayBR);
 
   // 1. Get campaign ID list
   let campaignIds: number[] = [];
@@ -114,12 +118,13 @@ async function fetchAdsPerformance(
           { campaign_id_list: batch.join(","), info_type_list: "1" }
         );
         console.log(`[SHOPEE ADS] campaign_setting_info batch ${Math.floor(i / 20) + 1} RESPONSE: ${JSON.stringify(details).substring(0, 3000)}`);
-        const items = details?.response?.data || details?.response?.campaign_list || [];
+        const items = details?.response?.campaign_list || details?.response?.data || [];
         if (Array.isArray(items)) {
           campaignDetails.push(...items);
           for (const d of items) {
-            if (d.campaign_id && d.item_id) {
-              campaignToItem[d.campaign_id] = d.item_id;
+            const itemId = d.common_info?.item_id_list?.[0] || d.item_id;
+            if (d.campaign_id && itemId) {
+              campaignToItem[d.campaign_id] = itemId;
             }
           }
         }
@@ -133,6 +138,8 @@ async function fetchAdsPerformance(
   // 3. Get daily performance (28 days) — DD-MM-YYYY format
   let allEntries: any[] = [];
   let wasRateLimited = false;
+  let perfApiError = "";
+  let perfApiMessage = "";
 
   try {
     console.log(`[SHOPEE ADS] === Step 3: get_all_cpc_ads_daily_performance ${startDate} → ${endDate} ===`);
@@ -147,11 +154,15 @@ async function fetchAdsPerformance(
     const err = result?.error || result?.msg || "";
     if (typeof err === "string" && err.toLowerCase().includes("rate_limit")) {
       wasRateLimited = true;
+    } else if (err && err !== "") {
+      perfApiError = err;
+      perfApiMessage = result?.message || "";
     } else {
       allEntries = result?.response?.entry_list || result?.response?.data || [];
     }
   } catch (e) {
     console.error("[SHOPEE ADS] get_all_cpc_ads_daily_performance error:", e);
+    perfApiError = (e as Error).message;
   }
 
   // 4. Get total balance
@@ -226,6 +237,10 @@ async function fetchAdsPerformance(
     period_end: endDate,
     raw_entry_count: allEntries.length,
     ads_rate_limited: wasRateLimited,
+    campaign_count: campaignIds.length,
+    campaign_to_item_count: Object.keys(campaignToItem).length,
+    perf_api_error: perfApiError || null,
+    perf_api_message: perfApiMessage || null,
   };
 }
 
