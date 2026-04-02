@@ -110,6 +110,13 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const [apiAdsData, setApiAdsData] = useState<any>(null);
   const [apiCampaignList, setApiCampaignList] = useState<any[]>([]);
 
+  // Load persisted data from database as fallback
+  const { data: persistedRows, invalidate: invalidatePersistedAds } = useApiAdsData();
+  const persistedApiData = useMemo(() => buildApiAdsDataFromRows(persistedRows || []), [persistedRows]);
+
+  // Use in-memory data if available, otherwise fall back to persisted DB data
+  const effectiveApiData = apiAdsData || persistedApiData;
+
   // Convert API campaign to EnrichedAdsData for detail view
   const campaignToEnrichedAds = (campaign: any): EnrichedAdsData => {
     const now = new Date().toISOString();
