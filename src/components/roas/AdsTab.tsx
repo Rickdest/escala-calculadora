@@ -201,6 +201,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
         toast.error(`Erro da API Shopee: ${adsPerfData.perf_api_message || adsPerfData.perf_api_error}`);
     } else if (adsPerfData?.summary?.total_impressions > 0 || (adsPerfData?.ads_by_campaign?.length || 0) > 0) {
         setApiAdsData(adsPerfData);
+        invalidatePersistedAds();
         const campaignCount = adsPerfData.ads_by_campaign?.length || 0;
         toast.success(`Ads importados: ${campaignCount} campanha${campaignCount !== 1 ? 's' : ''} · ${adsPerfData.summary.days} dias · ROAS ${adsPerfData.summary.roas_geral.toFixed(2)}`);
       } else if ((adsPerfData?.campaign_count || 0) > 0) {
