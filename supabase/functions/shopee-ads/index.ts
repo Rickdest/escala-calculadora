@@ -118,12 +118,13 @@ async function fetchAdsPerformance(
           { campaign_id_list: batch.join(","), info_type_list: "1" }
         );
         console.log(`[SHOPEE ADS] campaign_setting_info batch ${Math.floor(i / 20) + 1} RESPONSE: ${JSON.stringify(details).substring(0, 3000)}`);
-        const items = details?.response?.data || details?.response?.campaign_list || [];
+        const items = details?.response?.campaign_list || details?.response?.data || [];
         if (Array.isArray(items)) {
           campaignDetails.push(...items);
           for (const d of items) {
-            if (d.campaign_id && d.item_id) {
-              campaignToItem[d.campaign_id] = d.item_id;
+            const itemId = d.common_info?.item_id_list?.[0] || d.item_id;
+            if (d.campaign_id && itemId) {
+              campaignToItem[d.campaign_id] = itemId;
             }
           }
         }
