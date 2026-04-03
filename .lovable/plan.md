@@ -1,54 +1,71 @@
 
 
-## Plano: Melhorar layout da Performance + expandir inline
+## Plano: Redesign da Performance no estilo da referência + Tela de detalhes do produto
 
-### Problemas identificados
-1. **Estado vazio fraco**: tela branca com botão "Atualizar" pequeno e apagado — não convida a ação
-2. **KPIs genéricos**: sem destaque visual suficiente, valores sem formatação atrativa
-3. **Popup corta o fluxo**: clicar no produto abre Dialog que esconde o ranking
+### O que muda
 
-### Solução
+#### 1. Layout principal (`Performance.tsx`) — estilo tabela como na imagem
 
-#### 1. Estado vazio atrativo
-- Ilustração grande com ícone de gráfico/foguete
-- Título "Seus dados de vendas aparecerão aqui"
-- Subtítulo explicativo
-- Botão "Sincronizar agora" grande e em destaque (bg-primary, não outline)
-- Se estiver sincronizando, mostrar skeleton dos KPIs
+**KPI Cards**: manter os 4 cards atuais com bordas coloridas (já está bom).
 
-#### 2. KPIs mais ricos
-- Valores grandes (text-2xl no desktop) com formatação monetária separando centavos
-- Adicionar 4º KPI: **Un/dia** (unidades por dia média)
-- No mobile: grid 2×2 em vez de 3 colunas apertadas
-- Ícones maiores e cores mais vibrantes
+**Ranking como tabela**: substituir o formato de lista Collapsible por uma tabela estruturada com colunas:
+- **#** (posição/medalha)
+- **Produto** (nome + ID)
+- **Unidades** (qty + `▲ X% vendas`)
+- **Receita** (valor + `▲ X% receita`)
+- **Ticket Médio**
+- **Un/Dia**
+- **Ação** (botão "Ver detalhes")
 
-#### 3. Expandir inline em vez de popup
-- Remover `ProductDetailDrawer` (Dialog)
-- Ao clicar no produto no ranking, expandir um painel **abaixo** dele com animação suave (Collapsible)
-- O painel mostra: métricas (4 cards 2×2), barras de participação, variações e insight
-- Clicar de novo ou em outro produto fecha/troca
-- Barra de progresso visual no item do ranking mostrando % do total
+No mobile: layout card com as métricas empilhadas (não tabela).
 
-#### 4. Ranking melhorado
-- Cada item mostra uma mini barra horizontal de participação (% do total) atrás do texto
-- Top 3 com destaque visual (medalha dourada, prata, bronze)
-- Seta chevron indicando que é expansível
+Ao clicar no produto, o painel inline expande com:
+- 5 metric cards (Unidades, Receita, Ticket Médio, Un/Dia, **Top Variação** com nome e valor)
+- Barras de % Vendas e % Receita (coloridas: laranja e verde)
+- Grid de variações horizontal (cada variação como card com qty e receita)
+- Insight com recomendação de estoque
 
-### Alterações
+O botão "Ver detalhes" navega para `/performance/:itemId` — tela dedicada.
 
-**`src/pages/Performance.tsx`**:
-- Estado vazio redesenhado com CTA forte
-- KPIs em grid 2×2 mobile / 4 colunas desktop, com 4º KPI (Un/dia)
-- Ranking com expand inline (Collapsible) em vez de popup
-- Mini barra de % atrás de cada item do ranking
-- Top 3 com medalhas (🥇🥈🥉)
-- Remover import do ProductDetailDrawer
+#### 2. Tela de detalhes do produto (`PerformanceProductDetail.tsx`)
 
-**`src/components/performance/ProductDetailDrawer.tsx`**:
-- Transformar em `ProductExpandedDetail` — componente inline (não Dialog)
-- Mesmo conteúdo (métricas, variações, participação, insight) mas renderizado inline
-- Animação de expand/collapse suave
+Nova página em `/performance/:itemId` que carrega os dados do produto a partir do `shopee_performance` salvo no banco e exibe:
+
+- **Header**: nome do produto, ID, botões "Visualização ao vivo" (link externo Shopee) e "Editar Produto"
+- **Métricas Principais**: cards grandes com Impressões, Cliques, Visitantes, Views de Página, CTR (dados que a API da Shopee fornece via `get_item_base_info` — `likes`, `views`, `sales`)
+- **Variações detalhadas**: tabela com todas as variações, qty, receita, % do total
+- **Participação no total**: barras visuais
+- **Insight automático**: recomendação baseada na variação dominante
+
+**Nota sobre dados da API**: A Shopee Order API fornece `item_list` com qty/preço por variação. Os endpoints de `product` fornecem `likes`, `sales`, `views` no `get_item_base_info`. Vamos enriquecer o `shopee-sync` para salvar essas métricas adicionais no `product_sales` JSONB.
+
+#### 3. Enriquecer dados salvos no `shopee-sync`
+
+Atualizar `fetchProductsWithModels` para salvar no `product_sales` de cada item:
+- `image_url` (da `image.image_url_list[0]`)
+- `likes`, `views`, `sales` (do `get_item_base_info`)
+- `item_status`
+
+Esses dados extras ficam disponíveis na tela de detalhes.
+
+#### 4. Rota nova
+
+Adicionar em `App.tsx`:
+```
+/performance/:itemId → PerformanceProductDetail
+```
+
+### Arquivos
+
+```text
+src/pages/Performance.tsx                              — tabela + expand inline redesenhado
+src/components/performance/ProductExpandedDetail.tsx    — 5 cards + variações grid + insight
+src/pages/PerformanceProductDetail.tsx                  — nova página de detalhes
+src/App.tsx                                            — adicionar rota
+supabase/functions/shopee-sync/index.ts                — enriquecer product_sales com image/likes/views
+```
 
 ### Resultado
-Estado vazio convidativo, KPIs com mais impacto visual, detalhes de produto inline sem interromper o ranking, e medalhas nos top 3.
+
+Performance com visual de tabela profissional no desktop, expansão inline rica, e tela de detalhes dedicada com tudo que a API disponibiliza — imagem do produto, métricas de engajamento, variações e insights.
 
