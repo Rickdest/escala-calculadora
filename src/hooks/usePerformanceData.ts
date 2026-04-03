@@ -1,0 +1,89 @@
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useShopeeToken } from '@/hooks/useShopeeToken';
+import { toast } from 'sonner';
+
+export interface PerformanceData {
+  product_sales: Record<string, {
+    name: string;
+    total_qty: number;
+    total_revenue: number;
+    variants: Record<string, { qty: number; revenue: number }>;
+  }>;
+  summary: {
+    total_orders: number;
+    total_revenue: number;
+    avg_ticket: number;
+    status_counts: Record<string, number>;
+    period_days: number;
+  };
+}
+
+interface PerformanceRow {
+  summary: PerformanceData['summary'];
+  product_sales: PerformanceData['product_sales'];
+  synced_at: string;
+}
+
+export function usePerformanceData() {
+  const { user } = useAuth();
+  const { syncStoreData } = useShopeeToken();
+  const [data, setData] = useState<PerformanceData | null>(null);
+  const [syncedAt, setSyncedAt] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [syncing, setSyncing] = useState(false);
+
+  const loadFromDb = useCallback(async () => {
+    if (!user?.id) return;
+    try {
+      const { data: rows } = await supabase
+        .from('shopee_performance')
+        .select('summary, product_sales, synced_at')
+        .eq('user_id', user.id)
+        .limit(1);
+
+      if (rows && rows.length > 0) {
+        const row = rows[0] as unknown as PerformanceRow;
+        setData({ summary: row.summary, product_sales: row.product_sales });
+        setSyncedAt(row.synced_at);
+      }
+    } catch (e) {
+      console.error('[usePerformanceData] load error:', e);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    loadFromDb();
+  }, [loadFromDb]);
+
+  const sync = useCallback(async () => {
+    try {
+      setSyncing(true);
+      const result = await syncStoreData();
+      const perf = result?.results?.order_performance || result?.order_performance;
+      if (perf) {
+        setData(perf);
+        setSyncedAt(new Date().toISOString());
+        if (perf.summary?.total_orders === 0) {
+          toast.info('Sua loja não tem pedidos nos últimos 90 dias.');
+        } else {
+          toast.success(`${perf.summary.total_orders} pedidos carregados!`);
+        }
+      } else {
+        toast.info('Nenhum dado de performance disponível.');
+      }
+      // Reload from DB to get persisted version
+      await loadFromDb();
+    } catch (err) {
+      console.error('[usePerformanceData] sync error:', err);
+      toast.error('Erro ao sincronizar');
+    } finally {
+      setSyncing(false);
+    }
+  }, [syncStoreData, loadFromDb]);
+
+  return { data, syncedAt, loading, syncing, sync };
+}
