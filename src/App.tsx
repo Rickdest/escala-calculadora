@@ -31,6 +31,25 @@ const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const ShopeeCallback = lazy(() => import("./pages/ShopeeCallback"));
 const Performance = lazy(() => import("./pages/Performance"));
 
+function PaywallRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const { status, loading: subLoading } = useSubscription();
+
+  if (loading || subLoading || status === 'loading') {
+    return <PageLoader />;
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  if (status === 'active') {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -126,7 +145,7 @@ const App = () => (
                   <Route path="/stock" element={<ProtectedRoute><Stock /></ProtectedRoute>} />
                   <Route path="/roas" element={<ProtectedRoute><Roas /></ProtectedRoute>} />
                   <Route path="/performance" element={<ProtectedRoute><Performance /></ProtectedRoute>} />
-                  <Route path="/paywall" element={<Paywall />} />
+                  <Route path="/paywall" element={<PaywallRoute><Paywall /></PaywallRoute>} />
                   <Route path="/shopee-callback" element={<ShopeeCallback />} />
                   <Route path="/admin/banners" element={<AdminRoute><AdminBanners /></AdminRoute>} />
                   <Route path="/calculadoras" element={<ProtectedRoute><Calculators /></ProtectedRoute>} />

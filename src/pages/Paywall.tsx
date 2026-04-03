@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { useBilling } from '@/hooks/useBilling';
+import { useSignOut } from '@/hooks/useSignOut';
 import { Check } from 'lucide-react';
 import logoIcon from '@/assets/skalify-logo.png';
 import { PRICING } from '@/constants/pricing';
@@ -17,6 +17,7 @@ const benefits = [
 
 export default function Paywall() {
   const { refreshSubscription } = useBilling();
+  const { handleSignOut } = useSignOut();
   const [plan, setPlan] = useState<'monthly' | 'yearly'>('yearly');
 
   const handlePlanCheckout = () => {
@@ -28,8 +29,8 @@ export default function Paywall() {
   const monthlyEquiv = (PRICING.yearly / 12).toFixed(2).replace('.', ',');
 
   return (
-    <AppLayout>
-      <div className="py-6 max-w-sm mx-auto" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div className="min-h-screen bg-background flex items-center justify-center px-5 py-8">
+      <div className="w-full max-w-sm" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
         {/* Logo */}
         <div className="flex justify-center pt-2">
@@ -165,11 +166,19 @@ export default function Paywall() {
         <button
           onClick={refreshSubscription}
           className="w-full text-center text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
-          style={{ fontSize: '13px', paddingBottom: '8px' }}
+          style={{ fontSize: '13px' }}
         >
           Já assinei → Verificar acesso
         </button>
+
+        <button
+          onClick={handleSignOut}
+          className="w-full text-center text-muted-foreground/60 hover:text-foreground transition-colors"
+          style={{ fontSize: '13px', paddingBottom: '8px' }}
+        >
+          Sair da conta
+        </button>
       </div>
-    </AppLayout>
+    </div>
   );
 }
