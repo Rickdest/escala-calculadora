@@ -80,6 +80,9 @@ export function AdsProductCard({
                 </span>
               )}
               <span className="text-micro text-muted-foreground font-mono">{periodLabel}</span>
+              {source === 'csv' && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded-badge border border-border bg-secondary text-micro text-muted-foreground font-bold">CSV</span>
+              )}
             </div>
           </div>
 
