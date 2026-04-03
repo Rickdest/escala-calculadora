@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -6,7 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useShopeeToken } from '@/hooks/useShopeeToken';
 import { usePerformanceData } from '@/hooks/usePerformanceData';
 import { ProductExpandedDetail } from '@/components/performance/ProductExpandedDetail';
-import { RefreshCw, Loader2, ShoppingBag, TrendingUp, ShoppingCart, Package, Clock, ChevronDown, BarChart3 } from 'lucide-react';
+import { RefreshCw, Loader2, ShoppingBag, TrendingUp, ShoppingCart, Package, Clock, ChevronDown, BarChart3, Eye } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -33,6 +34,7 @@ const STATUS_LABELS: Record<string, string> = {
 const MEDALS = ['🥇', '🥈', '🥉'];
 
 export default function Performance() {
+  const navigate = useNavigate();
   const { isConnected, startOAuth, isLoading: tokenLoading } = useShopeeToken();
   const { data, syncedAt, loading, syncing, sync } = usePerformanceData();
   const [connecting, setConnecting] = useState(false);
@@ -104,11 +106,7 @@ export default function Performance() {
                 <div key={i} className="rounded-xl border border-border bg-card h-24" />
               ))}
             </div>
-            <div className="space-y-2">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="rounded-xl border border-border bg-card h-16" />
-              ))}
-            </div>
+            <div className="rounded-xl border border-border bg-card h-64" />
           </div>
         )}
 
@@ -131,7 +129,7 @@ export default function Performance() {
           </div>
         )}
 
-        {/* Syncing skeleton (no data yet) */}
+        {/* Syncing skeleton */}
         {syncing && !data && (
           <div className="space-y-4 animate-pulse">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -148,40 +146,12 @@ export default function Performance() {
 
         {data && (
           <div className="space-y-4 animate-fade-up">
-            {/* KPI Cards - 2x2 mobile, 4 cols desktop */}
+            {/* KPI Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <KpiCard
-                icon={<ShoppingCart className="w-5 h-5" />}
-                iconColor="text-primary"
-                borderColor="border-t-primary"
-                label="Pedidos"
-                value={String(data.summary.total_orders)}
-                sub="90 dias"
-              />
-              <KpiCard
-                icon={<TrendingUp className="w-5 h-5" />}
-                iconColor="text-emerald-500"
-                borderColor="border-t-emerald-500"
-                label="Faturamento"
-                value={totalRevenueAll > 0 ? `R$ ${totalRevenueAll.toFixed(0)}` : '—'}
-                sub={totalRevenueAll > 0 ? `R$ ${(totalRevenueAll / 90).toFixed(0)}/dia` : ''}
-              />
-              <KpiCard
-                icon={<Package className="w-5 h-5" />}
-                iconColor="text-blue-500"
-                borderColor="border-t-blue-500"
-                label="Ticket Médio"
-                value={data.summary.avg_ticket > 0 ? `R$ ${data.summary.avg_ticket.toFixed(2)}` : '—'}
-                sub="por pedido"
-              />
-              <KpiCard
-                icon={<BarChart3 className="w-5 h-5" />}
-                iconColor="text-orange-500"
-                borderColor="border-t-orange-500"
-                label="Pedidos/dia"
-                value={unDia > 0 ? unDia.toFixed(1) : '—'}
-                sub="média"
-              />
+              <KpiCard icon={<ShoppingCart className="w-5 h-5" />} iconColor="text-primary" borderColor="border-t-primary" label="Pedidos" value={String(data.summary.total_orders)} sub="90 dias" />
+              <KpiCard icon={<TrendingUp className="w-5 h-5" />} iconColor="text-emerald-500" borderColor="border-t-emerald-500" label="Faturamento" value={totalRevenueAll > 0 ? `R$ ${totalRevenueAll.toFixed(0)}` : '—'} sub={totalRevenueAll > 0 ? `R$ ${(totalRevenueAll / 90).toFixed(0)}/dia` : ''} />
+              <KpiCard icon={<Package className="w-5 h-5" />} iconColor="text-blue-500" borderColor="border-t-blue-500" label="Ticket Médio" value={data.summary.avg_ticket > 0 ? `R$ ${data.summary.avg_ticket.toFixed(2)}` : '—'} sub="por pedido" />
+              <KpiCard icon={<BarChart3 className="w-5 h-5" />} iconColor="text-orange-500" borderColor="border-t-orange-500" label="Pedidos/dia" value={unDia > 0 ? unDia.toFixed(1) : '—'} sub="média" />
             </div>
 
             {/* Status Chips */}
@@ -205,73 +175,141 @@ export default function Performance() {
                 Nenhum produto vendido no período.
               </div>
             ) : (
-              <div className="space-y-2">
-                <p className="text-sm font-bold text-foreground">🏆 Ranking de Produtos ({sorted.length})</p>
-                {sorted.slice(0, 20).map(([itemId, prod], i) => {
-                  const isExpanded = expandedId === itemId;
-                  const pctRevenue = totalRevenueAll > 0 ? (prod.total_revenue / totalRevenueAll) * 100 : 0;
+              <div className="space-y-0">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-bold text-foreground">🏆 Ranking de Produtos ({sorted.length})</p>
+                </div>
 
-                  return (
-                    <Collapsible
-                      key={itemId}
-                      open={isExpanded}
-                      onOpenChange={(open) => setExpandedId(open ? itemId : null)}
-                    >
-                      <div className="rounded-xl border border-border overflow-hidden transition-colors hover:bg-muted/20">
-                        <CollapsibleTrigger className="w-full text-left p-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                              {/* Position / Medal */}
-                              {i < 3 ? (
-                                <span className="w-6 h-6 flex items-center justify-center flex-shrink-0 text-sm">
-                                  {MEDALS[i]}
-                                </span>
-                              ) : (
-                                <span className="w-6 h-6 rounded-full bg-muted text-muted-foreground text-[10px] font-bold flex items-center justify-center flex-shrink-0">
-                                  {i + 1}
-                                </span>
-                              )}
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm font-medium text-foreground truncate">{prod.name}</p>
-                                {/* Mini revenue bar */}
-                                <div className="mt-1 h-1 bg-muted rounded-full overflow-hidden max-w-[200px]">
-                                  <div
-                                    className="h-full bg-primary/60 rounded-full transition-all duration-500"
-                                    style={{ width: `${Math.min(pctRevenue, 100)}%` }}
-                                  />
+                {/* Desktop Table */}
+                <div className="hidden md:block rounded-xl border border-border bg-card overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/30">
+                        <th className="text-left px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase w-10">#</th>
+                        <th className="text-left px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase">Produto</th>
+                        <th className="text-right px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase">Unidades</th>
+                        <th className="text-right px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase">Receita</th>
+                        <th className="text-right px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase">Ticket</th>
+                        <th className="text-right px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase">Un/Dia</th>
+                        <th className="text-center px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase w-24">Ação</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sorted.slice(0, 20).map(([itemId, prod], i) => {
+                        const isExpanded = expandedId === itemId;
+                        const pctQty = totalQtyAll > 0 ? (prod.total_qty / totalQtyAll) * 100 : 0;
+                        const pctRevenue = totalRevenueAll > 0 ? (prod.total_revenue / totalRevenueAll) * 100 : 0;
+                        const ticket = prod.total_qty > 0 ? prod.total_revenue / prod.total_qty : 0;
+                        const undiaItem = periodDays > 0 ? prod.total_qty / periodDays : 0;
+                        const meta = prod as any;
+
+                        return (
+                          <Collapsible key={itemId} open={isExpanded} onOpenChange={(open) => setExpandedId(open ? itemId : null)} asChild>
+                            <>
+                              <CollapsibleTrigger asChild>
+                                <tr className="border-b border-border hover:bg-muted/10 cursor-pointer transition-colors">
+                                  <td className="px-4 py-3">
+                                    {i < 3 ? <span className="text-base">{MEDALS[i]}</span> : <span className="text-xs text-muted-foreground font-mono">{i + 1}</span>}
+                                  </td>
+                                  <td className="px-4 py-3">
+                                    <div className="flex items-center gap-2.5">
+                                      {meta.image_url && (
+                                        <img src={meta.image_url} alt="" className="w-8 h-8 rounded-lg object-cover border border-border shrink-0" />
+                                      )}
+                                      <div className="min-w-0">
+                                        <p className="font-medium text-foreground truncate max-w-[250px]">{prod.name}</p>
+                                        <p className="text-[10px] text-muted-foreground">ID: {itemId}</p>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3 text-right">
+                                    <span className="font-mono font-semibold text-foreground">{prod.total_qty}</span>
+                                    <span className="text-[10px] text-muted-foreground ml-1">({pctQty.toFixed(1)}%)</span>
+                                  </td>
+                                  <td className="px-4 py-3 text-right">
+                                    <span className="font-mono font-semibold text-foreground">R$ {prod.total_revenue.toFixed(2)}</span>
+                                    <span className="text-[10px] text-muted-foreground ml-1">({pctRevenue.toFixed(1)}%)</span>
+                                  </td>
+                                  <td className="px-4 py-3 text-right font-mono text-foreground">R$ {ticket.toFixed(2)}</td>
+                                  <td className="px-4 py-3 text-right font-mono text-foreground">{undiaItem.toFixed(1)}</td>
+                                  <td className="px-4 py-3 text-center">
+                                    <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1" onClick={(e) => { e.stopPropagation(); navigate(`/performance/${itemId}`); }}>
+                                      <Eye className="w-3.5 h-3.5" /> Detalhes
+                                    </Button>
+                                  </td>
+                                </tr>
+                              </CollapsibleTrigger>
+                              <CollapsibleContent asChild>
+                                <tr>
+                                  <td colSpan={7} className="p-0 border-b border-border bg-muted/5">
+                                    <ProductExpandedDetail product={prod} totalRevenue={totalRevenueAll} totalQty={totalQtyAll} periodDays={periodDays} />
+                                  </td>
+                                </tr>
+                              </CollapsibleContent>
+                            </>
+                          </Collapsible>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Cards */}
+                <div className="md:hidden space-y-2">
+                  {sorted.slice(0, 20).map(([itemId, prod], i) => {
+                    const isExpanded = expandedId === itemId;
+                    const pctRevenue = totalRevenueAll > 0 ? (prod.total_revenue / totalRevenueAll) * 100 : 0;
+                    const meta = prod as any;
+
+                    return (
+                      <Collapsible key={itemId} open={isExpanded} onOpenChange={(open) => setExpandedId(open ? itemId : null)}>
+                        <div className="rounded-xl border border-border overflow-hidden transition-colors hover:bg-muted/20">
+                          <CollapsibleTrigger className="w-full text-left p-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                                {i < 3 ? (
+                                  <span className="w-6 h-6 flex items-center justify-center flex-shrink-0 text-sm">{MEDALS[i]}</span>
+                                ) : (
+                                  <span className="w-6 h-6 rounded-full bg-muted text-muted-foreground text-[10px] font-bold flex items-center justify-center flex-shrink-0">{i + 1}</span>
+                                )}
+                                {meta.image_url && (
+                                  <img src={meta.image_url} alt="" className="w-8 h-8 rounded-lg object-cover border border-border shrink-0" />
+                                )}
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-sm font-medium text-foreground truncate">{prod.name}</p>
+                                  <div className="mt-1 h-1 bg-muted rounded-full overflow-hidden max-w-[200px]">
+                                    <div className="h-full bg-primary/60 rounded-full transition-all duration-500" style={{ width: `${Math.min(pctRevenue, 100)}%` }} />
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                            <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                              <div className="flex flex-col items-end gap-0.5">
-                                {prod.total_revenue > 0 && (
-                                  <span className="text-xs font-bold text-foreground">
-                                    R$ {prod.total_revenue.toFixed(2)}
-                                  </span>
-                                )}
-                                <span className="text-[10px] text-muted-foreground">{prod.total_qty} un.</span>
+                              <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                                <div className="flex flex-col items-end gap-0.5">
+                                  {prod.total_revenue > 0 && <span className="text-xs font-bold text-foreground">R$ {prod.total_revenue.toFixed(2)}</span>}
+                                  <span className="text-[10px] text-muted-foreground">{prod.total_qty} un.</span>
+                                </div>
+                                <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
                               </div>
-                              <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
                             </div>
-                          </div>
-                        </CollapsibleTrigger>
+                          </CollapsibleTrigger>
 
-                        <CollapsibleContent>
-                          <div className="border-t border-border">
-                            <ProductExpandedDetail
-                              product={prod}
-                              totalRevenue={totalRevenueAll}
-                              totalQty={totalQtyAll}
-                              periodDays={periodDays}
-                            />
-                          </div>
-                        </CollapsibleContent>
-                      </div>
-                    </Collapsible>
-                  );
-                })}
+                          <CollapsibleContent>
+                            <div className="border-t border-border">
+                              <ProductExpandedDetail product={prod} totalRevenue={totalRevenueAll} totalQty={totalQtyAll} periodDays={periodDays} />
+                              <div className="px-3 pb-3">
+                                <Button variant="outline" size="sm" className="w-full h-8 text-xs gap-1.5" onClick={() => navigate(`/performance/${itemId}`)}>
+                                  <Eye className="w-3.5 h-3.5" /> Ver detalhes completos
+                                </Button>
+                              </div>
+                            </div>
+                          </CollapsibleContent>
+                        </div>
+                      </Collapsible>
+                    );
+                  })}
+                </div>
+
                 {sorted.length > 20 && (
-                  <p className="text-xs text-muted-foreground text-center">+{sorted.length - 20} produtos</p>
+                  <p className="text-xs text-muted-foreground text-center mt-3">+{sorted.length - 20} produtos</p>
                 )}
               </div>
             )}

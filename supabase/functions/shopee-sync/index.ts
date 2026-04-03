@@ -354,10 +354,23 @@ Deno.serve(async (req) => {
       console.error("[SHOPEE SYNC] Orders error:", e);
     }
 
-    // 4. Persist performance data
+    // 4. Enrich product_sales with metadata and persist
     const orderPerf = results.order_performance as any;
     if (orderPerf) {
       try {
+        // Merge enrichment data into product_sales
+        const enrichment = (results.product_enrichment || {}) as Record<string, any>;
+        for (const [itemId, sale] of Object.entries(orderPerf.product_sales as Record<string, any>)) {
+          const meta = enrichment[itemId];
+          if (meta) {
+            sale.image_url = meta.image_url;
+            sale.likes = meta.likes;
+            sale.views = meta.views;
+            sale.sales = meta.sales;
+            sale.item_status = meta.item_status;
+          }
+        }
+
         const supabaseAdmin = createClient(
           Deno.env.get("SUPABASE_URL")!,
           Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
