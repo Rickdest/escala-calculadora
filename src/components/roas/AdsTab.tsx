@@ -544,14 +544,13 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
                     <p className="text-xs font-medium text-muted-foreground md:hidden">Status do Anúncio</p>
                     <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0">
                       {([
-                        { key: 'all' as const, label: 'Tudo' },
                         { key: 'active' as const, label: 'Em andamento' },
                         { key: 'paused' as const, label: 'Pausado' },
                         { key: 'ended' as const, label: 'Encerrado' },
-                      ] as const).filter(f => f.key === 'all' || statusCounts[f.key] > 0).map(f => (
+                      ] as const).filter(f => statusCounts[f.key] > 0).map(f => (
                         <button
                           key={f.key}
-                          onClick={() => setStatusFilter(f.key)}
+                          onClick={() => setStatusFilter(statusFilter === f.key ? 'all' : f.key)}
                           className={cn(
                             'shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border',
                             statusFilter === f.key
@@ -560,7 +559,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
                           )}
                         >
                           {f.label}
-                          {statusCounts[f.key] > 0 && <span className="ml-1 opacity-60">({statusCounts[f.key]})</span>}
+                          <span className="ml-1 opacity-60">({statusCounts[f.key]})</span>
                         </button>
                       ))}
                     </div>
