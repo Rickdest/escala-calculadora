@@ -154,7 +154,7 @@ function CampaignCard({ campaign, onRefresh, onSelect, isSelected, linkedProduct
             )}
           </div>
           <p className="text-[10px] text-muted-foreground font-mono">
-            Campanha #{campaign.campaign_id} · Item #{campaign.item_id} · {campaign.days_active} dias ativos
+            Item #{campaign.item_id}{(campaign as any).campaign_ids?.length > 1 ? ` · ${(campaign as any).campaign_ids.length} campanhas` : ` · Campanha #${campaign.campaign_id}`} · {campaign.days_active} dias ativos
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -228,7 +228,7 @@ function CampaignDetail({ campaign, onClose, onRefresh }: { campaign: CampaignAd
         <div>
           <p className="text-sm font-bold text-foreground">{campaign.item_name}</p>
           <p className="text-[10px] text-muted-foreground font-mono">
-            Campanha #{campaign.campaign_id} · Item #{campaign.item_id}
+            Item #{campaign.item_id}{(campaign as any).campaign_ids?.length > 1 ? ` · ${(campaign as any).campaign_ids.length} campanhas` : ` · Campanha #${campaign.campaign_id}`}
           </p>
         </div>
         <div className="flex items-center gap-1.5">
@@ -450,7 +450,7 @@ export function ApiAdsDashboard({ data, products = [], onRefreshProduct, onCampa
       {campaigns.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-bold text-foreground">Campanhas ({campaigns.length})</p>
+            <p className="text-sm font-bold text-foreground">Produtos ({campaigns.length})</p>
             <div className="flex items-center gap-1.5">
               <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" />
               <Select value={sortBy} onValueChange={setSortBy}>

@@ -29,16 +29,50 @@ export function useApiAdsData() {
 export function buildApiAdsDataFromRows(rows: any[]) {
   if (!rows || rows.length === 0) return null;
 
-  // Deduplicate by campaign_id, keep most recent updated_at
-  const deduped = new Map<string, any>();
+  // Aggregate by item_id to avoid showing the same product multiple times
+  const byItem = new Map<string, any>();
   for (const r of rows) {
-    const key = String(r.campaign_id ?? r.item_id ?? r.id);
-    const existing = deduped.get(key);
-    if (!existing || (r.updated_at || '') > (existing.updated_at || '')) {
-      deduped.set(key, r);
+    const key = String(r.item_id ?? r.campaign_id ?? r.id);
+    const existing = byItem.get(key);
+    if (!existing) {
+      byItem.set(key, { ...r, campaign_ids: [r.campaign_id] });
+    } else {
+      // Merge metrics: sum numerical fields
+      existing.impressions = (existing.impressions || 0) + (r.impressions || 0);
+      existing.clicks = (existing.clicks || 0) + (r.clicks || 0);
+      existing.expense = Number(existing.expense || 0) + Number(r.expense || 0);
+      existing.gmv = Number(existing.gmv || 0) + Number(r.gmv || 0);
+      existing.direct_gmv = Number(existing.direct_gmv || 0) + Number(r.direct_gmv || 0);
+      existing.orders = (existing.orders || 0) + (r.orders || 0);
+      existing.direct_orders = (existing.direct_orders || 0) + (r.direct_orders || 0);
+      existing.campaign_ids.push(r.campaign_id);
+      // Keep the most recent updated_at
+      if ((r.updated_at || '') > (existing.updated_at || '')) {
+        existing.updated_at = r.updated_at;
+        existing.item_name = r.item_name || existing.item_name;
+      }
+      // Keep best avg_position
+      if (r.avg_position && (!existing.avg_position || r.avg_position < existing.avg_position)) {
+        existing.avg_position = r.avg_position;
+      }
+      // Merge daily data
+      if (r.daily_data && Array.isArray(r.daily_data)) {
+        const existingDaily = existing.daily_data || [];
+        existing.daily_data = mergeDailyData(existingDaily, r.daily_data);
+      }
     }
   }
-  const uniqueRows = Array.from(deduped.values());
+
+  const uniqueRows = Array.from(byItem.values());
+
+  // Recalculate derived metrics after aggregation
+  for (const r of uniqueRows) {
+    r.roas = r.expense > 0 ? r.gmv / r.expense : 0;
+    r.direct_roas = r.expense > 0 ? (r.direct_gmv || 0) / r.expense : 0;
+    r.acos = r.gmv > 0 ? (r.expense / r.gmv) * 100 : 0;
+    r.ctr = r.impressions > 0 ? (r.clicks / r.impressions) * 100 : 0;
+    r.cost_per_order = r.orders > 0 ? r.expense / r.orders : 0;
+  }
 
   const totalExpense = uniqueRows.reduce((s, r) => s + Number(r.expense || 0), 0);
   const totalGmv = uniqueRows.reduce((s, r) => s + Number(r.gmv || 0), 0);
@@ -64,7 +98,8 @@ export function buildApiAdsDataFromRows(rows: any[]) {
     campaign_details: [],
     total_balance: null,
     ads_by_campaign: uniqueRows.map(r => ({
-      campaign_id: r.campaign_id,
+      campaign_id: r.campaign_ids?.[0] ?? r.campaign_id,
+      campaign_ids: r.campaign_ids || [r.campaign_id],
       item_id: r.item_id,
       item_name: r.item_name || `Item #${r.item_id}`,
       impressions: r.impressions || 0,
@@ -88,4 +123,24 @@ export function buildApiAdsDataFromRows(rows: any[]) {
     period_end: periodEnd,
     campaign_count: uniqueRows.length,
   };
+}
+
+/** Merge daily data arrays by date, summing metrics */
+function mergeDailyData(a: any[], b: any[]): any[] {
+  const map = new Map<string, any>();
+  for (const entry of [...a, ...b]) {
+    const date = entry.date || '';
+    const existing = map.get(date);
+    if (!existing) {
+      map.set(date, { ...entry });
+    } else {
+      existing.impressions = (existing.impressions || 0) + (entry.impressions || 0);
+      existing.clicks = (existing.clicks || 0) + (entry.clicks || 0);
+      existing.expense = (existing.expense || 0) + (entry.expense || 0);
+      existing.gmv = (existing.gmv || 0) + (entry.gmv || 0);
+      existing.orders = (existing.orders || 0) + (entry.orders || 0);
+      existing.roas = existing.expense > 0 ? existing.gmv / existing.expense : 0;
+    }
+  }
+  return Array.from(map.values()).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 }
