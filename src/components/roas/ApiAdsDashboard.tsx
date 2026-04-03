@@ -450,7 +450,7 @@ export function ApiAdsDashboard({ data, products = [], onRefreshProduct, onCampa
       {campaigns.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-bold text-foreground">Campanhas ({campaigns.length})</p>
+            <p className="text-sm font-bold text-foreground">Produtos ({campaigns.length})</p>
             <div className="flex items-center gap-1.5">
               <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" />
               <Select value={sortBy} onValueChange={setSortBy}>
