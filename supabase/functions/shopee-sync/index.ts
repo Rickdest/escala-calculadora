@@ -109,15 +109,26 @@ async function fetchProductsWithModels(
   }
 
   // Build enrichment map from product details
-  const enrichmentMap: Record<string, { image_url?: string; likes?: number; views?: number; sales?: number; item_status?: string }> = {};
+  const enrichmentMap: Record<string, any> = {};
   const detailItems = productDetails?.response?.item_list || [];
   for (const p of detailItems) {
+    const priceInfo = p.price_info || {};
+    const stockInfo = p.stock_info_v2?.summary_info || {};
     enrichmentMap[String(p.item_id)] = {
       image_url: p.image?.image_url_list?.[0] || undefined,
       likes: p.likes ?? 0,
       views: p.views ?? 0,
       sales: p.sale_info?.total_sales ?? p.sales ?? 0,
       item_status: p.item_status || undefined,
+      current_price: priceInfo.current_price ?? priceInfo.min_price ?? null,
+      min_price: priceInfo.min_price ?? null,
+      max_price: priceInfo.max_price ?? null,
+      stock_available: stockInfo.total_available_stock ?? null,
+      rating_star: p.rating_star ?? null,
+      comment_count: p.comment_count ?? 0,
+      category_id: p.category_id ?? null,
+      weight: p.weight ?? null,
+      days_to_ship: p.days_to_ship ?? null,
     };
   }
 
