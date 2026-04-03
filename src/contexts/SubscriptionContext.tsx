@@ -1,9 +1,8 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { checkSubscription } from '@/services/billing.service';
-import { toast } from 'sonner';
 
-type SubscriptionStatus = 'free' | 'active' | 'canceled' | 'past_due' | 'expired' | 'loading';
+type SubscriptionStatus = 'free' | 'active' | 'canceled' | 'past_due' | 'expired' | 'loading' | 'error';
 
 interface SubscriptionContextType {
   status: SubscriptionStatus;
@@ -21,7 +20,6 @@ const STATUS_MAP: Record<string, SubscriptionStatus> = {
   past_due: 'past_due',
   expired: 'expired',
   free: 'free',
-  // Map legacy trialing to expired
   trialing: 'expired',
 };
 
@@ -73,15 +71,18 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       setStatus(newStatus);
       setPlan(data.plan);
     } catch {
+      // Technical error — do NOT treat as expired
       if (lastKnownStatus.current?.userId === userId) {
+        // Use cached status from this same user
         setStatus(lastKnownStatus.current.status);
         setPlan(lastKnownStatus.current.plan);
-        toast.warning('Não foi possível verificar sua assinatura. Usando dados anteriores.');
-      } else if (retryCount < 1) {
-        await new Promise<void>((resolve) => setTimeout(resolve, 2000));
+      } else if (retryCount < 2) {
+        // Retry up to 2 times with increasing delay
+        await new Promise<void>((resolve) => setTimeout(resolve, 2000 * (retryCount + 1)));
         return await fetchSubscription(true, retryCount + 1);
       } else {
-        setStatus('expired');
+        // After all retries failed, set error state — NOT expired
+        setStatus('error');
         setPlan('free');
       }
     } finally {
