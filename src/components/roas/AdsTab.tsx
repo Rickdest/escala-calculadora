@@ -340,13 +340,35 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
     ];
   }, [apiEnriched, filtered]);
 
-  // Apply classification filter to merged list
+  // Status counts for filter chips
+  const statusCounts = useMemo(() => {
+    const ads = mergedAds.map(m => m.ad);
+    return {
+      all: ads.length,
+      active: ads.filter(a => a.status_anuncio === 'Ativo').length,
+      paused: ads.filter(a => a.status_anuncio === 'Pausado').length,
+      ended: ads.filter(a => a.status_anuncio === 'Encerrado' || !a.status_anuncio).length,
+    };
+  }, [mergedAds]);
+
+  // Apply classification + status filter to merged list
   const filteredMerged = useMemo(() => {
-    if (filter === 'all') return mergedAds;
-    if (filter === 'unlinked') return mergedAds.filter(({ ad }) => !ad.product_id);
-    if (filter === 'ABAIXO_EMPATE') return mergedAds.filter(({ ad }) => ad.classificacao === 'ABAIXO_EMPATE' || ad.classificacao === 'MARGEM_APERTADA');
-    return mergedAds.filter(({ ad }) => ad.classificacao === filter);
-  }, [mergedAds, filter]);
+    let result = mergedAds;
+    // Status filter
+    if (statusFilter !== 'all') {
+      result = result.filter(({ ad }) => {
+        if (statusFilter === 'active') return ad.status_anuncio === 'Ativo';
+        if (statusFilter === 'paused') return ad.status_anuncio === 'Pausado';
+        if (statusFilter === 'ended') return ad.status_anuncio === 'Encerrado' || !ad.status_anuncio;
+        return true;
+      });
+    }
+    // Classification filter
+    if (filter === 'unlinked') result = result.filter(({ ad }) => !ad.product_id);
+    else if (filter === 'ABAIXO_EMPATE') result = result.filter(({ ad }) => ad.classificacao === 'ABAIXO_EMPATE' || ad.classificacao === 'MARGEM_APERTADA');
+    else if (filter !== 'all') result = result.filter(({ ad }) => ad.classificacao === filter);
+    return result;
+  }, [mergedAds, filter, statusFilter]);
 
   // For FilterChips, use all merged ads
   const allAdsForChips = useMemo(() => mergedAds.map(m => m.ad), [mergedAds]);
