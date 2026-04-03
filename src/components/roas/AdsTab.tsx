@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 import { FilterType } from './adsHelpers';
 import { cn } from '@/lib/utils';
 import { SummaryCards } from './SummaryCards';
-import { FilterChips } from './FilterChips';
+
 import { AdsProductCard } from './AdsProductCard';
 import { AlertsSection } from './AlertsSection';
 import { Button } from '@/components/ui/button';
@@ -554,31 +554,66 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
               {/* ═══ Alerts ═══ */}
               <AlertsSection data={allAdsForChips} />
 
-              {/* ═══ Filters: Status + Classification ═══ */}
-              <div className="space-y-3">
-                {hasApiCampaigns && (
-                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-4">
-                    <p className="text-sm font-medium text-foreground shrink-0">Status do Anúncio</p>
-                    <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 md:mx-0 md:px-0">
-                      {STATUS_FILTER_OPTIONS.map(option => (
-                        <button
-                          key={option.key}
-                          onClick={() => setStatusFilter(option.key)}
-                          className={cn(
-                            'shrink-0 px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all border bg-card',
-                            statusFilter === option.key
-                              ? 'border-primary text-primary shadow-sm'
-                              : 'border-border text-foreground hover:border-foreground/30'
-                          )}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+              {/* ═══ Unified filter bar ═══ */}
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 md:mx-0 md:px-0">
+                {/* Status chips (only when API campaigns exist) */}
+                {hasApiCampaigns && STATUS_FILTER_OPTIONS.map(option => (
+                  <button
+                    key={`status-${option.key}`}
+                    onClick={() => setStatusFilter(option.key)}
+                    className={cn(
+                      'shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border',
+                      statusFilter === option.key
+                        ? 'border-primary text-primary bg-primary/5'
+                        : 'bg-card border-border text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
 
-                <FilterChips filter={filter} setFilter={setFilter} data={allAdsForChips} />
+                {/* Separator */}
+                {hasApiCampaigns && <div className="w-px h-5 bg-border shrink-0 mx-1" />}
+
+                {/* Classification chips (inline) */}
+                {(() => {
+                  const linked = allAdsForChips.filter(d => !!d.product_id);
+                  const unlinkedCount = allAdsForChips.filter(d => !d.product_id).length;
+                  const classFilters: Array<{ key: FilterType; label: string; dot: string | null; count: number }> = [
+                    { key: 'all', label: 'Todos', dot: null, count: allAdsForChips.length },
+                    { key: 'LUCRATIVO', label: 'Lucrativos', dot: 'bg-success', count: linked.filter(d => d.classificacao === 'LUCRATIVO').length },
+                    { key: 'ABAIXO_EMPATE', label: 'Atenção', dot: 'bg-warning', count: linked.filter(d => d.classificacao === 'ABAIXO_EMPATE' || d.classificacao === 'MARGEM_APERTADA').length },
+                    { key: 'PREJUIZO', label: 'Prejuízo', dot: 'bg-destructive', count: linked.filter(d => d.classificacao === 'PREJUIZO').length },
+                    { key: 'unlinked', label: 'Pendentes', dot: null, count: unlinkedCount },
+                  ];
+                  const visible = classFilters.filter(f => f.key === 'all' || f.count > 0);
+                  return visible.map(f => {
+                    const isActive = filter === f.key;
+                    const activeStyles: Record<string, string> = {
+                      all: 'bg-primary text-primary-foreground',
+                      LUCRATIVO: 'bg-success/15 text-success border-success/30',
+                      ABAIXO_EMPATE: 'bg-warning/15 text-warning border-warning/30',
+                      PREJUIZO: 'bg-destructive/15 text-destructive border-destructive/30',
+                      unlinked: 'bg-surface-2 text-foreground border-border',
+                    };
+                    return (
+                      <button
+                        key={`class-${f.key}`}
+                        onClick={() => setFilter(f.key)}
+                        className={cn(
+                          'shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border flex items-center gap-1.5',
+                          isActive
+                            ? activeStyles[f.key] || 'bg-primary text-primary-foreground'
+                            : 'bg-card border-border text-muted-foreground hover:text-foreground'
+                        )}
+                      >
+                        {f.dot && <span className={cn('w-2 h-2 rounded-full inline-block', f.dot)} />}
+                        {f.label}
+                        <span className="opacity-50">({f.count})</span>
+                      </button>
+                    );
+                  });
+                })()}
               </div>
 
               {/* ═══ Product list (unified) ═══ */}
