@@ -715,6 +715,7 @@ export type Database = {
           period_start: string
           roas: number | null
           shop_id: number
+          status: string | null
           updated_at: string | null
           user_id: string
         }
@@ -743,6 +744,7 @@ export type Database = {
           period_start: string
           roas?: number | null
           shop_id: number
+          status?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -771,6 +773,7 @@ export type Database = {
           period_start?: string
           roas?: number | null
           shop_id?: number
+          status?: string | null
           updated_at?: string | null
           user_id?: string
         }
