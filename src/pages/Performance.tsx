@@ -38,8 +38,25 @@ export default function Performance() {
   const navigate = useNavigate();
   const { isConnected, startOAuth, isLoading: tokenLoading } = useShopeeToken();
   const { data, syncedAt, loading, syncing, sync } = usePerformanceData();
+  const { data: adsRows } = useApiAdsData();
   const [connecting, setConnecting] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Build ads lookup by item_id
+  const adsLookup = useMemo(() => {
+    if (!adsRows) return {};
+    const map: Record<string, { expense: number; gmv: number; roas: number }> = {};
+    for (const r of adsRows as any[]) {
+      const key = String(r.item_id);
+      if (!map[key]) map[key] = { expense: 0, gmv: 0, roas: 0 };
+      map[key].expense += Number(r.expense || 0);
+      map[key].gmv += Number(r.gmv || 0);
+    }
+    for (const v of Object.values(map)) {
+      v.roas = v.expense > 0 ? v.gmv / v.expense : 0;
+    }
+    return map;
+  }, [adsRows]);
 
   const handleConnect = async () => {
     try {
