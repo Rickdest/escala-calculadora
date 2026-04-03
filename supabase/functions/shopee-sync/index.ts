@@ -79,10 +79,10 @@ async function fetchProductsWithModels(
       accessToken,
       shopId,
       {
-        item_id_list: itemIds.join(","),
+      item_id_list: itemIds.join(","),
         need_tax_info: "true",
         response_optional_fields:
-          "price_info,stock_info_v2,sale_info,item_status",
+          "price_info,stock_info_v2,sale_info,item_status,description,weight,dimension,rating_star,comment_count,category_id",
       }
     );
 
