@@ -154,7 +154,7 @@ function CampaignCard({ campaign, onRefresh, onSelect, isSelected, linkedProduct
             )}
           </div>
           <p className="text-[10px] text-muted-foreground font-mono">
-            Campanha #{campaign.campaign_id} · Item #{campaign.item_id} · {campaign.days_active} dias ativos
+            Item #{campaign.item_id}{(campaign as any).campaign_ids?.length > 1 ? ` · ${(campaign as any).campaign_ids.length} campanhas` : ` · Campanha #${campaign.campaign_id}`} · {campaign.days_active} dias ativos
           </p>
         </div>
         <div className="flex items-center gap-2">
