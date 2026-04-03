@@ -294,11 +294,7 @@ export default function Performance() {
 
                           <CollapsibleContent>
                             <div className="border-t border-border">
-                              <ProductExpandedDetail product={prod} totalRevenue={totalRevenueAll} totalQty={totalQtyAll} periodDays={periodDays} />
-                              <div className="px-3 pb-3">
-                                <Button variant="outline" size="sm" className="w-full h-8 text-xs gap-1.5" onClick={() => navigate(`/performance/${itemId}`)}>
-                                  <Eye className="w-3.5 h-3.5" /> Ver detalhes completos
-                                </Button>
+                              <ProductExpandedDetail product={prod} totalRevenue={totalRevenueAll} totalQty={totalQtyAll} periodDays={periodDays} itemId={itemId} />
                               </div>
                             </div>
                           </CollapsibleContent>
