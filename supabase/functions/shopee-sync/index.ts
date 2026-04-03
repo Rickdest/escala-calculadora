@@ -230,6 +230,7 @@ async function fetchOrdersWithAggregation(
       total_qty: number;
       total_revenue: number;
       variants: Record<string, { qty: number; revenue: number }>;
+      daily_sales: Record<string, number>;
     }
   > = {};
 
