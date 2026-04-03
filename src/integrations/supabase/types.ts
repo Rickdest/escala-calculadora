@@ -778,18 +778,21 @@ export type Database = {
       }
       shopee_auth_states: {
         Row: {
+          app_type: string
           created_at: string
           id: string
           state: string
           user_id: string
         }
         Insert: {
+          app_type?: string
           created_at?: string
           id?: string
           state: string
           user_id: string
         }
         Update: {
+          app_type?: string
           created_at?: string
           id?: string
           state?: string
@@ -800,6 +803,7 @@ export type Database = {
       shopee_tokens: {
         Row: {
           access_token: string
+          app_type: string
           created_at: string
           expire_in: number
           id: string
@@ -811,6 +815,7 @@ export type Database = {
         }
         Insert: {
           access_token: string
+          app_type?: string
           created_at?: string
           expire_in?: number
           id?: string
@@ -822,6 +827,7 @@ export type Database = {
         }
         Update: {
           access_token?: string
+          app_type?: string
           created_at?: string
           expire_in?: number
           id?: string
