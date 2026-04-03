@@ -14,7 +14,7 @@ function getPositionColor(pos: number) {
 }
 
 export function AdsProductCard({
-  ad, onClick, onLink, onQuickRegister, onUpdatePosition, onDelete,
+  ad, onClick, onLink, onQuickRegister, onUpdatePosition, onDelete, source,
 }: {
   ad: EnrichedAdsData;
   onClick: () => void;
@@ -22,6 +22,7 @@ export function AdsProductCard({
   onQuickRegister: () => void;
   onUpdatePosition: () => void;
   onDelete: () => void;
+  source?: 'csv' | 'api';
 }) {
   const periodLabel = (() => {
     const f = (d: string) => { const parts = d.split('-'); return `${parts[2]}/${parts[1]}`; };
