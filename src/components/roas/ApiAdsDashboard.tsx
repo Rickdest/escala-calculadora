@@ -1,11 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { fmt, fmtShort, getRoasColor } from './adsHelpers';
-import { DollarSign, TrendingUp, BarChart3, Eye, MousePointerClick, ShoppingCart, ArrowUpDown, RefreshCw, X, Link2, Clock, Search, Zap, ZapOff, Lightbulb } from 'lucide-react';
+import { DollarSign, TrendingUp, BarChart3, Eye, MousePointerClick, ShoppingCart, Clock, Zap, ZapOff, Lightbulb } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { getClassCor } from './adsHelpers';
-import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart } from 'recharts';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface Keyword { keyword: string; search_volume: number; suggested_bid: number; quality_score?: number; }
 interface HourlyEntry { hour: number; impressions: number; clicks: number; expense: number; gmv: number; orders?: number; }
@@ -32,21 +30,6 @@ function shortDate(d: string | null): string {
   if (parts.length === 3 && parts[0].length === 2) return `${parts[0]}/${parts[1]}`;
   if (parts.length === 3 && parts[0].length === 4) return `${parts[2]}/${parts[1]}`;
   return d;
-}
-
-function MiniSparkline({ data }: { data?: Array<{ roas: number }> }) {
-  if (!data || !Array.isArray(data)) return null;
-  const last7 = data.slice(-7);
-  if (last7.length < 2) return null;
-  return (
-    <div className="w-20 h-8">
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={last7}>
-          <Line type="monotone" dataKey="roas" stroke="hsl(var(--primary))" strokeWidth={1.5} dot={false} />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-  );
 }
 
 function HourlyHeatmap({ data }: { data: HourlyEntry[] }) {
@@ -93,221 +76,9 @@ function HourlyHeatmap({ data }: { data: HourlyEntry[] }) {
   );
 }
 
-function KeywordsList({ keywords }: { keywords: Keyword[] }) {
-  if (!keywords || keywords.length === 0) return null;
-  return (
-    <div className="mt-3">
-      <div className="flex items-center gap-2 mb-2">
-        <Search className="w-3.5 h-3.5 text-primary" />
-        <p className="text-xs font-bold text-foreground">Palavras-chave Recomendadas</p>
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5">
-        {keywords.map((kw, i) => (
-          <div key={i} className="flex items-center justify-between rounded-lg bg-secondary/50 px-2.5 py-1.5">
-            <span className="text-xs text-foreground truncate flex-1">{kw.keyword}</span>
-            <div className="flex items-center gap-2 shrink-0 ml-2">
-              {kw.search_volume > 0 && (
-                <span className="text-[10px] text-muted-foreground">{kw.search_volume.toLocaleString('pt-BR')} buscas</span>
-              )}
-              {kw.suggested_bid > 0 && (
-                <Badge variant="secondary" className="text-[9px] px-1.5 py-0">{fmt(kw.suggested_bid)}</Badge>
-              )}
-              {kw.quality_score != null && (
-                <Badge variant="outline" className="text-[9px] px-1 py-0">QS {kw.quality_score}</Badge>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+export function ApiAdsDashboard({ data, products = [] }: { data: ApiAdsData; products?: any[] }) {
+  const { summary, daily_entries = [], ads_by_campaign = [], total_balance, hourly_performance, recommended_items, shop_toggles } = data || {};
 
-function CampaignCard({ campaign, onRefresh, onSelect, isSelected, linkedProduct }: { campaign: CampaignAds; onRefresh?: (itemId: number) => void; onSelect: () => void; isSelected: boolean; linkedProduct?: any }) {
-  const profit = campaign.gmv - campaign.expense;
-  const roasColor = getRoasColor(campaign.roas);
-
-  return (
-    <div
-      onClick={onSelect}
-      className={cn(
-        "rounded-2xl border bg-card p-4 space-y-3 cursor-pointer transition-all",
-        isSelected ? "border-primary ring-1 ring-primary/30" : "border-border hover:border-primary/40"
-      )}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-bold text-foreground truncate">{campaign.item_name}</p>
-            <span className={cn('text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0',
-              campaign.status === 'active' ? 'text-success bg-success/10' :
-              campaign.status === 'paused' ? 'text-warning bg-warning/10' :
-              'text-muted-foreground bg-muted'
-            )}>
-              {campaign.status === 'active' ? 'Ativo' : campaign.status === 'paused' ? 'Pausado' : 'Encerrado'}
-            </span>
-            {linkedProduct && (
-              <Badge variant="secondary" className="text-[8px] px-1.5 py-0 gap-0.5 shrink-0 bg-primary/10 text-primary border-primary/20">
-                <Link2 className="w-2.5 h-2.5" />
-                Vinculado
-              </Badge>
-            )}
-          </div>
-          <p className="text-[10px] text-muted-foreground font-mono">
-            Item #{campaign.item_id}{(campaign as any).campaign_ids?.length > 1 ? ` · ${(campaign as any).campaign_ids.length} campanhas` : ` · Campanha #${campaign.campaign_id}`} · {campaign.days_active} dias ativos
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <MiniSparkline data={campaign.daily || (campaign as any).daily_data} />
-          {onRefresh && (
-            <button onClick={(e) => { e.stopPropagation(); onRefresh(campaign.item_id); }} className="p-1 rounded-lg hover:bg-secondary transition-colors" title="Atualizar">
-              <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="flex items-center gap-4">
-        <div>
-          <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">ROAS</p>
-          <p className={cn('text-2xl font-black font-mono tabular-nums', roasColor)}>{campaign.roas.toFixed(2)}</p>
-        </div>
-        <div>
-          <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">Gasto</p>
-          <p className="text-lg font-bold font-mono tabular-nums text-foreground">{fmt(campaign.expense)}</p>
-        </div>
-        <div className="ml-auto text-right">
-          <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold">Lucro Est.</p>
-          <p className={cn('text-lg font-bold font-mono tabular-nums', profit >= 0 ? 'text-success' : 'text-destructive')}>{fmt(profit)}</p>
-        </div>
-      </div>
-
-      {campaign.keywords && campaign.keywords.length > 0 && (
-        <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
-          <Search className="w-3 h-3" />
-          <span>{campaign.keywords.length} palavras-chave</span>
-        </div>
-      )}
-
-      <div className="grid grid-cols-3 gap-2">
-        {[
-          { label: 'Receita', value: fmt(campaign.gmv) },
-          { label: 'Pedidos', value: String(campaign.orders) },
-          { label: 'Cliques', value: campaign.clicks.toLocaleString('pt-BR') },
-        ].map(({ label, value }) => (
-          <div key={label} className="text-center py-1">
-            <p className="text-xs font-bold font-mono tabular-nums text-foreground">{value}</p>
-            <p className="text-[8px] text-muted-foreground uppercase tracking-wide">{label}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function CampaignDetail({ campaign, onClose, onRefresh }: { campaign: CampaignAds; onClose: () => void; onRefresh?: (itemId: number) => void }) {
-  const [refreshing, setRefreshing] = useState(false);
-  const chartData = useMemo(() =>
-    (campaign.daily || (campaign as any).daily_data || []).map((e: any) => ({
-      date: shortDate(e.date), Gasto: e.expense, Receita: e.gmv, ROAS: e.roas,
-    })), [campaign.daily, (campaign as any).daily_data]
-  );
-
-  const profit = campaign.gmv - campaign.expense;
-  const roasColor = getRoasColor(campaign.roas);
-
-  const handleRefresh = async () => {
-    if (!onRefresh) return;
-    setRefreshing(true);
-    try { await onRefresh(campaign.item_id); } finally { setRefreshing(false); }
-  };
-
-  return (
-    <div className="rounded-2xl border border-primary/30 bg-card p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-bold text-foreground">{campaign.item_name}</p>
-          <p className="text-[10px] text-muted-foreground font-mono">
-            Item #{campaign.item_id}{(campaign as any).campaign_ids?.length > 1 ? ` · ${(campaign as any).campaign_ids.length} campanhas` : ` · Campanha #${campaign.campaign_id}`}
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5">
-          {onRefresh && (
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors text-xs font-medium text-primary disabled:opacity-50"
-            >
-              <RefreshCw className={cn("w-3.5 h-3.5", refreshing && "animate-spin")} />
-              {refreshing ? 'Atualizando...' : 'Atualizar Dados'}
-            </button>
-          )}
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
-            <X className="w-4 h-4 text-muted-foreground" />
-          </button>
-        </div>
-      </div>
-
-      {/* Full metrics grid */}
-      <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
-        {[
-          { label: 'ROAS', value: campaign.roas.toFixed(2), color: roasColor },
-          { label: 'ROAS Direto', value: campaign.direct_roas.toFixed(2) },
-          { label: 'Gasto', value: fmt(campaign.expense) },
-          { label: 'Receita', value: fmt(campaign.gmv) },
-          { label: 'GMV Direto', value: fmt(campaign.direct_gmv) },
-          { label: 'Lucro Est.', value: fmt(profit), color: profit >= 0 ? 'text-success' : 'text-destructive' },
-          { label: 'Pedidos', value: String(campaign.orders) },
-          { label: 'Pedidos Diretos', value: String(campaign.direct_orders) },
-          { label: 'Cliques', value: campaign.clicks.toLocaleString('pt-BR') },
-          { label: 'Impressões', value: campaign.impressions.toLocaleString('pt-BR') },
-          { label: 'CTR', value: `${campaign.ctr.toFixed(2)}%` },
-          { label: 'ACOS', value: `${campaign.acos.toFixed(1)}%` },
-          { label: 'Custo/Pedido', value: campaign.orders > 0 ? fmt(campaign.cost_per_order) : '—' },
-          { label: 'Posição Média', value: campaign.avg_position != null ? campaign.avg_position.toFixed(1) : '—' },
-          { label: 'Dias Ativos', value: String(campaign.days_active) },
-          { label: 'Status', value: campaign.status === 'active' ? 'Ativo' : 'Encerrado' },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="text-center py-2 rounded-lg bg-secondary/50">
-            <p className={cn('text-sm font-bold font-mono tabular-nums', color || 'text-foreground')}>{value}</p>
-            <p className="text-[8px] text-muted-foreground uppercase tracking-wide">{label}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Keywords */}
-      <KeywordsList keywords={campaign.keywords || []} />
-
-      {/* Daily chart */}
-      {chartData.length > 1 && (
-        <div>
-          <p className="text-xs font-bold text-foreground mb-2">Performance Diária</p>
-          <div className="h-[200px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                <YAxis yAxisId="money" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v: number) => fmtShort(v)} />
-                <YAxis yAxisId="roas" orientation="right" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 12, fontSize: 12 }} formatter={(val: number, name: string) => [name === 'ROAS' ? val.toFixed(2) : fmt(val), name]} />
-                <Bar yAxisId="money" dataKey="Gasto" fill="hsl(var(--destructive) / 0.3)" radius={[4, 4, 0, 0]} />
-                <Bar yAxisId="money" dataKey="Receita" fill="hsl(var(--success) / 0.3)" radius={[4, 4, 0, 0]} />
-                <Line yAxisId="roas" type="monotone" dataKey="ROAS" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-export function ApiAdsDashboard({ data, products = [], onRefreshProduct, onCampaignSelect }: { data: ApiAdsData; products?: any[]; onRefreshProduct?: (itemId: number) => void; onCampaignSelect?: (campaign: CampaignAds) => void }) {
-  const { summary, daily_entries = [], campaign_details, ads_by_campaign = [], total_balance, hourly_performance, recommended_items, shop_toggles } = data || {};
-  // Support legacy ads_by_product field
-  const campaigns: CampaignAds[] = ads_by_campaign.length > 0 ? ads_by_campaign : ((data as any).ads_by_product || []);
-  const [sortBy, setSortBy] = useState<string>('roas');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'paused' | 'ended'>('all');
 
   const chartData = useMemo(() =>
     daily_entries.filter(e => e.date).sort((a, b) => (a.date || '').localeCompare(b.date || '')).map(e => ({
@@ -316,24 +87,8 @@ export function ApiAdsDashboard({ data, products = [], onRefreshProduct, onCampa
     })), [daily_entries]
   );
 
-  const statusCounts = useMemo(() => ({
-    all: campaigns.length,
-    active: campaigns.filter(c => c.status === 'active').length,
-    paused: campaigns.filter(c => c.status === 'paused').length,
-    ended: campaigns.filter(c => c.status === 'ended').length,
-  }), [campaigns]);
 
-  const sortedCampaigns = useMemo(() => {
-    let arr = [...campaigns];
-    if (statusFilter !== 'all') arr = arr.filter(c => c.status === statusFilter);
-    switch (sortBy) {
-      case 'roas': return arr.sort((a, b) => b.roas - a.roas);
-      case 'expense': return arr.sort((a, b) => b.expense - a.expense);
-      case 'gmv': return arr.sort((a, b) => b.gmv - a.gmv);
-      case 'position': return arr.sort((a, b) => (a.avg_position ?? 999) - (b.avg_position ?? 999));
-      default: return arr;
-    }
-  }, [campaigns, sortBy, statusFilter]);
+
 
   const balance = total_balance?.total_balance ?? total_balance?.balance ?? null;
 
@@ -451,72 +206,6 @@ export function ApiAdsDashboard({ data, products = [], onRefreshProduct, onCampa
                 <span className="text-[10px] text-muted-foreground font-mono shrink-0 ml-2">#{item.item_id}</span>
               </div>
             ))}
-          </div>
-        </div>
-      )}
-
-      {/* Campaigns list */}
-      {campaigns.length > 0 && (
-        <div className="space-y-3">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-sm font-bold text-foreground">Produtos ({sortedCampaigns.length})</p>
-              <div className="flex items-center gap-1.5">
-                <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" />
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="h-7 text-xs w-[100px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="roas">ROAS</SelectItem>
-                    <SelectItem value="expense">Gasto</SelectItem>
-                    <SelectItem value="gmv">GMV</SelectItem>
-                    <SelectItem value="position">Posição</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-              {([
-                { key: 'all' as const, label: 'Todos' },
-                { key: 'active' as const, label: 'Em andamento', dot: 'bg-success' },
-                { key: 'paused' as const, label: 'Pausado', dot: 'bg-warning' },
-                { key: 'ended' as const, label: 'Encerrado', dot: 'bg-muted-foreground' },
-              ] as const).filter(f => f.key === 'all' || statusCounts[f.key] > 0).map(f => (
-                <button
-                  key={f.key}
-                  onClick={() => setStatusFilter(f.key)}
-                  className={cn(
-                    'shrink-0 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border flex items-center gap-1.5',
-                    statusFilter === f.key
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-card border-border text-muted-foreground hover:text-foreground'
-                  )}
-                >
-                  {'dot' in f && f.dot && <span className={cn('w-2 h-2 rounded-full inline-block', f.dot)} />}
-                  {f.label}
-                  <span className="opacity-50">({statusCounts[f.key]})</span>
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {sortedCampaigns.map(c => {
-              const linked = products.find((p: any) =>
-                (p.shopeeItemId || p.shopee_item_id) && c.item_id &&
-                String(p.shopeeItemId || p.shopee_item_id) === String(c.item_id)
-              );
-              return (
-                <CampaignCard
-                  key={c.campaign_id}
-                  campaign={c}
-                  onRefresh={onRefreshProduct}
-                  onSelect={() => onCampaignSelect?.(c)}
-                  isSelected={false}
-                  linkedProduct={linked}
-                />
-              );
-            })}
           </div>
         </div>
       )}

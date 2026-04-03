@@ -318,7 +318,40 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
     });
   }, [periodFiltered, filter]);
 
+  // Convert API campaigns to EnrichedAdsData
+  const apiEnriched = useMemo(() => {
+    if (!effectiveApiData?.ads_by_campaign) return [];
+    return effectiveApiData.ads_by_campaign.map((c: any) => campaignToEnrichedAds(c));
+  }, [effectiveApiData, products]);
+
+  // Merge: API + CSV, dedup by shopee_product_id
+  const mergedAds = useMemo(() => {
+    if (!apiEnriched.length) return filtered.map(ad => ({ ad, source: 'csv' as const }));
+    if (!filtered.length) return apiEnriched.map((ad: EnrichedAdsData) => ({ ad, source: 'api' as const }));
+    
+    // API takes priority; CSV items not in API get tagged "CSV"
+    const apiItemIds = new Set(apiEnriched.map((a: EnrichedAdsData) => a.shopee_product_id).filter(Boolean));
+    const csvOnly = filtered.filter(d => !d.shopee_product_id || !apiItemIds.has(d.shopee_product_id));
+    
+    return [
+      ...apiEnriched.map((ad: EnrichedAdsData) => ({ ad, source: 'api' as const })),
+      ...csvOnly.map(ad => ({ ad, source: 'csv' as const })),
+    ];
+  }, [apiEnriched, filtered]);
+
+  // Apply classification filter to merged list
+  const filteredMerged = useMemo(() => {
+    if (filter === 'all') return mergedAds;
+    if (filter === 'unlinked') return mergedAds.filter(({ ad }) => !ad.product_id);
+    if (filter === 'ABAIXO_EMPATE') return mergedAds.filter(({ ad }) => ad.classificacao === 'ABAIXO_EMPATE' || ad.classificacao === 'MARGEM_APERTADA');
+    return mergedAds.filter(({ ad }) => ad.classificacao === filter);
+  }, [mergedAds, filter]);
+
+  // For FilterChips, use all merged ads
+  const allAdsForChips = useMemo(() => mergedAds.map(m => m.ad), [mergedAds]);
+
   const hasData = data.length > 0;
+  const hasApiCampaigns = apiEnriched.length > 0;
   const hasAnyContent = hasData || !!effectiveApiData;
 
   const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -398,7 +431,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
               />
             )}
 
-          {/* ═══ API Ads Dashboard ═══ */}
+          {/* ═══ API Ads Summary (KPIs + charts only) ═══ */}
           {effectiveApiData && (
             <>
               <AdsHeader
@@ -407,7 +440,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
                 onImportAds={handleImportAds}
                 syncing={syncing}
               />
-              <ApiAdsDashboard data={effectiveApiData} products={products} onRefreshProduct={handleRefreshProduct} onCampaignSelect={handleCampaignSelect} />
+              <ApiAdsDashboard data={effectiveApiData} products={products} />
             </>
           )}
 
@@ -421,10 +454,10 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
              />
           )}
 
-          {hasData && (
+          {(hasData || hasApiCampaigns) && (
             <>
-              {/* ═══ Period chips ═══ */}
-              {periods.length > 0 && (
+              {/* ═══ Period chips (CSV only) ═══ */}
+              {periods.length > 0 && !hasApiCampaigns && (
                 <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
                   <Calendar className="w-4 h-4 text-text-3 flex-shrink-0" />
                   <span className="text-xs font-medium text-text-3 flex-shrink-0">Período</span>
@@ -475,19 +508,18 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
                 </div>
               )}
 
-              {/* ═══ Summary ═══ */}
-              <SummaryCards data={periodFiltered} />
+              {/* ═══ Summary (CSV only, when no API) ═══ */}
+              {!hasApiCampaigns && <SummaryCards data={periodFiltered} />}
 
-              {/* ═══ Alerts (collapsible banner) ═══ */}
-              <AlertsSection data={periodFiltered} />
-
+              {/* ═══ Alerts ═══ */}
+              <AlertsSection data={allAdsForChips} />
 
               {/* ═══ Filters ═══ */}
-              <FilterChips filter={filter} setFilter={setFilter} data={periodFiltered} />
+              <FilterChips filter={filter} setFilter={setFilter} data={allAdsForChips} />
 
-              {/* ═══ Product list ═══ */}
+              {/* ═══ Product list (unified) ═══ */}
               <div className="flex items-center justify-between gap-2">
-                <h2 className="text-lg font-bold text-foreground">Anúncios</h2>
+                <h2 className="text-lg font-bold text-foreground">Anúncios ({filteredMerged.length})</h2>
                 <div className="flex items-center gap-2">
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
@@ -514,18 +546,19 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {filtered.map(ad => (
+                {filteredMerged.map(({ ad, source }) => (
                   <AdsProductCard
                     key={ad.id}
                     ad={ad}
+                    source={source}
                     onClick={() => setSelectedDetail(ad)}
-                    onLink={() => setLinkTarget(ad.id)}
-                    onQuickRegister={() => setQuickRegTarget(ad)}
-                    onUpdatePosition={() => { setPositionTarget(ad.id); positionFileRef.current?.click(); }}
-                    onDelete={() => deleteAdsData(ad.id)}
+                    onLink={() => { if (!ad.id.startsWith('api-campaign-')) setLinkTarget(ad.id); }}
+                    onQuickRegister={() => { if (!ad.id.startsWith('api-campaign-')) setQuickRegTarget(ad); }}
+                    onUpdatePosition={() => { if (!ad.id.startsWith('api-campaign-')) { setPositionTarget(ad.id); positionFileRef.current?.click(); } }}
+                    onDelete={() => { if (!ad.id.startsWith('api-campaign-')) deleteAdsData(ad.id); }}
                   />
                 ))}
-                {filtered.length === 0 && (
+                {filteredMerged.length === 0 && (
                   <p className="text-center text-sm text-text-2 py-6">Nenhum produto neste filtro</p>
                 )}
               </div>
