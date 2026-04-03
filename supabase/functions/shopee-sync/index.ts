@@ -332,11 +332,12 @@ Deno.serve(async (req) => {
 
     // 2. Products + Models
     try {
-      const { productList, productDetails, modelsMap } =
+      const { productList, productDetails, modelsMap, enrichmentMap } =
         await fetchProductsWithModels(currentAccessToken, shopId);
       results.product_list = productList;
       results.product_details = productDetails;
       results.product_models = modelsMap;
+      results.product_enrichment = enrichmentMap;
     } catch (e) {
       errors.product_list = (e as Error).message;
       console.error("[SHOPEE SYNC] Products error:", e);
