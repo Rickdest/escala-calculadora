@@ -537,7 +537,36 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
               {/* ═══ Alerts ═══ */}
               <AlertsSection data={allAdsForChips} />
 
-              {/* ═══ Filters ═══ */}
+              {/* ═══ Status Filter (Shopee-style) ═══ */}
+              {hasApiCampaigns && (
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium text-muted-foreground">Status do Anúncio</p>
+                  <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 md:mx-0 md:px-0">
+                    {([
+                      { key: 'all' as const, label: 'Tudo' },
+                      { key: 'active' as const, label: 'Em andamento' },
+                      { key: 'paused' as const, label: 'Pausado' },
+                      { key: 'ended' as const, label: 'Encerrado' },
+                    ] as const).filter(f => f.key === 'all' || statusCounts[f.key] > 0).map(f => (
+                      <button
+                        key={f.key}
+                        onClick={() => setStatusFilter(f.key)}
+                        className={cn(
+                          'shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border',
+                          statusFilter === f.key
+                            ? 'border-primary text-primary bg-primary/5'
+                            : 'border-border text-muted-foreground bg-card hover:text-foreground hover:border-foreground/30'
+                        )}
+                      >
+                        {f.label}
+                        {statusCounts[f.key] > 0 && <span className="ml-1 opacity-60">({statusCounts[f.key]})</span>}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ═══ Classification Filters ═══ */}
               <FilterChips filter={filter} setFilter={setFilter} data={allAdsForChips} />
 
               {/* ═══ Product list (unified) ═══ */}
