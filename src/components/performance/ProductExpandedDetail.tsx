@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
-import { Star } from 'lucide-react';
+import { Star, Package, MessageSquare, TrendingUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { Badge } from '@/components/ui/badge';
 
 interface ProductData {
   name: string;
@@ -8,6 +9,9 @@ interface ProductData {
   total_revenue: number;
   variants: Record<string, { qty: number; revenue: number }>;
   daily_sales?: Record<string, number>;
+  rating_star?: number | null;
+  stock_available?: number | null;
+  comment_count?: number;
 }
 
 interface Props {
@@ -16,6 +20,7 @@ interface Props {
   totalQty: number;
   periodDays: number;
   itemId: string;
+  adsData?: { expense: number; gmv: number; roas: number } | null;
 }
 
 function buildWeeklyData(dailySales?: Record<string, number>, totalQty?: number, periodDays?: number) {
@@ -29,7 +34,6 @@ function buildWeeklyData(dailySales?: Record<string, number>, totalQty?: number,
     }
     return weeks.slice(-8);
   }
-  // Fallback: simulate 8 weeks from total
   if (!totalQty || !periodDays) return [];
   const avgPerWeek = totalQty / (periodDays / 7);
   return Array.from({ length: 8 }, (_, i) => ({
@@ -38,14 +42,41 @@ function buildWeeklyData(dailySales?: Record<string, number>, totalQty?: number,
   }));
 }
 
-export function ProductExpandedDetail({ product, totalRevenue, totalQty, periodDays, itemId }: Props) {
+export function ProductExpandedDetail({ product, totalRevenue, totalQty, periodDays, itemId, adsData }: Props) {
   const navigate = useNavigate();
   const sortedVariants = Object.entries(product.variants).sort(([, a], [, b]) => b.qty - a.qty);
-  const weeklyData = buildWeeklyData((product as any).daily_sales, product.total_qty, periodDays);
-  const maxWeekly = Math.max(...weeklyData.map(w => w.value), 1);
+  const weeklyData = buildWeeklyData(product.daily_sales, product.total_qty, periodDays);
 
   return (
     <div className="px-4 pb-4 pt-3 space-y-4 animate-fade-up">
+      {/* Mini-badges row */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {product.rating_star != null && product.rating_star > 0 && (
+          <Badge variant="outline" className="gap-1 text-[10px] font-semibold">
+            <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+            {product.rating_star.toFixed(1)}
+          </Badge>
+        )}
+        {(product.comment_count ?? 0) > 0 && (
+          <Badge variant="outline" className="gap-1 text-[10px] font-semibold">
+            <MessageSquare className="w-3 h-3 text-muted-foreground" />
+            {product.comment_count} avaliações
+          </Badge>
+        )}
+        {product.stock_available != null && (
+          <Badge variant="outline" className={`gap-1 text-[10px] font-semibold ${product.stock_available < 10 ? 'border-destructive text-destructive' : ''}`}>
+            <Package className="w-3 h-3" />
+            {product.stock_available} em estoque
+          </Badge>
+        )}
+        {adsData && adsData.roas > 0 && (
+          <Badge variant="outline" className="gap-1 text-[10px] font-semibold border-primary text-primary">
+            <TrendingUp className="w-3 h-3" />
+            ROAS {adsData.roas.toFixed(1)}x
+          </Badge>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Weekly Chart */}
         {weeklyData.length > 0 && (

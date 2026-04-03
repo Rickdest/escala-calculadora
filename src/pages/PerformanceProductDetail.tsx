@@ -2,8 +2,10 @@ import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { usePerformanceData } from '@/hooks/usePerformanceData';
+import { useApiAdsData } from '@/hooks/useApiAdsData';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ExternalLink, Package, DollarSign, TrendingUp, BarChart3, Star } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, ExternalLink, Package, DollarSign, TrendingUp, BarChart3, Star, MessageSquare, Weight, Truck, Eye, Heart, ShoppingCart, Megaphone } from 'lucide-react';
 import { PageLoader } from '@/components/layout/PageStates';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
@@ -11,6 +13,7 @@ export default function PerformanceProductDetail() {
   const { itemId } = useParams<{ itemId: string }>();
   const navigate = useNavigate();
   const { data, loading } = usePerformanceData();
+  const { data: adsRows } = useApiAdsData();
   const [chartPeriod, setChartPeriod] = useState<'7d' | '30d' | '90d'>('30d');
 
   const product = !loading && itemId ? data?.product_sales?.[itemId] || null : null;
@@ -25,11 +28,50 @@ export default function PerformanceProductDetail() {
   const topVariant = sortedVariants[0] || null;
   const bottomVariant = sortedVariants.length > 1 ? sortedVariants[sortedVariants.length - 1] : null;
 
+  // Cross-reference Ads data
+  const adsForProduct = useMemo(() => {
+    if (!adsRows || !itemId) return null;
+    const matching = adsRows.filter((r: any) => String(r.item_id) === itemId);
+    if (matching.length === 0) return null;
+    return {
+      expense: matching.reduce((s: number, r: any) => s + Number(r.expense || 0), 0),
+      gmv: matching.reduce((s: number, r: any) => s + Number(r.gmv || 0), 0),
+      clicks: matching.reduce((s: number, r: any) => s + Number(r.clicks || 0), 0),
+      impressions: matching.reduce((s: number, r: any) => s + Number(r.impressions || 0), 0),
+      orders: matching.reduce((s: number, r: any) => s + Number(r.orders || 0), 0),
+      roas: 0,
+      ctr: 0,
+      cost_per_order: 0,
+      status: matching.find((r: any) => r.status === 'active')?.status || matching[0]?.status || 'ended',
+    };
+  }, [adsRows, itemId]);
+
+  if (adsForProduct) {
+    adsForProduct.roas = adsForProduct.expense > 0 ? adsForProduct.gmv / adsForProduct.expense : 0;
+    adsForProduct.ctr = adsForProduct.impressions > 0 ? (adsForProduct.clicks / adsForProduct.impressions) * 100 : 0;
+    adsForProduct.cost_per_order = adsForProduct.orders > 0 ? adsForProduct.expense / adsForProduct.orders : 0;
+  }
+
+  // Daily chart data (real or simulated)
   const dailyData = useMemo(() => {
     if (!product) return [];
     const days = chartPeriod === '7d' ? 7 : chartPeriod === '30d' ? 30 : 90;
-    const avgPerDay = product.total_qty / (periodDays || 90);
     const today = new Date();
+
+    if (product.daily_sales && Object.keys(product.daily_sales).length > 0) {
+      const cutoff = new Date(today);
+      cutoff.setDate(cutoff.getDate() - days);
+      const cutoffStr = cutoff.toISOString().slice(0, 10);
+      return Array.from({ length: days }, (_, i) => {
+        const d = new Date(today);
+        d.setDate(d.getDate() - (days - 1 - i));
+        const dateStr = d.toISOString().slice(0, 10);
+        const label = `${d.getDate()} ${d.toLocaleString('pt-BR', { month: 'short' }).replace('.', '')}`;
+        return { label, value: product.daily_sales![dateStr] || 0 };
+      });
+    }
+
+    const avgPerDay = product.total_qty / (periodDays || 90);
     return Array.from({ length: days }, (_, i) => {
       const d = new Date(today);
       d.setDate(d.getDate() - (days - 1 - i));
@@ -38,7 +80,10 @@ export default function PerformanceProductDetail() {
       const noise = 0.7 + Math.random() * 0.6;
       return { label, value: Math.max(0, Math.round(avgPerDay * trend * noise)) };
     });
-  }, [chartPeriod, product?.total_qty, periodDays]);
+  }, [chartPeriod, product, periodDays]);
+
+  const hasDailySalesReal = product?.daily_sales && Object.keys(product.daily_sales).length > 0;
+  const meta = product as any;
 
   if (loading) return <AppLayout><PageLoader /></AppLayout>;
 
@@ -64,6 +109,9 @@ export default function PerformanceProductDetail() {
             <Button variant="ghost" size="icon" onClick={() => navigate('/performance')} className="shrink-0 h-8 w-8">
               <ArrowLeft className="w-4 h-4" />
             </Button>
+            {meta.image_url && (
+              <img src={meta.image_url} alt="" className="w-10 h-10 rounded-lg object-cover border border-border shrink-0" />
+            )}
             <div className="min-w-0">
               <h1 className="text-base md:text-lg font-bold text-foreground truncate">{product.name}</h1>
               <p className="text-[10px] text-muted-foreground font-mono">ID: {itemId}</p>
@@ -76,6 +124,36 @@ export default function PerformanceProductDetail() {
           </Button>
         </div>
 
+        {/* Metadata Badges */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {meta.rating_star != null && meta.rating_star > 0 && (
+            <Badge variant="outline" className="gap-1 text-xs font-semibold">
+              <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+              {meta.rating_star.toFixed(1)}
+            </Badge>
+          )}
+          {(meta.comment_count ?? 0) > 0 && (
+            <Badge variant="outline" className="gap-1 text-xs font-semibold">
+              <MessageSquare className="w-3.5 h-3.5" /> {meta.comment_count} avaliações
+            </Badge>
+          )}
+          {(meta.likes ?? 0) > 0 && (
+            <Badge variant="outline" className="gap-1 text-xs font-semibold">
+              <Heart className="w-3.5 h-3.5 text-red-500" /> {meta.likes}
+            </Badge>
+          )}
+          {(meta.views ?? 0) > 0 && (
+            <Badge variant="outline" className="gap-1 text-xs font-semibold">
+              <Eye className="w-3.5 h-3.5" /> {meta.views} views
+            </Badge>
+          )}
+          {meta.item_status && (
+            <Badge variant={meta.item_status === 'NORMAL' ? 'default' : 'secondary'} className="text-xs">
+              {meta.item_status === 'NORMAL' ? 'Ativo' : meta.item_status}
+            </Badge>
+          )}
+        </div>
+
         {/* KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <KpiCard icon={<Package className="w-5 h-5" />} borderColor="border-t-primary" label="UNIDADES" value={String(product.total_qty)} sub={`${(pctQty || 0).toFixed(1)}% do total`} />
@@ -84,19 +162,80 @@ export default function PerformanceProductDetail() {
           <KpiCard icon={<BarChart3 className="w-5 h-5" />} borderColor="border-t-amber-500" label="UN/DIA" value={(unDia || 0).toFixed(1).replace('.', ',')} sub="média no período" />
         </div>
 
+        {/* Price & Stock & Logistics */}
+        {(meta.current_price || meta.stock_available != null || meta.weight) && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {meta.current_price && (
+              <div className="rounded-xl border border-border bg-card p-3">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Preço Atual</p>
+                <p className="text-lg font-bold text-foreground font-mono mt-1">R$ {Number(meta.current_price).toFixed(2)}</p>
+                {meta.min_price && meta.max_price && meta.min_price !== meta.max_price && (
+                  <p className="text-[10px] text-muted-foreground">R$ {Number(meta.min_price).toFixed(2)} ~ R$ {Number(meta.max_price).toFixed(2)}</p>
+                )}
+              </div>
+            )}
+            {meta.stock_available != null && (
+              <div className={`rounded-xl border bg-card p-3 ${meta.stock_available < 10 ? 'border-destructive' : 'border-border'}`}>
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Estoque Disponível</p>
+                <p className={`text-lg font-bold font-mono mt-1 ${meta.stock_available < 10 ? 'text-destructive' : 'text-foreground'}`}>{meta.stock_available} un</p>
+                {meta.stock_available < 10 && <p className="text-[10px] text-destructive font-semibold">⚠️ Estoque baixo!</p>}
+              </div>
+            )}
+            {meta.weight != null && meta.weight > 0 && (
+              <div className="rounded-xl border border-border bg-card p-3">
+                <div className="flex items-center gap-1 mb-1">
+                  <Weight className="w-3.5 h-3.5 text-muted-foreground" />
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Peso</p>
+                </div>
+                <p className="text-lg font-bold text-foreground font-mono">{(meta.weight / 1000).toFixed(2)} kg</p>
+              </div>
+            )}
+            {meta.days_to_ship != null && meta.days_to_ship > 0 && (
+              <div className="rounded-xl border border-border bg-card p-3">
+                <div className="flex items-center gap-1 mb-1">
+                  <Truck className="w-3.5 h-3.5 text-muted-foreground" />
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Prazo de Envio</p>
+                </div>
+                <p className="text-lg font-bold text-foreground font-mono">{meta.days_to_ship} dias</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Ads Section */}
+        {adsForProduct && (
+          <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="p-4 border-b border-border flex items-center gap-2">
+              <Megaphone className="w-4 h-4 text-primary" />
+              <p className="text-sm font-semibold text-foreground">Dados de Ads</p>
+              <Badge variant={adsForProduct.status === 'active' ? 'default' : 'secondary'} className="ml-auto text-[10px]">
+                {adsForProduct.status === 'active' ? 'Ativo' : adsForProduct.status === 'paused' ? 'Pausado' : 'Encerrado'}
+              </Badge>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-px bg-border">
+              <AdsMetric label="Gasto Total" value={`R$ ${adsForProduct.expense.toFixed(2)}`} />
+              <AdsMetric label="GMV de Ads" value={`R$ ${adsForProduct.gmv.toFixed(2)}`} />
+              <AdsMetric label="ROAS" value={`${adsForProduct.roas.toFixed(1)}x`} highlight={adsForProduct.roas >= 3} />
+              <AdsMetric label="CTR" value={`${adsForProduct.ctr.toFixed(2)}%`} />
+              <AdsMetric label="Custo/Pedido" value={adsForProduct.orders > 0 ? `R$ ${adsForProduct.cost_per_order.toFixed(2)}` : '—'} />
+            </div>
+          </div>
+        )}
+
         {/* Daily Sales Chart */}
         <div className="rounded-xl border border-border bg-card p-4">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-semibold text-foreground">Vendas diárias</p>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Vendas diárias</p>
+              {!hasDailySalesReal && <p className="text-[10px] text-muted-foreground">* dados estimados — sincronize novamente para dados reais</p>}
+            </div>
             <div className="flex border border-border rounded-lg overflow-hidden">
               {(['7d', '30d', '90d'] as const).map(p => (
                 <button
                   key={p}
                   onClick={() => setChartPeriod(p)}
                   className={`px-3 py-1 text-[11px] font-medium transition-colors ${
-                    chartPeriod === p
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:text-foreground'
+                    chartPeriod === p ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
                   {p}
@@ -140,8 +279,6 @@ export default function PerformanceProductDetail() {
             <div className="p-4 border-b border-border">
               <p className="text-sm font-semibold text-foreground">Variações ({sortedVariants.length})</p>
             </div>
-
-            {/* Desktop */}
             <div className="hidden md:block">
               <table className="w-full text-sm">
                 <thead>
@@ -164,9 +301,7 @@ export default function PerformanceProductDetail() {
                           {isTop ? <Star className="w-4 h-4 text-amber-500 inline" /> : <span className="text-muted-foreground text-xs">{i + 1}</span>}
                         </td>
                         <td className="px-4 py-3">
-                          <div className={`flex items-center gap-2 ${isTop ? 'border-l-2 border-amber-500 pl-2' : ''}`}>
-                            <span className="font-medium text-foreground">{varName}</span>
-                          </div>
+                          <span className="font-medium text-foreground">{varName}</span>
                         </td>
                         <td className="px-4 py-3 text-right font-mono font-semibold text-foreground">{v.qty} un</td>
                         <td className="px-4 py-3 text-right font-mono font-semibold text-primary">
@@ -184,8 +319,6 @@ export default function PerformanceProductDetail() {
                 </tbody>
               </table>
             </div>
-
-            {/* Mobile */}
             <div className="md:hidden divide-y divide-border">
               {sortedVariants.map(([varName, v], i) => {
                 const varPct = product.total_qty > 0 ? (v.qty / product.total_qty) * 100 : 0;
@@ -224,6 +357,9 @@ export default function PerformanceProductDetail() {
                 <strong>{((bottomVariant[1].qty / product.total_qty) * 100).toFixed(0)}%</strong> pode ser descontinuado para liberar estoque.
                 Considere dobrar o estoque da variação {topVariant[0]}.</>
               )}
+              {adsForProduct && adsForProduct.roas > 0 && (
+                <> O ROAS atual de <strong>{adsForProduct.roas.toFixed(1)}x</strong> {adsForProduct.roas >= 3 ? 'indica boa performance de Ads.' : 'pode ser otimizado — revise os lances.'}</>
+              )}
             </p>
           </div>
         )}
@@ -255,6 +391,15 @@ function ShareBar({ label, pct, color, textColor }: { label: string; pct: number
       <div className="h-2.5 bg-muted rounded-full overflow-hidden">
         <div className={`h-full ${color} rounded-full transition-all duration-500`} style={{ width: `${Math.min(pct, 100)}%` }} />
       </div>
+    </div>
+  );
+}
+
+function AdsMetric({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div className="bg-card p-3">
+      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</p>
+      <p className={`text-sm font-bold font-mono mt-0.5 ${highlight ? 'text-emerald-500' : 'text-foreground'}`}>{value}</p>
     </div>
   );
 }
