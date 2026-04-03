@@ -99,6 +99,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const [linkTarget, setLinkTarget] = useState<string | null>(null);
   const [quickRegTarget, setQuickRegTarget] = useState<EnrichedAdsData | null>(null);
   const [filter, setFilter] = useState<FilterType>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'paused' | 'ended'>('all');
   const [selectedPeriod, setSelectedPeriod] = useState<string>('all');
   const fileRef = useRef<HTMLInputElement>(null);
   const [positionTarget, setPositionTarget] = useState<string | undefined>();
