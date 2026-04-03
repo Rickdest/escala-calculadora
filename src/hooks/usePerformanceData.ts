@@ -10,6 +10,11 @@ export interface PerformanceData {
     total_qty: number;
     total_revenue: number;
     variants: Record<string, { qty: number; revenue: number }>;
+    image_url?: string;
+    likes?: number;
+    views?: number;
+    sales?: number;
+    item_status?: string;
   }>;
   summary: {
     total_orders: number;

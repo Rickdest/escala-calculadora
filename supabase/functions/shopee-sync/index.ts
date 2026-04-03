@@ -108,7 +108,20 @@ async function fetchProductsWithModels(
     }
   }
 
-  return { productList, productDetails, modelsMap };
+  // Build enrichment map from product details
+  const enrichmentMap: Record<string, { image_url?: string; likes?: number; views?: number; sales?: number; item_status?: string }> = {};
+  const detailItems = productDetails?.response?.item_list || [];
+  for (const p of detailItems) {
+    enrichmentMap[String(p.item_id)] = {
+      image_url: p.image?.image_url_list?.[0] || undefined,
+      likes: p.likes ?? 0,
+      views: p.views ?? 0,
+      sales: p.sale_info?.total_sales ?? p.sales ?? 0,
+      item_status: p.item_status || undefined,
+    };
+  }
+
+  return { productList, productDetails, modelsMap, enrichmentMap };
 }
 
 async function fetchOrdersWithAggregation(
@@ -319,11 +332,12 @@ Deno.serve(async (req) => {
 
     // 2. Products + Models
     try {
-      const { productList, productDetails, modelsMap } =
+      const { productList, productDetails, modelsMap, enrichmentMap } =
         await fetchProductsWithModels(currentAccessToken, shopId);
       results.product_list = productList;
       results.product_details = productDetails;
       results.product_models = modelsMap;
+      results.product_enrichment = enrichmentMap;
     } catch (e) {
       errors.product_list = (e as Error).message;
       console.error("[SHOPEE SYNC] Products error:", e);
@@ -341,10 +355,23 @@ Deno.serve(async (req) => {
       console.error("[SHOPEE SYNC] Orders error:", e);
     }
 
-    // 4. Persist performance data
+    // 4. Enrich product_sales with metadata and persist
     const orderPerf = results.order_performance as any;
     if (orderPerf) {
       try {
+        // Merge enrichment data into product_sales
+        const enrichment = (results.product_enrichment || {}) as Record<string, any>;
+        for (const [itemId, sale] of Object.entries(orderPerf.product_sales as Record<string, any>)) {
+          const meta = enrichment[itemId];
+          if (meta) {
+            sale.image_url = meta.image_url;
+            sale.likes = meta.likes;
+            sale.views = meta.views;
+            sale.sales = meta.sales;
+            sale.item_status = meta.item_status;
+          }
+        }
+
         const supabaseAdmin = createClient(
           Deno.env.get("SUPABASE_URL")!,
           Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
