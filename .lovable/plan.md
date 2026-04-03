@@ -1,28 +1,37 @@
 
 
-## Plano: Credenciais Duplas Shopee + Discovery Vendedor + ROAS Líquido
+## Plano: Corrigir Paywall (remover sidebar + proteger assinantes ativos)
 
-### Status: Fase 1 ✅ + Fase 2 ✅ implementadas
+### Problemas identificados
 
-### Implementado
+1. **Paywall mostra sidebar/navegação**: O `Paywall.tsx` usa `<AppLayout>` que renderiza sidebar e header — deveria ser uma página isolada sem navegação lateral
+2. **Assinante ativo vê paywall**: A rota `/paywall` não tem proteção — qualquer usuário (mesmo ativo) pode cair nela. Falta um guard que redirecione assinantes ativos de volta para `/`
+3. **Erro no catch do SubscriptionContext**: Quando a chamada `check-subscription` falha e não há cache, o status cai para `'expired'` — isso joga assinantes ativos no paywall por erro de rede
 
-#### Fase 1 — Credenciais Duplas
-- ✅ Secrets `SHOPEE_ADS_PARTNER_ID` e `SHOPEE_ADS_KEY` configurados
-- ✅ Migration: `app_type` em `shopee_tokens` e `shopee_auth_states`
-- ✅ `_shared/shopee.ts`: helpers parametrizáveis (`generateSignWith`, `shopeeGetWith`, `shopeePostWith`, `getAdsCredentials`, `getSellerCredentials`, `getCredentialsForAppType`)
-- ✅ `shopee-auth`: aceita `app_type` no body, usa credenciais correspondentes
-- ✅ `shopee-callback`: lê `app_type` do state, token exchange com credenciais certas, upsert com `app_type`
-- ✅ `shopee-ads`: usa `getAdsCredentials()` + `shopeeGetWith` em todas as chamadas, busca token `app_type='ads'` com fallback
-- ✅ `useShopeeToken`: aceita `appType`, novo hook `useShopeeTokenStatus` para status dual
-- ✅ `ShopeeIntegrationModal`: cards de conexão dupla (Loja + Ads), status independente
+### Alterações
 
-#### Fase 2 — Discovery Vendedor
-- ✅ Nova Edge Function `shopee-seller-discovery`: admin-only, 1s delay entre steps
-- ✅ Testa: order_list (page_size=1), order_detail, escrow_detail, item_extra_info, shop_performance, shop_penalty, product_comment
-- ✅ Cada step com try/catch individual, skip se sem dados
-- ✅ Botão discovery no modal (admin-only), mostra JSON dos resultados
+#### 1. `src/pages/Paywall.tsx` — remover AppLayout
+- Substituir `<AppLayout>` por um wrapper simples (`div` com fundo e centralização)
+- Página standalone, sem sidebar, sem header, sem navegação
+- Manter todo o conteúdo interno (toggle, preço, CTA, benefícios)
 
-### Pendente — Fase 3 (pós-discovery)
-- Migration: tabela `shopee_order_finances` + VIEW `shopee_finances_with_net`
-- Sync finanças paginado no `shopee-sync`
-- Dashboard ROAS bruto vs líquido com breakdown de taxas
+#### 2. `src/App.tsx` — proteger rota `/paywall`
+- Criar um `PaywallRoute` que:
+  - Se `status === 'active'` → redireciona para `/`
+  - Se `!user` → redireciona para `/auth`
+  - Se loading → mostra loader
+  - Caso contrário → renderiza Paywall
+- Aplicar na rota: `<Route path="/paywall" element={<PaywallRoute><Paywall /></PaywallRoute>} />`
+
+#### 3. `src/contexts/SubscriptionContext.tsx` — retry antes de expirar
+- No catch, se não há cache, fazer 1 retry antes de definir como `'expired'`
+- Isso evita que falha temporária de rede jogue assinante ativo no paywall
+
+### Arquivos alterados
+
+```text
+src/pages/Paywall.tsx              — remover AppLayout, página standalone
+src/App.tsx                        — PaywallRoute guard
+src/contexts/SubscriptionContext.tsx — retry no catch
+```
+
