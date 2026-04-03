@@ -318,7 +318,40 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
     });
   }, [periodFiltered, filter]);
 
+  // Convert API campaigns to EnrichedAdsData
+  const apiEnriched = useMemo(() => {
+    if (!effectiveApiData?.ads_by_campaign) return [];
+    return effectiveApiData.ads_by_campaign.map((c: any) => campaignToEnrichedAds(c));
+  }, [effectiveApiData, products]);
+
+  // Merge: API + CSV, dedup by shopee_product_id
+  const mergedAds = useMemo(() => {
+    if (!apiEnriched.length) return filtered.map(ad => ({ ad, source: 'csv' as const }));
+    if (!filtered.length) return apiEnriched.map((ad: EnrichedAdsData) => ({ ad, source: 'api' as const }));
+    
+    // API takes priority; CSV items not in API get tagged "CSV"
+    const apiItemIds = new Set(apiEnriched.map((a: EnrichedAdsData) => a.shopee_product_id).filter(Boolean));
+    const csvOnly = filtered.filter(d => !d.shopee_product_id || !apiItemIds.has(d.shopee_product_id));
+    
+    return [
+      ...apiEnriched.map((ad: EnrichedAdsData) => ({ ad, source: 'api' as const })),
+      ...csvOnly.map(ad => ({ ad, source: 'csv' as const })),
+    ];
+  }, [apiEnriched, filtered]);
+
+  // Apply classification filter to merged list
+  const filteredMerged = useMemo(() => {
+    if (filter === 'all') return mergedAds;
+    if (filter === 'unlinked') return mergedAds.filter(({ ad }) => !ad.product_id);
+    if (filter === 'ABAIXO_EMPATE') return mergedAds.filter(({ ad }) => ad.classificacao === 'ABAIXO_EMPATE' || ad.classificacao === 'MARGEM_APERTADA');
+    return mergedAds.filter(({ ad }) => ad.classificacao === filter);
+  }, [mergedAds, filter]);
+
+  // For FilterChips, use all merged ads
+  const allAdsForChips = useMemo(() => mergedAds.map(m => m.ad), [mergedAds]);
+
   const hasData = data.length > 0;
+  const hasApiCampaigns = apiEnriched.length > 0;
   const hasAnyContent = hasData || !!effectiveApiData;
 
   const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
