@@ -242,6 +242,12 @@ async function fetchOrdersWithAggregation(
     statusCounts[status] = (statusCounts[status] || 0) + 1;
     totalRevenue += Number(order.total_amount || 0);
 
+    // Extract date for daily_sales
+    const orderTimestamp = order.pay_time || order.create_time || 0;
+    const orderDate = orderTimestamp > 0
+      ? new Date(orderTimestamp * 1000).toISOString().slice(0, 10)
+      : null;
+
     const items = order.item_list || [];
     for (const item of items) {
       const itemId = String(item.item_id);
@@ -251,6 +257,7 @@ async function fetchOrdersWithAggregation(
           total_qty: 0,
           total_revenue: 0,
           variants: {},
+          daily_sales: {},
         };
       }
       const qty = item.model_quantity_purchased || 1;
@@ -259,6 +266,11 @@ async function fetchOrdersWithAggregation(
 
       productSales[itemId].total_qty += qty;
       productSales[itemId].total_revenue += rev;
+
+      // Aggregate daily sales
+      if (orderDate) {
+        productSales[itemId].daily_sales[orderDate] = (productSales[itemId].daily_sales[orderDate] || 0) + qty;
+      }
 
       const variantName = item.model_name || "Único";
       if (!productSales[itemId].variants[variantName]) {
