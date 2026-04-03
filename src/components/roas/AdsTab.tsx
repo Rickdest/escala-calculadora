@@ -454,10 +454,10 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
              />
           )}
 
-          {hasData && (
+          {(hasData || hasApiCampaigns) && (
             <>
-              {/* ═══ Period chips ═══ */}
-              {periods.length > 0 && (
+              {/* ═══ Period chips (CSV only) ═══ */}
+              {periods.length > 0 && !hasApiCampaigns && (
                 <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
                   <Calendar className="w-4 h-4 text-text-3 flex-shrink-0" />
                   <span className="text-xs font-medium text-text-3 flex-shrink-0">Período</span>
@@ -508,19 +508,18 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
                 </div>
               )}
 
-              {/* ═══ Summary ═══ */}
-              <SummaryCards data={periodFiltered} />
+              {/* ═══ Summary (CSV only, when no API) ═══ */}
+              {!hasApiCampaigns && <SummaryCards data={periodFiltered} />}
 
-              {/* ═══ Alerts (collapsible banner) ═══ */}
-              <AlertsSection data={periodFiltered} />
-
+              {/* ═══ Alerts ═══ */}
+              <AlertsSection data={allAdsForChips} />
 
               {/* ═══ Filters ═══ */}
-              <FilterChips filter={filter} setFilter={setFilter} data={periodFiltered} />
+              <FilterChips filter={filter} setFilter={setFilter} data={allAdsForChips} />
 
-              {/* ═══ Product list ═══ */}
+              {/* ═══ Product list (unified) ═══ */}
               <div className="flex items-center justify-between gap-2">
-                <h2 className="text-lg font-bold text-foreground">Anúncios</h2>
+                <h2 className="text-lg font-bold text-foreground">Anúncios ({filteredMerged.length})</h2>
                 <div className="flex items-center gap-2">
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
@@ -547,18 +546,19 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {filtered.map(ad => (
+                {filteredMerged.map(({ ad, source }) => (
                   <AdsProductCard
                     key={ad.id}
                     ad={ad}
+                    source={source}
                     onClick={() => setSelectedDetail(ad)}
-                    onLink={() => setLinkTarget(ad.id)}
-                    onQuickRegister={() => setQuickRegTarget(ad)}
-                    onUpdatePosition={() => { setPositionTarget(ad.id); positionFileRef.current?.click(); }}
-                    onDelete={() => deleteAdsData(ad.id)}
+                    onLink={() => { if (!ad.id.startsWith('api-campaign-')) setLinkTarget(ad.id); }}
+                    onQuickRegister={() => { if (!ad.id.startsWith('api-campaign-')) setQuickRegTarget(ad); }}
+                    onUpdatePosition={() => { if (!ad.id.startsWith('api-campaign-')) { setPositionTarget(ad.id); positionFileRef.current?.click(); } }}
+                    onDelete={() => { if (!ad.id.startsWith('api-campaign-')) deleteAdsData(ad.id); }}
                   />
                 ))}
-                {filtered.length === 0 && (
+                {filteredMerged.length === 0 && (
                   <p className="text-center text-sm text-text-2 py-6">Nenhum produto neste filtro</p>
                 )}
               </div>
