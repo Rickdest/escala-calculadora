@@ -166,11 +166,19 @@ export default function Paywall() {
         <button
           onClick={refreshSubscription}
           className="w-full text-center text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
-          style={{ fontSize: '13px', paddingBottom: '8px' }}
+          style={{ fontSize: '13px' }}
         >
           Já assinei → Verificar acesso
         </button>
+
+        <button
+          onClick={handleSignOut}
+          className="w-full text-center text-muted-foreground/60 hover:text-foreground transition-colors"
+          style={{ fontSize: '13px', paddingBottom: '8px' }}
+        >
+          Sair da conta
+        </button>
       </div>
-    </AppLayout>
+    </div>
   );
 }

@@ -33,7 +33,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const lastKnownStatus = useRef<{ status: SubscriptionStatus; plan: string } | null>(null);
   const hasResolved = useRef(false);
 
-  const fetchSubscription = useCallback(async (noCache = false) => {
+  const fetchSubscription = useCallback(async (noCache = false, retryCount = 0) => {
     if (authLoading) return;
     if (!user || !session?.access_token) {
       setStatus('free');
@@ -60,6 +60,10 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         setStatus(lastKnownStatus.current.status);
         setPlan(lastKnownStatus.current.plan);
         toast.warning('Não foi possível verificar sua assinatura. Usando dados anteriores.');
+      } else if (retryCount < 1) {
+        // Retry once before giving up to avoid false expired on network blips
+        await new Promise(r => setTimeout(r, 2000));
+        return fetchSubscription(true, retryCount + 1);
       } else {
         setStatus('expired');
         setPlan('free');
