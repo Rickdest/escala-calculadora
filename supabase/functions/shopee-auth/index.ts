@@ -4,6 +4,7 @@ import {
   errorResponse,
   jsonResponse,
   getAuthUrl,
+  getCredentialsForAppType,
 } from "../_shared/shopee.ts";
 
 Deno.serve(async (req) => {
@@ -31,12 +32,23 @@ Deno.serve(async (req) => {
       return errorResponse("Unauthorized", 401);
     }
 
+    // Read app_type from body (default: 'seller')
+    let appType = 'seller';
+    try {
+      if (req.method === "POST" || req.headers.get("content-type")?.includes("json")) {
+        const body = await req.json().catch(() => ({}));
+        if (body?.app_type === 'ads' || body?.app_type === 'seller') {
+          appType = body.app_type;
+        }
+      }
+    } catch { /* ignore */ }
+
     const appUrl = Deno.env.get("APP_URL");
     if (!appUrl) {
       return errorResponse("APP_URL not configured", 500);
     }
 
-    // Generate a state token and save it linked to this user
+    // Generate a state token and save it linked to this user + app_type
     const state = crypto.randomUUID();
 
     const supabaseAdmin = createClient(
@@ -46,16 +58,19 @@ Deno.serve(async (req) => {
 
     const { error: stateError } = await supabaseAdmin
       .from("shopee_auth_states")
-      .insert({ user_id: user.id, state });
+      .insert({ user_id: user.id, state, app_type: appType });
 
     if (stateError) {
       console.error("[SHOPEE AUTH] State insert error:", stateError);
       return errorResponse("Failed to create auth state", 500);
     }
 
-    // Use APP_URL domain so Shopee validates the registered domain
+    // Use credentials for the correct app type
+    const creds = getCredentialsForAppType(appType);
     const callbackWithState = `${appUrl}/shopee-callback?state=${state}`;
-    const authUrl = await getAuthUrl(callbackWithState);
+    const authUrl = await getAuthUrl(callbackWithState, creds.partnerId, creds.partnerKey);
+
+    console.log(`[SHOPEE AUTH] Generated auth URL for app_type=${appType}, partner_id=${creds.partnerId}`);
 
     return jsonResponse({ auth_url: authUrl });
   } catch (e) {

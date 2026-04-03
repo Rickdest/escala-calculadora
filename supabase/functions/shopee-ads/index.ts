@@ -1,11 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   SHOPEE_HOST,
-  PARTNER_ID,
   corsHeaders,
-  generateSign,
-  shopeeGet,
-  shopeePost,
+  getAdsCredentials,
+  generateSignWith,
+  shopeeGetWith,
   errorResponse,
   jsonResponse,
 } from "../_shared/shopee.ts";
@@ -59,7 +58,6 @@ function mapCampaignStatus(rawStatus: unknown): CampaignStatus {
 
 function extractCampaignSummaryMetrics(detail: any) {
   const perf = detail?.performance_info ?? detail?.performance ?? detail?.report_info ?? detail?.stats ?? detail?.data ?? null;
-
   const impressions = toFiniteNumber(perf?.impression, perf?.impressions, perf?.total_impression, perf?.total_impressions, detail?.impression, detail?.impressions, detail?.total_impression, detail?.total_impressions);
   const clicks = toFiniteNumber(perf?.click, perf?.clicks, perf?.total_click, perf?.total_clicks, detail?.click, detail?.clicks, detail?.total_click, detail?.total_clicks);
   const expense = toFiniteNumber(perf?.expense, perf?.cost, perf?.ad_spend, perf?.total_expense, perf?.total_cost, detail?.expense, detail?.cost, detail?.total_expense, detail?.total_cost);
@@ -73,9 +71,13 @@ function extractCampaignSummaryMetrics(detail: any) {
   })();
   const daysActive = toFiniteNumber(perf?.days_active, perf?.active_days, detail?.days_active, detail?.active_days);
   const hasData = [impressions, clicks, expense, gmv, directGmv, orders, directOrders].some((value) => value > 0);
-
   return { impressions, clicks, expense, gmv, direct_gmv: directGmv, orders, direct_orders: directOrders, avg_position: avgPosition, roas: expense > 0 ? gmv / expense : 0, direct_roas: expense > 0 ? directGmv / expense : 0, acos: gmv > 0 ? (expense / gmv) * 100 : 0, ctr: impressions > 0 ? (clicks / impressions) * 100 : 0, cost_per_order: orders > 0 ? expense / orders : 0, days_active: daysActive, hasData };
 }
+
+// Get ads credentials once at function level
+const adsCreds = getAdsCredentials();
+const adsGet = (path: string, accessToken: string, shopId: string | number, extra: Record<string, string> = {}) =>
+  shopeeGetWith(adsCreds.partnerId, adsCreds.partnerKey, path, accessToken, shopId, extra);
 
 async function refreshTokenIfNeeded(shopeeToken: any, _supabase: any) {
   const tokenAge = (Date.now() - new Date(shopeeToken.token_created_at).getTime()) / 1000;
@@ -84,13 +86,13 @@ async function refreshTokenIfNeeded(shopeeToken: any, _supabase: any) {
   console.log("[SHOPEE ADS] Token near expiry, refreshing...");
   const refreshPath = "/api/v2/auth/access_token/get";
   const timestamp = Math.floor(Date.now() / 1000);
-  const sign = await generateSign(refreshPath, timestamp);
-  const refreshUrl = `${SHOPEE_HOST}${refreshPath}?partner_id=${PARTNER_ID}&timestamp=${timestamp}&sign=${sign}`;
+  const sign = await generateSignWith(adsCreds.partnerId, adsCreds.partnerKey, refreshPath, timestamp);
+  const refreshUrl = `${SHOPEE_HOST}${refreshPath}?partner_id=${adsCreds.partnerId}&timestamp=${timestamp}&sign=${sign}`;
 
   const refreshRes = await fetch(refreshUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh_token: shopeeToken.refresh_token, shop_id: Number(shopeeToken.shop_id), partner_id: PARTNER_ID }),
+    body: JSON.stringify({ refresh_token: shopeeToken.refresh_token, shop_id: Number(shopeeToken.shop_id), partner_id: adsCreds.partnerId }),
   });
 
   const refreshData = await refreshRes.json();
@@ -105,12 +107,10 @@ async function refreshTokenIfNeeded(shopeeToken: any, _supabase: any) {
   return shopeeToken.access_token;
 }
 
-/** Helper: extract entries from a Shopee response */
 function extractEntries(res: any): any[] {
   const resp = res?.response;
   if (!resp) return [];
   if (Array.isArray(resp)) return resp;
-  // Handle campaign_list[].metrics_list format from GET endpoint
   if (resp?.campaign_list && Array.isArray(resp.campaign_list)) {
     const allMetrics: any[] = [];
     for (const c of resp.campaign_list) {
@@ -121,7 +121,6 @@ function extractEntries(res: any): any[] {
   return resp?.entry_list || resp?.data || [];
 }
 
-/** Build date chunks of MAX_CHUNK_DAYS. Returns ISO dates (YYYY-MM-DD) for internal use. */
 function buildDateChunks(startDateISO: string, endDateISO: string): Array<{ startISO: string; endISO: string; startAPI: string; endAPI: string }> {
   const chunks: Array<{ startISO: string; endISO: string; startAPI: string; endAPI: string }> = [];
   let cur = new Date(startDateISO + "T12:00:00Z");
@@ -131,40 +130,21 @@ function buildDateChunks(startDateISO: string, endDateISO: string): Array<{ star
     const actualEnd = chunkEnd > end ? end : chunkEnd;
     const sISO = cur.toISOString().substring(0, 10);
     const eISO = actualEnd.toISOString().substring(0, 10);
-    chunks.push({
-      startISO: sISO,
-      endISO: eISO,
-      startAPI: isoToDDMMYYYY(sISO),
-      endAPI: isoToDDMMYYYY(eISO),
-    });
+    chunks.push({ startISO: sISO, endISO: eISO, startAPI: isoToDDMMYYYY(sISO), endAPI: isoToDDMMYYYY(eISO) });
     cur = new Date(actualEnd.getTime() + 86400000);
   }
   return chunks;
 }
 
-/**
- * Fetch per-campaign performance with cascading strategies.
- * 1. GET with campaign_id_list (confirmed working)
- * 2. GET with campaign_id (singular fallback)
- * 3. GMS fallback endpoint
- */
 async function fetchCampaignDaily(
-  accessToken: string,
-  shopId: string | number,
-  campaignId: number,
-  startDateISO: string,
-  endDateISO: string,
-  isFirst: boolean,
+  accessToken: string, shopId: string | number, campaignId: number,
+  startDateISO: string, endDateISO: string, isFirst: boolean,
 ): Promise<any[]> {
   const dailyPath = "/api/v2/ads/get_product_campaign_daily_performance";
   const gmsPath = "/api/v2/ads/get_gms_campaign_performance";
   const chunks = buildDateChunks(startDateISO, endDateISO);
 
-  // Helper to try a strategy across all chunks
-  const tryStrategy = async (
-    label: string,
-    fn: (chunk: any) => Promise<any>,
-  ): Promise<any[]> => {
+  const tryStrategy = async (label: string, fn: (chunk: any) => Promise<any>): Promise<any[]> => {
     const allEntries: any[] = [];
     for (const chunk of chunks) {
       try {
@@ -172,37 +152,26 @@ async function fetchCampaignDaily(
         if (isFirst && chunks.indexOf(chunk) === 0) {
           console.log(`[SHOPEE ADS] [DEBUG] ${label} ${campaignId} (${chunk.startAPI}→${chunk.endAPI}): ${JSON.stringify(res).substring(0, 600)}`);
         }
-        if (res?.error) return []; // API error, try next strategy
+        if (res?.error) return [];
         const entries = extractEntries(res);
         if (entries.length > 0) allEntries.push(...entries);
-      } catch {
-        return []; // Exception, try next strategy
-      }
+      } catch { return []; }
     }
     return allEntries;
   };
 
-  // Strategy 1: GET with campaign_id_list (confirmed working)
   let entries = await tryStrategy("S1-GET-list", (chunk) =>
-    shopeeGet(dailyPath, accessToken, shopId, {
-      campaign_id_list: String(campaignId), start_date: chunk.startAPI, end_date: chunk.endAPI,
-    })
+    adsGet(dailyPath, accessToken, shopId, { campaign_id_list: String(campaignId), start_date: chunk.startAPI, end_date: chunk.endAPI })
   );
   if (entries.length > 0) return entries;
 
-  // Strategy 2: GET with campaign_id (singular fallback)
   entries = await tryStrategy("S2-GET-singular", (chunk) =>
-    shopeeGet(dailyPath, accessToken, shopId, {
-      campaign_id: String(campaignId), start_date: chunk.startAPI, end_date: chunk.endAPI,
-    })
+    adsGet(dailyPath, accessToken, shopId, { campaign_id: String(campaignId), start_date: chunk.startAPI, end_date: chunk.endAPI })
   );
   if (entries.length > 0) return entries;
 
-  // Strategy 3: GMS endpoint fallback
   entries = await tryStrategy("S3-GMS", (chunk) =>
-    shopeeGet(gmsPath, accessToken, shopId, {
-      campaign_id_list: String(campaignId), start_date: chunk.startAPI, end_date: chunk.endAPI,
-    })
+    adsGet(gmsPath, accessToken, shopId, { campaign_id_list: String(campaignId), start_date: chunk.startAPI, end_date: chunk.endAPI })
   );
   if (entries.length > 0) return entries;
 
@@ -213,10 +182,8 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
   const nowBR = new Date();
   const yesterdayBR = new Date(nowBR.getTime() - 24 * 60 * 60 * 1000);
   const startBR = new Date(nowBR.getTime() - ADS_LOOKBACK_DAYS * 24 * 60 * 60 * 1000);
-  // ISO dates for DB storage
   const startDateISO = toISODateBR(startBR);
   const endDateISO = toISODateBR(yesterdayBR);
-  // DD-MM-YYYY for Shopee API
   const startDateAPI = toDateStrBR(startBR);
   const endDateAPI = toDateStrBR(yesterdayBR);
 
@@ -224,7 +191,7 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
   let campaignIds: number[] = [];
   try {
     console.log("[SHOPEE ADS] === Step 1: get_product_level_campaign_id_list ===");
-    const res = await shopeeGet("/api/v2/ads/get_product_level_campaign_id_list", accessToken, shopId);
+    const res = await adsGet("/api/v2/ads/get_product_level_campaign_id_list", accessToken, shopId);
     console.log(`[SHOPEE ADS] [DEBUG] Step 1 raw: ${JSON.stringify(res).substring(0, 1200)}`);
     const arr = res?.response?.campaign_list;
     if (Array.isArray(arr)) campaignIds = arr.map((c: any) => c.campaign_id).filter(Boolean);
@@ -235,7 +202,7 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
     console.log(`[SHOPEE ADS] ${campaignIds.length} campaign IDs`);
   } catch (e) { console.error("[SHOPEE ADS] Step 1 error:", e); }
 
-  // Step 2: Campaign details → item_id map
+  // Step 2: Campaign details
   const campaignDetails: any[] = [];
   const campaignToItem = new Map<number, { item_id: number; ad_name: string; status: number | null }>();
 
@@ -244,7 +211,7 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
     for (let i = 0; i < campaignIds.length; i += 20) {
       const batch = campaignIds.slice(i, i + 20);
       try {
-        const res = await shopeeGet(
+        const res = await adsGet(
           "/api/v2/ads/get_product_level_campaign_setting_info",
           accessToken, shopId,
           { campaign_id_list: batch.join(","), info_type_list: "1,2" }
@@ -267,22 +234,21 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
       } catch (e) { console.error("[SHOPEE ADS] Step 2 batch error:", e); }
     }
     console.log(`[SHOPEE ADS] ${campaignDetails.length} campaign details, ${campaignToItem.size} with item_id`);
-    console.log(`[SHOPEE ADS] [DEBUG] statuses:`, JSON.stringify(campaignDetails.slice(0, 5).map(c => ({ id: c.campaign_id, status: c.status, raw: c.raw_status, hasData: c.summary_metrics?.hasData }))));
   }
 
-  // Step 3: Daily performance (shop-level) — chunked, DD-MM-YYYY for API
+  // Step 3: Daily performance (shop-level)
   let dailyEntries: any[] = [];
   const chunks = buildDateChunks(startDateISO, endDateISO);
   try {
     console.log(`[SHOPEE ADS] === Step 3: daily_performance ${startDateAPI} → ${endDateAPI} (${chunks.length} chunks) ===`);
     for (const chunk of chunks) {
-      const res = await shopeeGet(
+      const res = await adsGet(
         "/api/v2/ads/get_all_cpc_ads_daily_performance",
         accessToken, shopId,
         { start_date: chunk.startAPI, end_date: chunk.endAPI }
       );
       if (chunks.indexOf(chunk) === 0) {
-        console.log(`[SHOPEE ADS] [DEBUG] Step 3 chunk1 raw (${chunk.startAPI}→${chunk.endAPI}): ${JSON.stringify(res).substring(0, 1200)}`);
+        console.log(`[SHOPEE ADS] [DEBUG] Step 3 chunk1 raw: ${JSON.stringify(res).substring(0, 1200)}`);
       }
       const raw = extractEntries(res);
       for (const e of raw) {
@@ -290,10 +256,10 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
           date: e.date || null,
           impressions: Number(e.impression || e.impressions || 0),
           clicks: Number(e.click || e.clicks || 0),
-      expense: Number(e.expense || e.cost || 0),
-      gmv: Number(e.broad_gmv || e.broad_order_amount || e.gmv || 0),
-      orders: Number(e.broad_order || e.broad_order_num || e.orders || 0),
-      roas: Number(e.broad_roi || e.broad_roas || e.roas || 0),
+          expense: Number(e.expense || e.cost || 0),
+          gmv: Number(e.broad_gmv || e.broad_order_amount || e.gmv || 0),
+          orders: Number(e.broad_order || e.broad_order_num || e.orders || 0),
+          roas: Number(e.broad_roi || e.broad_roas || e.roas || 0),
         });
       }
     }
@@ -312,17 +278,14 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
   if (skippedOld > 0) console.log(`[SHOPEE ADS] Skipped ${skippedOld} old ended campaigns (id < 50M)`);
   console.log(`[SHOPEE ADS] === Step 4: per-campaign performance for ${campaignsForStep4.length} campaigns ===`);
 
-  // Initial delay to avoid rate limit from Steps 1-3
   await delay(500);
 
-  // Fetch first campaign serially for debug logs
   if (campaignsForStep4.length > 0) {
     const first = campaignsForStep4[0];
     const entries = await fetchCampaignDaily(accessToken, shopId, first.campaign_id, startDateISO, endDateISO, true);
     processCampaignEntries(first, entries, adsByCampaign, 1, campaignsForStep4.length);
   }
 
-  // Fetch remaining in batches of 3 with 2000ms delay
   for (let i = 1; i < campaignsForStep4.length; i += 3) {
     await delay(2000);
     const batch = campaignsForStep4.slice(i, i + 3);
@@ -335,7 +298,7 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
 
   console.log(`[SHOPEE ADS] ${adsByCampaign.length} campaigns with data out of ${campaignsForStep4.length}`);
 
-  // Step 5: Hourly performance for avg_position (active campaigns only)
+  // Step 5: Hourly performance for avg_position
   const activeCampaignsWithData = adsByCampaign.filter((c: any) => c.status === 'active' && c.expense > 0);
   if (activeCampaignsWithData.length > 0) {
     console.log(`[SHOPEE ADS] === Step 5: hourly performance for avg_position (${activeCampaignsWithData.length} active campaigns) ===`);
@@ -347,45 +310,33 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
       const batch = activeCampaignsWithData.slice(i, i + 3);
       const promises = batch.map(async (c: any, batchIdx: number) => {
         try {
-          const res = await shopeeGet(
+          const res = await adsGet(
             "/api/v2/ads/get_product_campaign_hourly_performance",
             accessToken, shopId,
-            {
-              campaign_id_list: String(c.campaign_id),
-              performance_date: isoToDDMMYYYY(endDateISO),
-            }
+            { campaign_id_list: String(c.campaign_id), performance_date: isoToDDMMYYYY(endDateISO) }
           );
-
-          // Log first campaign response for debug
           if (i === 0 && batchIdx === 0) {
             console.log('[SHOPEE ADS] hourly sample:', JSON.stringify(res).substring(0, 2000));
           }
-
-          // Try to extract avg_position from response
           const resp = res?.response;
           let avgPos: number | null = null;
-
-          // Check various possible response structures
           if (resp?.campaign_list && Array.isArray(resp.campaign_list)) {
             for (const camp of resp.campaign_list) {
-              const pos = Number(camp?.average_position || camp?.avg_position || camp?.position || camp?.ranking || 0);
+              const pos = Number(camp?.average_position || camp?.avg_position || 0);
               if (pos > 0) { avgPos = pos; break; }
-              // Check inside metrics_list
               if (Array.isArray(camp?.metrics_list)) {
                 let posSum = 0, posCount = 0;
                 for (const m of camp.metrics_list) {
-                  const mPos = Number(m?.average_position || m?.avg_position || m?.position || m?.ranking || 0);
+                  const mPos = Number(m?.average_position || m?.avg_position || 0);
                   if (mPos > 0) { posSum += mPos; posCount++; }
                 }
                 if (posCount > 0) { avgPos = Math.round((posSum / posCount) * 10) / 10; break; }
               }
             }
           } else if (resp) {
-            // Direct response fields
-            const pos = Number(resp.average_position || resp.avg_position || resp.position || resp.ranking || 0);
+            const pos = Number(resp.average_position || resp.avg_position || 0);
             if (pos > 0) avgPos = pos;
           }
-
           if (avgPos !== null && avgPos > 0) {
             c.avg_position = avgPos;
             hourlyFound++;
@@ -399,27 +350,22 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
     console.log(`[SHOPEE ADS] Step 5: found avg_position for ${hourlyFound}/${activeCampaignsWithData.length} campaigns`);
   }
 
-  // Step 6: Enrichment — keywords, hourly shop performance, recommended items, shop toggles
+  // Step 6: Enrichment
   let hourlyPerformance: any[] = [];
   let recommendedItems: any[] = [];
   let shopToggles: any = null;
 
   try {
-    console.log("[SHOPEE ADS] === Step 6: Enrichment (keywords, hourly, recommendations, toggles) ===");
-
-    // 6A: Recommended keywords for active campaigns (batch of 3, 2s delay)
+    console.log("[SHOPEE ADS] === Step 6: Enrichment ===");
     const activeCampaignsForKw = adsByCampaign.filter((c: any) => c.status === 'active' && c.item_id);
     if (activeCampaignsForKw.length > 0) {
-      console.log(`[SHOPEE ADS] Step 6A: keywords for ${activeCampaignsForKw.length} active campaigns`);
       for (let i = 0; i < activeCampaignsForKw.length; i += 3) {
         if (i > 0) await delay(2000);
         const batch = activeCampaignsForKw.slice(i, i + 3);
         const promises = batch.map(async (c: any, batchIdx: number) => {
           try {
-            const res = await shopeeGet("/api/v2/ads/get_recommended_keyword_list", accessToken, shopId, { item_id: String(c.item_id) });
-            if (i === 0 && batchIdx === 0) {
-              console.log(`[SHOPEE ADS] keywords sample: ${JSON.stringify(res).substring(0, 600)}`);
-            }
+            const res = await adsGet("/api/v2/ads/get_recommended_keyword_list", accessToken, shopId, { item_id: String(c.item_id) });
+            if (i === 0 && batchIdx === 0) console.log(`[SHOPEE ADS] keywords sample: ${JSON.stringify(res).substring(0, 600)}`);
             const kwList = res?.response?.keyword_list || res?.response?.data || [];
             if (Array.isArray(kwList) && kwList.length > 0) {
               c.keywords = kwList.slice(0, 10).map((kw: any) => ({
@@ -433,17 +379,11 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
         });
         await Promise.all(promises);
       }
-      const withKw = adsByCampaign.filter((c: any) => c.keywords?.length > 0).length;
-      console.log(`[SHOPEE ADS] Step 6A: ${withKw}/${activeCampaignsForKw.length} campaigns got keywords`);
     }
 
-    // 6B: Hourly shop performance (yesterday)
     await delay(500);
     try {
-      const res = await shopeeGet("/api/v2/ads/get_all_cpc_ads_hourly_performance", accessToken, shopId, {
-        performance_date: isoToDDMMYYYY(endDateISO),
-      });
-      console.log(`[SHOPEE ADS] Step 6B hourly shop: ${JSON.stringify(res).substring(0, 600)}`);
+      const res = await adsGet("/api/v2/ads/get_all_cpc_ads_hourly_performance", accessToken, shopId, { performance_date: isoToDDMMYYYY(endDateISO) });
       const entries = extractEntries(res);
       if (entries.length > 0) {
         hourlyPerformance = entries.map((e: any) => ({
@@ -455,13 +395,11 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
           orders: Number(e.broad_order || e.orders || 0),
         }));
       }
-    } catch (e) { console.error("[SHOPEE ADS] Step 6B hourly error:", e); }
+    } catch (e) { console.error("[SHOPEE ADS] hourly error:", e); }
 
-    // 6C: Recommended items for Ads
     await delay(500);
     try {
-      const res = await shopeeGet("/api/v2/ads/get_recommended_item_list", accessToken, shopId);
-      console.log(`[SHOPEE ADS] Step 6C recommended items: ${JSON.stringify(res).substring(0, 600)}`);
+      const res = await adsGet("/api/v2/ads/get_recommended_item_list", accessToken, shopId);
       const items = res?.response?.item_list || res?.response?.data || [];
       if (Array.isArray(items)) {
         recommendedItems = items.slice(0, 10).map((it: any) => ({
@@ -469,13 +407,11 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
           item_name: it.item_name || it.name || `Item #${it.item_id}`,
         }));
       }
-    } catch (e) { console.error("[SHOPEE ADS] Step 6C recommended items error:", e); }
+    } catch (e) { console.error("[SHOPEE ADS] recommended items error:", e); }
 
-    // 6D: Shop toggle info
     await delay(500);
     try {
-      const res = await shopeeGet("/api/v2/ads/get_shop_toggle_info", accessToken, shopId);
-      console.log(`[SHOPEE ADS] Step 6D shop toggles: ${JSON.stringify(res).substring(0, 400)}`);
+      const res = await adsGet("/api/v2/ads/get_shop_toggle_info", accessToken, shopId);
       const resp = res?.response;
       if (resp) {
         shopToggles = {
@@ -483,19 +419,17 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
           campaign_surge: resp.campaign_surge ?? resp.surge ?? false,
         };
       }
-    } catch (e) { console.error("[SHOPEE ADS] Step 6D toggle error:", e); }
-
-    console.log(`[SHOPEE ADS] Step 6 done: hourly=${hourlyPerformance.length} recommended=${recommendedItems.length} toggles=${!!shopToggles}`);
+    } catch (e) { console.error("[SHOPEE ADS] toggle error:", e); }
   } catch (e) { console.error("[SHOPEE ADS] Step 6 error:", e); }
 
   // Step 7: Balance
   let totalBalance: any = null;
   try {
-    const res = await shopeeGet("/api/v2/ads/get_total_balance", accessToken, shopId);
+    const res = await adsGet("/api/v2/ads/get_total_balance", accessToken, shopId);
     totalBalance = res?.response || null;
   } catch (e) { console.error("[SHOPEE ADS] Balance error:", e); }
 
-  // Aggregate summary from daily entries OR from campaign summaries if daily is empty
+  // Summary
   const summary = {
     total_impressions: 0, total_clicks: 0, total_expense: 0,
     total_gmv: 0, total_orders: 0, roas_geral: 0, ctr: 0, days: dailyEntries.length,
@@ -549,7 +483,6 @@ function processCampaignEntries(campaign: any, entries: any[], result: any[], id
     const dgm = Number(e.direct_gmv || e.direct_order_amount || 0);
     const ord = Number(e.broad_order || e.broad_order_num || e.orders || 0);
     const dord = Number(e.direct_order || e.direct_order_num || e.direct_orders || 0);
-    const apiBroadRoi = Number(e.broad_roi || 0);
     const pos = Number(e.average_position || e.avg_position || 0);
 
     totImp += imp; totClk += clk; totExp += exp; totGmv += gm; totDgmv += dgm; totOrd += ord; totDord += dord;
@@ -603,7 +536,12 @@ Deno.serve(async (req) => {
     if (claimsError || !claimsData?.claims) return errorResponse("Unauthorized", 401);
     const user = { id: claimsData.claims.sub as string };
 
-    const { data: tokens } = await supabase.from("shopee_tokens").select("*").eq("user_id", user.id).limit(1);
+    // Try to find ads-specific token first, fallback to any token
+    let { data: tokens } = await supabase.from("shopee_tokens").select("*").eq("user_id", user.id).eq("app_type", "ads").limit(1);
+    if (!tokens || tokens.length === 0) {
+      const fallback = await supabase.from("shopee_tokens").select("*").eq("user_id", user.id).limit(1);
+      tokens = fallback.data;
+    }
     if (!tokens || tokens.length === 0) return errorResponse("No Shopee token found. Connect your shop first.");
 
     const shopeeToken = tokens[0];
@@ -619,11 +557,10 @@ Deno.serve(async (req) => {
 
     const adsPerformance = await fetchAdsPerformance(currentAccessToken, shopeeToken.shop_id, filterItemId);
 
-    // Upsert ads_by_campaign to database (uses ISO dates for period_start/end)
+    // Upsert ads_by_campaign to database
     if (adsPerformance.ads_by_campaign.length > 0) {
       const supabaseAdmin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-      // Clean old period data to avoid duplicates across different import windows
       if (!filterItemId) {
         await supabaseAdmin
           .from("shopee_ads_by_product")

@@ -3,8 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingBag, Zap, RefreshCw, FileX, Loader2, CheckCircle2, Package, ShoppingCart, ChevronDown, ChevronUp, AlertTriangle, TrendingUp, BarChart3 } from 'lucide-react';
-import { useShopeeToken } from '@/hooks/useShopeeToken';
+import { ShoppingBag, Zap, RefreshCw, FileX, Loader2, CheckCircle2, Package, ShoppingCart, ChevronDown, ChevronUp, AlertTriangle, TrendingUp, BarChart3, Search } from 'lucide-react';
+import { useShopeeToken, useShopeeTokenStatus } from '@/hooks/useShopeeToken';
+import { useAdmin } from '@/hooks/useAdmin';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const benefits = [
@@ -193,7 +195,6 @@ function PerformanceReport({ data }: { data: SyncReport['order_performance'] }) 
 
   return (
     <div className="space-y-4">
-      {/* Summary Cards */}
       <div className="grid grid-cols-3 gap-2">
         <div className="rounded-lg bg-surface-2 p-2.5 text-center">
           <p className="text-[10px] text-muted-foreground">Pedidos (90d)</p>
@@ -213,7 +214,6 @@ function PerformanceReport({ data }: { data: SyncReport['order_performance'] }) 
         </div>
       </div>
 
-      {/* Status Breakdown */}
       {Object.keys(summary.status_counts).length > 0 && (
         <div>
           <p className="text-xs font-semibold text-foreground mb-1.5">Pedidos por Status</p>
@@ -229,7 +229,6 @@ function PerformanceReport({ data }: { data: SyncReport['order_performance'] }) 
         </div>
       )}
 
-      {/* Product Ranking */}
       {sortedProducts.length > 0 ? (
         <div>
           <p className="text-xs font-semibold text-foreground mb-1.5">🏆 Ranking de Produtos</p>
@@ -280,20 +279,64 @@ function PerformanceReport({ data }: { data: SyncReport['order_performance'] }) 
   );
 }
 
+function ConnectionCard({
+  title,
+  description,
+  icon: Icon,
+  isConnected,
+  isLoading,
+  onConnect,
+}: {
+  title: string;
+  description: string;
+  icon: any;
+  isConnected: boolean;
+  isLoading: boolean;
+  onConnect: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-surface-2/30">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="w-8 h-8 rounded-lg bg-[#EE4D2D]/10 flex items-center justify-center flex-shrink-0">
+          <Icon className="w-4 h-4 text-[#EE4D2D]" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-foreground">{title}</p>
+          <p className="text-[10px] text-muted-foreground">{description}</p>
+        </div>
+      </div>
+      {isConnected ? (
+        <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-[10px] flex-shrink-0">
+          <CheckCircle2 className="w-3 h-3 mr-1" />
+          Conectado
+        </Badge>
+      ) : (
+        <Button size="sm" variant="outline" onClick={onConnect} disabled={isLoading} className="flex-shrink-0 text-xs">
+          {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Conectar'}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { isConnected, startOAuth, syncStoreData, isLoading: tokenLoading } = useShopeeToken();
+  const { sellerConnected, adsConnected, startOAuth, syncStoreData, isLoading: tokenLoading, refetchAll } = useShopeeTokenStatus();
+  const isConnected = sellerConnected || adsConnected;
   const [syncing, setSyncing] = useState(false);
-  const [connecting, setConnecting] = useState(false);
+  const [connecting, setConnecting] = useState<string | null>(null);
   const [report, setReport] = useState<SyncReport | null>(null);
   const [syncErrors, setSyncErrors] = useState<Record<string, string> | null>(null);
+  const { isAdmin } = useAdmin();
+  const [discoveryRunning, setDiscoveryRunning] = useState(false);
+  const [discoveryResults, setDiscoveryResults] = useState<any>(null);
 
-  const handleConnect = async () => {
+  const handleConnect = async (appType: 'seller' | 'ads') => {
     try {
-      setConnecting(true);
-      await startOAuth();
-    } catch (e) {
+      setConnecting(appType);
+      await startOAuth(appType);
+    } catch {
       toast.error('Erro ao iniciar conexão com Shopee');
-      setConnecting(false);
+      setConnecting(null);
     }
   };
 
@@ -303,14 +346,34 @@ export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClo
       setReport(null);
       setSyncErrors(null);
       const result = await syncStoreData();
-      console.log('Shopee sync full result:', result);
       if (result?.results) setReport(result.results);
       if (result?.errors) setSyncErrors(result.errors);
       toast.success('Sincronização concluída!');
-    } catch (e) {
+    } catch {
       toast.error('Erro ao sincronizar dados');
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleDiscovery = async () => {
+    try {
+      setDiscoveryRunning(true);
+      setDiscoveryResults(null);
+      const { data: session } = await supabase.auth.getSession();
+      const res = await supabase.functions.invoke('shopee-seller-discovery', {
+        headers: { Authorization: `Bearer ${session.session?.access_token}` },
+      });
+      if (res.error) {
+        toast.error(res.error.message || 'Erro no discovery');
+      } else {
+        setDiscoveryResults(res.data?.discovery_results || res.data);
+        toast.success('Discovery concluído!');
+      }
+    } catch {
+      toast.error('Erro ao executar discovery');
+    } finally {
+      setDiscoveryRunning(false);
     }
   };
 
@@ -318,7 +381,7 @@ export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClo
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className={report ? "max-w-lg max-h-[85vh] overflow-y-auto" : "max-w-sm"}>
+      <DialogContent className={report || discoveryResults ? "max-w-lg max-h-[85vh] overflow-y-auto" : "max-w-sm"}>
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#EE4D2D]/10 flex items-center justify-center">
@@ -329,32 +392,51 @@ export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClo
               <DialogDescription className="sr-only">
                 Conecte sua loja Shopee para sincronizar dados automaticamente
               </DialogDescription>
-              {isConnected ? (
-                <Badge className="mt-1 bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-[10px]">
-                  Conectada
-                </Badge>
-              ) : (
-                <Badge className="mt-1 bg-primary/15 text-primary border-primary/30 text-[10px]">
-                  Disponível
-                </Badge>
-              )}
             </div>
           </div>
         </DialogHeader>
 
-        {isConnected ? (
+        {/* Dual connection cards */}
+        <div className="space-y-2">
+          <ConnectionCard
+            title="📦 Dados da Loja"
+            description="Produtos, pedidos, finanças"
+            icon={Package}
+            isConnected={sellerConnected}
+            isLoading={connecting === 'seller' || tokenLoading}
+            onConnect={() => handleConnect('seller')}
+          />
+          <ConnectionCard
+            title="📊 Dados de Ads"
+            description="Campanhas, ROAS, keywords"
+            icon={BarChart3}
+            isConnected={adsConnected}
+            isLoading={connecting === 'ads' || tokenLoading}
+            onConnect={() => handleConnect('ads')}
+          />
+          {sellerConnected && adsConnected && (
+            <p className="text-[10px] text-emerald-600 text-center">
+              ✨ Ambos conectados — ROAS líquido real disponível em breve
+            </p>
+          )}
+          {(sellerConnected || adsConnected) && !(sellerConnected && adsConnected) && (
+            <p className="text-[10px] text-muted-foreground text-center">
+              💡 Conecte os dois para ver o ROAS líquido real
+            </p>
+          )}
+        </div>
+
+        {isConnected && (
           <div className="space-y-3">
-            <div className="flex items-center gap-2 text-sm text-emerald-600">
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Loja conectada com sucesso!</span>
-            </div>
-            <Button onClick={handleSync} disabled={syncing} className="w-full">
-              {syncing ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sincronizando...</>
-              ) : (
-                <><RefreshCw className="w-4 h-4 mr-2" /> {report ? 'Sincronizar Novamente' : 'Sincronizar e Ver Relatório'}</>
-              )}
-            </Button>
+            {sellerConnected && (
+              <Button onClick={handleSync} disabled={syncing} className="w-full" variant="outline">
+                {syncing ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sincronizando...</>
+                ) : (
+                  <><RefreshCw className="w-4 h-4 mr-2" /> {report ? 'Sincronizar Novamente' : 'Sincronizar Dados da Loja'}</>
+                )}
+              </Button>
+            )}
 
             {report && (
               <Tabs defaultValue={hasPerformance ? "performance" : "data"} className="w-full">
@@ -379,15 +461,6 @@ export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClo
                       <OrderReport listData={report.order_list} detailsData={report.order_details} />
                     </ReportSection>
                   )}
-                  <div className="rounded-lg border border-border bg-muted/30 p-2.5 flex items-start gap-2">
-                    <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-xs font-semibold text-foreground">Dados de Ads (ROAS, ACOS, gastos)</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">
-                        Métricas de anúncios não estão disponíveis via API para este app. Continue importando via CSV na aba de Ads.
-                      </p>
-                    </div>
-                  </div>
                 </TabsContent>
 
                 <TabsContent value="performance" className="mt-2">
@@ -405,35 +478,31 @@ export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClo
               </div>
             )}
 
-            <Button variant="outline" onClick={onClose} className="w-full">
-              Fechar
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Conecte sua loja Shopee para sincronizar dados de anúncios automaticamente.
-            </p>
-            <div className="space-y-2.5">
-              {benefits.map(({ icon: Icon, text }) => (
-                <div key={text} className="flex items-center gap-2.5 text-sm text-foreground">
-                  <Icon className="w-4 h-4 text-primary flex-shrink-0" />
-                  <span>{text}</span>
-                </div>
-              ))}
-            </div>
-            <Button onClick={handleConnect} disabled={connecting || tokenLoading} className="w-full bg-[#EE4D2D] hover:bg-[#EE4D2D]/90">
-              {connecting ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Conectando...</>
-              ) : (
-                <><ShoppingBag className="w-4 h-4 mr-2" /> Conectar Loja Shopee</>
-              )}
-            </Button>
-            <Button variant="outline" onClick={onClose} className="w-full">
-              Continuar com CSV
-            </Button>
+            {/* Admin-only discovery button */}
+            {isAdmin && sellerConnected && (
+              <div className="border-t border-border pt-3">
+                <Button onClick={handleDiscovery} disabled={discoveryRunning} variant="outline" size="sm" className="w-full text-xs">
+                  {discoveryRunning ? (
+                    <><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Executando Discovery...</>
+                  ) : (
+                    <><Search className="w-3 h-3 mr-1" /> 🔬 Discovery API Vendedor (Admin)</>
+                  )}
+                </Button>
+                {discoveryResults && (
+                  <div className="mt-2 max-h-60 overflow-y-auto rounded border border-border bg-muted/30 p-2">
+                    <pre className="text-[9px] text-foreground whitespace-pre-wrap break-all">
+                      {JSON.stringify(discoveryResults, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
+
+        <Button variant="outline" onClick={onClose} className="w-full">
+          {isConnected ? 'Fechar' : 'Continuar com CSV'}
+        </Button>
       </DialogContent>
     </Dialog>
   );
