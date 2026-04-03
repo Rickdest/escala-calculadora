@@ -108,7 +108,20 @@ async function fetchProductsWithModels(
     }
   }
 
-  return { productList, productDetails, modelsMap };
+  // Build enrichment map from product details
+  const enrichmentMap: Record<string, { image_url?: string; likes?: number; views?: number; sales?: number; item_status?: string }> = {};
+  const detailItems = productDetails?.response?.item_list || [];
+  for (const p of detailItems) {
+    enrichmentMap[String(p.item_id)] = {
+      image_url: p.image?.image_url_list?.[0] || undefined,
+      likes: p.likes ?? 0,
+      views: p.views ?? 0,
+      sales: p.sale_info?.total_sales ?? p.sales ?? 0,
+      item_status: p.item_status || undefined,
+    };
+  }
+
+  return { productList, productDetails, modelsMap, enrichmentMap };
 }
 
 async function fetchOrdersWithAggregation(
