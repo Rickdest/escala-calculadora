@@ -537,37 +537,40 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
               {/* ═══ Alerts ═══ */}
               <AlertsSection data={allAdsForChips} />
 
-              {/* ═══ Status Filter (Shopee-style) ═══ */}
-              {hasApiCampaigns && (
-                <div className="space-y-1.5">
-                  <p className="text-xs font-medium text-muted-foreground">Status do Anúncio</p>
-                  <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 md:mx-0 md:px-0">
-                    {([
-                      { key: 'all' as const, label: 'Tudo' },
-                      { key: 'active' as const, label: 'Em andamento' },
-                      { key: 'paused' as const, label: 'Pausado' },
-                      { key: 'ended' as const, label: 'Encerrado' },
-                    ] as const).filter(f => f.key === 'all' || statusCounts[f.key] > 0).map(f => (
-                      <button
-                        key={f.key}
-                        onClick={() => setStatusFilter(f.key)}
-                        className={cn(
-                          'shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border',
-                          statusFilter === f.key
-                            ? 'border-primary text-primary bg-primary/5'
-                            : 'border-border text-muted-foreground bg-card hover:text-foreground hover:border-foreground/30'
-                        )}
-                      >
-                        {f.label}
-                        {statusCounts[f.key] > 0 && <span className="ml-1 opacity-60">({statusCounts[f.key]})</span>}
-                      </button>
-                    ))}
+              {/* ═══ Filters: Status + Classification (single row on desktop) ═══ */}
+              <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
+                {hasApiCampaigns && (
+                  <div className="space-y-1 md:space-y-0">
+                    <p className="text-xs font-medium text-muted-foreground md:hidden">Status do Anúncio</p>
+                    <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0">
+                      {([
+                        { key: 'all' as const, label: 'Tudo' },
+                        { key: 'active' as const, label: 'Em andamento' },
+                        { key: 'paused' as const, label: 'Pausado' },
+                        { key: 'ended' as const, label: 'Encerrado' },
+                      ] as const).filter(f => f.key === 'all' || statusCounts[f.key] > 0).map(f => (
+                        <button
+                          key={f.key}
+                          onClick={() => setStatusFilter(f.key)}
+                          className={cn(
+                            'shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border',
+                            statusFilter === f.key
+                              ? 'border-primary text-primary bg-primary/5'
+                              : 'border-border text-muted-foreground bg-card hover:text-foreground hover:border-foreground/30'
+                          )}
+                        >
+                          {f.label}
+                          {statusCounts[f.key] > 0 && <span className="ml-1 opacity-60">({statusCounts[f.key]})</span>}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* ═══ Classification Filters ═══ */}
-              <FilterChips filter={filter} setFilter={setFilter} data={allAdsForChips} />
+                {hasApiCampaigns && <div className="hidden md:block w-px h-6 bg-border shrink-0" />}
+
+                <FilterChips filter={filter} setFilter={setFilter} data={allAdsForChips} />
+              </div>
 
               {/* ═══ Product list (unified) ═══ */}
               <div className="flex items-center justify-between gap-2">
