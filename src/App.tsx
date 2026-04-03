@@ -8,7 +8,6 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SubscriptionProvider, useSubscription } from "@/contexts/SubscriptionContext";
 import { SidebarProvider } from "@/contexts/SidebarContext";
-import { TrialExpiredBlock } from "@/components/TrialExpiredBlock";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { useAdmin } from "@/hooks/useAdmin";
 import { lazy, Suspense } from "react";
@@ -31,26 +30,6 @@ const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const ShopeeCallback = lazy(() => import("./pages/ShopeeCallback"));
 const Performance = lazy(() => import("./pages/Performance"));
 
-function PaywallRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  const { status, loading: subLoading } = useSubscription();
-
-  if (loading || subLoading || status === 'loading') {
-    return <PageLoader />;
-  }
-
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  if (status === 'active') {
-    return <Navigate to="/" replace />;
-  }
-
-  return <>{children}</>;
-}
-
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -70,11 +49,24 @@ function PageLoader() {
   );
 }
 
+function ErrorRetry({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+      <p className="text-muted-foreground text-sm">Erro ao verificar sua assinatura.</p>
+      <button
+        onClick={onRetry}
+        className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm"
+      >
+        Tentar novamente
+      </button>
+    </div>
+  );
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  const { status, loading: subLoading } = useSubscription();
+  const { status, loading: subLoading, refreshSubscription } = useSubscription();
 
-  // Wait for both auth and subscription to fully resolve
   if (loading || subLoading || status === 'loading') {
     return <PageLoader />;
   }
@@ -83,9 +75,33 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/auth" replace />;
   }
 
-  // Only active subscribers can access the app
+  // Technical error — show retry, NOT paywall
+  if (status === 'error') {
+    return <ErrorRetry onRetry={refreshSubscription} />;
+  }
+
+  // Only redirect to paywall when backend explicitly says not active
   if (status !== 'active') {
     return <Navigate to="/paywall" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function PaywallRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const { status, loading: subLoading } = useSubscription();
+
+  if (loading || subLoading || status === 'loading') {
+    return <PageLoader />;
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  if (status === 'active') {
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
