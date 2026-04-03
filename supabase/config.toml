@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.shopee-ads]
 verify_jwt = false
+
+[functions.shopee-seller-discovery]
+verify_jwt = false
