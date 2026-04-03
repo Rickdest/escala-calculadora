@@ -233,7 +233,7 @@ export default function Performance() {
                                   <td className="px-4 py-3 text-right font-mono text-foreground">R$ {ticket.toFixed(2)}</td>
                                   <td className="px-4 py-3 text-right font-mono text-foreground">{undiaItem.toFixed(1)}</td>
                                   <td className="px-4 py-3 text-center">
-                                    <Button variant="ghost" size="sm" className="h-7 text-[11px] gap-1" onClick={(e) => { e.stopPropagation(); navigate(`/performance/${itemId}`); }}>
+                                    <Button size="sm" className="h-7 text-[11px] gap-1 bg-primary hover:bg-primary/90 text-primary-foreground" onClick={(e) => { e.stopPropagation(); navigate(`/performance/${itemId}`); }}>
                                       <Eye className="w-3.5 h-3.5" /> Detalhes
                                     </Button>
                                   </td>
