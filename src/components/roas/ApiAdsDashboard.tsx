@@ -89,24 +89,8 @@ export function ApiAdsDashboard({ data, products = [] }: { data: ApiAdsData; pro
     })), [daily_entries]
   );
 
-  const statusCounts = useMemo(() => ({
-    all: campaigns.length,
-    active: campaigns.filter(c => c.status === 'active').length,
-    paused: campaigns.filter(c => c.status === 'paused').length,
-    ended: campaigns.filter(c => c.status === 'ended').length,
-  }), [campaigns]);
 
-  const sortedCampaigns = useMemo(() => {
-    let arr = [...campaigns];
-    if (statusFilter !== 'all') arr = arr.filter(c => c.status === statusFilter);
-    switch (sortBy) {
-      case 'roas': return arr.sort((a, b) => b.roas - a.roas);
-      case 'expense': return arr.sort((a, b) => b.expense - a.expense);
-      case 'gmv': return arr.sort((a, b) => b.gmv - a.gmv);
-      case 'position': return arr.sort((a, b) => (a.avg_position ?? 999) - (b.avg_position ?? 999));
-      default: return arr;
-    }
-  }, [campaigns, sortBy, statusFilter]);
+
 
   const balance = total_balance?.total_balance ?? total_balance?.balance ?? null;
 
