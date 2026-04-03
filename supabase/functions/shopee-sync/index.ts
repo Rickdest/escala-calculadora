@@ -341,6 +341,34 @@ Deno.serve(async (req) => {
       console.error("[SHOPEE SYNC] Orders error:", e);
     }
 
+    // 4. Persist performance data
+    const orderPerf = results.order_performance as any;
+    if (orderPerf) {
+      try {
+        const supabaseAdmin = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+        );
+        await supabaseAdmin
+          .from("shopee_performance")
+          .upsert(
+            {
+              user_id: user.id,
+              shop_id: String(shopId),
+              summary: orderPerf.summary,
+              product_sales: orderPerf.product_sales,
+              period_days: orderPerf.summary?.period_days || 90,
+              synced_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "user_id,shop_id" }
+          );
+        console.log("[SHOPEE SYNC] Performance data persisted.");
+      } catch (e) {
+        console.error("[SHOPEE SYNC] Failed to persist performance:", e);
+      }
+    }
+
     console.log(`[SHOPEE SYNC] === FUNCTION END === Errors: ${JSON.stringify(errors)}`);
 
     return jsonResponse({
