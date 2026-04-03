@@ -13,9 +13,34 @@ export default function PerformanceProductDetail() {
   const { data, loading } = usePerformanceData();
   const [chartPeriod, setChartPeriod] = useState<'7d' | '30d' | '90d'>('30d');
 
-  if (loading) return <AppLayout><PageLoader /></AppLayout>;
+  const product = !loading && itemId ? data?.product_sales?.[itemId] || null : null;
+  const totalRevenue = data?.summary?.total_revenue || 0;
+  const totalQty = data ? Object.values(data.product_sales).reduce((s, p) => s + p.total_qty, 0) : 0;
+  const periodDays = data?.summary?.period_days || 90;
+  const ticketMedio = product && product.total_qty > 0 ? product.total_revenue / product.total_qty : 0;
+  const unDia = product && periodDays > 0 ? product.total_qty / periodDays : 0;
+  const pctRevenue = product && totalRevenue > 0 ? (product.total_revenue / totalRevenue) * 100 : 0;
+  const pctQty = product && totalQty > 0 ? (product.total_qty / totalQty) * 100 : 0;
+  const sortedVariants = product ? Object.entries(product.variants || {}).sort(([, a], [, b]) => b.qty - a.qty) : [];
+  const topVariant = sortedVariants[0] || null;
+  const bottomVariant = sortedVariants.length > 1 ? sortedVariants[sortedVariants.length - 1] : null;
 
-  const product = itemId && data?.product_sales?.[itemId];
+  const dailyData = useMemo(() => {
+    if (!product) return [];
+    const days = chartPeriod === '7d' ? 7 : chartPeriod === '30d' ? 30 : 90;
+    const avgPerDay = product.total_qty / (periodDays || 90);
+    const today = new Date();
+    return Array.from({ length: days }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() - (days - 1 - i));
+      const label = `${d.getDate()} ${d.toLocaleString('pt-BR', { month: 'short' }).replace('.', '')}`;
+      const trend = 0.5 + (i / days) * 1.0;
+      const noise = 0.7 + Math.random() * 0.6;
+      return { label, value: Math.max(0, Math.round(avgPerDay * trend * noise)) };
+    });
+  }, [chartPeriod, product?.total_qty, periodDays]);
+
+  if (loading) return <AppLayout><PageLoader /></AppLayout>;
 
   if (!product) {
     return (
@@ -29,36 +54,6 @@ export default function PerformanceProductDetail() {
       </AppLayout>
     );
   }
-
-  const totalRevenue = data!.summary.total_revenue;
-  const totalQty = Object.values(data!.product_sales).reduce((s, p) => s + p.total_qty, 0);
-  const periodDays = data!.summary.period_days || 90;
-  const ticketMedio = product.total_qty > 0 ? product.total_revenue / product.total_qty : 0;
-  const unDia = periodDays > 0 ? product.total_qty / periodDays : 0;
-  const pctRevenue = totalRevenue > 0 ? (product.total_revenue / totalRevenue) * 100 : 0;
-  const pctQty = totalQty > 0 ? (product.total_qty / totalQty) * 100 : 0;
-
-  const sortedVariants = Object.entries(product.variants || {}).sort(([, a], [, b]) => b.qty - a.qty);
-  const topVariant = sortedVariants[0];
-  const bottomVariant = sortedVariants.length > 1 ? sortedVariants[sortedVariants.length - 1] : null;
-
-  const meta = product as any;
-
-  // Build daily chart data (simulated from total if no daily_sales)
-  const dailyData = useMemo(() => {
-    const days = chartPeriod === '7d' ? 7 : chartPeriod === '30d' ? 30 : 90;
-    const avgPerDay = product.total_qty / periodDays;
-    const today = new Date();
-    return Array.from({ length: days }, (_, i) => {
-      const d = new Date(today);
-      d.setDate(d.getDate() - (days - 1 - i));
-      const label = `${d.getDate()} ${d.toLocaleString('pt-BR', { month: 'short' }).replace('.', '')}`;
-      // Simulate growth trend
-      const trend = 0.5 + (i / days) * 1.0;
-      const noise = 0.7 + Math.random() * 0.6;
-      return { label, value: Math.max(0, Math.round(avgPerDay * trend * noise)) };
-    });
-  }, [chartPeriod, product.total_qty, periodDays]);
 
   return (
     <AppLayout>
@@ -83,10 +78,10 @@ export default function PerformanceProductDetail() {
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <KpiCard icon={<Package className="w-5 h-5" />} borderColor="border-t-primary" label="UNIDADES" value={String(product.total_qty)} sub={`${pctQty.toFixed(1)}% do total`} />
-          <KpiCard icon={<DollarSign className="w-5 h-5" />} borderColor="border-t-emerald-500" label="RECEITA" value={`R$ ${product.total_revenue.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} sub={`${pctRevenue.toFixed(1)}% do total`} />
-          <KpiCard icon={<TrendingUp className="w-5 h-5" />} borderColor="border-t-blue-500" label="TICKET MÉDIO" value={`R$ ${ticketMedio.toFixed(2).replace('.', ',')}`} sub="por unidade" />
-          <KpiCard icon={<BarChart3 className="w-5 h-5" />} borderColor="border-t-amber-500" label="UN/DIA" value={unDia.toFixed(1).replace('.', ',')} sub="média no período" />
+          <KpiCard icon={<Package className="w-5 h-5" />} borderColor="border-t-primary" label="UNIDADES" value={String(product.total_qty)} sub={`${(pctQty || 0).toFixed(1)}% do total`} />
+          <KpiCard icon={<DollarSign className="w-5 h-5" />} borderColor="border-t-emerald-500" label="RECEITA" value={`R$ ${product.total_revenue.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} sub={`${(pctRevenue || 0).toFixed(1)}% do total`} />
+          <KpiCard icon={<TrendingUp className="w-5 h-5" />} borderColor="border-t-blue-500" label="TICKET MÉDIO" value={`R$ ${(ticketMedio || 0).toFixed(2).replace('.', ',')}`} sub="por unidade" />
+          <KpiCard icon={<BarChart3 className="w-5 h-5" />} borderColor="border-t-amber-500" label="UN/DIA" value={(unDia || 0).toFixed(1).replace('.', ',')} sub="média no período" />
         </div>
 
         {/* Daily Sales Chart */}
@@ -135,8 +130,8 @@ export default function PerformanceProductDetail() {
         {/* Participation Bars */}
         <div className="rounded-xl border border-border bg-card p-4 space-y-3">
           <p className="text-sm font-semibold text-foreground">Participação no total</p>
-          <ShareBar label="% Vendas (qtd)" pct={pctQty} color="bg-primary" textColor="text-primary" />
-          <ShareBar label="% Receita" pct={pctRevenue} color="bg-emerald-500" textColor="text-emerald-500" />
+          <ShareBar label="% Vendas (qtd)" pct={pctQty || 0} color="bg-primary" textColor="text-primary" />
+          <ShareBar label="% Receita" pct={pctRevenue || 0} color="bg-emerald-500" textColor="text-emerald-500" />
         </div>
 
         {/* Variants Table */}
@@ -152,11 +147,11 @@ export default function PerformanceProductDetail() {
                 <thead>
                   <tr className="border-b border-border">
                     <th className="text-left px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase w-8"></th>
-                    <th className="text-left px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase">Variação</th>
+                    <th className="text-left px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase">VARIAÇÃO</th>
                     <th className="text-right px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase">QTD</th>
-                    <th className="text-right px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase">Receita</th>
+                    <th className="text-right px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase">RECEITA</th>
                     <th className="text-right px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase">%</th>
-                    <th className="text-right px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase w-28">Participação</th>
+                    <th className="text-right px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase w-28">PARTICIPAÇÃO</th>
                   </tr>
                 </thead>
                 <tbody>
