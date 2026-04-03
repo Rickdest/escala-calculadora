@@ -66,7 +66,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   // Only active subscribers can access the app
   if (status !== 'active') {
-    return <TrialExpiredBlock />;
+    return <Navigate to="/paywall" replace />;
   }
 
   return <>{children}</>;
