@@ -4,7 +4,7 @@ import { fmt, fmtShort, getRoasColor } from './adsHelpers';
 import { DollarSign, TrendingUp, BarChart3, Eye, MousePointerClick, ShoppingCart, Clock, Search, Zap, ZapOff, Lightbulb } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getClassCor } from './adsHelpers';
-import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart } from 'recharts';
+import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Keyword { keyword: string; search_volume: number; suggested_bid: number; quality_score?: number; }
