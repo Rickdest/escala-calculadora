@@ -1,60 +1,54 @@
 
 
-## Plano: Persistir dados de Performance + Enriquecer layout
+## Plano: Melhorar layout da Performance + expandir inline
 
-### Problema
-1. **Dados não persistem**: os dados de performance ficam apenas em `useState` — ao sair e voltar, somem. Não há tabela no banco para salvar.
-2. **Layout muito simples**: KPIs básicos, badges de status sem cor, ranking de produtos sem detalhes interativos. A imagem de referência mostra um layout rico com cards coloridos de KPI, chips de status coloridos, ranking clicável com painel lateral de variações.
+### Problemas identificados
+1. **Estado vazio fraco**: tela branca com botão "Atualizar" pequeno e apagado — não convida a ação
+2. **KPIs genéricos**: sem destaque visual suficiente, valores sem formatação atrativa
+3. **Popup corta o fluxo**: clicar no produto abre Dialog que esconde o ranking
 
 ### Solução
 
-#### 1. Criar tabela `shopee_performance` no banco
-- Colunas: `id`, `user_id`, `shop_id`, `summary` (jsonb), `product_sales` (jsonb), `synced_at`, `period_days`
-- RLS: usuário só acessa seus dados
-- O edge function `shopee-sync` salva/atualiza após agregação
-- O frontend carrega do banco ao montar e exibe imediatamente (sem precisar clicar "Carregar")
+#### 1. Estado vazio atrativo
+- Ilustração grande com ícone de gráfico/foguete
+- Título "Seus dados de vendas aparecerão aqui"
+- Subtítulo explicativo
+- Botão "Sincronizar agora" grande e em destaque (bg-primary, não outline)
+- Se estiver sincronizando, mostrar skeleton dos KPIs
 
-#### 2. Atualizar `shopee-sync` para persistir
-- Após calcular `order_performance`, fazer upsert na tabela `shopee_performance`
-- Usar `ON CONFLICT (user_id, shop_id)` para atualizar dados existentes
+#### 2. KPIs mais ricos
+- Valores grandes (text-2xl no desktop) com formatação monetária separando centavos
+- Adicionar 4º KPI: **Un/dia** (unidades por dia média)
+- No mobile: grid 2×2 em vez de 3 colunas apertadas
+- Ícones maiores e cores mais vibrantes
 
-#### 3. Enriquecer o layout (baseado na imagem de referência)
+#### 3. Expandir inline em vez de popup
+- Remover `ProductDetailDrawer` (Dialog)
+- Ao clicar no produto no ranking, expandir um painel **abaixo** dele com animação suave (Collapsible)
+- O painel mostra: métricas (4 cards 2×2), barras de participação, variações e insight
+- Clicar de novo ou em outro produto fecha/troca
+- Barra de progresso visual no item do ranking mostrando % do total
 
-**KPI Cards** (3 colunas, estilo dashboard):
-- Pedidos: número grande + "90 dias" como sub
-- Faturamento: valor em verde + "R$ X/dia em média" como sub
-- Ticket Médio: valor + "por pedido" como sub
-- Bordas superiores coloridas (como nos cards do Ads)
+#### 4. Ranking melhorado
+- Cada item mostra uma mini barra horizontal de participação (% do total) atrás do texto
+- Top 3 com destaque visual (medalha dourada, prata, bronze)
+- Seta chevron indicando que é expansível
 
-**Pedidos por Status** (chips coloridos horizontais):
-- Cada status com dot colorido (verde=Concluídos, vermelho=Cancelados, laranja=Pronto p/ envio, azul=Enviados, etc.)
-- Layout inline horizontal com scroll
+### Alterações
 
-**Ranking de Produtos** (cards clicáveis):
-- Cada produto: posição (#1, #2...), nome, ID do item, receita e unidades vendidas à direita
-- Ao clicar, abre painel lateral (no desktop) ou drawer (no mobile) com:
-  - Métricas do produto (unidades, receita, ticket médio, un/dia)
-  - Todas as variações com destaque na mais vendida (★)
-  - Participação no total (barras de % vendas e % receita)
-  - Insight automático ("Variação X representa Y% das vendas")
+**`src/pages/Performance.tsx`**:
+- Estado vazio redesenhado com CTA forte
+- KPIs em grid 2×2 mobile / 4 colunas desktop, com 4º KPI (Un/dia)
+- Ranking com expand inline (Collapsible) em vez de popup
+- Mini barra de % atrás de cada item do ranking
+- Top 3 com medalhas (🥇🥈🥉)
+- Remover import do ProductDetailDrawer
 
-**Botão "Atualizar dados"**: compacto no canto superior direito em vez de full-width
-
-#### 4. Hook `usePerformanceData`
-- Carrega dados do banco ao montar
-- Expõe função `sync()` que chama `shopee-sync` e recarrega
-- Mostra última sincronização ("Última sync hoje 18:00")
-
-### Arquivos alterados
-
-```
-Migration SQL                              — criar tabela shopee_performance
-supabase/functions/shopee-sync/index.ts    — upsert performance no banco
-src/hooks/usePerformanceData.ts            — novo hook (load + sync)
-src/pages/Performance.tsx                  — layout completo redesenhado
-src/components/performance/ProductDetail.tsx — painel lateral de variações
-```
+**`src/components/performance/ProductDetailDrawer.tsx`**:
+- Transformar em `ProductExpandedDetail` — componente inline (não Dialog)
+- Mesmo conteúdo (métricas, variações, participação, insight) mas renderizado inline
+- Animação de expand/collapse suave
 
 ### Resultado
-Dados persistem entre sessões, carregam instantaneamente ao abrir, layout rico com chips coloridos, ranking interativo e insights de variações — conforme a imagem de referência.
+Estado vazio convidativo, KPIs com mais impacto visual, detalhes de produto inline sem interromper o ranking, e medalhas nos top 3.
 
