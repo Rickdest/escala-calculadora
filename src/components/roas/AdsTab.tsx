@@ -34,6 +34,38 @@ const classOrder: Record<string, number> = {
   'LUCRATIVO': 3,
 };
 
+type StatusFilter = 'all' | 'scheduled' | 'active' | 'paused' | 'ended' | 'deleted';
+
+const STATUS_FILTER_OPTIONS: Array<{ key: StatusFilter; label: string }> = [
+  { key: 'all', label: 'Tudo' },
+  { key: 'scheduled', label: 'Programado' },
+  { key: 'active', label: 'Em andamento' },
+  { key: 'paused', label: 'Pausado' },
+  { key: 'ended', label: 'Encerrado' },
+  { key: 'deleted', label: 'Excluído' },
+];
+
+function getStatusFilterKey(status: string | null | undefined): Exclude<StatusFilter, 'all'> {
+  const normalized = String(status || '').trim().toLowerCase();
+
+  if (normalized === 'scheduled' || normalized === 'programado' || normalized === 'programada') return 'scheduled';
+  if (normalized === 'active' || normalized === 'ativo' || normalized === 'ativa' || normalized === 'em andamento') return 'active';
+  if (normalized === 'paused' || normalized === 'pausado' || normalized === 'pausada') return 'paused';
+  if (normalized === 'deleted' || normalized === 'excluído' || normalized === 'excluido') return 'deleted';
+
+  return 'ended';
+}
+
+function getStatusLabel(status: string | null | undefined) {
+  const key = getStatusFilterKey(status);
+
+  if (key === 'scheduled') return 'Programado';
+  if (key === 'active') return 'Ativo';
+  if (key === 'paused') return 'Pausado';
+  if (key === 'deleted') return 'Excluído';
+  return 'Encerrado';
+}
+
 function formatPeriodLabel(inicio: string, fim: string) {
   const fShort = (d: string) => { const p = d.split('-'); return `${p[2]}/${p[1]}`; };
   const fFull = (d: string) => { const p = d.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
@@ -99,7 +131,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const [linkTarget, setLinkTarget] = useState<string | null>(null);
   const [quickRegTarget, setQuickRegTarget] = useState<EnrichedAdsData | null>(null);
   const [filter, setFilter] = useState<FilterType>('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'paused' | 'ended'>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [selectedPeriod, setSelectedPeriod] = useState<string>('all');
   const fileRef = useRef<HTMLInputElement>(null);
   const [positionTarget, setPositionTarget] = useState<string | undefined>();
@@ -171,7 +203,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       itens_vendidos_diretos: campaign.direct_orders || 0,
       conversoes_diretas: campaign.direct_orders || 0,
       metodo_lance: null,
-      status_anuncio: campaign.status === 'active' ? 'Ativo' : campaign.status === 'paused' ? 'Pausado' : 'Encerrado',
+      status_anuncio: getStatusLabel(campaign.status),
       impressoes_produto: null,
       cliques_produto: null,
       posicao_media: campaign.avg_position,
@@ -340,33 +372,18 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
     ];
   }, [apiEnriched, filtered]);
 
-  // Status counts for filter chips
-  const statusCounts = useMemo(() => {
-    const ads = mergedAds.map(m => m.ad);
-    return {
-      all: ads.length,
-      active: ads.filter(a => a.status_anuncio === 'Ativo').length,
-      paused: ads.filter(a => a.status_anuncio === 'Pausado').length,
-      ended: ads.filter(a => a.status_anuncio === 'Encerrado' || !a.status_anuncio).length,
-    };
-  }, [mergedAds]);
-
   // Apply classification + status filter to merged list
   const filteredMerged = useMemo(() => {
     let result = mergedAds;
-    // Status filter
+
     if (statusFilter !== 'all') {
-      result = result.filter(({ ad }) => {
-        if (statusFilter === 'active') return ad.status_anuncio === 'Ativo';
-        if (statusFilter === 'paused') return ad.status_anuncio === 'Pausado';
-        if (statusFilter === 'ended') return ad.status_anuncio === 'Encerrado' || !ad.status_anuncio;
-        return true;
-      });
+      result = result.filter(({ ad }) => getStatusFilterKey(ad.status_anuncio) === statusFilter);
     }
-    // Classification filter
+
     if (filter === 'unlinked') result = result.filter(({ ad }) => !ad.product_id);
     else if (filter === 'ABAIXO_EMPATE') result = result.filter(({ ad }) => ad.classificacao === 'ABAIXO_EMPATE' || ad.classificacao === 'MARGEM_APERTADA');
     else if (filter !== 'all') result = result.filter(({ ad }) => ad.classificacao === filter);
+
     return result;
   }, [mergedAds, filter, statusFilter]);
 
@@ -537,37 +554,29 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
               {/* ═══ Alerts ═══ */}
               <AlertsSection data={allAdsForChips} />
 
-              {/* ═══ Filters: Status + Classification (single row on desktop) ═══ */}
-              <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
+              {/* ═══ Filters: Status + Classification ═══ */}
+              <div className="space-y-3">
                 {hasApiCampaigns && (
-                  <div className="space-y-1 md:space-y-0">
-                    <p className="text-xs font-medium text-muted-foreground md:hidden">Status do Anúncio</p>
-                    <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0">
-                      {([
-                        { key: 'all' as const, label: 'Tudo' },
-                        { key: 'active' as const, label: 'Em andamento' },
-                        { key: 'paused' as const, label: 'Pausado' },
-                        { key: 'ended' as const, label: 'Encerrado' },
-                      ] as const).filter(f => f.key === 'all' || statusCounts[f.key] > 0).map(f => (
+                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:gap-4">
+                    <p className="text-sm font-medium text-foreground shrink-0">Status do Anúncio</p>
+                    <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1 -mx-4 px-4 md:mx-0 md:px-0">
+                      {STATUS_FILTER_OPTIONS.map(option => (
                         <button
-                          key={f.key}
-                          onClick={() => setStatusFilter(f.key)}
+                          key={option.key}
+                          onClick={() => setStatusFilter(option.key)}
                           className={cn(
-                            'shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border',
-                            statusFilter === f.key
-                              ? 'border-primary text-primary bg-primary/5'
-                              : 'border-border text-muted-foreground bg-card hover:text-foreground hover:border-foreground/30'
+                            'shrink-0 px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all border bg-card',
+                            statusFilter === option.key
+                              ? 'border-primary text-primary shadow-sm'
+                              : 'border-border text-foreground hover:border-foreground/30'
                           )}
                         >
-                          {f.label}
-                          {f.key !== 'all' && <span className="ml-1 opacity-60">({statusCounts[f.key]})</span>}
+                          {option.label}
                         </button>
                       ))}
                     </div>
                   </div>
                 )}
-
-                {hasApiCampaigns && <div className="hidden md:block w-px h-6 bg-border shrink-0" />}
 
                 <FilterChips filter={filter} setFilter={setFilter} data={allAdsForChips} />
               </div>
