@@ -1,60 +1,41 @@
 
-Objetivo
 
-Parar o redirecionamento indevido ao paywall e garantir que só usuários realmente sem assinatura ativa vejam a cobrança.
+## Plano: Corrigir status dos anúncios (filtros mostrando "Ativo" incorretamente)
 
-Diagnóstico
+### Problema
 
-- O app hoje manda qualquer status diferente de `active` para `/paywall`.
-- O `SubscriptionContext` ainda transforma falha técnica em `expired` após retry.
-- O indício mais forte está no backend: os logs recentes de `check-subscription` mostram basicamente chamadas `OPTIONS` e não o `POST` real.
-- Em `supabase/functions/check-subscription/index.ts`, o CORS responde `Access-Control-Allow-Origin` e `Access-Control-Allow-Headers`, mas não inclui `Access-Control-Allow-Methods`. Isso pode bloquear a chamada real no navegador; quando isso acontece, o client trata como erro e empurra todo mundo para o paywall.
-- Portanto, o problema parece ser uma combinação de:
-  1. preflight/CORS incompleto na function
-  2. fallback agressivo no client (`erro = expired`)
+O backend (`shopee-ads`) calcula corretamente o status de cada campanha via `mapCampaignStatus` (active/paused/ended), mas **não salva esse status no banco**. A tabela `shopee_ads_by_product` não tem coluna `status`. No frontend, `buildApiAdsDataFromRows` usa um fallback ingênuo:
 
-Plano de correção
+```typescript
+status: r.item_name?.includes('Pausado') ? 'paused' : 'active'
+```
 
-1. Corrigir a function `check-subscription`
-- Adicionar `Access-Control-Allow-Methods: POST, OPTIONS`
-- Adicionar `Vary: Origin` e, se necessário, `Access-Control-Max-Age`
-- Garantir que o retorno de `OPTIONS` use os mesmos headers completos do fluxo real
-- Melhorar logs da function para diferenciar: preflight, token inválido, assinatura achada por `user_id`, assinatura achada por `email`, fallback por `profiles`
+Resultado: tudo aparece como "Ativo" mesmo que na Shopee esteja pausado ou encerrado.
 
-2. Parar de converter erro técnico em assinatura expirada
-- Ajustar `src/contexts/SubscriptionContext.tsx` para separar falha técnica de status real
-- Em caso de erro inicial, manter estado neutro (`loading`/`error`) ou o último status válido do mesmo usuário
-- Só definir paywall quando o backend responder explicitamente `free`, `expired`, `canceled` ou `past_due`
-- Preservar a lógica por `userId`, mas sem degradar assinantes ativos por timeout/CORS
+### Correção
 
-3. Ajustar os guards de rota
-- `ProtectedRoute`: se a checagem falhar tecnicamente, mostrar loader/estado de reconciliação em vez de redirecionar
-- `PaywallRoute`: continuar bloqueando acesso ao paywall para quem estiver `active`
-- Remover qualquer caminho que dependa de fallback legado para cobrança
+#### 1. Migration: adicionar coluna `status` à tabela `shopee_ads_by_product`
+- `ALTER TABLE shopee_ads_by_product ADD COLUMN status text DEFAULT 'ended'`
 
-4. Validar a consistência do backend
-- Manter a prioridade atual da function: `subscriptions` por `user_id` → `subscriptions` por `email` → `profiles.status = 'ativo'`
-- Fazer hardening para cenários com múltiplas linhas futuras de assinatura por email
-- Revisar `cakto-webhook` depois do fix principal para evitar inconsistência futura, mas isso é secundário ao bug atual
+#### 2. Backend: salvar status no upsert (`shopee-ads/index.ts`)
+- Linha ~573: adicionar `status: c.status` no objeto do upsert
+- O status já existe em `c.status` vindo de `processCampaignEntries`
 
-Arquivos principais
+#### 3. Frontend: usar status real do banco (`useApiAdsData.ts`)
+- Substituir o fallback naive por: `status: r.status || 'ended'`
+- Na agregação por item_id, priorizar status: se qualquer campanha do item é `active` → `active`; se qualquer é `paused` → `paused`; senão → `ended`
 
-- `supabase/functions/check-subscription/index.ts`
-- `src/contexts/SubscriptionContext.tsx`
-- `src/App.tsx`
-- possivelmente `src/services/billing.service.ts`
-- opcionalmente `supabase/functions/cakto-webhook/index.ts` para hardening posterior
+#### 4. Frontend: adicionar filtro por status no dashboard (`ApiAdsDashboard.tsx`)
+- Adicionar chips de filtro por status inspirados na imagem de referência (Tudo, Em andamento, Pausado, Encerrado)
+- Filtrar a lista de produtos pelo status selecionado
+- Mostrar contagem por status nos chips
 
-Ordem de execução
+### Arquivos alterados
 
-1. Corrigir CORS/preflight da `check-subscription`
-2. Corrigir fallback do `SubscriptionContext`
-3. Ajustar `ProtectedRoute` e `PaywallRoute`
-4. Validar fluxo de assinante ativo vs. não assinante
-5. Fazer hardening opcional do webhook
+```
+Migration SQL (nova coluna status)
+supabase/functions/shopee-ads/index.ts      — salvar status no upsert
+src/hooks/useApiAdsData.ts                  — usar status real + lógica de agregação
+src/components/roas/ApiAdsDashboard.tsx      — chips de filtro por status
+```
 
-Resultado esperado
-
-- Assinantes ativos param de ser enviados ao paywall
-- Falhas temporárias de backend não bloqueiam todo o app
-- Apenas usuários realmente sem assinatura ativa vão para a tela de cobrança
