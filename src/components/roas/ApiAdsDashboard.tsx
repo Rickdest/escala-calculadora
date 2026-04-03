@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { fmt, fmtShort, getRoasColor } from './adsHelpers';
-import { DollarSign, TrendingUp, BarChart3, Eye, MousePointerClick, ShoppingCart, ArrowUpDown, RefreshCw, X, Link2, Clock, Search, Zap, ZapOff, Lightbulb } from 'lucide-react';
+import { DollarSign, TrendingUp, BarChart3, Eye, MousePointerClick, ShoppingCart, Clock, Search, Zap, ZapOff, Lightbulb } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getClassCor } from './adsHelpers';
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart } from 'recharts';
