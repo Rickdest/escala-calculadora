@@ -228,7 +228,7 @@ function CampaignDetail({ campaign, onClose, onRefresh }: { campaign: CampaignAd
         <div>
           <p className="text-sm font-bold text-foreground">{campaign.item_name}</p>
           <p className="text-[10px] text-muted-foreground font-mono">
-            Campanha #{campaign.campaign_id} · Item #{campaign.item_id}
+            Item #{campaign.item_id}{(campaign as any).campaign_ids?.length > 1 ? ` · ${(campaign as any).campaign_ids.length} campanhas` : ` · Campanha #${campaign.campaign_id}`}
           </p>
         </div>
         <div className="flex items-center gap-1.5">
