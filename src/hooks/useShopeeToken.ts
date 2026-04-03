@@ -11,16 +11,17 @@ export function useShopeeToken(appType?: AppType) {
   const { data: token, isLoading, refetch } = useQuery({
     queryKey: ['shopee-token', user?.id, appType],
     queryFn: async () => {
-      let query = supabase
+      const baseQuery = supabase
         .from('shopee_tokens')
         .select('*')
         .eq('user_id', user!.id);
 
-      if (appType) {
-        query = query.eq('app_type' as any, appType);
-      }
+      // app_type column added via migration, not yet in generated types
+      const finalQuery = appType
+        ? (baseQuery as any).eq('app_type', appType)
+        : baseQuery;
 
-      const { data, error } = await query.limit(1).maybeSingle();
+      const { data, error } = await finalQuery.limit(1).maybeSingle();
       if (error) throw error;
       return data;
     },
