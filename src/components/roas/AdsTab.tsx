@@ -398,7 +398,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
               />
             )}
 
-          {/* ═══ API Ads Dashboard ═══ */}
+          {/* ═══ API Ads Summary (KPIs + charts only) ═══ */}
           {effectiveApiData && (
             <>
               <AdsHeader
