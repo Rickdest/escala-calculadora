@@ -121,7 +121,7 @@ export function buildApiAdsDataFromRows(rows: any[]) {
       cost_per_order: Number(r.cost_per_order || 0),
       days_active: r.days_active || 0,
       daily_data: r.daily_data || [],
-      status: r.item_name?.includes('Pausado') ? 'paused' : 'active',
+      status: r.status || 'ended',
     })),
     period_start: periodStart,
     period_end: periodEnd,
