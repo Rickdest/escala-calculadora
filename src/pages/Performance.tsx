@@ -242,7 +242,7 @@ export default function Performance() {
                               <CollapsibleContent asChild>
                                 <tr>
                                   <td colSpan={7} className="p-0 border-b border-border bg-muted/5">
-                                    <ProductExpandedDetail product={prod} totalRevenue={totalRevenueAll} totalQty={totalQtyAll} periodDays={periodDays} />
+                                    <ProductExpandedDetail product={prod} totalRevenue={totalRevenueAll} totalQty={totalQtyAll} periodDays={periodDays} itemId={itemId} />
                                   </td>
                                 </tr>
                               </CollapsibleContent>
