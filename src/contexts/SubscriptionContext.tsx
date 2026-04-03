@@ -30,40 +30,56 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<SubscriptionStatus>('loading');
   const [plan, setPlan] = useState('free');
   const [loading, setLoading] = useState(true);
-  const lastKnownStatus = useRef<{ status: SubscriptionStatus; plan: string } | null>(null);
+  const userId = user?.id;
+  const accessToken = session?.access_token;
+  const lastKnownStatus = useRef<{ userId: string; status: SubscriptionStatus; plan: string } | null>(null);
+  const resolvedUserId = useRef<string | null>(null);
   const hasResolved = useRef(false);
 
   const fetchSubscription = useCallback(async (noCache = false, retryCount = 0) => {
     if (authLoading) return;
-    if (!user || !session?.access_token) {
+
+    if (!userId || !accessToken) {
+      resolvedUserId.current = null;
+      lastKnownStatus.current = null;
+      hasResolved.current = false;
       setStatus('free');
       setPlan('free');
       setLoading(false);
       return;
     }
 
+    const userChanged = resolvedUserId.current !== userId;
+    if (userChanged) {
+      resolvedUserId.current = userId;
+      lastKnownStatus.current = null;
+      hasResolved.current = false;
+    }
+
+    if (!hasResolved.current) {
+      setLoading(true);
+    }
+
     try {
-      if (!hasResolved.current) setLoading(true);
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('timeout')), 10000)
       );
       const data = await Promise.race([
-        checkSubscription(session.access_token, noCache),
+        checkSubscription(accessToken, noCache),
         timeoutPromise,
       ]);
       const newStatus = STATUS_MAP[data.status] || 'expired';
-      lastKnownStatus.current = { status: newStatus, plan: data.plan };
+      lastKnownStatus.current = { userId, status: newStatus, plan: data.plan };
       setStatus(newStatus);
       setPlan(data.plan);
     } catch {
-      if (lastKnownStatus.current) {
+      if (lastKnownStatus.current?.userId === userId) {
         setStatus(lastKnownStatus.current.status);
         setPlan(lastKnownStatus.current.plan);
         toast.warning('Não foi possível verificar sua assinatura. Usando dados anteriores.');
       } else if (retryCount < 1) {
-        // Retry once before giving up to avoid false expired on network blips
-        await new Promise(r => setTimeout(r, 2000));
-        return fetchSubscription(true, retryCount + 1);
+        await new Promise<void>((resolve) => setTimeout(resolve, 2000));
+        return await fetchSubscription(true, retryCount + 1);
       } else {
         setStatus('expired');
         setPlan('free');
@@ -72,13 +88,14 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       hasResolved.current = true;
       setLoading(false);
     }
-  }, [user, session?.access_token, authLoading]);
+  }, [accessToken, authLoading, userId]);
 
   useEffect(() => {
     fetchSubscription();
   }, [fetchSubscription]);
 
   const isActive = status === 'active';
+  const effectiveLoading = loading || (!!userId && (!hasResolved.current || resolvedUserId.current !== userId));
 
   const refreshSubscription = useCallback(async () => {
     await fetchSubscription(true);
@@ -86,7 +103,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   return (
     <SubscriptionContext.Provider
-      value={{ status, plan, isActive, loading, refreshSubscription }}
+      value={{ status, plan, isActive, loading: effectiveLoading, refreshSubscription }}
     >
       {children}
     </SubscriptionContext.Provider>
