@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useShopeeToken } from '@/hooks/useShopeeToken';
 import { usePerformanceData } from '@/hooks/usePerformanceData';
-import { ProductDetailDrawer } from '@/components/performance/ProductDetailDrawer';
-import { RefreshCw, Loader2, ShoppingBag, TrendingUp, ShoppingCart, Package, Clock } from 'lucide-react';
+import { ProductExpandedDetail } from '@/components/performance/ProductExpandedDetail';
+import { RefreshCw, Loader2, ShoppingBag, TrendingUp, ShoppingCart, Package, Clock, ChevronDown, BarChart3 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -29,11 +30,13 @@ const STATUS_LABELS: Record<string, string> = {
   PROCESSED: 'Processados',
 };
 
+const MEDALS = ['🥇', '🥈', '🥉'];
+
 export default function Performance() {
   const { isConnected, startOAuth, isLoading: tokenLoading } = useShopeeToken();
   const { data, syncedAt, loading, syncing, sync } = usePerformanceData();
   const [connecting, setConnecting] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<{ itemId: string; product: any } | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const handleConnect = async () => {
     try {
@@ -43,8 +46,6 @@ export default function Performance() {
       setConnecting(false);
     }
   };
-
-  const formatCurrency = (v: number) => v > 0 ? `R$ ${v.toFixed(2)}` : '—';
 
   // Not connected
   if (!isConnected) {
@@ -72,6 +73,9 @@ export default function Performance() {
 
   const sorted = data ? Object.entries(data.product_sales).sort(([, a], [, b]) => b.total_qty - a.total_qty) : [];
   const totalQtyAll = data ? sorted.reduce((s, [, p]) => s + p.total_qty, 0) : 0;
+  const totalRevenueAll = data?.summary.total_revenue || 0;
+  const periodDays = data?.summary.period_days || 90;
+  const unDia = periodDays > 0 && data ? data.summary.total_orders / periodDays : 0;
 
   return (
     <AppLayout>
@@ -92,27 +96,60 @@ export default function Performance() {
       </div>
 
       <div className="pt-4 pb-24 md:pb-6 space-y-4">
-        {/* Loading state */}
+        {/* Loading skeleton */}
         {loading && !data && (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          <div className="space-y-4 animate-pulse">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="rounded-xl border border-border bg-card h-24" />
+              ))}
+            </div>
+            <div className="space-y-2">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="rounded-xl border border-border bg-card h-16" />
+              ))}
+            </div>
           </div>
         )}
 
         {/* Empty state */}
         {!loading && !data && !syncing && (
-          <div className="text-center py-16 space-y-3">
-            <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mx-auto">
-              <TrendingUp className="w-6 h-6 text-muted-foreground" />
+          <div className="flex flex-col items-center justify-center min-h-[45vh] text-center space-y-5 px-6 animate-fade-up">
+            <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <BarChart3 className="w-10 h-10 text-primary" />
             </div>
-            <p className="text-sm text-muted-foreground">Clique em "Atualizar" para carregar os dados de performance.</p>
+            <div>
+              <p className="text-lg font-bold text-foreground">Seus dados de vendas aparecerão aqui</p>
+              <p className="text-sm text-muted-foreground max-w-md mt-1.5">
+                Sincronize para carregar pedidos, faturamento, ranking de produtos e variações mais vendidas dos últimos 90 dias.
+              </p>
+            </div>
+            <Button onClick={sync} size="lg" className="gap-2 text-sm">
+              <RefreshCw className="w-4 h-4" />
+              Sincronizar agora
+            </Button>
+          </div>
+        )}
+
+        {/* Syncing skeleton (no data yet) */}
+        {syncing && !data && (
+          <div className="space-y-4 animate-pulse">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="rounded-xl border border-border bg-card h-24" />
+              ))}
+            </div>
+            <div className="flex items-center justify-center py-8 gap-2 text-sm text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Sincronizando pedidos...
+            </div>
           </div>
         )}
 
         {data && (
           <div className="space-y-4 animate-fade-up">
-            {/* KPI Cards */}
-            <div className="grid grid-cols-3 gap-3">
+            {/* KPI Cards - 2x2 mobile, 4 cols desktop */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <KpiCard
                 icon={<ShoppingCart className="w-5 h-5" />}
                 iconColor="text-primary"
@@ -126,8 +163,8 @@ export default function Performance() {
                 iconColor="text-emerald-500"
                 borderColor="border-t-emerald-500"
                 label="Faturamento"
-                value={data.summary.total_revenue > 0 ? `R$ ${data.summary.total_revenue.toFixed(0)}` : '—'}
-                sub={data.summary.total_revenue > 0 ? `R$ ${(data.summary.total_revenue / 90).toFixed(0)}/dia` : ''}
+                value={totalRevenueAll > 0 ? `R$ ${totalRevenueAll.toFixed(0)}` : '—'}
+                sub={totalRevenueAll > 0 ? `R$ ${(totalRevenueAll / 90).toFixed(0)}/dia` : ''}
               />
               <KpiCard
                 icon={<Package className="w-5 h-5" />}
@@ -136,6 +173,14 @@ export default function Performance() {
                 label="Ticket Médio"
                 value={data.summary.avg_ticket > 0 ? `R$ ${data.summary.avg_ticket.toFixed(2)}` : '—'}
                 sub="por pedido"
+              />
+              <KpiCard
+                icon={<BarChart3 className="w-5 h-5" />}
+                iconColor="text-orange-500"
+                borderColor="border-t-orange-500"
+                label="Pedidos/dia"
+                value={unDia > 0 ? unDia.toFixed(1) : '—'}
+                sub="média"
               />
             </div>
 
@@ -162,31 +207,69 @@ export default function Performance() {
             ) : (
               <div className="space-y-2">
                 <p className="text-sm font-bold text-foreground">🏆 Ranking de Produtos ({sorted.length})</p>
-                {sorted.slice(0, 20).map(([itemId, prod], i) => (
-                  <button
-                    key={itemId}
-                    onClick={() => setSelectedProduct({ itemId, product: prod })}
-                    className="w-full text-left rounded-xl border border-border p-3 hover:bg-muted/30 transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center flex-shrink-0">
-                          {i + 1}
-                        </span>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">{prod.name}</p>
-                          <p className="text-[10px] text-muted-foreground font-mono">ID: {itemId}</p>
-                        </div>
+                {sorted.slice(0, 20).map(([itemId, prod], i) => {
+                  const isExpanded = expandedId === itemId;
+                  const pctRevenue = totalRevenueAll > 0 ? (prod.total_revenue / totalRevenueAll) * 100 : 0;
+
+                  return (
+                    <Collapsible
+                      key={itemId}
+                      open={isExpanded}
+                      onOpenChange={(open) => setExpandedId(open ? itemId : null)}
+                    >
+                      <div className="rounded-xl border border-border overflow-hidden transition-colors hover:bg-muted/20">
+                        <CollapsibleTrigger className="w-full text-left p-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                              {/* Position / Medal */}
+                              {i < 3 ? (
+                                <span className="w-6 h-6 flex items-center justify-center flex-shrink-0 text-sm">
+                                  {MEDALS[i]}
+                                </span>
+                              ) : (
+                                <span className="w-6 h-6 rounded-full bg-muted text-muted-foreground text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                                  {i + 1}
+                                </span>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium text-foreground truncate">{prod.name}</p>
+                                {/* Mini revenue bar */}
+                                <div className="mt-1 h-1 bg-muted rounded-full overflow-hidden max-w-[200px]">
+                                  <div
+                                    className="h-full bg-primary/60 rounded-full transition-all duration-500"
+                                    style={{ width: `${Math.min(pctRevenue, 100)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                              <div className="flex flex-col items-end gap-0.5">
+                                {prod.total_revenue > 0 && (
+                                  <span className="text-xs font-bold text-foreground">
+                                    R$ {prod.total_revenue.toFixed(2)}
+                                  </span>
+                                )}
+                                <span className="text-[10px] text-muted-foreground">{prod.total_qty} un.</span>
+                              </div>
+                              <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                            </div>
+                          </div>
+                        </CollapsibleTrigger>
+
+                        <CollapsibleContent>
+                          <div className="border-t border-border">
+                            <ProductExpandedDetail
+                              product={prod}
+                              totalRevenue={totalRevenueAll}
+                              totalQty={totalQtyAll}
+                              periodDays={periodDays}
+                            />
+                          </div>
+                        </CollapsibleContent>
                       </div>
-                      <div className="flex flex-col items-end gap-0.5 flex-shrink-0 ml-2">
-                        {prod.total_revenue > 0 && (
-                          <span className="text-xs font-bold text-foreground">{formatCurrency(prod.total_revenue)}</span>
-                        )}
-                        <span className="text-[10px] text-muted-foreground">{prod.total_qty} un.</span>
-                      </div>
-                    </div>
-                  </button>
-                ))}
+                    </Collapsible>
+                  );
+                })}
                 {sorted.length > 20 && (
                   <p className="text-xs text-muted-foreground text-center">+{sorted.length - 20} produtos</p>
                 )}
@@ -195,17 +278,6 @@ export default function Performance() {
           </div>
         )}
       </div>
-
-      {/* Product Detail Drawer */}
-      <ProductDetailDrawer
-        open={!!selectedProduct}
-        onOpenChange={(open) => !open && setSelectedProduct(null)}
-        product={selectedProduct?.product || null}
-        itemId={selectedProduct?.itemId || ''}
-        totalRevenue={data?.summary.total_revenue || 0}
-        totalQty={totalQtyAll}
-        periodDays={data?.summary.period_days || 90}
-      />
     </AppLayout>
   );
 }
@@ -218,7 +290,7 @@ function KpiCard({ icon, iconColor, borderColor, label, value, sub }: {
     <div className={`rounded-xl border border-border border-t-2 ${borderColor} bg-card p-4 text-center`}>
       <div className={`${iconColor} flex justify-center mb-1`}>{icon}</div>
       <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</p>
-      <p className="text-xl font-bold text-foreground font-mono mt-0.5">{value}</p>
+      <p className="text-xl md:text-2xl font-bold text-foreground font-mono mt-0.5">{value}</p>
       {sub && <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>}
     </div>
   );
