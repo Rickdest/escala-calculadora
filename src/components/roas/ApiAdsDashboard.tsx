@@ -307,6 +307,7 @@ export function ApiAdsDashboard({ data, products = [], onRefreshProduct, onCampa
   // Support legacy ads_by_product field
   const campaigns: CampaignAds[] = ads_by_campaign.length > 0 ? ads_by_campaign : ((data as any).ads_by_product || []);
   const [sortBy, setSortBy] = useState<string>('roas');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'paused' | 'ended'>('all');
 
   const chartData = useMemo(() =>
     daily_entries.filter(e => e.date).sort((a, b) => (a.date || '').localeCompare(b.date || '')).map(e => ({
@@ -315,8 +316,16 @@ export function ApiAdsDashboard({ data, products = [], onRefreshProduct, onCampa
     })), [daily_entries]
   );
 
+  const statusCounts = useMemo(() => ({
+    all: campaigns.length,
+    active: campaigns.filter(c => c.status === 'active').length,
+    paused: campaigns.filter(c => c.status === 'paused').length,
+    ended: campaigns.filter(c => c.status === 'ended').length,
+  }), [campaigns]);
+
   const sortedCampaigns = useMemo(() => {
-    const arr = [...campaigns];
+    let arr = [...campaigns];
+    if (statusFilter !== 'all') arr = arr.filter(c => c.status === statusFilter);
     switch (sortBy) {
       case 'roas': return arr.sort((a, b) => b.roas - a.roas);
       case 'expense': return arr.sort((a, b) => b.expense - a.expense);
@@ -324,7 +333,7 @@ export function ApiAdsDashboard({ data, products = [], onRefreshProduct, onCampa
       case 'position': return arr.sort((a, b) => (a.avg_position ?? 999) - (b.avg_position ?? 999));
       default: return arr;
     }
-  }, [campaigns, sortBy]);
+  }, [campaigns, sortBy, statusFilter]);
 
   const balance = total_balance?.total_balance ?? total_balance?.balance ?? null;
 
