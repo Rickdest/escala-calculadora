@@ -34,13 +34,53 @@ function shortDate(d: string | null): string {
   return d;
 }
 
+function HourlyHeatmap({ data }: { data: HourlyEntry[] }) {
+  if (!data || data.length === 0) return null;
+  const maxClicks = Math.max(...data.map(h => h.clicks), 1);
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Clock className="w-4 h-4 text-primary" />
+        <p className="text-sm font-bold text-foreground">Melhores Horários (ontem)</p>
+      </div>
+      <div className="grid grid-cols-12 gap-1">
+        {Array.from({ length: 24 }, (_, h) => {
+          const entry = data.find(e => e.hour === h);
+          const clicks = entry?.clicks || 0;
+          const intensity = clicks / maxClicks;
+          const orders = entry?.orders || 0;
+          return (
+            <div key={h} className="text-center" title={`${h}h: ${clicks} cliques, ${orders} pedidos, ${fmt(entry?.expense || 0)} gasto`}>
+              <div
+                className="w-full aspect-square rounded-md transition-colors"
+                style={{
+                  backgroundColor: intensity > 0.7
+                    ? 'hsl(var(--primary))'
+                    : intensity > 0.4
+                    ? 'hsl(var(--primary) / 0.5)'
+                    : intensity > 0.1
+                    ? 'hsl(var(--primary) / 0.2)'
+                    : 'hsl(var(--secondary))',
+                }}
+              />
+              <p className="text-[8px] text-muted-foreground mt-0.5">{h}h</p>
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex items-center gap-3 mt-2 text-[9px] text-muted-foreground">
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-secondary inline-block" /> Baixo</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm inline-block" style={{ backgroundColor: 'hsl(var(--primary) / 0.2)' }} /> Médio</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm inline-block" style={{ backgroundColor: 'hsl(var(--primary) / 0.5)' }} /> Alto</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm inline-block" style={{ backgroundColor: 'hsl(var(--primary))' }} /> Pico</span>
+      </div>
+    </div>
+  );
+}
 
 export function ApiAdsDashboard({ data, products = [] }: { data: ApiAdsData; products?: any[] }) {
-  const { summary, daily_entries = [], campaign_details, ads_by_campaign = [], total_balance, hourly_performance, recommended_items, shop_toggles } = data || {};
-  // Support legacy ads_by_product field
-  const campaigns: CampaignAds[] = ads_by_campaign.length > 0 ? ads_by_campaign : ((data as any).ads_by_product || []);
-  const [sortBy, setSortBy] = useState<string>('roas');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'paused' | 'ended'>('all');
+  const { summary, daily_entries = [], ads_by_campaign = [], total_balance, hourly_performance, recommended_items, shop_toggles } = data || {};
+
 
   const chartData = useMemo(() =>
     daily_entries.filter(e => e.date).sort((a, b) => (a.date || '').localeCompare(b.date || '')).map(e => ({
