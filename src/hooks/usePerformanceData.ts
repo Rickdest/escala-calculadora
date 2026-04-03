@@ -10,11 +10,21 @@ export interface PerformanceData {
     total_qty: number;
     total_revenue: number;
     variants: Record<string, { qty: number; revenue: number }>;
+    daily_sales?: Record<string, number>;
     image_url?: string;
     likes?: number;
     views?: number;
     sales?: number;
     item_status?: string;
+    current_price?: number | null;
+    min_price?: number | null;
+    max_price?: number | null;
+    stock_available?: number | null;
+    rating_star?: number | null;
+    comment_count?: number;
+    category_id?: number | null;
+    weight?: number | null;
+    days_to_ship?: number | null;
   }>;
   summary: {
     total_orders: number;

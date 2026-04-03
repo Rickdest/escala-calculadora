@@ -79,10 +79,10 @@ async function fetchProductsWithModels(
       accessToken,
       shopId,
       {
-        item_id_list: itemIds.join(","),
+      item_id_list: itemIds.join(","),
         need_tax_info: "true",
         response_optional_fields:
-          "price_info,stock_info_v2,sale_info,item_status",
+          "price_info,stock_info_v2,sale_info,item_status,description,weight,dimension,rating_star,comment_count,category_id",
       }
     );
 
@@ -109,15 +109,26 @@ async function fetchProductsWithModels(
   }
 
   // Build enrichment map from product details
-  const enrichmentMap: Record<string, { image_url?: string; likes?: number; views?: number; sales?: number; item_status?: string }> = {};
+  const enrichmentMap: Record<string, any> = {};
   const detailItems = productDetails?.response?.item_list || [];
   for (const p of detailItems) {
+    const priceInfo = p.price_info || {};
+    const stockInfo = p.stock_info_v2?.summary_info || {};
     enrichmentMap[String(p.item_id)] = {
       image_url: p.image?.image_url_list?.[0] || undefined,
       likes: p.likes ?? 0,
       views: p.views ?? 0,
       sales: p.sale_info?.total_sales ?? p.sales ?? 0,
       item_status: p.item_status || undefined,
+      current_price: priceInfo.current_price ?? priceInfo.min_price ?? null,
+      min_price: priceInfo.min_price ?? null,
+      max_price: priceInfo.max_price ?? null,
+      stock_available: stockInfo.total_available_stock ?? null,
+      rating_star: p.rating_star ?? null,
+      comment_count: p.comment_count ?? 0,
+      category_id: p.category_id ?? null,
+      weight: p.weight ?? null,
+      days_to_ship: p.days_to_ship ?? null,
     };
   }
 
@@ -219,6 +230,7 @@ async function fetchOrdersWithAggregation(
       total_qty: number;
       total_revenue: number;
       variants: Record<string, { qty: number; revenue: number }>;
+      daily_sales: Record<string, number>;
     }
   > = {};
 
@@ -230,6 +242,12 @@ async function fetchOrdersWithAggregation(
     statusCounts[status] = (statusCounts[status] || 0) + 1;
     totalRevenue += Number(order.total_amount || 0);
 
+    // Extract date for daily_sales
+    const orderTimestamp = order.pay_time || order.create_time || 0;
+    const orderDate = orderTimestamp > 0
+      ? new Date(orderTimestamp * 1000).toISOString().slice(0, 10)
+      : null;
+
     const items = order.item_list || [];
     for (const item of items) {
       const itemId = String(item.item_id);
@@ -239,6 +257,7 @@ async function fetchOrdersWithAggregation(
           total_qty: 0,
           total_revenue: 0,
           variants: {},
+          daily_sales: {},
         };
       }
       const qty = item.model_quantity_purchased || 1;
@@ -247,6 +266,11 @@ async function fetchOrdersWithAggregation(
 
       productSales[itemId].total_qty += qty;
       productSales[itemId].total_revenue += rev;
+
+      // Aggregate daily sales
+      if (orderDate) {
+        productSales[itemId].daily_sales[orderDate] = (productSales[itemId].daily_sales[orderDate] || 0) + qty;
+      }
 
       const variantName = item.model_name || "Único";
       if (!productSales[itemId].variants[variantName]) {

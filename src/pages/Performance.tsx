@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -7,6 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useShopeeToken } from '@/hooks/useShopeeToken';
 import { usePerformanceData } from '@/hooks/usePerformanceData';
 import { ProductExpandedDetail } from '@/components/performance/ProductExpandedDetail';
+import { useApiAdsData } from '@/hooks/useApiAdsData';
 import { RefreshCw, Loader2, ShoppingBag, TrendingUp, ShoppingCart, Package, Clock, ChevronDown, BarChart3, Eye } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -37,8 +38,25 @@ export default function Performance() {
   const navigate = useNavigate();
   const { isConnected, startOAuth, isLoading: tokenLoading } = useShopeeToken();
   const { data, syncedAt, loading, syncing, sync } = usePerformanceData();
+  const { data: adsRows } = useApiAdsData();
   const [connecting, setConnecting] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Build ads lookup by item_id
+  const adsLookup = useMemo(() => {
+    if (!adsRows) return {};
+    const map: Record<string, { expense: number; gmv: number; roas: number }> = {};
+    for (const r of adsRows as any[]) {
+      const key = String(r.item_id);
+      if (!map[key]) map[key] = { expense: 0, gmv: 0, roas: 0 };
+      map[key].expense += Number(r.expense || 0);
+      map[key].gmv += Number(r.gmv || 0);
+    }
+    for (const v of Object.values(map)) {
+      v.roas = v.expense > 0 ? v.gmv / v.expense : 0;
+    }
+    return map;
+  }, [adsRows]);
 
   const handleConnect = async () => {
     try {
@@ -242,7 +260,7 @@ export default function Performance() {
                               <CollapsibleContent asChild>
                                 <tr>
                                   <td colSpan={7} className="p-0 border-b border-border bg-muted/5">
-                                    <ProductExpandedDetail product={prod} totalRevenue={totalRevenueAll} totalQty={totalQtyAll} periodDays={periodDays} itemId={itemId} />
+                                    <ProductExpandedDetail product={prod} totalRevenue={totalRevenueAll} totalQty={totalQtyAll} periodDays={periodDays} itemId={itemId} adsData={adsLookup[itemId] || null} />
                                   </td>
                                 </tr>
                               </CollapsibleContent>
@@ -294,7 +312,7 @@ export default function Performance() {
 
                           <CollapsibleContent>
                             <div className="border-t border-border">
-                              <ProductExpandedDetail product={prod} totalRevenue={totalRevenueAll} totalQty={totalQtyAll} periodDays={periodDays} itemId={itemId} />
+                              <ProductExpandedDetail product={prod} totalRevenue={totalRevenueAll} totalQty={totalQtyAll} periodDays={periodDays} itemId={itemId} adsData={adsLookup[itemId] || null} />
                             </div>
                           </CollapsibleContent>
                         </div>
