@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 import { FilterType } from './adsHelpers';
 import { cn } from '@/lib/utils';
 import { SummaryCards } from './SummaryCards';
-import { FilterChips } from './FilterChips';
+
 import { AdsProductCard } from './AdsProductCard';
 import { AlertsSection } from './AlertsSection';
 import { Button } from '@/components/ui/button';
