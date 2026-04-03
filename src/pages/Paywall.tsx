@@ -29,8 +29,8 @@ export default function Paywall() {
   const monthlyEquiv = (PRICING.yearly / 12).toFixed(2).replace('.', ',');
 
   return (
-    <AppLayout>
-      <div className="py-6 max-w-sm mx-auto" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div className="min-h-screen bg-background flex items-center justify-center px-5 py-8">
+      <div className="w-full max-w-sm" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
         {/* Logo */}
         <div className="flex justify-center pt-2">
