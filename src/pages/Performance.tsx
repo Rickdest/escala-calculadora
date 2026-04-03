@@ -7,6 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useShopeeToken } from '@/hooks/useShopeeToken';
 import { usePerformanceData } from '@/hooks/usePerformanceData';
 import { ProductExpandedDetail } from '@/components/performance/ProductExpandedDetail';
+import { useApiAdsData } from '@/hooks/useApiAdsData';
 import { RefreshCw, Loader2, ShoppingBag, TrendingUp, ShoppingCart, Package, Clock, ChevronDown, BarChart3, Eye } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
