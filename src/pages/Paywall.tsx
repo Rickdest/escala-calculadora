@@ -17,6 +17,7 @@ const benefits = [
 
 export default function Paywall() {
   const { refreshSubscription } = useBilling();
+  const { handleSignOut } = useSignOut();
   const [plan, setPlan] = useState<'monthly' | 'yearly'>('yearly');
 
   const handlePlanCheckout = () => {
