@@ -31,6 +31,25 @@ const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const ShopeeCallback = lazy(() => import("./pages/ShopeeCallback"));
 const Performance = lazy(() => import("./pages/Performance"));
 
+function PaywallRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const { status, loading: subLoading } = useSubscription();
+
+  if (loading || subLoading || status === 'loading') {
+    return <PageLoader />;
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  if (status === 'active') {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
