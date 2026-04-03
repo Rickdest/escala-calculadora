@@ -573,7 +573,8 @@ Deno.serve(async (req) => {
         await supabaseAdmin.from("shopee_ads_by_product").upsert({
           user_id: user.id, shop_id: Number(shopeeToken.shop_id),
           campaign_id: c.campaign_id, item_id: c.item_id,
-          item_name: c.item_name, period_start: adsPerformance.period_start,
+          item_name: c.item_name, status: c.status || 'ended',
+          period_start: adsPerformance.period_start,
           period_end: adsPerformance.period_end, impressions: c.impressions,
           clicks: c.clicks, expense: c.expense, gmv: c.gmv,
           direct_gmv: c.direct_gmv, orders: c.orders, direct_orders: c.direct_orders,

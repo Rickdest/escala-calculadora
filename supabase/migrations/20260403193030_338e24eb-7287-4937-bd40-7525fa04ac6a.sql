@@ -1,0 +1,1 @@
+ALTER TABLE public.shopee_ads_by_product ADD COLUMN status text DEFAULT 'ended';

@@ -307,6 +307,7 @@ export function ApiAdsDashboard({ data, products = [], onRefreshProduct, onCampa
   // Support legacy ads_by_product field
   const campaigns: CampaignAds[] = ads_by_campaign.length > 0 ? ads_by_campaign : ((data as any).ads_by_product || []);
   const [sortBy, setSortBy] = useState<string>('roas');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'paused' | 'ended'>('all');
 
   const chartData = useMemo(() =>
     daily_entries.filter(e => e.date).sort((a, b) => (a.date || '').localeCompare(b.date || '')).map(e => ({
@@ -315,8 +316,16 @@ export function ApiAdsDashboard({ data, products = [], onRefreshProduct, onCampa
     })), [daily_entries]
   );
 
+  const statusCounts = useMemo(() => ({
+    all: campaigns.length,
+    active: campaigns.filter(c => c.status === 'active').length,
+    paused: campaigns.filter(c => c.status === 'paused').length,
+    ended: campaigns.filter(c => c.status === 'ended').length,
+  }), [campaigns]);
+
   const sortedCampaigns = useMemo(() => {
-    const arr = [...campaigns];
+    let arr = [...campaigns];
+    if (statusFilter !== 'all') arr = arr.filter(c => c.status === statusFilter);
     switch (sortBy) {
       case 'roas': return arr.sort((a, b) => b.roas - a.roas);
       case 'expense': return arr.sort((a, b) => b.expense - a.expense);
@@ -324,7 +333,7 @@ export function ApiAdsDashboard({ data, products = [], onRefreshProduct, onCampa
       case 'position': return arr.sort((a, b) => (a.avg_position ?? 999) - (b.avg_position ?? 999));
       default: return arr;
     }
-  }, [campaigns, sortBy]);
+  }, [campaigns, sortBy, statusFilter]);
 
   const balance = total_balance?.total_balance ?? total_balance?.balance ?? null;
 
@@ -449,21 +458,46 @@ export function ApiAdsDashboard({ data, products = [], onRefreshProduct, onCampa
       {/* Campaigns list */}
       {campaigns.length > 0 && (
         <div className="space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-bold text-foreground">Produtos ({campaigns.length})</p>
-            <div className="flex items-center gap-1.5">
-              <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" />
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="h-7 text-xs w-[100px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="roas">ROAS</SelectItem>
-                  <SelectItem value="expense">Gasto</SelectItem>
-                  <SelectItem value="gmv">GMV</SelectItem>
-                  <SelectItem value="position">Posição</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm font-bold text-foreground">Produtos ({sortedCampaigns.length})</p>
+              <div className="flex items-center gap-1.5">
+                <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" />
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="h-7 text-xs w-[100px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="roas">ROAS</SelectItem>
+                    <SelectItem value="expense">Gasto</SelectItem>
+                    <SelectItem value="gmv">GMV</SelectItem>
+                    <SelectItem value="position">Posição</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+              {([
+                { key: 'all' as const, label: 'Todos' },
+                { key: 'active' as const, label: 'Em andamento', dot: 'bg-success' },
+                { key: 'paused' as const, label: 'Pausado', dot: 'bg-warning' },
+                { key: 'ended' as const, label: 'Encerrado', dot: 'bg-muted-foreground' },
+              ] as const).filter(f => f.key === 'all' || statusCounts[f.key] > 0).map(f => (
+                <button
+                  key={f.key}
+                  onClick={() => setStatusFilter(f.key)}
+                  className={cn(
+                    'shrink-0 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border flex items-center gap-1.5',
+                    statusFilter === f.key
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-card border-border text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {'dot' in f && f.dot && <span className={cn('w-2 h-2 rounded-full inline-block', f.dot)} />}
+                  {f.label}
+                  <span className="opacity-50">({statusCounts[f.key]})</span>
+                </button>
+              ))}
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

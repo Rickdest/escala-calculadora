@@ -46,6 +46,10 @@ export function buildApiAdsDataFromRows(rows: any[]) {
       existing.orders = (existing.orders || 0) + (r.orders || 0);
       existing.direct_orders = (existing.direct_orders || 0) + (r.direct_orders || 0);
       existing.campaign_ids.push(r.campaign_id);
+      // Prioritize status: active > paused > ended
+      const rStatus = r.status || 'ended';
+      if (rStatus === 'active') existing.status = 'active';
+      else if (rStatus === 'paused' && existing.status !== 'active') existing.status = 'paused';
       // Keep the most recent updated_at
       if ((r.updated_at || '') > (existing.updated_at || '')) {
         existing.updated_at = r.updated_at;
@@ -117,7 +121,7 @@ export function buildApiAdsDataFromRows(rows: any[]) {
       cost_per_order: Number(r.cost_per_order || 0),
       days_active: r.days_active || 0,
       daily_data: r.daily_data || [],
-      status: r.item_name?.includes('Pausado') ? 'paused' : 'active',
+      status: r.status || 'ended',
     })),
     period_start: periodStart,
     period_end: periodEnd,
