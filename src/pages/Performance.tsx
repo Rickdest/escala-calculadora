@@ -295,7 +295,6 @@ export default function Performance() {
                           <CollapsibleContent>
                             <div className="border-t border-border">
                               <ProductExpandedDetail product={prod} totalRevenue={totalRevenueAll} totalQty={totalQtyAll} periodDays={periodDays} itemId={itemId} />
-                              </div>
                             </div>
                           </CollapsibleContent>
                         </div>
