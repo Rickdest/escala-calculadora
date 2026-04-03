@@ -3,18 +3,25 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
-export function useShopeeToken() {
+type AppType = 'seller' | 'ads';
+
+export function useShopeeToken(appType?: AppType) {
   const { user } = useAuth();
 
   const { data: token, isLoading, refetch } = useQuery({
-    queryKey: ['shopee-token', user?.id],
+    queryKey: ['shopee-token', user?.id, appType],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const baseQuery = supabase
         .from('shopee_tokens')
         .select('*')
-        .eq('user_id', user!.id)
-        .limit(1)
-        .maybeSingle();
+        .eq('user_id', user!.id);
+
+      // app_type column added via migration, not yet in generated types
+      const finalQuery = appType
+        ? (baseQuery as any).eq('app_type', appType)
+        : baseQuery;
+
+      const { data, error } = await finalQuery.limit(1).maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -22,12 +29,13 @@ export function useShopeeToken() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const startOAuth = async () => {
+  const startOAuth = async (oauthAppType: AppType = 'seller') => {
     const { data: session } = await supabase.auth.getSession();
     const res = await supabase.functions.invoke('shopee-auth', {
       headers: {
         Authorization: `Bearer ${session.session?.access_token}`,
       },
+      body: { app_type: oauthAppType },
     });
 
     if (res.error) {
@@ -101,5 +109,23 @@ export function useShopeeToken() {
     syncStoreData,
     syncAdsOnly,
     refetch,
+  };
+}
+
+/** Hook to check both seller and ads token status */
+export function useShopeeTokenStatus() {
+  const seller = useShopeeToken('seller');
+  const ads = useShopeeToken('ads');
+
+  return {
+    sellerConnected: seller.isConnected,
+    adsConnected: ads.isConnected,
+    sellerToken: seller.token,
+    adsToken: ads.token,
+    isLoading: seller.isLoading || ads.isLoading,
+    startOAuth: seller.startOAuth,
+    syncStoreData: seller.syncStoreData,
+    syncAdsOnly: ads.syncAdsOnly || seller.syncAdsOnly,
+    refetchAll: () => { seller.refetch(); ads.refetch(); },
   };
 }
