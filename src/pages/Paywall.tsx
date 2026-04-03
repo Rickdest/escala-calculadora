@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
 import { useBilling } from '@/hooks/useBilling';
+import { useSignOut } from '@/hooks/useSignOut';
 import { Check } from 'lucide-react';
 import logoIcon from '@/assets/skalify-logo.png';
 import { PRICING } from '@/constants/pricing';
