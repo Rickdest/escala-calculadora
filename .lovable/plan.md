@@ -1,28 +1,19 @@
 
 
-## Plano: Separação rigorosa Seller vs Ads na integração Shopee
+## Plano: Corrigir SHOPEE_PARTNER_ID no ambiente
 
-### Implementado
+### Causa raiz
+O secret `SHOPEE_PARTNER_ID` está configurado como `2032223` (que é o Partner ID do app de **Ads**). O valor correto para o Seller é `2032348`.
 
-1. **`_shared/shopee.ts`**: `getAdsCredentials()` não faz mais fallback para credenciais Seller — lança erro claro se SHOPEE_ADS_PARTNER_ID ou SHOPEE_ADS_KEY não estão configurados. Adicionada validação cruzada: Partner ID de Ads não pode ser igual ao de Seller.
+Resultado: toda tentativa de OAuth abre com o app errado → Shopee rejeita por domínio inconsistente.
 
-2. **`shopee-sync`**: Busca explicitamente `app_type = 'seller'` no token.
+### Correção
 
-3. **`shopee-ads`**: Busca exclusivamente `app_type = 'ads'`, sem fallback. Retorna erro 403 claro se não existe token Ads.
+**Ação única**: Atualizar o secret `SHOPEE_PARTNER_ID` para `2032348`.
 
-4. **`shopee-callback`**: Todos os erros redirecionam para `/configuracoes/integracoes` com `app_type` e `shopee_error` na URL. Credenciais validadas com try/catch.
+Nenhuma mudança de código é necessária. Após atualizar o secret, as Edge Functions já fazem a separação correta:
+- Seller: `SHOPEE_PARTNER_ID` = 2032348
+- Ads: `SHOPEE_ADS_PARTNER_ID` = 2032223
 
-5. **`shopee-auth`**: Validação de credenciais com try/catch e mensagem clara de erro de configuração.
+O fluxo em cadeia (seller → ads) vai funcionar normalmente.
 
-6. **`shopee-seller-discovery`**: Removido fallback para "qualquer token" — usa apenas token seller.
-
-7. **`Integracoes.tsx`**:
-   - Exibe `shop_id` real em vez de `currentStore.name`
-   - Alerta visual quando Seller e Ads estão conectados a lojas diferentes
-   - Mensagens de erro específicas por código de erro
-   - Aviso quando há histórico de Ads mas sem token ativo
-   - Removida dependência de `useStore`
-
-8. **`AdsTab.tsx`**: `AdsHeader` e componente principal usam `useShopeeToken('ads')` em vez de genérico.
-
-9. **`ShopeeIntegrationModal.tsx`**: Usa `useShopeeTokenStatus()` para status separado de Seller e Ads.
