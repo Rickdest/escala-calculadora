@@ -6,6 +6,73 @@ import { toast } from 'sonner';
 
 type AppType = 'seller' | 'ads';
 
+type ParsedShopeeError = {
+  code?: string;
+  message: string;
+};
+
+function getShopeeAuthErrorMessage(appType: AppType, code?: string, fallback?: string) {
+  const normalizedCode = code?.toLowerCase();
+  const appLabel = appType === 'ads' ? 'Ads' : 'Seller';
+
+  if (normalizedCode === 'error_sign' || normalizedCode === 'wrong_sign') {
+    return `A chave da Shopee ${appLabel} está inválida ou não corresponde ao app configurado.`;
+  }
+
+  if (normalizedCode === 'auth_url_unavailable' || normalizedCode === 'auth_preflight_failed') {
+    return `A Shopee não aceitou iniciar a autorização de ${appLabel}. Tente novamente em instantes.`;
+  }
+
+  return fallback || 'Erro ao iniciar integração Shopee';
+}
+
+function getShopeePayloadError(payload: unknown, appType: AppType): ParsedShopeeError | null {
+  if (!payload || typeof payload !== 'object' || !('error' in payload)) {
+    return null;
+  }
+
+  const payloadRecord = payload as Record<string, unknown>;
+  const code = typeof payloadRecord.error === 'string' ? payloadRecord.error : undefined;
+  const payloadMessage = typeof payloadRecord.message === 'string' ? payloadRecord.message : undefined;
+  const fallback = payloadMessage || code || 'Erro ao iniciar integração Shopee';
+
+  return {
+    code,
+    message: getShopeeAuthErrorMessage(appType, code, fallback),
+  };
+}
+
+async function parseShopeeInvokeError(invokeError: unknown, appType: AppType): Promise<ParsedShopeeError> {
+  const fallback = invokeError instanceof Error ? invokeError.message : 'Erro ao iniciar integração Shopee';
+
+  if (invokeError && typeof invokeError === 'object' && 'context' in invokeError) {
+    const context = (invokeError as { context?: Response }).context;
+
+    if (context) {
+      try {
+        const payload = await context.clone().json();
+        const parsedPayloadError = getShopeePayloadError(payload, appType);
+        if (parsedPayloadError) return parsedPayloadError;
+      } catch {
+        // ignore JSON parse errors and try plain text
+      }
+
+      try {
+        const text = await context.clone().text();
+        return {
+          message: getShopeeAuthErrorMessage(appType, undefined, text || fallback),
+        };
+      } catch {
+        // ignore plain text parse errors and fall back to generic message
+      }
+    }
+  }
+
+  return {
+    message: getShopeeAuthErrorMessage(appType, undefined, fallback),
+  };
+}
+
 export function useShopeeToken(appType?: AppType) {
   const { user } = useAuth();
   const [needsReauth, setNeedsReauth] = useState(false);
@@ -45,16 +112,17 @@ export function useShopeeToken(appType?: AppType) {
     });
 
     if (res.error) {
-      const msg = res.error?.message || 'Erro ao iniciar integração Shopee';
-      toast.error(msg);
-      throw res.error;
+      const parsedError = await parseShopeeInvokeError(res.error, oauthAppType);
+      toast.error(parsedError.message);
+      throw new Error(parsedError.message);
     }
 
     const data = res.data;
+    const payloadError = getShopeePayloadError(data, oauthAppType);
 
-    if (data?.error) {
-      toast.error(`Erro Shopee: ${data.error}`);
-      throw new Error(data.error);
+    if (payloadError) {
+      toast.error(payloadError.message);
+      throw new Error(payloadError.message);
     }
 
     const { auth_url } = data;

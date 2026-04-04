@@ -41,6 +41,25 @@ const getShopLabel = (token: any): string => {
   return `Loja #${token.shop_id}`;
 };
 
+const SHOPEE_CONNECT_ERROR_MESSAGES: Record<string, string> = {
+  missing_params: 'Parâmetros faltando na resposta da Shopee. Tente novamente.',
+  invalid_state: 'Sessão expirada. Tente conectar novamente.',
+  token_exchange_http_error: 'Erro de comunicação com a Shopee. Tente novamente em alguns minutos.',
+  token_parse_error: 'Resposta inesperada da Shopee. Tente novamente.',
+  token_failed: 'A Shopee rejeitou a autorização. Tente novamente.',
+  token_upsert_failed: 'Erro ao salvar o token. Entre em contato com o suporte.',
+  error_param: 'Erro de configuração na Shopee. Entre em contato com o suporte.',
+  redirect_domain: 'Erro de configuração de domínio. Entre em contato com o suporte.',
+  error_sign: 'A chave da Shopee Seller está inválida ou não corresponde ao app configurado.',
+  wrong_sign: 'A chave da Shopee Seller está inválida ou não corresponde ao app configurado.',
+  auth_url_unavailable: 'A Shopee não aceitou iniciar a autorização agora. Tente novamente em instantes.',
+  auth_preflight_failed: 'Não foi possível validar a autorização da Shopee agora. Tente novamente em instantes.',
+};
+
+const clearPendingAdsOAuth = () => {
+  localStorage.removeItem('skalify_pending_ads_oauth');
+};
+
 export default function Integracoes() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -83,10 +102,12 @@ export default function Integracoes() {
     const pendingLocal = localStorage.getItem('skalify_pending_ads_oauth');
 
     if ((nextStep === 'ads' || pendingLocal === 'true') && justConnected && !adsConnected) {
-      localStorage.removeItem('skalify_pending_ads_oauth');
+      clearPendingAdsOAuth();
       setTimeout(() => {
         toast.info('Ótimo! Agora vamos conectar os dados de Ads...');
-        adsHook.startOAuth('ads');
+        void adsHook.startOAuth('ads').catch(() => {
+          clearPendingAdsOAuth();
+        });
       }, 1500);
     }
   }, [sellerConnected, adsConnected, searchParams]);
@@ -101,17 +122,8 @@ export default function Integracoes() {
     }
     const errCode = searchParams.get('shopee_error');
     if (errCode) {
-      const errorMessages: Record<string, string> = {
-        missing_params: 'Parâmetros faltando na resposta da Shopee. Tente novamente.',
-        invalid_state: 'Sessão expirada. Tente conectar novamente.',
-        token_exchange_http_error: 'Erro de comunicação com a Shopee. Tente novamente em alguns minutos.',
-        token_parse_error: 'Resposta inesperada da Shopee. Tente novamente.',
-        token_failed: 'A Shopee rejeitou a autorização. Tente novamente.',
-        token_upsert_failed: 'Erro ao salvar o token. Entre em contato com o suporte.',
-        error_param: 'Erro de configuração na Shopee. Entre em contato com o suporte.',
-        redirect_domain: 'Erro de configuração de domínio. Entre em contato com o suporte.',
-      };
-      toast.error(errorMessages[errCode] || 'Erro ao conectar com a Shopee. Tente novamente.');
+      clearPendingAdsOAuth();
+      toast.error(SHOPEE_CONNECT_ERROR_MESSAGES[errCode] || 'Erro ao conectar com a Shopee. Tente novamente.');
     }
   }, []);
 
@@ -126,6 +138,7 @@ export default function Integracoes() {
       localStorage.setItem('skalify_pending_ads_oauth', 'true');
       await sellerHook.startOAuth('seller');
     } catch {
+      clearPendingAdsOAuth();
       setConnecting(false);
     }
   };

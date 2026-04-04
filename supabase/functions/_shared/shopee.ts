@@ -15,6 +15,20 @@ export const PARTNER_ID: number = (() => {
 
 export const SHOPEE_PARTNER_ID = PARTNER_ID;
 
+export type ShopeeCredentials = { partnerId: number; partnerKey: string };
+
+async function getSecretFingerprint(secret: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(secret.trim())
+  );
+
+  return Array.from(new Uint8Array(digest))
+    .slice(0, 6)
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 function getPartnerKey(): string {
   const key = (Deno.env.get("SHOPEE_KEY") || "").trim();
   if (key && key.length >= 20) {
@@ -134,7 +148,7 @@ export async function shopeePostWith(
 
 // ─── Ads app credentials ─────────────────────────────────────────────
 
-export function getAdsCredentials(): { partnerId: number; partnerKey: string } {
+export function getAdsCredentials(): ShopeeCredentials {
   const envId = (Deno.env.get("SHOPEE_ADS_PARTNER_ID") || "").trim();
   const envKey = (Deno.env.get("SHOPEE_ADS_KEY") || "").trim();
   if (!envId || !/^\d+$/.test(envId)) {
@@ -152,12 +166,27 @@ export function getAdsCredentials(): { partnerId: number; partnerKey: string } {
   return { partnerId: adsId, partnerKey: envKey };
 }
 
-export function getSellerCredentials(): { partnerId: number; partnerKey: string } {
+export function getSellerCredentials(): ShopeeCredentials {
   return { partnerId: PARTNER_ID, partnerKey: getPartnerKey() };
 }
 
-export function getCredentialsForAppType(appType: string): { partnerId: number; partnerKey: string } {
+export function getCredentialsForAppType(appType: string): ShopeeCredentials {
   return appType === 'ads' ? getAdsCredentials() : getSellerCredentials();
+}
+
+export async function getCredentialsDiagnostics(
+  appType: string,
+  creds?: ShopeeCredentials
+) {
+  const resolved = creds ?? getCredentialsForAppType(appType);
+
+  return {
+    app_type: appType === 'ads' ? 'ads' : 'seller',
+    host: SHOPEE_HOST,
+    partner_id: resolved.partnerId,
+    key_fingerprint: await getSecretFingerprint(resolved.partnerKey),
+    key_length: resolved.partnerKey.trim().length,
+  };
 }
 
 // ─── Original helpers (default to seller credentials) ────────────────
