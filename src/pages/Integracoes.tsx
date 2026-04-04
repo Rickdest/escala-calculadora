@@ -107,7 +107,6 @@ export default function Integracoes() {
     }
     const errCode = searchParams.get('shopee_error');
     if (errCode) {
-      clearPendingAdsOAuth();
       toast.error(SHOPEE_CONNECT_ERROR_MESSAGES[errCode] || 'Erro ao conectar com a Shopee. Tente novamente.');
     }
   }, []);
