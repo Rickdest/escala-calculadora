@@ -26,7 +26,18 @@ export function useApiAdsData() {
   return { ...query, invalidate };
 }
 
-export function buildApiAdsDataFromRows(rows: any[]) {
+/** Convert DD-MM-YYYY to YYYY-MM-DD for comparison */
+function normalizeDailyDate(d: string): string {
+  if (!d) return '';
+  // DD-MM-YYYY → YYYY-MM-DD
+  const parts = d.split('-');
+  if (parts.length === 3 && parts[0].length <= 2) {
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  }
+  return d; // already YYYY-MM-DD
+}
+
+export function buildApiAdsDataFromRows(rows: any[], dateFrom?: string, dateTo?: string) {
   if (!rows || rows.length === 0) return null;
 
   // Aggregate by item_id to avoid showing the same product multiple times
