@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
       tokenData = JSON.parse(tokenText);
     } catch (parseErr) {
       console.error("[SHOPEE CALLBACK] JSON parse error:", parseErr);
-      return Response.redirect(`${appUrl}/roas?shopee_error=token_parse_error`, 302);
+      return Response.redirect(`${appUrl}/configuracoes/integracoes?shopee_error=token_parse_error&app_type=${appType}`, 302);
     }
 
     if (tokenData.error || !tokenData.access_token) {
