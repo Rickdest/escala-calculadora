@@ -417,16 +417,20 @@ export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClo
             description="Produtos, pedidos, finanças"
             icon={Package}
             isConnected={sellerConnected}
+            isExpired={sellerExpired}
             isLoading={connecting === 'seller' || tokenLoading}
             onConnect={() => handleConnect('seller')}
+            onReconnect={() => handleConnect('seller')}
           />
           <ConnectionCard
             title="📊 Dados de Ads"
             description="Campanhas, ROAS, keywords"
             icon={BarChart3}
             isConnected={adsConnected}
+            isExpired={adsExpired}
             isLoading={connecting === 'ads' || tokenLoading}
             onConnect={() => handleConnect('ads')}
+            onReconnect={() => handleConnect('ads')}
           />
           {sellerConnected && adsConnected && (
             <p className="text-[10px] text-emerald-600 text-center">
