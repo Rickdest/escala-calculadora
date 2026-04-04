@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
 
     if (!userId) {
       console.error("[SHOPEE CALLBACK] No valid state/user found. state:", state);
-      return Response.redirect(`${appUrl}/roas?shopee_error=invalid_state`, 302);
+      return Response.redirect(`${appUrl}/configuracoes/integracoes?shopee_error=invalid_state`, 302);
     }
 
     console.log("[SHOPEE CALLBACK] User ID:", userId, "app_type:", appType);
