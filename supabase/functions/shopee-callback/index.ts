@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
 
     if (!code || !shopId) {
       console.error("[SHOPEE CALLBACK] Params faltando");
-      return Response.redirect(`${appUrl}/roas?shopee_error=missing_params`, 302);
+      return Response.redirect(`${appUrl}/configuracoes/integracoes?shopee_error=missing_params`, 302);
     }
 
     const supabaseAdmin = createClient(
@@ -61,13 +61,19 @@ Deno.serve(async (req) => {
 
     if (!userId) {
       console.error("[SHOPEE CALLBACK] No valid state/user found. state:", state);
-      return Response.redirect(`${appUrl}/roas?shopee_error=invalid_state`, 302);
+      return Response.redirect(`${appUrl}/configuracoes/integracoes?shopee_error=invalid_state`, 302);
     }
 
     console.log("[SHOPEE CALLBACK] User ID:", userId, "app_type:", appType);
 
     // Use correct credentials for this app type
-    const creds = getCredentialsForAppType(appType);
+    let creds;
+    try {
+      creds = getCredentialsForAppType(appType);
+    } catch (credErr) {
+      console.error(`[SHOPEE CALLBACK] Credential error for app_type=${appType}:`, (credErr as Error).message);
+      return Response.redirect(`${appUrl}/configuracoes/integracoes?shopee_error=error_param&app_type=${appType}`, 302);
+    }
 
     // Token exchange
     const path = "/api/v2/auth/token/get";
@@ -94,7 +100,7 @@ Deno.serve(async (req) => {
 
     if (!tokenRes.ok) {
       console.error("[SHOPEE CALLBACK] HTTP error - status:", tokenRes.status, "body:", tokenText.substring(0, 300));
-      return Response.redirect(`${appUrl}/roas?shopee_error=token_exchange_http_error`, 302);
+      return Response.redirect(`${appUrl}/configuracoes/integracoes?shopee_error=token_exchange_http_error&app_type=${appType}`, 302);
     }
 
     let tokenData: Record<string, unknown>;
@@ -102,12 +108,14 @@ Deno.serve(async (req) => {
       tokenData = JSON.parse(tokenText);
     } catch (parseErr) {
       console.error("[SHOPEE CALLBACK] JSON parse error:", parseErr);
-      return Response.redirect(`${appUrl}/roas?shopee_error=token_parse_error`, 302);
+      return Response.redirect(`${appUrl}/configuracoes/integracoes?shopee_error=token_parse_error&app_type=${appType}`, 302);
     }
 
     if (tokenData.error || !tokenData.access_token) {
       console.error("[SHOPEE CALLBACK] Token error:", JSON.stringify(tokenData));
-      return Response.redirect(`${appUrl}/roas?shopee_error=token_failed`, 302);
+      const shopeeMsg = typeof tokenData.message === 'string' ? tokenData.message : '';
+      const isDomainError = shopeeMsg.includes('redirect') || shopeeMsg.includes('domain');
+      return Response.redirect(`${appUrl}/configuracoes/integracoes?shopee_error=${isDomainError ? 'redirect_domain' : 'token_failed'}&app_type=${appType}`, 302);
     }
 
     const upsertPayload = {
@@ -134,7 +142,7 @@ Deno.serve(async (req) => {
 
     if (upsertError) {
       console.error("[SHOPEE CALLBACK] Upsert error:", JSON.stringify(upsertError));
-      return Response.redirect(`${appUrl}/roas?shopee_error=token_upsert_failed`, 302);
+      return Response.redirect(`${appUrl}/configuracoes/integracoes?shopee_error=token_upsert_failed&app_type=${appType}`, 302);
     }
 
     console.log(`[SHOPEE CALLBACK] === SUCESSO === Token salvo (app_type=${appType})`);
@@ -142,6 +150,6 @@ Deno.serve(async (req) => {
   } catch (e) {
     console.error("[SHOPEE CALLBACK] === ERRO FATAL ===");
     console.error("[SHOPEE CALLBACK] Error:", e);
-    return Response.redirect(`${appUrl}/roas?shopee_error=unknown`, 302);
+    return Response.redirect(`${appUrl}/configuracoes/integracoes?shopee_error=unknown`, 302);
   }
 });

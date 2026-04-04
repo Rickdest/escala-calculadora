@@ -149,7 +149,7 @@ function AdsHeader({ periodLabel, onImportCSV, onImportAds, syncing, dateFrom, d
   periodLabel: string; onImportCSV: () => void; onImportAds: () => void; syncing?: boolean;
   dateFrom: Date | undefined; dateTo: Date | undefined; onRangeChange: (from: Date | undefined, to: Date | undefined) => void;
 }) {
-  const { isConnected, token } = useShopeeToken();
+  const { isConnected, token } = useShopeeToken('ads');
 
   const syncAgo = token?.updated_at
     ? formatDistanceToNow(new Date(token.updated_at), { addSuffix: false, locale: ptBR })
@@ -203,7 +203,7 @@ function AdsHeader({ periodLabel, onImportCSV, onImportAds, syncing, dateFrom, d
 export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => void }) {
   const { currentStore } = useStore();
   const { data, loading, operating, importGeneralCSV, importProductCSV, importFromApi, linkProduct, unlinkProduct, reload, deleteAdsData, deleteAll } = useAdsData();
-  const { isConnected, syncAdsOnly, isExpired, needsReauth, startOAuth } = useShopeeToken();
+  const { isConnected, syncAdsOnly, isExpired, needsReauth, startOAuth } = useShopeeToken('ads');
   const [selectedDetail, setSelectedDetailRaw] = useState<EnrichedAdsData | null>(null);
   const setSelectedDetail = (ad: EnrichedAdsData | null) => {
     setSelectedDetailRaw(ad);

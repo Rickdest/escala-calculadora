@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -54,6 +55,20 @@ export default function Integracoes() {
 
   const [autoSync, setAutoSync] = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
+
+  // Check if there's historical ads data without active ads token
+  const { data: historicalAdsCount } = useQuery({
+    queryKey: ['historical-ads-count', user?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('shopee_ads_by_product')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user!.id);
+      return count || 0;
+    },
+    enabled: !!user && !adsConnected,
+  });
+  const hasHistoricalAds = !adsConnected && (historicalAdsCount ?? 0) > 0;
 
   // Check if seller and ads are connected to different shops
   const shopMismatch = sellerConnected && adsConnected && sellerToken && adsToken
@@ -490,9 +505,24 @@ export default function Integracoes() {
                     </div>
                   </>
                 ) : (
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Conecte a API de Ads para importar dados de campanhas, ROAS e gastos automaticamente.
-                  </p>
+                  <div className="space-y-3">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Conecte a API de Ads para importar dados de campanhas, ROAS e gastos automaticamente.
+                    </p>
+                    {hasHistoricalAds && (
+                      <div className="flex items-center gap-2 rounded-lg p-3 text-xs border"
+                        style={{
+                          background: 'hsla(45, 100%, 50%, 0.07)',
+                          borderColor: 'hsla(45, 100%, 50%, 0.2)',
+                        }}
+                      >
+                        <span>📊</span>
+                        <span className="text-muted-foreground">
+                          Há histórico de Ads salvo, mas a autorização da API Ads não está ativa no momento. Reconecte para atualizar.
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

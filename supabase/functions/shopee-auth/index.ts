@@ -66,7 +66,13 @@ Deno.serve(async (req) => {
     }
 
     // Use credentials for the correct app type
-    const creds = getCredentialsForAppType(appType);
+    let creds;
+    try {
+      creds = getCredentialsForAppType(appType);
+    } catch (credErr) {
+      console.error(`[SHOPEE AUTH] Credential error for app_type=${appType}:`, (credErr as Error).message);
+      return errorResponse(`Erro de configuração: ${(credErr as Error).message}`, 500);
+    }
     const callbackWithState = `${appUrl}/shopee-callback?state=${state}`;
     const authUrl = await getAuthUrl(callbackWithState, creds.partnerId, creds.partnerKey);
 

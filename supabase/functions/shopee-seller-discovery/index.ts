@@ -64,11 +64,7 @@ Deno.serve(async (req) => {
     if (!isAdmin) return errorResponse("Admin only", 403);
 
     // Get seller token
-    let { data: tokens } = await supabase.from("shopee_tokens").select("*").eq("user_id", userId).eq("app_type" as any, "seller").limit(1);
-    if (!tokens || tokens.length === 0) {
-      const fallback = await supabase.from("shopee_tokens").select("*").eq("user_id", userId).limit(1);
-      tokens = fallback.data;
-    }
+    const { data: tokens } = await supabase.from("shopee_tokens").select("*").eq("user_id", userId).eq("app_type" as any, "seller").limit(1);
     if (!tokens || tokens.length === 0) return errorResponse("No seller token found. Connect your shop first.");
 
     const shopeeToken = tokens[0];
