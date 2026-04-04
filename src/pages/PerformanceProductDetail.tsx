@@ -398,7 +398,20 @@ export default function PerformanceProductDetail() {
             <BarChart data={dailyData} barCategoryGap="15%">
               <XAxis dataKey="label" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} interval={chartPeriod === '7d' ? 0 : chartPeriod === '30d' ? 4 : 13} />
               <YAxis hide />
-              <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }} formatter={(value: number) => [`${value} un.`, 'Vendas']} />
+              <Tooltip
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  const qty = payload[0]?.value as number;
+                  const rev = payload[0]?.payload?.revenue as number;
+                  return (
+                    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-md">
+                      <p className="text-[11px] font-semibold text-foreground mb-1">{label}</p>
+                      <p className="text-[11px] text-muted-foreground">Vendas: <span className="font-mono font-bold text-foreground">{qty} un.</span></p>
+                      <p className="text-[11px] text-muted-foreground">Faturamento: <span className="font-mono font-bold text-emerald-500">R$ {(rev || 0).toFixed(2).replace('.', ',')}</span></p>
+                    </div>
+                  );
+                }}
+              />
               <Bar dataKey="value" radius={[3, 3, 0, 0]}>
                 {dailyData.map((_, index) => (
                   <Cell key={index} fill={index >= dailyData.length - 3 ? 'hsl(var(--primary))' : 'hsl(var(--primary) / 0.65)'} />
