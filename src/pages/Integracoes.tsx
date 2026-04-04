@@ -247,7 +247,7 @@ export default function Integracoes() {
 
             <Button
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-              onClick={handleConnectBoth}
+              onClick={handleConnectSeller}
               disabled={connecting}
             >
               {connecting ? 'Redirecionando...' : 'Conectar com Shopee →'}
