@@ -92,22 +92,10 @@ export default function Integracoes() {
 
   const [connecting, setConnecting] = useState(false);
 
-  // Auto-connect Ads after Seller OAuth completes (via URL param from callback)
-  useEffect(() => {
-    const nextStep = searchParams.get('next');
-    const justConnected = searchParams.get('shopee_connected') === 'true';
-    const pendingLocal = localStorage.getItem('skalify_pending_ads_oauth');
-
-    if ((nextStep === 'ads' || pendingLocal === 'true') && justConnected && !adsConnected) {
-      clearPendingAdsOAuth();
-      setTimeout(() => {
-        toast.info('Ótimo! Agora vamos conectar os dados de Ads...');
-        void adsHook.startOAuth('ads').catch(() => {
-          clearPendingAdsOAuth();
-        });
-      }, 1500);
-    }
-  }, [sellerConnected, adsConnected, searchParams]);
+  // Detect if user just connected seller and needs ads next
+  const justConnectedSeller = searchParams.get('shopee_connected') === 'true'
+    && searchParams.get('app_type') === 'seller'
+    && sellerConnected && !adsConnected;
 
   // Show success/error toast on callback
   useEffect(() => {
