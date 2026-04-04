@@ -306,9 +306,13 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
   console.log(`[SHOPEE ADS] ${adsByCampaign.length} campaigns with data out of ${campaignsForStep4.length}`);
 
   // Step 5: Hourly performance for avg_position
-  const activeCampaignsWithData = adsByCampaign.filter((c: any) => c.status === 'active' && c.expense > 0);
-  if (activeCampaignsWithData.length > 0) {
-    console.log(`[SHOPEE ADS] === Step 5: hourly performance for avg_position (${activeCampaignsWithData.length} active campaigns) ===`);
+  // Include campaigns with expense > 0 (not just active), and filter by itemId if refreshing a single product
+  let campaignsForPosition = adsByCampaign.filter((c: any) => c.expense > 0);
+  if (filterItemId) {
+    campaignsForPosition = campaignsForPosition.filter((c: any) => c.item_id === filterItemId);
+  }
+  if (campaignsForPosition.length > 0) {
+    console.log(`[SHOPEE ADS] === Step 5: hourly performance for avg_position (${campaignsForPosition.length} campaigns, filterItemId=${filterItemId || 'none'}) ===`);
     await delay(1000);
     let hourlyFound = 0;
 
