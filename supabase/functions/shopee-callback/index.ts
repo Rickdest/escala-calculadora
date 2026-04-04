@@ -146,7 +146,13 @@ Deno.serve(async (req) => {
     }
 
     console.log(`[SHOPEE CALLBACK] === SUCESSO === Token salvo (app_type=${appType})`);
-    return Response.redirect(`${appUrl}/configuracoes/integracoes?shopee_connected=true&app_type=${appType}`, 302);
+
+    // If this was a seller connection, chain to ads OAuth automatically
+    let redirectUrl = `${appUrl}/configuracoes/integracoes?shopee_connected=true&app_type=${appType}`;
+    if (appType === 'seller') {
+      redirectUrl += '&next=ads';
+    }
+    return Response.redirect(redirectUrl, 302);
   } catch (e) {
     console.error("[SHOPEE CALLBACK] === ERRO FATAL ===");
     console.error("[SHOPEE CALLBACK] Error:", e);
