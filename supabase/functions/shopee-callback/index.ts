@@ -100,7 +100,7 @@ Deno.serve(async (req) => {
 
     if (!tokenRes.ok) {
       console.error("[SHOPEE CALLBACK] HTTP error - status:", tokenRes.status, "body:", tokenText.substring(0, 300));
-      return Response.redirect(`${appUrl}/roas?shopee_error=token_exchange_http_error`, 302);
+      return Response.redirect(`${appUrl}/configuracoes/integracoes?shopee_error=token_exchange_http_error&app_type=${appType}`, 302);
     }
 
     let tokenData: Record<string, unknown>;
