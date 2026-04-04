@@ -116,13 +116,11 @@ export default function Integracoes() {
     return formatDistanceToNow(new Date(sellerToken.updated_at), { addSuffix: true, locale: ptBR });
   };
 
-  const handleConnectBoth = async () => {
+  const handleConnectSeller = async () => {
     setConnecting(true);
     try {
-      localStorage.setItem('skalify_pending_ads_oauth', 'true');
       await sellerHook.startOAuth('seller');
     } catch {
-      clearPendingAdsOAuth();
       setConnecting(false);
     }
   };
