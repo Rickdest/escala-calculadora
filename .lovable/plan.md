@@ -1,58 +1,34 @@
 
-Resumo do diagnóstico
 
-- Não, o erro atual não acontece porque o sistema está pedindo Seller + Ads ao mesmo tempo.
-- A evidência é a chamada observada para `shopee-auth` com body `{"app_type":"seller"}` e o log:
-  - `[SHOPEE AUTH] Generated auth URL for app_type=seller, partner_id=2032348`
-- O `auth_url` retornado já está com:
-  - `partner_id=2032348`
-  - `redirect=https://app.skalify.com.br/shopee-callback?...`
-- Como não há logs do `shopee-callback`, a falha acontece antes do callback, já na abertura da URL da Shopee.
-- O erro `{"error":"error_sign","message":"Wrong sign"}` nesse ponto aponta para assinatura inválida do app Seller:
-  - `SHOPEE_KEY` não corresponde ao Partner ID `2032348`, ou
-  - a key não pertence ao ambiente `production`.
+## Problemas identificados
 
-Plano
+1. **Redirecionamento automático para Ads é confuso** — Depois de conectar o Seller, o sistema redireciona automaticamente para o OAuth de Ads sem explicar. O usuário vê outra tela de login sem entender por quê.
 
-1. Corrigir a credencial do app Seller
-- Atualizar o secret `SHOPEE_KEY` para a partner key correta do app Seller `2032348`.
-- Confirmar que `SHOPEE_ENV=production` continua alinhado com essa mesma aplicação.
-- Não tratar Ads como causa primária agora, porque o primeiro clique atual ainda nem chega nessa etapa.
+2. **Ao desconectar Seller com Ads ainda conectada, não aparece botão para reconectar Seller** — O card do Seller desaparece completamente (condição na linha 281: `sellerConnected`), e como `neitherConnected` é false (Ads ainda está conectada), o card unificado de conexão também não aparece.
 
-2. Blindar o backend para esse tipo de erro
-- Arquivos:
-  - `supabase/functions/_shared/shopee.ts`
-  - `supabase/functions/shopee-auth/index.ts`
-- Tornar mais explícita a separação Seller vs Ads nas credenciais.
-- Adicionar logs seguros de diagnóstico: `app_type`, `partner_id`, host e fingerprint curta da key, sem expor segredo.
-- Retornar erro estruturado quando houver falha de assinatura, para evitar jogar o usuário direto na resposta JSON crua da Shopee.
+3. **Tela de Ads não mostra permissões** — Isso é do lado da Shopee (imagem 144 vs 145), não controlamos. Mas podemos informar melhor o usuário.
 
-3. Melhorar o feedback na interface
-- Arquivos:
-  - `src/hooks/useShopeeToken.ts`
-  - `src/pages/Integracoes.tsx`
-- Traduzir `error_sign` como algo claro, por exemplo:
-  - “A chave da Shopee Seller está inválida ou não corresponde ao app configurado.”
-- Limpar o estado pendente do fluxo encadeado quando o Seller falhar, para não deixar Ads marcado como próximo passo sem necessidade.
+## Plano
 
-4. Validar o fluxo corretamente
-- Teste 1: conta sem integração → clicar em “Conectar com Shopee” deve abrir apenas o Seller com `partner_id=2032348`.
-- Teste 2: somente após o Seller autorizar com sucesso, iniciar Ads.
-- Se Seller passar e Ads falhar depois, aí o próximo ajuste será no `SHOPEE_ADS_KEY`, não no Seller.
+### 1. Remover auto-redirect para Ads — substituir por banner explicativo
 
-Detalhes técnicos
+- Remover o `useEffect` (linhas 99-113) que auto-inicia `adsHook.startOAuth('ads')` após o callback do Seller
+- Remover o `localStorage` de `skalify_pending_ads_oauth`
+- Após conectar Seller com sucesso, mostrar um banner destacado no card de Ads dizendo: "Seller conectado! Agora conecte os dados de Ads para ver ROAS e campanhas." com botão "Conectar Ads"
+- Isso dá ao usuário controle e contexto sobre o que está acontecendo
 
-- A lógica de assinatura no código está coerente para os endpoints de auth:
-  - `/api/v2/shop/auth_partner` → `partner_id + path + timestamp`
-  - `/api/v2/auth/token/get` → `partner_id + path + timestamp`
-- O frontend não altera a URL assinada; ele apenas recebe `auth_url` e faz `window.location.href = auth_url`.
-- Isso reduz muito a causa provável para configuração de segredo, não para bug de frontend.
-- O problema atual é do Seller, não do Ads, porque a tentativa observada foi `app_type=seller`.
+### 2. Mostrar card de Seller desconectada quando apenas Ads está conectada
 
-Arquivos envolvidos
-- `supabase/functions/_shared/shopee.ts`
-- `supabase/functions/shopee-auth/index.ts`
-- `src/hooks/useShopeeToken.ts`
-- `src/pages/Integracoes.tsx`
+- Alterar a lógica de renderização: o card do Seller deve aparecer também quando `!sellerConnected && adsConnected`, mostrando status "Não conectada" com botão "Conectar"
+- Isso resolve o problema de não poder reconectar Seller sem remover tudo
 
-Sem migration de banco.
+### 3. Melhorar feedback na transição Seller → Ads
+
+- No card de Ads (quando não conectada), adicionar texto explicativo: "Esta é uma segunda autorização necessária para acessar dados de campanhas e anúncios. Você será redirecionado para a Shopee novamente."
+
+## Arquivos modificados
+
+- `src/pages/Integracoes.tsx` — único arquivo alterado
+
+## Sem migrations de banco
+
