@@ -430,10 +430,10 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       const [inicio, fim] = selectedPeriod.split('|');
       result = result.filter(d => d.periodo_inicio === inicio && d.periodo_fim === fim);
     }
-    if (dateFrom || dateTo) {
+    if (dateFromStr || dateToStr) {
       result = result.filter(d => {
-        if (dateFrom && (d.periodo_fim || '') < dateFrom) return false;
-        if (dateTo && (d.periodo_inicio || '') > dateTo) return false;
+        if (dateFromStr && (d.periodo_fim || '') < dateFromStr) return false;
+        if (dateToStr && (d.periodo_inicio || '') > dateToStr) return false;
         return true;
       });
     }
