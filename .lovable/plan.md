@@ -1,24 +1,52 @@
 
 
-## Plano: Melhorar tooltip do gráfico de Vendas diárias
+## Plano: Refatorar página Integrações conforme HTML de referência
 
-### O que corrigir
-O tooltip atual ao passar o mouse mostra apenas "X un. / Vendas". O usuário quer ver também o faturamento estimado por dia.
+### Resumo
+Reescrever `Integracoes.tsx` seguindo a estrutura do HTML fornecido: remover jargões técnicos, substituir token por barra de progresso com dias restantes, unificar estado desconectado, remover toggle de notificação, e adicionar fluxo de conexão em cadeia (seller → ads).
 
-### Solução
+### Mudanças
 
-**Arquivo: `src/pages/PerformanceProductDetail.tsx`**
+#### 1. `src/pages/Integracoes.tsx` — Reescrita completa
 
-1. **Adicionar campo `revenue` no `dailyData`**: Calcular o faturamento diário multiplicando a quantidade do dia pelo ticket médio do produto (`total_revenue / total_qty`). Para dados estimados, mesma lógica.
+**Remover:**
+- `notifySync` state e seu toggle
+- `getTokenExpiry` (data absoluta)
+- Textos "Seller In House System · Partner ID 2032348" e "Ads Service · Partner ID 2032223"
+- "Shopee Ads API" → "Shopee Ads"
+- Estado desconectado duplicado (dois cards separados)
 
-2. **Melhorar o Tooltip**: Usar um `content` customizado no Recharts Tooltip que mostre:
-   - Data formatada (ex: "29 mar")
-   - Vendas: X un.
-   - Faturamento: R$ X,XX
-   - Estilo visual limpo com fundo escuro e texto legível
+**Adicionar:**
+- `getTokenDaysRemaining(token)` e `getTokenProgressPercent(token)` — calcula dias restantes dos 365 e percentual para barra de progresso
+- Token bar com barra de progresso visual ("🔑 Token válido · X dias restantes")
+- Descrições user-friendly: "Produtos · Pedidos · Estoque" e "ROAS · Campanhas · Gasto"
+- `handleConnectBoth()` — salva flag `skalify_pending_ads_oauth` no localStorage e inicia OAuth seller
 
-3. **Tooltip customizado**: Componente inline com fundo `hsl(var(--card))`, borda arredondada, exibindo as duas linhas de dados de forma clara.
+**Estados da página:**
+1. **Nenhum conectado**: Banner onboarding + card unificado "Conectar com Shopee" com 4 passos + card Ads com opacity 0.5 ("Conecte a Shopee primeiro")
+2. **Seller conectado, Ads não**: Card Seller completo + card Ads com botão "Conectar"
+3. **Ambos conectados**: Dois cards completos com barra de progresso do token
+
+#### 2. `src/pages/Integracoes.tsx` — useEffect para auto-connect Ads
+
+Adicionar `useEffect` que verifica:
+- Se `skalify_pending_ads_oauth` existe no localStorage
+- Se seller está conectado e ads não
+- Remove a flag e inicia `adsHook.startOAuth('ads')` após 1.5s com toast informativo
+
+#### 3. `supabase/functions/shopee-callback/index.ts` — Redirect para integrações
+
+Alterar redirect de sucesso de `/roas?shopee_connected=true` para `/configuracoes/integracoes?shopee_connected=true&app_type=${appType}` — pois é a página onde o fluxo faz sentido agora.
+
+### Arquivos modificados
+```
+src/pages/Integracoes.tsx                    — reescrita com todas as mudanças
+supabase/functions/shopee-callback/index.ts  — redirect para /configuracoes/integracoes
+```
 
 ### Resultado
-Ao passar o mouse sobre qualquer barra do gráfico, aparece a data, quantidade vendida e faturamento estimado daquele dia.
+- Página limpa, sem jargões técnicos
+- Token mostrado como "X dias restantes" com barra de progresso
+- Fluxo unificado de conexão: um clique conecta seller, depois automaticamente redireciona para ads
+- Estado parcial (só seller) mostra botão claro para conectar ads separadamente
 
