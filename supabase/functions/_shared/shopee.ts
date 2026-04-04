@@ -31,10 +31,12 @@ async function getSecretFingerprint(secret: string): Promise<string> {
 
 function getPartnerKey(): string {
   const key = (Deno.env.get("SHOPEE_KEY") || "").trim();
+  console.log(`[SHOPEE CONFIG] SHOPEE_KEY present=${!!key}, length=${key.length}, first4=${key.substring(0, 4)}***`);
   if (key && key.length >= 20) {
     return key;
   }
   const keyOld = (Deno.env.get("SHOPEE_PARTNER_KEY") || "").trim();
+  console.log(`[SHOPEE CONFIG] SHOPEE_PARTNER_KEY present=${!!keyOld}, length=${keyOld.length}`);
   if (keyOld && keyOld.length >= 20) {
     return keyOld;
   }
