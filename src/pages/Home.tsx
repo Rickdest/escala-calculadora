@@ -10,9 +10,6 @@ import { SubscriptionModal } from '@/components/SubscriptionModal';
 import { useShopeeToken } from '@/hooks/useShopeeToken';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { PageLoader, PageError } from '@/components/layout/PageStates';
-import { ProductForm } from '@/components/forms/ProductForm';
-import { SubscriptionModal } from '@/components/SubscriptionModal';
 
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { cn } from '@/lib/utils';
