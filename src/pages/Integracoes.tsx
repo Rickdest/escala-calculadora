@@ -72,6 +72,14 @@ export default function Integracoes() {
       sellerHook.refetch();
       adsHook.refetch();
     }
+    if (searchParams.get('shopee_error')) {
+      const errCode = searchParams.get('shopee_error');
+      if (errCode === 'error_param' || errCode === 'redirect_domain') {
+        toast.error('Erro de configuração na Shopee. Entre em contato com o suporte.');
+      } else {
+        toast.error('Erro ao conectar com a Shopee. Tente novamente.');
+      }
+    }
   }, []);
 
   const getLastSync = () => {
