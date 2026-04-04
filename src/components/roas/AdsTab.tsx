@@ -4,8 +4,8 @@ import { useStore } from '@/contexts/StoreContext';
 import { useAdsData, EnrichedAdsData } from '@/hooks/useAdsData';
 import { useShopeeToken } from '@/hooks/useShopeeToken';
 import { useApiAdsData, buildApiAdsDataFromRows } from '@/hooks/useApiAdsData';
-import { Upload, Trash2, MapPin, Calendar, ShoppingBag, CheckCircle2, Download, AlertTriangle, X } from 'lucide-react';
-import { formatDistanceToNow, subDays, format } from 'date-fns';
+import { Upload, Trash2, MapPin, Calendar as CalendarIcon, ShoppingBag, CheckCircle2, Download, AlertTriangle } from 'lucide-react';
+import { formatDistanceToNow, subDays, subMonths, startOfDay, endOfDay, startOfWeek, startOfMonth, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { parseShopeeAdsCSV, validateCSVSecurity } from '@/lib/shopeeAdsParser';
 import { AdsDetailFullView } from './AdsDetailFullView';
@@ -21,6 +21,8 @@ import { SummaryCards } from './SummaryCards';
 import { AdsProductCard } from './AdsProductCard';
 import { AlertsSection } from './AlertsSection';
 import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -72,9 +74,80 @@ function formatPeriodLabel(inicio: string, fim: string) {
   return `${fShort(inicio)} – ${fFull(fim)}`;
 }
 
-function AdsHeader({ periodLabel, onImportCSV, onImportAds, syncing, dateFrom, dateTo, onDateFromChange, onDateToChange, onClearDates }: {
+// Date range presets
+const DATE_PRESETS = [
+  { label: 'Hoje', getRange: () => ({ from: startOfDay(new Date()), to: endOfDay(new Date()) }) },
+  { label: 'Ontem', getRange: () => { const d = subDays(new Date(), 1); return { from: startOfDay(d), to: endOfDay(d) }; } },
+  { label: 'Última semana', getRange: () => ({ from: startOfDay(subDays(new Date(), 7)), to: endOfDay(new Date()) }) },
+  { label: 'Último mês', getRange: () => ({ from: startOfDay(subMonths(new Date(), 1)), to: endOfDay(new Date()) }) },
+  { label: 'Últimos 3 meses', getRange: () => ({ from: startOfDay(subMonths(new Date(), 3)), to: endOfDay(new Date()) }) },
+];
+
+function AdsDateRangePicker({ dateFrom, dateTo, onRangeChange }: {
+  dateFrom: Date | undefined; dateTo: Date | undefined;
+  onRangeChange: (from: Date | undefined, to: Date | undefined) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const label = dateFrom && dateTo
+    ? `${format(dateFrom, 'dd/MM/yyyy')} – ${format(dateTo, 'dd/MM/yyyy')}`
+    : 'Selecionar período';
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className={cn("gap-2 text-xs font-medium", !dateFrom && "text-muted-foreground")}>
+          <CalendarIcon className="w-3.5 h-3.5" />
+          {label}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <div className="flex">
+          {/* Presets sidebar */}
+          <div className="border-r border-border p-2 space-y-0.5 min-w-[130px]">
+            {DATE_PRESETS.map(preset => (
+              <button
+                key={preset.label}
+                onClick={() => {
+                  const range = preset.getRange();
+                  onRangeChange(range.from, range.to);
+                  setOpen(false);
+                }}
+                className="w-full text-left px-3 py-1.5 rounded-md text-xs hover:bg-accent hover:text-accent-foreground transition-colors"
+              >
+                {preset.label}
+              </button>
+            ))}
+            <div className="border-t border-border my-1" />
+            <button
+              onClick={() => { onRangeChange(undefined, undefined); setOpen(false); }}
+              className="w-full text-left px-3 py-1.5 rounded-md text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              Limpar filtro
+            </button>
+          </div>
+          {/* Calendar */}
+          <Calendar
+            mode="range"
+            selected={dateFrom && dateTo ? { from: dateFrom, to: dateTo } : undefined}
+            onSelect={(range) => {
+              onRangeChange(range?.from, range?.to);
+              if (range?.from && range?.to) setTimeout(() => setOpen(false), 200);
+            }}
+            numberOfMonths={2}
+            locale={ptBR}
+            disabled={(date) => date > new Date()}
+            className="p-3 pointer-events-auto"
+          />
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function AdsHeader({ periodLabel, onImportCSV, onImportAds, syncing, dateFrom, dateTo, onRangeChange }: {
   periodLabel: string; onImportCSV: () => void; onImportAds: () => void; syncing?: boolean;
-  dateFrom: string; dateTo: string; onDateFromChange: (v: string) => void; onDateToChange: (v: string) => void; onClearDates: () => void;
+  dateFrom: Date | undefined; dateTo: Date | undefined; onRangeChange: (from: Date | undefined, to: Date | undefined) => void;
 }) {
   const { isConnected, token } = useShopeeToken();
 
@@ -85,11 +158,14 @@ function AdsHeader({ periodLabel, onImportCSV, onImportAds, syncing, dateFrom, d
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <p className="text-sm font-bold text-foreground">Análise de Ads</p>
-          {periodLabel && (
-            <p className="text-[11px] text-muted-foreground font-mono">{periodLabel}</p>
-          )}
+        <div className="flex items-center gap-3">
+          <div>
+            <p className="text-sm font-bold text-foreground">Análise de Ads</p>
+            {periodLabel && (
+              <p className="text-[11px] text-muted-foreground font-mono">{periodLabel}</p>
+            )}
+          </div>
+          <AdsDateRangePicker dateFrom={dateFrom} dateTo={dateTo} onRangeChange={onRangeChange} />
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {isConnected && (
@@ -119,29 +195,6 @@ function AdsHeader({ periodLabel, onImportCSV, onImportAds, syncing, dateFrom, d
           )}
         </div>
       </div>
-      {/* Date range filter */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-        <span className="text-xs font-medium text-muted-foreground flex-shrink-0">Filtrar:</span>
-        <input
-          type="date"
-          value={dateFrom}
-          onChange={e => onDateFromChange(e.target.value)}
-          className="h-8 px-2 rounded-lg border border-border bg-card text-xs text-foreground"
-        />
-        <span className="text-xs text-muted-foreground">até</span>
-        <input
-          type="date"
-          value={dateTo}
-          onChange={e => onDateToChange(e.target.value)}
-          className="h-8 px-2 rounded-lg border border-border bg-card text-xs text-foreground"
-        />
-        {(dateFrom || dateTo) && (
-          <button onClick={onClearDates} className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
-            <X className="w-3 h-3" /> Limpar
-          </button>
-        )}
-      </div>
     </div>
   );
 }
@@ -169,9 +222,12 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const [syncing, setSyncing] = useState(false);
 
   // Date range filter – default: last 28 days
-  const [dateFrom, setDateFrom] = useState(() => format(subDays(new Date(), 28), 'yyyy-MM-dd'));
-  const [dateTo, setDateTo] = useState(() => format(new Date(), 'yyyy-MM-dd'));
-  const clearDates = () => { setDateFrom(''); setDateTo(''); };
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(() => subDays(new Date(), 28));
+  const [dateTo, setDateTo] = useState<Date | undefined>(() => new Date());
+  const handleRangeChange = (from: Date | undefined, to: Date | undefined) => { setDateFrom(from); setDateTo(to); };
+
+  const dateFromStr = dateFrom ? format(dateFrom, 'yyyy-MM-dd') : '';
+  const dateToStr = dateTo ? format(dateTo, 'yyyy-MM-dd') : '';
 
   const [apiAdsData, setApiAdsData] = useState<any>(null);
   const [apiCampaignList, setApiCampaignList] = useState<any[]>([]);
@@ -180,13 +236,13 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const { data: persistedRows, invalidate: invalidatePersistedAds } = useApiAdsData();
   const dateFilteredRows = useMemo(() => {
     if (!persistedRows) return [];
-    if (!dateFrom && !dateTo) return persistedRows;
+    if (!dateFromStr && !dateToStr) return persistedRows;
     return persistedRows.filter((r: any) => {
-      if (dateFrom && r.period_end < dateFrom) return false;
-      if (dateTo && r.period_start > dateTo) return false;
+      if (dateFromStr && r.period_end < dateFromStr) return false;
+      if (dateToStr && r.period_start > dateToStr) return false;
       return true;
     });
-  }, [persistedRows, dateFrom, dateTo]);
+  }, [persistedRows, dateFromStr, dateToStr]);
   const persistedApiData = useMemo(() => buildApiAdsDataFromRows(dateFilteredRows), [dateFilteredRows]);
 
   // Use in-memory data if available, otherwise fall back to persisted DB data
@@ -374,15 +430,15 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       const [inicio, fim] = selectedPeriod.split('|');
       result = result.filter(d => d.periodo_inicio === inicio && d.periodo_fim === fim);
     }
-    if (dateFrom || dateTo) {
+    if (dateFromStr || dateToStr) {
       result = result.filter(d => {
-        if (dateFrom && (d.periodo_fim || '') < dateFrom) return false;
-        if (dateTo && (d.periodo_inicio || '') > dateTo) return false;
+        if (dateFromStr && (d.periodo_fim || '') < dateFromStr) return false;
+        if (dateToStr && (d.periodo_inicio || '') > dateToStr) return false;
         return true;
       });
     }
     return result;
-  }, [data, selectedPeriod, dateFrom, dateTo]);
+  }, [data, selectedPeriod, dateFromStr, dateToStr]);
 
   const filtered = useMemo(() => {
     let result = periodFiltered;
@@ -540,9 +596,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
                 syncing={syncing}
                 dateFrom={dateFrom}
                 dateTo={dateTo}
-                onDateFromChange={setDateFrom}
-                onDateToChange={setDateTo}
-                onClearDates={clearDates}
+                onRangeChange={handleRangeChange}
               />
               <ApiAdsDashboard data={effectiveApiData} products={products} />
             </>
@@ -557,9 +611,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
                syncing={syncing}
                dateFrom={dateFrom}
                dateTo={dateTo}
-               onDateFromChange={setDateFrom}
-               onDateToChange={setDateTo}
-               onClearDates={clearDates}
+               onRangeChange={handleRangeChange}
              />
           )}
 
@@ -568,7 +620,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
               {/* ═══ Period chips (CSV only) ═══ */}
               {periods.length > 0 && !hasApiCampaigns && (
                 <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-                  <Calendar className="w-4 h-4 text-text-3 flex-shrink-0" />
+                  <CalendarIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                   <span className="text-xs font-medium text-text-3 flex-shrink-0">Período</span>
                   {periods.length > 1 && (
                     <button
