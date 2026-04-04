@@ -72,9 +72,80 @@ function formatPeriodLabel(inicio: string, fim: string) {
   return `${fShort(inicio)} – ${fFull(fim)}`;
 }
 
-function AdsHeader({ periodLabel, onImportCSV, onImportAds, syncing, dateFrom, dateTo, onDateFromChange, onDateToChange, onClearDates }: {
+// Date range presets
+const DATE_PRESETS = [
+  { label: 'Hoje', getRange: () => ({ from: startOfDay(new Date()), to: endOfDay(new Date()) }) },
+  { label: 'Ontem', getRange: () => { const d = subDays(new Date(), 1); return { from: startOfDay(d), to: endOfDay(d) }; } },
+  { label: 'Última semana', getRange: () => ({ from: startOfDay(subDays(new Date(), 7)), to: endOfDay(new Date()) }) },
+  { label: 'Último mês', getRange: () => ({ from: startOfDay(subMonths(new Date(), 1)), to: endOfDay(new Date()) }) },
+  { label: 'Últimos 3 meses', getRange: () => ({ from: startOfDay(subMonths(new Date(), 3)), to: endOfDay(new Date()) }) },
+];
+
+function AdsDateRangePicker({ dateFrom, dateTo, onRangeChange }: {
+  dateFrom: Date | undefined; dateTo: Date | undefined;
+  onRangeChange: (from: Date | undefined, to: Date | undefined) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const label = dateFrom && dateTo
+    ? `${format(dateFrom, 'dd/MM/yyyy')} – ${format(dateTo, 'dd/MM/yyyy')}`
+    : 'Selecionar período';
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className={cn("gap-2 text-xs font-medium", !dateFrom && "text-muted-foreground")}>
+          <CalendarIcon className="w-3.5 h-3.5" />
+          {label}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <div className="flex">
+          {/* Presets sidebar */}
+          <div className="border-r border-border p-2 space-y-0.5 min-w-[130px]">
+            {DATE_PRESETS.map(preset => (
+              <button
+                key={preset.label}
+                onClick={() => {
+                  const range = preset.getRange();
+                  onRangeChange(range.from, range.to);
+                  setOpen(false);
+                }}
+                className="w-full text-left px-3 py-1.5 rounded-md text-xs hover:bg-accent hover:text-accent-foreground transition-colors"
+              >
+                {preset.label}
+              </button>
+            ))}
+            <div className="border-t border-border my-1" />
+            <button
+              onClick={() => { onRangeChange(undefined, undefined); setOpen(false); }}
+              className="w-full text-left px-3 py-1.5 rounded-md text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              Limpar filtro
+            </button>
+          </div>
+          {/* Calendar */}
+          <Calendar
+            mode="range"
+            selected={dateFrom && dateTo ? { from: dateFrom, to: dateTo } : undefined}
+            onSelect={(range) => {
+              onRangeChange(range?.from, range?.to);
+              if (range?.from && range?.to) setTimeout(() => setOpen(false), 200);
+            }}
+            numberOfMonths={2}
+            locale={ptBR}
+            disabled={(date) => date > new Date()}
+            className="p-3 pointer-events-auto"
+          />
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function AdsHeader({ periodLabel, onImportCSV, onImportAds, syncing, dateFrom, dateTo, onRangeChange }: {
   periodLabel: string; onImportCSV: () => void; onImportAds: () => void; syncing?: boolean;
-  dateFrom: string; dateTo: string; onDateFromChange: (v: string) => void; onDateToChange: (v: string) => void; onClearDates: () => void;
+  dateFrom: Date | undefined; dateTo: Date | undefined; onRangeChange: (from: Date | undefined, to: Date | undefined) => void;
 }) {
   const { isConnected, token } = useShopeeToken();
 
@@ -85,11 +156,14 @@ function AdsHeader({ periodLabel, onImportCSV, onImportAds, syncing, dateFrom, d
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <p className="text-sm font-bold text-foreground">Análise de Ads</p>
-          {periodLabel && (
-            <p className="text-[11px] text-muted-foreground font-mono">{periodLabel}</p>
-          )}
+        <div className="flex items-center gap-3">
+          <div>
+            <p className="text-sm font-bold text-foreground">Análise de Ads</p>
+            {periodLabel && (
+              <p className="text-[11px] text-muted-foreground font-mono">{periodLabel}</p>
+            )}
+          </div>
+          <AdsDateRangePicker dateFrom={dateFrom} dateTo={dateTo} onRangeChange={onRangeChange} />
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {isConnected && (
@@ -118,29 +192,6 @@ function AdsHeader({ periodLabel, onImportCSV, onImportAds, syncing, dateFrom, d
             </button>
           )}
         </div>
-      </div>
-      {/* Date range filter */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-        <span className="text-xs font-medium text-muted-foreground flex-shrink-0">Filtrar:</span>
-        <input
-          type="date"
-          value={dateFrom}
-          onChange={e => onDateFromChange(e.target.value)}
-          className="h-8 px-2 rounded-lg border border-border bg-card text-xs text-foreground"
-        />
-        <span className="text-xs text-muted-foreground">até</span>
-        <input
-          type="date"
-          value={dateTo}
-          onChange={e => onDateToChange(e.target.value)}
-          className="h-8 px-2 rounded-lg border border-border bg-card text-xs text-foreground"
-        />
-        {(dateFrom || dateTo) && (
-          <button onClick={onClearDates} className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
-            <X className="w-3 h-3" /> Limpar
-          </button>
-        )}
       </div>
     </div>
   );
