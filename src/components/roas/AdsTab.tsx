@@ -493,7 +493,9 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
 
   const hasData = data.length > 0;
   const hasApiCampaigns = apiEnriched.length > 0;
-  const hasAnyContent = hasData || !!effectiveApiData;
+  // Check unfiltered data existence so date filter doesn't show empty/reconnect state
+  const hasPersistedApiData = (persistedRows && persistedRows.length > 0) || !!apiAdsData;
+  const hasAnyContent = hasData || hasPersistedApiData;
 
   const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
