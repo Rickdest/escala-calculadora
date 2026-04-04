@@ -358,7 +358,7 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
       });
       await Promise.all(promises);
     }
-    console.log(`[SHOPEE ADS] Step 5: found avg_position for ${hourlyFound}/${activeCampaignsWithData.length} campaigns`);
+    console.log(`[SHOPEE ADS] Step 5: found avg_position for ${hourlyFound}/${campaignsForPosition.length} campaigns`);
   }
 
   // Step 6: Enrichment
