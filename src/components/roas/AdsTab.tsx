@@ -589,10 +589,10 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
             )}
 
           {/* ═══ API Ads Summary (KPIs + charts only) ═══ */}
-          {effectiveApiData && (
+          {hasPersistedApiData && (
             <>
               <AdsHeader
-                periodLabel={`${effectiveApiData.period_start} – ${effectiveApiData.period_end}`}
+                periodLabel={effectiveApiData ? `${effectiveApiData.period_start} – ${effectiveApiData.period_end}` : 'Sem dados no período'}
                 onImportCSV={() => fileRef.current?.click()}
                 onImportAds={handleImportAds}
                 syncing={syncing}
@@ -600,12 +600,18 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
                 dateTo={dateTo}
                 onRangeChange={handleRangeChange}
               />
-              <ApiAdsDashboard data={effectiveApiData} products={products} />
+              {effectiveApiData && <ApiAdsDashboard data={effectiveApiData} products={products} />}
+              {!effectiveApiData && (
+                <div className="rounded-xl border border-border bg-card p-6 text-center">
+                  <p className="text-sm text-muted-foreground">Nenhum dado de Ads no período selecionado.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Altere as datas do filtro para ver os dados.</p>
+                </div>
+              )}
             </>
           )}
 
           {/* ═══ Header com botão discreto (CSV data) ═══ */}
-          {hasData && !effectiveApiData && (
+          {hasData && !hasPersistedApiData && (
              <AdsHeader
                periodLabel={periodLabel}
                onImportCSV={() => fileRef.current?.click()}
