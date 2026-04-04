@@ -168,6 +168,11 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const [showShopeeModal, setShowShopeeModal] = useState(false);
   const [syncing, setSyncing] = useState(false);
 
+  // Date range filter – default: last 28 days
+  const [dateFrom, setDateFrom] = useState(() => format(subDays(new Date(), 28), 'yyyy-MM-dd'));
+  const [dateTo, setDateTo] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+  const clearDates = () => { setDateFrom(''); setDateTo(''); };
+
   const [apiAdsData, setApiAdsData] = useState<any>(null);
   const [apiCampaignList, setApiCampaignList] = useState<any[]>([]);
 
