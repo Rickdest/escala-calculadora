@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
 
     if (!code || !shopId) {
       console.error("[SHOPEE CALLBACK] Params faltando");
-      return Response.redirect(`${appUrl}/roas?shopee_error=missing_params`, 302);
+      return Response.redirect(`${appUrl}/configuracoes/integracoes?shopee_error=missing_params`, 302);
     }
 
     const supabaseAdmin = createClient(
