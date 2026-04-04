@@ -31,12 +31,9 @@ export function useShopeeToken(appType?: AppType) {
   });
 
   // Check if token is likely expired based on local time
-  const isTokenExpired = (() => {
-    if (!token) return false;
-    if (needsReauth) return true;
-    const tokenAge = (Date.now() - new Date(token.token_created_at).getTime()) / 1000;
-    return tokenAge > (token.expire_in || 14400); // default 4h
-  })();
+  // Expiração é controlada pelo backend (refresh automático a cada ~4h).
+  // Só marca expirado quando o backend retorna needs_reauth (refresh token morreu).
+  const isTokenExpired = needsReauth;
 
   const startOAuth = async (oauthAppType: AppType = 'seller') => {
     const { data: session } = await supabase.auth.getSession();

@@ -81,8 +81,8 @@ const adsGet = (path: string, accessToken: string, shopId: string | number, extr
 
 async function refreshTokenIfNeeded(shopeeToken: any, _supabase: any): Promise<{ token: string; needs_reauth: boolean }> {
   const tokenAge = (Date.now() - new Date(shopeeToken.token_created_at).getTime()) / 1000;
-  // Refresh preventivo: renovar quando faltam 24h (não 5min)
-  if (tokenAge <= shopeeToken.expire_in - 86400) return { token: shopeeToken.access_token, needs_reauth: false };
+  // Refresh preventivo: renovar quando faltam 5min
+  if (tokenAge <= shopeeToken.expire_in - 300) return { token: shopeeToken.access_token, needs_reauth: false };
 
   console.log("[SHOPEE ADS] Token near expiry, refreshing...");
   const refreshPath = "/api/v2/auth/access_token/get";

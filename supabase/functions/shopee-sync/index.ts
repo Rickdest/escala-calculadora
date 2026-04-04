@@ -13,8 +13,8 @@ async function refreshTokenIfNeeded(shopeeToken: any, supabase: any): Promise<{ 
   const tokenAge =
     (Date.now() - new Date(shopeeToken.token_created_at).getTime()) / 1000;
 
-  // Refresh preventivo: renovar quando faltam 24h
-  if (tokenAge <= shopeeToken.expire_in - 86400) {
+  // Refresh preventivo: renovar quando faltam 5min
+  if (tokenAge <= shopeeToken.expire_in - 300) {
     return { token: shopeeToken.access_token, needs_reauth: false };
   }
 
