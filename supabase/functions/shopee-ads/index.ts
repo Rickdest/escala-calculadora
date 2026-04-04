@@ -598,7 +598,7 @@ Deno.serve(async (req) => {
       console.log(`[SHOPEE ADS] Upserted ${adsPerformance.ads_by_campaign.length} campaign records`);
     }
 
-    return jsonResponse({ success: true, results: { ads_performance: adsPerformance } });
+    return jsonResponse({ success: true, needs_reauth: refreshFailed, results: { ads_performance: { ...adsPerformance, needs_reauth: refreshFailed } } });
   } catch (e) {
     console.error("[SHOPEE ADS] Fatal error:", e);
     return errorResponse((e as Error).message, 500);
