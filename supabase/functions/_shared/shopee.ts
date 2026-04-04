@@ -137,11 +137,19 @@ export async function shopeePostWith(
 export function getAdsCredentials(): { partnerId: number; partnerKey: string } {
   const envId = (Deno.env.get("SHOPEE_ADS_PARTNER_ID") || "").trim();
   const envKey = (Deno.env.get("SHOPEE_ADS_KEY") || "").trim();
-  if (envId && /^\d+$/.test(envId) && envKey && envKey.length >= 20) {
-    return { partnerId: Number(envId), partnerKey: envKey };
+  if (!envId || !/^\d+$/.test(envId)) {
+    throw new Error("SHOPEE_ADS_PARTNER_ID não configurado ou inválido.");
   }
-  // NEVER fallback to seller credentials — throw clear error
-  throw new Error("SHOPEE_ADS_PARTNER_ID ou SHOPEE_ADS_KEY não configurados. Configure as credenciais do app de Ads no backend.");
+  if (!envKey || envKey.length < 20) {
+    throw new Error("SHOPEE_ADS_KEY não configurado ou inválido.");
+  }
+  const adsId = Number(envId);
+  // Cross-validate: Ads Partner ID must differ from Seller Partner ID
+  const sellerId = Number((Deno.env.get("SHOPEE_PARTNER_ID") || "").trim());
+  if (adsId === sellerId) {
+    throw new Error(`SHOPEE_ADS_PARTNER_ID (${adsId}) é igual ao SHOPEE_PARTNER_ID (${sellerId}). Configure o Partner ID correto do app de Ads.`);
+  }
+  return { partnerId: adsId, partnerKey: envKey };
 }
 
 export function getSellerCredentials(): { partnerId: number; partnerKey: string } {

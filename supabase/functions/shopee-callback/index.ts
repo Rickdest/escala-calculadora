@@ -150,6 +150,6 @@ Deno.serve(async (req) => {
   } catch (e) {
     console.error("[SHOPEE CALLBACK] === ERRO FATAL ===");
     console.error("[SHOPEE CALLBACK] Error:", e);
-    return Response.redirect(`${appUrl}/roas?shopee_error=unknown`, 302);
+    return Response.redirect(`${appUrl}/configuracoes/integracoes?shopee_error=unknown`, 302);
   }
 });
