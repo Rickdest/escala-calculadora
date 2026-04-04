@@ -306,15 +306,19 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
   console.log(`[SHOPEE ADS] ${adsByCampaign.length} campaigns with data out of ${campaignsForStep4.length}`);
 
   // Step 5: Hourly performance for avg_position
-  const activeCampaignsWithData = adsByCampaign.filter((c: any) => c.status === 'active' && c.expense > 0);
-  if (activeCampaignsWithData.length > 0) {
-    console.log(`[SHOPEE ADS] === Step 5: hourly performance for avg_position (${activeCampaignsWithData.length} active campaigns) ===`);
+  // Include campaigns with expense > 0 (not just active), and filter by itemId if refreshing a single product
+  let campaignsForPosition = adsByCampaign.filter((c: any) => c.expense > 0);
+  if (filterItemId) {
+    campaignsForPosition = campaignsForPosition.filter((c: any) => c.item_id === filterItemId);
+  }
+  if (campaignsForPosition.length > 0) {
+    console.log(`[SHOPEE ADS] === Step 5: hourly performance for avg_position (${campaignsForPosition.length} campaigns, filterItemId=${filterItemId || 'none'}) ===`);
     await delay(1000);
     let hourlyFound = 0;
 
-    for (let i = 0; i < activeCampaignsWithData.length; i += 3) {
+    for (let i = 0; i < campaignsForPosition.length; i += 3) {
       if (i > 0) await delay(2000);
-      const batch = activeCampaignsWithData.slice(i, i + 3);
+      const batch = campaignsForPosition.slice(i, i + 3);
       const promises = batch.map(async (c: any, batchIdx: number) => {
         try {
           const res = await adsGet(
@@ -354,7 +358,7 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
       });
       await Promise.all(promises);
     }
-    console.log(`[SHOPEE ADS] Step 5: found avg_position for ${hourlyFound}/${activeCampaignsWithData.length} campaigns`);
+    console.log(`[SHOPEE ADS] Step 5: found avg_position for ${hourlyFound}/${campaignsForPosition.length} campaigns`);
   }
 
   // Step 6: Enrichment
@@ -364,7 +368,10 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
 
   try {
     console.log("[SHOPEE ADS] === Step 6: Enrichment ===");
-    const activeCampaignsForKw = adsByCampaign.filter((c: any) => c.status === 'active' && c.item_id);
+    let activeCampaignsForKw = adsByCampaign.filter((c: any) => c.status === 'active' && c.item_id);
+    if (filterItemId) {
+      activeCampaignsForKw = activeCampaignsForKw.filter((c: any) => c.item_id === filterItemId);
+    }
     if (activeCampaignsForKw.length > 0) {
       for (let i = 0; i < activeCampaignsForKw.length; i += 3) {
         if (i > 0) await delay(2000);
@@ -388,45 +395,50 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
       }
     }
 
-    await delay(500);
-    try {
-      const res = await adsGet("/api/v2/ads/get_all_cpc_ads_hourly_performance", accessToken, shopId, { performance_date: isoToDDMMYYYY(endDateISO) });
-      const entries = extractEntries(res);
-      if (entries.length > 0) {
-        hourlyPerformance = entries.map((e: any) => ({
-          hour: Number(e.hour ?? e.time ?? 0),
-          impressions: Number(e.impression || e.impressions || 0),
-          clicks: Number(e.click || e.clicks || 0),
-          expense: Number(e.expense || e.cost || 0),
-          gmv: Number(e.broad_gmv || e.broad_order_amount || e.gmv || 0),
-          orders: Number(e.broad_order || e.orders || 0),
-        }));
-      }
-    } catch (e) { console.error("[SHOPEE ADS] hourly error:", e); }
+    // Skip shop-level enrichment when refreshing a single product (saves API quota)
+    if (!filterItemId) {
+      await delay(500);
+      try {
+        const res = await adsGet("/api/v2/ads/get_all_cpc_ads_hourly_performance", accessToken, shopId, { performance_date: isoToDDMMYYYY(endDateISO) });
+        const entries = extractEntries(res);
+        if (entries.length > 0) {
+          hourlyPerformance = entries.map((e: any) => ({
+            hour: Number(e.hour ?? e.time ?? 0),
+            impressions: Number(e.impression || e.impressions || 0),
+            clicks: Number(e.click || e.clicks || 0),
+            expense: Number(e.expense || e.cost || 0),
+            gmv: Number(e.broad_gmv || e.broad_order_amount || e.gmv || 0),
+            orders: Number(e.broad_order || e.orders || 0),
+          }));
+        }
+      } catch (e) { console.error("[SHOPEE ADS] hourly error:", e); }
 
-    await delay(500);
-    try {
-      const res = await adsGet("/api/v2/ads/get_recommended_item_list", accessToken, shopId);
-      const items = res?.response?.item_list || res?.response?.data || [];
-      if (Array.isArray(items)) {
-        recommendedItems = items.slice(0, 10).map((it: any) => ({
-          item_id: Number(it.item_id || 0),
-          item_name: it.item_name || it.name || `Item #${it.item_id}`,
-        }));
-      }
-    } catch (e) { console.error("[SHOPEE ADS] recommended items error:", e); }
+      await delay(500);
+      try {
+        const res = await adsGet("/api/v2/ads/get_recommended_item_list", accessToken, shopId);
+        const items = res?.response?.item_list || res?.response?.data || [];
+        if (Array.isArray(items)) {
+          recommendedItems = items.slice(0, 10).map((it: any) => ({
+            item_id: Number(it.item_id || 0),
+            item_name: it.item_name || it.name || `Item #${it.item_id}`,
+          }));
+        }
+      } catch (e) { console.error("[SHOPEE ADS] recommended items error:", e); }
 
-    await delay(500);
-    try {
-      const res = await adsGet("/api/v2/ads/get_shop_toggle_info", accessToken, shopId);
-      const resp = res?.response;
-      if (resp) {
-        shopToggles = {
-          auto_top_up: resp.auto_top_up ?? resp.auto_recharge ?? false,
-          campaign_surge: resp.campaign_surge ?? resp.surge ?? false,
-        };
-      }
-    } catch (e) { console.error("[SHOPEE ADS] toggle error:", e); }
+      await delay(500);
+      try {
+        const res = await adsGet("/api/v2/ads/get_shop_toggle_info", accessToken, shopId);
+        const resp = res?.response;
+        if (resp) {
+          shopToggles = {
+            auto_top_up: resp.auto_top_up ?? resp.auto_recharge ?? false,
+            campaign_surge: resp.campaign_surge ?? resp.surge ?? false,
+          };
+        }
+      } catch (e) { console.error("[SHOPEE ADS] toggle error:", e); }
+    } else {
+      console.log("[SHOPEE ADS] Skipping shop-level enrichment (individual product refresh)");
+    }
   } catch (e) { console.error("[SHOPEE ADS] Step 6 error:", e); }
 
   // Step 7: Balance
