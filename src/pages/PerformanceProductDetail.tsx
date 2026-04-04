@@ -92,13 +92,15 @@ export default function PerformanceProductDetail() {
     if (!product) return [];
     const days = chartPeriod === '7d' ? 7 : chartPeriod === '30d' ? 30 : 90;
     const today = new Date();
+    const avgTicket = product.total_qty > 0 ? product.total_revenue / product.total_qty : 0;
     if (product.daily_sales && Object.keys(product.daily_sales).length > 0) {
       return Array.from({ length: days }, (_, i) => {
         const d = new Date(today);
         d.setDate(d.getDate() - (days - 1 - i));
         const dateStr = d.toISOString().slice(0, 10);
         const label = `${d.getDate()} ${d.toLocaleString('pt-BR', { month: 'short' }).replace('.', '')}`;
-        return { label, value: product.daily_sales![dateStr] || 0 };
+        const qty = product.daily_sales![dateStr] || 0;
+        return { label, value: qty, revenue: qty * avgTicket };
       });
     }
     const avgPerDay = product.total_qty / (periodDays || 90);
@@ -108,7 +110,8 @@ export default function PerformanceProductDetail() {
       const label = `${d.getDate()} ${d.toLocaleString('pt-BR', { month: 'short' }).replace('.', '')}`;
       const trend = 0.5 + (i / days) * 1.0;
       const noise = 0.7 + Math.random() * 0.6;
-      return { label, value: Math.max(0, Math.round(avgPerDay * trend * noise)) };
+      const qty = Math.max(0, Math.round(avgPerDay * trend * noise));
+      return { label, value: qty, revenue: qty * avgTicket };
     });
   }, [chartPeriod, product, periodDays]);
 
