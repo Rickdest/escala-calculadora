@@ -222,9 +222,12 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const [syncing, setSyncing] = useState(false);
 
   // Date range filter – default: last 28 days
-  const [dateFrom, setDateFrom] = useState(() => format(subDays(new Date(), 28), 'yyyy-MM-dd'));
-  const [dateTo, setDateTo] = useState(() => format(new Date(), 'yyyy-MM-dd'));
-  const clearDates = () => { setDateFrom(''); setDateTo(''); };
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(() => subDays(new Date(), 28));
+  const [dateTo, setDateTo] = useState<Date | undefined>(() => new Date());
+  const handleRangeChange = (from: Date | undefined, to: Date | undefined) => { setDateFrom(from); setDateTo(to); };
+
+  const dateFromStr = dateFrom ? format(dateFrom, 'yyyy-MM-dd') : '';
+  const dateToStr = dateTo ? format(dateTo, 'yyyy-MM-dd') : '';
 
   const [apiAdsData, setApiAdsData] = useState<any>(null);
   const [apiCampaignList, setApiCampaignList] = useState<any[]>([]);
@@ -233,13 +236,13 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const { data: persistedRows, invalidate: invalidatePersistedAds } = useApiAdsData();
   const dateFilteredRows = useMemo(() => {
     if (!persistedRows) return [];
-    if (!dateFrom && !dateTo) return persistedRows;
+    if (!dateFromStr && !dateToStr) return persistedRows;
     return persistedRows.filter((r: any) => {
-      if (dateFrom && r.period_end < dateFrom) return false;
-      if (dateTo && r.period_start > dateTo) return false;
+      if (dateFromStr && r.period_end < dateFromStr) return false;
+      if (dateToStr && r.period_start > dateToStr) return false;
       return true;
     });
-  }, [persistedRows, dateFrom, dateTo]);
+  }, [persistedRows, dateFromStr, dateToStr]);
   const persistedApiData = useMemo(() => buildApiAdsDataFromRows(dateFilteredRows), [dateFilteredRows]);
 
   // Use in-memory data if available, otherwise fall back to persisted DB data
