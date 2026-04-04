@@ -56,6 +56,20 @@ export default function Integracoes() {
   const [autoSync, setAutoSync] = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
 
+  // Check if there's historical ads data without active ads token
+  const { data: historicalAdsCount } = useQuery({
+    queryKey: ['historical-ads-count', user?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from('shopee_ads_by_product')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user!.id);
+      return count || 0;
+    },
+    enabled: !!user && !adsConnected,
+  });
+  const hasHistoricalAds = !adsConnected && (historicalAdsCount ?? 0) > 0;
+
   // Check if seller and ads are connected to different shops
   const shopMismatch = sellerConnected && adsConnected && sellerToken && adsToken
     && Number(sellerToken.shop_id) !== Number(adsToken.shop_id);
