@@ -318,7 +318,7 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
 
     for (let i = 0; i < campaignsForPosition.length; i += 3) {
       if (i > 0) await delay(2000);
-      const batch = activeCampaignsWithData.slice(i, i + 3);
+      const batch = campaignsForPosition.slice(i, i + 3);
       const promises = batch.map(async (c: any, batchIdx: number) => {
         try {
           const res = await adsGet(
