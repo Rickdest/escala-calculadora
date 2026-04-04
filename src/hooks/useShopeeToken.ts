@@ -31,13 +31,10 @@ function getShopeePayloadError(payload: unknown, appType: AppType): ParsedShopee
     return null;
   }
 
-  const code = typeof payload.error === 'string' ? payload.error : undefined;
-  const fallback =
-    typeof (payload as { message?: unknown }).message === 'string'
-      ? (payload as { message: string }).message
-      : typeof payload.error === 'string'
-        ? payload.error
-        : 'Erro ao iniciar integração Shopee';
+  const payloadRecord = payload as Record<string, unknown>;
+  const code = typeof payloadRecord.error === 'string' ? payloadRecord.error : undefined;
+  const payloadMessage = typeof payloadRecord.message === 'string' ? payloadRecord.message : undefined;
+  const fallback = payloadMessage || code || 'Erro ao iniciar integração Shopee';
 
   return {
     code,
