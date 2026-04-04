@@ -367,12 +367,22 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
     return '';
   }, [periods, selectedPeriod]);
 
-  // Filter by period first, then by classification
+  // Filter by period + date range
   const periodFiltered = useMemo(() => {
-    if (selectedPeriod === 'all') return data;
-    const [inicio, fim] = selectedPeriod.split('|');
-    return data.filter(d => d.periodo_inicio === inicio && d.periodo_fim === fim);
-  }, [data, selectedPeriod]);
+    let result = data;
+    if (selectedPeriod !== 'all') {
+      const [inicio, fim] = selectedPeriod.split('|');
+      result = result.filter(d => d.periodo_inicio === inicio && d.periodo_fim === fim);
+    }
+    if (dateFrom || dateTo) {
+      result = result.filter(d => {
+        if (dateFrom && (d.periodo_fim || '') < dateFrom) return false;
+        if (dateTo && (d.periodo_inicio || '') > dateTo) return false;
+        return true;
+      });
+    }
+    return result;
+  }, [data, selectedPeriod, dateFrom, dateTo]);
 
   const filtered = useMemo(() => {
     let result = periodFiltered;
