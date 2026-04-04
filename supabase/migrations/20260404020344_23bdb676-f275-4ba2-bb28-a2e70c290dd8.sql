@@ -1,0 +1,1 @@
+ALTER TABLE public.shopee_ads_by_product ADD COLUMN IF NOT EXISTS keywords jsonb DEFAULT '[]'::jsonb;

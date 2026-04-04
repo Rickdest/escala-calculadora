@@ -393,6 +393,15 @@ Deno.serve(async (req) => {
             sale.views = meta.views;
             sale.sales = meta.sales;
             sale.item_status = meta.item_status;
+            sale.current_price = meta.current_price;
+            sale.min_price = meta.min_price;
+            sale.max_price = meta.max_price;
+            sale.stock_available = meta.stock_available;
+            sale.rating_star = meta.rating_star;
+            sale.comment_count = meta.comment_count;
+            sale.category_id = meta.category_id;
+            sale.weight = meta.weight;
+            sale.days_to_ship = meta.days_to_ship;
           }
         }
 
