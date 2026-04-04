@@ -620,7 +620,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
               {/* ═══ Period chips (CSV only) ═══ */}
               {periods.length > 0 && !hasApiCampaigns && (
                 <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-                  <Calendar className="w-4 h-4 text-text-3 flex-shrink-0" />
+                  <CalendarIcon className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                   <span className="text-xs font-medium text-text-3 flex-shrink-0">Período</span>
                   {periods.length > 1 && (
                     <button
