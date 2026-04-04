@@ -5,9 +5,10 @@ import { usePerformanceData } from '@/hooks/usePerformanceData';
 import { useApiAdsData } from '@/hooks/useApiAdsData';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, ExternalLink, Package, DollarSign, TrendingUp, BarChart3, Star, MessageSquare, Weight, Truck, Eye, Heart, ShoppingCart, Megaphone } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { ArrowLeft, ExternalLink, Package, DollarSign, TrendingUp, BarChart3, Star, MessageSquare, Weight, Truck, Eye, Heart, Megaphone, Target, Calendar, Search } from 'lucide-react';
 import { PageLoader } from '@/components/layout/PageStates';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, AreaChart, Area, Legend, CartesianGrid } from 'recharts';
 
 export default function PerformanceProductDetail() {
   const { itemId } = useParams<{ itemId: string }>();
@@ -28,40 +29,70 @@ export default function PerformanceProductDetail() {
   const topVariant = sortedVariants[0] || null;
   const bottomVariant = sortedVariants.length > 1 ? sortedVariants[sortedVariants.length - 1] : null;
 
-  // Cross-reference Ads data
+  // Cross-reference Ads data (full)
   const adsForProduct = useMemo(() => {
     if (!adsRows || !itemId) return null;
     const matching = adsRows.filter((r: any) => String(r.item_id) === itemId);
     if (matching.length === 0) return null;
-    return {
+    const agg = {
       expense: matching.reduce((s: number, r: any) => s + Number(r.expense || 0), 0),
       gmv: matching.reduce((s: number, r: any) => s + Number(r.gmv || 0), 0),
+      direct_gmv: matching.reduce((s: number, r: any) => s + Number(r.direct_gmv || 0), 0),
       clicks: matching.reduce((s: number, r: any) => s + Number(r.clicks || 0), 0),
       impressions: matching.reduce((s: number, r: any) => s + Number(r.impressions || 0), 0),
       orders: matching.reduce((s: number, r: any) => s + Number(r.orders || 0), 0),
-      roas: 0,
-      ctr: 0,
-      cost_per_order: 0,
+      direct_orders: matching.reduce((s: number, r: any) => s + Number(r.direct_orders || 0), 0),
+      days_active: matching.reduce((max: number, r: any) => Math.max(max, Number(r.days_active || 0)), 0),
+      avg_position: null as number | null,
+      roas: 0, direct_roas: 0, ctr: 0, cost_per_order: 0,
       status: matching.find((r: any) => r.status === 'active')?.status || matching[0]?.status || 'ended',
+      daily_data: [] as any[],
+      keywords: [] as any[],
     };
+    // Merge daily_data
+    const dailyMap = new Map<string, any>();
+    for (const r of matching) {
+      const dd = r.daily_data as any[];
+      if (Array.isArray(dd)) {
+        for (const entry of dd) {
+          const date = entry.date || '';
+          const ex = dailyMap.get(date);
+          if (!ex) { dailyMap.set(date, { ...entry }); }
+          else {
+            ex.impressions = (ex.impressions || 0) + (entry.impressions || 0);
+            ex.clicks = (ex.clicks || 0) + (entry.clicks || 0);
+            ex.expense = (ex.expense || 0) + (entry.expense || 0);
+            ex.gmv = (ex.gmv || 0) + (entry.gmv || 0);
+          }
+        }
+      }
+      // Merge keywords
+      const kw = (r as any).keywords as any[];
+      if (Array.isArray(kw)) agg.keywords.push(...kw);
+      // Best avg_position
+      if (r.avg_position && (!agg.avg_position || Number(r.avg_position) < agg.avg_position)) {
+        agg.avg_position = Number(r.avg_position);
+      }
+    }
+    agg.daily_data = Array.from(dailyMap.values()).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    // Derived
+    agg.roas = agg.expense > 0 ? agg.gmv / agg.expense : 0;
+    agg.direct_roas = agg.expense > 0 ? agg.direct_gmv / agg.expense : 0;
+    agg.ctr = agg.impressions > 0 ? (agg.clicks / agg.impressions) * 100 : 0;
+    agg.cost_per_order = agg.orders > 0 ? agg.expense / agg.orders : 0;
+    // Deduplicate keywords by keyword text
+    const kwMap = new Map<string, any>();
+    for (const k of agg.keywords) { if (k.keyword && !kwMap.has(k.keyword)) kwMap.set(k.keyword, k); }
+    agg.keywords = Array.from(kwMap.values()).slice(0, 15);
+    return agg;
   }, [adsRows, itemId]);
-
-  if (adsForProduct) {
-    adsForProduct.roas = adsForProduct.expense > 0 ? adsForProduct.gmv / adsForProduct.expense : 0;
-    adsForProduct.ctr = adsForProduct.impressions > 0 ? (adsForProduct.clicks / adsForProduct.impressions) * 100 : 0;
-    adsForProduct.cost_per_order = adsForProduct.orders > 0 ? adsForProduct.expense / adsForProduct.orders : 0;
-  }
 
   // Daily chart data (real or simulated)
   const dailyData = useMemo(() => {
     if (!product) return [];
     const days = chartPeriod === '7d' ? 7 : chartPeriod === '30d' ? 30 : 90;
     const today = new Date();
-
     if (product.daily_sales && Object.keys(product.daily_sales).length > 0) {
-      const cutoff = new Date(today);
-      cutoff.setDate(cutoff.getDate() - days);
-      const cutoffStr = cutoff.toISOString().slice(0, 10);
       return Array.from({ length: days }, (_, i) => {
         const d = new Date(today);
         d.setDate(d.getDate() - (days - 1 - i));
@@ -70,7 +101,6 @@ export default function PerformanceProductDetail() {
         return { label, value: product.daily_sales![dateStr] || 0 };
       });
     }
-
     const avgPerDay = product.total_qty / (periodDays || 90);
     return Array.from({ length: days }, (_, i) => {
       const d = new Date(today);
@@ -86,15 +116,12 @@ export default function PerformanceProductDetail() {
   const meta = product as any;
 
   if (loading) return <AppLayout><PageLoader /></AppLayout>;
-
   if (!product) {
     return (
       <AppLayout>
         <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4">
           <p className="text-muted-foreground text-sm">Este produto não foi encontrado nos dados sincronizados.</p>
-          <Button variant="outline" onClick={() => navigate('/performance')}>
-            <ArrowLeft className="w-4 h-4 mr-2" /> Voltar
-          </Button>
+          <Button variant="outline" onClick={() => navigate('/performance')}><ArrowLeft className="w-4 h-4 mr-2" /> Voltar</Button>
         </div>
       </AppLayout>
     );
@@ -128,8 +155,7 @@ export default function PerformanceProductDetail() {
         <div className="flex items-center gap-2 flex-wrap">
           {meta.rating_star != null && meta.rating_star > 0 && (
             <Badge variant="outline" className="gap-1 text-xs font-semibold">
-              <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-              {meta.rating_star.toFixed(1)}
+              <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" /> {meta.rating_star.toFixed(1)}
             </Badge>
           )}
           {(meta.comment_count ?? 0) > 0 && (
@@ -150,6 +176,11 @@ export default function PerformanceProductDetail() {
           {meta.item_status && (
             <Badge variant={meta.item_status === 'NORMAL' ? 'default' : 'secondary'} className="text-xs">
               {meta.item_status === 'NORMAL' ? 'Ativo' : meta.item_status}
+            </Badge>
+          )}
+          {adsForProduct?.avg_position != null && adsForProduct.avg_position > 0 && (
+            <Badge variant="outline" className="gap-1 text-xs font-semibold border-primary text-primary">
+              <Target className="w-3.5 h-3.5" /> Posição #{adsForProduct.avg_position.toFixed(0)}
             </Badge>
           )}
         </div>
@@ -202,23 +233,140 @@ export default function PerformanceProductDetail() {
           </div>
         )}
 
-        {/* Ads Section */}
+        {/* Ads Section — Expanded with Tabs */}
         {adsForProduct && (
           <div className="rounded-xl border border-border bg-card overflow-hidden">
             <div className="p-4 border-b border-border flex items-center gap-2">
               <Megaphone className="w-4 h-4 text-primary" />
-              <p className="text-sm font-semibold text-foreground">Dados de Ads</p>
+              <p className="text-sm font-semibold text-foreground">Performance de Ads</p>
               <Badge variant={adsForProduct.status === 'active' ? 'default' : 'secondary'} className="ml-auto text-[10px]">
                 {adsForProduct.status === 'active' ? 'Ativo' : adsForProduct.status === 'paused' ? 'Pausado' : 'Encerrado'}
               </Badge>
+              {adsForProduct.days_active > 0 && (
+                <Badge variant="outline" className="text-[10px] gap-1">
+                  <Calendar className="w-3 h-3" /> {adsForProduct.days_active} dias
+                </Badge>
+              )}
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-px bg-border">
-              <AdsMetric label="Gasto Total" value={`R$ ${adsForProduct.expense.toFixed(2)}`} />
-              <AdsMetric label="GMV de Ads" value={`R$ ${adsForProduct.gmv.toFixed(2)}`} />
-              <AdsMetric label="ROAS" value={`${adsForProduct.roas.toFixed(1)}x`} highlight={adsForProduct.roas >= 3} />
-              <AdsMetric label="CTR" value={`${adsForProduct.ctr.toFixed(2)}%`} />
-              <AdsMetric label="Custo/Pedido" value={adsForProduct.orders > 0 ? `R$ ${adsForProduct.cost_per_order.toFixed(2)}` : '—'} />
-            </div>
+
+            <Tabs defaultValue="resumo" className="w-full">
+              <TabsList className="w-full justify-start rounded-none border-b border-border bg-transparent h-auto p-0">
+                <TabsTrigger value="resumo" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent text-xs px-4 py-2.5">Resumo</TabsTrigger>
+                {adsForProduct.daily_data.length > 0 && (
+                  <TabsTrigger value="tendencia" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent text-xs px-4 py-2.5">Tendência</TabsTrigger>
+                )}
+                {adsForProduct.keywords.length > 0 && (
+                  <TabsTrigger value="keywords" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent text-xs px-4 py-2.5">Keywords</TabsTrigger>
+                )}
+              </TabsList>
+
+              {/* Resumo Tab */}
+              <TabsContent value="resumo" className="mt-0">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border">
+                  <AdsMetric label="Gasto Total" value={`R$ ${adsForProduct.expense.toFixed(2)}`} />
+                  <AdsMetric label="GMV Total" value={`R$ ${adsForProduct.gmv.toFixed(2)}`} />
+                  <AdsMetric label="ROAS Amplo" value={`${adsForProduct.roas.toFixed(1)}x`} highlight={adsForProduct.roas >= 3} />
+                  <AdsMetric label="ROAS Direto" value={`${adsForProduct.direct_roas.toFixed(1)}x`} highlight={adsForProduct.direct_roas >= 3} />
+                  <AdsMetric label="CTR" value={`${adsForProduct.ctr.toFixed(2)}%`} />
+                  <AdsMetric label="Custo/Pedido" value={adsForProduct.orders > 0 ? `R$ ${adsForProduct.cost_per_order.toFixed(2)}` : '—'} />
+                  <AdsMetric label="Impressões" value={adsForProduct.impressions.toLocaleString('pt-BR')} />
+                  <AdsMetric label="Cliques" value={adsForProduct.clicks.toLocaleString('pt-BR')} />
+                </div>
+                {/* Direct vs Broad comparison */}
+                {adsForProduct.direct_gmv > 0 && (
+                  <div className="p-4 border-t border-border">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-3">Direto vs Amplo</p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-muted-foreground">GMV Direto</p>
+                        <p className="text-sm font-bold font-mono text-foreground">R$ {adsForProduct.direct_gmv.toFixed(2)}</p>
+                        <p className="text-[10px] text-muted-foreground">{adsForProduct.gmv > 0 ? ((adsForProduct.direct_gmv / adsForProduct.gmv) * 100).toFixed(0) : 0}% do total</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Pedidos Diretos</p>
+                        <p className="text-sm font-bold font-mono text-foreground">{adsForProduct.direct_orders}</p>
+                        <p className="text-[10px] text-muted-foreground">{adsForProduct.orders > 0 ? ((adsForProduct.direct_orders / adsForProduct.orders) * 100).toFixed(0) : 0}% do total</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* Tendência Tab — Daily Ads Chart */}
+              {adsForProduct.daily_data.length > 0 && (
+                <TabsContent value="tendencia" className="mt-0 p-4">
+                  <p className="text-xs font-semibold text-foreground mb-3">Gasto vs GMV diário (Ads)</p>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <AreaChart data={adsForProduct.daily_data}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis
+                        dataKey="date"
+                        tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }}
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={(val: string) => {
+                          const parts = val.split('-');
+                          return parts.length === 3 ? `${parts[2]}/${parts[1]}` : val;
+                        }}
+                        interval={Math.max(0, Math.floor(adsForProduct.daily_data.length / 7))}
+                      />
+                      <YAxis hide />
+                      <Tooltip
+                        contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }}
+                        formatter={(value: number, name: string) => [`R$ ${value.toFixed(2)}`, name === 'expense' ? 'Gasto' : 'GMV']}
+                        labelFormatter={(label: string) => {
+                          const parts = label.split('-');
+                          return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : label;
+                        }}
+                      />
+                      <Legend formatter={(value: string) => value === 'expense' ? 'Gasto' : 'GMV'} />
+                      <Area type="monotone" dataKey="gmv" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.2)" strokeWidth={2} />
+                      <Area type="monotone" dataKey="expense" stroke="hsl(var(--destructive))" fill="hsl(var(--destructive) / 0.1)" strokeWidth={2} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </TabsContent>
+              )}
+
+              {/* Keywords Tab */}
+              {adsForProduct.keywords.length > 0 && (
+                <TabsContent value="keywords" className="mt-0">
+                  <div className="p-4 pb-2">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Search className="w-4 h-4 text-muted-foreground" />
+                      <p className="text-xs font-semibold text-foreground">Palavras-chave recomendadas</p>
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-y border-border bg-muted/30">
+                          <th className="text-left px-4 py-2 text-[10px] font-semibold text-muted-foreground uppercase">Keyword</th>
+                          <th className="text-right px-4 py-2 text-[10px] font-semibold text-muted-foreground uppercase">Volume</th>
+                          <th className="text-right px-4 py-2 text-[10px] font-semibold text-muted-foreground uppercase">Bid Sugerido</th>
+                          <th className="text-right px-4 py-2 text-[10px] font-semibold text-muted-foreground uppercase">Quality</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {adsForProduct.keywords.map((kw, i) => (
+                          <tr key={i} className="border-b border-border last:border-0">
+                            <td className="px-4 py-2.5 font-medium text-foreground">{kw.keyword}</td>
+                            <td className="px-4 py-2.5 text-right font-mono text-muted-foreground">{(kw.search_volume || 0).toLocaleString('pt-BR')}</td>
+                            <td className="px-4 py-2.5 text-right font-mono text-primary">R$ {(kw.suggested_bid || 0).toFixed(2)}</td>
+                            <td className="px-4 py-2.5 text-right">
+                              {kw.quality_score != null ? (
+                                <Badge variant={kw.quality_score >= 8 ? 'default' : kw.quality_score >= 5 ? 'secondary' : 'destructive'} className="text-[10px]">
+                                  {kw.quality_score}
+                                </Badge>
+                              ) : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </TabsContent>
+              )}
+            </Tabs>
           </div>
         )}
 
@@ -245,18 +393,9 @@ export default function PerformanceProductDetail() {
           </div>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={dailyData} barCategoryGap="15%">
-              <XAxis
-                dataKey="label"
-                tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }}
-                axisLine={false}
-                tickLine={false}
-                interval={chartPeriod === '7d' ? 0 : chartPeriod === '30d' ? 4 : 13}
-              />
+              <XAxis dataKey="label" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} interval={chartPeriod === '7d' ? 0 : chartPeriod === '30d' ? 4 : 13} />
               <YAxis hide />
-              <Tooltip
-                contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }}
-                formatter={(value: number) => [`${value} un.`, 'Vendas']}
-              />
+              <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }} formatter={(value: number) => [`${value} un.`, 'Vendas']} />
               <Bar dataKey="value" radius={[3, 3, 0, 0]}>
                 {dailyData.map((_, index) => (
                   <Cell key={index} fill={index >= dailyData.length - 3 ? 'hsl(var(--primary))' : 'hsl(var(--primary) / 0.65)'} />
@@ -300,13 +439,9 @@ export default function PerformanceProductDetail() {
                         <td className="px-4 py-3 text-center">
                           {isTop ? <Star className="w-4 h-4 text-amber-500 inline" /> : <span className="text-muted-foreground text-xs">{i + 1}</span>}
                         </td>
-                        <td className="px-4 py-3">
-                          <span className="font-medium text-foreground">{varName}</span>
-                        </td>
+                        <td className="px-4 py-3"><span className="font-medium text-foreground">{varName}</span></td>
                         <td className="px-4 py-3 text-right font-mono font-semibold text-foreground">{v.qty} un</td>
-                        <td className="px-4 py-3 text-right font-mono font-semibold text-primary">
-                          R$ {v.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </td>
+                        <td className="px-4 py-3 text-right font-mono font-semibold text-primary">R$ {v.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         <td className="px-4 py-3 text-right font-mono text-primary font-semibold">{varPct.toFixed(0)}%</td>
                         <td className="px-4 py-3">
                           <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
@@ -358,7 +493,10 @@ export default function PerformanceProductDetail() {
                 Considere dobrar o estoque da variação {topVariant[0]}.</>
               )}
               {adsForProduct && adsForProduct.roas > 0 && (
-                <> O ROAS atual de <strong>{adsForProduct.roas.toFixed(1)}x</strong> {adsForProduct.roas >= 3 ? 'indica boa performance de Ads.' : 'pode ser otimizado — revise os lances.'}</>
+                <> O ROAS atual de <strong>{adsForProduct.roas.toFixed(1)}x</strong> {adsForProduct.roas >= 3 ? 'indica boa performance de Ads.' : 'pode ser otimizado — revise os lances.'}
+                {adsForProduct.direct_roas > 0 && adsForProduct.direct_roas !== adsForProduct.roas && (
+                  <> ROAS Direto: <strong>{adsForProduct.direct_roas.toFixed(1)}x</strong>.</>
+                )}</>
               )}
             </p>
           </div>

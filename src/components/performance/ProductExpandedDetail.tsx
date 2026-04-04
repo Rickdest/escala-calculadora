@@ -75,6 +75,12 @@ export function ProductExpandedDetail({ product, totalRevenue, totalQty, periodD
             ROAS {adsData.roas.toFixed(1)}x
           </Badge>
         )}
+        {adsData && (adsData as any).avg_position != null && (adsData as any).avg_position > 0 && (
+          <Badge variant="outline" className="gap-1 text-[10px] font-semibold border-primary text-primary">
+            <Target className="w-3 h-3" />
+            Pos. #{(adsData as any).avg_position.toFixed(0)}
+          </Badge>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
