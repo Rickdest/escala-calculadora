@@ -220,6 +220,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const [positionJustImported, setPositionJustImported] = useState(false);
   const [showShopeeModal, setShowShopeeModal] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const autoSyncAttempted = useRef(false);
 
   // Date range filter – default: last 28 days
   const [dateFrom, setDateFrom] = useState<Date | undefined>(() => subDays(new Date(), 28));
@@ -527,6 +528,14 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   };
 
 
+  // Auto-sync: trigger import when connected but no data yet
+  useEffect(() => {
+    if (isConnected && !hasPersistedApiData && !syncing && !loading && !autoSyncAttempted.current) {
+      autoSyncAttempted.current = true;
+      handleImportAds();
+    }
+  }, [isConnected, hasPersistedApiData, syncing, loading]);
+
   if (loading && data.length === 0) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -536,7 +545,20 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 relative">
+      {/* ═══ Syncing Overlay ═══ */}
+      {syncing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-card border border-border shadow-lg max-w-sm text-center">
+            <div className="animate-spin w-10 h-10 border-3 border-primary border-t-transparent rounded-full" />
+            <div>
+              <p className="text-base font-bold text-foreground">Importando dados de Ads da Shopee...</p>
+              <p className="text-sm text-muted-foreground mt-1">Isso pode levar até 1 minuto dependendo do número de campanhas.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <input ref={fileRef} type="file" accept=".csv" onChange={handleFileImport} className="hidden" />
       <input ref={positionFileRef} type="file" accept=".csv" onChange={handlePositionFile} className="hidden" />
 
