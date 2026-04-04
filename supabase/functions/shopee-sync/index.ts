@@ -341,7 +341,7 @@ Deno.serve(async (req) => {
 
     const shopeeToken = tokens[0];
     const shopId = shopeeToken.shop_id;
-    const currentAccessToken = await refreshTokenIfNeeded(shopeeToken, supabase);
+    const { token: currentAccessToken, needs_reauth: refreshFailed } = await refreshTokenIfNeeded(shopeeToken, supabase);
 
     console.log(`[SHOPEE SYNC] Starting sync for shop ${shopId}`);
 
