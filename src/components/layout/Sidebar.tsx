@@ -1,4 +1,4 @@
-import { Home, ShoppingBag, Calculator, BarChart2, TrendingUp, Settings2, Boxes, Store, UserCircle, ChevronDown, Plus, MessageCircle } from 'lucide-react';
+import { Home, ShoppingBag, Calculator, BarChart2, TrendingUp, Settings2, Boxes, Store, UserCircle, ChevronDown, Plus, MessageCircle, Plug } from 'lucide-react';
 
 const WHATSAPP_URL = 'https://api.whatsapp.com/send?phone=5511930291287&text=Ol%C3%A1%2C%20preciso%20de%20suporte%20no%20Skalify';
 import { useLocation, useNavigate } from 'react-router-dom';
