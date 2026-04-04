@@ -56,9 +56,6 @@ const SHOPEE_CONNECT_ERROR_MESSAGES: Record<string, string> = {
   auth_preflight_failed: 'Não foi possível validar a autorização da Shopee agora. Tente novamente em instantes.',
 };
 
-const clearPendingAdsOAuth = () => {
-  localStorage.removeItem('skalify_pending_ads_oauth');
-};
 
 export default function Integracoes() {
   const navigate = useNavigate();
@@ -95,22 +92,10 @@ export default function Integracoes() {
 
   const [connecting, setConnecting] = useState(false);
 
-  // Auto-connect Ads after Seller OAuth completes (via URL param from callback)
-  useEffect(() => {
-    const nextStep = searchParams.get('next');
-    const justConnected = searchParams.get('shopee_connected') === 'true';
-    const pendingLocal = localStorage.getItem('skalify_pending_ads_oauth');
-
-    if ((nextStep === 'ads' || pendingLocal === 'true') && justConnected && !adsConnected) {
-      clearPendingAdsOAuth();
-      setTimeout(() => {
-        toast.info('Ótimo! Agora vamos conectar os dados de Ads...');
-        void adsHook.startOAuth('ads').catch(() => {
-          clearPendingAdsOAuth();
-        });
-      }, 1500);
-    }
-  }, [sellerConnected, adsConnected, searchParams]);
+  // Detect if user just connected seller and needs ads next
+  const justConnectedSeller = searchParams.get('shopee_connected') === 'true'
+    && searchParams.get('app_type') === 'seller'
+    && sellerConnected && !adsConnected;
 
   // Show success/error toast on callback
   useEffect(() => {
@@ -122,7 +107,6 @@ export default function Integracoes() {
     }
     const errCode = searchParams.get('shopee_error');
     if (errCode) {
-      clearPendingAdsOAuth();
       toast.error(SHOPEE_CONNECT_ERROR_MESSAGES[errCode] || 'Erro ao conectar com a Shopee. Tente novamente.');
     }
   }, []);
@@ -132,13 +116,11 @@ export default function Integracoes() {
     return formatDistanceToNow(new Date(sellerToken.updated_at), { addSuffix: true, locale: ptBR });
   };
 
-  const handleConnectBoth = async () => {
+  const handleConnectSeller = async () => {
     setConnecting(true);
     try {
-      localStorage.setItem('skalify_pending_ads_oauth', 'true');
       await sellerHook.startOAuth('seller');
     } catch {
-      clearPendingAdsOAuth();
       setConnecting(false);
     }
   };
@@ -265,7 +247,7 @@ export default function Integracoes() {
 
             <Button
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-              onClick={handleConnectBoth}
+              onClick={handleConnectSeller}
               disabled={connecting}
             >
               {connecting ? 'Redirecionando...' : 'Conectar com Shopee →'}
@@ -277,8 +259,8 @@ export default function Integracoes() {
           </div>
         )}
 
-        {/* ═══ SHOPEE SELLER CARD — when connected ═══ */}
-        {sellerConnected && (
+        {/* ═══ SHOPEE SELLER CARD — when connected or when ads is connected but seller isn't ═══ */}
+        {(sellerConnected || adsConnected) && (
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2.5">
               Shopee
@@ -293,7 +275,7 @@ export default function Integracoes() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-foreground">
-                      {getShopLabel(sellerToken)}
+                      {sellerConnected ? getShopLabel(sellerToken) : 'Shopee Seller'}
                     </p>
                     <p className="text-[11px] text-muted-foreground">
                       Produtos · Pedidos · Estoque
@@ -302,105 +284,152 @@ export default function Integracoes() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                    Conectada
+                  <div className={`flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full border ${
+                    sellerConnected
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                      : 'bg-muted/20 text-muted-foreground border-border'
+                  }`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${sellerConnected ? 'bg-emerald-400' : 'bg-muted-foreground'}`} />
+                    {sellerConnected ? 'Conectada' : 'Não conectada'}
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => sellerHook.startOAuth('seller')}>
-                    ↻ Reconectar
-                  </Button>
+                  {sellerConnected ? (
+                    <Button variant="outline" size="sm" onClick={() => sellerHook.startOAuth('seller')}>
+                      ↻ Reconectar
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      className="bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20"
+                      onClick={handleConnectSeller}
+                      disabled={connecting}
+                    >
+                      🔗 Conectar
+                    </Button>
+                  )}
                 </div>
               </div>
 
               {/* Body */}
               <div className="p-4">
-                {/* Token bar with progress */}
-                <div className="rounded-lg px-3 py-2.5 mb-4 text-xs border"
-                  style={{
-                    background: 'hsla(142, 71%, 45%, 0.07)',
-                    borderColor: 'hsla(142, 71%, 45%, 0.15)',
-                  }}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-emerald-400 flex items-center gap-1.5">
-                      🔑 Autorização ativa
-                    </span>
-                    <span className="text-muted-foreground">
-                      Última sync: {getLastSync()}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1.5">
-                    <span>Validade da autorização</span>
-                    <span className="text-emerald-400 font-medium">
-                      {getTokenDaysRemaining(sellerToken)} dias restantes
-                    </span>
-                  </div>
-                  <div className="h-1 bg-muted/30 rounded-full overflow-hidden">
-                    <div
-                      className="h-1 rounded-full bg-emerald-500 transition-all"
-                      style={{ width: `${getTokenProgressPercent(sellerToken)}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Toggle */}
-                <div className="space-y-0 divide-y divide-border">
-                  <div className="flex items-center justify-between py-3">
-                    <div>
-                      <p className="text-sm">Sincronização automática</p>
-                      <p className="text-xs text-muted-foreground">
-                        Atualiza produtos e pedidos a cada 6 horas
-                      </p>
+                {sellerConnected ? (
+                  <>
+                    {/* Token bar with progress */}
+                    <div className="rounded-lg px-3 py-2.5 mb-4 text-xs border"
+                      style={{
+                        background: 'hsla(142, 71%, 45%, 0.07)',
+                        borderColor: 'hsla(142, 71%, 45%, 0.15)',
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-emerald-400 flex items-center gap-1.5">
+                          🔑 Autorização ativa
+                        </span>
+                        <span className="text-muted-foreground">
+                          Última sync: {getLastSync()}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1.5">
+                        <span>Validade da autorização</span>
+                        <span className="text-emerald-400 font-medium">
+                          {getTokenDaysRemaining(sellerToken)} dias restantes
+                        </span>
+                      </div>
+                      <div className="h-1 bg-muted/30 rounded-full overflow-hidden">
+                        <div
+                          className="h-1 rounded-full bg-emerald-500 transition-all"
+                          style={{ width: `${getTokenProgressPercent(sellerToken)}%` }}
+                        />
+                      </div>
                     </div>
-                    <Switch checked={autoSync} onCheckedChange={setAutoSync} />
-                  </div>
-                </div>
 
-                {/* Readonly note */}
-                <div className="text-xs text-muted-foreground/60 bg-muted/20 rounded-lg p-3 mt-4 border-l-2 border-muted leading-relaxed">
-                  🔒 <strong className="text-muted-foreground">Somente leitura.</strong>{' '}
-                  O Skalify nunca altera dados na Shopee. Preço, estoque e nome são importados apenas para leitura.
-                </div>
+                    {/* Toggle */}
+                    <div className="space-y-0 divide-y divide-border">
+                      <div className="flex items-center justify-between py-3">
+                        <div>
+                          <p className="text-sm">Sincronização automática</p>
+                          <p className="text-xs text-muted-foreground">
+                            Atualiza produtos e pedidos a cada 6 horas
+                          </p>
+                        </div>
+                        <Switch checked={autoSync} onCheckedChange={setAutoSync} />
+                      </div>
+                    </div>
 
-                {/* Disconnect */}
-                <div className="flex items-center justify-between pt-4 mt-4 border-t border-border">
-                  <div>
-                    <p className="text-sm">Desconectar loja</p>
-                    <p className="text-xs text-muted-foreground">
-                      Remove o token e para a sincronização
-                    </p>
-                  </div>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                      >
-                        Desconectar
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Desconectar Shopee?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          O token será removido e a sincronização será interrompida. Você poderá reconectar a qualquer momento.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleDisconnect}
-                          className="bg-red-500 hover:bg-red-600 text-white"
-                          disabled={disconnecting}
-                        >
-                          {disconnecting ? 'Desconectando...' : 'Desconectar'}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
+                    {/* Readonly note */}
+                    <div className="text-xs text-muted-foreground/60 bg-muted/20 rounded-lg p-3 mt-4 border-l-2 border-muted leading-relaxed">
+                      🔒 <strong className="text-muted-foreground">Somente leitura.</strong>{' '}
+                      O Skalify nunca altera dados na Shopee. Preço, estoque e nome são importados apenas para leitura.
+                    </div>
+
+                    {/* Disconnect */}
+                    <div className="flex items-center justify-between pt-4 mt-4 border-t border-border">
+                      <div>
+                        <p className="text-sm">Desconectar loja</p>
+                        <p className="text-xs text-muted-foreground">
+                          Remove o token e para a sincronização
+                        </p>
+                      </div>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                          >
+                            Desconectar
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Desconectar Shopee?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              O token será removido e a sincronização será interrompida. Você poderá reconectar a qualquer momento.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={handleDisconnect}
+                              className="bg-red-500 hover:bg-red-600 text-white"
+                              disabled={disconnecting}
+                            >
+                              {disconnecting ? 'Desconectando...' : 'Desconectar'}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Conecte a API Seller para importar produtos, pedidos e estoque da Shopee automaticamente.
+                  </p>
+                )}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ BANNER: Seller connected, Ads pending ═══ */}
+        {justConnectedSeller && (
+          <div className="flex items-center gap-3 rounded-xl p-4 border"
+            style={{
+              background: 'hsla(142, 71%, 45%, 0.08)',
+              borderColor: 'hsla(142, 71%, 45%, 0.2)',
+            }}
+          >
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base flex-shrink-0"
+              style={{ background: 'hsla(142, 71%, 45%, 0.15)' }}
+            >
+              ✅
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-emerald-400">
+                Seller conectado com sucesso!
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Agora conecte os dados de Ads abaixo para ver ROAS, campanhas e gastos.
+              </p>
             </div>
           </div>
         )}
@@ -533,6 +562,17 @@ export default function Integracoes() {
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       Conecte a API de Ads para importar dados de campanhas, ROAS e gastos automaticamente.
                     </p>
+                    <div className="flex items-center gap-2 rounded-lg p-3 text-xs border"
+                      style={{
+                        background: 'hsla(210, 100%, 50%, 0.07)',
+                        borderColor: 'hsla(210, 100%, 50%, 0.15)',
+                      }}
+                    >
+                      <span>ℹ️</span>
+                      <span className="text-muted-foreground">
+                        Esta é uma segunda autorização necessária para acessar dados de campanhas e anúncios. Você será redirecionado para a Shopee novamente.
+                      </span>
+                    </div>
                     {hasHistoricalAds && (
                       <div className="flex items-center gap-2 rounded-lg p-3 text-xs border"
                         style={{
