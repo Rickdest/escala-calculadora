@@ -142,7 +142,7 @@ Deno.serve(async (req) => {
 
     if (upsertError) {
       console.error("[SHOPEE CALLBACK] Upsert error:", JSON.stringify(upsertError));
-      return Response.redirect(`${appUrl}/roas?shopee_error=token_upsert_failed`, 302);
+      return Response.redirect(`${appUrl}/configuracoes/integracoes?shopee_error=token_upsert_failed&app_type=${appType}`, 302);
     }
 
     console.log(`[SHOPEE CALLBACK] === SUCESSO === Token salvo (app_type=${appType})`);
