@@ -339,15 +339,8 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
     else if (filter !== 'all') result = periodFiltered.filter(d => d.classificacao === filter);
 
     return [...result].sort((a, b) => {
-      const aLinked = a.product_id ? 1 : 0;
-      const bLinked = b.product_id ? 1 : 0;
-      if (aLinked !== bLinked) return bLinked - aLinked;
-      if (aLinked && bLinked) {
-        const aOrder = classOrder[a.classificacao || ''] ?? 5;
-        const bOrder = classOrder[b.classificacao || ''] ?? 5;
-        return aOrder - bOrder;
-      }
-      return 0;
+      // Ordenar por maior GMV como padrão
+      return (b.gmv || 0) - (a.gmv || 0);
     });
   }, [periodFiltered, filter]);
 
