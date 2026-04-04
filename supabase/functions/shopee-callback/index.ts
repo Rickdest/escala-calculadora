@@ -67,7 +67,13 @@ Deno.serve(async (req) => {
     console.log("[SHOPEE CALLBACK] User ID:", userId, "app_type:", appType);
 
     // Use correct credentials for this app type
-    const creds = getCredentialsForAppType(appType);
+    let creds;
+    try {
+      creds = getCredentialsForAppType(appType);
+    } catch (credErr) {
+      console.error(`[SHOPEE CALLBACK] Credential error for app_type=${appType}:`, (credErr as Error).message);
+      return Response.redirect(`${appUrl}/configuracoes/integracoes?shopee_error=error_param&app_type=${appType}`, 302);
+    }
 
     // Token exchange
     const path = "/api/v2/auth/token/get";
