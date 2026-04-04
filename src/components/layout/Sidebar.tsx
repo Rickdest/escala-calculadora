@@ -25,6 +25,7 @@ const navItems = [
   { icon: TrendingUp, label: 'Performance', path: '/performance' },
   { icon: Boxes, label: 'Estoque', path: '/stock' },
   { icon: Store, label: 'Lojas', path: '/stores' },
+  { icon: Plug, label: 'Integrações', path: '/configuracoes/integracoes' },
   { icon: UserCircle, label: 'Perfil', path: '/profile' },
   { icon: Settings2, label: 'Configurações', path: '/settings' },
 ];
