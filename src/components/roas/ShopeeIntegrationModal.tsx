@@ -334,7 +334,7 @@ function ConnectionCard({
 }
 
 export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { sellerConnected, adsConnected, startOAuth, syncStoreData, isLoading: tokenLoading, refetchAll } = useShopeeTokenStatus();
+  const { sellerConnected, adsConnected, sellerExpired, adsExpired, startOAuth, syncStoreData, isLoading: tokenLoading, refetchAll } = useShopeeTokenStatus();
   const isConnected = sellerConnected || adsConnected;
   const [syncing, setSyncing] = useState(false);
   const [connecting, setConnecting] = useState<string | null>(null);
