@@ -102,9 +102,11 @@ export function buildApiAdsDataFromRows(rows: any[], dateFrom?: string, dateTo?:
         r.direct_orders = filteredDays.reduce((s: number, d: any) => s + (d.direct_orders || 0), 0);
       }
     }
-    // Remove items with zero activity after filtering
+  // Remove items with zero activity after filtering
     uniqueRows = uniqueRows.filter(r => r.impressions > 0 || r.clicks > 0 || r.expense > 0 || r.gmv > 0 || r.orders > 0);
   }
+
+  if (uniqueRows.length === 0) return null;
 
   // Recalculate derived metrics after aggregation
   for (const r of uniqueRows) {
