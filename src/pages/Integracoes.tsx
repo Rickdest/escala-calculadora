@@ -259,8 +259,8 @@ export default function Integracoes() {
           </div>
         )}
 
-        {/* ═══ SHOPEE SELLER CARD — when connected ═══ */}
-        {sellerConnected && (
+        {/* ═══ SHOPEE SELLER CARD — when connected or when ads is connected but seller isn't ═══ */}
+        {(sellerConnected || adsConnected) && (
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2.5">
               Shopee
