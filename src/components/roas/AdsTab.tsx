@@ -4,7 +4,7 @@ import { useStore } from '@/contexts/StoreContext';
 import { useAdsData, EnrichedAdsData } from '@/hooks/useAdsData';
 import { useShopeeToken } from '@/hooks/useShopeeToken';
 import { useApiAdsData, buildApiAdsDataFromRows } from '@/hooks/useApiAdsData';
-import { Upload, Trash2, MapPin, Calendar, ShoppingBag, CheckCircle2, Download } from 'lucide-react';
+import { Upload, Trash2, MapPin, Calendar, ShoppingBag, CheckCircle2, Download, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { parseShopeeAdsCSV, validateCSVSecurity } from '@/lib/shopeeAdsParser';
@@ -122,7 +122,7 @@ function AdsHeader({ periodLabel, onImportCSV, onImportAds, syncing }: { periodL
 export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => void }) {
   const { currentStore } = useStore();
   const { data, loading, operating, importGeneralCSV, importProductCSV, importFromApi, linkProduct, unlinkProduct, reload, deleteAdsData, deleteAll } = useAdsData();
-  const { isConnected, syncAdsOnly } = useShopeeToken();
+  const { isConnected, syncAdsOnly, isExpired, needsReauth, startOAuth } = useShopeeToken();
   const [selectedDetail, setSelectedDetailRaw] = useState<EnrichedAdsData | null>(null);
   const setSelectedDetail = (ad: EnrichedAdsData | null) => {
     setSelectedDetailRaw(ad);
@@ -460,6 +460,20 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
         />
       ) : (
         <>
+           {/* ═══ Reauth Alert ═══ */}
+           {isConnected && (isExpired || needsReauth) && (
+             <div className="flex items-center gap-3 p-3 rounded-lg border border-amber-500/30 bg-amber-500/10">
+               <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />
+               <div className="flex-1 min-w-0">
+                 <p className="text-sm font-medium text-foreground">Token da Shopee expirado</p>
+                 <p className="text-xs text-muted-foreground">Reconecte para continuar importando dados de Ads.</p>
+               </div>
+               <Button size="sm" onClick={() => startOAuth('ads')} className="flex-shrink-0 bg-amber-500 hover:bg-amber-600 text-white">
+                 Reconectar
+               </Button>
+             </div>
+           )}
+
            {/* ═══ Empty State ═══ */}
            {!hasAnyContent && (
               <AdsEmptyState

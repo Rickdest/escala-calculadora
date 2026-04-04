@@ -79,9 +79,10 @@ const adsCreds = getAdsCredentials();
 const adsGet = (path: string, accessToken: string, shopId: string | number, extra: Record<string, string> = {}) =>
   shopeeGetWith(adsCreds.partnerId, adsCreds.partnerKey, path, accessToken, shopId, extra);
 
-async function refreshTokenIfNeeded(shopeeToken: any, _supabase: any) {
+async function refreshTokenIfNeeded(shopeeToken: any, _supabase: any): Promise<{ token: string; needs_reauth: boolean }> {
   const tokenAge = (Date.now() - new Date(shopeeToken.token_created_at).getTime()) / 1000;
-  if (tokenAge <= shopeeToken.expire_in - 300) return shopeeToken.access_token;
+  // Refresh preventivo: renovar quando faltam 24h (não 5min)
+  if (tokenAge <= shopeeToken.expire_in - 86400) return { token: shopeeToken.access_token, needs_reauth: false };
 
   console.log("[SHOPEE ADS] Token near expiry, refreshing...");
   const refreshPath = "/api/v2/auth/access_token/get";
@@ -89,22 +90,28 @@ async function refreshTokenIfNeeded(shopeeToken: any, _supabase: any) {
   const sign = await generateSignWith(adsCreds.partnerId, adsCreds.partnerKey, refreshPath, timestamp);
   const refreshUrl = `${SHOPEE_HOST}${refreshPath}?partner_id=${adsCreds.partnerId}&timestamp=${timestamp}&sign=${sign}`;
 
-  const refreshRes = await fetch(refreshUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh_token: shopeeToken.refresh_token, shop_id: Number(shopeeToken.shop_id), partner_id: adsCreds.partnerId }),
-  });
+  try {
+    const refreshRes = await fetch(refreshUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: shopeeToken.refresh_token, shop_id: Number(shopeeToken.shop_id), partner_id: adsCreds.partnerId }),
+    });
 
-  const refreshData = await refreshRes.json();
-  if (refreshData.access_token) {
-    const supabaseAdmin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    await supabaseAdmin.from("shopee_tokens").update({
-      access_token: refreshData.access_token, refresh_token: refreshData.refresh_token,
-      expire_in: refreshData.expire_in || 0, token_created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-    }).eq("id", shopeeToken.id);
-    return refreshData.access_token;
+    const refreshData = await refreshRes.json();
+    if (refreshData.access_token) {
+      const supabaseAdmin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      await supabaseAdmin.from("shopee_tokens").update({
+        access_token: refreshData.access_token, refresh_token: refreshData.refresh_token,
+        expire_in: refreshData.expire_in || 0, token_created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+      }).eq("id", shopeeToken.id);
+      return { token: refreshData.access_token, needs_reauth: false };
+    }
+    console.error("[SHOPEE ADS] Refresh failed, no access_token in response:", JSON.stringify(refreshData).substring(0, 500));
+    return { token: shopeeToken.access_token, needs_reauth: true };
+  } catch (e) {
+    console.error("[SHOPEE ADS] Refresh request failed:", e);
+    return { token: shopeeToken.access_token, needs_reauth: true };
   }
-  return shopeeToken.access_token;
 }
 
 function extractEntries(res: any): any[] {
@@ -545,7 +552,7 @@ Deno.serve(async (req) => {
     if (!tokens || tokens.length === 0) return errorResponse("No Shopee token found. Connect your shop first.");
 
     const shopeeToken = tokens[0];
-    const currentAccessToken = await refreshTokenIfNeeded(shopeeToken, supabase);
+    const { token: currentAccessToken, needs_reauth: refreshFailed } = await refreshTokenIfNeeded(shopeeToken, supabase);
 
     let filterItemId: number | undefined;
     try {
@@ -556,6 +563,9 @@ Deno.serve(async (req) => {
     } catch { /* ignore */ }
 
     const adsPerformance = await fetchAdsPerformance(currentAccessToken, shopeeToken.shop_id, filterItemId);
+
+    // Detect if API returned auth errors (0 campaigns despite having token)
+    const authFailed = refreshFailed || (adsPerformance.campaign_count === 0 && adsPerformance.summary.total_impressions === 0);
 
     // Upsert ads_by_campaign to database
     if (adsPerformance.ads_by_campaign.length > 0) {
@@ -588,7 +598,7 @@ Deno.serve(async (req) => {
       console.log(`[SHOPEE ADS] Upserted ${adsPerformance.ads_by_campaign.length} campaign records`);
     }
 
-    return jsonResponse({ success: true, results: { ads_performance: adsPerformance } });
+    return jsonResponse({ success: true, needs_reauth: refreshFailed, results: { ads_performance: { ...adsPerformance, needs_reauth: refreshFailed } } });
   } catch (e) {
     console.error("[SHOPEE ADS] Fatal error:", e);
     return errorResponse((e as Error).message, 500);

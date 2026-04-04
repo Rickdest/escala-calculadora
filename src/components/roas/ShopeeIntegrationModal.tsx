@@ -284,15 +284,19 @@ function ConnectionCard({
   description,
   icon: Icon,
   isConnected,
+  isExpired,
   isLoading,
   onConnect,
+  onReconnect,
 }: {
   title: string;
   description: string;
   icon: any;
   isConnected: boolean;
+  isExpired?: boolean;
   isLoading: boolean;
   onConnect: () => void;
+  onReconnect?: () => void;
 }) {
   return (
     <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-surface-2/30">
@@ -305,7 +309,17 @@ function ConnectionCard({
           <p className="text-[10px] text-muted-foreground">{description}</p>
         </div>
       </div>
-      {isConnected ? (
+      {isConnected && isExpired ? (
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <Badge className="bg-amber-500/15 text-amber-500 border-amber-500/30 text-[10px]">
+            <AlertTriangle className="w-3 h-3 mr-1" />
+            Expirado
+          </Badge>
+          <Button size="sm" variant="outline" onClick={onReconnect || onConnect} disabled={isLoading} className="text-xs border-amber-500/30 text-amber-600 hover:bg-amber-500/10">
+            {isLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : 'Reconectar'}
+          </Button>
+        </div>
+      ) : isConnected ? (
         <Badge className="bg-emerald-500/15 text-emerald-500 border-emerald-500/30 text-[10px] flex-shrink-0">
           <CheckCircle2 className="w-3 h-3 mr-1" />
           Conectado
@@ -320,7 +334,7 @@ function ConnectionCard({
 }
 
 export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { sellerConnected, adsConnected, startOAuth, syncStoreData, isLoading: tokenLoading, refetchAll } = useShopeeTokenStatus();
+  const { sellerConnected, adsConnected, sellerExpired, adsExpired, startOAuth, syncStoreData, isLoading: tokenLoading, refetchAll } = useShopeeTokenStatus();
   const isConnected = sellerConnected || adsConnected;
   const [syncing, setSyncing] = useState(false);
   const [connecting, setConnecting] = useState<string | null>(null);
@@ -403,16 +417,20 @@ export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClo
             description="Produtos, pedidos, finanças"
             icon={Package}
             isConnected={sellerConnected}
+            isExpired={sellerExpired}
             isLoading={connecting === 'seller' || tokenLoading}
             onConnect={() => handleConnect('seller')}
+            onReconnect={() => handleConnect('seller')}
           />
           <ConnectionCard
             title="📊 Dados de Ads"
             description="Campanhas, ROAS, keywords"
             icon={BarChart3}
             isConnected={adsConnected}
+            isExpired={adsExpired}
             isLoading={connecting === 'ads' || tokenLoading}
             onConnect={() => handleConnect('ads')}
+            onReconnect={() => handleConnect('ads')}
           />
           {sellerConnected && adsConnected && (
             <p className="text-[10px] text-emerald-600 text-center">
