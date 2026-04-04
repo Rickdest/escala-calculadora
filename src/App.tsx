@@ -30,6 +30,7 @@ const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const ShopeeCallback = lazy(() => import("./pages/ShopeeCallback"));
 const Performance = lazy(() => import("./pages/Performance"));
 const PerformanceProductDetail = lazy(() => import("./pages/PerformanceProductDetail"));
+const Integracoes = lazy(() => import("./pages/Integracoes"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -167,6 +168,7 @@ const App = () => (
                   <Route path="/shopee-callback" element={<ShopeeCallback />} />
                   <Route path="/admin/banners" element={<AdminRoute><AdminBanners /></AdminRoute>} />
                   <Route path="/calculadoras" element={<ProtectedRoute><Calculators /></ProtectedRoute>} />
+                  <Route path="/configuracoes/integracoes" element={<ProtectedRoute><Integracoes /></ProtectedRoute>} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>

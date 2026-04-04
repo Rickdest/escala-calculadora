@@ -147,6 +147,22 @@ export default function Settings() {
           </Button>
         )}
 
+        {/* Link to Integrations */}
+        <Button
+          onClick={() => navigate('/configuracoes/integracoes')}
+          variant="outline"
+          className="w-full h-14 justify-start gap-4 animate-fade-up"
+        >
+          <div className="p-2 rounded-xl bg-primary/10">
+            <ShoppingBag className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="font-semibold">Integrações</p>
+            <p className="text-xs text-muted-foreground">Shopee, Ads e outros marketplaces</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        </Button>
+
         {/* Suporte WhatsApp - visível no topo */}
         <a
           href="https://api.whatsapp.com/send?phone=5511930291287&text=Ol%C3%A1%2C%20preciso%20de%20suporte%20no%20Skalify"

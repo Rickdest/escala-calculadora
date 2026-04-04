@@ -1,4 +1,4 @@
-import { Home, ShoppingBag, Calculator, BarChart2, TrendingUp, Settings2, Boxes, Store, UserCircle, ChevronDown, Plus, MessageCircle } from 'lucide-react';
+import { Home, ShoppingBag, Calculator, BarChart2, TrendingUp, Settings2, Boxes, Store, UserCircle, ChevronDown, Plus, MessageCircle, Plug } from 'lucide-react';
 
 const WHATSAPP_URL = 'https://api.whatsapp.com/send?phone=5511930291287&text=Ol%C3%A1%2C%20preciso%20de%20suporte%20no%20Skalify';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -25,6 +25,7 @@ const navItems = [
   { icon: TrendingUp, label: 'Performance', path: '/performance' },
   { icon: Boxes, label: 'Estoque', path: '/stock' },
   { icon: Store, label: 'Lojas', path: '/stores' },
+  { icon: Plug, label: 'Integrações', path: '/configuracoes/integracoes' },
   { icon: UserCircle, label: 'Perfil', path: '/profile' },
   { icon: Settings2, label: 'Configurações', path: '/settings' },
 ];
