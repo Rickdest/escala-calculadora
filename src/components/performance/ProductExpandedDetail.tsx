@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Star, Package, MessageSquare, TrendingUp } from 'lucide-react';
+import { Star, Package, MessageSquare, TrendingUp, Target } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 
