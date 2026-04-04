@@ -74,17 +74,22 @@ export default function Integracoes() {
   const shopMismatch = sellerConnected && adsConnected && sellerToken && adsToken
     && Number(sellerToken.shop_id) !== Number(adsToken.shop_id);
 
-  // Auto-connect Ads after Seller OAuth completes
+  const [connecting, setConnecting] = useState(false);
+
+  // Auto-connect Ads after Seller OAuth completes (via URL param from callback)
   useEffect(() => {
-    const pendingAds = localStorage.getItem('skalify_pending_ads_oauth');
-    if (pendingAds === 'true' && sellerConnected && !adsConnected) {
+    const nextStep = searchParams.get('next');
+    const justConnected = searchParams.get('shopee_connected') === 'true';
+    const pendingLocal = localStorage.getItem('skalify_pending_ads_oauth');
+
+    if ((nextStep === 'ads' || pendingLocal === 'true') && justConnected && !adsConnected) {
       localStorage.removeItem('skalify_pending_ads_oauth');
       setTimeout(() => {
         toast.info('Ótimo! Agora vamos conectar os dados de Ads...');
         adsHook.startOAuth('ads');
       }, 1500);
     }
-  }, [sellerConnected, adsConnected]);
+  }, [sellerConnected, adsConnected, searchParams]);
 
   // Show success/error toast on callback
   useEffect(() => {
