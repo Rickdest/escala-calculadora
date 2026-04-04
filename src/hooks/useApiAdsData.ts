@@ -78,7 +78,33 @@ export function buildApiAdsDataFromRows(rows: any[], dateFrom?: string, dateTo?:
     }
   }
 
-  const uniqueRows = Array.from(byItem.values());
+  let uniqueRows = Array.from(byItem.values());
+
+  // If date filter provided, filter daily_data and recalculate metrics from filtered days
+  if (dateFrom || dateTo) {
+    for (const r of uniqueRows) {
+      if (r.daily_data && Array.isArray(r.daily_data) && r.daily_data.length > 0) {
+        const filteredDays = r.daily_data.filter((day: any) => {
+          const dayDate = normalizeDailyDate(day.date || '');
+          if (!dayDate) return false;
+          if (dateFrom && dayDate < dateFrom) return false;
+          if (dateTo && dayDate > dateTo) return false;
+          return true;
+        });
+        r.daily_data = filteredDays;
+        // Recalculate from filtered daily data
+        r.impressions = filteredDays.reduce((s: number, d: any) => s + (d.impressions || 0), 0);
+        r.clicks = filteredDays.reduce((s: number, d: any) => s + (d.clicks || 0), 0);
+        r.expense = filteredDays.reduce((s: number, d: any) => s + Number(d.expense || 0), 0);
+        r.gmv = filteredDays.reduce((s: number, d: any) => s + Number(d.gmv || 0), 0);
+        r.orders = filteredDays.reduce((s: number, d: any) => s + (d.orders || 0), 0);
+        r.direct_gmv = filteredDays.reduce((s: number, d: any) => s + Number(d.direct_gmv || 0), 0);
+        r.direct_orders = filteredDays.reduce((s: number, d: any) => s + (d.direct_orders || 0), 0);
+      }
+    }
+    // Remove items with zero activity after filtering
+    uniqueRows = uniqueRows.filter(r => r.impressions > 0 || r.clicks > 0 || r.expense > 0 || r.gmv > 0 || r.orders > 0);
+  }
 
   // Recalculate derived metrics after aggregation
   for (const r of uniqueRows) {
