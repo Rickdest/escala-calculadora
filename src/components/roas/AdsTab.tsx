@@ -528,6 +528,14 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   };
 
 
+  // Auto-sync: trigger import when connected but no data yet
+  useEffect(() => {
+    if (isConnected && !hasPersistedApiData && !syncing && !loading && !autoSyncAttempted.current) {
+      autoSyncAttempted.current = true;
+      handleImportAds();
+    }
+  }, [isConnected, hasPersistedApiData, syncing, loading]);
+
   if (loading && data.length === 0) {
     return (
       <div className="flex items-center justify-center py-16">
