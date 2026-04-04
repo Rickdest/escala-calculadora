@@ -596,9 +596,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
                 syncing={syncing}
                 dateFrom={dateFrom}
                 dateTo={dateTo}
-                onDateFromChange={setDateFrom}
-                onDateToChange={setDateTo}
-                onClearDates={clearDates}
+                onRangeChange={handleRangeChange}
               />
               <ApiAdsDashboard data={effectiveApiData} products={products} />
             </>
