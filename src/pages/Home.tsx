@@ -54,6 +54,18 @@ export default function Home() {
   const [showProductForm, setShowProductForm] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [prefillProduct, setPrefillProduct] = useState<Partial<Product> | null>(null);
+  const [onboardingDismissed, setOnboardingDismissed] = useState(() => localStorage.getItem('shopee_onboarding_dismissed') === '1');
+
+  const { isConnected: shopeeConnected, token: shopeeToken } = useShopeeToken('seller');
+
+  const dismissOnboarding = useCallback(() => {
+    setOnboardingDismissed(true);
+    localStorage.setItem('shopee_onboarding_dismissed', '1');
+  }, []);
+
+  const lastSyncRelative = shopeeToken
+    ? formatDistanceToNow(new Date(shopeeToken.updated_at), { addSuffix: false, locale: ptBR })
+    : '';
 
   useEffect(() => {
     if (searchParams.get('new') === '1') {
