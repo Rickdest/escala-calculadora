@@ -538,6 +538,11 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
                 onImportCSV={() => fileRef.current?.click()}
                 onImportAds={handleImportAds}
                 syncing={syncing}
+                dateFrom={dateFrom}
+                dateTo={dateTo}
+                onDateFromChange={setDateFrom}
+                onDateToChange={setDateTo}
+                onClearDates={clearDates}
               />
               <ApiAdsDashboard data={effectiveApiData} products={products} />
             </>
@@ -550,6 +555,11 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
                onImportCSV={() => fileRef.current?.click()}
                onImportAds={handleImportAds}
                syncing={syncing}
+               dateFrom={dateFrom}
+               dateTo={dateTo}
+               onDateFromChange={setDateFrom}
+               onDateToChange={setDateTo}
+               onClearDates={clearDates}
              />
           )}
 
