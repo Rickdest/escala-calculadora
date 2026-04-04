@@ -316,7 +316,7 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
     await delay(1000);
     let hourlyFound = 0;
 
-    for (let i = 0; i < activeCampaignsWithData.length; i += 3) {
+    for (let i = 0; i < campaignsForPosition.length; i += 3) {
       if (i > 0) await delay(2000);
       const batch = activeCampaignsWithData.slice(i, i + 3);
       const promises = batch.map(async (c: any, batchIdx: number) => {
