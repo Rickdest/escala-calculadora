@@ -176,9 +176,18 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const [apiAdsData, setApiAdsData] = useState<any>(null);
   const [apiCampaignList, setApiCampaignList] = useState<any[]>([]);
 
-  // Load persisted data from database as fallback
+  // Load persisted data from database as fallback, filtered by date range
   const { data: persistedRows, invalidate: invalidatePersistedAds } = useApiAdsData();
-  const persistedApiData = useMemo(() => buildApiAdsDataFromRows(persistedRows || []), [persistedRows]);
+  const dateFilteredRows = useMemo(() => {
+    if (!persistedRows) return [];
+    if (!dateFrom && !dateTo) return persistedRows;
+    return persistedRows.filter((r: any) => {
+      if (dateFrom && r.period_end < dateFrom) return false;
+      if (dateTo && r.period_start > dateTo) return false;
+      return true;
+    });
+  }, [persistedRows, dateFrom, dateTo]);
+  const persistedApiData = useMemo(() => buildApiAdsDataFromRows(dateFilteredRows), [dateFilteredRows]);
 
   // Use in-memory data if available, otherwise fall back to persisted DB data
   const effectiveApiData = apiAdsData || persistedApiData;
