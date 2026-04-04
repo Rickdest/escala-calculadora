@@ -113,7 +113,9 @@ Deno.serve(async (req) => {
 
     if (tokenData.error || !tokenData.access_token) {
       console.error("[SHOPEE CALLBACK] Token error:", JSON.stringify(tokenData));
-      return Response.redirect(`${appUrl}/roas?shopee_error=token_failed`, 302);
+      const shopeeMsg = typeof tokenData.message === 'string' ? tokenData.message : '';
+      const isDomainError = shopeeMsg.includes('redirect') || shopeeMsg.includes('domain');
+      return Response.redirect(`${appUrl}/configuracoes/integracoes?shopee_error=${isDomainError ? 'redirect_domain' : 'token_failed'}&app_type=${appType}`, 302);
     }
 
     const upsertPayload = {
