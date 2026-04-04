@@ -441,6 +441,7 @@ Deno.serve(async (req) => {
     return jsonResponse({
       success: true,
       shop_id: shopId,
+      needs_reauth: refreshFailed,
       results,
       errors: Object.keys(errors).length > 0 ? errors : undefined,
       message: "Sync completed.",
