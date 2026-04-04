@@ -92,13 +92,15 @@ export default function PerformanceProductDetail() {
     if (!product) return [];
     const days = chartPeriod === '7d' ? 7 : chartPeriod === '30d' ? 30 : 90;
     const today = new Date();
+    const avgTicket = product.total_qty > 0 ? product.total_revenue / product.total_qty : 0;
     if (product.daily_sales && Object.keys(product.daily_sales).length > 0) {
       return Array.from({ length: days }, (_, i) => {
         const d = new Date(today);
         d.setDate(d.getDate() - (days - 1 - i));
         const dateStr = d.toISOString().slice(0, 10);
         const label = `${d.getDate()} ${d.toLocaleString('pt-BR', { month: 'short' }).replace('.', '')}`;
-        return { label, value: product.daily_sales![dateStr] || 0 };
+        const qty = product.daily_sales![dateStr] || 0;
+        return { label, value: qty, revenue: qty * avgTicket };
       });
     }
     const avgPerDay = product.total_qty / (periodDays || 90);
@@ -108,7 +110,8 @@ export default function PerformanceProductDetail() {
       const label = `${d.getDate()} ${d.toLocaleString('pt-BR', { month: 'short' }).replace('.', '')}`;
       const trend = 0.5 + (i / days) * 1.0;
       const noise = 0.7 + Math.random() * 0.6;
-      return { label, value: Math.max(0, Math.round(avgPerDay * trend * noise)) };
+      const qty = Math.max(0, Math.round(avgPerDay * trend * noise));
+      return { label, value: qty, revenue: qty * avgTicket };
     });
   }, [chartPeriod, product, periodDays]);
 
@@ -395,7 +398,20 @@ export default function PerformanceProductDetail() {
             <BarChart data={dailyData} barCategoryGap="15%">
               <XAxis dataKey="label" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} interval={chartPeriod === '7d' ? 0 : chartPeriod === '30d' ? 4 : 13} />
               <YAxis hide />
-              <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }} formatter={(value: number) => [`${value} un.`, 'Vendas']} />
+              <Tooltip
+                content={({ active, payload, label }) => {
+                  if (!active || !payload?.length) return null;
+                  const qty = payload[0]?.value as number;
+                  const rev = payload[0]?.payload?.revenue as number;
+                  return (
+                    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-md">
+                      <p className="text-[11px] font-semibold text-foreground mb-1">{label}</p>
+                      <p className="text-[11px] text-muted-foreground">Vendas: <span className="font-mono font-bold text-foreground">{qty} un.</span></p>
+                      <p className="text-[11px] text-muted-foreground">Faturamento: <span className="font-mono font-bold text-emerald-500">R$ {(rev || 0).toFixed(2).replace('.', ',')}</span></p>
+                    </div>
+                  );
+                }}
+              />
               <Bar dataKey="value" radius={[3, 3, 0, 0]}>
                 {dailyData.map((_, index) => (
                   <Cell key={index} fill={index >= dailyData.length - 3 ? 'hsl(var(--primary))' : 'hsl(var(--primary) / 0.65)'} />
