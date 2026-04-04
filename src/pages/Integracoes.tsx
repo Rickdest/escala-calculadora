@@ -505,9 +505,24 @@ export default function Integracoes() {
                     </div>
                   </>
                 ) : (
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Conecte a API de Ads para importar dados de campanhas, ROAS e gastos automaticamente.
-                  </p>
+                  <div className="space-y-3">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Conecte a API de Ads para importar dados de campanhas, ROAS e gastos automaticamente.
+                    </p>
+                    {hasHistoricalAds && (
+                      <div className="flex items-center gap-2 rounded-lg p-3 text-xs border"
+                        style={{
+                          background: 'hsla(45, 100%, 50%, 0.07)',
+                          borderColor: 'hsla(45, 100%, 50%, 0.2)',
+                        }}
+                      >
+                        <span>📊</span>
+                        <span className="text-muted-foreground">
+                          Há histórico de Ads salvo, mas a autorização da API Ads não está ativa no momento. Reconecte para atualizar.
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
