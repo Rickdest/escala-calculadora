@@ -30,6 +30,7 @@ const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const ShopeeCallback = lazy(() => import("./pages/ShopeeCallback"));
 const Performance = lazy(() => import("./pages/Performance"));
 const PerformanceProductDetail = lazy(() => import("./pages/PerformanceProductDetail"));
+const Integracoes = lazy(() => import("./pages/Integracoes"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
