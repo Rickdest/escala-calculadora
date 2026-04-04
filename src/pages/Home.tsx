@@ -312,6 +312,39 @@ export default function Home() {
           DESKTOP LAYOUT — redesigned
           ══════════════════════════════════════════════ */}
       <div className="hidden md:block py-4">
+        {/* Shopee connection status — desktop */}
+        {shopeeConnected && (
+          <button
+            onClick={() => navigate('/configuracoes/integracoes')}
+            className="flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-3 py-1.5 mb-3 hover:bg-emerald-500/15 transition-colors"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            Shopee conectada · sync há {lastSyncRelative}
+          </button>
+        )}
+        {!shopeeConnected && !onboardingDismissed && (
+          <div className="flex items-center gap-3 rounded-xl p-4 mb-3 border"
+            style={{ background: 'hsla(24, 100%, 45%, 0.08)', borderColor: 'hsla(24, 100%, 45%, 0.2)' }}
+          >
+            <span className="text-lg">🔗</span>
+            <div className="flex-1">
+              <p className="text-sm font-medium">Conecte sua loja Shopee para começar</p>
+              <p className="text-xs text-muted-foreground">Importe produtos e pedidos automaticamente</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                className="text-xs font-medium bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
+                onClick={() => navigate('/configuracoes/integracoes')}
+              >
+                Conectar →
+              </button>
+              <button className="text-[10px] text-muted-foreground" onClick={dismissOnboarding}>
+                Fazer depois
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* CTA banners */}
         {expiredCta && <div className="mb-2.5">{expiredCta}</div>}
 
