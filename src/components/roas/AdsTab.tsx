@@ -72,7 +72,10 @@ function formatPeriodLabel(inicio: string, fim: string) {
   return `${fShort(inicio)} – ${fFull(fim)}`;
 }
 
-function AdsHeader({ periodLabel, onImportCSV, onImportAds, syncing }: { periodLabel: string; onImportCSV: () => void; onImportAds: () => void; syncing?: boolean }) {
+function AdsHeader({ periodLabel, onImportCSV, onImportAds, syncing, dateFrom, dateTo, onDateFromChange, onDateToChange, onClearDates }: {
+  periodLabel: string; onImportCSV: () => void; onImportAds: () => void; syncing?: boolean;
+  dateFrom: string; dateTo: string; onDateFromChange: (v: string) => void; onDateToChange: (v: string) => void; onClearDates: () => void;
+}) {
   const { isConnected, token } = useShopeeToken();
 
   const syncAgo = token?.updated_at
@@ -80,37 +83,62 @@ function AdsHeader({ periodLabel, onImportCSV, onImportAds, syncing }: { periodL
     : null;
 
   return (
-    <div className="flex items-center justify-between flex-wrap gap-2">
-      <div>
-        <p className="text-sm font-bold text-foreground">Análise de Ads</p>
-        {periodLabel && (
-          <p className="text-[11px] text-muted-foreground font-mono">{periodLabel}</p>
-        )}
-      </div>
-      <div className="flex items-center gap-2 flex-wrap">
-        {isConnected && (
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-            <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-            <span className="text-[10px] font-medium text-emerald-600">
-              Shopee conectada{syncAgo ? ` · sync há ${syncAgo}` : ''}
-            </span>
-          </div>
-        )}
-        <button
-          onClick={onImportCSV}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-secondary hover:bg-secondary/80 text-[12px] font-semibold text-foreground transition-colors"
-        >
-          <Upload className="w-3.5 h-3.5" />
-          Atualizar CSV
-        </button>
-        {isConnected && (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <p className="text-sm font-bold text-foreground">Análise de Ads</p>
+          {periodLabel && (
+            <p className="text-[11px] text-muted-foreground font-mono">{periodLabel}</p>
+          )}
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {isConnected && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+              <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+              <span className="text-[10px] font-medium text-emerald-600">
+                Shopee conectada{syncAgo ? ` · sync há ${syncAgo}` : ''}
+              </span>
+            </div>
+          )}
           <button
-            onClick={onImportAds}
-            disabled={syncing}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#EE4D2D]/30 bg-[#EE4D2D]/5 text-[#EE4D2D] hover:bg-[#EE4D2D]/10 text-[12px] font-semibold transition-colors disabled:opacity-50"
+            onClick={onImportCSV}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border bg-secondary hover:bg-secondary/80 text-[12px] font-semibold text-foreground transition-colors"
           >
-            <Download className={cn("w-3.5 h-3.5", syncing && "animate-spin")} />
-            {syncing ? 'Importando...' : 'Importar Ads'}
+            <Upload className="w-3.5 h-3.5" />
+            Atualizar CSV
+          </button>
+          {isConnected && (
+            <button
+              onClick={onImportAds}
+              disabled={syncing}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#EE4D2D]/30 bg-[#EE4D2D]/5 text-[#EE4D2D] hover:bg-[#EE4D2D]/10 text-[12px] font-semibold transition-colors disabled:opacity-50"
+            >
+              <Download className={cn("w-3.5 h-3.5", syncing && "animate-spin")} />
+              {syncing ? 'Importando...' : 'Importar Ads'}
+            </button>
+          )}
+        </div>
+      </div>
+      {/* Date range filter */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Calendar className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+        <span className="text-xs font-medium text-muted-foreground flex-shrink-0">Filtrar:</span>
+        <input
+          type="date"
+          value={dateFrom}
+          onChange={e => onDateFromChange(e.target.value)}
+          className="h-8 px-2 rounded-lg border border-border bg-card text-xs text-foreground"
+        />
+        <span className="text-xs text-muted-foreground">até</span>
+        <input
+          type="date"
+          value={dateTo}
+          onChange={e => onDateToChange(e.target.value)}
+          className="h-8 px-2 rounded-lg border border-border bg-card text-xs text-foreground"
+        />
+        {(dateFrom || dateTo) && (
+          <button onClick={onClearDates} className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+            <X className="w-3 h-3" /> Limpar
           </button>
         )}
       </div>
