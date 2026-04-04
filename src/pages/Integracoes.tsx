@@ -410,6 +410,30 @@ export default function Integracoes() {
           </div>
         )}
 
+        {/* ═══ BANNER: Seller connected, Ads pending ═══ */}
+        {justConnectedSeller && (
+          <div className="flex items-center gap-3 rounded-xl p-4 border"
+            style={{
+              background: 'hsla(142, 71%, 45%, 0.08)',
+              borderColor: 'hsla(142, 71%, 45%, 0.2)',
+            }}
+          >
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base flex-shrink-0"
+              style={{ background: 'hsla(142, 71%, 45%, 0.15)' }}
+            >
+              ✅
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-emerald-400">
+                Seller conectado com sucesso!
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Agora conecte os dados de Ads abaixo para ver ROAS, campanhas e gastos.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* ═══ SHOPEE ADS CARD ═══ */}
         {(sellerConnected || adsConnected) && (
           <div>
