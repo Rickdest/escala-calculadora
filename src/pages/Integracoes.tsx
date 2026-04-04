@@ -56,9 +56,6 @@ const SHOPEE_CONNECT_ERROR_MESSAGES: Record<string, string> = {
   auth_preflight_failed: 'Não foi possível validar a autorização da Shopee agora. Tente novamente em instantes.',
 };
 
-const clearPendingAdsOAuth = () => {
-  localStorage.removeItem('skalify_pending_ads_oauth');
-};
 
 export default function Integracoes() {
   const navigate = useNavigate();
