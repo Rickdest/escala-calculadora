@@ -1,34 +1,41 @@
 
 
-## Problemas identificados
+## Diagnóstico
 
-1. **Redirecionamento automático para Ads é confuso** — Depois de conectar o Seller, o sistema redireciona automaticamente para o OAuth de Ads sem explicar. O usuário vê outra tela de login sem entender por quê.
+Três problemas distintos na experiência da aba "Análise de Ads":
 
-2. **Ao desconectar Seller com Ads ainda conectada, não aparece botão para reconectar Seller** — O card do Seller desaparece completamente (condição na linha 281: `sellerConnected`), e como `neitherConnected` é false (Ads ainda está conectada), o card unificado de conexão também não aparece.
+1. **Após conectar Ads, nada é importado automaticamente** — O callback (`shopee-callback`) salva o token e redireciona para `/configuracoes/integracoes`. Quando o usuário navega para a aba Ads, não há nenhum trigger de sincronização automática. O botão "Importar Ads" fica escondido no header.
 
-3. **Tela de Ads não mostra permissões** — Isso é do lado da Shopee (imagem 144 vs 145), não controlamos. Mas podemos informar melhor o usuário.
+2. **Botão "Importar Ads" é pouco visível** — Aparece como um botão pequeno no canto superior direito, sem destaque. No empty state, aparece como opção secundária abaixo do CSV.
+
+3. **Sem feedback visual durante importação** — O botão gira discretamente mas não há overlay/modal/barra de progresso indicando que algo está acontecendo. Se a edge function demora (30s+), o usuário não sabe o que está ocorrendo.
 
 ## Plano
 
-### 1. Remover auto-redirect para Ads — substituir por banner explicativo
+### 1. Auto-sync ao detectar conexão nova sem dados
 
-- Remover o `useEffect` (linhas 99-113) que auto-inicia `adsHook.startOAuth('ads')` após o callback do Seller
-- Remover o `localStorage` de `skalify_pending_ads_oauth`
-- Após conectar Seller com sucesso, mostrar um banner destacado no card de Ads dizendo: "Seller conectado! Agora conecte os dados de Ads para ver ROAS e campanhas." com botão "Conectar Ads"
-- Isso dá ao usuário controle e contexto sobre o que está acontecendo
+No `AdsTab`, adicionar um `useEffect` que detecta: API conectada + sem dados persistidos (`!hasPersistedApiData`) + não está sincronizando → dispara `handleImportAds()` automaticamente na primeira vez.
+- Usar um `useRef` para evitar múltiplas chamadas
+- Isso garante que após conectar, ao abrir Ads, os dados já começam a carregar
 
-### 2. Mostrar card de Seller desconectada quando apenas Ads está conectada
+### 2. Melhorar visibilidade do empty state
 
-- Alterar a lógica de renderização: o card do Seller deve aparecer também quando `!sellerConnected && adsConnected`, mostrando status "Não conectada" com botão "Conectar"
-- Isso resolve o problema de não poder reconectar Seller sem remover tudo
+No `AdsEmptyState`, quando `isConnected === true`:
+- Inverter a ordem: botão "Importar via API" vira o **primário** (destaque), CSV vira secundário
+- Adicionar texto "Sua Shopee Ads está conectada! Importe os dados agora."
 
-### 3. Melhorar feedback na transição Seller → Ads
+### 3. Adicionar overlay de progresso durante importação
 
-- No card de Ads (quando não conectada), adicionar texto explicativo: "Esta é uma segunda autorização necessária para acessar dados de campanhas e anúncios. Você será redirecionado para a Shopee novamente."
+Criar um overlay/modal simples no `AdsTab` que aparece quando `syncing === true`:
+- Fundo semi-transparente com spinner central
+- Texto: "Importando dados de Ads da Shopee..."
+- Subtexto: "Isso pode levar até 1 minuto dependendo do número de campanhas."
+- Impede que o usuário fique confuso achando que nada está acontecendo
 
 ## Arquivos modificados
 
-- `src/pages/Integracoes.tsx` — único arquivo alterado
+- `src/components/roas/AdsTab.tsx` — auto-sync + overlay de progresso
+- `src/components/roas/AdsEmptyState.tsx` — reorganizar quando conectado
 
-## Sem migrations de banco
+## Sem migration de banco
 
