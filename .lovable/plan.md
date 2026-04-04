@@ -1,29 +1,44 @@
 
 
-## Plano: "Atualizar Dados" só do produto + buscar posição
+## Plano: Corrigir falso positivo de token expirado
 
-### Problemas atuais
+### Causa raiz
+1. **Backend**: margem de refresh de 24h (86400s) é maior que o tempo de vida do access token (14400s = 4h), então a condição `tokenAge <= expire_in - 86400` nunca é satisfeita → sempre tenta refresh → se falha = `needs_reauth: true`
+2. **Frontend**: checagem local `tokenAge > expire_in` marca "Expirado" após 4h, ignorando que o backend renova automaticamente
 
-1. **Step 5 (avg_position) ignora filterItemId**: quando clica "Atualizar Dados" de um produto específico, o Step 5 busca posição de TODAS as campanhas ativas em vez de só do item clicado
-2. **Step 5 só roda para campanhas `active`**: campanhas `ended` nunca recebem posição, mesmo que tenham dados recentes
-3. **Step 6 (keywords) também ignora filterItemId**: busca keywords de todos os itens ativos
+### Correções
 
-### Correções no `shopee-ads/index.ts`
-
-#### Step 5 — filtrar por itemId e incluir campanhas com dados
-- Quando `filterItemId` está definido, filtrar `activeCampaignsWithData` para incluir apenas campanhas daquele item
-- Relaxar o filtro: incluir campanhas com `expense > 0` (não só `active`), para que ended recentes também recebam posição
-- Isso garante que ao clicar "Atualizar Dados", só busca a posição daquele produto
-
-#### Step 6 — keywords só do item filtrado
-- Quando `filterItemId` está definido, filtrar `activeCampaignsForKw` para apenas aquele item
-- Pular chamadas de shop-level (hourly_performance, recommended_items, shop_toggles) quando é refresh individual — são irrelevantes e gastam quota da API
-
-### Arquivo modificado
+#### 1. Backend: margem de refresh correta
+Em `shopee-ads/index.ts` e `shopee-sync/index.ts`, trocar a margem de 24h para 5 minutos (300s):
 ```
-supabase/functions/shopee-ads/index.ts
+// ANTES (bugado):
+if (tokenAge <= shopeeToken.expire_in - 86400)
+
+// DEPOIS:
+if (tokenAge <= shopeeToken.expire_in - 300)
+```
+Isso faz o refresh acontecer só nos últimos 5 minutos de vida do access token — silencioso e automático.
+
+#### 2. Frontend: remover checagem local de expiração
+Em `useShopeeToken.ts`, remover o cálculo de `tokenAge` e basear `isExpired` **apenas** no flag `needsReauth` (que só é setado quando o backend realmente falha ao renovar):
+```typescript
+// ANTES:
+const tokenAge = (Date.now() - new Date(token.token_created_at).getTime()) / 1000;
+return tokenAge > (token.expire_in || 14400);
+
+// DEPOIS:
+return false; // só needsReauth (vindo do backend) importa
+```
+
+### Arquivos modificados
+```
+supabase/functions/shopee-ads/index.ts    — margem 300s
+supabase/functions/shopee-sync/index.ts   — mesma correção
+src/hooks/useShopeeToken.ts               — remover checagem local
 ```
 
 ### Resultado
-"Atualizar Dados" no detalhe do produto busca apenas as campanhas, posição e keywords daquele item — mais rápido, sem gastar quota, e a posição passa a aparecer se a API retornar.
+- O refresh automático funciona silenciosamente a cada ~4h
+- O alerta "Expirado / Reconectar" só aparece quando o refresh token de 365 dias realmente expira
+- O usuário não precisa reconectar manualmente no uso normal
 
