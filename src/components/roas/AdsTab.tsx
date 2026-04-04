@@ -438,7 +438,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       });
     }
     return result;
-  }, [data, selectedPeriod, dateFrom, dateTo]);
+  }, [data, selectedPeriod, dateFromStr, dateToStr]);
 
   const filtered = useMemo(() => {
     let result = periodFiltered;
