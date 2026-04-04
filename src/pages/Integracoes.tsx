@@ -562,6 +562,17 @@ export default function Integracoes() {
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       Conecte a API de Ads para importar dados de campanhas, ROAS e gastos automaticamente.
                     </p>
+                    <div className="flex items-center gap-2 rounded-lg p-3 text-xs border"
+                      style={{
+                        background: 'hsla(210, 100%, 50%, 0.07)',
+                        borderColor: 'hsla(210, 100%, 50%, 0.15)',
+                      }}
+                    >
+                      <span>ℹ️</span>
+                      <span className="text-muted-foreground">
+                        Esta é uma segunda autorização necessária para acessar dados de campanhas e anúncios. Você será redirecionado para a Shopee novamente.
+                      </span>
+                    </div>
                     {hasHistoricalAds && (
                       <div className="flex items-center gap-2 rounded-lg p-3 text-xs border"
                         style={{
