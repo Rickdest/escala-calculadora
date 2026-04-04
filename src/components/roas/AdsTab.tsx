@@ -149,7 +149,7 @@ function AdsHeader({ periodLabel, onImportCSV, onImportAds, syncing, dateFrom, d
   periodLabel: string; onImportCSV: () => void; onImportAds: () => void; syncing?: boolean;
   dateFrom: Date | undefined; dateTo: Date | undefined; onRangeChange: (from: Date | undefined, to: Date | undefined) => void;
 }) {
-  const { isConnected, token } = useShopeeToken();
+  const { isConnected, token } = useShopeeToken('ads');
 
   const syncAgo = token?.updated_at
     ? formatDistanceToNow(new Date(token.updated_at), { addSuffix: false, locale: ptBR })
