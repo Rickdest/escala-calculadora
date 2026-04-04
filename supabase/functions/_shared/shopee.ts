@@ -140,9 +140,8 @@ export function getAdsCredentials(): { partnerId: number; partnerKey: string } {
   if (envId && /^\d+$/.test(envId) && envKey && envKey.length >= 20) {
     return { partnerId: Number(envId), partnerKey: envKey };
   }
-  // Fallback to seller credentials if ads-specific not configured
-  console.warn("[SHOPEE] Ads credentials not found, falling back to seller credentials");
-  return { partnerId: PARTNER_ID, partnerKey: getPartnerKey() };
+  // NEVER fallback to seller credentials — throw clear error
+  throw new Error("SHOPEE_ADS_PARTNER_ID ou SHOPEE_ADS_KEY não configurados. Configure as credenciais do app de Ads no backend.");
 }
 
 export function getSellerCredentials(): { partnerId: number; partnerKey: string } {

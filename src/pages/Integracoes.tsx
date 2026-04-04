@@ -5,7 +5,6 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { useShopeeToken } from '@/hooks/useShopeeToken';
-import { useStore } from '@/contexts/StoreContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
@@ -36,11 +35,15 @@ const getTokenProgressPercent = (token: any): number => {
   return Math.min(100, Math.round((days / 365) * 100));
 };
 
+const getShopLabel = (token: any): string => {
+  if (!token) return 'Minha Loja';
+  return `Loja #${token.shop_id}`;
+};
+
 export default function Integracoes() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
-  const { currentStore } = useStore();
   const sellerHook = useShopeeToken('seller');
   const adsHook = useShopeeToken('ads');
 
@@ -51,6 +54,10 @@ export default function Integracoes() {
 
   const [autoSync, setAutoSync] = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
+
+  // Check if seller and ads are connected to different shops
+  const shopMismatch = sellerConnected && adsConnected && sellerToken && adsToken
+    && Number(sellerToken.shop_id) !== Number(adsToken.shop_id);
 
   // Auto-connect Ads after Seller OAuth completes
   useEffect(() => {
@@ -64,7 +71,7 @@ export default function Integracoes() {
     }
   }, [sellerConnected, adsConnected]);
 
-  // Show success toast on callback
+  // Show success/error toast on callback
   useEffect(() => {
     if (searchParams.get('shopee_connected') === 'true') {
       const appType = searchParams.get('app_type') || 'seller';
@@ -72,13 +79,19 @@ export default function Integracoes() {
       sellerHook.refetch();
       adsHook.refetch();
     }
-    if (searchParams.get('shopee_error')) {
-      const errCode = searchParams.get('shopee_error');
-      if (errCode === 'error_param' || errCode === 'redirect_domain') {
-        toast.error('Erro de configuração na Shopee. Entre em contato com o suporte.');
-      } else {
-        toast.error('Erro ao conectar com a Shopee. Tente novamente.');
-      }
+    const errCode = searchParams.get('shopee_error');
+    if (errCode) {
+      const errorMessages: Record<string, string> = {
+        missing_params: 'Parâmetros faltando na resposta da Shopee. Tente novamente.',
+        invalid_state: 'Sessão expirada. Tente conectar novamente.',
+        token_exchange_http_error: 'Erro de comunicação com a Shopee. Tente novamente em alguns minutos.',
+        token_parse_error: 'Resposta inesperada da Shopee. Tente novamente.',
+        token_failed: 'A Shopee rejeitou a autorização. Tente novamente.',
+        token_upsert_failed: 'Erro ao salvar o token. Entre em contato com o suporte.',
+        error_param: 'Erro de configuração na Shopee. Entre em contato com o suporte.',
+        redirect_domain: 'Erro de configuração de domínio. Entre em contato com o suporte.',
+      };
+      toast.error(errorMessages[errCode] || 'Erro ao conectar com a Shopee. Tente novamente.');
     }
   }, []);
 
@@ -86,8 +99,6 @@ export default function Integracoes() {
     if (!sellerToken) return null;
     return formatDistanceToNow(new Date(sellerToken.updated_at), { addSuffix: true, locale: ptBR });
   };
-
-  const productCount = currentStore?.products?.filter((p: any) => p.source === 'shopee').length || 0;
 
   const handleConnectBoth = () => {
     localStorage.setItem('skalify_pending_ads_oauth', 'true');
@@ -139,6 +150,31 @@ export default function Integracoes() {
       <PageHeader title="Integrações" subtitle="Gerencie as conexões com marketplaces e plataformas" />
 
       <div className="max-w-2xl mx-auto pt-6 pb-8 space-y-5">
+
+        {/* ═══ SHOP MISMATCH WARNING ═══ */}
+        {shopMismatch && (
+          <div className="flex items-center gap-3 rounded-xl p-4 border"
+            style={{
+              background: 'hsla(0, 80%, 50%, 0.08)',
+              borderColor: 'hsla(0, 80%, 50%, 0.2)',
+            }}
+          >
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center text-base flex-shrink-0"
+              style={{ background: 'hsla(0, 80%, 50%, 0.15)' }}
+            >
+              ⚠️
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-red-400">
+                Contas diferentes conectadas
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Seller está na loja #{sellerToken?.shop_id} e Ads na loja #{adsToken?.shop_id}.
+                Para dados consistentes, conecte ambas na mesma conta Shopee.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* ═══ ONBOARDING BANNER — only when nothing connected ═══ */}
         {neitherConnected && (
@@ -218,7 +254,7 @@ export default function Integracoes() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-foreground">
-                      {currentStore?.name || 'Minha Loja'}
+                      {getShopLabel(sellerToken)}
                     </p>
                     <p className="text-[11px] text-muted-foreground">
                       Produtos · Pedidos · Estoque
@@ -265,26 +301,6 @@ export default function Integracoes() {
                       className="h-1 rounded-full bg-emerald-500 transition-all"
                       style={{ width: `${getTokenProgressPercent(sellerToken)}%` }}
                     />
-                  </div>
-                </div>
-
-                {/* Metrics */}
-                <div className="grid grid-cols-2 gap-2.5 mb-4">
-                  <div className="bg-muted/20 rounded-lg p-3">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">
-                      Produtos sincronizados
-                    </p>
-                    <p className="text-sm font-semibold text-emerald-400">
-                      {productCount} produtos
-                    </p>
-                  </div>
-                  <div className="bg-muted/20 rounded-lg p-3">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">
-                      Próxima sincronização
-                    </p>
-                    <p className="text-sm font-semibold text-primary">
-                      automática
-                    </p>
                   </div>
                 </div>
 
@@ -369,6 +385,9 @@ export default function Integracoes() {
                     <p className="text-sm font-semibold text-foreground">Shopee Ads</p>
                     <p className="text-[11px] text-muted-foreground">
                       ROAS · Campanhas · Gasto
+                      {adsConnected && adsToken && (
+                        <span className="ml-1">· Loja #{adsToken.shop_id}</span>
+                      )}
                     </p>
                   </div>
                 </div>
@@ -428,8 +447,7 @@ export default function Integracoes() {
                     </div>
 
                     <p className="text-xs text-muted-foreground leading-relaxed bg-muted/20 rounded-lg p-3">
-                      A sincronização automática de dados de Ads (ROAS, GMV, Gasto) está em implementação.{' '}
-                      Continue usando o <strong className="text-foreground">CSV de Ads</strong> na aba Ads.
+                      Dados de campanhas, ROAS e gastos são sincronizados automaticamente via API.
                     </p>
 
                     {/* Disconnect Ads */}

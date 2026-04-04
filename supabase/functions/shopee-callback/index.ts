@@ -11,8 +11,11 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const appUrl =
-    Deno.env.get("APP_URL") || "https://app.richardaragao.com.br";
+  const appUrl = Deno.env.get("APP_URL");
+    if (!appUrl) {
+      console.error("[SHOPEE CALLBACK] APP_URL not configured");
+      return new Response("APP_URL not configured", { status: 500 });
+    }
 
   try {
     const url = new URL(req.url);

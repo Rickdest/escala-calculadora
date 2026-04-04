@@ -333,6 +333,7 @@ Deno.serve(async (req) => {
       .from("shopee_tokens")
       .select("*")
       .eq("user_id", user.id)
+      .eq("app_type", "seller")
       .limit(1);
 
     if (!tokens || tokens.length === 0) {

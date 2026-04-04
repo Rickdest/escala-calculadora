@@ -555,13 +555,9 @@ Deno.serve(async (req) => {
     if (claimsError || !claimsData?.claims) return errorResponse("Unauthorized", 401);
     const user = { id: claimsData.claims.sub as string };
 
-    // Try to find ads-specific token first, fallback to any token
-    let { data: tokens } = await supabase.from("shopee_tokens").select("*").eq("user_id", user.id).eq("app_type", "ads").limit(1);
-    if (!tokens || tokens.length === 0) {
-      const fallback = await supabase.from("shopee_tokens").select("*").eq("user_id", user.id).limit(1);
-      tokens = fallback.data;
-    }
-    if (!tokens || tokens.length === 0) return errorResponse("No Shopee token found. Connect your shop first.");
+    // Strictly require ads token — no fallback to seller
+    const { data: tokens } = await supabase.from("shopee_tokens").select("*").eq("user_id", user.id).eq("app_type", "ads").limit(1);
+    if (!tokens || tokens.length === 0) return errorResponse("Nenhum token de Ads encontrado. Conecte a API de Ads primeiro.", 403);
 
     const shopeeToken = tokens[0];
     const { token: currentAccessToken, needs_reauth: refreshFailed } = await refreshTokenIfNeeded(shopeeToken, supabase);
