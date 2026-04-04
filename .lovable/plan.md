@@ -1,59 +1,71 @@
 
 
-## Plano: Enriquecer Performance com dados completos das 2 APIs
+## Plano: Dados faltantes das 2 APIs na Performance
 
-### O que adicionar
+### Bug encontrado
+O `shopee-sync` **constrói** os campos enriquecidos (preço, estoque, rating, peso, etc.) no `enrichmentMap` (linha 117-133), mas na hora de **mesclar** no `product_sales` (linhas 390-396), só copia 5 campos: `image_url`, `likes`, `views`, `sales`, `item_status`. Os outros 8 campos são **descartados** — por isso a tela de detalhes não mostra preço, estoque, rating, peso nem prazo de envio.
 
-#### 1. Enriquecer `shopee-sync` — mais campos do `get_item_base_info`
-
-Atualizar `fetchProductsWithModels` para extrair do response e salvar no `enrichmentMap` (que vai para o JSONB `product_sales`):
-- `price_info.current_price` ou `price_info.min_price` / `price_info.max_price`
-- `stock_info_v2.summary_info.total_available_stock`
-- `rating_star` (float 0-5)
-- `comment_count`
-- `category_id`
-- `weight` (em kg)
-- `days_to_ship`
-
-Também pedir mais `response_optional_fields`: adicionar `description,weight,dimension,rating_star,comment_count,category_id`.
-
-#### 2. Salvar vendas por dia no `product_sales`
-
-No `fetchOrdersWithAggregation`, ao processar cada pedido, agrupar por data (`pay_time` ou `create_time`) para cada `item_id`. Salvar campo `daily_sales: Record<string, number>` (data ISO → qty) no `product_sales` JSONB. Isso permite gráfico de vendas diárias **real** em vez de simulado.
-
-#### 3. Cruzar dados de Ads na tela de Performance
-
-No frontend, carregar `shopee_ads_by_product` (já existe o hook `useApiAdsData`) e cruzar por `item_id`. Na tela de detalhes do produto, mostrar seção "Dados de Ads" com:
-- Gasto total, GMV de Ads, ROAS
-- CTR, Custo por pedido
-- Status da campanha
-
-#### 4. Atualizar `PerformanceProductDetail.tsx`
-
-Adicionar novas seções:
-- **Preço & Estoque**: preço atual, estoque disponível, alerta se < 10
-- **Avaliação**: rating ⭐ + nº de avaliações
-- **Vendas Diárias**: gráfico real usando `daily_sales`
-- **Performance de Ads**: gasto, ROAS, CTR (cruzado do `shopee_ads_by_product`)
-- **Logística**: peso, prazo de envio
-
-#### 5. Atualizar `ProductExpandedDetail.tsx`
-
-Adicionar mini-badges de:
-- Rating (⭐ 4.8)
-- Estoque (📦 45 un)
-- Ads ROAS (se tiver campanha ativa)
-
-### Arquivos
+### O que já temos vs. o que não estamos usando
 
 ```text
-supabase/functions/shopee-sync/index.ts           — mais campos no enrichmentMap + daily_sales
-src/hooks/usePerformanceData.ts                    — tipar novos campos
-src/pages/PerformanceProductDetail.tsx              — novas seções (preço, rating, ads, logística, gráfico real)
-src/components/performance/ProductExpandedDetail.tsx — mini-badges extras
+┌─────────────────────────────────────────────────────────────┐
+│ API SELLER (shopee-sync)                                    │
+├──────────────────────────┬──────────────────────────────────┤
+│ ✅ Usando                │ ❌ Coletado mas não salvo        │
+│ image_url                │ current_price / min / max        │
+│ likes, views, sales      │ stock_available                  │
+│ item_status              │ rating_star                      │
+│ daily_sales (vendas/dia) │ comment_count                    │
+│ variants (variações)     │ category_id                      │
+│                          │ weight                           │
+│                          │ days_to_ship                     │
+├──────────────────────────┴──────────────────────────────────┤
+│ API ADS (shopee-ads)                                        │
+├──────────────────────────┬──────────────────────────────────┤
+│ ✅ Usando na Performance │ ❌ Disponível mas não mostrado   │
+│ expense, gmv, roas       │ direct_gmv / direct_roas         │
+│ clicks, impressions, ctr │ avg_position (ranking de busca)  │
+│ orders, cost_per_order   │ days_active                      │
+│ status (ativo/pausado)   │ daily_data (gráfico Ads/dia)     │
+│                          │ keywords (palavras-chave)        │
+│                          │ hourly_performance (heatmap 24h) │
+│                          │ total_balance (saldo Ads)        │
+│                          │ recommended_items                │
+└──────────────────────────┴──────────────────────────────────┘
+```
+
+### Correções e melhorias
+
+#### 1. Fix merge no `shopee-sync` (bug)
+Adicionar os 8 campos faltantes na mesclagem (linhas 390-396):
+`current_price`, `min_price`, `max_price`, `stock_available`, `rating_star`, `comment_count`, `category_id`, `weight`, `days_to_ship`
+
+#### 2. Enriquecer `PerformanceProductDetail` com dados de Ads completos
+- **Direct vs Broad**: mostrar ROAS Direto vs ROAS Amplo
+- **Posição Média**: badge de ranking de busca (se disponível)
+- **Dias Ativos**: quantos dias a campanha rodou
+- **Gráfico de Ads Diário**: gráfico de gasto e GMV por dia usando `daily_data`
+- **Keywords**: listar top palavras-chave recomendadas (volume, bid, quality score)
+
+#### 3. Persistir keywords no `shopee_ads_by_product`
+Adicionar coluna `keywords jsonb` à tabela para que as palavras-chave recomendadas não se percam após o sync.
+
+#### 4. Expandir seção de Ads no detalhe do produto
+Layout com sub-abas ou seções:
+- **Resumo**: gasto, GMV, ROAS direto/amplo, posição média
+- **Tendência**: gráfico diário de gasto vs GMV de Ads
+- **Keywords**: tabela com palavra, volume de busca, bid sugerido, quality score
+
+### Arquivos modificados
+
+```text
+supabase/functions/shopee-sync/index.ts          — fix merge (adicionar 8 campos)
+supabase/functions/shopee-ads/index.ts           — persistir keywords no upsert
+supabase/migrations/                             — ADD keywords jsonb to shopee_ads_by_product
+src/pages/PerformanceProductDetail.tsx            — seções de Ads expandidas + keywords + gráfico diário
+src/components/performance/ProductExpandedDetail.tsx — badge posição média
 ```
 
 ### Resultado
-
-A aba Performance passa a exibir **tudo** que as 2 APIs disponibilizam: vendas reais por dia (gráfico), preço atual, estoque, rating/avaliações, dados de Ads cruzados (gasto/ROAS/CTR) e info logística — transformando a tela num painel completo de inteligência por produto.
+Após a correção do merge, preço/estoque/rating/peso passam a aparecer na tela de detalhes. Com os dados de Ads expandidos (ROAS direto, posição, keywords, gráfico diário), a Performance vira um painel completo cruzando **tudo** das 2 APIs.
 
