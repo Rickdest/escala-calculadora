@@ -582,6 +582,7 @@ Deno.serve(async (req) => {
           acos: c.acos, ctr: c.ctr, cost_per_order: c.cost_per_order,
           days_active: c.days_active, daily_data: c.daily,
           campaign_ids: [c.campaign_id], updated_at: new Date().toISOString(),
+          keywords: c.keywords || [],
         }, { onConflict: "user_id,campaign_id,period_start" });
       }
       console.log(`[SHOPEE ADS] Upserted ${adsPerformance.ads_by_campaign.length} campaign records`);

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Star, Package, MessageSquare, TrendingUp } from 'lucide-react';
+import { Star, Package, MessageSquare, TrendingUp, Target } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 
@@ -73,6 +73,12 @@ export function ProductExpandedDetail({ product, totalRevenue, totalQty, periodD
           <Badge variant="outline" className="gap-1 text-[10px] font-semibold border-primary text-primary">
             <TrendingUp className="w-3 h-3" />
             ROAS {adsData.roas.toFixed(1)}x
+          </Badge>
+        )}
+        {adsData && (adsData as any).avg_position != null && (adsData as any).avg_position > 0 && (
+          <Badge variant="outline" className="gap-1 text-[10px] font-semibold border-primary text-primary">
+            <Target className="w-3 h-3" />
+            Pos. #{(adsData as any).avg_position.toFixed(0)}
           </Badge>
         )}
       </div>

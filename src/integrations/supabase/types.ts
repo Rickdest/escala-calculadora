@@ -710,6 +710,7 @@ export type Database = {
           impressions: number | null
           item_id: number
           item_name: string | null
+          keywords: Json | null
           orders: number | null
           period_end: string
           period_start: string
@@ -739,6 +740,7 @@ export type Database = {
           impressions?: number | null
           item_id: number
           item_name?: string | null
+          keywords?: Json | null
           orders?: number | null
           period_end: string
           period_start: string
@@ -768,6 +770,7 @@ export type Database = {
           impressions?: number | null
           item_id?: number
           item_name?: string | null
+          keywords?: Json | null
           orders?: number | null
           period_end?: string
           period_start?: string
