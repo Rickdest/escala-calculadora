@@ -552,7 +552,7 @@ Deno.serve(async (req) => {
     if (!tokens || tokens.length === 0) return errorResponse("No Shopee token found. Connect your shop first.");
 
     const shopeeToken = tokens[0];
-    const currentAccessToken = await refreshTokenIfNeeded(shopeeToken, supabase);
+    const { token: currentAccessToken, needs_reauth: refreshFailed } = await refreshTokenIfNeeded(shopeeToken, supabase);
 
     let filterItemId: number | undefined;
     try {
@@ -563,6 +563,9 @@ Deno.serve(async (req) => {
     } catch { /* ignore */ }
 
     const adsPerformance = await fetchAdsPerformance(currentAccessToken, shopeeToken.shop_id, filterItemId);
+
+    // Detect if API returned auth errors (0 campaigns despite having token)
+    const authFailed = refreshFailed || (adsPerformance.campaign_count === 0 && adsPerformance.summary.total_impressions === 0);
 
     // Upsert ads_by_campaign to database
     if (adsPerformance.ads_by_campaign.length > 0) {
