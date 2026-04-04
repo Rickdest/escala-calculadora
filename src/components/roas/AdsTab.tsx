@@ -364,7 +364,11 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
     }
     setSyncing(true);
     try {
-      const result = await syncAdsOnly();
+      // Race against a 90s timeout so the UI never freezes
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('TIMEOUT')), 90_000)
+      );
+      const result = await Promise.race([syncAdsOnly(), timeout]);
       const adsPerfData = result?.results?.ads_performance;
       if (adsPerfData?.ads_rate_limited && !adsPerfData?.summary?.total_impressions) {
         toast.warning('API de Ads temporariamente limitada pela Shopee. Tente novamente em 2-3 minutos.');
@@ -380,8 +384,11 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       } else {
         toast.info('Nenhuma campanha de Ads encontrada na sua loja Shopee.');
       }
-    } catch {
-      // Error already shown by syncAdsOnly
+    } catch (err: any) {
+      if (err?.message === 'TIMEOUT') {
+        toast.error('A importação demorou demais. Tente novamente — os dados parciais podem já ter sido salvos.');
+        invalidatePersistedAds();
+      }
     } finally {
       setSyncing(false);
     }
@@ -546,15 +553,17 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
 
   return (
     <div className="space-y-4 relative">
-      {/* ═══ Syncing Overlay ═══ */}
+      {/* ═══ Syncing Inline Banner ═══ */}
       {syncing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-card border border-border shadow-lg max-w-sm text-center">
-            <div className="animate-spin w-10 h-10 border-3 border-primary border-t-transparent rounded-full" />
-            <div>
-              <p className="text-base font-bold text-foreground">Importando dados de Ads da Shopee...</p>
-              <p className="text-sm text-muted-foreground mt-1">Isso pode levar até 1 minuto dependendo do número de campanhas.</p>
-            </div>
+        <div className="flex items-center gap-4 p-4 rounded-xl border border-primary/20 bg-primary/5 animate-in fade-in duration-300">
+          <div className="relative w-12 h-12 flex-shrink-0">
+            <div className="absolute inset-0 rounded-full border-[3px] border-primary/20" />
+            <div className="absolute inset-0 rounded-full border-[3px] border-primary border-t-transparent animate-spin" />
+            <span className="absolute inset-0 flex items-center justify-center text-lg font-black text-primary">S</span>
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-foreground">Importando dados de Ads da Shopee...</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Isso pode levar até 1 minuto dependendo do número de campanhas.</p>
           </div>
         </div>
       )}
