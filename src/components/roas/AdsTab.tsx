@@ -4,7 +4,7 @@ import { useStore } from '@/contexts/StoreContext';
 import { useAdsData, EnrichedAdsData } from '@/hooks/useAdsData';
 import { useShopeeToken } from '@/hooks/useShopeeToken';
 import { useApiAdsData, buildApiAdsDataFromRows } from '@/hooks/useApiAdsData';
-import { Upload, Trash2, MapPin, Calendar, ShoppingBag, CheckCircle2, Download } from 'lucide-react';
+import { Upload, Trash2, MapPin, Calendar, ShoppingBag, CheckCircle2, Download, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { parseShopeeAdsCSV, validateCSVSecurity } from '@/lib/shopeeAdsParser';
