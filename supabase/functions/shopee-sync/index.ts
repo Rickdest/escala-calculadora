@@ -9,12 +9,13 @@ import {
   jsonResponse,
 } from "../_shared/shopee.ts";
 
-async function refreshTokenIfNeeded(shopeeToken: any, supabase: any) {
+async function refreshTokenIfNeeded(shopeeToken: any, supabase: any): Promise<{ token: string; needs_reauth: boolean }> {
   const tokenAge =
     (Date.now() - new Date(shopeeToken.token_created_at).getTime()) / 1000;
 
-  if (tokenAge <= shopeeToken.expire_in - 300) {
-    return shopeeToken.access_token;
+  // Refresh preventivo: renovar quando faltam 24h
+  if (tokenAge <= shopeeToken.expire_in - 86400) {
+    return { token: shopeeToken.access_token, needs_reauth: false };
   }
 
   console.log("[SHOPEE SYNC] Token near expiry, refreshing...");
@@ -24,35 +25,41 @@ async function refreshTokenIfNeeded(shopeeToken: any, supabase: any) {
 
   const refreshUrl = `${SHOPEE_HOST}${refreshPath}?partner_id=${PARTNER_ID}&timestamp=${timestamp}&sign=${sign}`;
 
-  const refreshRes = await fetch(refreshUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      refresh_token: shopeeToken.refresh_token,
-      shop_id: Number(shopeeToken.shop_id),
-      partner_id: PARTNER_ID,
-    }),
-  });
+  try {
+    const refreshRes = await fetch(refreshUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        refresh_token: shopeeToken.refresh_token,
+        shop_id: Number(shopeeToken.shop_id),
+        partner_id: PARTNER_ID,
+      }),
+    });
 
-  const refreshData = await refreshRes.json();
-  if (refreshData.access_token) {
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-    await supabaseAdmin
-      .from("shopee_tokens")
-      .update({
-        access_token: refreshData.access_token,
-        refresh_token: refreshData.refresh_token,
-        expire_in: refreshData.expire_in || 0,
-        token_created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", shopeeToken.id);
-    return refreshData.access_token;
+    const refreshData = await refreshRes.json();
+    if (refreshData.access_token) {
+      const supabaseAdmin = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      );
+      await supabaseAdmin
+        .from("shopee_tokens")
+        .update({
+          access_token: refreshData.access_token,
+          refresh_token: refreshData.refresh_token,
+          expire_in: refreshData.expire_in || 0,
+          token_created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", shopeeToken.id);
+      return { token: refreshData.access_token, needs_reauth: false };
+    }
+    console.error("[SHOPEE SYNC] Refresh failed:", JSON.stringify(refreshData).substring(0, 500));
+    return { token: shopeeToken.access_token, needs_reauth: true };
+  } catch (e) {
+    console.error("[SHOPEE SYNC] Refresh request failed:", e);
+    return { token: shopeeToken.access_token, needs_reauth: true };
   }
-  return shopeeToken.access_token;
 }
 
 async function fetchProductsWithModels(
