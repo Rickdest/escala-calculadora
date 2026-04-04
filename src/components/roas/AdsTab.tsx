@@ -364,7 +364,11 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
     }
     setSyncing(true);
     try {
-      const result = await syncAdsOnly();
+      // Race against a 90s timeout so the UI never freezes
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('TIMEOUT')), 90_000)
+      );
+      const result = await Promise.race([syncAdsOnly(), timeout]);
       const adsPerfData = result?.results?.ads_performance;
       if (adsPerfData?.ads_rate_limited && !adsPerfData?.summary?.total_impressions) {
         toast.warning('API de Ads temporariamente limitada pela Shopee. Tente novamente em 2-3 minutos.');
@@ -380,8 +384,11 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       } else {
         toast.info('Nenhuma campanha de Ads encontrada na sua loja Shopee.');
       }
-    } catch {
-      // Error already shown by syncAdsOnly
+    } catch (err: any) {
+      if (err?.message === 'TIMEOUT') {
+        toast.error('A importação demorou demais. Tente novamente — os dados parciais podem já ter sido salvos.');
+        invalidatePersistedAds();
+      }
     } finally {
       setSyncing(false);
     }
