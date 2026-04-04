@@ -1,42 +1,29 @@
 
 
-## Plano: Reconexão automática + botão "Reconectar" visível
+## Plano: "Atualizar Dados" só do produto + buscar posição
 
-### Problemas
-1. **Não aparece opção de reconectar**: Quando o token está conectado mas expirado, o `ConnectionCard` mostra apenas "✅ Conectado" sem ação — o usuário fica preso
-2. **Vai ter que fazer toda vez?**: Sim, tokens Shopee expiram (~4h access, ~30 dias refresh). Quando o refresh token também expira, precisa re-autorizar manualmente. Mas podemos **minimizar** isso com refresh automático preventivo
+### Problemas atuais
 
-### Solução
+1. **Step 5 (avg_position) ignora filterItemId**: quando clica "Atualizar Dados" de um produto específico, o Step 5 busca posição de TODAS as campanhas ativas em vez de só do item clicado
+2. **Step 5 só roda para campanhas `active`**: campanhas `ended` nunca recebem posição, mesmo que tenham dados recentes
+3. **Step 6 (keywords) também ignora filterItemId**: busca keywords de todos os itens ativos
 
-#### 1. Backend: retornar erro claro quando token expirado
-No `shopee-ads/index.ts`, após `refreshTokenIfNeeded`, verificar se a primeira chamada retorna `invalid_access_token` e retornar `{ error: "token_expired", needs_reauth: true }` em vez de `{ campaigns: 0 }` silenciosamente.
+### Correções no `shopee-ads/index.ts`
 
-Mesmo tratamento no `shopee-sync/index.ts`.
+#### Step 5 — filtrar por itemId e incluir campanhas com dados
+- Quando `filterItemId` está definido, filtrar `activeCampaignsWithData` para incluir apenas campanhas daquele item
+- Relaxar o filtro: incluir campanhas com `expense > 0` (não só `active`), para que ended recentes também recebam posição
+- Isso garante que ao clicar "Atualizar Dados", só busca a posição daquele produto
 
-#### 2. Frontend: `ConnectionCard` com estado "expirado"
-No `ShopeeIntegrationModal.tsx`, alterar o `ConnectionCard` para aceitar um terceiro estado: **expirado**. Quando conectado mas expirado, mostrar badge amarelo "⚠ Expirado" com botão "Reconectar" que chama `startOAuth` novamente (o callback vai sobrescrever o token antigo).
+#### Step 6 — keywords só do item filtrado
+- Quando `filterItemId` está definido, filtrar `activeCampaignsForKw` para apenas aquele item
+- Pular chamadas de shop-level (hourly_performance, recommended_items, shop_toggles) quando é refresh individual — são irrelevantes e gastam quota da API
 
-#### 3. Frontend: detectar token expirado na aba Ads
-No `useShopeeToken`, adicionar campo `isExpired` baseado na resposta do sync. Quando `syncAdsOnly` retorna `{ needs_reauth: true }`, setar estado e mostrar alerta na aba Ads com botão direto "Reconectar API de Ads".
-
-#### 4. Refresh preventivo (reduzir reconexões manuais)
-No backend, melhorar `refreshTokenIfNeeded`:
-- Logar quando o refresh falha (hoje falha silenciosamente)
-- Se o refresh falhar, retornar `needs_reauth: true` na response
-- Considerar margem maior (renovar quando faltam 24h, não 5 min)
+### Arquivo modificado
+```
+supabase/functions/shopee-ads/index.ts
+```
 
 ### Resultado
-- Botão "Reconectar" visível quando o token expira (não fica mais preso em "Conectado")
-- Alerta claro na aba Ads quando precisa re-autorizar
-- Refresh preventivo reduz a frequência de reconexão manual (~1x por mês no pior caso)
-- Não precisa reconectar "toda vez" — só quando o refresh token de 30 dias expira
-
-### Arquivos modificados
-```text
-supabase/functions/shopee-ads/index.ts       — retornar needs_reauth quando token inválido
-supabase/functions/shopee-sync/index.ts      — mesmo tratamento
-src/hooks/useShopeeToken.ts                  — detectar needs_reauth, expor isExpired
-src/components/roas/ShopeeIntegrationModal.tsx — ConnectionCard com estado expirado + botão Reconectar
-src/components/roas/AdsTab.tsx               — alerta de reconexão quando token expirado
-```
+"Atualizar Dados" no detalhe do produto busca apenas as campanhas, posição e keywords daquele item — mais rápido, sem gastar quota, e a posição passa a aparecer se a API retornar.
 
