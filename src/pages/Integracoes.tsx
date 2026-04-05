@@ -101,7 +101,11 @@ export default function Integracoes() {
   useEffect(() => {
     if (searchParams.get('shopee_connected') === 'true') {
       const appType = searchParams.get('app_type') || 'seller';
-      toast.success(appType === 'ads' ? 'Shopee Ads conectada!' : 'Shopee conectada!');
+      if (appType === 'ads') {
+        toast.success('Shopee Ads conectada! Clique em "Abrir Análise de Ads" para importar os dados.');
+      } else {
+        toast.success('Shopee conectada!');
+      }
       sellerHook.refetch();
       adsHook.refetch();
     }
@@ -517,6 +521,13 @@ export default function Integracoes() {
                     <p className="text-xs text-muted-foreground leading-relaxed bg-muted/20 rounded-lg p-3">
                       Dados de campanhas, ROAS e gastos são sincronizados automaticamente via API.
                     </p>
+
+                    <Button
+                      className="w-full mt-3 gap-2"
+                      onClick={() => navigate('/roas?tab=ads&startAdsImport=1')}
+                    >
+                      📊 Abrir Análise de Ads
+                    </Button>
 
                     {/* Disconnect Ads */}
                     <div className="flex items-center justify-between pt-4 mt-4 border-t border-border">

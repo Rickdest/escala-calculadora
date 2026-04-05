@@ -1,11 +1,13 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ApiAdsDashboard } from './ApiAdsDashboard';
 import { useStore } from '@/contexts/StoreContext';
 import { useAdsData, EnrichedAdsData } from '@/hooks/useAdsData';
 import { useShopeeToken } from '@/hooks/useShopeeToken';
 import { useApiAdsData, buildApiAdsDataFromRows } from '@/hooks/useApiAdsData';
+import { useAdsImportJob } from '@/hooks/useAdsImportJob';
 import { Upload, Trash2, MapPin, Calendar as CalendarIcon, ShoppingBag, CheckCircle2, Download, AlertTriangle } from 'lucide-react';
-import { formatDistanceToNow, subDays, subMonths, startOfDay, endOfDay, startOfWeek, startOfMonth, format } from 'date-fns';
+import { formatDistanceToNow, subDays, subMonths, startOfDay, endOfDay, startOfMonth, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { parseShopeeAdsCSV, validateCSVSecurity } from '@/lib/shopeeAdsParser';
 import { AdsDetailFullView } from './AdsDetailFullView';
@@ -204,6 +206,8 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const { currentStore } = useStore();
   const { data, loading, operating, importGeneralCSV, importProductCSV, importFromApi, linkProduct, unlinkProduct, reload, deleteAdsData, deleteAll } = useAdsData();
   const { isConnected, syncAdsOnly, isExpired, needsReauth, startOAuth } = useShopeeToken('ads');
+  const importJob = useAdsImportJob();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedDetail, setSelectedDetailRaw] = useState<EnrichedAdsData | null>(null);
   const setSelectedDetail = (ad: EnrichedAdsData | null) => {
     setSelectedDetailRaw(ad);
@@ -220,7 +224,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const [positionJustImported, setPositionJustImported] = useState(false);
   const [showShopeeModal, setShowShopeeModal] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const autoSyncAttempted = useRef(false);
+  const autoSyncTriggered = useRef(false);
 
   // Date range filter – default: last 28 days
   const [dateFrom, setDateFrom] = useState<Date | undefined>(() => subDays(new Date(), 28));
@@ -362,36 +366,9 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       setShowShopeeModal(true);
       return;
     }
-    setSyncing(true);
-    try {
-      // Race against a 90s timeout so the UI never freezes
-      const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('TIMEOUT')), 90_000)
-      );
-      const result = await Promise.race([syncAdsOnly(), timeout]);
-      const adsPerfData = result?.results?.ads_performance;
-      if (adsPerfData?.ads_rate_limited && !adsPerfData?.summary?.total_impressions) {
-        toast.warning('API de Ads temporariamente limitada pela Shopee. Tente novamente em 2-3 minutos.');
-      } else if (adsPerfData?.perf_api_error) {
-        toast.error(`Erro da API Shopee: ${adsPerfData.perf_api_message || adsPerfData.perf_api_error}`);
-    } else if (adsPerfData?.summary?.total_impressions > 0 || (adsPerfData?.ads_by_campaign?.length || 0) > 0) {
-        setApiAdsData(adsPerfData);
-        invalidatePersistedAds();
-        const campaignCount = adsPerfData.ads_by_campaign?.length || 0;
-        toast.success(`Ads importados: ${campaignCount} campanha${campaignCount !== 1 ? 's' : ''} · ${adsPerfData.summary.days} dias · ROAS ${adsPerfData.summary.roas_geral.toFixed(2)}`);
-      } else if ((adsPerfData?.campaign_count || 0) > 0) {
-        toast.info(`${adsPerfData.campaign_count} campanhas encontradas, mas sem métricas no período.`);
-      } else {
-        toast.info('Nenhuma campanha de Ads encontrada na sua loja Shopee.');
-      }
-    } catch (err: any) {
-      if (err?.message === 'TIMEOUT') {
-        toast.error('A importação demorou demais. Tente novamente — os dados parciais podem já ter sido salvos.');
-        invalidatePersistedAds();
-      }
-    } finally {
-      setSyncing(false);
-    }
+    // Use job-based import for full sync
+    importJob.startJob();
+  };
   };
 
   const products = currentStore?.products || [];
@@ -535,13 +512,24 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   };
 
 
-  // Auto-sync: trigger import when connected but no data yet
+  // URL-param trigger: only auto-import when navigated from Integracoes with ?startAdsImport=1
   useEffect(() => {
-    if (isConnected && !hasPersistedApiData && !syncing && !loading && !autoSyncAttempted.current) {
-      autoSyncAttempted.current = true;
-      handleImportAds();
+    if (searchParams.get('startAdsImport') === '1' && isConnected && !autoSyncTriggered.current && !importJob.isImporting) {
+      autoSyncTriggered.current = true;
+      // Clean the URL param
+      searchParams.delete('startAdsImport');
+      setSearchParams(searchParams, { replace: true });
+      // Start job-based import
+      importJob.startJob();
     }
-  }, [isConnected, hasPersistedApiData, syncing, loading]);
+  }, [searchParams, isConnected, importJob.isImporting]);
+
+  // When job finishes, reload persisted data
+  useEffect(() => {
+    if (importJob.status === 'done') {
+      invalidatePersistedAds();
+    }
+  }, [importJob.status]);
 
   if (loading && data.length === 0) {
     return (
@@ -554,7 +542,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   return (
     <div className="space-y-4 relative">
       {/* ═══ Syncing Inline Banner ═══ */}
-      {syncing && (
+      {(syncing || importJob.isImporting) && (
         <div className="flex items-center gap-4 p-4 rounded-xl border border-primary/20 bg-primary/5 animate-in fade-in duration-300">
           <div className="relative w-12 h-12 flex-shrink-0">
             <div className="absolute inset-0 rounded-full border-[3px] border-primary/20" />
@@ -562,9 +550,25 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
             <span className="absolute inset-0 flex items-center justify-center text-lg font-black text-primary">S</span>
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-bold text-foreground">Importando dados de Ads da Shopee...</p>
+            <p className="text-sm font-bold text-foreground">
+              {importJob.status === 'pending' ? 'Preparando importação...' : 'Importando dados de Ads da Shopee...'}
+            </p>
             <p className="text-xs text-muted-foreground mt-0.5">Isso pode levar até 1 minuto dependendo do número de campanhas.</p>
           </div>
+        </div>
+      )}
+
+      {/* ═══ Job Failed Banner ═══ */}
+      {importJob.status === 'failed' && (
+        <div className="flex items-center gap-3 p-4 rounded-xl border border-destructive/20 bg-destructive/5">
+          <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground">Falha na importação</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{importJob.error || 'Erro desconhecido. Tente novamente.'}</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => { importJob.reset(); handleImportAds(); }}>
+            Tentar novamente
+          </Button>
         </div>
       )}
 
