@@ -581,10 +581,10 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
           allAds={selectedDetail.id.startsWith('api-campaign-') ? (effectiveApiData?.ads_by_campaign || []).map(campaignToEnrichedAds) : filtered}
           onClose={() => setSelectedDetail(null)}
           onNavigate={(ad) => setSelectedDetail(ad)}
-          onImportPosition={() => { if (!selectedDetail.id.startsWith('api-campaign-')) { setPositionTarget(selectedDetail.id); setSelectedDetail(null); positionFileRef.current?.click(); } }}
+          onImportPosition={() => { setPositionTarget(selectedDetail.id.startsWith('api-campaign-') ? undefined : selectedDetail.id); setSelectedDetail(null); positionFileRef.current?.click(); }}
           onLink={() => { if (!selectedDetail.id.startsWith('api-campaign-')) { setLinkTarget(selectedDetail.id); setSelectedDetail(null); } }}
           onQuickRegister={() => { if (!selectedDetail.id.startsWith('api-campaign-')) { setQuickRegTarget(selectedDetail); setSelectedDetail(null); } }}
-          onReimport={() => { if (!selectedDetail.id.startsWith('api-campaign-')) { setPositionTarget(selectedDetail.id); positionFileRef.current?.click(); } }}
+          onReimport={() => { setPositionTarget(selectedDetail.id.startsWith('api-campaign-') ? undefined : selectedDetail.id); positionFileRef.current?.click(); }}
           onUnlink={() => { if (!selectedDetail.id.startsWith('api-campaign-')) { unlinkProduct(selectedDetail.id); setSelectedDetail(null); } }}
           onChangeLink={() => { if (!selectedDetail.id.startsWith('api-campaign-')) { setLinkTarget(selectedDetail.id); } }}
           onRefreshProduct={selectedDetail.id.startsWith('api-campaign-') ? (itemId: number) => handleRefreshProduct(itemId) : undefined}
