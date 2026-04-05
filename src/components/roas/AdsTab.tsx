@@ -369,7 +369,6 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
     // Use job-based import for full sync
     importJob.startJob();
   };
-  };
 
   const products = currentStore?.products || [];
 
