@@ -655,9 +655,9 @@ export default function Integracoes() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Desconectar Shopee Ads?</AlertDialogTitle>
+                             <AlertDialogTitle>Desconectar Shopee Ads?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              O token de Ads será removido. Você poderá reconectar a qualquer momento.
+                              O token de Ads será removido e todos os dados de campanhas, ROAS e gastos serão apagados. Você poderá reconectar a qualquer momento.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
