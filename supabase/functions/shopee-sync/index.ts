@@ -423,25 +423,30 @@ Deno.serve(async (req) => {
           }
         }
 
-        const supabaseAdmin = createClient(
-          Deno.env.get("SUPABASE_URL")!,
-          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-        );
-        await supabaseAdmin
-          .from("shopee_performance")
-          .upsert(
-            {
-              user_id: user.id,
-              shop_id: String(shopId),
-              summary: orderPerf.summary,
-              product_sales: orderPerf.product_sales,
-              period_days: orderPerf.summary?.period_days || 90,
-              synced_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-            { onConflict: "user_id,shop_id" }
+        // Guard: don't overwrite existing data with empty results
+        if (orderPerf.summary?.total_orders === 0 && orderPerf.summary?.total_revenue === 0) {
+          console.log("[SHOPEE SYNC] Sync returned 0 orders/revenue — skipping upsert to preserve existing data.");
+        } else {
+          const supabaseAdmin = createClient(
+            Deno.env.get("SUPABASE_URL")!,
+            Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
           );
-        console.log("[SHOPEE SYNC] Performance data persisted.");
+          await supabaseAdmin
+            .from("shopee_performance")
+            .upsert(
+              {
+                user_id: user.id,
+                shop_id: String(shopId),
+                summary: orderPerf.summary,
+                product_sales: orderPerf.product_sales,
+                period_days: orderPerf.summary?.period_days || 90,
+                synced_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: "user_id,shop_id" }
+            );
+          console.log("[SHOPEE SYNC] Performance data persisted.");
+        }
       } catch (e) {
         console.error("[SHOPEE SYNC] Failed to persist performance:", e);
       }
