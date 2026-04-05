@@ -473,9 +473,9 @@ export default function Integracoes() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Desconectar Shopee?</AlertDialogTitle>
+                            <AlertDialogTitle>Desconectar Shopee Seller?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              O token será removido e a sincronização será interrompida. Você poderá reconectar a qualquer momento.
+                              O token será removido e todos os dados de performance importados serão apagados. Você poderá reconectar a qualquer momento.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
