@@ -141,6 +141,15 @@ export default function Integracoes() {
     }
   };
 
+  const handleConnectAds = async () => {
+    setConnecting(true);
+    try {
+      await adsHook.startOAuth('ads');
+    } catch {
+      setConnecting(false);
+    }
+  };
+
   const handleDisconnect = async () => {
     if (!user) return;
     setDisconnecting(true);
