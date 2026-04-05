@@ -77,9 +77,9 @@ export default function Performance() {
             <ShoppingBag className="w-8 h-8 text-[#EE4D2D]" />
           </div>
           <div>
-            <p className="text-lg font-bold text-foreground">Conecte sua Shopee</p>
+            <p className="text-lg font-bold text-foreground">Conecte sua Shopee Seller</p>
             <p className="text-sm text-muted-foreground max-w-sm mt-1">
-              A aba de Performance exibe dados de vendas, variações mais vendidas e ticket médio dos últimos 90 dias via API da Shopee.
+              A aba de Performance exibe dados de vendas, variações mais vendidas e ticket médio dos últimos 90 dias via API Seller da Shopee.
             </p>
           </div>
           <Button onClick={handleConnect} disabled={connecting} className="bg-[#EE4D2D] hover:bg-[#EE4D2D]/90 text-white">
