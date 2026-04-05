@@ -534,7 +534,7 @@ export default function Integracoes() {
                   </div>
                   {adsConnected ? (
                     adsExpired ? (
-                      <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white gap-1" onClick={() => adsHook.startOAuth('ads')}>
+                      <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white gap-1" onClick={handleConnectAds}>
                         ⚠️ Reconectar agora
                       </Button>
                     ) : (
