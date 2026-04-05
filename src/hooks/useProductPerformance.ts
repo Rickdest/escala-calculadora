@@ -220,7 +220,7 @@ export function useProductPerformance() {
       const pStart = `${period_start.slice(0, 4)}-${period_start.slice(4, 6)}-${period_start.slice(6, 8)}`;
       const pEnd = `${period_end.slice(0, 4)}-${period_end.slice(4, 6)}-${period_end.slice(6, 8)}`;
 
-      // Fetch existing ads data for matching
+      // Fetch existing ads data from shopee_ads_by_product for enrichment
       const { data: adsRows } = await supabase
         .from('shopee_ads_by_product')
         .select('item_id, expense, gmv, roas, impressions, clicks, orders')
@@ -230,7 +230,7 @@ export function useProductPerformance() {
       if (adsRows) {
         for (const r of adsRows) {
           const key = String(r.item_id);
-          if (!adsMap[key]) adsMap[key] = { expense: 0, gmv: 0, roas: 0, impressions: 0, clicks: 0, orders: 0 };
+          if (!adsMap[key]) adsMap[key] = { expense: 0, gmv: 0, impressions: 0, clicks: 0, orders: 0 };
           adsMap[key].expense += Number(r.expense || 0);
           adsMap[key].gmv += Number(r.gmv || 0);
           adsMap[key].impressions += Number(r.impressions || 0);
@@ -242,12 +242,24 @@ export function useProductPerformance() {
         }
       }
 
-      const rows = products.map(p => {
+      // Fetch existing product_performance records for this store
+      const { data: existingRows } = await supabase
+        .from('product_performance')
+        .select('id, item_id')
+        .eq('user_id', user.id)
+        .eq('store_id', storeId);
+
+      const existingMap: Record<string, string> = {};
+      if (existingRows) {
+        for (const e of existingRows) {
+          existingMap[e.item_id] = e.id;
+        }
+      }
+
+      let updated = 0, inserted = 0;
+      for (const p of products) {
         const ads = adsMap[p.item_id];
-        return {
-          user_id: user.id,
-          store_id: storeId,
-          item_id: p.item_id,
+        const organicFields = {
           nome: p.nome,
           period_start: pStart,
           period_end: pEnd,
@@ -273,19 +285,32 @@ export function useProductPerformance() {
           ads_cliques: ads?.clicks ?? null,
           source: 'excel',
         };
-      });
 
-      // Upsert in batches of 50
-      for (let i = 0; i < rows.length; i += 50) {
-        const batch = rows.slice(i, i + 50);
-        const { error } = await supabase
-          .from('product_performance')
-          .upsert(batch as any, { onConflict: 'store_id,item_id,period_start,period_end' });
-        if (error) throw error;
+        const existingId = existingMap[p.item_id];
+        if (existingId) {
+          // Update existing record (preserve nothing — Excel is the richer source)
+          const { error } = await supabase
+            .from('product_performance')
+            .update(organicFields)
+            .eq('id', existingId);
+          if (error) throw error;
+          updated++;
+        } else {
+          const { error } = await supabase
+            .from('product_performance')
+            .insert({
+              user_id: user.id,
+              store_id: storeId,
+              item_id: p.item_id,
+              ...organicFields,
+            } as any);
+          if (error) throw error;
+          inserted++;
+        }
       }
 
-      const semAds = rows.filter(r => !r.ads_roas).length;
-      toast.success(`${products.length} produtos importados!${semAds > 0 ? ` (${semAds} sem dados de Ads)` : ''}`);
+      const semAds = products.filter(p => !adsMap[p.item_id]).length;
+      toast.success(`${products.length} produtos importados! ${updated} atualizados, ${inserted} novos.${semAds > 0 ? ` (${semAds} sem dados de Ads)` : ''}`);
       await loadData();
     } catch (err: any) {
       console.error('[useProductPerformance] import error:', err);
