@@ -4,15 +4,13 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { useShopeeToken } from '@/hooks/useShopeeToken';
+
 import { usePerformanceData } from '@/hooks/usePerformanceData';
 import { useProductPerformance } from '@/hooks/useProductPerformance';
 import { ProductExpandedDetail } from '@/components/performance/ProductExpandedDetail';
 import { ProductPerformanceCard } from '@/components/performance/ProductPerformanceCard';
 import { useApiAdsData } from '@/hooks/useApiAdsData';
-import { RefreshCw, Loader2, ShoppingBag, TrendingUp, ShoppingCart, Package, Clock, ChevronDown, BarChart3, Eye, Upload, FileSpreadsheet } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { Loader2, ShoppingBag, TrendingUp, ShoppingCart, Package, ChevronDown, BarChart3, Eye, Upload, FileSpreadsheet } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -39,11 +37,9 @@ const MEDALS = ['🥇', '🥈', '🥉'];
 
 export default function Performance() {
   const navigate = useNavigate();
-  const { isConnected, startOAuth, isLoading: tokenLoading } = useShopeeToken('seller');
   const { data, syncedAt, loading, syncing, sync } = usePerformanceData();
   const { data: adsRows } = useApiAdsData();
   const perfHook = useProductPerformance();
-  const [connecting, setConnecting] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -68,14 +64,7 @@ export default function Performance() {
     return map;
   }, [adsRows]);
 
-  const handleConnect = async () => {
-    try {
-      setConnecting(true);
-      await startOAuth();
-    } catch {
-      setConnecting(false);
-    }
-  };
+  // handleConnect removed — Seller API hidden
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -117,21 +106,6 @@ export default function Performance() {
               <span className="hidden md:inline">{perfHook.importing ? 'Importando...' : 'Importar Excel'}</span>
             </div>
           </label>
-
-          {isConnected && (
-            <>
-              {syncedAt && (
-                <span className="hidden md:flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <Clock className="w-3 h-3" />
-                  {formatDistanceToNow(new Date(syncedAt), { addSuffix: true, locale: ptBR })}
-                </span>
-              )}
-              <Button size="sm" variant="outline" onClick={sync} disabled={syncing} className="h-8 text-xs gap-1.5">
-                {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-                {syncing ? 'Sincronizando...' : 'Atualizar API'}
-              </Button>
-            </>
-          )}
         </div>
       </div>
 
@@ -141,11 +115,6 @@ export default function Performance() {
           {hasExcelData && (
             <span className="flex items-center gap-1 bg-muted/30 rounded-lg px-2 py-1 border border-border">
               📊 Relatório de produto · orgânico + Ads
-            </span>
-          )}
-          {hasApiData && (
-            <span className="flex items-center gap-1 bg-primary/10 text-primary rounded-lg px-2 py-1 border border-primary/20">
-              📈 API Seller · pedidos
             </span>
           )}
           {Object.keys(adsLookup).length > 0 && (
@@ -231,20 +200,6 @@ export default function Performance() {
                       Importar relatório de produto
                     </div>
                   </label>
-
-                  {isConnected && (
-                    <Button onClick={sync} variant="outline" size="lg" className="gap-2 text-sm">
-                      <RefreshCw className="w-4 h-4" />
-                      Sincronizar API
-                    </Button>
-                  )}
-
-                  {!isConnected && (
-                    <Button onClick={handleConnect} disabled={connecting} variant="outline" className="gap-2">
-                      {connecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingBag className="w-4 h-4" />}
-                      Conectar Shopee
-                    </Button>
-                  )}
                 </div>
 
                 <div className="text-xs text-muted-foreground bg-muted/30 rounded-xl p-3 max-w-md border border-border">

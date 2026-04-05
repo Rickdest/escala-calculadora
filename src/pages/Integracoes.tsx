@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { FEATURES } from '@/config/features';
 
 const getTokenDaysRemaining = (token: any): number => {
   if (!token) return 0;
@@ -160,7 +161,13 @@ export default function Integracoes() {
         .eq('user_id', user.id)
         .eq('app_type', 'seller');
       if (error) throw error;
-      toast.success('Loja desconectada');
+
+      // Clean up seller-related data
+      await supabase.from('product_performance').delete().eq('user_id', user.id);
+      // shopee_performance has RLS deny on DELETE, ignore errors
+      await supabase.from('shopee_performance').delete().eq('user_id', user.id).then(() => {});
+
+      toast.success('Loja desconectada e dados removidos');
       sellerHook.refetch();
     } catch {
       toast.error('Erro ao desconectar');
@@ -179,7 +186,27 @@ export default function Integracoes() {
         .eq('user_id', user.id)
         .eq('app_type', 'ads');
       if (error) throw error;
-      toast.success('Shopee Ads desconectada');
+
+      // Clean up ads-related data
+      await supabase.from('shopee_ads_by_product').delete().eq('user_id', user.id);
+      await supabase.from('ads_data').delete().eq('user_id', user.id);
+      await supabase.from('product_ads_metrics').delete().eq('user_id', user.id);
+      // shopee_ads_import_jobs has RLS deny on DELETE, ignore errors
+      await supabase.from('shopee_ads_import_jobs').delete().eq('user_id', user.id).then(() => {});
+
+      // Clear ads columns from product_performance but keep organic data
+      await supabase.from('product_performance')
+        .update({
+          ads_roas: null,
+          ads_gasto: null,
+          ads_gmv: null,
+          ads_pedidos: null,
+          ads_impressoes: null,
+          ads_cliques: null,
+        })
+        .eq('user_id', user.id);
+
+      toast.success('Shopee Ads desconectada e dados removidos');
       adsHook.refetch();
     } catch {
       toast.error('Erro ao desconectar');
@@ -248,28 +275,30 @@ export default function Integracoes() {
         {/* ═══ CONNECT CARDS — when neither connected ═══ */}
         {neitherConnected && (
           <div className="space-y-3">
-            {/* Seller Card */}
-            <div className="bg-card border border-border rounded-xl p-5">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-[#ee4d2d] flex items-center justify-center text-xl">
-                  🛍
+            {/* Seller Card — hidden when feature flag is off */}
+            {FEATURES.SHOPEE_SELLER_API_READY && (
+              <div className="bg-card border border-border rounded-xl p-5">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#ee4d2d] flex items-center justify-center text-xl">
+                    🛍
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">Shopee Seller</p>
+                    <p className="text-[11px] text-muted-foreground">Produtos · Pedidos · Estoque</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold">Shopee Seller</p>
-                  <p className="text-[11px] text-muted-foreground">Produtos · Pedidos · Estoque</p>
-                </div>
+                <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+                  Importe seus produtos, acompanhe pedidos e sincronize estoque automaticamente.
+                </p>
+                <Button
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                  onClick={handleConnectSeller}
+                  disabled={connecting}
+                >
+                  {connecting ? 'Redirecionando...' : '🔗 Conectar Shopee Seller'}
+                </Button>
               </div>
-              <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
-                Importe seus produtos, acompanhe pedidos e sincronize estoque automaticamente.
-              </p>
-              <Button
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                onClick={handleConnectSeller}
-                disabled={connecting}
-              >
-                {connecting ? 'Redirecionando...' : '🔗 Conectar Shopee Seller'}
-              </Button>
-            </div>
+            )}
 
             {/* Ads Card */}
             <div className="bg-card border border-border rounded-xl p-5">
@@ -347,7 +376,7 @@ export default function Integracoes() {
                         ↻ Reconectar
                       </Button>
                     )
-                  ) : (
+                  ) : FEATURES.SHOPEE_SELLER_API_READY ? (
                     <Button
                       size="sm"
                       className="bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20"
@@ -356,6 +385,10 @@ export default function Integracoes() {
                     >
                       🔗 Conectar
                     </Button>
+                  ) : (
+                    <span className="text-[11px] text-muted-foreground/60 px-2.5 py-1">
+                      Indisponível
+                    </span>
                   )}
                 </div>
               </div>
@@ -440,9 +473,9 @@ export default function Integracoes() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Desconectar Shopee?</AlertDialogTitle>
+                            <AlertDialogTitle>Desconectar Shopee Seller?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              O token será removido e a sincronização será interrompida. Você poderá reconectar a qualquer momento.
+                              O token será removido e todos os dados de performance importados serão apagados. Você poderá reconectar a qualquer momento.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -622,9 +655,9 @@ export default function Integracoes() {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Desconectar Shopee Ads?</AlertDialogTitle>
+                             <AlertDialogTitle>Desconectar Shopee Ads?</AlertDialogTitle>
                             <AlertDialogDescription>
-                              O token de Ads será removido. Você poderá reconectar a qualquer momento.
+                              O token de Ads será removido e todos os dados de campanhas, ROAS e gastos serão apagados. Você poderá reconectar a qualquer momento.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
