@@ -523,10 +523,11 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
     }
   }, [searchParams, isConnected, importJob.isImporting]);
 
-  // When job finishes, reload persisted data
+  // When job finishes, reload persisted data with a small delay for DB consistency
   useEffect(() => {
     if (importJob.status === 'done') {
-      invalidatePersistedAds();
+      const timer = setTimeout(() => invalidatePersistedAds(), 1500);
+      return () => clearTimeout(timer);
     }
   }, [importJob.status]);
 
