@@ -344,6 +344,16 @@ Deno.serve(async (req) => {
     const shopId = shopeeToken.shop_id;
     const { token: currentAccessToken, needs_reauth: refreshFailed } = await refreshTokenIfNeeded(shopeeToken, supabase);
 
+    if (refreshFailed) {
+      console.log("[SHOPEE SYNC] Token invalid / shop not linked. Aborting sync to preserve existing data.");
+      return jsonResponse({
+        success: false,
+        shop_id: shopId,
+        needs_reauth: true,
+        message: "Sua loja Shopee precisa ser reconectada. Vá em Integrações e reconecte.",
+      });
+    }
+
     console.log(`[SHOPEE SYNC] Starting sync for shop ${shopId}`);
 
     const results: Record<string, unknown> = {};
