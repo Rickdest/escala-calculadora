@@ -301,17 +301,27 @@ export default function Integracoes() {
 
                 <div className="flex items-center gap-2">
                   <div className={`flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full border ${
-                    sellerConnected
-                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                      : 'bg-muted/20 text-muted-foreground border-border'
+                    sellerExpired
+                      ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                      : sellerConnected
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        : 'bg-muted/20 text-muted-foreground border-border'
                   }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${sellerConnected ? 'bg-emerald-400' : 'bg-muted-foreground'}`} />
-                    {sellerConnected ? 'Conectada' : 'Não conectada'}
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      sellerExpired ? 'bg-red-400' : sellerConnected ? 'bg-emerald-400' : 'bg-muted-foreground'
+                    }`} />
+                    {sellerExpired ? 'Expirado' : sellerConnected ? 'Conectada' : 'Não conectada'}
                   </div>
                   {sellerConnected ? (
-                    <Button variant="outline" size="sm" onClick={() => sellerHook.startOAuth('seller')}>
-                      ↻ Reconectar
-                    </Button>
+                    sellerExpired ? (
+                      <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white gap-1" onClick={() => sellerHook.startOAuth('seller')}>
+                        ⚠️ Reconectar agora
+                      </Button>
+                    ) : (
+                      <Button variant="outline" size="sm" onClick={() => sellerHook.startOAuth('seller')}>
+                        ↻ Reconectar
+                      </Button>
+                    )
                   ) : (
                     <Button
                       size="sm"
