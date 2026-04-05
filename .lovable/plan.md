@@ -1,38 +1,32 @@
 
 
-## Plano: Melhorar visibilidade dos botões + KPIs combinados (Excel + Ads)
+## Plano: Corrigir importação de CSV na aba Ads
 
 ### Problemas identificados
 
-1. **Botões apagados**: O botão de lixeira usa `variant="ghost"` com `text-muted-foreground`, "Sincronizar Ads" usa `variant="outline"` discreto, e "Importar Excel" usa classes `bg-muted/30` — tudo muito apagado no tema escuro.
+1. **Falha silenciosa quando `currentStore` é null**: Em `importGeneralCSV`, a linha `if (!user || !currentStore) return;` faz a função retornar sem nenhum feedback. Se o contexto da loja não carregou ou o usuário não tem loja, o import simplesmente não acontece — sem erro, sem toast.
 
-2. **KPIs confusos**: Quando tem Excel + Ads, os KPIs mostram apenas `vendas_pago` (que é o valor do Excel). Falta contexto — o usuário não sabe se é orgânico, Ads, ou total. Precisa mostrar a composição clara.
+2. **Multi-line quoted fields não tratados no parser geral**: O `parseGeneralFormatCSV` faz `csvContent.split('\n')` direto, sem usar `mergeMultiLineQuotedFields`. Se algum nome de produto no CSV tiver quebra de linha dentro de aspas, as linhas ficam partidas e são descartadas (check `cols.length < 20`).
+
+3. **Lock não liberado em early returns**: Dentro do `try` block, o `return` nas linhas 195-197 (CSV inválido) não chama `releaseLock()` explicitamente — depende do `finally`. Porém o `finally` existe, então isso funciona. Mas a combinação de erros silenciosos + lock travado pode causar "Operação em andamento" em tentativas subsequentes se houver um bug no fluxo.
 
 ### Mudanças
 
-#### 1. Botões com mais destaque (`src/pages/Performance.tsx`)
+#### `src/hooks/useAdsData.ts`
 
-- **Lixeira**: Trocar `variant="ghost"` por `variant="outline"` com ícone visível
-- **Sincronizar Ads**: Usar cores mais vivas — `bg-primary/10 text-primary border-primary/30`
-- **Importar Excel**: Usar estilo de botão outline real em vez de `div` com classes muted
+**importGeneralCSV:**
+- Adicionar toast de erro quando `!currentStore`: `toast.error('Selecione uma loja primeiro')` + return
+- Usar `mergeMultiLineQuotedFields` no `parseGeneralFormatCSV` (no parser)
 
-#### 2. KPIs combinados quando tem Excel + Ads
+**importProductCSV:**
+- Adicionar toast de erro quando `!user`: `toast.error('Faça login para importar')`
 
-Quando `hasExcelEnriched` (tem Excel e Ads juntos), mostrar 4 KPIs mais informativos:
+#### `src/lib/shopeeAdsParser.ts`
 
-| KPI | Valor | Sub |
-|---|---|---|
-| Receita Total | `vendas_pago` (do Excel = total) | `X dias` |
-| Receita Ads | `ads_gmv` total | `Y% do total` |
-| Gasto Ads | `ads_gasto` total | `ROAS Xz` |
-| Produtos | contagem | `X com Ads / Y total` |
-
-Isso deixa claro a composição orgânico vs ads nos KPIs de topo.
-
-#### 3. Quando só tem Ads (sem Excel)
-
-Manter os KPIs atuais de Ads (GMV Ads, Gasto, ROAS, Produtos) — já está bom.
+**parseGeneralFormatCSV:**
+- Aplicar `mergeMultiLineQuotedFields` nas linhas do CSV antes de processar, igual já é feito no `parseOperationLogCSV`
 
 ### Arquivos modificados
-- `src/pages/Performance.tsx` — estilo dos botões + KPIs combinados
+- `src/hooks/useAdsData.ts` — feedback de erro para guards silenciosos
+- `src/lib/shopeeAdsParser.ts` — merge de campos multi-linha no parser geral
 
