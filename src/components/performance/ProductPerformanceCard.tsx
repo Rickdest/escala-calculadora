@@ -29,6 +29,7 @@ function MetricBox({ label, value, sub }: { label: string; value: string; sub?: 
 
 export function ProductPerformanceCard({ produto, rank, periodDays }: Props) {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
   const unDia = periodDays > 0 ? produto.unidades_pagas / periodDays : 0;
   const isAdsOnly = produto.source === 'ads_api';
   const hasOrganic = produto.impressoes > 0 || produto.ctr > 0 || produto.taxa_conversao > 0;

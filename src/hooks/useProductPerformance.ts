@@ -265,7 +265,25 @@ export function useProductPerformance() {
     }
   }, [user?.id, storeId, loadData]);
 
-  return { data, loading, importing, importingAds, importExcel, importFromAdsApi, periodLabel, reload: loadData };
+  const clearData = useCallback(async () => {
+    if (!user?.id || !storeId) return;
+    try {
+      const { error } = await supabase
+        .from('product_performance')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('store_id', storeId);
+      if (error) throw error;
+      setData([]);
+      setPeriodLabel(null);
+      toast.success('Dados de performance removidos.');
+    } catch (err: any) {
+      console.error('[useProductPerformance] clearData error:', err);
+      toast.error(err?.message || 'Erro ao limpar dados.');
+    }
+  }, [user?.id, storeId]);
+
+  return { data, loading, importing, importingAds, importExcel, importFromAdsApi, clearData, periodLabel, reload: loadData };
 }
 
 function formatDate(d: string) {
