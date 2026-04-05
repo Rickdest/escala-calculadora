@@ -68,6 +68,8 @@ export default function Integracoes() {
   const adsConnected = adsHook.isConnected;
   const sellerToken = sellerHook.token;
   const adsToken = adsHook.token;
+  const sellerExpired = sellerHook.needsReauth;
+  const adsExpired = adsHook.needsReauth;
 
   const [autoSync, setAutoSync] = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
