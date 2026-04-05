@@ -535,27 +535,35 @@ export default function Integracoes() {
                     {/* Token bar with progress */}
                     <div className="rounded-lg px-3 py-2.5 mb-3 text-xs border"
                       style={{
-                        background: 'hsla(142, 71%, 45%, 0.07)',
-                        borderColor: 'hsla(142, 71%, 45%, 0.15)',
+                        background: adsExpired ? 'hsla(0, 80%, 50%, 0.07)' : 'hsla(142, 71%, 45%, 0.07)',
+                        borderColor: adsExpired ? 'hsla(0, 80%, 50%, 0.15)' : 'hsla(142, 71%, 45%, 0.15)',
                       }}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-emerald-400 flex items-center gap-1.5">
-                          🔑 Autorização ativa
+                        <span className={`${adsExpired ? 'text-red-400' : 'text-emerald-400'} flex items-center gap-1.5`}>
+                          {adsExpired ? '⚠️ Autorização expirada' : '🔑 Autorização ativa'}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1.5">
-                        <span>Validade da autorização</span>
-                        <span className="text-emerald-400 font-medium">
-                          {getTokenDaysRemaining(adsToken)} dias restantes
-                        </span>
-                      </div>
-                      <div className="h-1 bg-muted/30 rounded-full overflow-hidden">
-                        <div
-                          className="h-1 rounded-full bg-emerald-500 transition-all"
-                          style={{ width: `${getTokenProgressPercent(adsToken)}%` }}
-                        />
-                      </div>
+                      {adsExpired ? (
+                        <p className="text-red-400 text-[10px]">
+                          Clique em "Reconectar agora" para renovar a autorização de Ads.
+                        </p>
+                      ) : (
+                        <>
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1.5">
+                            <span>Validade da autorização</span>
+                            <span className="text-emerald-400 font-medium">
+                              {getTokenDaysRemaining(adsToken)} dias restantes
+                            </span>
+                          </div>
+                          <div className="h-1 bg-muted/30 rounded-full overflow-hidden">
+                            <div
+                              className="h-1 rounded-full bg-emerald-500 transition-all"
+                              style={{ width: `${getTokenProgressPercent(adsToken)}%` }}
+                            />
+                          </div>
+                        </>
+                      )}
                     </div>
 
                     <p className="text-xs text-muted-foreground leading-relaxed bg-muted/20 rounded-lg p-3">
