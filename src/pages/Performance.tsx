@@ -4,7 +4,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { useShopeeToken } from '@/hooks/useShopeeToken';
+
 import { usePerformanceData } from '@/hooks/usePerformanceData';
 import { useProductPerformance } from '@/hooks/useProductPerformance';
 import { ProductExpandedDetail } from '@/components/performance/ProductExpandedDetail';
