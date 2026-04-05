@@ -10,9 +10,8 @@ import { useProductPerformance } from '@/hooks/useProductPerformance';
 import { ProductExpandedDetail } from '@/components/performance/ProductExpandedDetail';
 import { ProductPerformanceCard } from '@/components/performance/ProductPerformanceCard';
 import { useApiAdsData } from '@/hooks/useApiAdsData';
-import { RefreshCw, Loader2, ShoppingBag, TrendingUp, ShoppingCart, Package, Clock, ChevronDown, BarChart3, Eye, Upload, FileSpreadsheet } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { Loader2, TrendingUp, ShoppingCart, Package, ChevronDown, BarChart3, Eye, Upload, FileSpreadsheet } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const STATUS_COLORS: Record<string, string> = {
