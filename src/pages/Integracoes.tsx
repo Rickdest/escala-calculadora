@@ -496,17 +496,27 @@ export default function Integracoes() {
 
                 <div className="flex items-center gap-2">
                   <div className={`flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full border ${
-                    adsConnected
-                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                      : 'bg-muted/20 text-muted-foreground border-border'
+                    adsExpired
+                      ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                      : adsConnected
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        : 'bg-muted/20 text-muted-foreground border-border'
                   }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${adsConnected ? 'bg-emerald-400' : 'bg-muted-foreground'}`} />
-                    {adsConnected ? 'Conectada' : 'Não conectada'}
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      adsExpired ? 'bg-red-400' : adsConnected ? 'bg-emerald-400' : 'bg-muted-foreground'
+                    }`} />
+                    {adsExpired ? 'Expirado' : adsConnected ? 'Conectada' : 'Não conectada'}
                   </div>
                   {adsConnected ? (
-                    <Button variant="outline" size="sm" onClick={() => adsHook.startOAuth('ads')}>
-                      ↻ Reconectar
-                    </Button>
+                    adsExpired ? (
+                      <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white gap-1" onClick={() => adsHook.startOAuth('ads')}>
+                        ⚠️ Reconectar agora
+                      </Button>
+                    ) : (
+                      <Button variant="outline" size="sm" onClick={() => adsHook.startOAuth('ads')}>
+                        ↻ Reconectar
+                      </Button>
+                    )
                   ) : (
                     <Button
                       size="sm"
