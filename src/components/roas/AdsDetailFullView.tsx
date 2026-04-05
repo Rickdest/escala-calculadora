@@ -648,6 +648,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
             importedAt: new Date().toISOString(),
           } as any,
         };
+        // Try update first
         let updateQuery = supabase
           .from('product_ads_metrics')
           .update(savePayload)
@@ -659,7 +660,26 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         }
         const { error: saveError } = await updateQuery;
         if (saveError) {
-          console.error('Erro ao salvar Excel:', saveError.message);
+          console.error('Erro ao salvar Excel (update):', saveError.message);
+        }
+        // Check if any row was actually updated; if not, insert
+        const checkQuery = supabase.from('product_ads_metrics').select('id').eq('user_id', user.id);
+        const checkResult = productIdForSave
+          ? await checkQuery.eq('product_id', productIdForSave).limit(1)
+          : await checkQuery.eq('shopee_product_id', shopeeIdForSave!).limit(1);
+        if (!checkResult.data || checkResult.data.length === 0) {
+          const today = new Date().toISOString().slice(0, 10);
+          const { error: insertError } = await supabase.from('product_ads_metrics').insert({
+            user_id: user.id,
+            product_id: productIdForSave,
+            shopee_product_id: shopeeIdForSave,
+            period_start: today,
+            period_end: today,
+            ...savePayload,
+          } as any);
+          if (insertError) {
+            console.error('Erro ao salvar Excel (insert):', insertError.message);
+          }
         }
       }
     } catch (err: any) {
