@@ -206,10 +206,10 @@ export default function Performance() {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <KpiCard icon={<TrendingUp className="w-5 h-5" />} iconColor="text-emerald-500" borderColor="border-t-emerald-500" label="Receita Paga" value={`R$ ${excelTotalRevenue.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`} sub={`${excelPeriodDays} dias`} />
-                  <KpiCard icon={<Package className="w-5 h-5" />} iconColor="text-primary" borderColor="border-t-primary" label="Unidades" value={String(excelTotalUnits)} sub={`${(excelTotalUnits / excelPeriodDays).toFixed(1)}/dia`} />
-                  <KpiCard icon={<ShoppingCart className="w-5 h-5" />} iconColor="text-blue-500" borderColor="border-t-blue-500" label="Ticket Médio" value={excelTotalUnits > 0 ? `R$ ${(excelTotalRevenue / excelTotalUnits).toFixed(2)}` : '—'} sub="por unidade" />
-                  <KpiCard icon={<BarChart3 className="w-5 h-5" />} iconColor="text-orange-500" borderColor="border-t-orange-500" label="Produtos" value={String(perfHook.data.length)} sub="com dados" />
+                  <KpiCard icon={<TrendingUp className="w-5 h-5" />} iconColor="text-emerald-500" borderColor="border-t-emerald-500" label="Receita Total" value={`R$ ${excelTotalRevenue.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`} sub={`${excelPeriodDays} dias`} />
+                  <KpiCard icon={<Megaphone className="w-5 h-5" />} iconColor="text-primary" borderColor="border-t-primary" label="Receita Ads" value={`R$ ${excelTotalAdsGmv.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`} sub={excelTotalRevenue > 0 ? `${((excelTotalAdsGmv / excelTotalRevenue) * 100).toFixed(0)}% do total` : '—'} />
+                  <KpiCard icon={<DollarSign className="w-5 h-5" />} iconColor="text-orange-500" borderColor="border-t-orange-500" label="Gasto Ads" value={`R$ ${excelTotalAdsGasto.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}`} sub={overallRoas > 0 ? `ROAS ${overallRoas.toFixed(1)}x` : 'investido'} />
+                  <KpiCard icon={<BarChart3 className="w-5 h-5" />} iconColor="text-blue-500" borderColor="border-t-blue-500" label="Produtos" value={String(perfHook.data.length)} sub={`${perfHook.data.filter(p => p.ads_gasto && p.ads_gasto > 0).length} com Ads`} />
                 </div>
               )}
 
