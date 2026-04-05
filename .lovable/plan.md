@@ -1,22 +1,32 @@
 
 
-## Plano: Separar conexão Seller e Ads no card inicial
+## Diagnóstico
 
-### Problema
-Quando nenhuma API está conectada, só aparece um botão "Conectar com Shopee" que inicia o OAuth Seller. Como a API Seller só funciona para a conta do dono do app (sem Go Live), outros usuários ficam travados sem poder conectar a API Ads (que funciona para qualquer conta).
+Dois problemas no botão "Conectar Shopee Ads":
 
-### Solução
-Modificar o card de onboarding (`neitherConnected`) para mostrar **duas opções separadas**:
+1. **Chamada sem `async/await`** — `onClick={() => adsHook.startOAuth('ads')}` não captura erros nem gerencia estado de loading. Se falhar, o erro "Unauthorized" aparece mas o botão não reseta.
 
-1. **Conectar Seller** — botão para OAuth Seller (produtos, pedidos, estoque)
-2. **Conectar Ads** — botão para OAuth Ads (ROAS, campanhas, gasto)
+2. **Estado `connecting` compartilhado** — o estado `connecting` só é setado pelo botão Seller. O botão Ads usa o mesmo `disabled={connecting}` mas nunca seta `connecting`, então se der erro no Seller, o Ads fica travado.
 
-Cada botão inicia o OAuth com o `app_type` correto. Após conectar qualquer um dos dois, os cards individuais (Seller e Ads) já aparecem normalmente como estão hoje.
+## Plano
 
-### Também
-- Mostrar o card de Ads mesmo quando **só Ads** está conectado (sem Seller) — já funciona pelo `adsConnected` na condição `(sellerConnected || adsConnected)`
-- Mostrar o card de Seller para conectar mesmo quando só Ads está conectado — já funciona
+### 1. Criar handler dedicado para Ads
+Adicionar `handleConnectAds` similar ao `handleConnectSeller`, com seu próprio try/catch e gerenciamento do estado `connecting`:
 
-### Arquivo modificado
-- `src/pages/Integracoes.tsx` — substituir o card unificado por dois botões separados no estado `neitherConnected`
+```typescript
+const handleConnectAds = async () => {
+  setConnecting(true);
+  try {
+    await adsHook.startOAuth('ads');
+  } catch {
+    setConnecting(false);
+  }
+};
+```
+
+### 2. Atualizar o botão Ads para usar o novo handler
+Trocar `onClick={() => adsHook.startOAuth('ads')}` por `onClick={handleConnectAds}`.
+
+## Arquivo modificado
+- `src/pages/Integracoes.tsx` — adicionar `handleConnectAds` e atualizar o onClick do botão Ads
 
