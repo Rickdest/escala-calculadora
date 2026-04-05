@@ -83,6 +83,7 @@ export function buildApiAdsDataFromRows(rows: any[], dateFrom?: string, dateTo?:
   // If date filter provided, filter daily_data and recalculate metrics from filtered days
   if (dateFrom || dateTo) {
     for (const r of uniqueRows) {
+      // Only recalculate if daily_data has entries; otherwise preserve row-level metrics
       if (r.daily_data && Array.isArray(r.daily_data) && r.daily_data.length > 0) {
         const filteredDays = r.daily_data.filter((day: any) => {
           const dayDate = normalizeDailyDate(day.date || '');
@@ -101,8 +102,9 @@ export function buildApiAdsDataFromRows(rows: any[], dateFrom?: string, dateTo?:
         r.direct_gmv = filteredDays.reduce((s: number, d: any) => s + Number(d.direct_gmv || 0), 0);
         r.direct_orders = filteredDays.reduce((s: number, d: any) => s + (d.direct_orders || 0), 0);
       }
+      // If daily_data is empty/missing, keep original row metrics as-is (no zeroing)
     }
-  // Remove items with zero activity after filtering
+  // Remove items with zero activity after filtering (only if they had daily_data to filter)
     uniqueRows = uniqueRows.filter(r => r.impressions > 0 || r.clicks > 0 || r.expense > 0 || r.gmv > 0 || r.orders > 0);
   }
 

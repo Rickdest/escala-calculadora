@@ -226,9 +226,9 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const [syncing, setSyncing] = useState(false);
   const autoSyncTriggered = useRef(false);
 
-  // Date range filter – default: last 28 days
-  const [dateFrom, setDateFrom] = useState<Date | undefined>(() => subDays(new Date(), 28));
-  const [dateTo, setDateTo] = useState<Date | undefined>(() => new Date());
+  // Date range filter – default: no filter (show all data)
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const handleRangeChange = (from: Date | undefined, to: Date | undefined) => { setDateFrom(from); setDateTo(to); };
 
   const dateFromStr = dateFrom ? format(dateFrom, 'yyyy-MM-dd') : '';
@@ -523,10 +523,11 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
     }
   }, [searchParams, isConnected, importJob.isImporting]);
 
-  // When job finishes, reload persisted data
+  // When job finishes, reload persisted data with a small delay for DB consistency
   useEffect(() => {
     if (importJob.status === 'done') {
-      invalidatePersistedAds();
+      const timer = setTimeout(() => invalidatePersistedAds(), 1500);
+      return () => clearTimeout(timer);
     }
   }, [importJob.status]);
 
