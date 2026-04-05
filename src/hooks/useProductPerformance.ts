@@ -36,7 +36,7 @@ export interface ProductPerformanceDB {
 
 export function useProductPerformance() {
   const { user } = useAuth();
-  const { selectedStore } = useStoreContext();
+  const { currentStore: selectedStore } = useStore();
   const [data, setData] = useState<ProductPerformanceDB[]>([]);
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
