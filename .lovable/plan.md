@@ -2,31 +2,26 @@
 
 ## Diagnóstico
 
-Dois problemas no botão "Conectar Shopee Ads":
+O código **já constrói a URL corretamente** com `partner.shopeemobile.com/api/v2/shop/auth_partner` — não está chamando nenhum endpoint da Shopee para "gerar" a URL. A URL é montada localmente com `partner_id`, `timestamp`, `sign` e `redirect`.
 
-1. **Chamada sem `async/await`** — `onClick={() => adsHook.startOAuth('ads')}` não captura erros nem gerencia estado de loading. Se falhar, o erro "Unauthorized" aparece mas o botão não reseta.
-
-2. **Estado `connecting` compartilhado** — o estado `connecting` só é setado pelo botão Seller. O botão Ads usa o mesmo `disabled={connecting}` mas nunca seta `connecting`, então se der erro no Seller, o Ads fica travado.
+O problema real é o **preflight validation** (`validateAuthUrl`): antes de entregar a URL ao usuário, o backend faz um `GET` na URL de OAuth. Isso:
+1. Consome a sessão/estado no lado da Shopee antes do browser do usuário chegar lá
+2. Pode invalidar o `sign`/`timestamp` porque a Shopee registra o primeiro acesso
+3. Explica porque Ads funciona (por acidente, reutiliza sessão existente) e Seller não (precisa de sessão limpa que já foi "gasta" pelo preflight)
 
 ## Plano
 
-### 1. Criar handler dedicado para Ads
-Adicionar `handleConnectAds` similar ao `handleConnectSeller`, com seu próprio try/catch e gerenciamento do estado `connecting`:
+### 1. Remover o preflight validation do `shopee-auth`
+Eliminar a chamada `validateAuthUrl` que faz GET na URL antes de entregá-la ao usuário. A URL é construída localmente com HMAC válido — não precisa de validação prévia. Se der erro, o usuário verá na Shopee e pode tentar de novo.
 
-```typescript
-const handleConnectAds = async () => {
-  setConnecting(true);
-  try {
-    await adsHook.startOAuth('ads');
-  } catch {
-    setConnecting(false);
-  }
-};
-```
+### 2. Simplificar o retorno
+Após construir a URL com `getAuthUrl`, retornar diretamente `{ auth_url }` sem o passo de verificação. Manter apenas o log de diagnóstico.
 
-### 2. Atualizar o botão Ads para usar o novo handler
-Trocar `onClick={() => adsHook.startOAuth('ads')}` por `onClick={handleConnectAds}`.
+### 3. Limpar código morto
+Remover a função `validateAuthUrl`, o type `AuthUrlValidationResult`, e a função `getFriendlyAuthError` que só eram usadas pelo preflight.
 
 ## Arquivo modificado
-- `src/pages/Integracoes.tsx` — adicionar `handleConnectAds` e atualizar o onClick do botão Ads
+- `supabase/functions/shopee-auth/index.ts` — remover preflight, simplificar fluxo
+
+## Sem migration
 
