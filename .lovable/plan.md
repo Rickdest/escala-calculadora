@@ -1,31 +1,22 @@
 
 
-## Diagnóstico
+## Plano: Separar conexão Seller e Ads no card inicial
 
-A tabela `shopee_tokens` tem apenas duas políticas RLS:
-1. **Admins manage shopee tokens** — ALL para admins
-2. **Users can view own shopee tokens** — apenas SELECT
+### Problema
+Quando nenhuma API está conectada, só aparece um botão "Conectar com Shopee" que inicia o OAuth Seller. Como a API Seller só funciona para a conta do dono do app (sem Go Live), outros usuários ficam travados sem poder conectar a API Ads (que funciona para qualquer conta).
 
-Usuários normais **não têm permissão de DELETE** nos próprios tokens. O `supabase.from('shopee_tokens').delete()` retorna sucesso (0 rows affected) sem erro, mas não deleta nada — por isso "não acontece nada".
+### Solução
+Modificar o card de onboarding (`neitherConnected`) para mostrar **duas opções separadas**:
 
-## Plano
+1. **Conectar Seller** — botão para OAuth Seller (produtos, pedidos, estoque)
+2. **Conectar Ads** — botão para OAuth Ads (ROAS, campanhas, gasto)
 
-### 1. Adicionar política RLS de DELETE para usuários
-Criar uma migration que adicione uma política permitindo que usuários autenticados deletem seus próprios tokens:
+Cada botão inicia o OAuth com o `app_type` correto. Após conectar qualquer um dos dois, os cards individuais (Seller e Ads) já aparecem normalmente como estão hoje.
 
-```sql
-CREATE POLICY "Users can delete own shopee tokens"
-ON public.shopee_tokens
-FOR DELETE
-TO authenticated
-USING (auth.uid() = user_id);
-```
+### Também
+- Mostrar o card de Ads mesmo quando **só Ads** está conectado (sem Seller) — já funciona pelo `adsConnected` na condição `(sellerConnected || adsConnected)`
+- Mostrar o card de Seller para conectar mesmo quando só Ads está conectado — já funciona
 
-### 2. Verificar UI após desconexão
-Após o delete funcionar, o `refetch()` já existente no código vai atualizar o estado e o card deve voltar para o estado "não conectada" automaticamente (o código já trata `neitherConnected`).
-
-## Arquivos modificados
-- Nova migration SQL (política RLS)
-
-Nenhuma alteração de código frontend necessária — a lógica de `handleDisconnect` e `handleDisconnectAds` já está correta.
+### Arquivo modificado
+- `src/pages/Integracoes.tsx` — substituir o card unificado por dois botões separados no estado `neitherConnected`
 
