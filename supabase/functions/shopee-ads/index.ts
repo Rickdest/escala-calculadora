@@ -74,10 +74,16 @@ function extractCampaignSummaryMetrics(detail: any) {
   return { impressions, clicks, expense, gmv, direct_gmv: directGmv, orders, direct_orders: directOrders, avg_position: avgPosition, roas: expense > 0 ? gmv / expense : 0, direct_roas: expense > 0 ? directGmv / expense : 0, acos: gmv > 0 ? (expense / gmv) * 100 : 0, ctr: impressions > 0 ? (clicks / impressions) * 100 : 0, cost_per_order: orders > 0 ? expense / orders : 0, days_active: daysActive, hasData };
 }
 
-// Get ads credentials once at function level
-const adsCreds = getAdsCredentials();
-const adsGet = (path: string, accessToken: string, shopId: string | number, extra: Record<string, string> = {}) =>
-  shopeeGetWith(adsCreds.partnerId, adsCreds.partnerKey, path, accessToken, shopId, extra);
+// Lazy credential holder — initialized on first use inside the handler, not at module level
+let _adsCreds: { partnerId: number; partnerKey: string } | null = null;
+function getAdsCreds() {
+  if (!_adsCreds) _adsCreds = getAdsCredentials();
+  return _adsCreds;
+}
+const adsGet = (path: string, accessToken: string, shopId: string | number, extra: Record<string, string> = {}) => {
+  const creds = getAdsCreds();
+  return shopeeGetWith(creds.partnerId, creds.partnerKey, path, accessToken, shopId, extra);
+};
 
 async function refreshTokenIfNeeded(shopeeToken: any, _supabase: any): Promise<{ token: string; needs_reauth: boolean }> {
   const tokenAge = (Date.now() - new Date(shopeeToken.token_created_at).getTime()) / 1000;
