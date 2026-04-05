@@ -12,8 +12,9 @@ import { ProductPerformanceCard } from '@/components/performance/ProductPerforma
 import { useApiAdsData } from '@/hooks/useApiAdsData';
 import { useShopeeToken } from '@/hooks/useShopeeToken';
 import { useAdsImportJob } from '@/hooks/useAdsImportJob';
-import { Loader2, ShoppingBag, TrendingUp, ShoppingCart, Package, ChevronDown, BarChart3, Eye, Upload, FileSpreadsheet, RefreshCw, Megaphone, DollarSign } from 'lucide-react';
+import { Loader2, ShoppingBag, TrendingUp, ShoppingCart, Package, ChevronDown, BarChart3, Eye, Upload, FileSpreadsheet, RefreshCw, Megaphone, DollarSign, Trash2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 const STATUS_COLORS: Record<string, string> = {
   COMPLETED: 'bg-emerald-500',
@@ -106,6 +107,30 @@ export default function Performance() {
       <div className="flex items-center justify-between px-4 md:px-0">
         <PageHeader title="Performance" subtitle={hasExcelData && perfHook.periodLabel ? `Período: ${perfHook.periodLabel}` : 'Vendas · Shopee'} />
         <div className="flex items-center gap-2">
+          {/* Clear data button */}
+          {perfHook.data.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Limpar dados de Performance?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Isso vai remover todos os dados de performance e Ads desta aba. Você precisará reimportar os dados depois.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => perfHook.clearData()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Limpar tudo
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
           {/* Ads API sync button */}
           {adsToken && (
             <Button

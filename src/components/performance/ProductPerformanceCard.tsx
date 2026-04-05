@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { ChevronDown, Star, TrendingUp, ShoppingCart, Eye, MousePointerClick, Megaphone } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ChevronDown, Star, TrendingUp, ShoppingCart, Eye, MousePointerClick, Megaphone, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { FunnelBar } from './FunnelBar';
@@ -27,6 +29,7 @@ function MetricBox({ label, value, sub }: { label: string; value: string; sub?: 
 
 export function ProductPerformanceCard({ produto, rank, periodDays }: Props) {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
   const unDia = periodDays > 0 ? produto.unidades_pagas / periodDays : 0;
   const isAdsOnly = produto.source === 'ads_api';
   const hasOrganic = produto.impressoes > 0 || produto.ctr > 0 || produto.taxa_conversao > 0;
@@ -191,6 +194,17 @@ export function ProductPerformanceCard({ produto, rank, periodDays }: Props) {
 
             {/* Insights — only when organic data */}
             {!isAdsOnly && <InsightsPanel produto={produto} />}
+
+            {/* Ver detalhes button */}
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                className="gap-1.5 text-xs"
+                onClick={() => navigate(`/performance/${produto.item_id}`)}
+              >
+                Ver detalhes <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
+            </div>
           </div>
         </CollapsibleContent>
       </div>

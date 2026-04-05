@@ -1,35 +1,42 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { usePerformanceData } from '@/hooks/usePerformanceData';
+import { useProductPerformance } from '@/hooks/useProductPerformance';
 import { useApiAdsData } from '@/hooks/useApiAdsData';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { ArrowLeft, ExternalLink, Package, DollarSign, TrendingUp, BarChart3, Star, MessageSquare, Weight, Truck, Eye, Heart, Megaphone, Target, Calendar, Search } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Package, DollarSign, TrendingUp, BarChart3, Star, Megaphone, Target, Calendar, Search, Eye, MousePointerClick, ShoppingCart, ArrowRight, ArrowLeftIcon } from 'lucide-react';
 import { PageLoader } from '@/components/layout/PageStates';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, AreaChart, Area, Legend, CartesianGrid } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid } from 'recharts';
+import { FunnelBar } from '@/components/performance/FunnelBar';
+import { InsightsPanel } from '@/components/performance/InsightsPanel';
+import { calcOrganicoVsAds } from '@/lib/calcPerformance';
 
 export default function PerformanceProductDetail() {
   const { itemId } = useParams<{ itemId: string }>();
   const navigate = useNavigate();
-  const { data, loading } = usePerformanceData();
+  const { data: perfData, loading } = useProductPerformance();
   const { data: adsRows } = useApiAdsData();
-  const [chartPeriod, setChartPeriod] = useState<'7d' | '30d' | '90d'>('30d');
 
-  const product = !loading && itemId ? data?.product_sales?.[itemId] || null : null;
-  const totalRevenue = data?.summary?.total_revenue || 0;
-  const totalQty = data ? Object.values(data.product_sales).reduce((s, p) => s + p.total_qty, 0) : 0;
-  const periodDays = data?.summary?.period_days || 90;
-  const ticketMedio = product && product.total_qty > 0 ? product.total_revenue / product.total_qty : 0;
-  const unDia = product && periodDays > 0 ? product.total_qty / periodDays : 0;
-  const pctRevenue = product && totalRevenue > 0 ? (product.total_revenue / totalRevenue) * 100 : 0;
-  const pctQty = product && totalQty > 0 ? (product.total_qty / totalQty) * 100 : 0;
-  const sortedVariants = product ? Object.entries(product.variants || {}).sort(([, a], [, b]) => b.qty - a.qty) : [];
-  const topVariant = sortedVariants[0] || null;
-  const bottomVariant = sortedVariants.length > 1 ? sortedVariants[sortedVariants.length - 1] : null;
+  // Find product from product_performance
+  const product = useMemo(() => {
+    if (!itemId || !perfData.length) return null;
+    return perfData.find(p => p.item_id === itemId) || null;
+  }, [perfData, itemId]);
 
-  // Cross-reference Ads data (full)
+  const isAdsOnly = product?.source === 'ads_api';
+  const hasOrganic = product ? (product.impressoes > 0 || product.ctr > 0 || product.taxa_conversao > 0) : false;
+
+  // Period days
+  const periodDays = useMemo(() => {
+    if (!product) return 30;
+    const diff = new Date(product.period_end).getTime() - new Date(product.period_start).getTime();
+    return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  }, [product]);
+
+  // Cross-reference with shopee_ads_by_product for extra data
   const adsForProduct = useMemo(() => {
     if (!adsRows || !itemId) return null;
     const matching = adsRows.filter((r: any) => String(r.item_id) === itemId);
@@ -49,7 +56,6 @@ export default function PerformanceProductDetail() {
       daily_data: [] as any[],
       keywords: [] as any[],
     };
-    // Merge daily_data
     const dailyMap = new Map<string, any>();
     for (const r of matching) {
       const dd = r.daily_data as any[];
@@ -66,64 +72,47 @@ export default function PerformanceProductDetail() {
           }
         }
       }
-      // Merge keywords
       const kw = (r as any).keywords as any[];
       if (Array.isArray(kw)) agg.keywords.push(...kw);
-      // Best avg_position
       if (r.avg_position && (!agg.avg_position || Number(r.avg_position) < agg.avg_position)) {
         agg.avg_position = Number(r.avg_position);
       }
     }
     agg.daily_data = Array.from(dailyMap.values()).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-    // Derived
     agg.roas = agg.expense > 0 ? agg.gmv / agg.expense : 0;
     agg.direct_roas = agg.expense > 0 ? agg.direct_gmv / agg.expense : 0;
     agg.ctr = agg.impressions > 0 ? (agg.clicks / agg.impressions) * 100 : 0;
     agg.cost_per_order = agg.orders > 0 ? agg.expense / agg.orders : 0;
-    // Deduplicate keywords by keyword text
     const kwMap = new Map<string, any>();
     for (const k of agg.keywords) { if (k.keyword && !kwMap.has(k.keyword)) kwMap.set(k.keyword, k); }
     agg.keywords = Array.from(kwMap.values()).slice(0, 15);
     return agg;
   }, [adsRows, itemId]);
 
-  // Daily chart data (real or simulated)
-  const dailyData = useMemo(() => {
-    if (!product) return [];
-    const days = chartPeriod === '7d' ? 7 : chartPeriod === '30d' ? 30 : 90;
-    const today = new Date();
-    const avgTicket = product.total_qty > 0 ? product.total_revenue / product.total_qty : 0;
-    if (product.daily_sales && Object.keys(product.daily_sales).length > 0) {
-      return Array.from({ length: days }, (_, i) => {
-        const d = new Date(today);
-        d.setDate(d.getDate() - (days - 1 - i));
-        const dateStr = d.toISOString().slice(0, 10);
-        const label = `${d.getDate()} ${d.toLocaleString('pt-BR', { month: 'short' }).replace('.', '')}`;
-        const qty = product.daily_sales![dateStr] || 0;
-        return { label, value: qty, revenue: qty * avgTicket };
-      });
-    }
-    const avgPerDay = product.total_qty / (periodDays || 90);
-    return Array.from({ length: days }, (_, i) => {
-      const d = new Date(today);
-      d.setDate(d.getDate() - (days - 1 - i));
-      const label = `${d.getDate()} ${d.toLocaleString('pt-BR', { month: 'short' }).replace('.', '')}`;
-      const trend = 0.5 + (i / days) * 1.0;
-      const noise = 0.7 + Math.random() * 0.6;
-      const qty = Math.max(0, Math.round(avgPerDay * trend * noise));
-      return { label, value: qty, revenue: qty * avgTicket };
-    });
-  }, [chartPeriod, product, periodDays]);
+  // Navigation helpers
+  const currentIndex = perfData.findIndex(p => p.item_id === itemId);
+  const prevItem = currentIndex > 0 ? perfData[currentIndex - 1] : null;
+  const nextItem = currentIndex >= 0 && currentIndex < perfData.length - 1 ? perfData[currentIndex + 1] : null;
 
-  const hasDailySalesReal = product?.daily_sales && Object.keys(product.daily_sales).length > 0;
-  const meta = product as any;
+  // Organic vs Ads split
+  const split = product ? calcOrganicoVsAds(product.vendas_pago, product.ads_gmv) : null;
+  const sortedVariacoes = product ? [...product.variacoes].sort((a: any, b: any) => b.vendas_pago - a.vendas_pago) : [];
+  const unDia = product && periodDays > 0 ? product.unidades_pagas / periodDays : 0;
+
+  // Total for share calculations
+  const totalRevenue = perfData.reduce((s, p) => s + Number(p.vendas_pago), 0);
+  const totalUnits = perfData.reduce((s, p) => s + Number(p.unidades_pagas), 0);
+  const pctRevenue = product && totalRevenue > 0 ? (product.vendas_pago / totalRevenue) * 100 : 0;
+  const pctUnits = product && totalUnits > 0 ? (product.unidades_pagas / totalUnits) * 100 : 0;
+
+  useEffect(() => { window.scrollTo(0, 0); }, [itemId]);
 
   if (loading) return <AppLayout><PageLoader /></AppLayout>;
   if (!product) {
     return (
       <AppLayout>
         <div className="flex flex-col items-center justify-center min-h-[40vh] gap-4">
-          <p className="text-muted-foreground text-sm">Este produto não foi encontrado nos dados sincronizados.</p>
+          <p className="text-muted-foreground text-sm">Este produto não foi encontrado nos dados de performance.</p>
           <Button variant="outline" onClick={() => navigate('/performance')}><ArrowLeft className="w-4 h-4 mr-2" /> Voltar</Button>
         </div>
       </AppLayout>
@@ -139,114 +128,131 @@ export default function PerformanceProductDetail() {
             <Button variant="ghost" size="icon" onClick={() => navigate('/performance')} className="shrink-0 h-8 w-8">
               <ArrowLeft className="w-4 h-4" />
             </Button>
-            {meta.image_url && (
-              <img src={meta.image_url} alt="" className="w-10 h-10 rounded-lg object-cover border border-border shrink-0" />
-            )}
             <div className="min-w-0">
-              <h1 className="text-base md:text-lg font-bold text-foreground truncate">{product.name}</h1>
+              <h1 className="text-base md:text-lg font-bold text-foreground truncate">{product.nome}</h1>
               <p className="text-[10px] text-muted-foreground font-mono">ID: {itemId}</p>
             </div>
           </div>
-          <Button variant="outline" size="sm" className="shrink-0 gap-1.5 text-xs h-8" asChild>
-            <a href={`https://shopee.com.br/product-i.${itemId}`} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="w-3.5 h-3.5" /> Ver na Shopee
-            </a>
-          </Button>
+          <div className="flex items-center gap-2">
+            {prevItem && (
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/performance/${prevItem.item_id}`)}>
+                <ArrowLeftIcon className="w-4 h-4" />
+              </Button>
+            )}
+            {nextItem && (
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigate(`/performance/${nextItem.item_id}`)}>
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
         </div>
 
-        {/* Metadata Badges */}
+        {/* Badges */}
         <div className="flex items-center gap-2 flex-wrap">
-          {meta.rating_star != null && meta.rating_star > 0 && (
-            <Badge variant="outline" className="gap-1 text-xs font-semibold">
-              <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" /> {meta.rating_star.toFixed(1)}
+          {isAdsOnly && (
+            <Badge variant="outline" className="gap-1 text-xs border-primary/30 text-primary">
+              <Megaphone className="w-3 h-3" /> Dados via Ads
             </Badge>
           )}
-          {(meta.comment_count ?? 0) > 0 && (
-            <Badge variant="outline" className="gap-1 text-xs font-semibold">
-              <MessageSquare className="w-3.5 h-3.5" /> {meta.comment_count} avaliações
-            </Badge>
-          )}
-          {(meta.likes ?? 0) > 0 && (
-            <Badge variant="outline" className="gap-1 text-xs font-semibold">
-              <Heart className="w-3.5 h-3.5 text-red-500" /> {meta.likes}
-            </Badge>
-          )}
-          {(meta.views ?? 0) > 0 && (
-            <Badge variant="outline" className="gap-1 text-xs font-semibold">
-              <Eye className="w-3.5 h-3.5" /> {meta.views} views
-            </Badge>
-          )}
-          {meta.item_status && (
-            <Badge variant={meta.item_status === 'NORMAL' ? 'default' : 'secondary'} className="text-xs">
-              {meta.item_status === 'NORMAL' ? 'Ativo' : meta.item_status}
+          {!isAdsOnly && product.ads_roas != null && product.ads_roas > 0 && (
+            <Badge variant="outline" className="gap-1 text-xs border-primary/30 text-primary">
+              <TrendingUp className="w-3 h-3" /> ROAS {product.ads_roas.toFixed(1)}x
             </Badge>
           )}
           {adsForProduct?.avg_position != null && adsForProduct.avg_position > 0 && (
             <Badge variant="outline" className="gap-1 text-xs font-semibold border-primary text-primary">
-              <Target className="w-3.5 h-3.5" /> Posição #{adsForProduct.avg_position.toFixed(0)}
+              <Target className="w-3 h-3" /> Posição #{adsForProduct.avg_position.toFixed(0)}
+            </Badge>
+          )}
+          {adsForProduct?.status && (
+            <Badge variant={adsForProduct.status === 'active' ? 'default' : 'secondary'} className="text-[10px]">
+              {adsForProduct.status === 'active' ? 'Ads Ativo' : adsForProduct.status === 'paused' ? 'Pausado' : 'Encerrado'}
+            </Badge>
+          )}
+          {product.taxa_rejeicao > 0 && (
+            <Badge variant="outline" className={`text-[10px] gap-1 ${product.taxa_rejeicao > 30 ? 'border-destructive text-destructive' : ''}`}>
+              <MousePointerClick className="w-3 h-3" /> Rejeição {product.taxa_rejeicao.toFixed(1)}%
+            </Badge>
+          )}
+          {product.taxa_recompra > 0 && (
+            <Badge variant="outline" className="text-[10px] gap-1 border-emerald-500/30 text-emerald-500">
+              <ShoppingCart className="w-3 h-3" /> Recompra {product.taxa_recompra.toFixed(1)}%
             </Badge>
           )}
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <KpiCard icon={<Package className="w-5 h-5" />} borderColor="border-t-primary" label="UNIDADES" value={String(product.total_qty)} sub={`${(pctQty || 0).toFixed(1)}% do total`} />
-          <KpiCard icon={<DollarSign className="w-5 h-5" />} borderColor="border-t-emerald-500" label="RECEITA" value={`R$ ${product.total_revenue.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} sub={`${(pctRevenue || 0).toFixed(1)}% do total`} />
-          <KpiCard icon={<TrendingUp className="w-5 h-5" />} borderColor="border-t-blue-500" label="TICKET MÉDIO" value={`R$ ${(ticketMedio || 0).toFixed(2).replace('.', ',')}`} sub="por unidade" />
-          <KpiCard icon={<BarChart3 className="w-5 h-5" />} borderColor="border-t-amber-500" label="UN/DIA" value={(unDia || 0).toFixed(1).replace('.', ',')} sub="média no período" />
-        </div>
-
-        {/* Price & Stock & Logistics */}
-        {(meta.current_price || meta.stock_available != null || meta.weight) && (
+        {isAdsOnly ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {meta.current_price && (
-              <div className="rounded-xl border border-border bg-card p-3">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Preço Atual</p>
-                <p className="text-lg font-bold text-foreground font-mono mt-1">R$ {Number(meta.current_price).toFixed(2)}</p>
-                {meta.min_price && meta.max_price && meta.min_price !== meta.max_price && (
-                  <p className="text-[10px] text-muted-foreground">R$ {Number(meta.min_price).toFixed(2)} ~ R$ {Number(meta.max_price).toFixed(2)}</p>
-                )}
-              </div>
-            )}
-            {meta.stock_available != null && (
-              <div className={`rounded-xl border bg-card p-3 ${meta.stock_available < 10 ? 'border-destructive' : 'border-border'}`}>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Estoque Disponível</p>
-                <p className={`text-lg font-bold font-mono mt-1 ${meta.stock_available < 10 ? 'text-destructive' : 'text-foreground'}`}>{meta.stock_available} un</p>
-                {meta.stock_available < 10 && <p className="text-[10px] text-destructive font-semibold">⚠️ Estoque baixo!</p>}
-              </div>
-            )}
-            {meta.weight != null && meta.weight > 0 && (
-              <div className="rounded-xl border border-border bg-card p-3">
-                <div className="flex items-center gap-1 mb-1">
-                  <Weight className="w-3.5 h-3.5 text-muted-foreground" />
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Peso</p>
-                </div>
-                <p className="text-lg font-bold text-foreground font-mono">{(meta.weight / 1000).toFixed(2)} kg</p>
-              </div>
-            )}
-            {meta.days_to_ship != null && meta.days_to_ship > 0 && (
-              <div className="rounded-xl border border-border bg-card p-3">
-                <div className="flex items-center gap-1 mb-1">
-                  <Truck className="w-3.5 h-3.5 text-muted-foreground" />
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Prazo de Envio</p>
-                </div>
-                <p className="text-lg font-bold text-foreground font-mono">{meta.days_to_ship} dias</p>
-              </div>
+            <KpiCard icon={<DollarSign className="w-5 h-5" />} borderColor="border-t-emerald-500" label="GMV ADS" value={`R$ ${(product.ads_gmv || 0).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`} sub={`${pctRevenue.toFixed(1)}% do total`} />
+            <KpiCard icon={<TrendingUp className="w-5 h-5" />} borderColor="border-t-primary" label="GASTO ADS" value={`R$ ${(product.ads_gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} sub="investido" />
+            <KpiCard icon={<Megaphone className="w-5 h-5" />} borderColor="border-t-blue-500" label="ROAS" value={`${(product.ads_roas || 0).toFixed(1)}x`} sub="retorno" />
+            <KpiCard icon={<Package className="w-5 h-5" />} borderColor="border-t-amber-500" label="PEDIDOS ADS" value={String(product.ads_pedidos || 0)} sub={`${(product.ads_pedidos || 0) > 0 && periodDays > 0 ? ((product.ads_pedidos || 0) / periodDays).toFixed(1) + '/dia' : ''}`} />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <KpiCard icon={<DollarSign className="w-5 h-5" />} borderColor="border-t-emerald-500" label="RECEITA" value={`R$ ${product.vendas_pago.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`} sub={`${pctRevenue.toFixed(1)}% do total`} />
+            <KpiCard icon={<Package className="w-5 h-5" />} borderColor="border-t-primary" label="UNIDADES" value={String(product.unidades_pagas)} sub={`${unDia.toFixed(1)}/dia`} />
+            <KpiCard icon={<TrendingUp className="w-5 h-5" />} borderColor="border-t-blue-500" label="TICKET MÉDIO" value={`R$ ${product.ticket_medio.toFixed(2)}`} sub="por unidade" />
+            <KpiCard icon={<BarChart3 className="w-5 h-5" />} borderColor="border-t-amber-500" label="PEDIDOS" value={String(product.pedidos_pagos)} sub={`${pctUnits.toFixed(1)}% do total`} />
+          </div>
+        )}
+
+        {/* Ads Impressions/Clicks row */}
+        {(product.ads_impressoes || 0) > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <MetricBox label="Impressões Ads" value={(product.ads_impressoes || 0).toLocaleString('pt-BR')} />
+            <MetricBox label="Cliques Ads" value={(product.ads_cliques || 0).toLocaleString('pt-BR')} />
+            {adsForProduct && (
+              <>
+                <MetricBox label="CTR Ads" value={`${adsForProduct.ctr.toFixed(2)}%`} />
+                <MetricBox label="Custo/Pedido" value={adsForProduct.orders > 0 ? `R$ ${adsForProduct.cost_per_order.toFixed(2)}` : '—'} />
+              </>
             )}
           </div>
         )}
 
-        {/* Ads Section — Expanded with Tabs */}
+        {/* Conversion Funnel — only with organic data */}
+        {hasOrganic && product.impressoes > 0 && (
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Eye className="w-3.5 h-3.5 text-muted-foreground" />
+              <p className="text-sm font-semibold text-foreground uppercase tracking-wider">Funil de conversão</p>
+            </div>
+            <FunnelBar label="Impressões" value={product.impressoes} max={product.impressoes} />
+            <FunnelBar label="Cliques" value={product.cliques} max={product.impressoes} pct={product.ctr} pctLabel="CTR" />
+            <FunnelBar label="Add ao carrinho" value={product.add_carrinho} max={product.impressoes} pct={product.taxa_carrinho} />
+            <FunnelBar label="Pedido pago" value={product.pedidos_pagos} max={product.impressoes} pct={product.taxa_conversao} pctLabel="Conv." color="green" />
+          </div>
+        )}
+
+        {/* Organic vs Ads */}
+        {!isAdsOnly && product.ads_gmv != null && product.ads_gmv > 0 && split && (
+          <div className="rounded-xl border border-border bg-card p-4">
+            <p className="text-sm font-semibold text-foreground uppercase tracking-wider mb-3">Orgânico vs Ads</p>
+            <div className="h-4 rounded-full overflow-hidden bg-muted flex">
+              <div className="h-full bg-emerald-500 transition-all" style={{ width: `${split.pct_organico}%` }} />
+              <div className="h-full bg-primary transition-all" style={{ width: `${split.pct_ads}%` }} />
+            </div>
+            <div className="flex justify-between mt-2 text-xs">
+              <span className="text-emerald-500 font-semibold">
+                🌱 Orgânico {split.pct_organico.toFixed(0)}% · R$ {split.organico_receita.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
+              </span>
+              <span className="text-primary font-semibold">
+                📈 Ads {split.pct_ads.toFixed(0)}% · R$ {split.ads_receita.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Ads Detail Section with Tabs */}
         {adsForProduct && (
           <div className="rounded-xl border border-border bg-card overflow-hidden">
             <div className="p-4 border-b border-border flex items-center gap-2">
               <Megaphone className="w-4 h-4 text-primary" />
               <p className="text-sm font-semibold text-foreground">Performance de Ads</p>
-              <Badge variant={adsForProduct.status === 'active' ? 'default' : 'secondary'} className="ml-auto text-[10px]">
-                {adsForProduct.status === 'active' ? 'Ativo' : adsForProduct.status === 'paused' ? 'Pausado' : 'Encerrado'}
-              </Badge>
               {adsForProduct.days_active > 0 && (
-                <Badge variant="outline" className="text-[10px] gap-1">
+                <Badge variant="outline" className="text-[10px] gap-1 ml-auto">
                   <Calendar className="w-3 h-3" /> {adsForProduct.days_active} dias
                 </Badge>
               )}
@@ -263,7 +269,6 @@ export default function PerformanceProductDetail() {
                 )}
               </TabsList>
 
-              {/* Resumo Tab */}
               <TabsContent value="resumo" className="mt-0">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-border">
                   <AdsMetric label="Gasto Total" value={`R$ ${adsForProduct.expense.toFixed(2)}`} />
@@ -275,7 +280,6 @@ export default function PerformanceProductDetail() {
                   <AdsMetric label="Impressões" value={adsForProduct.impressions.toLocaleString('pt-BR')} />
                   <AdsMetric label="Cliques" value={adsForProduct.clicks.toLocaleString('pt-BR')} />
                 </div>
-                {/* Direct vs Broad comparison */}
                 {adsForProduct.direct_gmv > 0 && (
                   <div className="p-4 border-t border-border">
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-3">Direto vs Amplo</p>
@@ -295,7 +299,6 @@ export default function PerformanceProductDetail() {
                 )}
               </TabsContent>
 
-              {/* Tendência Tab — Daily Ads Chart */}
               {adsForProduct.daily_data.length > 0 && (
                 <TabsContent value="tendencia" className="mt-0 p-4">
                   <p className="text-xs font-semibold text-foreground mb-3">Gasto vs GMV diário (Ads)</p>
@@ -330,7 +333,6 @@ export default function PerformanceProductDetail() {
                 </TabsContent>
               )}
 
-              {/* Keywords Tab */}
               {adsForProduct.keywords.length > 0 && (
                 <TabsContent value="keywords" className="mt-0">
                   <div className="p-4 pb-2">
@@ -350,7 +352,7 @@ export default function PerformanceProductDetail() {
                         </tr>
                       </thead>
                       <tbody>
-                        {adsForProduct.keywords.map((kw, i) => (
+                        {adsForProduct.keywords.map((kw: any, i: number) => (
                           <tr key={i} className="border-b border-border last:border-0">
                             <td className="px-4 py-2.5 font-medium text-foreground">{kw.keyword}</td>
                             <td className="px-4 py-2.5 text-right font-mono text-muted-foreground">{(kw.search_volume || 0).toLocaleString('pt-BR')}</td>
@@ -373,122 +375,38 @@ export default function PerformanceProductDetail() {
           </div>
         )}
 
-        {/* Daily Sales Chart */}
-        <div className="rounded-xl border border-border bg-card p-4">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-sm font-semibold text-foreground">Vendas diárias</p>
-              {!hasDailySalesReal && <p className="text-[10px] text-muted-foreground">* dados estimados — sincronize novamente para dados reais</p>}
-            </div>
-            <div className="flex border border-border rounded-lg overflow-hidden">
-              {(['7d', '30d', '90d'] as const).map(p => (
-                <button
-                  key={p}
-                  onClick={() => setChartPeriod(p)}
-                  className={`px-3 py-1 text-[11px] font-medium transition-colors ${
-                    chartPeriod === p ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          </div>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={dailyData} barCategoryGap="15%">
-              <XAxis dataKey="label" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} interval={chartPeriod === '7d' ? 0 : chartPeriod === '30d' ? 4 : 13} />
-              <YAxis hide />
-              <Tooltip
-                content={({ active, payload, label }) => {
-                  if (!active || !payload?.length) return null;
-                  const qty = payload[0]?.value as number;
-                  const rev = payload[0]?.payload?.revenue as number;
-                  return (
-                    <div className="rounded-lg border border-border bg-card px-3 py-2 shadow-md">
-                      <p className="text-[11px] font-semibold text-foreground mb-1">{label}</p>
-                      <p className="text-[11px] text-muted-foreground">Vendas: <span className="font-mono font-bold text-foreground">{qty} un.</span></p>
-                      <p className="text-[11px] text-muted-foreground">Faturamento: <span className="font-mono font-bold text-emerald-500">R$ {(rev || 0).toFixed(2).replace('.', ',')}</span></p>
-                    </div>
-                  );
-                }}
-              />
-              <Bar dataKey="value" radius={[3, 3, 0, 0]}>
-                {dailyData.map((_, index) => (
-                  <Cell key={index} fill={index >= dailyData.length - 3 ? 'hsl(var(--primary))' : 'hsl(var(--primary) / 0.65)'} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
         {/* Participation Bars */}
         <div className="rounded-xl border border-border bg-card p-4 space-y-3">
           <p className="text-sm font-semibold text-foreground">Participação no total</p>
-          <ShareBar label="% Vendas (qtd)" pct={pctQty || 0} color="bg-primary" textColor="text-primary" />
-          <ShareBar label="% Receita" pct={pctRevenue || 0} color="bg-emerald-500" textColor="text-emerald-500" />
+          <ShareBar label="% Receita" pct={pctRevenue} color="bg-emerald-500" textColor="text-emerald-500" />
+          <ShareBar label="% Unidades" pct={pctUnits} color="bg-primary" textColor="text-primary" />
         </div>
 
-        {/* Variants Table */}
-        {sortedVariants.length > 0 && (
+        {/* Variations */}
+        {sortedVariacoes.length > 0 && (
           <div className="rounded-xl border border-border bg-card overflow-hidden">
             <div className="p-4 border-b border-border">
-              <p className="text-sm font-semibold text-foreground">Variações ({sortedVariants.length})</p>
+              <p className="text-sm font-semibold text-foreground">Variações ({sortedVariacoes.length})</p>
             </div>
-            <div className="hidden md:block">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase w-8"></th>
-                    <th className="text-left px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase">VARIAÇÃO</th>
-                    <th className="text-right px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase">QTD</th>
-                    <th className="text-right px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase">RECEITA</th>
-                    <th className="text-right px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase">%</th>
-                    <th className="text-right px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase w-28">PARTICIPAÇÃO</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedVariants.map(([varName, v], i) => {
-                    const varPct = product.total_qty > 0 ? (v.qty / product.total_qty) * 100 : 0;
-                    const isTop = i === 0 && sortedVariants.length > 1;
-                    return (
-                      <tr key={varName} className={`border-b border-border last:border-0 ${isTop ? 'bg-primary/5' : ''}`}>
-                        <td className="px-4 py-3 text-center">
-                          {isTop ? <Star className="w-4 h-4 text-amber-500 inline" /> : <span className="text-muted-foreground text-xs">{i + 1}</span>}
-                        </td>
-                        <td className="px-4 py-3"><span className="font-medium text-foreground">{varName}</span></td>
-                        <td className="px-4 py-3 text-right font-mono font-semibold text-foreground">{v.qty} un</td>
-                        <td className="px-4 py-3 text-right font-mono font-semibold text-primary">R$ {v.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                        <td className="px-4 py-3 text-right font-mono text-primary font-semibold">{varPct.toFixed(0)}%</td>
-                        <td className="px-4 py-3">
-                          <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                            <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${Math.min(varPct, 100)}%` }} />
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <div className="md:hidden divide-y divide-border">
-              {sortedVariants.map(([varName, v], i) => {
-                const varPct = product.total_qty > 0 ? (v.qty / product.total_qty) * 100 : 0;
-                const isTop = i === 0 && sortedVariants.length > 1;
+            <div className="divide-y divide-border">
+              {sortedVariacoes.map((v: any, i: number) => {
+                const isTop = i === 0 && sortedVariacoes.length > 1;
+                const pct = product.unidades_pagas > 0 ? (v.unidades_pagas / product.unidades_pagas) * 100 : 0;
                 return (
-                  <div key={varName} className={`px-4 py-3 space-y-1.5 ${isTop ? 'bg-primary/5' : ''}`}>
+                  <div key={v.variacao_id || i} className={`px-4 py-3 ${isTop ? 'bg-primary/5' : ''}`}>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         {isTop ? <Star className="w-3.5 h-3.5 text-amber-500" /> : <span className="text-muted-foreground text-xs w-5 text-center">{i + 1}</span>}
-                        <span className="text-sm font-medium text-foreground truncate">{varName}</span>
+                        <span className="text-sm font-medium text-foreground truncate">{v.nome_variacao}</span>
                       </div>
-                      <span className="text-xs font-mono text-primary font-semibold">{varPct.toFixed(0)}%</span>
+                      <span className="text-xs font-mono text-primary font-semibold">{pct.toFixed(0)}%</span>
                     </div>
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>{v.qty} un</span>
-                      <span className="font-semibold text-primary">R$ {v.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
+                      <span>{v.unidades_pagas} un</span>
+                      <span className="font-semibold text-primary">R$ {v.vendas_pago.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
                     </div>
-                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div className="h-full bg-primary rounded-full" style={{ width: `${Math.min(varPct, 100)}%` }} />
+                    <div className="h-1.5 bg-muted rounded-full overflow-hidden mt-1.5">
+                      <div className="h-full bg-primary rounded-full" style={{ width: `${Math.min(pct, 100)}%` }} />
                     </div>
                   </div>
                 );
@@ -497,23 +415,14 @@ export default function PerformanceProductDetail() {
           </div>
         )}
 
-        {/* Insight */}
-        {topVariant && sortedVariants.length > 1 && (
+        {/* Insights */}
+        {!isAdsOnly && <InsightsPanel produto={product} />}
+
+        {/* Ads-only info banner */}
+        {isAdsOnly && (
           <div className="rounded-xl bg-primary/5 border border-primary/10 p-4">
             <p className="text-sm text-muted-foreground">
-              💡 <strong>{topVariant[0]}</strong> representa{' '}
-              <strong>{((topVariant[1].qty / product.total_qty) * 100).toFixed(0)}%</strong> das vendas deste produto.
-              {bottomVariant && (
-                <> <strong>{bottomVariant[0]}</strong> com apenas{' '}
-                <strong>{((bottomVariant[1].qty / product.total_qty) * 100).toFixed(0)}%</strong> pode ser descontinuado para liberar estoque.
-                Considere dobrar o estoque da variação {topVariant[0]}.</>
-              )}
-              {adsForProduct && adsForProduct.roas > 0 && (
-                <> O ROAS atual de <strong>{adsForProduct.roas.toFixed(1)}x</strong> {adsForProduct.roas >= 3 ? 'indica boa performance de Ads.' : 'pode ser otimizado — revise os lances.'}
-                {adsForProduct.direct_roas > 0 && adsForProduct.direct_roas !== adsForProduct.roas && (
-                  <> ROAS Direto: <strong>{adsForProduct.direct_roas.toFixed(1)}x</strong>.</>
-                )}</>
-              )}
+              💡 <strong>Dados parciais.</strong> Estes são apenas dados de Ads. Importe o relatório de produto do Seller Center para ver o funil completo (impressões orgânicas, CTR, conversão, variações).
             </p>
           </div>
         )}
@@ -531,6 +440,15 @@ function KpiCard({ icon, borderColor, label, value, sub }: {
       <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</p>
       <p className="text-xl md:text-2xl font-bold text-foreground font-mono mt-1">{value}</p>
       {sub && <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>}
+    </div>
+  );
+}
+
+function MetricBox({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-3 text-center">
+      <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</p>
+      <p className="text-sm font-bold text-foreground font-mono mt-0.5">{value}</p>
     </div>
   );
 }
