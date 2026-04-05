@@ -1,32 +1,42 @@
 
 
-## Plano: Corrigir importação de CSV na aba Ads
+## Plano: Corrigir importação de CSV/Excel na aba Ads para campanhas da API
 
-### Problemas identificados
+### Problema raiz
 
-1. **Falha silenciosa quando `currentStore` é null**: Em `importGeneralCSV`, a linha `if (!user || !currentStore) return;` faz a função retornar sem nenhum feedback. Se o contexto da loja não carregou ou o usuário não tem loja, o import simplesmente não acontece — sem erro, sem toast.
+Quando os dados vêm da API (prefixo `api-campaign-`), três importações falham:
 
-2. **Multi-line quoted fields não tratados no parser geral**: O `parseGeneralFormatCSV` faz `csvContent.split('\n')` direto, sem usar `mergeMultiLineQuotedFields`. Se algum nome de produto no CSV tiver quebra de linha dentro de aspas, as linhas ficam partidas e são descartadas (check `cols.length < 20`).
+1. **CSV do Produto (posição)**: Bloqueado explicitamente no `AdsTab.tsx` pelo guard `if (!selectedDetail.id.startsWith('api-campaign-'))` — o botão não faz nada.
 
-3. **Lock não liberado em early returns**: Dentro do `try` block, o `return` nas linhas 195-197 (CSV inválido) não chama `releaseLock()` explicitamente — depende do `finally`. Porém o `finally` existe, então isso funciona. Mas a combinação de erros silenciosos + lock travado pode causar "Operação em andamento" em tentativas subsequentes se houver um bug no fluxo.
+2. **CSV de Operações**: O `OperationLogTimeline` tenta `UPDATE product_ads_metrics` usando `product_id` ou `shopee_product_id`, mas não existe linha nessa tabela para campanhas da API. O update afeta 0 rows — falha silenciosa.
+
+3. **Excel (.xlsx)**: Mesmo problema — `handleExcelUpload` faz `UPDATE product_ads_metrics` sem linha correspondente.
 
 ### Mudanças
 
-#### `src/hooks/useAdsData.ts`
+#### 1. `src/components/roas/AdsTab.tsx` — Permitir import de CSV para campanhas API
 
-**importGeneralCSV:**
-- Adicionar toast de erro quando `!currentStore`: `toast.error('Selecione uma loja primeiro')` + return
-- Usar `mergeMultiLineQuotedFields` no `parseGeneralFormatCSV` (no parser)
+Remover o guard `api-campaign-` nas funções `onImportPosition`, `onReimport`, `onLink`, `onQuickRegister`, `onUnlink`, `onChangeLink`. Para campanhas API, o fluxo de posição precisa:
+- Criar uma entrada temporária em `ads_data` a partir dos dados da API antes de importar o CSV
+- Ou usar `importProductCSV` diretamente sem `targetAdsDataId`, deixando o parser encontrar por `shopee_product_id`
 
-**importProductCSV:**
-- Adicionar toast de erro quando `!user`: `toast.error('Faça login para importar')`
+A abordagem mais simples: para campanhas API, chamar `importProductCSV(text)` sem target ID, permitindo que o sistema crie/atualize o registro automaticamente.
 
-#### `src/lib/shopeeAdsParser.ts`
+#### 2. `src/components/roas/AdsDetailFullView.tsx` — Upsert em vez de Update
 
-**parseGeneralFormatCSV:**
-- Aplicar `mergeMultiLineQuotedFields` nas linhas do CSV antes de processar, igual já é feito no `parseOperationLogCSV`
+Nas funções `handleExcelUpload` e `handleImportLog` do `OperationLogTimeline`:
+- Trocar `.update()` por `.upsert()` com a chave `user_id + shopee_product_id`
+- Isso garante que se não existir linha em `product_ads_metrics`, ela será criada automaticamente
+
+Detalhes:
+- `handleImportLog`: Se não existe row em `product_ads_metrics`, fazer `INSERT` com os campos `user_id`, `shopee_product_id`, `product_id`, `operation_log`
+- `handleExcelUpload`: Se o `UPDATE` retorna 0 rows afetadas, fazer `INSERT` com `user_id`, `shopee_product_id`, `product_id`, `excel_daily_data`, `excel_summary`
+
+#### 3. Verificar schema `product_ads_metrics`
+
+Confirmar que a tabela aceita `INSERT` sem campos obrigatórios faltando (verificar constraints).
 
 ### Arquivos modificados
-- `src/hooks/useAdsData.ts` — feedback de erro para guards silenciosos
-- `src/lib/shopeeAdsParser.ts` — merge de campos multi-linha no parser geral
+- `src/components/roas/AdsTab.tsx` — remover guards `api-campaign-` para imports
+- `src/components/roas/AdsDetailFullView.tsx` — upsert em `OperationLogTimeline` e `handleExcelUpload`
 
