@@ -78,6 +78,14 @@ export function usePerformanceData() {
     try {
       setSyncing(true);
       const result = await syncStoreData();
+
+      // Handle needs_reauth from backend
+      if (result?.needs_reauth) {
+        toast.error('Sua loja Shopee precisa ser reconectada. Vá em Integrações e reconecte.', { duration: 6000 });
+        await loadFromDb();
+        return;
+      }
+
       const perf = result?.results?.order_performance || result?.order_performance;
       if (perf) {
         setData(perf);
@@ -90,7 +98,6 @@ export function usePerformanceData() {
       } else {
         toast.info('Nenhum dado de performance disponível.');
       }
-      // Reload from DB to get persisted version
       await loadFromDb();
     } catch (err) {
       console.error('[usePerformanceData] sync error:', err);
