@@ -1,11 +1,13 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { ApiAdsDashboard } from './ApiAdsDashboard';
 import { useStore } from '@/contexts/StoreContext';
 import { useAdsData, EnrichedAdsData } from '@/hooks/useAdsData';
 import { useShopeeToken } from '@/hooks/useShopeeToken';
 import { useApiAdsData, buildApiAdsDataFromRows } from '@/hooks/useApiAdsData';
+import { useAdsImportJob } from '@/hooks/useAdsImportJob';
 import { Upload, Trash2, MapPin, Calendar as CalendarIcon, ShoppingBag, CheckCircle2, Download, AlertTriangle } from 'lucide-react';
-import { formatDistanceToNow, subDays, subMonths, startOfDay, endOfDay, startOfWeek, startOfMonth, format } from 'date-fns';
+import { formatDistanceToNow, subDays, subMonths, startOfDay, endOfDay, startOfMonth, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { parseShopeeAdsCSV, validateCSVSecurity } from '@/lib/shopeeAdsParser';
 import { AdsDetailFullView } from './AdsDetailFullView';
