@@ -287,7 +287,7 @@ export default function Integracoes() {
               </p>
               <Button
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                onClick={() => adsHook.startOAuth('ads')}
+                onClick={handleConnectAds}
                 disabled={connecting}
               >
                 {connecting ? 'Redirecionando...' : '🔗 Conectar Shopee Ads'}
