@@ -304,12 +304,12 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
   const campaignsForStep4 = campaignDetails.filter(c => {
     if (filterItemId && c.item_id !== filterItemId) return false;
     if (!c.item_id) return false;
-    if (c.status === "ended" && c.campaign_id < 50000000) return false;
+    // Skip ALL ended campaigns unless they have real data in summary_metrics
+    if (c.status === "ended" && !c.summary_metrics?.hasData) return false;
     return true;
   });
-  const skippedOld = campaignDetails.filter(c => c.status === "ended" && c.campaign_id < 50000000).length;
-  if (skippedOld > 0) console.log(`[SHOPEE ADS] Skipped ${skippedOld} old ended campaigns (id < 50M)`);
-  console.log(`[SHOPEE ADS] === Step 4: per-campaign performance for ${campaignsForStep4.length} campaigns ===`);
+  const skippedEnded = campaignDetails.filter(c => c.status === "ended" && !c.summary_metrics?.hasData).length;
+  if (skippedEnded > 0) console.log(`[SHOPEE ADS] Skipped ${skippedEnded} ended campaigns without data`);
 
   await delay(500);
 
