@@ -342,30 +342,38 @@ export default function Integracoes() {
                     {/* Token bar with progress */}
                     <div className="rounded-lg px-3 py-2.5 mb-4 text-xs border"
                       style={{
-                        background: 'hsla(142, 71%, 45%, 0.07)',
-                        borderColor: 'hsla(142, 71%, 45%, 0.15)',
+                        background: sellerExpired ? 'hsla(0, 80%, 50%, 0.07)' : 'hsla(142, 71%, 45%, 0.07)',
+                        borderColor: sellerExpired ? 'hsla(0, 80%, 50%, 0.15)' : 'hsla(142, 71%, 45%, 0.15)',
                       }}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-emerald-400 flex items-center gap-1.5">
-                          🔑 Autorização ativa
+                        <span className={`${sellerExpired ? 'text-red-400' : 'text-emerald-400'} flex items-center gap-1.5`}>
+                          {sellerExpired ? '⚠️ Autorização expirada' : '🔑 Autorização ativa'}
                         </span>
                         <span className="text-muted-foreground">
                           Última sync: {getLastSync()}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1.5">
-                        <span>Validade da autorização</span>
-                        <span className="text-emerald-400 font-medium">
-                          {getTokenDaysRemaining(sellerToken)} dias restantes
-                        </span>
-                      </div>
-                      <div className="h-1 bg-muted/30 rounded-full overflow-hidden">
-                        <div
-                          className="h-1 rounded-full bg-emerald-500 transition-all"
-                          style={{ width: `${getTokenProgressPercent(sellerToken)}%` }}
-                        />
-                      </div>
+                      {sellerExpired ? (
+                        <p className="text-red-400 text-[10px]">
+                          Clique em "Reconectar agora" para renovar a autorização da Shopee.
+                        </p>
+                      ) : (
+                        <>
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1.5">
+                            <span>Validade da autorização</span>
+                            <span className="text-emerald-400 font-medium">
+                              {getTokenDaysRemaining(sellerToken)} dias restantes
+                            </span>
+                          </div>
+                          <div className="h-1 bg-muted/30 rounded-full overflow-hidden">
+                            <div
+                              className="h-1 rounded-full bg-emerald-500 transition-all"
+                              style={{ width: `${getTokenProgressPercent(sellerToken)}%` }}
+                            />
+                          </div>
+                        </>
+                      )}
                     </div>
 
                     {/* Toggle */}
@@ -377,7 +385,7 @@ export default function Integracoes() {
                             Atualiza produtos e pedidos a cada 6 horas
                           </p>
                         </div>
-                        <Switch checked={autoSync} onCheckedChange={setAutoSync} />
+                        <Switch checked={autoSync} onCheckedChange={setAutoSync} disabled={sellerExpired} />
                       </div>
                     </div>
 
