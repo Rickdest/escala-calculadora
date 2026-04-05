@@ -187,7 +187,8 @@ export function useAdsData() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const importGeneralCSV = useCallback(async (csvText: string) => {
-    if (!user || !currentStore) return;
+    if (!user) { toast.error('Faça login para importar'); return; }
+    if (!currentStore) { toast.error('Selecione uma loja primeiro'); return; }
     if (!acquireLock()) { toast.error('Operação em andamento...'); return; }
     if (!checkRateLimit()) { releaseLock(); return; }
     try {

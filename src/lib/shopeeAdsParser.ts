@@ -409,7 +409,8 @@ function parseProductFormatCSV(csvContent: string): ParsedAdsFile | null {
 
 function parseGeneralFormatCSV(csvContent: string): ParsedAdsFile | null {
   try {
-    const lines = csvContent.split('\n').map(l => l.replace(/^\uFEFF/, '').trim()).filter(l => l.length > 0);
+    const rawLines = csvContent.split('\n').map(l => l.replace(/^\uFEFF/, '').replace(/\r$/, ''));
+    const lines = mergeMultiLineQuotedFields(rawLines).map(l => l.trim()).filter(l => l.length > 0);
     if (lines.length < 8) return null;
 
     const shopName = lines[2]?.split(',')[1] || '';
