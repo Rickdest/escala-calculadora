@@ -40,6 +40,7 @@ export function useProductPerformance() {
   const [data, setData] = useState<ProductPerformanceDB[]>([]);
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
+  const [importingAds, setImportingAds] = useState(false);
   const [periodLabel, setPeriodLabel] = useState<string | null>(null);
 
   const storeId = selectedStore?.id;
@@ -73,6 +74,104 @@ export function useProductPerformance() {
   }, [user?.id, storeId]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // Import data from shopee_ads_by_product into product_performance
+  const importFromAdsApi = useCallback(async () => {
+    if (!user?.id || !storeId) {
+      toast.error('Selecione uma loja primeiro.');
+      return;
+    }
+    try {
+      setImportingAds(true);
+
+      // Fetch all ads data for this user
+      const { data: adsRows, error: adsError } = await supabase
+        .from('shopee_ads_by_product')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (adsError) throw adsError;
+      if (!adsRows || adsRows.length === 0) {
+        toast.info('Nenhum dado de Ads encontrado. Sincronize primeiro na aba Integrações.');
+        return;
+      }
+
+      // Aggregate by item_id
+      const itemMap: Record<string, {
+        item_name: string;
+        expense: number; gmv: number; impressions: number; clicks: number; orders: number;
+        period_start: string; period_end: string;
+      }> = {};
+
+      for (const r of adsRows) {
+        const key = String(r.item_id);
+        if (!itemMap[key]) {
+          itemMap[key] = {
+            item_name: r.item_name || `Produto ${r.item_id}`,
+            expense: 0, gmv: 0, impressions: 0, clicks: 0, orders: 0,
+            period_start: r.period_start, period_end: r.period_end,
+          };
+        }
+        const m = itemMap[key];
+        m.expense += Number(r.expense || 0);
+        m.gmv += Number(r.gmv || 0);
+        m.impressions += Number(r.impressions || 0);
+        m.clicks += Number(r.clicks || 0);
+        m.orders += Number(r.orders || 0);
+        // Expand period range
+        if (r.period_start < m.period_start) m.period_start = r.period_start;
+        if (r.period_end > m.period_end) m.period_end = r.period_end;
+      }
+
+      const rows = Object.entries(itemMap).map(([itemId, m]) => ({
+        user_id: user.id,
+        store_id: storeId,
+        item_id: itemId,
+        nome: m.item_name,
+        period_start: m.period_start,
+        period_end: m.period_end,
+        // Organic fields default to 0 — will be enriched by Excel later
+        vendas_pago: m.gmv, // Use ads GMV as revenue when no Excel data
+        pedidos_pagos: m.orders,
+        unidades_pagas: m.orders, // Approximation: 1 order = 1 unit
+        compradores_pagos: 0,
+        ticket_medio: m.orders > 0 ? m.gmv / m.orders : 0,
+        impressoes: 0,
+        cliques: 0,
+        ctr: 0,
+        taxa_conversao: 0,
+        taxa_rejeicao: 0,
+        add_carrinho: 0,
+        taxa_carrinho: 0,
+        taxa_recompra: 0,
+        variacoes: [] as any[],
+        ads_roas: m.expense > 0 ? m.gmv / m.expense : 0,
+        ads_gasto: m.expense,
+        ads_gmv: m.gmv,
+        ads_pedidos: m.orders,
+        ads_impressoes: m.impressions,
+        ads_cliques: m.clicks,
+        source: 'ads_api',
+      }));
+
+      // Upsert in batches of 50
+      for (let i = 0; i < rows.length; i += 50) {
+        const batch = rows.slice(i, i + 50);
+        const { error } = await supabase
+          .from('product_performance')
+          .upsert(batch as any, { onConflict: 'store_id,item_id,period_start,period_end' });
+        if (error) throw error;
+      }
+
+      toast.success(`${rows.length} produtos importados da API de Ads!`);
+      await loadData();
+    } catch (err: any) {
+      console.error('[useProductPerformance] importFromAdsApi error:', err);
+      toast.error(err?.message || 'Erro ao importar dados de Ads.');
+    } finally {
+      setImportingAds(false);
+    }
+  }, [user?.id, storeId, loadData]);
 
   const importExcel = useCallback(async (file: File) => {
     if (!user?.id || !storeId) {
@@ -166,7 +265,7 @@ export function useProductPerformance() {
     }
   }, [user?.id, storeId, loadData]);
 
-  return { data, loading, importing, importExcel, periodLabel, reload: loadData };
+  return { data, loading, importing, importingAds, importExcel, importFromAdsApi, periodLabel, reload: loadData };
 }
 
 function formatDate(d: string) {

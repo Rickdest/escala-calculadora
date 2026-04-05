@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, Star, TrendingUp, ShoppingCart, Eye, MousePointerClick } from 'lucide-react';
+import { ChevronDown, Star, TrendingUp, ShoppingCart, Eye, MousePointerClick, Megaphone } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { FunnelBar } from './FunnelBar';
@@ -28,6 +28,8 @@ function MetricBox({ label, value, sub }: { label: string; value: string; sub?: 
 export function ProductPerformanceCard({ produto, rank, periodDays }: Props) {
   const [open, setOpen] = useState(false);
   const unDia = periodDays > 0 ? produto.unidades_pagas / periodDays : 0;
+  const isAdsOnly = produto.source === 'ads_api';
+  const hasOrganic = produto.impressoes > 0 || produto.ctr > 0 || produto.taxa_conversao > 0;
   const split = calcOrganicoVsAds(produto.vendas_pago, produto.ads_gmv);
   const sortedVariacoes = [...produto.variacoes].sort((a, b) => b.vendas_pago - a.vendas_pago);
 
@@ -46,6 +48,11 @@ export function ProductPerformanceCard({ produto, rank, periodDays }: Props) {
                 <p className="text-sm font-medium text-foreground truncate">{produto.nome}</p>
                 <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                   <span className="text-[10px] text-muted-foreground font-mono">ID: {produto.item_id}</span>
+                  {isAdsOnly && (
+                    <Badge variant="outline" className="text-[9px] h-4 gap-0.5 border-primary/30 text-primary px-1">
+                      <Megaphone className="w-2.5 h-2.5" />Dados via Ads
+                    </Badge>
+                  )}
                   {produto.ads_roas != null && produto.ads_roas > 0 && (
                     <Badge variant="outline" className="text-[9px] h-4 gap-0.5 border-primary/30 text-primary px-1">
                       <TrendingUp className="w-2.5 h-2.5" />ROAS {produto.ads_roas.toFixed(1)}x
@@ -69,15 +76,32 @@ export function ProductPerformanceCard({ produto, rank, periodDays }: Props) {
         <CollapsibleContent>
           <div className="border-t border-border px-3 pb-4 pt-3 space-y-4 animate-fade-up">
             {/* Metrics Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-              <MetricBox label="Receita" value={`R$ ${produto.vendas_pago.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} />
-              <MetricBox label="Pedidos pagos" value={String(produto.pedidos_pagos)} />
-              <MetricBox label="Ticket médio" value={`R$ ${produto.ticket_medio.toFixed(2)}`} />
-              <MetricBox label="Unid/dia" value={unDia.toFixed(1)} />
-            </div>
+            {isAdsOnly ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <MetricBox label="GMV Ads" value={`R$ ${(produto.ads_gmv || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} />
+                <MetricBox label="Gasto Ads" value={`R$ ${(produto.ads_gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+                <MetricBox label="ROAS" value={`${(produto.ads_roas || 0).toFixed(1)}x`} />
+                <MetricBox label="Pedidos Ads" value={String(produto.ads_pedidos || 0)} />
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <MetricBox label="Receita" value={`R$ ${produto.vendas_pago.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} />
+                <MetricBox label="Pedidos pagos" value={String(produto.pedidos_pagos)} />
+                <MetricBox label="Ticket médio" value={`R$ ${produto.ticket_medio.toFixed(2)}`} />
+                <MetricBox label="Unid/dia" value={unDia.toFixed(1)} />
+              </div>
+            )}
 
-            {/* Funnel */}
-            {produto.impressoes > 0 && (
+            {/* Ads detail row for ads-only */}
+            {isAdsOnly && (produto.ads_impressoes || 0) > 0 && (
+              <div className="grid grid-cols-2 gap-2">
+                <MetricBox label="Impressões Ads" value={(produto.ads_impressoes || 0).toLocaleString('pt-BR')} />
+                <MetricBox label="Cliques Ads" value={(produto.ads_cliques || 0).toLocaleString('pt-BR')} />
+              </div>
+            )}
+
+            {/* Funnel — only when organic data exists */}
+            {hasOrganic && produto.impressoes > 0 && (
               <div className="rounded-xl border border-border bg-card p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <Eye className="w-3.5 h-3.5 text-muted-foreground" />
@@ -90,8 +114,8 @@ export function ProductPerformanceCard({ produto, rank, periodDays }: Props) {
               </div>
             )}
 
-            {/* Orgânico vs Ads Split */}
-            {produto.ads_gmv != null && produto.ads_gmv > 0 && (
+            {/* Orgânico vs Ads Split — only when both exist */}
+            {!isAdsOnly && produto.ads_gmv != null && produto.ads_gmv > 0 && (
               <div className="rounded-xl border border-border bg-card p-4">
                 <p className="text-xs font-semibold text-foreground uppercase tracking-wider mb-3">Orgânico vs Ads</p>
                 <div className="h-3 rounded-full overflow-hidden bg-muted flex">
@@ -106,6 +130,15 @@ export function ProductPerformanceCard({ produto, rank, periodDays }: Props) {
                     📈 Ads {split.pct_ads.toFixed(0)}% · R$ {split.ads_receita.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
                   </span>
                 </div>
+              </div>
+            )}
+
+            {/* Info banner for ads-only */}
+            {isAdsOnly && (
+              <div className="rounded-xl bg-primary/5 border border-primary/10 p-3">
+                <p className="text-xs text-muted-foreground">
+                  💡 <strong>Dados parciais.</strong> Estes são apenas dados de Ads. Importe o relatório de produto do Seller Center para ver o funil completo (impressões orgânicas, CTR, conversão, variações).
+                </p>
               </div>
             )}
 
@@ -156,8 +189,8 @@ export function ProductPerformanceCard({ produto, rank, periodDays }: Props) {
               )}
             </div>
 
-            {/* Insights */}
-            <InsightsPanel produto={produto} />
+            {/* Insights — only when organic data */}
+            {!isAdsOnly && <InsightsPanel produto={produto} />}
           </div>
         </CollapsibleContent>
       </div>
