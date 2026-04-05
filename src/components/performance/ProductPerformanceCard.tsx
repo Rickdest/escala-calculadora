@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { ChevronDown, Star, TrendingUp, ShoppingCart, Eye, MousePointerClick, Megaphone } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ChevronDown, Star, TrendingUp, ShoppingCart, Eye, MousePointerClick, Megaphone, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { FunnelBar } from './FunnelBar';
