@@ -78,11 +78,10 @@ function formatPeriodLabel(inicio: string, fim: string) {
 
 // Date range presets
 const DATE_PRESETS = [
-  { label: 'Hoje', getRange: () => ({ from: startOfDay(new Date()), to: endOfDay(new Date()) }) },
   { label: 'Ontem', getRange: () => { const d = subDays(new Date(), 1); return { from: startOfDay(d), to: endOfDay(d) }; } },
-  { label: 'Última semana', getRange: () => ({ from: startOfDay(subDays(new Date(), 7)), to: endOfDay(new Date()) }) },
-  { label: 'Último mês', getRange: () => ({ from: startOfDay(subMonths(new Date(), 1)), to: endOfDay(new Date()) }) },
-  { label: 'Últimos 3 meses', getRange: () => ({ from: startOfDay(subMonths(new Date(), 3)), to: endOfDay(new Date()) }) },
+  { label: 'Última semana', getRange: () => ({ from: startOfDay(subDays(new Date(), 7)), to: endOfDay(subDays(new Date(), 1)) }) },
+  { label: 'Último mês', getRange: () => ({ from: startOfDay(subMonths(new Date(), 1)), to: endOfDay(subDays(new Date(), 1)) }) },
+  { label: 'Últimos 3 meses', getRange: () => ({ from: startOfDay(subMonths(new Date(), 3)), to: endOfDay(subDays(new Date(), 1)) }) },
 ];
 
 function AdsDateRangePicker({ dateFrom, dateTo, onRangeChange }: {
