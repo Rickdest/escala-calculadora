@@ -36,7 +36,7 @@ const MEDALS = ['🥇', '🥈', '🥉'];
 
 export default function Performance() {
   const navigate = useNavigate();
-  const { isConnected, startOAuth, isLoading: tokenLoading } = useShopeeToken();
+  const { isConnected, startOAuth, isLoading: tokenLoading } = useShopeeToken('seller');
   const { data, syncedAt, loading, syncing, sync } = usePerformanceData();
   const { data: adsRows } = useApiAdsData();
   const [connecting, setConnecting] = useState(false);
