@@ -42,7 +42,7 @@ export default function Performance() {
   const { data, syncedAt, loading, syncing, sync } = usePerformanceData();
   const { data: adsRows, invalidate: invalidateAds } = useApiAdsData();
   const { token: adsToken } = useShopeeToken('ads');
-  const { startImport, importing: adsImporting } = useAdsImportJob({ onComplete: invalidateAds });
+  const { startJob: startAdsImport, isImporting: adsImporting } = useAdsImportJob();
   const perfHook = useProductPerformance();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
