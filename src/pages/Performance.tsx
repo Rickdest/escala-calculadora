@@ -96,6 +96,19 @@ export default function Performance() {
       <div className="flex items-center justify-between px-4 md:px-0">
         <PageHeader title="Performance" subtitle={hasExcelData && perfHook.periodLabel ? `Período: ${perfHook.periodLabel}` : 'Vendas · Shopee'} />
         <div className="flex items-center gap-2">
+          {/* Ads API sync button */}
+          {adsToken && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs gap-1.5"
+              disabled={adsImporting}
+              onClick={async () => { await startAdsImport(); invalidateAds(); }}
+            >
+              {adsImporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+              <span className="hidden md:inline">{adsImporting ? 'Sincronizando...' : 'Sincronizar Ads'}</span>
+            </Button>
+          )}
           {/* Excel import button */}
           <label className="cursor-pointer">
             <input
