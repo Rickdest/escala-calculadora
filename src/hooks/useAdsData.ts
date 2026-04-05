@@ -357,7 +357,7 @@ export function useAdsData() {
   }, [user, currentStore, products, config, fetchData, acquireLock, releaseLock, checkRateLimit]);
 
   const importProductCSV = useCallback(async (csvText: string, targetAdsDataId?: string) => {
-    if (!user) return;
+    if (!user) { toast.error('Faça login para importar'); return; }
     if (!acquireLock()) { toast.error('Operação em andamento...'); return; }
     if (!checkRateLimit()) { releaseLock(); return; }
     try {
