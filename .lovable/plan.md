@@ -1,43 +1,18 @@
 
 
-## Diagnóstico: Por que a aba Performance parou de funcionar
+## Plano: Atualizar o secret SHOPEE_KEY
 
-### O que aconteceu
+### Contexto
+O diagnóstico confirmou que o fingerprint da `SHOPEE_KEY` no backend (`fce888b74738`) **não corresponde** à chave do console Shopee. Isso causa assinatura HMAC inválida, resultando no erro "Please login first".
 
-A aba Performance depende exclusivamente da **API Seller** (função `shopee-sync`), que chama endpoints como:
-- `/api/v2/order/get_order_list` — pedidos
-- `/api/v2/product/get_item_list` — produtos
-- `/api/v2/shop/get_shop_info` — info da loja
+### Ação
+1. **Solicitar a chave correta** — Usar a ferramenta `add_secret` para pedir que você cole a **Live API Partner Key** do app Seller (2032348) do console Shopee (a que começa com `shpk6f4f6a...`). Isso atualizará o secret `SHOPEE_KEY` no backend.
 
-O backend filtra explicitamente por `app_type: 'seller'` na linha 337 de `shopee-sync/index.ts`:
-```typescript
-.eq("app_type", "seller")
-```
+2. **Verificar o deploy** — Após atualização, chamar o endpoint `shopee-auth` via curl para confirmar que o novo fingerprint corresponde à chave esperada.
 
-### Antes vs Agora
+### Resultado esperado
+Com a chave correta, a assinatura HMAC será válida e o OAuth Seller redirecionará direto para o Seller Center (como acontece com o Ads), sem exigir login no Open Platform.
 
-**Antes**: Você tinha um token Seller conectado → `shopee-sync` encontrava o token → dados de pedidos/produtos eram carregados → Performance funcionava.
-
-**Agora**: Você desconectou o token Seller (ou ele expirou). Só tem o token **Ads** conectado. O `shopee-sync` não encontra token com `app_type: 'seller'` e retorna erro `"No Shopee token found"`.
-
-A aba Performance usa `useShopeeToken()` sem filtro de tipo, então encontra o token Ads e mostra `isConnected: true` — mas ao clicar "Atualizar", a sync falha porque o backend exige token Seller.
-
-### O que a API Ads **não** fornece
-- Pedidos reais (order_list, order_detail)
-- Dados de produtos (estoque, preço, avaliações)
-- Faturamento real por produto
-
-A API Ads só tem: campanhas, impressões, cliques, gastos, GMV estimado.
-
-### Solução proposta
-
-1. **Corrigir o estado de conexão na aba Performance** — usar `useShopeeToken('seller')` em vez de `useShopeeToken()` sem filtro, para mostrar corretamente "Conecte sua Shopee Seller" quando só Ads está conectado.
-
-2. **Reconectar o Seller** — o fluxo OAuth do Seller já foi corrigido (preflight removido). Basta reconectar com sua conta (a que tem Go Live) para restaurar os dados de Performance.
-
-3. **Opcional: mostrar dados parciais de Ads** — quando só Ads estiver conectado, exibir GMV/gastos/ROAS por produto na aba Performance como dados parciais, com aviso de que dados completos requerem a API Seller.
-
-### Arquivos a modificar
-- `src/pages/Performance.tsx` — trocar `useShopeeToken()` por `useShopeeToken('seller')` e ajustar mensagem de conexão
-- `src/hooks/usePerformanceData.ts` — usar `useShopeeToken('seller')` para que o `syncStoreData` busque o token correto
+### Nenhuma alteração de código necessária
+O problema é exclusivamente de configuração (secret incorreto).
 
