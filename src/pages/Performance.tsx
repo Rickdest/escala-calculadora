@@ -108,21 +108,6 @@ export default function Performance() {
               <span className="hidden md:inline">{perfHook.importing ? 'Importando...' : 'Importar Excel'}</span>
             </div>
           </label>
-
-          {isConnected && (
-            <>
-              {syncedAt && (
-                <span className="hidden md:flex items-center gap-1 text-[10px] text-muted-foreground">
-                  <Clock className="w-3 h-3" />
-                  {formatDistanceToNow(new Date(syncedAt), { addSuffix: true, locale: ptBR })}
-                </span>
-              )}
-              <Button size="sm" variant="outline" onClick={sync} disabled={syncing} className="h-8 text-xs gap-1.5">
-                {syncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-                {syncing ? 'Sincronizando...' : 'Atualizar API'}
-              </Button>
-            </>
-          )}
         </div>
       </div>
 
