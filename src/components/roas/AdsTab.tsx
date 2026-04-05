@@ -366,36 +366,9 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       setShowShopeeModal(true);
       return;
     }
-    setSyncing(true);
-    try {
-      // Race against a 90s timeout so the UI never freezes
-      const timeout = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('TIMEOUT')), 90_000)
-      );
-      const result = await Promise.race([syncAdsOnly(), timeout]);
-      const adsPerfData = result?.results?.ads_performance;
-      if (adsPerfData?.ads_rate_limited && !adsPerfData?.summary?.total_impressions) {
-        toast.warning('API de Ads temporariamente limitada pela Shopee. Tente novamente em 2-3 minutos.');
-      } else if (adsPerfData?.perf_api_error) {
-        toast.error(`Erro da API Shopee: ${adsPerfData.perf_api_message || adsPerfData.perf_api_error}`);
-    } else if (adsPerfData?.summary?.total_impressions > 0 || (adsPerfData?.ads_by_campaign?.length || 0) > 0) {
-        setApiAdsData(adsPerfData);
-        invalidatePersistedAds();
-        const campaignCount = adsPerfData.ads_by_campaign?.length || 0;
-        toast.success(`Ads importados: ${campaignCount} campanha${campaignCount !== 1 ? 's' : ''} · ${adsPerfData.summary.days} dias · ROAS ${adsPerfData.summary.roas_geral.toFixed(2)}`);
-      } else if ((adsPerfData?.campaign_count || 0) > 0) {
-        toast.info(`${adsPerfData.campaign_count} campanhas encontradas, mas sem métricas no período.`);
-      } else {
-        toast.info('Nenhuma campanha de Ads encontrada na sua loja Shopee.');
-      }
-    } catch (err: any) {
-      if (err?.message === 'TIMEOUT') {
-        toast.error('A importação demorou demais. Tente novamente — os dados parciais podem já ter sido salvos.');
-        invalidatePersistedAds();
-      }
-    } finally {
-      setSyncing(false);
-    }
+    // Use job-based import for full sync
+    importJob.startJob();
+  };
   };
 
   const products = currentStore?.products || [];
