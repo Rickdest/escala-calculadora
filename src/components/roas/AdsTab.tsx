@@ -557,9 +557,6 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       invalidatePersistedAds();
     }
   }, [importJob.status]);
-      handleImportAds();
-    }
-  }, [isConnected, hasPersistedApiData, syncing, loading]);
 
   if (loading && data.length === 0) {
     return (
