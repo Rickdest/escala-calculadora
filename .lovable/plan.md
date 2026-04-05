@@ -1,46 +1,33 @@
 
 
-## Plano: Página de Detalhe do Produto na Performance + Botão Limpar Dados
+## Plano: Corrigir merge CSV orgânico + API Ads na Performance
 
-### Problema
-1. O `ProductPerformanceCard` não tem botão para abrir detalhes — só expande inline
-2. A página `PerformanceProductDetail` usa `usePerformanceData()` (Seller API desabilitada) — não funciona com dados do Excel/Ads API
-3. Não existe botão para limpar dados de Ads/Performance
+### Problema raiz
+O upsert usa a chave `store_id,item_id,period_start,period_end`. Os dados da API Ads têm período diferente do Excel (ex: API = `2026-02-23 a 2026-03-23`, Excel = `2026-03-06 a 2026-04-04`). Como os períodos não batem, o upsert cria linhas novas em vez de atualizar as existentes. Os dados nunca se complementam.
+
+### Solução
+Mudar a estratégia de merge no `importExcel()`:
+
+1. Para cada produto do Excel, verificar se já existe um registro `ads_api` na `product_performance` com o mesmo `item_id` e `store_id` (ignorando período)
+2. Se existir: fazer UPDATE no registro existente, preenchendo os campos orgânicos e atualizando período/source para `'excel'`
+3. Se não existir: fazer INSERT normal (produto sem Ads)
+4. Produtos que só têm Ads (não aparecem no Excel) permanecem intactos
 
 ### Mudanças
 
-#### 1. Botão "Ver detalhes" no ProductPerformanceCard
-**Arquivo:** `src/components/performance/ProductPerformanceCard.tsx`
-- Adicionar botão no final do conteúdo expandido: `navigate(/performance/${produto.item_id})`
+#### `src/hooks/useProductPerformance.ts` — `importExcel()`
 
-#### 2. Refatorar PerformanceProductDetail para usar product_performance
-**Arquivo:** `src/pages/PerformanceProductDetail.tsx`
-- Trocar `usePerformanceData()` por `useProductPerformance()` como fonte primária
-- Buscar o produto por `item_id` dos dados do hook
-- Cruzar com `shopee_ads_by_product` para dados extras (daily_data, keywords, avg_position, direct_gmv, cost_per_order, status)
-- Organizar em seções:
-  - **Header**: nome, ID, badges (source, ROAS, posição)
-  - **KPIs**: Receita, Unidades, Ticket Médio, Un/Dia (adaptável se ads_only)
-  - **Funil de Conversão**: quando tiver dados orgânicos (Excel)
-  - **Orgânico vs Ads**: barra comparativa quando ambos existem
-  - **Performance de Ads**: seção com tabs (Resumo, Tendência diária, Keywords) — manter lógica existente que já funciona bem
-  - **Variações**: tabela com ranking por receita
-  - **Insights**: painel com regras automáticas
+Substituir a lógica de upsert por:
+1. Buscar todos os registros existentes de `product_performance` da loja atual
+2. Para cada produto do Excel:
+   - Se tem registro existente (mesmo `item_id`): usar `.update()` com os campos orgânicos + ads do `adsMap` + `source: 'excel'`
+   - Se não tem: usar `.insert()` com todos os campos
+3. Isso garante que o registro da API seja enriquecido em vez de duplicado
 
-#### 3. Botão "Limpar Dados" na Performance
-**Arquivo:** `src/pages/Performance.tsx`
-- Adicionar botão discreto (ícone lixeira) no header ao lado dos outros botões
-- Ao clicar, abre confirm dialog: "Isso vai remover todos os dados de performance e Ads da aba. Deseja continuar?"
-- Se confirmado: `DELETE FROM product_performance WHERE user_id = X AND store_id = Y`
-- Recarrega os dados
-
-#### 4. Hook: adicionar função clearData
-**Arquivo:** `src/hooks/useProductPerformance.ts`
-- Nova função `clearData()` que deleta todos os registros da loja atual
+O `importFromAdsApi()` também precisa de ajuste simétrico:
+- Antes de inserir, verificar se já existe registro `excel` para o mesmo `item_id`
+- Se existir: atualizar apenas os campos `ads_*` sem sobrescrever orgânicos
 
 ### Arquivos modificados
-- `src/hooks/useProductPerformance.ts` — clearData()
-- `src/pages/Performance.tsx` — botão limpar + confirm
-- `src/pages/PerformanceProductDetail.tsx` — refatorar para usar product_performance + ads enrichment
-- `src/components/performance/ProductPerformanceCard.tsx` — botão "Ver detalhes"
+- `src/hooks/useProductPerformance.ts` — lógica de merge bidirecional
 
