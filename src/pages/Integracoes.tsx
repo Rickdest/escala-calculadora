@@ -161,7 +161,13 @@ export default function Integracoes() {
         .eq('user_id', user.id)
         .eq('app_type', 'seller');
       if (error) throw error;
-      toast.success('Loja desconectada');
+
+      // Clean up seller-related data
+      await supabase.from('product_performance').delete().eq('user_id', user.id);
+      // shopee_performance has RLS deny on DELETE, ignore errors
+      await supabase.from('shopee_performance').delete().eq('user_id', user.id).then(() => {});
+
+      toast.success('Loja desconectada e dados removidos');
       sellerHook.refetch();
     } catch {
       toast.error('Erro ao desconectar');
@@ -180,7 +186,27 @@ export default function Integracoes() {
         .eq('user_id', user.id)
         .eq('app_type', 'ads');
       if (error) throw error;
-      toast.success('Shopee Ads desconectada');
+
+      // Clean up ads-related data
+      await supabase.from('shopee_ads_by_product').delete().eq('user_id', user.id);
+      await supabase.from('ads_data').delete().eq('user_id', user.id);
+      await supabase.from('product_ads_metrics').delete().eq('user_id', user.id);
+      // shopee_ads_import_jobs has RLS deny on DELETE, ignore errors
+      await supabase.from('shopee_ads_import_jobs').delete().eq('user_id', user.id).then(() => {});
+
+      // Clear ads columns from product_performance but keep organic data
+      await supabase.from('product_performance')
+        .update({
+          ads_roas: null,
+          ads_gasto: null,
+          ads_gmv: null,
+          ads_pedidos: null,
+          ads_impressoes: null,
+          ads_cliques: null,
+        })
+        .eq('user_id', user.id);
+
+      toast.success('Shopee Ads desconectada e dados removidos');
       adsHook.refetch();
     } catch {
       toast.error('Erro ao desconectar');
