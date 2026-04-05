@@ -108,11 +108,13 @@ export default function Performance() {
         <PageHeader title="Performance" subtitle={hasExcelData && perfHook.periodLabel ? `Período: ${perfHook.periodLabel}` : 'Vendas · Shopee'} />
         <div className="flex items-center gap-2">
           {/* Clear data button */}
+          {/* Clear data button */}
           {perfHook.data.length > 0 && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive">
+                <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs border-destructive/40 text-destructive hover:bg-destructive/10">
                   <Trash2 className="w-3.5 h-3.5" />
+                  <span className="hidden md:inline">Limpar</span>
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -136,7 +138,7 @@ export default function Performance() {
             <Button
               size="sm"
               variant="outline"
-              className="h-8 text-xs gap-1.5"
+              className="h-8 text-xs gap-1.5 border-primary/40 bg-primary/10 text-primary hover:bg-primary/20"
               disabled={adsImporting || perfHook.importingAds}
               onClick={handleSyncAds}
             >
@@ -153,10 +155,12 @@ export default function Performance() {
               className="hidden"
               onChange={handleFileChange}
             />
-            <div className="flex items-center gap-1.5 text-xs bg-muted/30 border border-border rounded-lg px-2.5 py-1.5 hover:bg-muted/50 transition-colors cursor-pointer">
-              {perfHook.importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-              <span className="hidden md:inline">{perfHook.importing ? 'Importando...' : 'Importar Excel'}</span>
-            </div>
+            <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 pointer-events-none" asChild>
+              <div>
+                {perfHook.importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                <span className="hidden md:inline">{perfHook.importing ? 'Importando...' : 'Importar Excel'}</span>
+              </div>
+            </Button>
           </label>
         </div>
       </div>
