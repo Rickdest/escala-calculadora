@@ -275,28 +275,30 @@ export default function Integracoes() {
         {/* ═══ CONNECT CARDS — when neither connected ═══ */}
         {neitherConnected && (
           <div className="space-y-3">
-            {/* Seller Card */}
-            <div className="bg-card border border-border rounded-xl p-5">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-xl bg-[#ee4d2d] flex items-center justify-center text-xl">
-                  🛍
+            {/* Seller Card — hidden when feature flag is off */}
+            {FEATURES.SHOPEE_SELLER_API_READY && (
+              <div className="bg-card border border-border rounded-xl p-5">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#ee4d2d] flex items-center justify-center text-xl">
+                    🛍
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold">Shopee Seller</p>
+                    <p className="text-[11px] text-muted-foreground">Produtos · Pedidos · Estoque</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold">Shopee Seller</p>
-                  <p className="text-[11px] text-muted-foreground">Produtos · Pedidos · Estoque</p>
-                </div>
+                <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+                  Importe seus produtos, acompanhe pedidos e sincronize estoque automaticamente.
+                </p>
+                <Button
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                  onClick={handleConnectSeller}
+                  disabled={connecting}
+                >
+                  {connecting ? 'Redirecionando...' : '🔗 Conectar Shopee Seller'}
+                </Button>
               </div>
-              <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
-                Importe seus produtos, acompanhe pedidos e sincronize estoque automaticamente.
-              </p>
-              <Button
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                onClick={handleConnectSeller}
-                disabled={connecting}
-              >
-                {connecting ? 'Redirecionando...' : '🔗 Conectar Shopee Seller'}
-              </Button>
-            </div>
+            )}
 
             {/* Ads Card */}
             <div className="bg-card border border-border rounded-xl p-5">
