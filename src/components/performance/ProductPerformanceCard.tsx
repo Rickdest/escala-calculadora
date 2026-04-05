@@ -194,6 +194,17 @@ export function ProductPerformanceCard({ produto, rank, periodDays }: Props) {
 
             {/* Insights — only when organic data */}
             {!isAdsOnly && <InsightsPanel produto={produto} />}
+
+            {/* Ver detalhes button */}
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                className="gap-1.5 text-xs"
+                onClick={() => navigate(`/performance/${produto.item_id}`)}
+              >
+                Ver detalhes <ArrowRight className="w-3.5 h-3.5" />
+              </Button>
+            </div>
           </div>
         </CollapsibleContent>
       </div>

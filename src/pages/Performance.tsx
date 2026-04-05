@@ -12,8 +12,9 @@ import { ProductPerformanceCard } from '@/components/performance/ProductPerforma
 import { useApiAdsData } from '@/hooks/useApiAdsData';
 import { useShopeeToken } from '@/hooks/useShopeeToken';
 import { useAdsImportJob } from '@/hooks/useAdsImportJob';
-import { Loader2, ShoppingBag, TrendingUp, ShoppingCart, Package, ChevronDown, BarChart3, Eye, Upload, FileSpreadsheet, RefreshCw, Megaphone, DollarSign } from 'lucide-react';
+import { Loader2, ShoppingBag, TrendingUp, ShoppingCart, Package, ChevronDown, BarChart3, Eye, Upload, FileSpreadsheet, RefreshCw, Megaphone, DollarSign, Trash2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 const STATUS_COLORS: Record<string, string> = {
   COMPLETED: 'bg-emerald-500',
