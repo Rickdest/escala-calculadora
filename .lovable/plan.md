@@ -1,27 +1,43 @@
 
 
-## Diagnóstico
+## Diagnóstico: Por que a aba Performance parou de funcionar
 
-O código **já constrói a URL corretamente** com `partner.shopeemobile.com/api/v2/shop/auth_partner` — não está chamando nenhum endpoint da Shopee para "gerar" a URL. A URL é montada localmente com `partner_id`, `timestamp`, `sign` e `redirect`.
+### O que aconteceu
 
-O problema real é o **preflight validation** (`validateAuthUrl`): antes de entregar a URL ao usuário, o backend faz um `GET` na URL de OAuth. Isso:
-1. Consome a sessão/estado no lado da Shopee antes do browser do usuário chegar lá
-2. Pode invalidar o `sign`/`timestamp` porque a Shopee registra o primeiro acesso
-3. Explica porque Ads funciona (por acidente, reutiliza sessão existente) e Seller não (precisa de sessão limpa que já foi "gasta" pelo preflight)
+A aba Performance depende exclusivamente da **API Seller** (função `shopee-sync`), que chama endpoints como:
+- `/api/v2/order/get_order_list` — pedidos
+- `/api/v2/product/get_item_list` — produtos
+- `/api/v2/shop/get_shop_info` — info da loja
 
-## Plano
+O backend filtra explicitamente por `app_type: 'seller'` na linha 337 de `shopee-sync/index.ts`:
+```typescript
+.eq("app_type", "seller")
+```
 
-### 1. Remover o preflight validation do `shopee-auth`
-Eliminar a chamada `validateAuthUrl` que faz GET na URL antes de entregá-la ao usuário. A URL é construída localmente com HMAC válido — não precisa de validação prévia. Se der erro, o usuário verá na Shopee e pode tentar de novo.
+### Antes vs Agora
 
-### 2. Simplificar o retorno
-Após construir a URL com `getAuthUrl`, retornar diretamente `{ auth_url }` sem o passo de verificação. Manter apenas o log de diagnóstico.
+**Antes**: Você tinha um token Seller conectado → `shopee-sync` encontrava o token → dados de pedidos/produtos eram carregados → Performance funcionava.
 
-### 3. Limpar código morto
-Remover a função `validateAuthUrl`, o type `AuthUrlValidationResult`, e a função `getFriendlyAuthError` que só eram usadas pelo preflight.
+**Agora**: Você desconectou o token Seller (ou ele expirou). Só tem o token **Ads** conectado. O `shopee-sync` não encontra token com `app_type: 'seller'` e retorna erro `"No Shopee token found"`.
 
-## Arquivo modificado
-- `supabase/functions/shopee-auth/index.ts` — remover preflight, simplificar fluxo
+A aba Performance usa `useShopeeToken()` sem filtro de tipo, então encontra o token Ads e mostra `isConnected: true` — mas ao clicar "Atualizar", a sync falha porque o backend exige token Seller.
 
-## Sem migration
+### O que a API Ads **não** fornece
+- Pedidos reais (order_list, order_detail)
+- Dados de produtos (estoque, preço, avaliações)
+- Faturamento real por produto
+
+A API Ads só tem: campanhas, impressões, cliques, gastos, GMV estimado.
+
+### Solução proposta
+
+1. **Corrigir o estado de conexão na aba Performance** — usar `useShopeeToken('seller')` em vez de `useShopeeToken()` sem filtro, para mostrar corretamente "Conecte sua Shopee Seller" quando só Ads está conectado.
+
+2. **Reconectar o Seller** — o fluxo OAuth do Seller já foi corrigido (preflight removido). Basta reconectar com sua conta (a que tem Go Live) para restaurar os dados de Performance.
+
+3. **Opcional: mostrar dados parciais de Ads** — quando só Ads estiver conectado, exibir GMV/gastos/ROAS por produto na aba Performance como dados parciais, com aviso de que dados completos requerem a API Seller.
+
+### Arquivos a modificar
+- `src/pages/Performance.tsx` — trocar `useShopeeToken()` por `useShopeeToken('seller')` e ajustar mensagem de conexão
+- `src/hooks/usePerformanceData.ts` — usar `useShopeeToken('seller')` para que o `syncStoreData` busque o token correto
 
