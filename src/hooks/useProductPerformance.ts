@@ -291,7 +291,7 @@ export function useProductPerformance() {
           // Update existing record (preserve nothing — Excel is the richer source)
           const { error } = await supabase
             .from('product_performance')
-            .update(organicFields)
+            .update({ ...organicFields, variacoes: organicFields.variacoes as any })
             .eq('id', existingId);
           if (error) throw error;
           updated++;
