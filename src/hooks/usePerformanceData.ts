@@ -43,7 +43,7 @@ interface PerformanceRow {
 
 export function usePerformanceData() {
   const { user } = useAuth();
-  const { syncStoreData } = useShopeeToken();
+  const { syncStoreData } = useShopeeToken('seller');
   const [data, setData] = useState<PerformanceData | null>(null);
   const [syncedAt, setSyncedAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
