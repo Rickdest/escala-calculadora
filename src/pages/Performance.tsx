@@ -117,11 +117,6 @@ export default function Performance() {
               📊 Relatório de produto · orgânico + Ads
             </span>
           )}
-          {hasApiData && (
-            <span className="flex items-center gap-1 bg-primary/10 text-primary rounded-lg px-2 py-1 border border-primary/20">
-              📈 API Seller · pedidos
-            </span>
-          )}
           {Object.keys(adsLookup).length > 0 && (
             <span className="flex items-center gap-1 bg-primary/10 text-primary rounded-lg px-2 py-1 border border-primary/20">
               🎯 API Ads · campanhas
