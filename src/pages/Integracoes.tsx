@@ -117,6 +117,16 @@ export default function Integracoes() {
     }
   }, []);
 
+  // Auto toast when token is expired
+  useEffect(() => {
+    if (sellerExpired && sellerConnected) {
+      toast.error('Sua autorização Shopee Seller expirou. Clique em "Reconectar agora" para renovar.', { duration: 8000 });
+    }
+    if (adsExpired && adsConnected) {
+      toast.error('Sua autorização Shopee Ads expirou. Clique em "Reconectar agora" para renovar.', { duration: 8000 });
+    }
+  }, [sellerExpired, adsExpired, sellerConnected, adsConnected]);
+
   const getLastSync = () => {
     if (!sellerToken) return null;
     return formatDistanceToNow(new Date(sellerToken.updated_at), { addSuffix: true, locale: ptBR });
