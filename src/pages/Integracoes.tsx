@@ -538,7 +538,7 @@ export default function Integracoes() {
                         ⚠️ Reconectar agora
                       </Button>
                     ) : (
-                      <Button variant="outline" size="sm" onClick={() => adsHook.startOAuth('ads')}>
+                      <Button variant="outline" size="sm" onClick={handleConnectAds}>
                         ↻ Reconectar
                       </Button>
                     )
