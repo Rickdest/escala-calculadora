@@ -84,7 +84,6 @@ export function useProductPerformance() {
     try {
       setImportingAds(true);
 
-      // Fetch all ads data for this user
       const { data: adsRows, error: adsError } = await supabase
         .from('shopee_ads_by_product')
         .select('*')
@@ -118,52 +117,83 @@ export function useProductPerformance() {
         m.impressions += Number(r.impressions || 0);
         m.clicks += Number(r.clicks || 0);
         m.orders += Number(r.orders || 0);
-        // Expand period range
         if (r.period_start < m.period_start) m.period_start = r.period_start;
         if (r.period_end > m.period_end) m.period_end = r.period_end;
       }
 
-      const rows = Object.entries(itemMap).map(([itemId, m]) => ({
-        user_id: user.id,
-        store_id: storeId,
-        item_id: itemId,
-        nome: m.item_name,
-        period_start: m.period_start,
-        period_end: m.period_end,
-        // Organic fields default to 0 — will be enriched by Excel later
-        vendas_pago: m.gmv, // Use ads GMV as revenue when no Excel data
-        pedidos_pagos: m.orders,
-        unidades_pagas: m.orders, // Approximation: 1 order = 1 unit
-        compradores_pagos: 0,
-        ticket_medio: m.orders > 0 ? m.gmv / m.orders : 0,
-        impressoes: 0,
-        cliques: 0,
-        ctr: 0,
-        taxa_conversao: 0,
-        taxa_rejeicao: 0,
-        add_carrinho: 0,
-        taxa_carrinho: 0,
-        taxa_recompra: 0,
-        variacoes: [] as any[],
-        ads_roas: m.expense > 0 ? m.gmv / m.expense : 0,
-        ads_gasto: m.expense,
-        ads_gmv: m.gmv,
-        ads_pedidos: m.orders,
-        ads_impressoes: m.impressions,
-        ads_cliques: m.clicks,
-        source: 'ads_api',
-      }));
+      // Fetch existing records to decide update vs insert
+      const { data: existing } = await supabase
+        .from('product_performance')
+        .select('id, item_id, source')
+        .eq('user_id', user.id)
+        .eq('store_id', storeId);
 
-      // Upsert in batches of 50
-      for (let i = 0; i < rows.length; i += 50) {
-        const batch = rows.slice(i, i + 50);
-        const { error } = await supabase
-          .from('product_performance')
-          .upsert(batch as any, { onConflict: 'store_id,item_id,period_start,period_end' });
-        if (error) throw error;
+      const existingMap: Record<string, { id: string; source: string }> = {};
+      if (existing) {
+        for (const e of existing) {
+          existingMap[e.item_id] = { id: e.id, source: e.source || 'excel' };
+        }
       }
 
-      toast.success(`${rows.length} produtos importados da API de Ads!`);
+      let updated = 0, inserted = 0;
+      for (const [itemId, m] of Object.entries(itemMap)) {
+        const adsFields = {
+          ads_roas: m.expense > 0 ? m.gmv / m.expense : 0,
+          ads_gasto: m.expense,
+          ads_gmv: m.gmv,
+          ads_pedidos: m.orders,
+          ads_impressoes: m.impressions,
+          ads_cliques: m.clicks,
+        };
+
+        const ex = existingMap[itemId];
+        if (ex) {
+          // Update only ads fields, preserve organic data
+          const updateData: any = { ...adsFields };
+          if (ex.source === 'ads_api') {
+            // Also update revenue approximations since no Excel data yet
+            updateData.vendas_pago = m.gmv;
+            updateData.pedidos_pagos = m.orders;
+            updateData.unidades_pagas = m.orders;
+            updateData.ticket_medio = m.orders > 0 ? m.gmv / m.orders : 0;
+            updateData.period_start = m.period_start;
+            updateData.period_end = m.period_end;
+          }
+          const { error } = await supabase
+            .from('product_performance')
+            .update(updateData)
+            .eq('id', ex.id);
+          if (error) throw error;
+          updated++;
+        } else {
+          // Insert new record with ads data
+          const { error } = await supabase
+            .from('product_performance')
+            .insert({
+              user_id: user.id,
+              store_id: storeId,
+              item_id: itemId,
+              nome: m.item_name,
+              period_start: m.period_start,
+              period_end: m.period_end,
+              vendas_pago: m.gmv,
+              pedidos_pagos: m.orders,
+              unidades_pagas: m.orders,
+              compradores_pagos: 0,
+              ticket_medio: m.orders > 0 ? m.gmv / m.orders : 0,
+              impressoes: 0, cliques: 0, ctr: 0,
+              taxa_conversao: 0, taxa_rejeicao: 0,
+              add_carrinho: 0, taxa_carrinho: 0, taxa_recompra: 0,
+              variacoes: [],
+              ...adsFields,
+              source: 'ads_api',
+            } as any);
+          if (error) throw error;
+          inserted++;
+        }
+      }
+
+      toast.success(`Ads importados! ${inserted} novos, ${updated} atualizados.`);
       await loadData();
     } catch (err: any) {
       console.error('[useProductPerformance] importFromAdsApi error:', err);
