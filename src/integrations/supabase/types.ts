@@ -546,6 +546,113 @@ export type Database = {
           },
         ]
       }
+      product_performance: {
+        Row: {
+          add_carrinho: number | null
+          ads_cliques: number | null
+          ads_gasto: number | null
+          ads_gmv: number | null
+          ads_impressoes: number | null
+          ads_pedidos: number | null
+          ads_roas: number | null
+          cliques: number | null
+          compradores_pagos: number | null
+          created_at: string | null
+          ctr: number | null
+          id: string
+          impressoes: number | null
+          item_id: string
+          nome: string | null
+          pedidos_pagos: number | null
+          period_end: string | null
+          period_start: string | null
+          source: string | null
+          store_id: string | null
+          taxa_carrinho: number | null
+          taxa_conversao: number | null
+          taxa_recompra: number | null
+          taxa_rejeicao: number | null
+          ticket_medio: number | null
+          unidades_pagas: number | null
+          updated_at: string | null
+          user_id: string
+          variacoes: Json | null
+          vendas_pago: number | null
+        }
+        Insert: {
+          add_carrinho?: number | null
+          ads_cliques?: number | null
+          ads_gasto?: number | null
+          ads_gmv?: number | null
+          ads_impressoes?: number | null
+          ads_pedidos?: number | null
+          ads_roas?: number | null
+          cliques?: number | null
+          compradores_pagos?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          id?: string
+          impressoes?: number | null
+          item_id: string
+          nome?: string | null
+          pedidos_pagos?: number | null
+          period_end?: string | null
+          period_start?: string | null
+          source?: string | null
+          store_id?: string | null
+          taxa_carrinho?: number | null
+          taxa_conversao?: number | null
+          taxa_recompra?: number | null
+          taxa_rejeicao?: number | null
+          ticket_medio?: number | null
+          unidades_pagas?: number | null
+          updated_at?: string | null
+          user_id: string
+          variacoes?: Json | null
+          vendas_pago?: number | null
+        }
+        Update: {
+          add_carrinho?: number | null
+          ads_cliques?: number | null
+          ads_gasto?: number | null
+          ads_gmv?: number | null
+          ads_impressoes?: number | null
+          ads_pedidos?: number | null
+          ads_roas?: number | null
+          cliques?: number | null
+          compradores_pagos?: number | null
+          created_at?: string | null
+          ctr?: number | null
+          id?: string
+          impressoes?: number | null
+          item_id?: string
+          nome?: string | null
+          pedidos_pagos?: number | null
+          period_end?: string | null
+          period_start?: string | null
+          source?: string | null
+          store_id?: string | null
+          taxa_carrinho?: number | null
+          taxa_conversao?: number | null
+          taxa_recompra?: number | null
+          taxa_rejeicao?: number | null
+          ticket_medio?: number | null
+          unidades_pagas?: number | null
+          updated_at?: string | null
+          user_id?: string
+          variacoes?: Json | null
+          vendas_pago?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_performance_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           ads_cost: number | null
