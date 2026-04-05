@@ -206,6 +206,8 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const { currentStore } = useStore();
   const { data, loading, operating, importGeneralCSV, importProductCSV, importFromApi, linkProduct, unlinkProduct, reload, deleteAdsData, deleteAll } = useAdsData();
   const { isConnected, syncAdsOnly, isExpired, needsReauth, startOAuth } = useShopeeToken('ads');
+  const importJob = useAdsImportJob();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedDetail, setSelectedDetailRaw] = useState<EnrichedAdsData | null>(null);
   const setSelectedDetail = (ad: EnrichedAdsData | null) => {
     setSelectedDetailRaw(ad);
@@ -222,7 +224,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const [positionJustImported, setPositionJustImported] = useState(false);
   const [showShopeeModal, setShowShopeeModal] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const autoSyncAttempted = useRef(false);
+  const autoSyncTriggered = useRef(false);
 
   // Date range filter – default: last 28 days
   const [dateFrom, setDateFrom] = useState<Date | undefined>(() => subDays(new Date(), 28));
