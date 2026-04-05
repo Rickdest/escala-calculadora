@@ -303,7 +303,8 @@ export function useProductPerformance() {
               store_id: storeId,
               item_id: p.item_id,
               ...organicFields,
-            } as any);
+              variacoes: organicFields.variacoes as any,
+            });
           if (error) throw error;
           inserted++;
         }
