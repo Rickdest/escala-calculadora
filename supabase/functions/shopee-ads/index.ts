@@ -74,10 +74,16 @@ function extractCampaignSummaryMetrics(detail: any) {
   return { impressions, clicks, expense, gmv, direct_gmv: directGmv, orders, direct_orders: directOrders, avg_position: avgPosition, roas: expense > 0 ? gmv / expense : 0, direct_roas: expense > 0 ? directGmv / expense : 0, acos: gmv > 0 ? (expense / gmv) * 100 : 0, ctr: impressions > 0 ? (clicks / impressions) * 100 : 0, cost_per_order: orders > 0 ? expense / orders : 0, days_active: daysActive, hasData };
 }
 
-// Get ads credentials once at function level
-const adsCreds = getAdsCredentials();
-const adsGet = (path: string, accessToken: string, shopId: string | number, extra: Record<string, string> = {}) =>
-  shopeeGetWith(adsCreds.partnerId, adsCreds.partnerKey, path, accessToken, shopId, extra);
+// Lazy credential holder — initialized on first use inside the handler, not at module level
+let _adsCreds: { partnerId: number; partnerKey: string } | null = null;
+function getAdsCreds() {
+  if (!_adsCreds) _adsCreds = getAdsCredentials();
+  return _adsCreds;
+}
+const adsGet = (path: string, accessToken: string, shopId: string | number, extra: Record<string, string> = {}) => {
+  const creds = getAdsCreds();
+  return shopeeGetWith(creds.partnerId, creds.partnerKey, path, accessToken, shopId, extra);
+};
 
 async function refreshTokenIfNeeded(shopeeToken: any, _supabase: any): Promise<{ token: string; needs_reauth: boolean }> {
   const tokenAge = (Date.now() - new Date(shopeeToken.token_created_at).getTime()) / 1000;
@@ -86,14 +92,15 @@ async function refreshTokenIfNeeded(shopeeToken: any, _supabase: any): Promise<{
   console.log("[SHOPEE ADS] Token near expiry, refreshing...");
   const refreshPath = "/api/v2/auth/access_token/get";
   const timestamp = Math.floor(Date.now() / 1000);
-  const sign = await generateSignWith(adsCreds.partnerId, adsCreds.partnerKey, refreshPath, timestamp);
-  const refreshUrl = `${SHOPEE_HOST}${refreshPath}?partner_id=${adsCreds.partnerId}&timestamp=${timestamp}&sign=${sign}`;
+  const creds = getAdsCreds();
+  const sign = await generateSignWith(creds.partnerId, creds.partnerKey, refreshPath, timestamp);
+  const refreshUrl = `${SHOPEE_HOST}${refreshPath}?partner_id=${creds.partnerId}&timestamp=${timestamp}&sign=${sign}`;
 
   try {
     const refreshRes = await fetch(refreshUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh_token: shopeeToken.refresh_token, shop_id: Number(shopeeToken.shop_id), partner_id: adsCreds.partnerId }),
+      body: JSON.stringify({ refresh_token: shopeeToken.refresh_token, shop_id: Number(shopeeToken.shop_id), partner_id: creds.partnerId }),
     });
 
     const refreshData = await refreshRes.json();
@@ -177,7 +184,13 @@ async function fetchCampaignDaily(
       try {
         const res = await fn(chunk);
         if (isFirst && chunks.indexOf(chunk) === 0) {
-          console.log(`[SHOPEE ADS] [DEBUG] ${label} ${campaignId} (${chunk.startAPI}→${chunk.endAPI}): ${JSON.stringify(res).substring(0, 600)}`);
+          // Full diagnostic log for the first campaign's first chunk
+          const rawJson = JSON.stringify(res);
+          console.log(`[SHOPEE ADS] [DIAG-FULL] ${label} campaign=${campaignId} (${chunk.startAPI}→${chunk.endAPI}) len=${rawJson.length}: ${rawJson.substring(0, 3000)}`);
+          const entries0 = extractEntries(res);
+          if (entries0.length > 0) {
+            console.log(`[SHOPEE ADS] [DIAG-ENTRY] First entry raw: ${JSON.stringify(entries0[0]).substring(0, 2000)}`);
+          }
         }
         if (res?.error) return [];
         const entries = extractEntries(res);
@@ -291,12 +304,12 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
   const campaignsForStep4 = campaignDetails.filter(c => {
     if (filterItemId && c.item_id !== filterItemId) return false;
     if (!c.item_id) return false;
-    if (c.status === "ended" && c.campaign_id < 50000000) return false;
+    // Skip ALL ended campaigns unless they have real data in summary_metrics
+    if (c.status === "ended" && !c.summary_metrics?.hasData) return false;
     return true;
   });
-  const skippedOld = campaignDetails.filter(c => c.status === "ended" && c.campaign_id < 50000000).length;
-  if (skippedOld > 0) console.log(`[SHOPEE ADS] Skipped ${skippedOld} old ended campaigns (id < 50M)`);
-  console.log(`[SHOPEE ADS] === Step 4: per-campaign performance for ${campaignsForStep4.length} campaigns ===`);
+  const skippedEnded = campaignDetails.filter(c => c.status === "ended" && !c.summary_metrics?.hasData).length;
+  if (skippedEnded > 0) console.log(`[SHOPEE ADS] Skipped ${skippedEnded} ended campaigns without data`);
 
   await delay(500);
 
@@ -638,6 +651,11 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // Validate credentials early — fail fast with a friendly message
+    try { getAdsCreds(); } catch (credErr) {
+      console.error("[SHOPEE ADS] Credential error:", (credErr as Error).message);
+      return errorResponse("Credenciais de Ads não configuradas. Verifique SHOPEE_ADS_PARTNER_ID e SHOPEE_ADS_KEY.", 500);
+    }
     console.log("[SHOPEE ADS] === FUNCTION START ===");
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) return errorResponse("Unauthorized", 401);
