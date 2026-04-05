@@ -107,6 +107,30 @@ export default function Performance() {
       <div className="flex items-center justify-between px-4 md:px-0">
         <PageHeader title="Performance" subtitle={hasExcelData && perfHook.periodLabel ? `Período: ${perfHook.periodLabel}` : 'Vendas · Shopee'} />
         <div className="flex items-center gap-2">
+          {/* Clear data button */}
+          {perfHook.data.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Limpar dados de Performance?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Isso vai remover todos os dados de performance e Ads desta aba. Você precisará reimportar os dados depois.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => perfHook.clearData()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Limpar tudo
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
           {/* Ads API sync button */}
           {adsToken && (
             <Button
