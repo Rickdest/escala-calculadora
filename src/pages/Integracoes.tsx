@@ -141,6 +141,15 @@ export default function Integracoes() {
     }
   };
 
+  const handleConnectAds = async () => {
+    setConnecting(true);
+    try {
+      await adsHook.startOAuth('ads');
+    } catch {
+      setConnecting(false);
+    }
+  };
+
   const handleDisconnect = async () => {
     if (!user) return;
     setDisconnecting(true);
@@ -278,7 +287,7 @@ export default function Integracoes() {
               </p>
               <Button
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-                onClick={() => adsHook.startOAuth('ads')}
+                onClick={handleConnectAds}
                 disabled={connecting}
               >
                 {connecting ? 'Redirecionando...' : '🔗 Conectar Shopee Ads'}
@@ -525,11 +534,11 @@ export default function Integracoes() {
                   </div>
                   {adsConnected ? (
                     adsExpired ? (
-                      <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white gap-1" onClick={() => adsHook.startOAuth('ads')}>
+                      <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white gap-1" onClick={handleConnectAds}>
                         ⚠️ Reconectar agora
                       </Button>
                     ) : (
-                      <Button variant="outline" size="sm" onClick={() => adsHook.startOAuth('ads')}>
+                      <Button variant="outline" size="sm" onClick={handleConnectAds}>
                         ↻ Reconectar
                       </Button>
                     )
@@ -537,7 +546,7 @@ export default function Integracoes() {
                     <Button
                       size="sm"
                       className="bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20"
-                      onClick={() => adsHook.startOAuth('ads')}
+                      onClick={handleConnectAds}
                     >
                       🔗 Conectar
                     </Button>
