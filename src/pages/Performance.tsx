@@ -10,7 +10,9 @@ import { useProductPerformance } from '@/hooks/useProductPerformance';
 import { ProductExpandedDetail } from '@/components/performance/ProductExpandedDetail';
 import { ProductPerformanceCard } from '@/components/performance/ProductPerformanceCard';
 import { useApiAdsData } from '@/hooks/useApiAdsData';
-import { Loader2, ShoppingBag, TrendingUp, ShoppingCart, Package, ChevronDown, BarChart3, Eye, Upload, FileSpreadsheet } from 'lucide-react';
+import { useShopeeToken } from '@/hooks/useShopeeToken';
+import { useAdsImportJob } from '@/hooks/useAdsImportJob';
+import { Loader2, ShoppingBag, TrendingUp, ShoppingCart, Package, ChevronDown, BarChart3, Eye, Upload, FileSpreadsheet, RefreshCw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -38,7 +40,9 @@ const MEDALS = ['🥇', '🥈', '🥉'];
 export default function Performance() {
   const navigate = useNavigate();
   const { data, syncedAt, loading, syncing, sync } = usePerformanceData();
-  const { data: adsRows } = useApiAdsData();
+  const { data: adsRows, invalidate: invalidateAds } = useApiAdsData();
+  const { token: adsToken } = useShopeeToken('ads');
+  const { startJob: startAdsImport, isImporting: adsImporting } = useAdsImportJob();
   const perfHook = useProductPerformance();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -92,6 +96,19 @@ export default function Performance() {
       <div className="flex items-center justify-between px-4 md:px-0">
         <PageHeader title="Performance" subtitle={hasExcelData && perfHook.periodLabel ? `Período: ${perfHook.periodLabel}` : 'Vendas · Shopee'} />
         <div className="flex items-center gap-2">
+          {/* Ads API sync button */}
+          {adsToken && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 text-xs gap-1.5"
+              disabled={adsImporting}
+              onClick={async () => { await startAdsImport(); invalidateAds(); }}
+            >
+              {adsImporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+              <span className="hidden md:inline">{adsImporting ? 'Sincronizando...' : 'Sincronizar Ads'}</span>
+            </Button>
+          )}
           {/* Excel import button */}
           <label className="cursor-pointer">
             <input
