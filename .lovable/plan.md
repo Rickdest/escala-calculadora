@@ -1,40 +1,29 @@
 
-## Diagnóstico completo
 
-### O filtro de datas pode esconder dados?
-**Sim, parcialmente.** O filtro padrão é "últimos 28 dias" (8 de março → 5 de abril). Os dados salvos vão de 7 de março a 3 de abril. Dois problemas:
+## Diagnóstico
 
-1. **Campanhas com `daily_data` vazia** (que usaram `summary_metrics` como fallback) — quando o filtro de datas está ativo, o frontend recalcula TUDO a partir de `daily_data`. Se `daily_data` está vazia, as métricas viram zero e o item é removido da lista.
+A aba Performance usa a API **Seller** (via `shopee-sync`). Os logs mostram o problema real:
 
-2. **Campo `orders` faltando no `daily_data`** — o backend salva `{date, impressions, clicks, expense, gmv, roas}` mas NÃO salva `orders`. Quando o filtro recalcula, `orders` fica sempre 0.
-
-### Outros problemas encontrados
-
-3. **Cache não recarrega após importação** — Quando o job termina como "done", `invalidatePersistedAds()` é chamada, mas o react-query pode não refazer a busca imediatamente se a aba estava em estado de loading/transição.
-
-4. **Dados existem mas `effectiveApiData` pode ser null** — Se `buildApiAdsDataFromRows` retorna `null` (todos os itens filtrados), a UI mostra "Nenhum dado no período" mesmo com dados reais no banco.
+1. **Token refresh falha com `"shop_no_linked"`** — o parceiro (Partner ID) e a loja não estão mais vinculados (provavelmente porque o usuário trocou de conta ou a autorização expirou)
+2. A função `refreshTokenIfNeeded` marca `needs_reauth: true` mas **continua a execução** com o token inválido
+3. Todas as chamadas da API retornam **403 `invalid_acceess_token`**
+4. O `shopeeGet` retorna `{ error: "HTTP 403" }` em vez de lançar exceção — o código de pedidos interpreta isso como "0 pedidos"
+5. A função **sobrescreve** os dados existentes com dados vazios (0 pedidos, 0 faturamento)
 
 ## Plano de correção
 
-### 1. Preservar métricas originais quando `daily_data` está vazia
-Em `buildApiAdsDataFromRows`, se um item tem `daily_data` vazia ou ausente, **não recalcular** — manter as métricas salvas no nível da row (`r.impressions, r.expense, r.gmv`).
+### 1. Parar sincronização quando `needs_reauth` é `true`
+Em `shopee-sync/index.ts`, logo após `refreshTokenIfNeeded`, se `needs_reauth` for `true`, retornar imediatamente com uma mensagem amigável em vez de continuar chamando APIs com token inválido.
 
-### 2. Incluir `orders` no `daily_data` do backend
-Em `processCampaignEntries`, adicionar `orders` ao objeto `daily`:
-```
-daily.push({
-  date, impressions, clicks, expense, gmv, roas,
-  orders: e.orders  // ← campo faltando
-});
-```
+### 2. Não sobrescrever dados existentes com dados vazios
+No bloco de persistência do `shopee_performance`, verificar se `total_orders > 0` antes de fazer upsert. Se o sync retornou 0 pedidos, não sobrescrever o que já está salvo.
 
-### 3. Forçar refetch após job "done"
-No `useEffect` que detecta `importJob.status === 'done'`, adicionar um pequeno delay antes de invalidar para garantir que o banco já processou o upsert.
-
-### 4. Remover filtro padrão restritivo
-Inicializar `dateFrom` e `dateTo` como `undefined` (sem filtro) quando não há dados ainda. Após carregar dados, usar o período real dos dados como range padrão.
+### 3. Mostrar aviso de reconexão no frontend
+Em `usePerformanceData`, quando `sync()` retorna `needs_reauth: true`, exibir toast informando que é necessário reconectar a Shopee Seller, em vez de "Nenhum dado disponível".
 
 ## Arquivos modificados
-- `src/hooks/useApiAdsData.ts` — preservar métricas quando daily_data vazia
-- `supabase/functions/shopee-ads/index.ts` — incluir `orders` no daily_data
-- `src/components/roas/AdsTab.tsx` — inicialização do filtro + refetch robusto
+- `supabase/functions/shopee-sync/index.ts` — early return quando token inválido + proteção contra overwrite
+- `src/hooks/usePerformanceData.ts` — tratar `needs_reauth` no retorno do sync
+
+## Sem migration
+
