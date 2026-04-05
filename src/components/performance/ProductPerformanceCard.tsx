@@ -13,21 +13,22 @@ interface Props {
   produto: ProductPerformanceDB;
   rank: number;
   periodDays: number;
+  adsData?: { expense: number; gmv: number; direct_gmv: number; roas: number; direct_roas: number; impressions: number; clicks: number; orders: number; direct_orders: number } | null;
 }
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
-function MetricBox({ label, value, sub }: { label: string; value: string; sub?: string }) {
+function MetricBox({ label, value, sub, valueColor }: { label: string; value: string; sub?: string; valueColor?: string }) {
   return (
     <div className="rounded-xl border border-border bg-card p-3 text-center">
       <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</p>
-      <p className="text-sm font-bold text-foreground font-mono mt-0.5">{value}</p>
+      <p className={`text-sm font-bold font-mono mt-0.5 ${valueColor || 'text-foreground'}`}>{value}</p>
       {sub && <p className="text-[10px] text-muted-foreground">{sub}</p>}
     </div>
   );
 }
 
-export function ProductPerformanceCard({ produto, rank, periodDays }: Props) {
+export function ProductPerformanceCard({ produto, rank, periodDays, adsData }: Props) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const unDia = periodDays > 0 ? produto.unidades_pagas / periodDays : 0;
@@ -35,6 +36,12 @@ export function ProductPerformanceCard({ produto, rank, periodDays }: Props) {
   const hasOrganic = produto.impressoes > 0 || produto.ctr > 0 || produto.taxa_conversao > 0;
   const split = calcOrganicoVsAds(produto.vendas_pago, produto.ads_gmv);
   const sortedVariacoes = [...produto.variacoes].sort((a, b) => b.vendas_pago - a.vendas_pago);
+
+  // GMV compare
+  const gmvBroad = adsData?.gmv || produto.ads_gmv || 0;
+  const gmvDireto = adsData?.direct_gmv || 0;
+  const pctDireto = gmvBroad > 0 ? (gmvDireto / gmvBroad) * 100 : 0;
+  const hasGmvCompare = gmvBroad > 0 && gmvDireto > 0;
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
@@ -57,9 +64,9 @@ export function ProductPerformanceCard({ produto, rank, periodDays }: Props) {
                     </Badge>
                   )}
                   {produto.ads_roas != null && produto.ads_roas > 0 && (
-                    <Badge variant="outline" className="text-[9px] h-4 gap-0.5 border-primary/30 text-primary px-1">
-                      <TrendingUp className="w-2.5 h-2.5" />ROAS {produto.ads_roas.toFixed(1)}x
-                    </Badge>
+                    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-primary bg-primary/10 border border-primary/20 rounded px-1.5 py-0.5">
+                      📈 ROAS {produto.ads_roas.toFixed(1)}x
+                    </span>
                   )}
                 </div>
               </div>
@@ -81,17 +88,65 @@ export function ProductPerformanceCard({ produto, rank, periodDays }: Props) {
             {/* Metrics Grid */}
             {isAdsOnly ? (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <MetricBox label="GMV Ads" value={`R$ ${(produto.ads_gmv || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} />
+                <MetricBox label="GMV Ads" value={`R$ ${(produto.ads_gmv || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} valueColor="text-emerald-500" />
                 <MetricBox label="Gasto Ads" value={`R$ ${(produto.ads_gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-                <MetricBox label="ROAS" value={`${(produto.ads_roas || 0).toFixed(1)}x`} />
+                <MetricBox label="ROAS" value={`${(produto.ads_roas || 0).toFixed(1)}x`} valueColor="text-emerald-500" />
                 <MetricBox label="Pedidos Ads" value={String(produto.ads_pedidos || 0)} />
               </div>
             ) : (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <MetricBox label="Receita" value={`R$ ${produto.vendas_pago.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} />
+                <MetricBox label="Receita" value={`R$ ${produto.vendas_pago.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} valueColor="text-emerald-500" />
                 <MetricBox label="Pedidos pagos" value={String(produto.pedidos_pagos)} />
                 <MetricBox label="Ticket médio" value={`R$ ${produto.ticket_medio.toFixed(2)}`} />
                 <MetricBox label="Unid/dia" value={unDia.toFixed(1)} />
+              </div>
+            )}
+
+            {/* GMV Broad vs Direto */}
+            {hasGmvCompare && (
+              <div className="rounded-xl border border-border bg-muted/30 p-3">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                  📊 GMV Ads — Amplo vs Direto
+                </p>
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div className="rounded-lg border border-primary/20 bg-card p-3">
+                    <p className="text-[9px] font-bold text-primary uppercase mb-1">🟠 GMV Amplo</p>
+                    <p className="text-base font-bold font-mono text-primary">R$ {gmvBroad.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</p>
+                    {adsData && adsData.expense > 0 && (
+                      <p className="text-[9px] text-muted-foreground mt-1">ROAS Amplo: <strong className="text-emerald-500">{adsData.roas.toFixed(1)}x</strong></p>
+                    )}
+                  </div>
+                  <div className="rounded-lg border border-border bg-card p-3">
+                    <p className="text-[9px] font-bold text-emerald-500 uppercase mb-1">🟢 GMV Direto</p>
+                    <p className="text-base font-bold font-mono text-emerald-500">R$ {gmvDireto.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</p>
+                    {adsData && adsData.expense > 0 && (
+                      <p className="text-[9px] text-muted-foreground mt-1">ROAS Direto: <strong className="text-emerald-500">{adsData.direct_roas.toFixed(1)}x</strong></p>
+                    )}
+                  </div>
+                </div>
+                {/* Stacked bars */}
+                <div className="space-y-1.5 mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-muted-foreground w-16 shrink-0">Direto</span>
+                    <div className="flex-1 h-1.5 bg-card rounded-full overflow-hidden">
+                      <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${pctDireto}%` }} />
+                    </div>
+                    <span className="text-[10px] font-mono font-semibold text-emerald-500 w-12 text-right">{pctDireto.toFixed(0)}%</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-muted-foreground w-16 shrink-0">Amplo</span>
+                    <div className="flex-1 h-1.5 bg-card rounded-full overflow-hidden">
+                      <div className="h-full bg-primary rounded-full" style={{ width: '100%' }} />
+                    </div>
+                    <span className="text-[10px] font-mono font-semibold text-primary w-12 text-right">100%</span>
+                  </div>
+                </div>
+                {/* Insight */}
+                <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-2 text-[10px] text-amber-600 dark:text-amber-400">
+                  {pctDireto >= 90 ? '✅ Ótima atribuição direta — seus anúncios convertem quem clicou' :
+                   pctDireto >= 60 ? '⚡ Boa atribuição — parte das vendas vem de efeito halo' :
+                   '⚠️ Muita atribuição indireta — considere revisar campanhas'}
+                </div>
               </div>
             )}
 
@@ -140,7 +195,7 @@ export function ProductPerformanceCard({ produto, rank, periodDays }: Props) {
             {isAdsOnly && (
               <div className="rounded-xl bg-primary/5 border border-primary/10 p-3">
                 <p className="text-xs text-muted-foreground">
-                  💡 <strong>Dados parciais.</strong> Estes são apenas dados de Ads. Importe o relatório de produto do Seller Center para ver o funil completo (impressões orgânicas, CTR, conversão, variações).
+                  💡 <strong>Dados parciais.</strong> Estes são apenas dados de Ads. Importe o relatório de produto do Seller Center para ver o funil completo.
                 </p>
               </div>
             )}
@@ -199,10 +254,11 @@ export function ProductPerformanceCard({ produto, rank, periodDays }: Props) {
             <div className="flex justify-end">
               <Button
                 size="sm"
-                className="gap-1.5 text-xs"
+                variant="outline"
+                className="gap-1.5 text-xs border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
                 onClick={() => navigate(`/performance/${produto.item_id}`)}
               >
-                Ver detalhes <ArrowRight className="w-3.5 h-3.5" />
+                ↗ Detalhes <ArrowRight className="w-3.5 h-3.5" />
               </Button>
             </div>
           </div>

@@ -20,7 +20,6 @@ export default function PerformanceProductDetail() {
   const { data: perfData, loading } = useProductPerformance();
   const { data: adsRows } = useApiAdsData();
 
-  // Find product from product_performance
   const product = useMemo(() => {
     if (!itemId || !perfData.length) return null;
     return perfData.find(p => p.item_id === itemId) || null;
@@ -29,7 +28,6 @@ export default function PerformanceProductDetail() {
   const isAdsOnly = product?.source === 'ads_api';
   const hasOrganic = product ? (product.impressoes > 0 || product.ctr > 0 || product.taxa_conversao > 0) : false;
 
-  // Period days
   const periodDays = useMemo(() => {
     if (!product) return 30;
     const diff = new Date(product.period_end).getTime() - new Date(product.period_start).getTime();
@@ -94,16 +92,19 @@ export default function PerformanceProductDetail() {
   const prevItem = currentIndex > 0 ? perfData[currentIndex - 1] : null;
   const nextItem = currentIndex >= 0 && currentIndex < perfData.length - 1 ? perfData[currentIndex + 1] : null;
 
-  // Organic vs Ads split
   const split = product ? calcOrganicoVsAds(product.vendas_pago, product.ads_gmv) : null;
   const sortedVariacoes = product ? [...product.variacoes].sort((a: any, b: any) => b.vendas_pago - a.vendas_pago) : [];
   const unDia = product && periodDays > 0 ? product.unidades_pagas / periodDays : 0;
 
-  // Total for share calculations
   const totalRevenue = perfData.reduce((s, p) => s + Number(p.vendas_pago), 0);
   const totalUnits = perfData.reduce((s, p) => s + Number(p.unidades_pagas), 0);
   const pctRevenue = product && totalRevenue > 0 ? (product.vendas_pago / totalRevenue) * 100 : 0;
   const pctUnits = product && totalUnits > 0 ? (product.unidades_pagas / totalUnits) * 100 : 0;
+
+  // GMV Broad vs Direto
+  const gmvBroad = adsForProduct?.gmv || 0;
+  const gmvDireto = adsForProduct?.direct_gmv || 0;
+  const pctDireto = gmvBroad > 0 ? (gmvDireto / gmvBroad) * 100 : 0;
 
   useEffect(() => { window.scrollTo(0, 0); }, [itemId]);
 
@@ -184,17 +185,69 @@ export default function PerformanceProductDetail() {
         {/* KPI Cards */}
         {isAdsOnly ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <KpiCard icon={<DollarSign className="w-5 h-5" />} borderColor="border-t-emerald-500" label="GMV ADS" value={`R$ ${(product.ads_gmv || 0).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`} sub={`${pctRevenue.toFixed(1)}% do total`} />
-            <KpiCard icon={<TrendingUp className="w-5 h-5" />} borderColor="border-t-primary" label="GASTO ADS" value={`R$ ${(product.ads_gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} sub="investido" />
-            <KpiCard icon={<Megaphone className="w-5 h-5" />} borderColor="border-t-blue-500" label="ROAS" value={`${(product.ads_roas || 0).toFixed(1)}x`} sub="retorno" />
-            <KpiCard icon={<Package className="w-5 h-5" />} borderColor="border-t-amber-500" label="PEDIDOS ADS" value={String(product.ads_pedidos || 0)} sub={`${(product.ads_pedidos || 0) > 0 && periodDays > 0 ? ((product.ads_pedidos || 0) / periodDays).toFixed(1) + '/dia' : ''}`} />
+            <KpiCard borderColor="border-t-emerald-500" label="GMV ADS" value={`R$ ${(product.ads_gmv || 0).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`} sub={`${pctRevenue.toFixed(1)}% do total`} valueColor="text-emerald-500" />
+            <KpiCard borderColor="border-t-destructive" label="GASTO ADS" value={`R$ ${(product.ads_gasto || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} sub="investido" />
+            <KpiCard borderColor="border-t-blue-500" label="ROAS" value={`${(product.ads_roas || 0).toFixed(1)}x`} sub="retorno" valueColor="text-emerald-500" />
+            <KpiCard borderColor="border-t-primary" label="UN/DIA" value={`${unDia.toFixed(1)}`} sub={`${product.unidades_pagas || product.ads_pedidos || 0} total`} valueColor="text-primary" />
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <KpiCard icon={<DollarSign className="w-5 h-5" />} borderColor="border-t-emerald-500" label="RECEITA" value={`R$ ${product.vendas_pago.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`} sub={`${pctRevenue.toFixed(1)}% do total`} />
-            <KpiCard icon={<Package className="w-5 h-5" />} borderColor="border-t-primary" label="UNIDADES" value={String(product.unidades_pagas)} sub={`${unDia.toFixed(1)}/dia`} />
-            <KpiCard icon={<TrendingUp className="w-5 h-5" />} borderColor="border-t-blue-500" label="TICKET MÉDIO" value={`R$ ${product.ticket_medio.toFixed(2)}`} sub="por unidade" />
-            <KpiCard icon={<BarChart3 className="w-5 h-5" />} borderColor="border-t-amber-500" label="PEDIDOS" value={String(product.pedidos_pagos)} sub={`${pctUnits.toFixed(1)}% do total`} />
+            <KpiCard borderColor="border-t-emerald-500" label="RECEITA" value={`R$ ${product.vendas_pago.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`} sub={`${pctRevenue.toFixed(1)}% do total`} valueColor="text-emerald-500" />
+            <KpiCard borderColor="border-t-primary" label="UNIDADES" value={String(product.unidades_pagas)} sub={`${unDia.toFixed(1)}/dia`} />
+            <KpiCard borderColor="border-t-blue-500" label="TICKET MÉDIO" value={`R$ ${product.ticket_medio.toFixed(2)}`} sub="por unidade" valueColor="text-blue-500" />
+            <KpiCard borderColor="border-t-primary" label="PEDIDOS" value={String(product.pedidos_pagos)} sub={`${pctUnits.toFixed(1)}% do total`} />
+          </div>
+        )}
+
+        {/* GMV Broad vs Direto — HIGHLIGHT */}
+        {gmvBroad > 0 && gmvDireto > 0 && adsForProduct && (
+          <div className="rounded-xl border border-border bg-card p-4 space-y-4">
+            <div className="flex items-center gap-2">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">📊 GMV Ads — Amplo vs Direto</p>
+              <span className="text-[9px] text-muted-foreground">O que é atribuído aos seus anúncios</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="rounded-xl border border-primary/20 bg-muted/30 p-4">
+                <p className="text-[9px] font-bold text-primary uppercase tracking-wide mb-1">🟠 GMV Amplo (Broad)</p>
+                <p className="text-2xl font-bold font-mono text-primary">{`R$ ${gmvBroad.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">ROAS Amplo: <strong className="text-emerald-500">{adsForProduct.roas.toFixed(1)}x</strong></p>
+                <p className="text-[9px] text-muted-foreground mt-2">Inclui conversões indiretas — clicou no ad mas comprou outro produto</p>
+              </div>
+              <div className="rounded-xl border border-border bg-muted/30 p-4">
+                <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-wide mb-1">🟢 GMV Direto</p>
+                <p className="text-2xl font-bold font-mono text-emerald-500">{`R$ ${gmvDireto.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`}</p>
+                <p className="text-[10px] text-muted-foreground mt-1">ROAS Direto: <strong className="text-emerald-500">{adsForProduct.direct_roas.toFixed(1)}x</strong></p>
+                <p className="text-[9px] text-muted-foreground mt-2">Só quem clicou no anúncio e comprou exatamente esse produto</p>
+              </div>
+            </div>
+
+            {/* Stacked bars */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] text-muted-foreground w-20 shrink-0">GMV Direto</span>
+                <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${pctDireto}%` }} />
+                </div>
+                <span className="text-[10px] font-mono font-semibold text-emerald-500 w-20 text-right">R$ {gmvDireto.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-[10px] text-muted-foreground w-20 shrink-0">GMV Amplo</span>
+                <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-primary rounded-full" style={{ width: '100%' }} />
+                </div>
+                <span className="text-[10px] font-mono font-semibold text-primary w-20 text-right">R$ {gmvBroad.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</span>
+              </div>
+            </div>
+
+            {/* Insight box */}
+            <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-3 text-[10px] text-amber-600 dark:text-amber-400">
+              {pctDireto >= 90
+                ? `✅ Ótima atribuição direta: ${pctDireto.toFixed(1)}% do GMV Amplo é direto — seus anúncios convertem quem clicou, sem depender de vendas indiretas.`
+                : pctDireto >= 60
+                ? `⚡ Atribuição moderada: ${pctDireto.toFixed(1)}% é direto. Parte do faturamento vem do efeito halo dos anúncios.`
+                : `⚠️ Muita atribuição indireta: apenas ${pctDireto.toFixed(1)}% é direto. Considere revisar segmentação de campanhas.`}
+            </div>
           </div>
         )}
 
@@ -212,12 +265,12 @@ export default function PerformanceProductDetail() {
           </div>
         )}
 
-        {/* Conversion Funnel — only with organic data */}
+        {/* Conversion Funnel */}
         {hasOrganic && product.impressoes > 0 && (
           <div className="rounded-xl border border-border bg-card p-4">
             <div className="flex items-center gap-2 mb-3">
               <Eye className="w-3.5 h-3.5 text-muted-foreground" />
-              <p className="text-sm font-semibold text-foreground uppercase tracking-wider">Funil de conversão</p>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">👁 Funil de conversão</p>
             </div>
             <FunnelBar label="Impressões" value={product.impressoes} max={product.impressoes} />
             <FunnelBar label="Cliques" value={product.cliques} max={product.impressoes} pct={product.ctr} pctLabel="CTR" />
@@ -280,14 +333,14 @@ export default function PerformanceProductDetail() {
                   <AdsMetric label="Impressões" value={adsForProduct.impressions.toLocaleString('pt-BR')} />
                   <AdsMetric label="Cliques" value={adsForProduct.clicks.toLocaleString('pt-BR')} />
                 </div>
-                {adsForProduct.direct_gmv > 0 && (
+                {/* Orders Broad vs Direct */}
+                {adsForProduct.direct_orders > 0 && (
                   <div className="p-4 border-t border-border">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-3">Direto vs Amplo</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-3">Pedidos — Amplo vs Direto</p>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-xs text-muted-foreground">GMV Direto</p>
-                        <p className="text-sm font-bold font-mono text-foreground">R$ {adsForProduct.direct_gmv.toFixed(2)}</p>
-                        <p className="text-[10px] text-muted-foreground">{adsForProduct.gmv > 0 ? ((adsForProduct.direct_gmv / adsForProduct.gmv) * 100).toFixed(0) : 0}% do total</p>
+                        <p className="text-xs text-muted-foreground">Pedidos Amplos</p>
+                        <p className="text-sm font-bold font-mono text-foreground">{adsForProduct.orders}</p>
                       </div>
                       <div>
                         <p className="text-xs text-muted-foreground">Pedidos Diretos</p>
@@ -431,14 +484,13 @@ export default function PerformanceProductDetail() {
   );
 }
 
-function KpiCard({ icon, borderColor, label, value, sub }: {
-  icon: React.ReactNode; borderColor: string; label: string; value: string; sub?: string;
+function KpiCard({ borderColor, label, value, sub, valueColor }: {
+  borderColor: string; label: string; value: string; sub?: string; valueColor?: string;
 }) {
   return (
     <div className={`rounded-xl border border-border border-t-2 ${borderColor} bg-card p-4`}>
-      <div className="flex justify-start mb-1 text-muted-foreground">{icon}</div>
       <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</p>
-      <p className="text-xl md:text-2xl font-bold text-foreground font-mono mt-1">{value}</p>
+      <p className={`text-xl md:text-2xl font-bold font-mono mt-1 ${valueColor || 'text-foreground'}`}>{value}</p>
       {sub && <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>}
     </div>
   );

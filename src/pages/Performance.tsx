@@ -55,18 +55,24 @@ export default function Performance() {
   const hasAdsOnlyData = perfHook.data.length > 0 && perfHook.data.every(p => p.source === 'ads_api');
   const hasExcelEnriched = perfHook.data.some(p => p.source === 'excel');
 
-  // Build ads lookup by item_id
+  // Build ads lookup by item_id — extended with direct_gmv, direct_orders, impressions, clicks
   const adsLookup = useMemo(() => {
     if (!adsRows) return {};
-    const map: Record<string, { expense: number; gmv: number; roas: number }> = {};
+    const map: Record<string, { expense: number; gmv: number; direct_gmv: number; roas: number; direct_roas: number; impressions: number; clicks: number; orders: number; direct_orders: number }> = {};
     for (const r of adsRows as any[]) {
       const key = String(r.item_id);
-      if (!map[key]) map[key] = { expense: 0, gmv: 0, roas: 0 };
+      if (!map[key]) map[key] = { expense: 0, gmv: 0, direct_gmv: 0, roas: 0, direct_roas: 0, impressions: 0, clicks: 0, orders: 0, direct_orders: 0 };
       map[key].expense += Number(r.expense || 0);
       map[key].gmv += Number(r.gmv || 0);
+      map[key].direct_gmv += Number(r.direct_gmv || 0);
+      map[key].impressions += Number(r.impressions || 0);
+      map[key].clicks += Number(r.clicks || 0);
+      map[key].orders += Number(r.orders || 0);
+      map[key].direct_orders += Number(r.direct_orders || 0);
     }
     for (const v of Object.values(map)) {
       v.roas = v.expense > 0 ? v.gmv / v.expense : 0;
+      v.direct_roas = v.expense > 0 ? v.direct_gmv / v.expense : 0;
     }
     return map;
   }, [adsRows]);
@@ -80,7 +86,6 @@ export default function Performance() {
   const handleSyncAds = async () => {
     await startAdsImport();
     invalidateAds();
-    // After ads sync, import into product_performance
     await perfHook.importFromAdsApi();
   };
 
@@ -102,13 +107,16 @@ export default function Performance() {
     return Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   })() : 30;
 
+  // GMV Broad vs Direto totals from adsLookup
+  const totalGmvBroad = Object.values(adsLookup).reduce((s, v) => s + v.gmv, 0);
+  const totalGmvDireto = Object.values(adsLookup).reduce((s, v) => s + v.direct_gmv, 0);
+  const pctDireto = totalGmvBroad > 0 ? (totalGmvDireto / totalGmvBroad) * 100 : 0;
+
   return (
     <AppLayout>
       <div className="flex items-center justify-between px-4 md:px-0">
         <PageHeader title="Performance" subtitle={hasExcelData && perfHook.periodLabel ? `Período: ${perfHook.periodLabel}` : 'Vendas · Shopee'} />
         <div className="flex items-center gap-2">
-          {/* Clear data button */}
-          {/* Clear data button */}
           {perfHook.data.length > 0 && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -133,7 +141,6 @@ export default function Performance() {
               </AlertDialogContent>
             </AlertDialog>
           )}
-          {/* Ads API sync button */}
           {adsToken && (
             <Button
               size="sm"
@@ -146,15 +153,8 @@ export default function Performance() {
               <span className="hidden md:inline">{(adsImporting || perfHook.importingAds) ? 'Sincronizando...' : 'Sincronizar Ads'}</span>
             </Button>
           )}
-          {/* Excel import button */}
           <label className="cursor-pointer">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx"
-              className="hidden"
-              onChange={handleFileChange}
-            />
+            <input ref={fileInputRef} type="file" accept=".xlsx" className="hidden" onChange={handleFileChange} />
             <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 pointer-events-none" asChild>
               <div>
                 {perfHook.importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
@@ -213,12 +213,128 @@ export default function Performance() {
                 </div>
               )}
 
+              {/* GMV Broad vs Direto bar */}
+              {totalGmvBroad > 0 && totalGmvDireto > 0 && (
+                <div className="rounded-xl border border-primary/20 bg-card p-4">
+                  <div className="flex flex-col md:flex-row md:items-center gap-4">
+                    <p className="text-[10px] font-bold text-primary uppercase tracking-wider shrink-0">📊 GMV</p>
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <div>
+                        <p className="text-lg font-bold font-mono text-emerald-500">R$ {totalGmvBroad.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</p>
+                        <p className="text-[9px] text-muted-foreground uppercase tracking-wide">Amplo (Broad)</p>
+                      </div>
+                      <div className="w-px h-8 bg-border hidden md:block" />
+                      <div>
+                        <p className="text-lg font-bold font-mono text-primary">R$ {totalGmvDireto.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</p>
+                        <p className="text-[9px] text-muted-foreground uppercase tracking-wide">Direto</p>
+                      </div>
+                      <div className="w-px h-8 bg-border hidden md:block" />
+                      <div className="flex-1 min-w-[120px]">
+                        <div className="flex justify-between text-[10px] text-muted-foreground mb-1">
+                          <span>GMV Direto vs Amplo</span>
+                          <span className="font-mono font-bold text-primary">{pctDireto.toFixed(1)}%</span>
+                        </div>
+                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                          <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${Math.min(pctDireto, 100)}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground max-w-[160px] leading-relaxed shrink-0 hidden lg:block">
+                      💡 {pctDireto >= 80 ? `${pctDireto.toFixed(0)}% das vendas via Ads foram diretas — excelente atribuição` : pctDireto >= 50 ? 'Atribuição moderada — parte das vendas vem de efeito halo' : 'Muita atribuição indireta — verifique campanhas'}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {/* Product cards */}
               <div className="space-y-2">
                 <p className="text-sm font-bold text-foreground">🏆 Ranking de Produtos ({perfHook.data.length})</p>
-                {perfHook.data.map((p, i) => (
-                  <ProductPerformanceCard key={p.id} produto={p} rank={i} periodDays={excelPeriodDays} />
-                ))}
+
+                {/* Desktop Table */}
+                <div className="hidden md:block rounded-xl border border-border bg-card overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-muted/30">
+                        <th className="text-left px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase w-10">#</th>
+                        <th className="text-left px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase">Produto</th>
+                        <th className="text-right px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase">Receita</th>
+                        <th className="text-right px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase">GMV Ads</th>
+                        <th className="text-right px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase">Unidades</th>
+                        <th className="text-right px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase">ROAS</th>
+                        <th className="text-center px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase w-24">Ação</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {perfHook.data.map((p, i) => {
+                        const ads = adsLookup[p.item_id];
+                        const pctRev = excelTotalRevenue > 0 ? (p.vendas_pago / excelTotalRevenue) * 100 : 0;
+                        const unDiaP = excelPeriodDays > 0 ? p.unidades_pagas / excelPeriodDays : 0;
+                        return (
+                          <tr key={p.id} className="border-b border-border hover:bg-muted/10 cursor-pointer transition-colors" onClick={() => navigate(`/performance/${p.item_id}`)}>
+                            <td className="px-4 py-3">
+                              {i < 3 ? <span className="text-base">{MEDALS[i]}</span> : <span className="text-xs text-muted-foreground font-mono">{i + 1}</span>}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="min-w-0">
+                                <p className="font-medium text-foreground truncate max-w-[280px]">{p.nome}</p>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="text-[10px] text-muted-foreground font-mono">ID: {p.item_id}</span>
+                                  {p.ads_roas != null && p.ads_roas > 0 && (
+                                    <span className="inline-flex items-center gap-1 text-[9px] font-bold text-primary bg-primary/10 border border-primary/20 rounded px-1.5 py-0.5">
+                                      📈 ROAS {p.ads_roas.toFixed(1)}x
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <span className="font-mono font-semibold text-foreground">R$ {p.vendas_pago.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</span>
+                              <p className="text-[9px] text-muted-foreground">{pctRev.toFixed(1)}% do total</p>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              {ads ? (
+                                <>
+                                  <span className="font-mono font-semibold text-emerald-500">R$ {ads.gmv.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</span>
+                                  <p className="text-[9px] text-muted-foreground">broad</p>
+                                </>
+                              ) : (
+                                <span className="text-muted-foreground text-xs">—</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <span className="font-mono font-semibold text-foreground">{p.unidades_pagas} un</span>
+                              <p className="text-[9px] text-muted-foreground">{unDiaP.toFixed(1)}/dia</p>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              {(p.ads_roas || 0) > 0 ? (
+                                <span className="font-mono font-semibold text-emerald-500">{(p.ads_roas || 0).toFixed(1)}x</span>
+                              ) : (
+                                <span className="text-muted-foreground text-xs">—</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 text-[11px] gap-1 border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
+                                onClick={(e) => { e.stopPropagation(); navigate(`/performance/${p.item_id}`); }}
+                              >
+                                ↗ Detalhes
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Cards */}
+                <div className="md:hidden space-y-2">
+                  {perfHook.data.map((p, i) => (
+                    <ProductPerformanceCard key={p.id} produto={p} rank={i} periodDays={excelPeriodDays} adsData={adsLookup[p.item_id] || null} />
+                  ))}
+                </div>
               </div>
             </TabsContent>
 
@@ -229,7 +345,6 @@ export default function Performance() {
           </Tabs>
         ) : (
           <>
-            {/* Loading / Empty / Syncing states */}
             {(loading || perfHook.loading) && !data && !hasExcelData && (
               <div className="space-y-4 animate-pulse">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -253,25 +368,14 @@ export default function Performance() {
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center gap-3">
-                  {/* Primary CTA: Sync Ads if token exists */}
                   {adsToken && (
-                    <Button
-                      className="gap-2"
-                      disabled={adsImporting || perfHook.importingAds}
-                      onClick={handleSyncAds}
-                    >
+                    <Button className="gap-2" disabled={adsImporting || perfHook.importingAds} onClick={handleSyncAds}>
                       {(adsImporting || perfHook.importingAds) ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                       {(adsImporting || perfHook.importingAds) ? 'Sincronizando...' : 'Sincronizar Ads'}
                     </Button>
                   )}
-                  {/* Secondary CTA: Import Excel */}
                   <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      accept=".xlsx"
-                      className="hidden"
-                      onChange={handleFileChange}
-                    />
+                    <input type="file" accept=".xlsx" className="hidden" onChange={handleFileChange} />
                     <div className={`flex items-center gap-2 text-sm rounded-lg px-4 py-2.5 transition-colors cursor-pointer font-medium ${adsToken ? 'bg-muted/30 border border-border text-foreground hover:bg-muted/50' : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}>
                       <Upload className="w-4 h-4" />
                       Importar relatório de produto
