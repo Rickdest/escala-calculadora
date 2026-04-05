@@ -539,10 +539,24 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   };
 
 
-  // Auto-sync: trigger import when connected but no data yet
+  // URL-param trigger: only auto-import when navigated from Integracoes with ?startAdsImport=1
   useEffect(() => {
-    if (isConnected && !hasPersistedApiData && !syncing && !loading && !autoSyncAttempted.current) {
-      autoSyncAttempted.current = true;
+    if (searchParams.get('startAdsImport') === '1' && isConnected && !autoSyncTriggered.current && !importJob.isImporting) {
+      autoSyncTriggered.current = true;
+      // Clean the URL param
+      searchParams.delete('startAdsImport');
+      setSearchParams(searchParams, { replace: true });
+      // Start job-based import
+      importJob.startJob();
+    }
+  }, [searchParams, isConnected, importJob.isImporting]);
+
+  // When job finishes, reload persisted data
+  useEffect(() => {
+    if (importJob.status === 'done') {
+      invalidatePersistedAds();
+    }
+  }, [importJob.status]);
       handleImportAds();
     }
   }, [isConnected, hasPersistedApiData, syncing, loading]);
