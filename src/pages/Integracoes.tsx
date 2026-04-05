@@ -236,40 +236,56 @@ export default function Integracoes() {
           </div>
         )}
 
-        {/* ═══ UNIFIED CONNECT CARD — when neither connected ═══ */}
+        {/* ═══ CONNECT CARDS — when neither connected ═══ */}
         {neitherConnected && (
-          <div className="bg-card border border-border rounded-xl p-5">
-            <p className="text-sm font-semibold mb-1">🔗 Conectar com Shopee</p>
-            <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
-              Uma conexão rápida libera importação de produtos, pedidos e análise de Ads.
-              O processo leva menos de 2 minutos e requer duas aprovações na Shopee.
-            </p>
-
-            <div className="space-y-2 mb-4">
-              {[
-                'Você será redirecionado para o login da Shopee',
-                'Aprova acesso a produtos e pedidos',
-                'Aprova acesso a dados de Ads',
-                'Pronto — dados sincronizados automaticamente',
-              ].map((step, i) => (
-                <div key={i} className="flex items-center gap-2.5 text-xs text-muted-foreground">
-                  <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center flex-shrink-0">
-                    {i + 1}
-                  </span>
-                  {step}
+          <div className="space-y-3">
+            {/* Seller Card */}
+            <div className="bg-card border border-border rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-[#ee4d2d] flex items-center justify-center text-xl">
+                  🛍
                 </div>
-              ))}
+                <div>
+                  <p className="text-sm font-semibold">Shopee Seller</p>
+                  <p className="text-[11px] text-muted-foreground">Produtos · Pedidos · Estoque</p>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+                Importe seus produtos, acompanhe pedidos e sincronize estoque automaticamente.
+              </p>
+              <Button
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                onClick={handleConnectSeller}
+                disabled={connecting}
+              >
+                {connecting ? 'Redirecionando...' : '🔗 Conectar Shopee Seller'}
+              </Button>
             </div>
 
-            <Button
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-              onClick={handleConnectSeller}
-              disabled={connecting}
-            >
-              {connecting ? 'Redirecionando...' : 'Conectar com Shopee →'}
-            </Button>
+            {/* Ads Card */}
+            <div className="bg-card border border-border rounded-xl p-5">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 rounded-xl bg-[#ee4d2d] flex items-center justify-center text-xl">
+                  📊
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">Shopee Ads</p>
+                  <p className="text-[11px] text-muted-foreground">ROAS · Campanhas · Gasto</p>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+                Analise o ROAS real dos seus anúncios, campanhas e gastos diretamente da API.
+              </p>
+              <Button
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                onClick={() => adsHook.startOAuth('ads')}
+                disabled={connecting}
+              >
+                {connecting ? 'Redirecionando...' : '🔗 Conectar Shopee Ads'}
+              </Button>
+            </div>
 
-            <p className="text-[10px] text-muted-foreground/60 text-center mt-2">
+            <p className="text-[10px] text-muted-foreground/60 text-center">
               🔒 Somente leitura · O Skalify nunca altera dados na Shopee
             </p>
           </div>
