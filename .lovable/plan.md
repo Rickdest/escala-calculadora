@@ -1,36 +1,40 @@
 
+## Diagnóstico completo
 
-## Diagnóstico
+### O filtro de datas pode esconder dados?
+**Sim, parcialmente.** O filtro padrão é "últimos 28 dias" (8 de março → 5 de abril). Os dados salvos vão de 7 de março a 3 de abril. Dois problemas:
 
-Dois problemas distintos causam a falha:
+1. **Campanhas com `daily_data` vazia** (que usaram `summary_metrics` como fallback) — quando o filtro de datas está ativo, o frontend recalcula TUDO a partir de `daily_data`. Se `daily_data` está vazia, as métricas viram zero e o item é removido da lista.
 
-### 1. Edge Function crasha na inicialização
-Na linha 78 de `shopee-ads/index.ts`, `getAdsCredentials()` é chamada no **nível do módulo** (fora do `Deno.serve`). Se alguma variável de ambiente estiver ausente ou inválida, a função crasheia antes de processar qualquer request — resultando em "Failed to send a request to the Edge Function".
+2. **Campo `orders` faltando no `daily_data`** — o backend salva `{date, impressions, clicks, expense, gmv, roas}` mas NÃO salva `orders`. Quando o filtro recalcula, `orders` fica sempre 0.
 
-### 2. Métricas todas zeradas
-Os logs mostram 108 campanhas com `expense=0.00`. O endpoint `get_product_campaign_daily_performance` retorna entradas diárias, mas os campos de métricas estão em formatos que o `normalizeDailyEntry` não reconhece, ou a Shopee está retornando dados vazios para campanhas "ended" antigas. O filtro atual só pula campanhas com `campaign_id < 50M`, mas a maioria das 108 campanhas são "ended" e não têm dados úteis.
+### Outros problemas encontrados
 
-## Plano
+3. **Cache não recarrega após importação** — Quando o job termina como "done", `invalidatePersistedAds()` é chamada, mas o react-query pode não refazer a busca imediatamente se a aba estava em estado de loading/transição.
 
-### 1. Mover `getAdsCredentials()` para dentro do handler
-- Remover a chamada no nível do módulo (linha 78-80)
-- Chamar `getAdsCredentials()` dentro do `Deno.serve` handler e dentro de `processJob`
-- Retornar erro amigável se credenciais faltarem, em vez de crashar
+4. **Dados existem mas `effectiveApiData` pode ser null** — Se `buildApiAdsDataFromRows` retorna `null` (todos os itens filtrados), a UI mostra "Nenhum dado no período" mesmo com dados reais no banco.
 
-### 2. Adicionar log de diagnóstico na resposta da API Shopee
-- No `fetchCampaignDaily`, para a **primeira campanha**, logar o JSON bruto completo de uma entrada diária (não só 600 chars) para entender o formato real que a Shopee retorna
-- Isso vai revelar se as métricas estão em campos não mapeados
+## Plano de correção
 
-### 3. Filtrar campanhas "ended" de forma mais agressiva
-- Pular **todas** as campanhas com status "ended" durante o Step 4 (busca individual), a menos que tenham métricas no sumário (`summary_metrics.hasData === true`)
-- Isso reduz drasticamente o tempo de execução (de 108 campanhas para apenas as ativas/pausadas ou com dados reais)
+### 1. Preservar métricas originais quando `daily_data` está vazia
+Em `buildApiAdsDataFromRows`, se um item tem `daily_data` vazia ou ausente, **não recalcular** — manter as métricas salvas no nível da row (`r.impressions, r.expense, r.gmv`).
 
-### 4. Usar `summary_metrics` como fallback principal
-- Se `fetchCampaignDaily` retorna entradas mas todas com métricas zeradas, usar os `summary_metrics` extraídos no Step 2 como fonte principal de dados
-- Isso garante que pelo menos os totais apareçam
+### 2. Incluir `orders` no `daily_data` do backend
+Em `processCampaignEntries`, adicionar `orders` ao objeto `daily`:
+```
+daily.push({
+  date, impressions, clicks, expense, gmv, roas,
+  orders: e.orders  // ← campo faltando
+});
+```
+
+### 3. Forçar refetch após job "done"
+No `useEffect` que detecta `importJob.status === 'done'`, adicionar um pequeno delay antes de invalidar para garantir que o banco já processou o upsert.
+
+### 4. Remover filtro padrão restritivo
+Inicializar `dateFrom` e `dateTo` como `undefined` (sem filtro) quando não há dados ainda. Após carregar dados, usar o período real dos dados como range padrão.
 
 ## Arquivos modificados
-- `supabase/functions/shopee-ads/index.ts`
-
-## Sem migration
-
+- `src/hooks/useApiAdsData.ts` — preservar métricas quando daily_data vazia
+- `supabase/functions/shopee-ads/index.ts` — incluir `orders` no daily_data
+- `src/components/roas/AdsTab.tsx` — inicialização do filtro + refetch robusto
