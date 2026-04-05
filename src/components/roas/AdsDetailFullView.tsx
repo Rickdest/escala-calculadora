@@ -160,16 +160,38 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
         toast.error('Este CSV não é um log de operações válido');
         return;
       }
+      if (!adProductId && !adShopeeProductId) {
+        toast.error('Produto não vinculado'); return;
+      }
+      // Try update first
       let updateFilter = supabase.from('product_ads_metrics').update({ operation_log: detected.operationLog as any }).eq('user_id', user.id);
       if (adProductId) {
         updateFilter = updateFilter.eq('product_id', adProductId);
-      } else if (adShopeeProductId) {
-        updateFilter = updateFilter.eq('shopee_product_id', adShopeeProductId);
       } else {
-        toast.error('Produto não vinculado'); return;
+        updateFilter = updateFilter.eq('shopee_product_id', adShopeeProductId!);
       }
-      const { error } = await updateFilter;
-      if (error) { toast.error('Erro ao salvar log'); return; }
+      const { error, count } = await updateFilter.select('id').maybeSingle();
+      if (error && error.code !== 'PGRST116') { toast.error('Erro ao salvar log'); return; }
+      // If no row was updated, insert a new one
+      if (!count && !error) {
+        // Check if update actually matched
+        const checkQuery = supabase.from('product_ads_metrics').select('id').eq('user_id', user.id);
+        const checkResult = adProductId
+          ? await checkQuery.eq('product_id', adProductId).limit(1)
+          : await checkQuery.eq('shopee_product_id', adShopeeProductId!).limit(1);
+        if (!checkResult.data || checkResult.data.length === 0) {
+          // No existing row — insert
+          const today = new Date().toISOString().slice(0, 10);
+          await supabase.from('product_ads_metrics').insert({
+            user_id: user.id,
+            product_id: adProductId || null,
+            shopee_product_id: adShopeeProductId || null,
+            period_start: today,
+            period_end: today,
+            operation_log: detected.operationLog as any,
+          } as any);
+        }
+      }
       toast.success('Log de operações importado');
       loadLog();
     } catch { toast.error('Erro ao importar'); }
