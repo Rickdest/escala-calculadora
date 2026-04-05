@@ -518,6 +518,13 @@ export default function Integracoes() {
                       Dados de campanhas, ROAS e gastos são sincronizados automaticamente via API.
                     </p>
 
+                    <Button
+                      className="w-full mt-3 gap-2"
+                      onClick={() => navigate('/roas?tab=ads&startAdsImport=1')}
+                    >
+                      📊 Abrir Análise de Ads
+                    </Button>
+
                     {/* Disconnect Ads */}
                     <div className="flex items-center justify-between pt-4 mt-4 border-t border-border">
                       <div>
