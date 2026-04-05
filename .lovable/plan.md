@@ -1,56 +1,72 @@
 
 
-## Plano: Limpar dados ao desconectar + Esconder API Seller
+## Plano: Importar dados da API Ads na Performance + Enriquecer com Excel
 
-### Contexto
-1. Ao desconectar uma API, os dados associados permanecem no banco -- o usuário espera que sejam apagados.
-2. A API Seller (In House System) não está funcionando para usuários externos, então não deve aparecer como opção.
+### Problema atual
+A aba Performance só mostra dados quando o usuário importa o Excel (`parentskudetail`). Os dados da API Ads (`shopee_ads_by_product`) estão disponíveis mas só são usados como enriquecimento no momento da importação Excel -- nunca como fonte primária.
+
+### O que muda
+Quando o usuário tem dados de Ads sincronizados via API, a Performance deve mostrar esses produtos automaticamente (GMV, gasto, ROAS, pedidos, impressões, cliques). Quando o Excel for importado depois, ele enriquece esses registros com dados orgânicos (funil completo, variações, recompra).
 
 ### Mudanças
 
-#### 1. Feature flag para esconder Seller API
-**Arquivo:** `src/config/features.ts`
-- Adicionar `SHOPEE_SELLER_API_READY: false`
+#### 1. Hook `useProductPerformance` -- importar dados da API Ads
+**Arquivo:** `src/hooks/useProductPerformance.ts`
 
-#### 2. Página Integrações -- esconder card Seller + limpar dados ao desconectar
-**Arquivo:** `src/pages/Integracoes.tsx`
+Adicionar função `importFromAdsApi()`:
+- Buscar todos os registros de `shopee_ads_by_product` do usuário
+- Agregar por `item_id` (mesmo produto pode ter múltiplas campanhas)
+- Para cada item_id, criar/atualizar um registro em `product_performance` com:
+  - `ads_roas`, `ads_gasto`, `ads_gmv`, `ads_pedidos`, `ads_impressoes`, `ads_cliques` preenchidos
+  - Campos orgânicos zerados (impressoes, cliques, ctr, etc = 0) -- serão preenchidos pelo Excel
+  - `nome` = `item_name` da campanha
+  - `source` = `'ads_api'`
+  - `period_start` / `period_end` do range dos dados de Ads
+- Upsert com `onConflict: 'store_id,item_id,period_start,period_end'`
+- Quando o Excel for importado depois, o upsert sobrescreve os campos orgânicos mantendo os ads
 
-**Esconder Seller:**
-- No estado `neitherConnected`, não renderizar o card "Shopee Seller" (condicionar com feature flag)
-- No card de Seller quando Ads está conectado, esconder o botão "Conectar" do Seller e mostrar apenas como "Indisponível no momento"
-- Se já estiver conectado, manter visível para permitir desconexão
+Modificar `importExcel()`:
+- Após importar o Excel, re-buscar `shopee_ads_by_product` e atualizar campos `ads_*` dos registros existentes (já faz isso, manter)
 
-**Limpar dados ao desconectar Seller (`handleDisconnect`):**
-- Após deletar `shopee_tokens`, deletar também:
-  - `shopee_performance` (where `user_id`)
-  - `product_performance` (where `user_id`)
-
-**Limpar dados ao desconectar Ads (`handleDisconnectAds`):**
-- Após deletar `shopee_tokens`, deletar também:
-  - `shopee_ads_by_product` (where `user_id`)
-  - `shopee_ads_import_jobs` (where `user_id`) -- RLS bloqueia DELETE, então ignorar erro
-  - `ads_data` (where `user_id`)
-  - `product_ads_metrics` (where `user_id`)
-- Atualizar `product_performance` para limpar colunas `ads_*` (set null)
-
-**Diálogo de confirmação:** Atualizar texto para avisar que os dados serão apagados.
-
-#### 3. Página Performance -- remover referências ao Seller API
+#### 2. Botão "Sincronizar Ads" na Performance
 **Arquivo:** `src/pages/Performance.tsx`
-- Remover botão "Conectar Shopee" (Seller) do empty state
-- Remover botão "Atualizar API" / "Sincronizar API" do header
-- Manter apenas o fluxo de importação Excel como fonte principal
-- Remover a aba "Pedidos (API)" quando não houver dados da API
 
-#### 4. Tabelas afetadas na limpeza
+Atualizar o botão existente de "Sincronizar Ads":
+- Após chamar `startAdsImport()` e a importação concluir, chamar `perfHook.importFromAdsApi()` para popular a `product_performance`
+- Isso garante que os dados apareçam na aba Performance automaticamente
 
-| Desconectar | Tabelas limpas |
-|---|---|
-| Seller | `shopee_performance`, `product_performance` |
-| Ads | `shopee_ads_by_product`, `ads_data`, `product_ads_metrics`, campos `ads_*` em `product_performance` |
+#### 3. Ajustar cards para dados "somente Ads"
+**Arquivo:** `src/components/performance/ProductPerformanceCard.tsx`
+
+- Quando `source === 'ads_api'` e dados orgânicos estão zerados:
+  - Ocultar seção "Funil de conversão" (não há dados de impressões orgânicas)
+  - Mostrar badge "📈 Dados via Ads" no card
+  - Exibir métricas de Ads como primárias: GMV Ads, Gasto, ROAS, Pedidos Ads
+  - Ocultar "Orgânico vs Ads" (sem dados orgânicos ainda)
+- Quando o Excel enriquecer depois, o `source` vira `'excel'` e tudo aparece normalmente
+
+#### 4. KPI cards adaptáveis
+**Arquivo:** `src/pages/Performance.tsx`
+
+- Quando só tem dados de Ads (sem Excel): mostrar KPIs de Ads (GMV Ads, Gasto Total, ROAS Geral, Produtos com Ads)
+- Quando tem Excel: manter KPIs atuais (Receita Paga, Unidades, Ticket Médio, Produtos)
+- Badge no header indicando fonte: "📈 API Ads" ou "📊 Excel + API Ads"
+
+#### 5. Empty state atualizado
+- Se tem token de Ads mas sem dados: mostrar botão "Sincronizar Ads" como CTA primário
+- Manter "Importar Excel" como CTA secundário
+
+### Fluxo do usuário
+
+```text
+1. Conecta API Ads → Sincroniza Ads
+2. Performance mostra produtos com dados de Ads (GMV, ROAS, gasto)
+3. Usuário importa Excel → Performance enriquece com funil orgânico
+4. Cards mostram dados completos: orgânico + Ads combinados
+```
 
 ### Arquivos modificados
-- `src/config/features.ts` -- nova flag
-- `src/pages/Integracoes.tsx` -- limpeza de dados + esconder Seller
-- `src/pages/Performance.tsx` -- remover referências ao Seller API
+- `src/hooks/useProductPerformance.ts` -- nova função `importFromAdsApi()`
+- `src/pages/Performance.tsx` -- fluxo de sync, KPIs adaptáveis, empty state
+- `src/components/performance/ProductPerformanceCard.tsx` -- layout adaptável por `source`
 
