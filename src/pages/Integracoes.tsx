@@ -546,7 +546,7 @@ export default function Integracoes() {
                     <Button
                       size="sm"
                       className="bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20"
-                      onClick={() => adsHook.startOAuth('ads')}
+                      onClick={handleConnectAds}
                     >
                       🔗 Conectar
                     </Button>
