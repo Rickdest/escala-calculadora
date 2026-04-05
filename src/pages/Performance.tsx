@@ -12,7 +12,7 @@ import { ProductPerformanceCard } from '@/components/performance/ProductPerforma
 import { useApiAdsData } from '@/hooks/useApiAdsData';
 import { useShopeeToken } from '@/hooks/useShopeeToken';
 import { useAdsImportJob } from '@/hooks/useAdsImportJob';
-import { Loader2, ShoppingBag, TrendingUp, ShoppingCart, Package, ChevronDown, BarChart3, Eye, Upload, FileSpreadsheet, RefreshCw } from 'lucide-react';
+import { Loader2, ShoppingBag, TrendingUp, ShoppingCart, Package, ChevronDown, BarChart3, Eye, Upload, FileSpreadsheet, RefreshCw, Megaphone, DollarSign } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -47,10 +47,12 @@ export default function Performance() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Determine active tab
   const hasExcelData = perfHook.data.length > 0;
   const hasApiData = !!data;
-  const [activeTab, setActiveTab] = useState(hasExcelData ? 'excel' : 'api');
+
+  // Determine data source type
+  const hasAdsOnlyData = perfHook.data.length > 0 && perfHook.data.every(p => p.source === 'ads_api');
+  const hasExcelEnriched = perfHook.data.some(p => p.source === 'excel');
 
   // Build ads lookup by item_id
   const adsLookup = useMemo(() => {
@@ -68,12 +70,17 @@ export default function Performance() {
     return map;
   }, [adsRows]);
 
-  // handleConnect removed — Seller API hidden
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) perfHook.importExcel(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleSyncAds = async () => {
+    await startAdsImport();
+    invalidateAds();
+    // After ads sync, import into product_performance
+    await perfHook.importFromAdsApi();
   };
 
   const sorted = data ? Object.entries(data.product_sales).sort(([, a], [, b]) => b.total_qty - a.total_qty) : [];
@@ -82,9 +89,12 @@ export default function Performance() {
   const periodDays = data?.summary.period_days || 90;
   const unDia = periodDays > 0 && data ? data.summary.total_orders / periodDays : 0;
 
-  // Excel summary
+  // Excel/Ads summary
   const excelTotalRevenue = perfHook.data.reduce((s, p) => s + Number(p.vendas_pago), 0);
   const excelTotalUnits = perfHook.data.reduce((s, p) => s + Number(p.unidades_pagas), 0);
+  const excelTotalAdsGasto = perfHook.data.reduce((s, p) => s + Number(p.ads_gasto || 0), 0);
+  const excelTotalAdsGmv = perfHook.data.reduce((s, p) => s + Number(p.ads_gmv || 0), 0);
+  const overallRoas = excelTotalAdsGasto > 0 ? excelTotalAdsGmv / excelTotalAdsGasto : 0;
   const excelPeriodDays = perfHook.data.length > 0 ? (() => {
     const p = perfHook.data[0];
     const diff = new Date(p.period_end).getTime() - new Date(p.period_start).getTime();
@@ -102,11 +112,11 @@ export default function Performance() {
               size="sm"
               variant="outline"
               className="h-8 text-xs gap-1.5"
-              disabled={adsImporting}
-              onClick={async () => { await startAdsImport(); invalidateAds(); }}
+              disabled={adsImporting || perfHook.importingAds}
+              onClick={handleSyncAds}
             >
-              {adsImporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-              <span className="hidden md:inline">{adsImporting ? 'Sincronizando...' : 'Sincronizar Ads'}</span>
+              {(adsImporting || perfHook.importingAds) ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+              <span className="hidden md:inline">{(adsImporting || perfHook.importingAds) ? 'Sincronizando...' : 'Sincronizar Ads'}</span>
             </Button>
           )}
           {/* Excel import button */}
@@ -129,21 +139,21 @@ export default function Performance() {
       <div className="pt-4 pb-24 md:pb-6 space-y-4">
         {/* Data source badges */}
         <div className="flex items-center gap-2 text-xs flex-wrap px-4 md:px-0">
-          {hasExcelData && (
+          {hasExcelEnriched && (
             <span className="flex items-center gap-1 bg-muted/30 rounded-lg px-2 py-1 border border-border">
-              📊 Relatório de produto · orgânico + Ads
+              📊 Excel + API Ads
             </span>
           )}
-          {Object.keys(adsLookup).length > 0 && (
+          {hasAdsOnlyData && !hasExcelEnriched && (
             <span className="flex items-center gap-1 bg-primary/10 text-primary rounded-lg px-2 py-1 border border-primary/20">
-              🎯 API Ads · campanhas
+              📈 API Ads
             </span>
           )}
         </div>
 
-        {/* Tabs when both sources exist */}
+        {/* Main content */}
         {(hasExcelData || hasApiData) ? (
-          <Tabs value={hasExcelData ? 'excel' : 'api'} onValueChange={setActiveTab}>
+          <Tabs value={hasExcelData ? 'excel' : 'api'} onValueChange={() => {}}>
             {hasExcelData && hasApiData && (
               <TabsList className="w-full">
                 <TabsTrigger value="excel" className="flex-1 gap-1.5">
@@ -155,15 +165,24 @@ export default function Performance() {
               </TabsList>
             )}
 
-            {/* EXCEL TAB */}
+            {/* EXCEL / ADS TAB */}
             <TabsContent value="excel" className="space-y-4 mt-4">
-              {/* KPI Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <KpiCard icon={<TrendingUp className="w-5 h-5" />} iconColor="text-emerald-500" borderColor="border-t-emerald-500" label="Receita Paga" value={`R$ ${excelTotalRevenue.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`} sub={`${excelPeriodDays} dias`} />
-                <KpiCard icon={<Package className="w-5 h-5" />} iconColor="text-primary" borderColor="border-t-primary" label="Unidades" value={String(excelTotalUnits)} sub={`${(excelTotalUnits / excelPeriodDays).toFixed(1)}/dia`} />
-                <KpiCard icon={<ShoppingCart className="w-5 h-5" />} iconColor="text-blue-500" borderColor="border-t-blue-500" label="Ticket Médio" value={excelTotalUnits > 0 ? `R$ ${(excelTotalRevenue / excelTotalUnits).toFixed(2)}` : '—'} sub="por unidade" />
-                <KpiCard icon={<BarChart3 className="w-5 h-5" />} iconColor="text-orange-500" borderColor="border-t-orange-500" label="Produtos" value={String(perfHook.data.length)} sub="com dados" />
-              </div>
+              {/* KPI Cards — adaptive */}
+              {hasAdsOnlyData && !hasExcelEnriched ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <KpiCard icon={<TrendingUp className="w-5 h-5" />} iconColor="text-emerald-500" borderColor="border-t-emerald-500" label="GMV Ads" value={`R$ ${excelTotalAdsGmv.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`} sub={`${excelPeriodDays} dias`} />
+                  <KpiCard icon={<DollarSign className="w-5 h-5" />} iconColor="text-orange-500" borderColor="border-t-orange-500" label="Gasto Total" value={`R$ ${excelTotalAdsGasto.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}`} sub="investido" />
+                  <KpiCard icon={<Megaphone className="w-5 h-5" />} iconColor="text-primary" borderColor="border-t-primary" label="ROAS Geral" value={`${overallRoas.toFixed(1)}x`} sub="retorno" />
+                  <KpiCard icon={<BarChart3 className="w-5 h-5" />} iconColor="text-blue-500" borderColor="border-t-blue-500" label="Produtos" value={String(perfHook.data.length)} sub="com Ads" />
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <KpiCard icon={<TrendingUp className="w-5 h-5" />} iconColor="text-emerald-500" borderColor="border-t-emerald-500" label="Receita Paga" value={`R$ ${excelTotalRevenue.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`} sub={`${excelPeriodDays} dias`} />
+                  <KpiCard icon={<Package className="w-5 h-5" />} iconColor="text-primary" borderColor="border-t-primary" label="Unidades" value={String(excelTotalUnits)} sub={`${(excelTotalUnits / excelPeriodDays).toFixed(1)}/dia`} />
+                  <KpiCard icon={<ShoppingCart className="w-5 h-5" />} iconColor="text-blue-500" borderColor="border-t-blue-500" label="Ticket Médio" value={excelTotalUnits > 0 ? `R$ ${(excelTotalRevenue / excelTotalUnits).toFixed(2)}` : '—'} sub="por unidade" />
+                  <KpiCard icon={<BarChart3 className="w-5 h-5" />} iconColor="text-orange-500" borderColor="border-t-orange-500" label="Produtos" value={String(perfHook.data.length)} sub="com dados" />
+                </div>
+              )}
 
               {/* Product cards */}
               <div className="space-y-2">
@@ -200,11 +219,23 @@ export default function Performance() {
                 <div>
                   <p className="text-lg font-bold text-foreground">Seus dados de performance aparecerão aqui</p>
                   <p className="text-sm text-muted-foreground max-w-md mt-1.5">
-                    Importe o relatório de produto do Seller Center ou sincronize via API.
+                    Sincronize via API de Ads ou importe o relatório de produto do Seller Center.
                   </p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center gap-3">
+                  {/* Primary CTA: Sync Ads if token exists */}
+                  {adsToken && (
+                    <Button
+                      className="gap-2"
+                      disabled={adsImporting || perfHook.importingAds}
+                      onClick={handleSyncAds}
+                    >
+                      {(adsImporting || perfHook.importingAds) ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+                      {(adsImporting || perfHook.importingAds) ? 'Sincronizando...' : 'Sincronizar Ads'}
+                    </Button>
+                  )}
+                  {/* Secondary CTA: Import Excel */}
                   <label className="cursor-pointer">
                     <input
                       type="file"
@@ -212,7 +243,7 @@ export default function Performance() {
                       className="hidden"
                       onChange={handleFileChange}
                     />
-                    <div className="flex items-center gap-2 text-sm bg-primary text-primary-foreground rounded-lg px-4 py-2.5 hover:bg-primary/90 transition-colors cursor-pointer font-medium">
+                    <div className={`flex items-center gap-2 text-sm rounded-lg px-4 py-2.5 transition-colors cursor-pointer font-medium ${adsToken ? 'bg-muted/30 border border-border text-foreground hover:bg-muted/50' : 'bg-primary text-primary-foreground hover:bg-primary/90'}`}>
                       <Upload className="w-4 h-4" />
                       Importar relatório de produto
                     </div>
@@ -243,7 +274,6 @@ export default function Performance() {
     if (!data) return null;
     return (
       <>
-        {/* KPI Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <KpiCard icon={<ShoppingCart className="w-5 h-5" />} iconColor="text-primary" borderColor="border-t-primary" label="Pedidos" value={String(data.summary.total_orders)} sub="90 dias" />
           <KpiCard icon={<TrendingUp className="w-5 h-5" />} iconColor="text-emerald-500" borderColor="border-t-emerald-500" label="Faturamento" value={totalRevenueAll > 0 ? `R$ ${totalRevenueAll.toFixed(0)}` : '—'} sub={totalRevenueAll > 0 ? `R$ ${(totalRevenueAll / 90).toFixed(0)}/dia` : ''} />
@@ -251,7 +281,6 @@ export default function Performance() {
           <KpiCard icon={<BarChart3 className="w-5 h-5" />} iconColor="text-orange-500" borderColor="border-t-orange-500" label="Pedidos/dia" value={unDia > 0 ? unDia.toFixed(1) : '—'} sub="média" />
         </div>
 
-        {/* Status Chips */}
         {Object.keys(data.summary.status_counts).length > 0 && (
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
             {Object.entries(data.summary.status_counts)
@@ -266,7 +295,6 @@ export default function Performance() {
           </div>
         )}
 
-        {/* Product Ranking */}
         {sorted.length === 0 ? (
           <div className="rounded-xl border border-border p-6 text-center text-sm text-muted-foreground">
             Nenhum produto vendido no período.
