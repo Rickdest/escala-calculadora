@@ -10,7 +10,9 @@ import { useProductPerformance } from '@/hooks/useProductPerformance';
 import { ProductExpandedDetail } from '@/components/performance/ProductExpandedDetail';
 import { ProductPerformanceCard } from '@/components/performance/ProductPerformanceCard';
 import { useApiAdsData } from '@/hooks/useApiAdsData';
-import { Loader2, ShoppingBag, TrendingUp, ShoppingCart, Package, ChevronDown, BarChart3, Eye, Upload, FileSpreadsheet } from 'lucide-react';
+import { useShopeeToken } from '@/hooks/useShopeeToken';
+import { useAdsImportJob } from '@/hooks/useAdsImportJob';
+import { Loader2, ShoppingBag, TrendingUp, ShoppingCart, Package, ChevronDown, BarChart3, Eye, Upload, FileSpreadsheet, RefreshCw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const STATUS_COLORS: Record<string, string> = {
