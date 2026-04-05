@@ -77,11 +77,25 @@ export function usePerformanceData() {
   const sync = useCallback(async () => {
     try {
       setSyncing(true);
-      const result = await syncStoreData();
+      let result: any = null;
+      try {
+        result = await syncStoreData();
+      } catch (syncErr: any) {
+        // syncStoreData may throw on needs_reauth or other errors
+        console.error('[usePerformanceData] syncStoreData threw:', syncErr);
+        const msg = syncErr?.message || '';
+        if (msg.includes('reconectada') || msg.includes('reauth') || msg.includes('shop_no_linked')) {
+          toast.error('Sua loja Shopee precisa ser reconectada. Vá em Integrações e reconecte.', { duration: 6000 });
+          return;
+        }
+        toast.error('Erro ao sincronizar dados da loja.');
+        return;
+      }
 
-      // Handle needs_reauth from backend
-      if (result?.needs_reauth) {
-        toast.error('Sua loja Shopee precisa ser reconectada. Vá em Integrações e reconecte.', { duration: 6000 });
+      // Handle needs_reauth from backend (success: false)
+      if (result?.needs_reauth || result?.success === false) {
+        const msg = result?.message || 'Sua loja Shopee precisa ser reconectada. Vá em Integrações e reconecte.';
+        toast.error(msg, { duration: 6000 });
         await loadFromDb();
         return;
       }
