@@ -101,7 +101,11 @@ export default function Integracoes() {
   useEffect(() => {
     if (searchParams.get('shopee_connected') === 'true') {
       const appType = searchParams.get('app_type') || 'seller';
-      toast.success(appType === 'ads' ? 'Shopee Ads conectada!' : 'Shopee conectada!');
+      if (appType === 'ads') {
+        toast.success('Shopee Ads conectada! Clique em "Abrir Análise de Ads" para importar os dados.');
+      } else {
+        toast.success('Shopee conectada!');
+      }
       sellerHook.refetch();
       adsHook.refetch();
     }
