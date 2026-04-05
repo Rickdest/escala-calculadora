@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { FEATURES } from '@/config/features';
 
 const getTokenDaysRemaining = (token: any): number => {
   if (!token) return 0;
