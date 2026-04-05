@@ -92,14 +92,15 @@ async function refreshTokenIfNeeded(shopeeToken: any, _supabase: any): Promise<{
   console.log("[SHOPEE ADS] Token near expiry, refreshing...");
   const refreshPath = "/api/v2/auth/access_token/get";
   const timestamp = Math.floor(Date.now() / 1000);
-  const sign = await generateSignWith(adsCreds.partnerId, adsCreds.partnerKey, refreshPath, timestamp);
-  const refreshUrl = `${SHOPEE_HOST}${refreshPath}?partner_id=${adsCreds.partnerId}&timestamp=${timestamp}&sign=${sign}`;
+  const creds = getAdsCreds();
+  const sign = await generateSignWith(creds.partnerId, creds.partnerKey, refreshPath, timestamp);
+  const refreshUrl = `${SHOPEE_HOST}${refreshPath}?partner_id=${creds.partnerId}&timestamp=${timestamp}&sign=${sign}`;
 
   try {
     const refreshRes = await fetch(refreshUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh_token: shopeeToken.refresh_token, shop_id: Number(shopeeToken.shop_id), partner_id: adsCreds.partnerId }),
+      body: JSON.stringify({ refresh_token: shopeeToken.refresh_token, shop_id: Number(shopeeToken.shop_id), partner_id: creds.partnerId }),
     });
 
     const refreshData = await refreshRes.json();
