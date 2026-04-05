@@ -542,7 +542,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   return (
     <div className="space-y-4 relative">
       {/* ═══ Syncing Inline Banner ═══ */}
-      {syncing && (
+      {(syncing || importJob.isImporting) && (
         <div className="flex items-center gap-4 p-4 rounded-xl border border-primary/20 bg-primary/5 animate-in fade-in duration-300">
           <div className="relative w-12 h-12 flex-shrink-0">
             <div className="absolute inset-0 rounded-full border-[3px] border-primary/20" />
@@ -550,9 +550,25 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
             <span className="absolute inset-0 flex items-center justify-center text-lg font-black text-primary">S</span>
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-bold text-foreground">Importando dados de Ads da Shopee...</p>
+            <p className="text-sm font-bold text-foreground">
+              {importJob.status === 'pending' ? 'Preparando importação...' : 'Importando dados de Ads da Shopee...'}
+            </p>
             <p className="text-xs text-muted-foreground mt-0.5">Isso pode levar até 1 minuto dependendo do número de campanhas.</p>
           </div>
+        </div>
+      )}
+
+      {/* ═══ Job Failed Banner ═══ */}
+      {importJob.status === 'failed' && (
+        <div className="flex items-center gap-3 p-4 rounded-xl border border-destructive/20 bg-destructive/5">
+          <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground">Falha na importação</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{importJob.error || 'Erro desconhecido. Tente novamente.'}</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => { importJob.reset(); handleImportAds(); }}>
+            Tentar novamente
+          </Button>
         </div>
       )}
 
