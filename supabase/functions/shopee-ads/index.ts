@@ -651,6 +651,11 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // Validate credentials early — fail fast with a friendly message
+    try { getAdsCreds(); } catch (credErr) {
+      console.error("[SHOPEE ADS] Credential error:", (credErr as Error).message);
+      return errorResponse("Credenciais de Ads não configuradas. Verifique SHOPEE_ADS_PARTNER_ID e SHOPEE_ADS_KEY.", 500);
+    }
     console.log("[SHOPEE ADS] === FUNCTION START ===");
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) return errorResponse("Unauthorized", 401);
