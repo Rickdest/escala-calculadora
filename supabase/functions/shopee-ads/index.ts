@@ -544,6 +544,7 @@ function processCampaignEntries(campaign: any, entries: any[], result: any[], id
       date: e.date, impressions: e.impressions, clicks: e.clicks,
       expense: Math.round(e.expense * 100) / 100, gmv: Math.round(e.gmv * 100) / 100,
       roas: e.expense > 0 ? Math.round((e.gmv / e.expense) * 100) / 100 : 0,
+      orders: e.orders, direct_gmv: Math.round(e.direct_gmv * 100) / 100, direct_orders: e.direct_orders,
     });
   }
 

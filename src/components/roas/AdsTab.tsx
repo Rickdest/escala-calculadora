@@ -226,9 +226,9 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const [syncing, setSyncing] = useState(false);
   const autoSyncTriggered = useRef(false);
 
-  // Date range filter – default: last 28 days
-  const [dateFrom, setDateFrom] = useState<Date | undefined>(() => subDays(new Date(), 28));
-  const [dateTo, setDateTo] = useState<Date | undefined>(() => new Date());
+  // Date range filter – default: no filter (show all data)
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const handleRangeChange = (from: Date | undefined, to: Date | undefined) => { setDateFrom(from); setDateTo(to); };
 
   const dateFromStr = dateFrom ? format(dateFrom, 'yyyy-MM-dd') : '';
