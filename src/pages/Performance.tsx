@@ -207,20 +207,6 @@ export default function Performance() {
                       Importar relatório de produto
                     </div>
                   </label>
-
-                  {isConnected && (
-                    <Button onClick={sync} variant="outline" size="lg" className="gap-2 text-sm">
-                      <RefreshCw className="w-4 h-4" />
-                      Sincronizar API
-                    </Button>
-                  )}
-
-                  {!isConnected && (
-                    <Button onClick={handleConnect} disabled={connecting} variant="outline" className="gap-2">
-                      {connecting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingBag className="w-4 h-4" />}
-                      Conectar Shopee
-                    </Button>
-                  )}
                 </div>
 
                 <div className="text-xs text-muted-foreground bg-muted/30 rounded-xl p-3 max-w-md border border-border">
