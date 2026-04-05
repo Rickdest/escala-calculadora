@@ -184,7 +184,13 @@ async function fetchCampaignDaily(
       try {
         const res = await fn(chunk);
         if (isFirst && chunks.indexOf(chunk) === 0) {
-          console.log(`[SHOPEE ADS] [DEBUG] ${label} ${campaignId} (${chunk.startAPI}→${chunk.endAPI}): ${JSON.stringify(res).substring(0, 600)}`);
+          // Full diagnostic log for the first campaign's first chunk
+          const rawJson = JSON.stringify(res);
+          console.log(`[SHOPEE ADS] [DIAG-FULL] ${label} campaign=${campaignId} (${chunk.startAPI}→${chunk.endAPI}) len=${rawJson.length}: ${rawJson.substring(0, 3000)}`);
+          const entries0 = extractEntries(res);
+          if (entries0.length > 0) {
+            console.log(`[SHOPEE ADS] [DIAG-ENTRY] First entry raw: ${JSON.stringify(entries0[0]).substring(0, 2000)}`);
+          }
         }
         if (res?.error) return [];
         const entries = extractEntries(res);
