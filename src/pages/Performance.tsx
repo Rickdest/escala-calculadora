@@ -66,14 +66,7 @@ export default function Performance() {
     return map;
   }, [adsRows]);
 
-  const handleConnect = async () => {
-    try {
-      setConnecting(true);
-      await startOAuth();
-    } catch {
-      setConnecting(false);
-    }
-  };
+  // handleConnect removed — Seller API hidden
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
