@@ -81,7 +81,6 @@ const adsGet = (path: string, accessToken: string, shopId: string | number, extr
 
 async function refreshTokenIfNeeded(shopeeToken: any, _supabase: any): Promise<{ token: string; needs_reauth: boolean }> {
   const tokenAge = (Date.now() - new Date(shopeeToken.token_created_at).getTime()) / 1000;
-  // Refresh preventivo: renovar quando faltam 5min
   if (tokenAge <= shopeeToken.expire_in - 300) return { token: shopeeToken.access_token, needs_reauth: false };
 
   console.log("[SHOPEE ADS] Token near expiry, refreshing...");
@@ -126,6 +125,27 @@ function extractEntries(res: any): any[] {
     if (allMetrics.length > 0) return allMetrics;
   }
   return resp?.entry_list || resp?.data || [];
+}
+
+/**
+ * Normalize a single daily entry using the same field-priority logic
+ * as extractCampaignSummaryMetrics so we never persist zeroed rows.
+ */
+function normalizeDailyEntry(e: any) {
+  // The entry might be flat or nested under performance_info / stats / report_info
+  const perf = e?.performance_info ?? e?.performance ?? e?.report_info ?? e?.stats ?? e;
+  return {
+    date: e.date || perf?.date || "unknown",
+    impressions: toFiniteNumber(perf?.impression, perf?.impressions, e?.impression, e?.impressions),
+    clicks: toFiniteNumber(perf?.click, perf?.clicks, e?.click, e?.clicks),
+    expense: toFiniteNumber(perf?.expense, perf?.cost, e?.expense, e?.cost),
+    gmv: toFiniteNumber(perf?.broad_gmv, perf?.broad_order_amount, perf?.gmv, e?.broad_gmv, e?.broad_order_amount, e?.gmv),
+    direct_gmv: toFiniteNumber(perf?.direct_gmv, perf?.direct_order_amount, e?.direct_gmv, e?.direct_order_amount),
+    orders: toFiniteNumber(perf?.broad_order, perf?.broad_order_num, perf?.orders, e?.broad_order, e?.broad_order_num, e?.orders),
+    direct_orders: toFiniteNumber(perf?.direct_order_num, perf?.direct_orders, e?.direct_order_num, e?.direct_orders),
+    avg_position: toFiniteNumber(perf?.average_position, perf?.avg_position, e?.average_position, e?.avg_position),
+    roas: toFiniteNumber(perf?.broad_roi, perf?.broad_roas, perf?.roas, e?.broad_roi, e?.broad_roas, e?.roas),
+  };
 }
 
 function buildDateChunks(startDateISO: string, endDateISO: string): Array<{ startISO: string; endISO: string; startAPI: string; endAPI: string }> {
@@ -259,15 +279,8 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
       }
       const raw = extractEntries(res);
       for (const e of raw) {
-        dailyEntries.push({
-          date: e.date || null,
-          impressions: Number(e.impression || e.impressions || 0),
-          clicks: Number(e.click || e.clicks || 0),
-          expense: Number(e.expense || e.cost || 0),
-          gmv: Number(e.broad_gmv || e.broad_order_amount || e.gmv || 0),
-          orders: Number(e.broad_order || e.broad_order_num || e.orders || 0),
-          roas: Number(e.broad_roi || e.broad_roas || e.roas || 0),
-        });
+        const norm = normalizeDailyEntry(e);
+        dailyEntries.push(norm);
       }
     }
   } catch (e) { console.error("[SHOPEE ADS] Step 3 error:", e); }
@@ -306,7 +319,6 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
   console.log(`[SHOPEE ADS] ${adsByCampaign.length} campaigns with data out of ${campaignsForStep4.length}`);
 
   // Step 5: Hourly performance for avg_position
-  // Include campaigns with expense > 0 (not just active), and filter by itemId if refreshing a single product
   let campaignsForPosition = adsByCampaign.filter((c: any) => c.expense > 0);
   if (filterItemId) {
     campaignsForPosition = campaignsForPosition.filter((c: any) => c.item_id === filterItemId);
@@ -395,21 +407,23 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
       }
     }
 
-    // Skip shop-level enrichment when refreshing a single product (saves API quota)
     if (!filterItemId) {
       await delay(500);
       try {
         const res = await adsGet("/api/v2/ads/get_all_cpc_ads_hourly_performance", accessToken, shopId, { performance_date: isoToDDMMYYYY(endDateISO) });
         const entries = extractEntries(res);
         if (entries.length > 0) {
-          hourlyPerformance = entries.map((e: any) => ({
-            hour: Number(e.hour ?? e.time ?? 0),
-            impressions: Number(e.impression || e.impressions || 0),
-            clicks: Number(e.click || e.clicks || 0),
-            expense: Number(e.expense || e.cost || 0),
-            gmv: Number(e.broad_gmv || e.broad_order_amount || e.gmv || 0),
-            orders: Number(e.broad_order || e.orders || 0),
-          }));
+          hourlyPerformance = entries.map((e: any) => {
+            const norm = normalizeDailyEntry(e);
+            return {
+              hour: Number(e.hour ?? e.time ?? 0),
+              impressions: norm.impressions,
+              clicks: norm.clicks,
+              expense: norm.expense,
+              gmv: norm.gmv,
+              orders: norm.orders,
+            };
+          });
         }
       } catch (e) { console.error("[SHOPEE ADS] hourly error:", e); }
 
@@ -489,34 +503,40 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
 }
 
 function processCampaignEntries(campaign: any, entries: any[], result: any[], idx: number, total: number) {
-  const fallbackMetrics = entries.length === 0 && campaign.summary_metrics?.hasData ? campaign.summary_metrics : null;
+  // Normalize all entries using the same logic as extractCampaignSummaryMetrics
+  const normalizedEntries = entries.map(normalizeDailyEntry);
+  
+  // Check if all daily entries are zeroed — if so, use summary fallback
+  const allZeroed = normalizedEntries.length > 0 && normalizedEntries.every(e =>
+    e.impressions === 0 && e.clicks === 0 && e.expense === 0 && e.gmv === 0 && e.orders === 0
+  );
+  
+  if (allZeroed && idx <= 3) {
+    console.log(`[SHOPEE ADS] [DIAG] Campaign ${campaign.campaign_id}: ${normalizedEntries.length} daily entries ALL ZEROED. Raw sample: ${JSON.stringify(entries[0]).substring(0, 500)}`);
+  }
+
+  const useEntries = allZeroed ? [] : normalizedEntries;
+  const fallbackMetrics = (useEntries.length === 0 && campaign.summary_metrics?.hasData) ? campaign.summary_metrics : null;
+  
   let totImp = fallbackMetrics?.impressions ?? 0, totClk = fallbackMetrics?.clicks ?? 0, totExp = fallbackMetrics?.expense ?? 0, totGmv = fallbackMetrics?.gmv ?? 0, totDgmv = fallbackMetrics?.direct_gmv ?? 0, totOrd = fallbackMetrics?.orders ?? 0, totDord = fallbackMetrics?.direct_orders ?? 0;
   let posWeighted = 0, posImp = 0, daysActive = fallbackMetrics?.days_active ?? 0;
   const daily: any[] = [];
 
-  for (const e of entries) {
-    const imp = Number(e.impression || e.impressions || 0);
-    const clk = Number(e.click || e.clicks || 0);
-    const exp = Number(e.expense || e.cost || 0);
-    const gm = Number(e.broad_gmv || e.broad_order_amount || e.gmv || 0);
-    const dgm = Number(e.direct_gmv || e.direct_order_amount || 0);
-    const ord = Number(e.broad_order || e.broad_order_num || e.orders || 0);
-    const dord = Number(e.direct_order || e.direct_order_num || e.direct_orders || 0);
-    const pos = Number(e.average_position || e.avg_position || 0);
-
-    totImp += imp; totClk += clk; totExp += exp; totGmv += gm; totDgmv += dgm; totOrd += ord; totDord += dord;
-    if (pos > 0) { posWeighted += pos * imp; posImp += imp; }
-    if (exp > 0) daysActive++;
+  for (const e of useEntries) {
+    totImp += e.impressions; totClk += e.clicks; totExp += e.expense; totGmv += e.gmv; totDgmv += e.direct_gmv; totOrd += e.orders; totDord += e.direct_orders;
+    if (e.avg_position > 0) { posWeighted += e.avg_position * e.impressions; posImp += e.impressions; }
+    if (e.expense > 0) daysActive++;
 
     daily.push({
-      date: e.date || "unknown", impressions: imp, clicks: clk,
-      expense: Math.round(exp * 100) / 100, gmv: Math.round(gm * 100) / 100,
-      roas: exp > 0 ? Math.round((gm / exp) * 100) / 100 : 0,
+      date: e.date, impressions: e.impressions, clicks: e.clicks,
+      expense: Math.round(e.expense * 100) / 100, gmv: Math.round(e.gmv * 100) / 100,
+      roas: e.expense > 0 ? Math.round((e.gmv / e.expense) * 100) / 100 : 0,
     });
   }
 
   const statusStr = campaign.status || 'ended';
-  console.log(`[SHOPEE ADS] Campaign ${idx}/${total}: id=${campaign.campaign_id} item_id=${campaign.item_id} status=${statusStr} expense=${totExp.toFixed(2)} entries=${entries.length}${fallbackMetrics ? ' source=summary' : ''}`);
+  const source = fallbackMetrics ? 'summary' : `daily(${useEntries.length})`;
+  console.log(`[SHOPEE ADS] Campaign ${idx}/${total}: id=${campaign.campaign_id} item_id=${campaign.item_id} status=${statusStr} expense=${totExp.toFixed(2)} source=${source}`);
 
   result.push({
     campaign_id: campaign.campaign_id, item_id: campaign.item_id,
@@ -526,7 +546,7 @@ function processCampaignEntries(campaign: any, entries: any[], result: any[], id
     direct_gmv: Math.round(totDgmv * 100) / 100, orders: totOrd, direct_orders: totDord,
     avg_position: posImp > 0 ? Math.round((posWeighted / posImp) * 10) / 10 : (fallbackMetrics?.avg_position ?? null),
     roas: totExp > 0 ? Math.round((totGmv / totExp) * 100) / 100 : Math.round((fallbackMetrics?.roas ?? 0) * 100) / 100,
-    broad_roi: entries.length > 0 ? Math.round(entries.reduce((s: number, e: any) => s + Number(e.broad_roi || 0), 0) / Math.max(entries.length, 1) * 100) / 100 : null,
+    broad_roi: useEntries.length > 0 ? Math.round(useEntries.reduce((s: number, e: any) => s + (e.roas || 0), 0) / Math.max(useEntries.length, 1) * 100) / 100 : null,
     direct_roas: totExp > 0 ? Math.round((totDgmv / totExp) * 100) / 100 : Math.round((fallbackMetrics?.direct_roas ?? 0) * 100) / 100,
     acos: totGmv > 0 ? Math.round((totExp / totGmv) * 10000) / 100 : Math.round((fallbackMetrics?.acos ?? 0) * 100) / 100,
     ctr: totImp > 0 ? Math.round((totClk / totImp) * 10000) / 100 : Math.round((fallbackMetrics?.ctr ?? 0) * 100) / 100,
@@ -534,6 +554,84 @@ function processCampaignEntries(campaign: any, entries: any[], result: any[], id
     days_active: daysActive,
     daily: daily.sort((a, b) => (a.date || "").localeCompare(b.date || "")),
   });
+}
+
+async function processJob(jobId: string, userId: string) {
+  const supabaseAdmin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  
+  try {
+    // Mark job as running
+    await supabaseAdmin.from("shopee_ads_import_jobs").update({ status: "running", updated_at: new Date().toISOString() }).eq("id", jobId);
+
+    // Get ads token
+    const { data: tokens } = await supabaseAdmin.from("shopee_tokens").select("*").eq("user_id", userId).eq("app_type", "ads").limit(1);
+    if (!tokens || tokens.length === 0) {
+      await supabaseAdmin.from("shopee_ads_import_jobs").update({ status: "failed", error: "Nenhum token de Ads encontrado.", updated_at: new Date().toISOString() }).eq("id", jobId);
+      return;
+    }
+
+    const shopeeToken = tokens[0];
+    const { token: currentAccessToken, needs_reauth: refreshFailed } = await refreshTokenIfNeeded(shopeeToken, supabaseAdmin);
+
+    if (refreshFailed) {
+      await supabaseAdmin.from("shopee_ads_import_jobs").update({ status: "failed", error: "Token expirado. Reconecte a API de Ads.", updated_at: new Date().toISOString() }).eq("id", jobId);
+      return;
+    }
+
+    const adsPerformance = await fetchAdsPerformance(currentAccessToken, shopeeToken.shop_id);
+
+    // Upsert ads_by_campaign to database
+    if (adsPerformance.ads_by_campaign.length > 0) {
+      await supabaseAdmin
+        .from("shopee_ads_by_product")
+        .delete()
+        .eq("user_id", userId)
+        .neq("period_start", adsPerformance.period_start);
+
+      for (const c of adsPerformance.ads_by_campaign) {
+        await supabaseAdmin.from("shopee_ads_by_product").upsert({
+          user_id: userId, shop_id: Number(shopeeToken.shop_id),
+          campaign_id: c.campaign_id, item_id: c.item_id,
+          item_name: c.item_name, status: c.status || 'ended',
+          period_start: adsPerformance.period_start,
+          period_end: adsPerformance.period_end, impressions: c.impressions,
+          clicks: c.clicks, expense: c.expense, gmv: c.gmv,
+          direct_gmv: c.direct_gmv, orders: c.orders, direct_orders: c.direct_orders,
+          avg_position: c.avg_position, roas: c.roas, direct_roas: c.direct_roas,
+          acos: c.acos, ctr: c.ctr, cost_per_order: c.cost_per_order,
+          days_active: c.days_active, daily_data: c.daily,
+          campaign_ids: [c.campaign_id], updated_at: new Date().toISOString(),
+          keywords: c.keywords || [],
+        }, { onConflict: "user_id,campaign_id,period_start" });
+      }
+      console.log(`[SHOPEE ADS] Job ${jobId}: Upserted ${adsPerformance.ads_by_campaign.length} campaign records`);
+    }
+
+    // Mark job as done
+    const resultSummary = {
+      campaign_count: adsPerformance.campaign_count,
+      ads_by_campaign_count: adsPerformance.ads_by_campaign.length,
+      total_expense: adsPerformance.summary.total_expense,
+      total_gmv: adsPerformance.summary.total_gmv,
+      roas_geral: adsPerformance.summary.roas_geral,
+      period_start: adsPerformance.period_start,
+      period_end: adsPerformance.period_end,
+    };
+    
+    await supabaseAdmin.from("shopee_ads_import_jobs").update({
+      status: "done",
+      result: resultSummary,
+      updated_at: new Date().toISOString(),
+    }).eq("id", jobId);
+
+  } catch (e) {
+    console.error(`[SHOPEE ADS] Job ${jobId} error:`, e);
+    await supabaseAdmin.from("shopee_ads_import_jobs").update({
+      status: "failed",
+      error: (e as Error).message || "Erro desconhecido",
+      updated_at: new Date().toISOString(),
+    }).eq("id", jobId);
+  }
 }
 
 Deno.serve(async (req) => {
@@ -555,7 +653,51 @@ Deno.serve(async (req) => {
     if (claimsError || !claimsData?.claims) return errorResponse("Unauthorized", 401);
     const user = { id: claimsData.claims.sub as string };
 
-    // Strictly require ads token — no fallback to seller
+    let body: any = {};
+    try {
+      if (req.method === "POST") {
+        body = await req.json().catch(() => ({}));
+      }
+    } catch { /* ignore */ }
+
+    // Job-based mode: create a job and process in background
+    if (body?.mode === 'job') {
+      // Create job record (user can insert via RLS)
+      const { data: job, error: jobError } = await supabase
+        .from("shopee_ads_import_jobs")
+        .insert({ user_id: user.id, status: 'pending' })
+        .select()
+        .single();
+
+      if (jobError) {
+        console.error("[SHOPEE ADS] Failed to create job:", jobError);
+        return errorResponse("Falha ao criar job de importação", 500);
+      }
+
+      // Process in background (don't await — respond immediately)
+      const jobId = job.id;
+      console.log(`[SHOPEE ADS] Created job ${jobId}, processing in background`);
+      
+      // Use EdgeRuntime.waitUntil if available, otherwise just fire-and-forget
+      const processingPromise = processJob(jobId, user.id);
+      
+      try {
+        // @ts-ignore - EdgeRuntime may not be typed
+        if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime.waitUntil) {
+          // @ts-ignore
+          EdgeRuntime.waitUntil(processingPromise);
+        } else {
+          // Fire and forget — the function will keep running
+          processingPromise.catch(e => console.error(`[SHOPEE ADS] Background job error:`, e));
+        }
+      } catch {
+        processingPromise.catch(e => console.error(`[SHOPEE ADS] Background job error:`, e));
+      }
+
+      return jsonResponse({ success: true, job_id: jobId, status: 'pending' });
+    }
+
+    // Legacy synchronous mode (for single product refresh etc.)
     const { data: tokens } = await supabase.from("shopee_tokens").select("*").eq("user_id", user.id).eq("app_type", "ads").limit(1);
     if (!tokens || tokens.length === 0) return errorResponse("Nenhum token de Ads encontrado. Conecte a API de Ads primeiro.", 403);
 
@@ -563,16 +705,10 @@ Deno.serve(async (req) => {
     const { token: currentAccessToken, needs_reauth: refreshFailed } = await refreshTokenIfNeeded(shopeeToken, supabase);
 
     let filterItemId: number | undefined;
-    try {
-      if (req.method === "POST") {
-        const body = await req.json().catch(() => ({}));
-        if (body?.item_id) filterItemId = Number(body.item_id);
-      }
-    } catch { /* ignore */ }
+    if (body?.item_id) filterItemId = Number(body.item_id);
 
     const adsPerformance = await fetchAdsPerformance(currentAccessToken, shopeeToken.shop_id, filterItemId);
 
-    // Detect if API returned auth errors (0 campaigns despite having token)
     const authFailed = refreshFailed || (adsPerformance.campaign_count === 0 && adsPerformance.summary.total_impressions === 0);
 
     // Upsert ads_by_campaign to database
