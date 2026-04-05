@@ -376,7 +376,7 @@ export default function Integracoes() {
                         ↻ Reconectar
                       </Button>
                     )
-                  ) : (
+                  ) : FEATURES.SHOPEE_SELLER_API_READY ? (
                     <Button
                       size="sm"
                       className="bg-primary/10 border border-primary/30 text-primary hover:bg-primary/20"
@@ -385,6 +385,10 @@ export default function Integracoes() {
                     >
                       🔗 Conectar
                     </Button>
+                  ) : (
+                    <span className="text-[11px] text-muted-foreground/60 px-2.5 py-1">
+                      Indisponível
+                    </span>
                   )}
                 </div>
               </div>
