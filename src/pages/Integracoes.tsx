@@ -68,6 +68,8 @@ export default function Integracoes() {
   const adsConnected = adsHook.isConnected;
   const sellerToken = sellerHook.token;
   const adsToken = adsHook.token;
+  const sellerExpired = sellerHook.needsReauth;
+  const adsExpired = adsHook.needsReauth;
 
   const [autoSync, setAutoSync] = useState(true);
   const [disconnecting, setDisconnecting] = useState(false);
@@ -114,6 +116,16 @@ export default function Integracoes() {
       toast.error(SHOPEE_CONNECT_ERROR_MESSAGES[errCode] || 'Erro ao conectar com a Shopee. Tente novamente.');
     }
   }, []);
+
+  // Auto toast when token is expired
+  useEffect(() => {
+    if (sellerExpired && sellerConnected) {
+      toast.error('Sua autorização Shopee Seller expirou. Clique em "Reconectar agora" para renovar.', { duration: 8000 });
+    }
+    if (adsExpired && adsConnected) {
+      toast.error('Sua autorização Shopee Ads expirou. Clique em "Reconectar agora" para renovar.', { duration: 8000 });
+    }
+  }, [sellerExpired, adsExpired, sellerConnected, adsConnected]);
 
   const getLastSync = () => {
     if (!sellerToken) return null;
@@ -289,17 +301,27 @@ export default function Integracoes() {
 
                 <div className="flex items-center gap-2">
                   <div className={`flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full border ${
-                    sellerConnected
-                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                      : 'bg-muted/20 text-muted-foreground border-border'
+                    sellerExpired
+                      ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                      : sellerConnected
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        : 'bg-muted/20 text-muted-foreground border-border'
                   }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${sellerConnected ? 'bg-emerald-400' : 'bg-muted-foreground'}`} />
-                    {sellerConnected ? 'Conectada' : 'Não conectada'}
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      sellerExpired ? 'bg-red-400' : sellerConnected ? 'bg-emerald-400' : 'bg-muted-foreground'
+                    }`} />
+                    {sellerExpired ? 'Expirado' : sellerConnected ? 'Conectada' : 'Não conectada'}
                   </div>
                   {sellerConnected ? (
-                    <Button variant="outline" size="sm" onClick={() => sellerHook.startOAuth('seller')}>
-                      ↻ Reconectar
-                    </Button>
+                    sellerExpired ? (
+                      <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white gap-1" onClick={() => sellerHook.startOAuth('seller')}>
+                        ⚠️ Reconectar agora
+                      </Button>
+                    ) : (
+                      <Button variant="outline" size="sm" onClick={() => sellerHook.startOAuth('seller')}>
+                        ↻ Reconectar
+                      </Button>
+                    )
                   ) : (
                     <Button
                       size="sm"
@@ -320,30 +342,38 @@ export default function Integracoes() {
                     {/* Token bar with progress */}
                     <div className="rounded-lg px-3 py-2.5 mb-4 text-xs border"
                       style={{
-                        background: 'hsla(142, 71%, 45%, 0.07)',
-                        borderColor: 'hsla(142, 71%, 45%, 0.15)',
+                        background: sellerExpired ? 'hsla(0, 80%, 50%, 0.07)' : 'hsla(142, 71%, 45%, 0.07)',
+                        borderColor: sellerExpired ? 'hsla(0, 80%, 50%, 0.15)' : 'hsla(142, 71%, 45%, 0.15)',
                       }}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-emerald-400 flex items-center gap-1.5">
-                          🔑 Autorização ativa
+                        <span className={`${sellerExpired ? 'text-red-400' : 'text-emerald-400'} flex items-center gap-1.5`}>
+                          {sellerExpired ? '⚠️ Autorização expirada' : '🔑 Autorização ativa'}
                         </span>
                         <span className="text-muted-foreground">
                           Última sync: {getLastSync()}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1.5">
-                        <span>Validade da autorização</span>
-                        <span className="text-emerald-400 font-medium">
-                          {getTokenDaysRemaining(sellerToken)} dias restantes
-                        </span>
-                      </div>
-                      <div className="h-1 bg-muted/30 rounded-full overflow-hidden">
-                        <div
-                          className="h-1 rounded-full bg-emerald-500 transition-all"
-                          style={{ width: `${getTokenProgressPercent(sellerToken)}%` }}
-                        />
-                      </div>
+                      {sellerExpired ? (
+                        <p className="text-red-400 text-[10px]">
+                          Clique em "Reconectar agora" para renovar a autorização da Shopee.
+                        </p>
+                      ) : (
+                        <>
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1.5">
+                            <span>Validade da autorização</span>
+                            <span className="text-emerald-400 font-medium">
+                              {getTokenDaysRemaining(sellerToken)} dias restantes
+                            </span>
+                          </div>
+                          <div className="h-1 bg-muted/30 rounded-full overflow-hidden">
+                            <div
+                              className="h-1 rounded-full bg-emerald-500 transition-all"
+                              style={{ width: `${getTokenProgressPercent(sellerToken)}%` }}
+                            />
+                          </div>
+                        </>
+                      )}
                     </div>
 
                     {/* Toggle */}
@@ -355,7 +385,7 @@ export default function Integracoes() {
                             Atualiza produtos e pedidos a cada 6 horas
                           </p>
                         </div>
-                        <Switch checked={autoSync} onCheckedChange={setAutoSync} />
+                        <Switch checked={autoSync} onCheckedChange={setAutoSync} disabled={sellerExpired} />
                       </div>
                     </div>
 
@@ -466,17 +496,27 @@ export default function Integracoes() {
 
                 <div className="flex items-center gap-2">
                   <div className={`flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full border ${
-                    adsConnected
-                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                      : 'bg-muted/20 text-muted-foreground border-border'
+                    adsExpired
+                      ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                      : adsConnected
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        : 'bg-muted/20 text-muted-foreground border-border'
                   }`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${adsConnected ? 'bg-emerald-400' : 'bg-muted-foreground'}`} />
-                    {adsConnected ? 'Conectada' : 'Não conectada'}
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      adsExpired ? 'bg-red-400' : adsConnected ? 'bg-emerald-400' : 'bg-muted-foreground'
+                    }`} />
+                    {adsExpired ? 'Expirado' : adsConnected ? 'Conectada' : 'Não conectada'}
                   </div>
                   {adsConnected ? (
-                    <Button variant="outline" size="sm" onClick={() => adsHook.startOAuth('ads')}>
-                      ↻ Reconectar
-                    </Button>
+                    adsExpired ? (
+                      <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white gap-1" onClick={() => adsHook.startOAuth('ads')}>
+                        ⚠️ Reconectar agora
+                      </Button>
+                    ) : (
+                      <Button variant="outline" size="sm" onClick={() => adsHook.startOAuth('ads')}>
+                        ↻ Reconectar
+                      </Button>
+                    )
                   ) : (
                     <Button
                       size="sm"
@@ -495,27 +535,35 @@ export default function Integracoes() {
                     {/* Token bar with progress */}
                     <div className="rounded-lg px-3 py-2.5 mb-3 text-xs border"
                       style={{
-                        background: 'hsla(142, 71%, 45%, 0.07)',
-                        borderColor: 'hsla(142, 71%, 45%, 0.15)',
+                        background: adsExpired ? 'hsla(0, 80%, 50%, 0.07)' : 'hsla(142, 71%, 45%, 0.07)',
+                        borderColor: adsExpired ? 'hsla(0, 80%, 50%, 0.15)' : 'hsla(142, 71%, 45%, 0.15)',
                       }}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-emerald-400 flex items-center gap-1.5">
-                          🔑 Autorização ativa
+                        <span className={`${adsExpired ? 'text-red-400' : 'text-emerald-400'} flex items-center gap-1.5`}>
+                          {adsExpired ? '⚠️ Autorização expirada' : '🔑 Autorização ativa'}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1.5">
-                        <span>Validade da autorização</span>
-                        <span className="text-emerald-400 font-medium">
-                          {getTokenDaysRemaining(adsToken)} dias restantes
-                        </span>
-                      </div>
-                      <div className="h-1 bg-muted/30 rounded-full overflow-hidden">
-                        <div
-                          className="h-1 rounded-full bg-emerald-500 transition-all"
-                          style={{ width: `${getTokenProgressPercent(adsToken)}%` }}
-                        />
-                      </div>
+                      {adsExpired ? (
+                        <p className="text-red-400 text-[10px]">
+                          Clique em "Reconectar agora" para renovar a autorização de Ads.
+                        </p>
+                      ) : (
+                        <>
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1.5">
+                            <span>Validade da autorização</span>
+                            <span className="text-emerald-400 font-medium">
+                              {getTokenDaysRemaining(adsToken)} dias restantes
+                            </span>
+                          </div>
+                          <div className="h-1 bg-muted/30 rounded-full overflow-hidden">
+                            <div
+                              className="h-1 rounded-full bg-emerald-500 transition-all"
+                              style={{ width: `${getTokenProgressPercent(adsToken)}%` }}
+                            />
+                          </div>
+                        </>
+                      )}
                     </div>
 
                     <p className="text-xs text-muted-foreground leading-relaxed bg-muted/20 rounded-lg p-3">
