@@ -192,7 +192,7 @@ export default function Profile() {
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="••••••••"
                   className="pl-11 pr-11 h-12 input-modern"
-                  minLength={6}
+                  minLength={8}
                 />
                 <button
                   type="button"
