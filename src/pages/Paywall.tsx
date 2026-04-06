@@ -38,6 +38,7 @@ export default function Paywall() {
 
   const isYearly = plan === 'yearly';
   const monthlyEquiv = (PRICING.yearly / 12).toFixed(2).replace('.', ',');
+  const benefits = isYearly ? yearlyBenefits : monthlyBenefits;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-5 py-8">
