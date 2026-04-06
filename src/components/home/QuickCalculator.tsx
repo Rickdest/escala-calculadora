@@ -98,7 +98,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
       {/* Inputs */}
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div>
-          <label className="section-label mb-1.5 block text-[10px]">CUSTO</label>
+          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">CUSTO</label>
           <div className="relative">
             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-1.5">R$</span>
             <input
