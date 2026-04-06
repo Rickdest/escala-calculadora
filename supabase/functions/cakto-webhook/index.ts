@@ -266,17 +266,3 @@ function getStatusForEvent(event: string): string {
       return "free";
   }
 }
-  switch (event) {
-    case "purchase_approved":
-    case "subscription_renewed":
-      return "active";
-    case "refund":
-    case "chargeback":
-    case "subscription_canceled":
-      return "canceled";
-    case "subscription_renewal_refused":
-      return "past_due";
-    default:
-      return "free";
-  }
-}
