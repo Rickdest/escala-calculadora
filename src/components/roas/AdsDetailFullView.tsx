@@ -1560,9 +1560,6 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
               <>
                 <div className="flex items-center justify-between">
                   <p className="text-[10px] uppercase tracking-wider font-bold text-text-3">Análise de Performance ({excelData.totalDias} dias)</p>
-                  <Button onClick={() => excelInputRef.current?.click()} size="sm" variant="ghost" className="h-7 text-[11px] text-text-2 gap-1">
-                    <Upload className="w-3 h-3" /> Reimportar
-                  </Button>
                 </div>
                 <ExcelAnalysis data={excelData} operationLog={opLog.length > 0 ? opLog : undefined} />
               </>
