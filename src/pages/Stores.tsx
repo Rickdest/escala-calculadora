@@ -1,10 +1,15 @@
 import { useState } from 'react';
-import { Plus, Store, MoreVertical, Trash2, Edit2, Check, X, Package } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Store, MoreVertical, Trash2, Edit2, Check, X, Package, Link2 } from 'lucide-react';
 import { useStore } from '@/contexts/StoreContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
