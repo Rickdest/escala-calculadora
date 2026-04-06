@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { GraduationCap, PlayCircle, BookOpen, ExternalLink, Edit2, Save, X, Plus, Trash2, Loader2 } from 'lucide-react';
+import { GraduationCap, PlayCircle, Play, BookOpen, ExternalLink, Edit2, Save, X, Plus, Trash2, Loader2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
