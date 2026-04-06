@@ -1329,6 +1329,68 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         {/* ═══ Tab 2: Métricas & Histórico ═══ */}
         <TabsContent value="metricas">
           <div className="space-y-4">
+            {/* Dados Importados Card */}
+            <div className="rounded-xl border border-border bg-card px-3 py-2.5 shadow-sm">
+              <p className="text-[9px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5 mb-2">
+                <Upload className="w-3 h-3" /> Dados Importados
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {/* CSV de Ads */}
+                <div className={cn(
+                  'rounded-lg border p-2 flex flex-col gap-1',
+                  opLog.length > 0 ? 'border-success/30 bg-success/5' : 'border-warning/30 bg-warning/5'
+                )}>
+                  <p className="text-[11px] font-bold text-foreground leading-tight">CSV de Ads</p>
+                  <p className="text-[9px] text-text-3">Log de operações</p>
+                  {opLog.length > 0 ? (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-success/20 text-success w-fit mt-auto">Importado</span>
+                  ) : (
+                    <>
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-warning/20 text-warning w-fit">Pendente</span>
+                      <Button onClick={() => opLogImportTriggerRef.current?.()} size="sm" variant="outline" className="mt-auto h-7 text-[10px] gap-1 border-primary/30 text-primary hover:bg-primary/10 w-full">
+                        <Plus className="w-3 h-3" /> Importar
+                      </Button>
+                    </>
+                  )}
+                </div>
+                {/* CSV Individual */}
+                <div className={cn(
+                  'rounded-lg border p-2 flex flex-col gap-1',
+                  ad.posicao_media !== null ? 'border-success/30 bg-success/5' : 'border-warning/30 bg-warning/5'
+                )}>
+                  <p className="text-[11px] font-bold text-foreground leading-tight">CSV Individual</p>
+                  <p className="text-[9px] text-text-3">Posicionamento</p>
+                  {ad.posicao_media !== null ? (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-success/20 text-success w-fit mt-auto">Importado</span>
+                  ) : (
+                    <>
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-warning/20 text-warning w-fit">Pendente</span>
+                      <Button onClick={onImportPosition} size="sm" variant="outline" className="mt-auto h-7 text-[10px] gap-1 border-primary/30 text-primary hover:bg-primary/10 w-full">
+                        <Plus className="w-3 h-3" /> Importar
+                      </Button>
+                    </>
+                  )}
+                </div>
+                {/* Excel Analytics */}
+                <div className={cn(
+                  'rounded-lg border p-2 flex flex-col gap-1',
+                  excelData ? 'border-success/30 bg-success/5' : 'border-warning/30 bg-warning/5'
+                )}>
+                  <p className="text-[11px] font-bold text-foreground leading-tight">Excel Analytics</p>
+                  <p className="text-[9px] text-text-3">Performance diária</p>
+                  {excelData ? (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-success/20 text-success w-fit mt-auto">Importado</span>
+                  ) : (
+                    <>
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-warning/20 text-warning w-fit">Pendente</span>
+                      <Button onClick={() => excelInputRef.current?.click()} size="sm" variant="outline" className="mt-auto h-7 text-[10px] gap-1 border-primary/30 text-primary hover:bg-primary/10 w-full">
+                        <Plus className="w-3 h-3" /> Importar
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
             {/* Posicionamento + Geral vs Direto — TOPO */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
               {/* Posicionamento */}
