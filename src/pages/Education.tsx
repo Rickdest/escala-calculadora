@@ -28,6 +28,7 @@ export default function Education() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<any>({});
   const [saving, setSaving] = useState(false);
+  const [playingId, setPlayingId] = useState<string | null>(null);
 
   useEffect(() => {
     loadContent();
