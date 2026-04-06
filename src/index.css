@@ -184,7 +184,7 @@
   /* Section label — uses micro scale */
   .section-label {
     @apply uppercase tracking-[0.08em] font-medium;
-    font-size: 10px;
+    font-size: 11px;
     color: #444444;
   }
 
