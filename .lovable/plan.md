@@ -1,42 +1,33 @@
 
 
-## Plano: Refatorar card "Economia por Venda" e renomear tabs
+## Plano: Corrigir origem do Preço de Venda no card Economia por Venda
 
-### 1. Renomear tabs (trivial)
+### Problema
 
-**Arquivo: `src/components/roas/AdsDetailFullView.tsx`** — Linhas 1067 e 1074:
-- "Diagnóstico" → "IA & Ação"
-- "Métricas" → "Performance Ads"
-
-### 2. Refatorar card "Economia por Venda" (linhas 1302-1339)
-
-Criar dois estados baseados em `product?.costPrice > 0`:
-
-**Estado 1 — Com custos cadastrados:**
-- Header: título "Economia por venda", badge verde "Produto vinculado", botão "Editar custos" que alterna para Estado 2 inline
-- Body: linhas com Custo do produto, Comissão Shopee (calculada: `salePrice * (feePercent/100) + feeFixed`), Gasto com ads (ACOS) em laranja
-- Divider + bloco verde com "Lucro por venda" e valor `+ R$ X`
-
-**Estado 2 — Sem custos (ou editando):**
-- Badge cinza "Custos não configurados"
-- Inputs compactos: Preço de venda, Custo do produto, Comissão Shopee (%), Frete subsidiado (R$)
-- Pré-preenchidos com dados do produto quando existem
-- Bloco verde com cálculo em tempo real
-- Botão laranja "Salvar custos no produto" → chama `updateProduct(product.id, { costPrice, packagingCost })` via StoreContext
-- Hint: "Esses dados serão salvos no cadastro do produto"
-
-**Nota sobre DB:** Não é necessário criar colunas novas. O `costPrice` e `packagingCost` já existem na tabela `products`. A comissão Shopee é calculada pela config da loja (não é um campo separado). O "Frete subsidiado" será salvo como `packagingCost`.
-
-### Estado interno necessário
-
-Adicionar ao componente:
+Linha 1320 de `AdsDetailFullView.tsx`:
 ```typescript
-const [editingCosts, setEditingCosts] = useState(false);
-const [costForm, setCostForm] = useState({ salePrice: 0, costPrice: 0, commissionPct: 14, shippingCost: 0 });
+const salePrice = product?.salePrice || (ad.itens_vendidos > 0 ? ad.gmv / ad.itens_vendidos : ad.gmv);
 ```
 
-Reset `editingCosts` no useEffect de `ad.id`.
+Quando o produto está vinculado com `salePrice = 49.90`, o valor correto deveria aparecer. Mas o fallback `gmv / itens_vendidos` (= 51.53) é usado quando `product?.salePrice` é falsy (0 ou undefined). É possível que o produto vinculado não tenha `salePrice` populado corretamente no objeto `ad.product`.
 
-### Arquivo modificado
-- `src/components/roas/AdsDetailFullView.tsx` — renomear tabs + refatorar seção "Economia por Venda" (linhas 1060-1075 e 1302-1339)
+### Correção
+
+1. **Priorizar `product.salePrice`** — só usar fallback de GMV se realmente não houver produto vinculado
+2. Mudar a lógica para:
+
+```typescript
+const salePrice = product?.salePrice && product.salePrice > 0
+  ? product.salePrice
+  : (ad.itens_vendidos > 0 ? ad.gmv / ad.itens_vendidos : ad.gmv);
+```
+
+3. Adicionar indicador visual de onde vem o preço — se veio do fallback (GMV), mostrar "(estimado)" ao lado do valor
+
+### Investigação adicional
+
+Verificar como `ad.product` é populado no merge — pode ser que o vínculo existe mas o campo `salePrice` não está sendo trazido. Se for o caso, corrigir o mapeamento também.
+
+### Arquivo
+- `src/components/roas/AdsDetailFullView.tsx` — linha 1320
 
