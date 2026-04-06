@@ -127,7 +127,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const updateStore = useCallback(async (storeId: string, updates: Partial<Store>) => {
     const dbUpdates: TablesUpdate<'stores'> = {};
     if (updates.name !== undefined) dbUpdates.name = updates.name;
-    const { error } = await supabase.from('stores').update(dbUpdates).eq('id', storeId);
+    if (!user) return;
+    const { error } = await supabase.from('stores').update(dbUpdates).eq('id', storeId).eq('user_id', user.id);
     if (error) { toast.error('Erro ao atualizar loja'); return; }
     invalidate();
   }, [invalidate]);
