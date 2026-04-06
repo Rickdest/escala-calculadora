@@ -154,9 +154,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [invalidate]);
 
   const deleteStore = useCallback(async (storeId: string) => {
-    const { error: prodError } = await supabase.from('products').delete().eq('store_id', storeId);
+    if (!user) return;
+    const { error: prodError } = await supabase.from('products').delete().eq('store_id', storeId).eq('user_id', user.id);
     if (prodError) { toast.error('Erro ao excluir produtos da loja'); return; }
-    const { error } = await supabase.from('stores').delete().eq('id', storeId);
+    const { error } = await supabase.from('stores').delete().eq('id', storeId).eq('user_id', user.id);
     if (error) { toast.error('Erro ao excluir loja'); return; }
     if (currentStore?.id === storeId) setCurrentStoreState(null);
     invalidate();
