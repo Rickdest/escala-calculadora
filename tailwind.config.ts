@@ -18,12 +18,12 @@ export default {
         mono: ['DM Mono', 'monospace'],
       },
       fontSize: {
-        display: ['24px', { lineHeight: '1.2', fontWeight: '700' }],
-        title: ['18px', { lineHeight: '1.3', fontWeight: '700' }],
-        subtitle: ['15px', { lineHeight: '1.4', fontWeight: '500' }],
-        body: ['13px', { lineHeight: '1.5', fontWeight: '400' }],
-        small: ['11px', { lineHeight: '1.4', fontWeight: '400' }],
-        micro: ['10px', { lineHeight: '1.3', fontWeight: '500', letterSpacing: '0.06em' }],
+        display: ['26px', { lineHeight: '1.2', fontWeight: '700' }],
+        title: ['19px', { lineHeight: '1.3', fontWeight: '700' }],
+        subtitle: ['16px', { lineHeight: '1.4', fontWeight: '500' }],
+        body: ['14px', { lineHeight: '1.5', fontWeight: '400' }],
+        small: ['12px', { lineHeight: '1.4', fontWeight: '400' }],
+        micro: ['11px', { lineHeight: '1.3', fontWeight: '500', letterSpacing: '0.06em' }],
       },
       colors: {
         border: "hsl(var(--border))",
