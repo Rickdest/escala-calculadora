@@ -254,8 +254,8 @@ export default function Home() {
                 >
                   {mp.sigla}
                 </div>
-                <span className="text-micro normal-case tracking-normal font-semibold text-text-2 text-center leading-tight whitespace-nowrap">{mp.name}</span>
-                <span className="text-micro normal-case tracking-normal text-text-3 whitespace-nowrap">{mp.rate}</span>
+                <span className="text-micro normal-case tracking-normal font-semibold text-foreground/80 text-center leading-tight whitespace-nowrap">{mp.name}</span>
+                <span className="text-micro normal-case tracking-normal text-muted-foreground whitespace-nowrap">{mp.rate}</span>
               </button>
             ))}
           </div>
