@@ -210,7 +210,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
 
           <button
             onClick={() => setShowAnalysis(!showAnalysis)}
-            className="w-full flex items-center justify-center gap-1.5 text-[12px] text-text-3 hover:text-primary transition-colors py-1"
+            className="w-full flex items-center justify-center gap-1.5 text-[12px] text-muted-foreground hover:text-primary transition-colors py-1"
           >
             {showAnalysis ? (
               <>Fechar análise <ChevronUp className="w-3.5 h-3.5" /></>
