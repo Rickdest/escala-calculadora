@@ -46,6 +46,7 @@ export default function Performance() {
   const { startJob: startAdsImport, isImporting: adsImporting } = useAdsImportJob();
   const perfHook = useProductPerformance();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('excel');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const hasExcelData = perfHook.data.length > 0;
@@ -182,7 +183,7 @@ export default function Performance() {
 
         {/* Main content */}
         {(hasExcelData || hasApiData) ? (
-          <Tabs value={hasExcelData ? 'excel' : 'api'} onValueChange={() => {}}>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             {hasExcelData && hasApiData && (
               <TabsList className="w-full">
                 <TabsTrigger value="excel" className="flex-1 gap-1.5">
