@@ -1,21 +1,33 @@
 
 
-## Plano: Ajustar importação de produtos para usar dados da API de Ads
+## Plano: Destacar produtos sem custo configurado
 
-### Problema
-O botão "Importar da Shopee" chama `shopee-sync` (requer token Seller), mas o usuário só tem token Ads. Os produtos já existem via `source: "ads_api"`.
+### Mudança
 
-### Correção
+**Arquivo: `src/components/cards/ProductCard.tsx`**
 
-**Arquivo: `src/components/produtos/ShopeeImportModal.tsx`**
+1. **Borda amarela condicional** — quando `product.costPrice <= 0`, trocar a classe de borda do card de `border-border` para `border-warning/50` (amarelo)
 
-1. Quando não há token Seller conectado, em vez de mostrar erro genérico, verificar se há token Ads disponível
-2. Se há token Ads: usar a função `shopee-ads` para sincronizar dados de produtos via API de Ads (que já cria stubs de produtos), e depois listar os produtos existentes no banco com `source = 'ads_api'` para o usuário selecionar quais ativar/importar
-3. Alterar o fluxo do modal:
-   - Sem token Seller + Com token Ads: buscar produtos direto da tabela `products` onde `source = 'ads_api'` e `draft = true`, permitindo ao usuário "ativar" esses produtos (tirar do draft)
-   - Sem nenhum token: mostrar mensagem para conectar em Integrações
-4. Adicionar opção de "Atualizar via Ads" que chama `syncAdsOnly()` para refresh dos dados
+2. **Banner de aviso** — logo após o `cardHeader`, se `costPrice <= 0`, mostrar uma linha com fundo `bg-warning/10`, borda `border-warning/20`, texto 11px amarelo: `"⚠ Custo não informado — preencha para calcular margem real"`
+
+### Lógica
+```typescript
+const missingCost = !product.costPrice || product.costPrice <= 0;
+
+// No className do card wrapper:
+className={cn(
+  "rounded-card border bg-card p-4 ...",
+  missingCost ? "border-warning/50" : "border-border hover:border-primary/30"
+)}
+
+// Após cardHeader:
+{missingCost && (
+  <div className="mt-2 flex items-center gap-1.5 text-[11px] text-warning bg-warning/10 border border-warning/20 rounded px-2 py-1">
+    ⚠ Custo não informado — preencha para calcular margem real
+  </div>
+)}
+```
 
 ### Arquivo modificado
-- `src/components/produtos/ShopeeImportModal.tsx`
+- `src/components/cards/ProductCard.tsx` — borda condicional + banner de aviso
 
