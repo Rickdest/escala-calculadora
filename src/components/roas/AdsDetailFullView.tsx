@@ -616,6 +616,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
    const [costFormCost, setCostFormCost] = useState(0);
    const [costFormSalePrice, setCostFormSalePrice] = useState(0);
    const [savingCosts, setSavingCosts] = useState(false);
+   const [autoSaveTimer, setAutoSaveTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const { updateProduct } = useStore();
 
   // Reset internal state when navigating between products
@@ -623,6 +624,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
     setExcelData(null);
     setOpLog([]);
     setEditingCosts(false);
+    if (autoSaveTimer) clearTimeout(autoSaveTimer);
     const fallbackPrice = Math.round((ad.itens_vendidos > 0 ? ad.gmv / ad.itens_vendidos : ad.gmv) * 100) / 100;
     if (ad.product) {
       setCostFormCost(ad.product.costPrice || 0);
@@ -1369,21 +1371,32 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                 const costPriceChanged = product && activeCostPrice !== (product.costPrice || 0);
                 const hasChanges = salePriceChanged || costPriceChanged;
 
-                const handleSaveCosts = async () => {
+                const handleSaveCosts = async (sp?: number, cp?: number) => {
                   if (!product) return;
+                  const finalSp = sp ?? activeSalePrice;
+                  const finalCp = cp ?? activeCostPrice;
+                  if (finalSp === (product.salePrice || 0) && finalCp === (product.costPrice || 0)) return;
                   setSavingCosts(true);
                   try {
                     await updateProduct(product.id, {
-                      salePrice: activeSalePrice,
-                      costPrice: activeCostPrice,
+                      salePrice: finalSp,
+                      costPrice: finalCp,
                     });
-                    setEditingCosts(false);
                     toast.success('Dados salvos no produto');
                   } catch {
                     toast.error('Erro ao salvar');
                   } finally {
                     setSavingCosts(false);
                   }
+                };
+
+                const triggerAutoSave = (newSalePrice: number, newCostPrice: number) => {
+                  if (!product) return;
+                  if (autoSaveTimer) clearTimeout(autoSaveTimer);
+                  const timer = setTimeout(() => {
+                    handleSaveCosts(newSalePrice, newCostPrice);
+                  }, 1500);
+                  setAutoSaveTimer(timer);
                 };
 
                 return (
@@ -1406,7 +1419,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                             type="number"
                             step="0.01"
                             value={costFormSalePrice || ''}
-                            onChange={e => setCostFormSalePrice(parseFloat(e.target.value) || 0)}
+                            onChange={e => { const v = parseFloat(e.target.value) || 0; setCostFormSalePrice(v); triggerAutoSave(v, costFormCost); }}
                             className="w-[120px] text-right text-sm font-mono rounded-lg px-2 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                             style={{ background: '#111', border: '1px solid rgba(255,255,255,0.15)' }}
                             placeholder="0,00"
@@ -1422,7 +1435,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                             type="number"
                             step="0.01"
                             value={costFormCost || ''}
-                            onChange={e => setCostFormCost(parseFloat(e.target.value) || 0)}
+                            onChange={e => { const v = parseFloat(e.target.value) || 0; setCostFormCost(v); triggerAutoSave(costFormSalePrice, v); }}
                             className="w-[120px] text-right text-sm font-mono rounded-lg px-2 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                             style={{ background: '#111', border: '1px solid rgba(255,255,255,0.15)' }}
                             placeholder="0,00"
@@ -1456,19 +1469,12 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                       <p className="text-[11px] mt-1.5 text-text-3">● Taxas calculadas pela Calculadora Shopee</p>
                     </div>
 
-                    {/* Save button — shows when there are changes or cost not set */}
-                    {product && (hasChanges || !hasCosts) && activeCostPrice > 0 && (
-                      <>
-                        <Button
-                          onClick={handleSaveCosts}
-                          disabled={savingCosts}
-                          className="w-full font-bold text-white"
-                          style={{ background: '#e85d00' }}
-                        >
-                          {savingCosts ? 'Salvando...' : hasCosts ? 'Salvar alterações' : 'Salvar custo no produto'}
-                        </Button>
-                        <p className="text-[11px] text-center text-text-3">Esses dados serão salvos no cadastro do produto</p>
-                      </>
+                    {/* Auto-save indicator */}
+                    {product && savingCosts && (
+                      <p className="text-[11px] text-center text-warning animate-pulse">Salvando...</p>
+                    )}
+                    {product && hasChanges && !savingCosts && (
+                      <p className="text-[11px] text-center text-text-3">Salvo automaticamente ao parar de digitar</p>
                     )}
 
                     {lucroTotalPeriodo !== null && (
