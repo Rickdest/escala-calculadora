@@ -1,0 +1,1 @@
+UPDATE subscriptions SET status = 'active', plan = 'monthly', updated_at = now() WHERE id = '1556c536-f310-4610-9392-be55095fcfc9'
