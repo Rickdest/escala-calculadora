@@ -6,13 +6,24 @@ import logoIcon from '@/assets/skalify-logo.png';
 import { PRICING } from '@/constants/pricing';
 import { cn } from '@/lib/utils';
 
-const benefits = [
+const monthlyBenefits = [
   'Cálculo automático de taxas da Shopee',
   'Lucro líquido real por produto, sem achismo',
   'ROAS de empate: saiba quando o anúncio lucra',
   'Gestão de produtos com histórico na nuvem',
   'Análise de Ads com classificação automática',
   'Controle de estoque com alertas críticos',
+  'Até 2 lojas',
+];
+
+const yearlyBenefits = [
+  'Cálculo automático de taxas da Shopee',
+  'Lucro líquido real por produto, sem achismo',
+  'ROAS de empate: saiba quando o anúncio lucra',
+  'Gestão de produtos com histórico na nuvem',
+  'Análise de Ads com classificação automática',
+  'Controle de estoque com alertas críticos',
+  'Até 7 lojas — gerencie toda a sua operação',
 ];
 
 export default function Paywall() {

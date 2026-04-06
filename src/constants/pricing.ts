@@ -1,3 +1,9 @@
+export const PLAN_STORE_LIMITS: Record<string, number> = {
+  free: 0,
+  monthly: 2,
+  yearly: 7,
+};
+
 export const PRICING = {
   monthly: 39.90,
   monthlyLabel: "R$ 39,90",
