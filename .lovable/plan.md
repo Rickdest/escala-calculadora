@@ -1,31 +1,19 @@
 
 
-## Plano: Trocar iframe do YouTube por thumbnail clicável
+## Plano: Corrigir thumbnails dos vídeos na aba Educação
 
 ### Problema
-O embed do YouTube via iframe mostra controles poluídos (botões de compartilhar, relógio, logo YouTube, etc.) diretamente na listagem de vídeos.
+As thumbnails estão com barras cinzas (letterboxing) porque `hqdefault.jpg` do YouTube tem proporção 4:3 (480x360) sendo forçada em container 16:9.
 
 ### Mudança
 
 **Arquivo: `src/pages/Education.tsx`**
 
-1. **Adicionar estado `playingId`** — controla qual vídeo está tocando (`null` = nenhum)
-2. **Substituir o iframe por thumbnail** — Usar a imagem `https://img.youtube.com/vi/{youtube_id}/hqdefault.jpg` como fundo, com um ícone de play centralizado (círculo vermelho + triângulo branco, estilo YouTube)
-3. **Ao clicar na thumbnail** — Setar `playingId = video.id`, que troca a thumbnail pelo iframe com `?autoplay=1` para começar a tocar automaticamente
-4. **Ao clicar em outro vídeo** — O anterior volta a ser thumbnail (só um iframe ativo por vez, melhor performance)
+1. Trocar `hqdefault.jpg` por `maxresdefault.jpg` (1280x720, 16:9 nativo) — elimina barras cinzas
+2. Adicionar fallback com `onError` para `hqdefault.jpg` caso o vídeo não tenha resolução máxima
+3. Manter `object-cover` + `aspect-video` para garantir preenchimento total
+4. Melhorar visual geral dos cards: `rounded-2xl`, sombra sutil, overlay de play com `shadow-xl`
 
-### Resultado visual
-```text
-┌─────────────────────────┐
-│                         │
-│   [thumbnail do video]  │
-│       ▶ (play icon)     │
-│                         │
-├─────────────────────────┤
-│ Título do vídeo         │
-│ Descrição curta         │
-└─────────────────────────┘
-```
-
-Ao clicar → thumbnail vira player com autoplay. Layout limpo, sem poluição visual.
+### Arquivo modificado
+- `src/pages/Education.tsx`
 
