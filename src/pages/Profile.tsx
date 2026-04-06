@@ -67,8 +67,8 @@ export default function Profile() {
       toast.error('Senhas não conferem', { description: 'Digite a mesma senha nos dois campos.' });
       return;
     }
-    if (newPassword.length < 6) {
-      toast.error('Senha muito curta', { description: 'A senha deve ter pelo menos 6 caracteres.' });
+    if (newPassword.length < 8) {
+      toast.error('Senha muito curta', { description: 'A senha deve ter pelo menos 8 caracteres.' });
       return;
     }
     setSavingPassword(true);
