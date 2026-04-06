@@ -309,9 +309,6 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
         <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
           <History className="w-3.5 h-3.5 text-success" /> Histórico de Performance
         </p>
-        <Button onClick={() => fileInputRef.current?.click()} size="sm" variant="outline" className="h-7 text-[10px] gap-1 border-border text-text-2 hover:bg-surface-2">
-          <Upload className="w-3 h-3" /> Atualizar CSV
-        </Button>
       </div>
 
       {showChart && (
