@@ -1494,7 +1494,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
             </div>
 
             {/* Histórico de Performance */}
-            <OperationLogTimeline adProductId={ad.product_id} adShopeeProductId={ad.shopee_product_id} roasEmpate={roasEmpate} onLogLoaded={setOpLog} />
+            <OperationLogTimeline adProductId={ad.product_id} adShopeeProductId={ad.shopee_product_id} roasEmpate={roasEmpate} onLogLoaded={setOpLog} onMetricsImported={onMetricsImported} />
 
             {/* Excel Performance Analysis */}
             <input ref={excelInputRef} type="file" accept=".xlsx" onChange={handleExcelUpload} className="hidden" />
