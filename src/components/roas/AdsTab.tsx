@@ -204,6 +204,7 @@ function AdsHeader({ periodLabel, onImportCSV, onImportAds, syncing, dateFrom, d
 
 /* ═══ Main AdsTab ═══ */
 export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => void }) {
+  const { user } = useAuth();
   const { currentStore } = useStore();
   const { data, loading, operating, importGeneralCSV, importProductCSV, importFromApi, linkProduct, unlinkProduct, reload, deleteAdsData, deleteAll } = useAdsData();
   const { isConnected, syncAdsOnly, isExpired, needsReauth, startOAuth } = useShopeeToken('ads');
