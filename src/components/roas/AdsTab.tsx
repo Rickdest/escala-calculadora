@@ -306,7 +306,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       impressoes_produto: null,
       cliques_produto: null,
       posicao_media: campaign.avg_position,
-      posicao_importada: false,
+      posicao_importada: campaign.avg_position !== null && campaign.avg_position > 0,
       roas_empate: roasEmpate,
       margem_contribuicao: margemContribuicao,
       classificacao,
