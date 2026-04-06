@@ -1,35 +1,36 @@
 
 
-## Plano: Corrigir lógica de Orçamento Diário Sugerido
+## Plano: Tutorial de instalação PWA no primeiro acesso mobile
 
-### Problema
-A fórmula atual é simplesmente `custoConversao × 5` (linha 719). Com custo por conversão de R$3,99, isso dá R$19,95 — um corte de 76% num orçamento que já está performando bem com 20,9 conv/dia. A sugestão não considera se a campanha é lucrativa ou não.
+### O que será feito
+Ao fazer login pela primeira vez em dispositivo móvel, o usuário verá um modal com passo-a-passo para instalar o Skalify como app na tela inicial — com instruções diferentes para Android e iOS.
 
-### Lógica corrigida
+### Arquivos a criar
 
-O orçamento sugerido deve ser contextual:
+**1. `src/hooks/useInstallPrompt.ts`**
+- Detecta se é mobile via `userAgent`
+- Captura o evento `beforeinstallprompt` (Android) para permitir instalação nativa
+- Verifica `localStorage("installTutorialSeen")` para mostrar apenas na primeira vez
+- Exibe o tutorial com delay de 2s após carregar a Home
+- Expõe: `showTutorial`, `markAsSeen`, `deferredPrompt`, `installApp()`
 
-1. **Se ROAS atual ≥ ROAS saudável** → campanha lucrativa, sugerir manter ou otimizar levemente:
-   - `sugerido = orçamento atual` (manter)
-   - Mostrar texto "Orçamento adequado — campanha lucrativa"
+**2. `src/components/InstallTutorial.tsx`**
+- Modal fullscreen com overlay escuro
+- Detecta iOS vs Android para mostrar instruções específicas:
+  - **iOS**: Compartilhar → Adicionar à Tela de Início → Adicionar
+  - **Android**: Se `deferredPrompt` disponível, botão direto "Instalar agora" que chama `prompt()`. Senão, instruções manuais (menu ⋮ → Adicionar à tela inicial)
+- Botão "Entendi" fecha e marca como visto
+- Design consistente com o tema do app (bg-card, text-foreground, botão orange)
 
-2. **Se ROAS atual ≥ ROAS empate mas < saudável** → margem apertada:
-   - `sugerido = custoConversao × convPorDia × (roasAtual / roasSaudavel)`
-   - Redução proporcional para melhorar margem
+### Arquivo a modificar
 
-3. **Se ROAS atual < ROAS empate** → prejuízo:
-   - `sugerido = custoConversao × 5` (mínimo de proteção)
-   - Reduzir ao mínimo viável até otimizar
+**3. `src/pages/Home.tsx`**
+- Importar `useInstallPrompt` e `InstallTutorial`
+- Renderizar `{showTutorial && <InstallTutorial ... />}` dentro do layout
+- Passar `onClose={markAsSeen}`, `onInstall={installApp}`, `deferredPrompt`
 
-4. **Piso**: nunca sugerir abaixo de `custoConversao × 5` (proteção do algoritmo)
-5. **Teto**: nunca sugerir acima do orçamento atual (não faz sentido sugerir gastar mais sem dados)
-
-### Mudanças no card visual
-
-- Quando sugerido ≈ atual (diferença < 10%): mostrar "✅ Orçamento adequado" em verde, sem seta de redução
-- Quando sugerido < atual: mostrar a seta atual → sugerido com o motivo ("Margem apertada" ou "Prejuízo — reduza")
-- Adicionar linha explicativa: "Baseado em {convPorDia} conv/dia × R$ {custoConversao}/conv"
-
-### Arquivo
-- `src/components/roas/AdsDetailFullView.tsx` — linhas 718-722 (cálculo) e 1239-1266 (UI)
+### Detalhes
+- Não envolve `vite-plugin-pwa` nem service workers — o `manifest.json` com `display: standalone` já existe e é suficiente para instalação
+- O tutorial é apenas UI educativa + gatilho nativo do Android quando disponível
+- `localStorage` garante que só aparece uma vez por dispositivo
 
