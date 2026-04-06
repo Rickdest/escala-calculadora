@@ -22,25 +22,25 @@ export function PageHeader({ title, subtitle, showStoreSelector = true, action }
   const navigate = useNavigate();
 
   return (
-    <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border px-4 py-3 safe-top md:hidden">
-      <div className="flex items-center justify-between">
+    <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border px-4 py-3 safe-top md:hidden overflow-hidden">
+      <div className="flex items-center justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-2">
-            <h1 className="text-display text-foreground md:text-2xl">{title}</h1>
+          <div className="flex flex-col gap-0.5">
+            <h1 className="text-display text-foreground truncate">{title}</h1>
             {subtitle && (
-              <p className="text-small text-text-2 truncate">{subtitle}</p>
+              <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
             )}
           </div>
         </div>
 
         <div className="flex items-center gap-2">
           {showStoreSelector && currentStore && stores.length > 0 && (
-            <div className="md:hidden">
+            <div className="md:hidden flex-shrink-0">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-card border border-border hover:border-primary/30 transition-colors">
                   <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                  <span className="text-body text-text-2 max-w-[100px] truncate">
+                  <span className="text-body text-muted-foreground max-w-[80px] truncate">
                     {currentStore.name}
                   </span>
                   <ChevronDown className="w-3 h-3 text-text-3" />
