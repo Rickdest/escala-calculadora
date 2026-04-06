@@ -1475,10 +1475,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                   <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-text-3" /> Posicionamento
                   </p>
-                  <p className="text-sm text-text-2">Importe o CSV individual para ver a posição nos resultados de busca.</p>
-                  <Button onClick={onImportPosition} size="sm" variant="outline" className="gap-1.5 text-sm border-border text-text-2 hover:bg-surface-2">
-                    <Upload className="w-4 h-4" /> Importar CSV do Produto
-                  </Button>
+                  <p className="text-sm text-text-2">Posição disponível após importar o CSV Individual.</p>
                 </div>
               )}
 
