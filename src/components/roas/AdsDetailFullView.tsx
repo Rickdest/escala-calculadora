@@ -651,6 +651,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
   }, [product, config]);
 
   const roasEmpate = empateResult?.roasEmpate ?? (ad.roas_empate || null);
+  const roasSaudavel = roasEmpate && roasEmpate > 0 && roasEmpate !== Infinity ? parseFloat((roasEmpate / 0.61).toFixed(2)) : null;
   const margemContrib = empateResult?.margemContribuicao ?? (ad.margem_contribuicao || null);
 
   const classification = useMemo(() => {
