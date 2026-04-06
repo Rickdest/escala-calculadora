@@ -28,11 +28,11 @@ const toolItems = [
   { icon: Calculator, label: 'Calculadoras', route: '/calculadoras', isAccent: true, iconBg: '', iconColor: '' },
   { icon: ShoppingBag, label: 'Produtos', route: '/products', iconBg: '', iconColor: '' },
   { icon: BarChart2, label: 'Ads', route: '/roas', iconBg: '', iconColor: '' },
-  { icon: GraduationCap, label: 'Educação', route: '/education', iconBg: '', iconColor: '' },
   { icon: Archive, label: 'Estoque', route: '/stock', iconBg: '', iconColor: '' },
   { icon: Percent, label: 'Taxas', route: '/settings', iconBg: '', iconColor: '' },
   { icon: Store, label: 'Lojas', route: '/stores', iconBg: '', iconColor: '' },
   { icon: UserCircle, label: 'Perfil', route: '/profile', iconBg: '', iconColor: '' },
+  { icon: GraduationCap, label: 'Educação', route: '/education', iconBg: '', iconColor: '' },
 ];
 
 
