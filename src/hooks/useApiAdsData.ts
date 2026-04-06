@@ -1,19 +1,28 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStore } from '@/contexts/StoreContext';
 
 export function useApiAdsData() {
   const { user } = useAuth();
+  const { currentStore } = useStore();
   const queryClient = useQueryClient();
+  const storeId = currentStore?.id;
 
   const query = useQuery({
-    queryKey: ['shopee-ads-by-product', user?.id],
+    queryKey: ['shopee-ads-by-product', user?.id, storeId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from('shopee_ads_by_product')
         .select('*')
         .eq('user_id', user!.id)
         .order('updated_at', { ascending: false });
+      
+      if (storeId) {
+        q = (q as any).eq('store_id', storeId);
+      }
+
+      const { data, error } = await q;
       if (error) throw error;
       return data || [];
     },
