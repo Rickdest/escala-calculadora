@@ -222,6 +222,10 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
           period_end: m.periodEnd || new Date().toISOString().slice(0, 10),
         } as any);
         toast.success('Dados de performance do produto importados');
+        // Notify parent about position update so UI refreshes
+        if (m.avgPosition !== null && m.avgPosition !== undefined) {
+          onMetricsImported?.({ posicao_media: m.avgPosition });
+        }
       } else {
         toast.error('CSV não reconhecido. Use o relatório "Por Produto" ou "Registro de Operações" da Shopee.');
       }
