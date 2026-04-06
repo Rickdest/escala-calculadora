@@ -258,7 +258,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
 
               {/* ROAS */}
               <div className="py-3">
-                <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-2">ROAS</p>
+                <p className="uppercase text-[10px] font-semibold text-muted-foreground tracking-wider mb-2">ROAS</p>
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center">
                     <div>
