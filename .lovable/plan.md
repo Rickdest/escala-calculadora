@@ -1,22 +1,18 @@
 
 
-## Plano: Sistema de limite de lojas por plano
+## Plano: Corrigir botão Upgrade na página de Lojas
 
-### Mudanças
+### Problema
+O botão "Upgrade" navega para `/paywall`, mas o `PaywallRoute` redireciona usuários com assinatura ativa de volta para `/`. Ou seja, quem já tem plano mensal nunca consegue ver a página de upgrade.
 
-1. **`src/constants/pricing.ts`** — Adicionar `PLAN_STORE_LIMITS` com free=0, monthly=2, yearly=7
+### Solução
+Trocar a ação do botão "Upgrade" no banner de limite de lojas para abrir diretamente o checkout do plano anual, em vez de navegar para `/paywall`.
 
-2. **Criar `src/hooks/useStoreLimit.ts`** — Hook que combina `useSubscription` + `useStore` para retornar `canAddStore`, `isAtLimit`, `limit`, `storeCount`
+### Mudança em `src/pages/Stores.tsx`
 
-3. **`src/pages/Stores.tsx`** — Usar o hook para:
-   - Desabilitar botão "+" quando no limite (mostrar ícone Lock)
-   - Exibir banner de upgrade quando atingir o limite
+1. Importar `PRICING` de `@/constants/pricing`
+2. No botão "Upgrade" do banner, trocar `navigate('/paywall')` por `window.open(PRICING.checkoutYearly, '_blank', 'noopener,noreferrer')`
 
-4. **`src/pages/Paywall.tsx`** — Separar benefícios por plano (mensal mostra "Até 2 lojas", anual mostra "Até 7 lojas" com destaque em primary)
-
-### Arquivos modificados
-- `src/constants/pricing.ts`
-- `src/hooks/useStoreLimit.ts` (novo)
+### Arquivo modificado
 - `src/pages/Stores.tsx`
-- `src/pages/Paywall.tsx`
 
