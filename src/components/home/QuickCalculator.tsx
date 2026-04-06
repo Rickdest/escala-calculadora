@@ -350,7 +350,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                     </div>
                   </div>
                   <div className="flex justify-between items-center pt-1">
-                    <span className="text-[13px] text-text-2">Status</span>
+                    <span className="text-[13px] text-foreground/80">Status</span>
                     <span className={cn('text-[13px] font-semibold', getMarginStatus(result.realMargin).color)}>
                       {getMarginStatus(result.realMargin).emoji} {getMarginStatus(result.realMargin).label}
                     </span>
