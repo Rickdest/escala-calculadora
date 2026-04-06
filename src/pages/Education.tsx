@@ -143,7 +143,7 @@ export default function Education() {
 
           <div className="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
             {videos.map((video) => (
-              <div key={video.id} className="glass-card overflow-hidden">
+              <div key={video.id} className="glass-card overflow-hidden rounded-2xl shadow-sm">
                 {editingId === video.id ? (
                   <div className="p-4 space-y-4">
                     <div className="space-y-2">
