@@ -1434,7 +1434,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                             type="number"
                             step="0.01"
                             value={costFormCost || ''}
-                            onChange={e => setCostFormCost(parseFloat(e.target.value) || 0)}
+                            onChange={e => { const v = parseFloat(e.target.value) || 0; setCostFormCost(v); triggerAutoSave(costFormSalePrice, v); }}
                             className="w-[120px] text-right text-sm font-mono rounded-lg px-2 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                             style={{ background: '#111', border: '1px solid rgba(255,255,255,0.15)' }}
                             placeholder="0,00"
