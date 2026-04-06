@@ -1210,6 +1210,19 @@ export type Database = {
           trial_inicio: string
         }[]
       }
+      get_shopee_token_metadata: {
+        Args: { p_app_type?: string; p_store_id?: string }
+        Returns: {
+          app_type: string
+          created_at: string
+          expire_in: number
+          id: string
+          shop_id: number
+          store_id: string
+          token_created_at: string
+          updated_at: string
+        }[]
+      }
       has_active_subscription: { Args: never; Returns: boolean }
       has_role: {
         Args: { _role: Database["public"]["Enums"]["app_role"] }

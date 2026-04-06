@@ -80,21 +80,13 @@ export function useShopeeToken(appType?: AppType, storeId?: string) {
   const { data: token, isLoading, refetch } = useQuery({
     queryKey: ['shopee-token', user?.id, appType, storeId],
     queryFn: async () => {
-      let query = supabase
-        .from('shopee_tokens')
-        .select('*')
-        .eq('user_id', user!.id);
-
-      if (appType) {
-        query = (query as any).eq('app_type', appType);
-      }
-      if (storeId) {
-        query = (query as any).eq('store_id', storeId);
-      }
-
-      const { data, error } = await query.limit(1).maybeSingle();
+      const { data, error } = await (supabase.rpc as any)('get_shopee_token_metadata', {
+        p_app_type: appType || null,
+        p_store_id: storeId || null,
+      });
       if (error) throw error;
-      return data;
+      const row = Array.isArray(data) ? data[0] ?? null : data;
+      return row as { id: string; shop_id: number; app_type: string; store_id: string | null; expire_in: number; token_created_at: string; updated_at: string; created_at: string } | null;
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
@@ -146,8 +138,6 @@ export function useShopeeToken(appType?: AppType, storeId?: string) {
       },
     });
     if (res.error) {
-      const msg = res.error?.message || 'Erro ao sincronizar dados da loja';
-      // Don't toast here — let the caller handle it
       throw res.error;
     }
     // If needs_reauth, set flag but DON'T throw — return data so caller can check
@@ -171,8 +161,8 @@ export function useShopeeToken(appType?: AppType, storeId?: string) {
       body: itemId ? { item_id: itemId } : undefined,
     });
     if (res.error) {
-      const msg = res.error?.message || 'Erro ao importar ads';
-      toast.error(msg);
+      const errorMsg = res.error?.message || 'Erro ao importar ads';
+      toast.error(errorMsg);
       throw res.error;
     }
     if (res.data?.error) {

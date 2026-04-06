@@ -127,7 +127,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const updateStore = useCallback(async (storeId: string, updates: Partial<Store>) => {
     const dbUpdates: TablesUpdate<'stores'> = {};
     if (updates.name !== undefined) dbUpdates.name = updates.name;
-    const { error } = await supabase.from('stores').update(dbUpdates).eq('id', storeId);
+    if (!user) return;
+    const { error } = await supabase.from('stores').update(dbUpdates).eq('id', storeId).eq('user_id', user.id);
     if (error) { toast.error('Erro ao atualizar loja'); return; }
     invalidate();
   }, [invalidate]);
@@ -146,15 +147,17 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (config.enableShopeeCampaigns !== undefined) dbConfig.enable_shopee_campaigns = config.enableShopeeCampaigns;
     if (config.shopeeAcelera !== undefined) dbConfig.shopee_acelera = config.shopeeAcelera;
 
-    const { error } = await supabase.from('stores').update(dbConfig).eq('id', storeId);
+    if (!user) return;
+    const { error } = await supabase.from('stores').update(dbConfig).eq('id', storeId).eq('user_id', user.id);
     if (error) { toast.error('Erro ao atualizar configuração'); return; }
     invalidate();
   }, [invalidate]);
 
   const deleteStore = useCallback(async (storeId: string) => {
-    const { error: prodError } = await supabase.from('products').delete().eq('store_id', storeId);
+    if (!user) return;
+    const { error: prodError } = await supabase.from('products').delete().eq('store_id', storeId).eq('user_id', user.id);
     if (prodError) { toast.error('Erro ao excluir produtos da loja'); return; }
-    const { error } = await supabase.from('stores').delete().eq('id', storeId);
+    const { error } = await supabase.from('stores').delete().eq('id', storeId).eq('user_id', user.id);
     if (error) { toast.error('Erro ao excluir loja'); return; }
     if (currentStore?.id === storeId) setCurrentStoreState(null);
     invalidate();
@@ -230,7 +233,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (Object.keys(dbUpdates).length > 0) {
-      const { error } = await supabase.from('products').update(dbUpdates).eq('id', productId);
+      if (!user) return;
+      const { error } = await supabase.from('products').update(dbUpdates).eq('id', productId).eq('user_id', user.id);
       if (error) { toast.error('Erro ao atualizar produto'); return; }
     }
 
@@ -253,8 +257,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [user, invalidate]);
 
   const deleteProduct = useCallback(async (productId: string) => {
-    if (user) await deleteProductImage(user.id, productId);
-    const { error } = await supabase.from('products').delete().eq('id', productId);
+    if (!user) return;
+    await deleteProductImage(user.id, productId);
+    const { error } = await supabase.from('products').delete().eq('id', productId).eq('user_id', user.id);
     if (error) { toast.error('Erro ao excluir produto'); return; }
     invalidate();
   }, [user, invalidate]);
