@@ -63,8 +63,10 @@ export default function Integracoes() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
-  const sellerHook = useShopeeToken('seller');
-  const adsHook = useShopeeToken('ads');
+  const { currentStore } = useStore();
+  const storeId = currentStore?.id;
+  const sellerHook = useShopeeToken('seller', storeId);
+  const adsHook = useShopeeToken('ads', storeId);
 
   const sellerConnected = sellerHook.isConnected;
   const adsConnected = adsHook.isConnected;
