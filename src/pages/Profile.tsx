@@ -67,8 +67,8 @@ export default function Profile() {
       toast.error('Senhas não conferem', { description: 'Digite a mesma senha nos dois campos.' });
       return;
     }
-    if (newPassword.length < 6) {
-      toast.error('Senha muito curta', { description: 'A senha deve ter pelo menos 6 caracteres.' });
+    if (newPassword.length < 8) {
+      toast.error('Senha muito curta', { description: 'A senha deve ter pelo menos 8 caracteres.' });
       return;
     }
     setSavingPassword(true);
@@ -130,9 +130,10 @@ export default function Profile() {
               <Input
                 id="displayName"
                 value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
+                onChange={(e) => setDisplayName(e.target.value.slice(0, 100))}
                 placeholder="Seu nome"
                 className="input-modern h-12"
+                maxLength={100}
               />
             </div>
 
@@ -191,7 +192,7 @@ export default function Profile() {
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="••••••••"
                   className="pl-11 pr-11 h-12 input-modern"
-                  minLength={6}
+                  minLength={8}
                 />
                 <button
                   type="button"
@@ -214,7 +215,7 @@ export default function Profile() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••••"
                   className="pl-11 h-12 input-modern"
-                  minLength={6}
+                  minLength={8}
                 />
               </div>
             </div>

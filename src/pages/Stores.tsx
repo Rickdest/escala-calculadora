@@ -29,6 +29,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 export default function Stores() {
   const { stores, currentStore, setCurrentStore, addStore, updateStore, deleteStore, getStoreStats } = useStore();
@@ -64,11 +65,20 @@ export default function Stores() {
   };
 
   const handleAddStore = async () => {
-    if (newStoreName.trim()) {
-      const store = await addStore(newStoreName.trim());
+    const name = newStoreName.trim().slice(0, 100);
+    if (!name) return;
+    try {
+      const store = await addStore(name);
       setCurrentStore(store);
       setNewStoreName('');
       setIsAdding(false);
+    } catch (err: any) {
+      const msg = err?.message || '';
+      if (msg.includes('Store limit reached')) {
+        toast.error('Limite de lojas atingido', {
+          description: 'Faça upgrade do seu plano para criar mais lojas.',
+        });
+      }
     }
   };
 
@@ -147,6 +157,7 @@ export default function Stores() {
                   onChange={(e) => setNewStoreName(e.target.value)}
                   placeholder="Nome da nova loja..."
                   className="input-modern h-12"
+                  maxLength={100}
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleAddStore();
