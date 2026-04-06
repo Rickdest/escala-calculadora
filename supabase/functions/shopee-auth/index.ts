@@ -33,13 +33,17 @@ Deno.serve(async (req) => {
       return errorResponse("Unauthorized", 401);
     }
 
-    // Read app_type from body (default: 'seller')
+    // Read app_type and store_id from body
     let appType = 'seller';
+    let storeId: string | null = null;
     try {
       if (req.method === "POST" || req.headers.get("content-type")?.includes("json")) {
         const body = await req.json().catch(() => ({}));
         if (body?.app_type === 'ads' || body?.app_type === 'seller') {
           appType = body.app_type;
+        }
+        if (body?.store_id && typeof body.store_id === 'string') {
+          storeId = body.store_id;
         }
       }
     } catch { /* ignore */ }
@@ -59,7 +63,7 @@ Deno.serve(async (req) => {
 
     const { error: stateError } = await supabaseAdmin
       .from("shopee_auth_states")
-      .insert({ user_id: user.id, state, app_type: appType });
+      .insert({ user_id: user.id, state, app_type: appType, store_id: storeId });
 
     if (stateError) {
       console.error("[SHOPEE AUTH] State insert error:", stateError);

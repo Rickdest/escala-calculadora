@@ -36,22 +36,24 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Resolve user_id and app_type from state token
+    // Resolve user_id, app_type, and store_id from state token
     let userId: string | null = null;
     let appType = 'seller';
+    let storeId: string | null = null;
 
     if (state) {
       const { data: stateRow, error: stateError } = await supabaseAdmin
         .from("shopee_auth_states")
-        .select("user_id, app_type")
+        .select("user_id, app_type, store_id")
         .eq("state", state)
         .maybeSingle();
 
-      console.log("[SHOPEE CALLBACK] State lookup result:", { stateRow: stateRow ? { user_id: stateRow.user_id, app_type: stateRow.app_type } : null, stateError });
+      console.log("[SHOPEE CALLBACK] State lookup result:", { stateRow: stateRow ? { user_id: stateRow.user_id, app_type: stateRow.app_type, store_id: stateRow.store_id } : null, stateError });
 
       if (stateRow) {
         userId = stateRow.user_id;
         appType = stateRow.app_type || 'seller';
+        storeId = stateRow.store_id || null;
         await supabaseAdmin
           .from("shopee_auth_states")
           .delete()
@@ -118,10 +120,11 @@ Deno.serve(async (req) => {
       return Response.redirect(`${appUrl}/configuracoes/integracoes?shopee_error=${isDomainError ? 'redirect_domain' : 'token_failed'}&app_type=${appType}`, 302);
     }
 
-    const upsertPayload = {
+    const upsertPayload: Record<string, unknown> = {
       user_id: userId,
       shop_id: Number(shopId),
       app_type: appType,
+      store_id: storeId,
       access_token: tokenData.access_token as string,
       refresh_token: tokenData.refresh_token as string,
       expire_in: (tokenData.expire_in as number) || 0,
@@ -133,12 +136,13 @@ Deno.serve(async (req) => {
       user_id: upsertPayload.user_id,
       shop_id: upsertPayload.shop_id,
       app_type: upsertPayload.app_type,
+      store_id: upsertPayload.store_id,
       expire_in: upsertPayload.expire_in,
     });
 
     const { error: upsertError } = await supabaseAdmin
       .from("shopee_tokens")
-      .upsert(upsertPayload, { onConflict: "user_id,shop_id,app_type" });
+      .upsert(upsertPayload, { onConflict: "user_id,store_id,shop_id,app_type" });
 
     if (upsertError) {
       console.error("[SHOPEE CALLBACK] Upsert error:", JSON.stringify(upsertError));

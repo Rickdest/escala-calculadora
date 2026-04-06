@@ -73,23 +73,26 @@ async function parseShopeeInvokeError(invokeError: unknown, appType: AppType): P
   };
 }
 
-export function useShopeeToken(appType?: AppType) {
+export function useShopeeToken(appType?: AppType, storeId?: string) {
   const { user } = useAuth();
   const [needsReauth, setNeedsReauth] = useState(false);
 
   const { data: token, isLoading, refetch } = useQuery({
-    queryKey: ['shopee-token', user?.id, appType],
+    queryKey: ['shopee-token', user?.id, appType, storeId],
     queryFn: async () => {
-      const baseQuery = supabase
+      let query = supabase
         .from('shopee_tokens')
         .select('*')
         .eq('user_id', user!.id);
 
-      const finalQuery = appType
-        ? (baseQuery as any).eq('app_type', appType)
-        : baseQuery;
+      if (appType) {
+        query = (query as any).eq('app_type', appType);
+      }
+      if (storeId) {
+        query = (query as any).eq('store_id', storeId);
+      }
 
-      const { data, error } = await finalQuery.limit(1).maybeSingle();
+      const { data, error } = await query.limit(1).maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -102,13 +105,13 @@ export function useShopeeToken(appType?: AppType) {
   // Só marca expirado quando o backend retorna needs_reauth (refresh token morreu).
   const isTokenExpired = needsReauth;
 
-  const startOAuth = async (oauthAppType: AppType = 'seller') => {
+  const startOAuth = async (oauthAppType: AppType = 'seller', oauthStoreId?: string) => {
     const { data: session } = await supabase.auth.getSession();
     const res = await supabase.functions.invoke('shopee-auth', {
       headers: {
         Authorization: `Bearer ${session.session?.access_token}`,
       },
-      body: { app_type: oauthAppType },
+      body: { app_type: oauthAppType, store_id: oauthStoreId || storeId },
     });
 
     if (res.error) {
@@ -196,10 +199,10 @@ export function useShopeeToken(appType?: AppType) {
   };
 }
 
-/** Hook to check both seller and ads token status */
-export function useShopeeTokenStatus() {
-  const seller = useShopeeToken('seller');
-  const ads = useShopeeToken('ads');
+/** Hook to check both seller and ads token status for a specific store */
+export function useShopeeTokenStatus(storeId?: string) {
+  const seller = useShopeeToken('seller', storeId);
+  const ads = useShopeeToken('ads', storeId);
 
   return {
     sellerConnected: seller.isConnected,

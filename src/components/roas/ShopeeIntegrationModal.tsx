@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ShoppingBag, Zap, RefreshCw, FileX, Loader2, CheckCircle2, Package, ShoppingCart, ChevronDown, ChevronUp, AlertTriangle, TrendingUp, BarChart3, Search } from 'lucide-react';
 import { useShopeeToken, useShopeeTokenStatus } from '@/hooks/useShopeeToken';
 import { useAdmin } from '@/hooks/useAdmin';
+import { useStore } from '@/contexts/StoreContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -334,7 +335,8 @@ function ConnectionCard({
 }
 
 export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { sellerConnected, adsConnected, sellerExpired, adsExpired, startOAuth, syncStoreData, isLoading: tokenLoading, refetchAll } = useShopeeTokenStatus();
+  const { currentStore } = useStore();
+  const { sellerConnected, adsConnected, sellerExpired, adsExpired, startOAuth, syncStoreData, isLoading: tokenLoading, refetchAll } = useShopeeTokenStatus(currentStore?.id);
   const isConnected = sellerConnected || adsConnected;
   const [syncing, setSyncing] = useState(false);
   const [connecting, setConnecting] = useState<string | null>(null);

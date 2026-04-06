@@ -1,10 +1,15 @@
 import { useState } from 'react';
-import { Plus, Store, MoreVertical, Trash2, Edit2, Check, X, Package } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Store, MoreVertical, Trash2, Edit2, Check, X, Package, Link2 } from 'lucide-react';
 import { useStore } from '@/contexts/StoreContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,11 +30,35 @@ import { cn } from '@/lib/utils';
 
 export default function Stores() {
   const { stores, currentStore, setCurrentStore, addStore, updateStore, deleteStore, getStoreStats } = useStore();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [isAdding, setIsAdding] = useState(false);
   const [newStoreName, setNewStoreName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  // Fetch all shopee tokens for this user to show badges per store
+  const { data: shopeeTokens } = useQuery({
+    queryKey: ['shopee-tokens-all', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('shopee_tokens')
+        .select('store_id, app_type, shop_id')
+        .eq('user_id', user!.id);
+      return data || [];
+    },
+    enabled: !!user,
+    staleTime: 30 * 1000,
+  });
+
+  const getStoreIntegrations = (storeId: string) => {
+    if (!shopeeTokens) return { seller: false, ads: false };
+    return {
+      seller: shopeeTokens.some(t => t.store_id === storeId && t.app_type === 'seller'),
+      ads: shopeeTokens.some(t => t.store_id === storeId && t.app_type === 'ads'),
+    };
+  };
 
   const handleAddStore = async () => {
     if (newStoreName.trim()) {
@@ -169,7 +198,7 @@ export default function Stores() {
                       ) : (
                         <>
                           <p className="font-bold text-foreground truncate text-lg">{store.name}</p>
-                          <div className="flex items-center gap-4 mt-1">
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
                             <span className="text-xs text-muted-foreground flex items-center gap-1 font-medium">
                               <Package className="w-3 h-3" />
                               {stats.totalProducts} produtos
@@ -183,6 +212,24 @@ export default function Stores() {
                               </span>
                             )}
                           </div>
+                          {(() => {
+                            const integrations = getStoreIntegrations(store.id);
+                            if (!integrations.seller && !integrations.ads) return null;
+                            return (
+                              <div className="flex items-center gap-1.5 mt-1.5">
+                                {integrations.seller && (
+                                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 gap-1">
+                                    🛍 Seller ✓
+                                  </Badge>
+                                )}
+                                {integrations.ads && (
+                                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 gap-1">
+                                    📊 Ads ✓
+                                  </Badge>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </>
                       )}
                     </div>
@@ -195,6 +242,14 @@ export default function Stores() {
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={(e) => { 
+                            e.stopPropagation(); 
+                            setCurrentStore(store);
+                            navigate('/configuracoes/integracoes');
+                          }}>
+                            <Link2 className="w-4 h-4 mr-2" />
+                            Conectar Shopee
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleStartEdit(store); }}>
                             <Edit2 className="w-4 h-4 mr-2" />
                             Renomear

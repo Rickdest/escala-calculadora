@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { useShopeeToken } from '@/hooks/useShopeeToken';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStore } from '@/contexts/StoreContext';
 import { toast } from 'sonner';
 import { formatDistanceToNow, addSeconds } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -62,8 +63,10 @@ export default function Integracoes() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
-  const sellerHook = useShopeeToken('seller');
-  const adsHook = useShopeeToken('ads');
+  const { currentStore } = useStore();
+  const storeId = currentStore?.id;
+  const sellerHook = useShopeeToken('seller', storeId);
+  const adsHook = useShopeeToken('ads', storeId);
 
   const sellerConnected = sellerHook.isConnected;
   const adsConnected = adsHook.isConnected;
@@ -219,7 +222,7 @@ export default function Integracoes() {
 
   return (
     <AppLayout>
-      <PageHeader title="Integrações" subtitle="Gerencie as conexões com marketplaces e plataformas" />
+      <PageHeader title="Integrações" subtitle={currentStore ? `Loja: ${currentStore.name}` : 'Gerencie as conexões com marketplaces e plataformas'} />
 
       <div className="max-w-2xl mx-auto pt-6 pb-8 space-y-5">
 
