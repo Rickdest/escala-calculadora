@@ -1,25 +1,16 @@
 
 
-## Plano: Aumentar levemente os tamanhos de fonte no app inteiro
+## Plano: Melhorar contraste do botão "Minha Loja" no header
 
 ### Problema
-Textos estão pequenos em várias partes do app, especialmente `body` (13px), `small` (11px) e `micro` (10px).
+O texto e borda do seletor de loja estão muito apagados (`text-muted-foreground`, `border-border`, `text-text-3`).
 
-### Mudança
+### Mudança em `src/components/layout/PageHeader.tsx`
 
-**Arquivo: `tailwind.config.ts`** — Aumentar a escala tipográfica em ~1px:
+1. **Texto da loja**: `text-muted-foreground` → `text-foreground/70` (mais visível sem ser branco puro)
+2. **Borda do botão**: `border-border` → `border-border/80` (sutil melhoria)
+3. **Ícone chevron**: `text-text-3` → `text-muted-foreground` (acompanha o texto)
+4. **Dot indicador**: manter `bg-primary` (já tem contraste)
 
-| Token | Atual | Novo |
-|-------|-------|------|
-| display | 24px | 26px |
-| title | 18px | 19px |
-| subtitle | 15px | 16px |
-| body | 13px | 14px |
-| small | 11px | 12px |
-| micro | 10px | 11px |
-
-**Arquivo: `src/index.css`** — Ajustar os estilos de `section-label`, `label-field` e `label-metric` de `10px` para `11px`.
-
-### Resultado
-Aumento sutil (~1px) em toda a escala tipográfica. Melhora a legibilidade sem quebrar layouts existentes.
+Resultado: botão mais legível sem chamar atenção excessiva — meio termo entre apagado e destacado.
 
