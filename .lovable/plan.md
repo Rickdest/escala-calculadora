@@ -1,21 +1,25 @@
 
 
-## Plano: Melhorar contraste dos textos na Calculadora Rápida (Home)
+## Plano: Aumentar levemente os tamanhos de fonte no app inteiro
 
 ### Problema
-Os labels e textos da calculadora rápida estão usando `text-text-3` e `section-label` que resultam em cinza muito apagado (#444 ou 60% lightness), dificultando a leitura no tema escuro.
+Textos estão pequenos em várias partes do app, especialmente `body` (13px), `small` (11px) e `micro` (10px).
 
-### Mudanças no arquivo `src/components/home/QuickCalculator.tsx`
+### Mudança
 
-1. **Labels dos campos (CUSTO, PREÇO DE VENDA, EMBALAGEM)** — trocar de `section-label` para classe com `text-muted-foreground font-semibold` e cor mais clara
-2. **Prefixo "R$"** — trocar `text-text-3` por `text-muted-foreground` (mais visível)
-3. **Título "CALCULADORA RÁPIDA"** — adicionar `text-foreground` ou `text-muted-foreground` com `font-semibold`
-4. **Labels das métricas ("Margem real", "Lucro líquido", etc.)** — trocar `text-text-3` por `text-muted-foreground`
-5. **Textos da análise completa** — mesma melhoria em `text-text-2` → `text-foreground/80` e `text-text-3` → `text-muted-foreground`
+**Arquivo: `tailwind.config.ts`** — Aumentar a escala tipográfica em ~1px:
+
+| Token | Atual | Novo |
+|-------|-------|------|
+| display | 24px | 26px |
+| title | 18px | 19px |
+| subtitle | 15px | 16px |
+| body | 13px | 14px |
+| small | 11px | 12px |
+| micro | 10px | 11px |
+
+**Arquivo: `src/index.css`** — Ajustar os estilos de `section-label`, `label-field` e `label-metric` de `10px` para `11px`.
 
 ### Resultado
-Textos levemente mais grossos (font-semibold onde cabe) e mais brancos/claros, sem perder hierarquia visual. Melhor legibilidade no tema escuro mantendo a identidade do app.
-
-### Arquivo modificado
-- `src/components/home/QuickCalculator.tsx`
+Aumento sutil (~1px) em toda a escala tipográfica. Melhora a legibilidade sem quebrar layouts existentes.
 
