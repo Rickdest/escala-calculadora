@@ -1,102 +1,49 @@
 
 
-## Auditoria Completa do App — Bugs e Melhorias Encontrados
+## Plano: Corrigir importação dos 3 arquivos na aba Ads
 
-### Metodologia
-Revisão de código de todos os módulos principais, execução de 45 testes unitários (todos passando), análise de logs do dev-server (sem erros), e inspeção de fluxos de cálculo, importação e navegação.
+### Diagnóstico (via session replay)
 
----
+Os erros reais capturados foram:
 
-### 🐛 Bug 1: Calculadora Shopee ignora taxa CPF de R$3
+1. **Product CSV** (`Product-Ad-Data...csv`) → Erro: **"Este CSV não é um log de operações válido"**
+   - O usuário clicou no botão **"Importar CSV de Operações"** (dentro do `OperationLogTimeline`), mas o arquivo é um CSV de performance de produto. O handler `handleImportLog` detecta corretamente que o tipo é `performance` (não `operation_log`) e rejeita.
+   - **Causa**: O botão correto ("Importar CSV do Produto") está em outro local da interface, e o componente não redireciona automaticamente.
 
-**Gravidade: Média** — Cálculo incorreto para vendedores CPF
+2. **Excel** (`parentskudetail...xlsx`) → Erro: **"Cabeçalhos de dados diários não encontrados."**
+   - O `handleExcelUpload` usa o parser `parseShopeeExcel` que espera o formato "Performance do Produto" (dados diários com coluna "Data"). O arquivo enviado é o formato **"parentskudetail"** (detalhamento por SKU/variação) — formato completamente diferente, com colunas `ID do Item | Produto | Status Atual do Item | ID da Variação...`
+   - **Causa**: O parser Excel da aba Ads só aceita um formato, mas o usuário está subindo o outro formato que já é suportado em `parseProductPerformanceExcel.ts` (usado na aba Performance).
 
-**Local:** `src/components/calculators/ShopeeTab.tsx` linha 45
+3. **Operation Log CSV** → Este arquivo provavelmente funciona se colocado no botão certo, mas o usuário pode estar confundindo os botões de upload.
 
-O componente tem os toggles `isCpf` e `hasOver450`, mas o cálculo da `shopeeFee` nunca soma o adicional de R$3 quando ambos estão ativos. Compare com `calculateProduct.ts` e `roasUtils.ts` que fazem `cpfAdditional = (isCpf && hasOver450) ? 3 : 0`.
+### Mudanças
 
-**Impacto:** O usuário vê margem e lucro inflados quando marca "CPF + mais de 450 pedidos".
+#### 1. `OperationLogTimeline` — aceitar CSV de produto automaticamente
+**Arquivo:** `src/components/roas/AdsDetailFullView.tsx`
 
-**Correção:** Adicionar `const cpfAdditional = (isCpf && hasOver450) ? 3 : 0;` e somar no `shopeeFee`.
+No `handleImportLog`, quando `detected.type === 'performance'`:
+- Em vez de mostrar erro, disparar o fluxo de importação de posição automaticamente
+- Chamar o `onImportPosition` callback com o conteúdo do CSV, ou salvar diretamente no `product_ads_metrics`
+- Mostrar toast informativo: "CSV de produto detectado — dados de posição importados"
 
----
+Alternativa mais simples: aceitar ambos os tipos no mesmo handler. Se o tipo detectado for `performance`, extrair os dados de posição/métricas e salvar no `product_ads_metrics` da mesma forma que `importProductCSV` faria.
 
-### 🐛 Bug 2: Tabs da Performance não permitem trocar
+#### 2. Excel parser — suportar formato "parentskudetail" 
+**Arquivo:** `src/components/roas/AdsDetailFullView.tsx`
 
-**Gravidade: Média**
+No `handleExcelUpload`, adicionar fallback:
+- Se `parseShopeeExcel` falhar (throw), tentar `parseProductPerformanceExcel` 
+- Se o segundo parser funcionar, converter os dados para o formato esperado pela UI (`ExcelPerformanceData`)
+- Mapear os campos: `vendas_pago` → `vendasBrl`, `impressoes` → `impressoes`, `compradores_pagos` → `compradores`, etc.
+- Criar `dadosDiarios` como um único ponto (totais do período) já que este formato não tem breakdown diário
+- Persistir no banco normalmente
 
-**Local:** `src/pages/Performance.tsx` linha 185
+#### 3. Aceitar `.xlsx` no input do Excel (já funciona)
+O input já tem `accept=".xlsx"` — isso está correto.
 
-```tsx
-<Tabs value={hasExcelData ? 'excel' : 'api'} onValueChange={() => {}}>
-```
+#### 4. Mudar `accept` do `OperationLogTimeline` para aceitar ambos
+Alterar `accept=".csv"` para `accept=".csv,.xlsx"` não é necessário aqui (log de operações é sempre CSV). Mas garantir que o CSV de produto seja redirecionado automaticamente.
 
-O `onValueChange` é uma função vazia — o tab fica travado na aba "Excel" se há dados Excel. O usuário não consegue clicar para ver "Pedidos (API)".
-
-**Correção:** Usar estado controlado com `useState` para gerenciar a tab ativa.
-
----
-
-### 🐛 Bug 3: Insight "Orgânico" pode mostrar valor negativo
-
-**Gravidade: Baixa**
-
-**Local:** `src/components/performance/InsightsPanel.tsx` linha 35
-
-Se `ads_gmv > vendas_pago` (possível quando GMV Ads inclui atribuição ampla), o cálculo `vendas_pago - ads_gmv` fica negativo. O insight mostra "R$ -500 veio de forma orgânica".
-
-**Correção:** Adicionar guard `if (organicoReceita > 0)` — já existe na linha 36 mas a condição na linha 34 permite entrar. Na verdade olhando melhor, o guard existe. Porém `calcOrganicoVsAds` já trata com `Math.max(0, ...)`. A `InsightsPanel` não usa essa função. Deveria clampar também com `Math.max(0, ...)`.
-
----
-
-### ⚠️ Melhoria 1: Excel period missing do nome do arquivo
-
-**Local:** `src/lib/parsers/parseProductPerformanceExcel.ts` linha 47
-
-Se o nome do arquivo não contém o padrão `YYYYMMDD_YYYYMMDD` (ex: arquivo renomeado), `period_start` e `period_end` ficam strings vazias. Isso causa datas inválidas no banco e `NaN` nos cálculos de `periodDays`.
-
-**Correção:** Fallback para extrair data do conteúdo do Excel ou usar data de hoje como período.
-
----
-
-### ⚠️ Melhoria 2: Performance paginação limitada a 20 produtos
-
-**Local:** `src/pages/Performance.tsx` linhas 456, 517
-
-A aba API limita a `sorted.slice(0, 20)` sem opção de ver mais. Vendedores com muitos SKUs perdem visibilidade.
-
----
-
-### ⚠️ Melhoria 3: calcOrganicoVsAds assume ads_gmv ⊂ vendas_pago
-
-**Local:** `src/lib/calcPerformance.ts` linha 12
-
-`Math.min(ads_gmv, vendas_pago)` — correto como defesa, mas quando o GMV Ads (Broad) é maior que vendas_pago (ex: atribuição indireta inclui cross-sell), o insight fica enganoso pois mostra 0% orgânico quando na verdade o vendedor tem vendas orgânicas.
-
----
-
-### ✅ O que está correto
-- **Fórmulas de cálculo** (`calculateProduct`, `calcFullRoas`, `roasUtils`): Taxas, ROAS empate/saudável/ideal, acelera — todos consistentes entre si e passando nos testes
-- **Parser Excel/CSV**: Merge de multi-line quoted fields funcionando
-- **Auth flow**: ProtectedRoute, PaywallRoute, AdminRoute — lógica correta
-- **RLS policies**: Tabelas protegidas adequadamente
-- **Subscription check**: Edge function + client side guard implementados
-
----
-
-### Plano de implementação
-
-#### Arquivo 1: `src/components/calculators/ShopeeTab.tsx`
-- Adicionar `cpfAdditional` = 3 quando CPF + 450 pedidos
-- Incluir no `shopeeFee` e na lista `costs`
-
-#### Arquivo 2: `src/pages/Performance.tsx`
-- Trocar `onValueChange={() => {}}` por estado controlado com `useState`
-- Permitir trocar entre tabs Excel e API
-
-#### Arquivo 3: `src/components/performance/InsightsPanel.tsx`
-- Clampar `organicoReceita` com `Math.max(0, ...)` para evitar valores negativos
-
-#### Arquivo 4: `src/lib/parsers/parseProductPerformanceExcel.ts`
-- Adicionar fallback de data quando nome do arquivo não contém período
+### Arquivos modificados
+- `src/components/roas/AdsDetailFullView.tsx` — `handleImportLog` aceita CSV de produto + `handleExcelUpload` aceita parentskudetail
 
