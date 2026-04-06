@@ -2,39 +2,35 @@
 
 ## Plano: Corrigir importação dos 3 arquivos na aba Ads
 
-### Problema
+### Bugs encontrados
 
-1. **Product Ads CSV**: Quando importado pelo botão "Importar CSV de Operações" (o único botão CSV visível no detalhe), é rejeitado com "Este CSV não é um log de operações válido" — porque `handleImportLog` só aceita `type === 'operation_log'`.
+**1. CSV de Posicionamento (Product-Ad-Data) — "importa mas não atualiza"**
 
-2. **Operation Log CSV**: Funciona no parser, mas o botão pode confundir o usuário.
+O parser `parseProductFormatCSV` funciona e extrai os dados corretamente. O problema está no `upsertMetrics`: quando o produto vem da API, `ad.product_id` pode ser `null` (não tem vínculo com tabela `products`). O `UPDATE` não encontra nenhuma row e o `INSERT` cria uma row nova com `period_start: today` — desconectada dos dados existentes. Resultado: dados salvos mas nunca carregados de volta na UI.
 
-3. **Excel parentskudetail**: `handleExcelUpload` usa `parseShopeeExcel` que espera formato diário. O parentskudetail não tem coluna "Data", então lança "Cabeçalhos de dados diários não encontrados".
+**Correção**: No `upsertMetrics`, quando ambos `product_id` e `shopee_product_id` estão presentes, priorizar busca por `shopee_product_id`. Após o INSERT, forçar reload dos dados na UI.
 
-### Mudanças
+**2. CSV de Operações (Operation-Log) — timestamps não reconhecidos**
 
-#### `src/components/roas/AdsDetailFullView.tsx`
+O parser `parseOperationLogCSV` (linha 653) valida timestamps com regex `!/^\d{4}-\d{2}-\d{2}/`. Mas os timestamps reais do CSV da Shopee são no formato `Fri Apr 03 2026 13:40:54 GMT+0000 (Coordinated Universal Time)` — formato JavaScript Date string, NÃO ISO. Resultado: zero entradas parseadas, log sempre vazio.
 
-**1. `handleImportLog` → handler unificado de CSV**
+**Correção**: Adicionar conversão de `new Date(rawTimestamp).toISOString()` antes da validação. Aceitar tanto ISO quanto formato Date string.
 
-Quando `detectAndParseCSV` retorna `type === 'performance'`, em vez de mostrar erro, salvar os dados de posição/métricas no `product_ads_metrics` (posição média, impressões, etc.) e mostrar toast de sucesso. Reutilizar a lógica de upsert que já existe.
+**3. Excel (parentskudetail) — sheet name errado + dados incompletos**
 
-Fluxo:
-- Se `type === 'operation_log'` → salvar log (como hoje)
-- Se `type === 'performance'` → extrair `avgPosition`, métricas, salvar no `product_ads_metrics` com upsert
-- Se `type === 'unknown'` → toast de erro
+O `parseProductPerformanceExcel` espera a aba `'Produtos com Melhor Desempenho'` (hardcoded). O parentskudetail provavelmente tem outro nome de aba. Depois, o fallback no `handleExcelUpload` agrega TODOS os produtos em um único ponto de dados, perdendo o detalhamento por produto.
 
-**2. `handleExcelUpload` → fallback para parentskudetail**
-
-Envolver `parseShopeeExcel` em try/catch. Se falhar, tentar `parseProductPerformanceExcel` como fallback. Se o segundo parser funcionar, converter os dados para um formato resumido (sem breakdown diário) e salvar no banco. Toast informando que os dados são agregados.
-
-**3. Renomear label do botão CSV**
-
-Mudar de "Importar CSV de Operações" para "Importar CSV" com helper text: "Aceita relatório de produto ou log de operações"
-
-**4. Adicionar import do parser de fallback**
-
-Importar `parseProductPerformanceExcel` no componente.
+**Correção**: No parser, se a aba nomeada não existir, usar a primeira aba do workbook. No fallback do Excel handler, preservar dados por produto em vez de agregar tudo.
 
 ### Arquivos modificados
-- `src/components/roas/AdsDetailFullView.tsx` — handler CSV unificado + fallback Excel
+
+#### `src/lib/shopeeAdsParser.ts`
+- Na função `parseOperationLogCSV`, converter timestamps tipo `Fri Apr 03 2026...` para ISO usando `new Date(rawTimestamp)` antes da regex check
+
+#### `src/lib/parsers/parseProductPerformanceExcel.ts`
+- Se aba `'Produtos com Melhor Desempenho'` não existir, usar a primeira aba disponível
+
+#### `src/components/roas/AdsDetailFullView.tsx`
+- `upsertMetrics`: melhorar lógica de busca para usar `shopee_product_id` quando `product_id` não encontra resultados
+- `handleExcelUpload` fallback: preservar dados individuais por produto no `dadosDiarios` em vez de agregar tudo em um ponto
 
