@@ -21,6 +21,8 @@ import { BannerCarousel } from '@/components/home/BannerCarousel';
 import { useAdmin } from '@/hooks/useAdmin';
 import { MARKETPLACE_SHORTCUTS } from '@/lib/marketplaceShortcuts';
 import type { Product } from '@/types/store';
+import { useInstallPrompt } from '@/hooks/useInstallPrompt';
+import { InstallTutorial } from '@/components/InstallTutorial';
 
 const toolItems = [
   { icon: Calculator, label: 'Precificar', isAccent: true, action: 'addProduct' as const, iconBg: '', iconColor: '' },
@@ -54,6 +56,7 @@ export default function Home() {
   const [onboardingDismissed, setOnboardingDismissed] = useState(() => localStorage.getItem('shopee_onboarding_dismissed') === '1');
 
   const { isConnected: shopeeConnected, token: shopeeToken } = useShopeeToken('seller');
+  const { showTutorial, markAsSeen, deferredPrompt, installApp } = useInstallPrompt();
 
   const dismissOnboarding = useCallback(() => {
     setOnboardingDismissed(true);
@@ -481,6 +484,7 @@ export default function Home() {
 
       {showProductForm && <ProductForm product={prefillProduct as any} onClose={() => { setShowProductForm(false); setPrefillProduct(null); }} onSave={handleSaveProduct} />}
       <SubscriptionModal open={showPaywall} onClose={() => setShowPaywall(false)} />
+      {showTutorial && <InstallTutorial onClose={markAsSeen} onInstall={installApp} hasNativePrompt={!!deferredPrompt} />}
     </AppLayout>
   );
 }
