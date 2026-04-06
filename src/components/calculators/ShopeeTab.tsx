@@ -42,7 +42,8 @@ export function ShopeeTab() {
   const isReady = sp > 0 && cp > 0;
 
   const feeRange = getShopeeFeeForPrice(sp);
-  const shopeeFee = sp > 0 ? sp * (feeRange.percent / 100) + feeRange.fixed : 0;
+  const cpfAdditional = (isCpf && hasOver450) ? 3 : 0;
+  const shopeeFee = sp > 0 ? sp * (feeRange.percent / 100) + feeRange.fixed + cpfAdditional : 0;
   const taxesCost = sp * (tax / 100);
   const affiliateCost = sp * (aff / 100);
   const campaignsCost = sp * (camp / 100);
