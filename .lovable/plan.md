@@ -1,23 +1,30 @@
 
 
-## Plano: Mostrar instruções abertas por padrão quando pendente + aumentar fontes
+## Plano: Corrigir navegação entre produtos no detalhe de Ads
 
-### Mudança
+### Bug identificado
 
-No componente `ImportFileColumn`, duas alterações simples:
+Ao navegar entre produtos pelas setas `< 10/11 >`, o `ad` prop muda, mas os estados internos do `AdsDetailFullView` **não resetam**:
 
-1. **Iniciar aberto quando pendente**: Trocar `useState(false)` por `useState(!imported)` — se não importou, as instruções já aparecem expandidas. Se já importou, fica fechado.
+1. **`excelData`** — Linha 864: `if (!user || excelData) return;` impede o carregamento de novos dados porque o estado anterior ainda está preenchido
+2. **`opLog`** — permanece com os dados do produto anterior
 
-2. **Aumentar fontes** em todo o card:
-   - Título: `text-[11px]` → `text-xs` (12px)
-   - Subtítulo: `text-[9px]` → `text-[11px]`
-   - Badge (Importado/Pendente): `text-[9px]` → `text-[10px]`
-   - "Como obter": `text-[10px]` → `text-[11px]`
-   - Header "Onde baixar": `text-[8px]` → `text-[9px]`
-   - Steps: `text-[9px]` → `text-[11px]`
-   - Step number circle: `text-[8px]` → `text-[9px]`, `w-3.5 h-3.5` → `w-4 h-4`
-   - Botão importar: `text-[10px]` → `text-xs`
+### Correção
+
+Adicionar um `useEffect` que reseta `excelData` e `opLog` quando o `ad.id` muda:
+
+```typescript
+useEffect(() => {
+  setExcelData(null);
+  setOpLog([]);
+}, [ad.id]);
+```
+
+Isso garante que:
+- O efeito de carregamento do Excel (linha 863) será re-executado porque `excelData` voltará a `null`
+- O `OperationLogTimeline` já recarrega automaticamente via `loadLog` quando `adProductId`/`adShopeeProductId` mudam
+- O scroll já reseta (linha 900)
 
 ### Arquivo modificado
-- `src/components/roas/AdsDetailFullView.tsx` — linhas 547-599
+- `src/components/roas/AdsDetailFullView.tsx` — adicionar useEffect de reset após linha 612
 
