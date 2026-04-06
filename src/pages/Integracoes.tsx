@@ -222,7 +222,7 @@ export default function Integracoes() {
 
   return (
     <AppLayout>
-      <PageHeader title="Integrações" subtitle="Gerencie as conexões com marketplaces e plataformas" />
+      <PageHeader title="Integrações" subtitle={currentStore ? `Loja: ${currentStore.name}` : 'Gerencie as conexões com marketplaces e plataformas'} />
 
       <div className="max-w-2xl mx-auto pt-6 pb-8 space-y-5">
 
