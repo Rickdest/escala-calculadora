@@ -306,7 +306,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
       impressoes_produto: null,
       cliques_produto: null,
       posicao_media: campaign.avg_position,
-      posicao_importada: false,
+      posicao_importada: campaign.avg_position !== null && campaign.avg_position > 0,
       roas_empate: roasEmpate,
       margem_contribuicao: margemContribuicao,
       classificacao,
@@ -465,7 +465,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
     else if (filter === 'ABAIXO_EMPATE') result = result.filter(({ ad }) => ad.classificacao === 'ABAIXO_EMPATE' || ad.classificacao === 'MARGEM_APERTADA');
     else if (filter !== 'all') result = result.filter(({ ad }) => ad.classificacao === filter);
 
-    return result;
+    return result.sort((a, b) => (b.ad.gmv || 0) - (a.ad.gmv || 0));
   }, [mergedAds, filter, statusFilter]);
 
   // For FilterChips, use all merged ads
