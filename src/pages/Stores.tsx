@@ -131,7 +131,7 @@ export default function Stores() {
                   </p>
                 </div>
               </div>
-              <Button size="sm" onClick={() => navigate('/paywall')}>
+              <Button size="sm" onClick={() => window.open(PRICING.checkoutYearly, '_blank', 'noopener,noreferrer')}>
                 Upgrade
               </Button>
             </div>
