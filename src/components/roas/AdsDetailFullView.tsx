@@ -1345,7 +1345,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                 const costLines = (
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-[13px] text-text-2">Preço de venda</span>
+                      <span className="text-[13px] text-text-2">Preço de venda {salePriceEstimated && <span className="text-[11px] text-muted-foreground">(estimado)</span>}</span>
                       <span className="text-[13px] font-bold font-mono tabular-nums text-foreground">{fmt(salePrice)}</span>
                     </div>
                     <div className="flex justify-between items-center">
