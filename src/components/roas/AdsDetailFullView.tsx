@@ -612,9 +612,10 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
   const excelInputRef = useRef<HTMLInputElement>(null);
   const opLogImportTriggerRef = useRef<(() => void) | null>(null);
 
-  const [editingCosts, setEditingCosts] = useState(false);
-  const [costFormCost, setCostFormCost] = useState(0);
-  const [savingCosts, setSavingCosts] = useState(false);
+   const [editingCosts, setEditingCosts] = useState(false);
+   const [costFormCost, setCostFormCost] = useState(0);
+   const [costFormSalePrice, setCostFormSalePrice] = useState(0);
+   const [savingCosts, setSavingCosts] = useState(false);
   const { updateProduct } = useStore();
 
   // Reset internal state when navigating between products
