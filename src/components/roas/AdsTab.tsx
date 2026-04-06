@@ -9,7 +9,7 @@ import { useAdsImportJob } from '@/hooks/useAdsImportJob';
 import { Upload, Trash2, MapPin, Calendar as CalendarIcon, ShoppingBag, CheckCircle2, Download, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow, subDays, subMonths, startOfDay, endOfDay, startOfMonth, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { parseShopeeAdsCSV, validateCSVSecurity } from '@/lib/shopeeAdsParser';
+import { parseShopeeAdsCSV, validateCSVSecurity, detectAndParseCSV } from '@/lib/shopeeAdsParser';
 import { AdsDetailFullView } from './AdsDetailFullView';
 import { AdsLinkModal } from './AdsLinkModal';
 import { QuickRegisterModal } from './QuickRegisterModal';
