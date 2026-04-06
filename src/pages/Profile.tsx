@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { User, Mail, Lock, Save, Loader2, Check, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Lock, Save, Loader2, Check, Eye, EyeOff, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { openCheckout } from '@/services/checkout.service';
 import { supabase } from '@/integrations/supabase/client';
+import { useSignOut } from '@/hooks/useSignOut';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { UserAvatar } from '@/components/UserAvatar';
@@ -14,6 +15,7 @@ import { toast } from 'sonner';
 
 export default function Profile() {
   const { user } = useAuth();
+  const { handleSignOut } = useSignOut();
 
   const [displayName, setDisplayName] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -237,6 +239,15 @@ export default function Profile() {
             )}
           </Button>
         </div>
+
+        {/* Sign Out */}
+        <button
+          onClick={handleSignOut}
+          className="w-full h-12 rounded-xl border border-destructive/30 text-destructive flex items-center justify-center gap-2 text-sm font-semibold hover:bg-destructive/10 transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          Sair da conta
+        </button>
       </div>
     </AppLayout>
   );
