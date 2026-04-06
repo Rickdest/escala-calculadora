@@ -168,7 +168,7 @@ export default function Paywall() {
             {benefits.map((b) => (
               <div key={b} className="flex items-start gap-2.5">
                 <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" strokeWidth={2} />
-                <span className="text-foreground/80" style={{ fontSize: '13px', lineHeight: '1.35' }}>{b}</span>
+                <span className={cn("text-foreground/80", b.includes('lojas') && isYearly && 'text-primary font-semibold')} style={{ fontSize: '13px', lineHeight: '1.35' }}>{b}</span>
               </div>
             ))}
           </div>

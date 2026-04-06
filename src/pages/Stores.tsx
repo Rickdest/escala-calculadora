@@ -116,6 +116,26 @@ export default function Stores() {
       />
 
       <div className="py-6 md:py-8 space-y-4">
+        {isAtLimit && (
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <Lock className="w-5 h-5 text-primary shrink-0" />
+                <div>
+                  <p className="text-sm font-bold text-foreground">
+                    Limite de lojas atingido ({storeCount}/{limit})
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Faça upgrade para o plano anual e gerencie até 7 lojas.
+                  </p>
+                </div>
+              </div>
+              <Button size="sm" onClick={() => navigate('/paywall')}>
+                Upgrade
+              </Button>
+            </div>
+          </div>
+        )}
         {/* Add New Store */}
         {isAdding && (
           <div className="glass-card p-4 animate-scale-up">
