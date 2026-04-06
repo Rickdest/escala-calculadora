@@ -552,6 +552,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
   const [opLog, setOpLog] = useState<OperationLogEntry[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const excelInputRef = useRef<HTMLInputElement>(null);
+  const opLogImportTriggerRef = useRef<(() => void) | null>(null);
 
   const isApiCampaign = ad.id.startsWith('api-campaign-');
   const itemId = ad.shopee_product_id ? Number(ad.shopee_product_id) : null;
