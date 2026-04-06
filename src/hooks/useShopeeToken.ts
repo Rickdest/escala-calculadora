@@ -86,7 +86,7 @@ export function useShopeeToken(appType?: AppType, storeId?: string) {
       });
       if (error) throw error;
       const row = Array.isArray(data) ? data[0] ?? null : data;
-      return row as { id: string; shop_id: number; app_type: string; store_id: string | null; expire_in: number; token_created_at: string } | null;
+      return row as { id: string; shop_id: number; app_type: string; store_id: string | null; expire_in: number; token_created_at: string; updated_at: string; created_at: string } | null;
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
