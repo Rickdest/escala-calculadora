@@ -8,7 +8,7 @@ import {
   TrendingUp, TrendingDown, AlertTriangle, Target, Zap, MapPin,
   Eye, MousePointerClick, ShoppingCart, DollarSign, Percent, Upload,
   Link2, BarChart3, Info, Clock, Wallet, Package, Plus, LineChart,
-  History, Settings, Sparkles, ArrowRight, RefreshCw,
+  History, Settings, Sparkles, ArrowRight, RefreshCw, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -538,6 +538,63 @@ function KpiCard({ label, value, sub, subColor, icon: Icon, highlight, colorClas
       </p>
       <p className="text-sm md:text-lg font-bold mt-0.5 font-mono tabular-nums text-foreground">{value}</p>
       {sub && <p className={cn('text-[10px] md:text-[11px] font-medium mt-0.5 truncate', subColor || 'text-text-2')}>{sub}</p>}
+    </div>
+  );
+}
+
+// ═══ Import File Column (Como obter?) ═══
+
+function ImportFileColumn({ title, subtitle, imported, onImport, steps }: {
+  title: string; subtitle: string; imported: boolean;
+  onImport: () => void; steps: React.ReactNode[];
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={cn(
+      'rounded-lg border p-2 flex flex-col gap-1',
+      imported ? 'border-success/30 bg-success/5' : 'border-warning/30 bg-warning/5'
+    )}>
+      <div className="flex items-start justify-between gap-1">
+        <div>
+          <p className="text-[11px] font-bold text-foreground leading-tight">{title}</p>
+          <p className="text-[9px] text-text-3">{subtitle}</p>
+        </div>
+        {imported ? (
+          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-success/20 text-success whitespace-nowrap">Importado</span>
+        ) : (
+          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-warning/20 text-warning whitespace-nowrap">Pendente</span>
+        )}
+      </div>
+
+      {/* Como obter? toggle */}
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors mt-0.5 w-fit"
+      >
+        <Info className="w-3 h-3" />
+        <span>Como obter</span>
+        {open ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+      </button>
+
+      {open && (
+        <div className="rounded-md border border-border/50 bg-background/50 p-2 mt-0.5">
+          <p className="text-[8px] uppercase tracking-wider text-text-3 font-bold mb-1">Onde baixar na Shopee</p>
+          <ol className="space-y-0.5">
+            {steps.map((step, i) => (
+              <li key={i} className="flex items-start gap-1.5 text-[9px] text-text-2">
+                <span className="flex-shrink-0 w-3.5 h-3.5 rounded-full bg-muted flex items-center justify-center text-[8px] font-bold text-foreground mt-px">{i + 1}</span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+
+      {!imported && (
+        <Button onClick={onImport} size="sm" variant="outline" className="mt-auto h-7 text-[10px] gap-1 border-primary/30 text-primary hover:bg-primary/10 w-full">
+          <Plus className="w-3 h-3" /> Importar arquivo
+        </Button>
+      )}
     </div>
   );
 }
@@ -1336,60 +1393,46 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
               </p>
               <div className="grid grid-cols-3 gap-2">
                 {/* CSV de Ads */}
-                <div className={cn(
-                  'rounded-lg border p-2 flex flex-col gap-1',
-                  opLog.length > 0 ? 'border-success/30 bg-success/5' : 'border-warning/30 bg-warning/5'
-                )}>
-                  <p className="text-[11px] font-bold text-foreground leading-tight">CSV de Ads</p>
-                  <p className="text-[9px] text-text-3">Log de operações</p>
-                  {opLog.length > 0 ? (
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-success/20 text-success w-fit mt-auto">Importado</span>
-                  ) : (
-                    <>
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-warning/20 text-warning w-fit">Pendente</span>
-                      <Button onClick={() => opLogImportTriggerRef.current?.()} size="sm" variant="outline" className="mt-auto h-7 text-[10px] gap-1 border-primary/30 text-primary hover:bg-primary/10 w-full">
-                        <Plus className="w-3 h-3" /> Importar
-                      </Button>
-                    </>
-                  )}
-                </div>
+                <ImportFileColumn
+                  title="CSV de Ads"
+                  subtitle="Log de operações"
+                  imported={opLog.length > 0}
+                  onImport={() => opLogImportTriggerRef.current?.()}
+                  steps={[
+                    <>Central do Vendedor › <strong>Shopee Ads</strong></>,
+                    <>Selecione o produto › defina o <strong>Período</strong></>,
+                    <>Histórico da Operação › <strong>Exportar Dados</strong></>,
+                  ]}
+                />
                 {/* CSV Individual */}
-                <div className={cn(
-                  'rounded-lg border p-2 flex flex-col gap-1',
-                  ad.posicao_media !== null ? 'border-success/30 bg-success/5' : 'border-warning/30 bg-warning/5'
-                )}>
-                  <p className="text-[11px] font-bold text-foreground leading-tight">CSV Individual</p>
-                  <p className="text-[9px] text-text-3">Posicionamento</p>
-                  {ad.posicao_media !== null ? (
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-success/20 text-success w-fit mt-auto">Importado</span>
-                  ) : (
-                    <>
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-warning/20 text-warning w-fit">Pendente</span>
-                      <Button onClick={onImportPosition} size="sm" variant="outline" className="mt-auto h-7 text-[10px] gap-1 border-primary/30 text-primary hover:bg-primary/10 w-full">
-                        <Plus className="w-3 h-3" /> Importar
-                      </Button>
-                    </>
-                  )}
-                </div>
+                <ImportFileColumn
+                  title="CSV Individual"
+                  subtitle="Posicionamento"
+                  imported={ad.posicao_media !== null}
+                  onImport={onImportPosition}
+                  steps={[
+                    <>Central do Vendedor › <strong>Shopee Ads</strong></>,
+                    <>Selecione o produto › defina o <strong>Período</strong></>,
+                    <>Clique em <strong>Exportar Dados</strong></>,
+                  ]}
+                />
                 {/* Excel Analytics */}
-                <div className={cn(
-                  'rounded-lg border p-2 flex flex-col gap-1',
-                  excelData ? 'border-success/30 bg-success/5' : 'border-warning/30 bg-warning/5'
-                )}>
-                  <p className="text-[11px] font-bold text-foreground leading-tight">Excel Analytics</p>
-                  <p className="text-[9px] text-text-3">Performance diária</p>
-                  {excelData ? (
-                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-success/20 text-success w-fit mt-auto">Importado</span>
-                  ) : (
-                    <>
-                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-warning/20 text-warning w-fit">Pendente</span>
-                      <Button onClick={() => excelInputRef.current?.click()} size="sm" variant="outline" className="mt-auto h-7 text-[10px] gap-1 border-primary/30 text-primary hover:bg-primary/10 w-full">
-                        <Plus className="w-3 h-3" /> Importar
-                      </Button>
-                    </>
-                  )}
-                </div>
+                <ImportFileColumn
+                  title="Excel Analytics"
+                  subtitle="Performance diária"
+                  imported={!!excelData}
+                  onImport={() => excelInputRef.current?.click()}
+                  steps={[
+                    <>Informações Gerenciais › <strong>Produto</strong></>,
+                    <>Performance do Produto › selecione o produto e o <strong>Período</strong></>,
+                    <>Clique em <strong>Exportar Dados</strong></>,
+                  ]}
+                />
               </div>
+              <p className="text-[9px] text-text-3 mt-2 flex items-center gap-1">
+                <Info className="w-3 h-3 text-primary" />
+                Todos os arquivos são exportados diretamente da <strong className="mx-0.5">Central do Vendedor Shopee</strong>. Em breve: tutorial em vídeo mostrando o passo a passo.
+              </p>
             </div>
             {/* Posicionamento + Geral vs Direto — TOPO */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
