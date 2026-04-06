@@ -1404,12 +1404,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                     <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-primary dark:text-blue-400" /> Posicionamento
                     </p>
-                    <div className="flex items-center gap-3">
-                      <Button onClick={onImportPosition} size="sm" variant="ghost" className="h-6 text-[10px] gap-1 text-text-3 hover:text-foreground hover:bg-surface-2 px-2">
-                        <Upload className="w-3 h-3" /> Atualizar
-                      </Button>
-                      <span className="text-xl md:text-3xl font-black font-mono tabular-nums text-foreground">#{ad.posicao_media}</span>
-                    </div>
+                    <span className="text-xl md:text-3xl font-black font-mono tabular-nums text-foreground">#{ad.posicao_media}</span>
                   </div>
 
                   {/* Content: 2 columns on md+, stacked on mobile */}
