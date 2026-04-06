@@ -616,6 +616,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
    const [costFormCost, setCostFormCost] = useState(0);
    const [costFormSalePrice, setCostFormSalePrice] = useState(0);
    const [savingCosts, setSavingCosts] = useState(false);
+   const [autoSaveTimer, setAutoSaveTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const { updateProduct } = useStore();
 
   // Reset internal state when navigating between products
