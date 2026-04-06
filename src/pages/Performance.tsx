@@ -115,56 +115,59 @@ export default function Performance() {
 
   return (
     <AppLayout>
-      <div className="flex items-center justify-between px-4 md:px-0">
-        <PageHeader title="Performance" subtitle={hasExcelData && perfHook.periodLabel ? `Período: ${perfHook.periodLabel}` : 'Vendas · Shopee'} />
-        <div className="flex items-center gap-2">
-          {perfHook.data.length > 0 && (
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs border-destructive/40 text-destructive hover:bg-destructive/10">
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span className="hidden md:inline">Limpar</span>
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Limpar dados de Performance?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Isso vai remover todos os dados de performance e Ads desta aba. Você precisará reimportar os dados depois.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => perfHook.clearData()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                    Limpar tudo
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
-          {adsToken && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-8 text-xs gap-1.5 border-primary/40 bg-primary/10 text-primary hover:bg-primary/20"
-              disabled={adsImporting || perfHook.importingAds}
-              onClick={handleSyncAds}
-            >
-              {(adsImporting || perfHook.importingAds) ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-              <span className="hidden md:inline">{(adsImporting || perfHook.importingAds) ? 'Sincronizando...' : 'Sincronizar Ads'}</span>
-            </Button>
-          )}
-          <label className="cursor-pointer">
-            <input ref={fileInputRef} type="file" accept=".xlsx" className="hidden" onChange={handleFileChange} />
-            <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 pointer-events-none" asChild>
-              <div>
-                {perfHook.importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
-                <span className="hidden md:inline">{perfHook.importing ? 'Importando...' : 'Importar Excel'}</span>
-              </div>
-            </Button>
-          </label>
-        </div>
-      </div>
+      <PageHeader
+        title="Performance"
+        subtitle={hasExcelData && perfHook.periodLabel ? `Período: ${perfHook.periodLabel}` : 'Vendas · Shopee'}
+        action={
+          <div className="flex items-center gap-2">
+            {perfHook.data.length > 0 && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs border-destructive/40 text-destructive hover:bg-destructive/10">
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span className="hidden md:inline">Limpar</span>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Limpar dados de Performance?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Isso vai remover todos os dados de performance e Ads desta aba. Você precisará reimportar os dados depois.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => perfHook.clearData()} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Limpar tudo
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+            {adsToken && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 text-xs gap-1.5 border-primary/40 bg-primary/10 text-primary hover:bg-primary/20"
+                disabled={adsImporting || perfHook.importingAds}
+                onClick={handleSyncAds}
+              >
+                {(adsImporting || perfHook.importingAds) ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                <span className="hidden md:inline">{(adsImporting || perfHook.importingAds) ? 'Sincronizando...' : 'Sincronizar Ads'}</span>
+              </Button>
+            )}
+            <label className="cursor-pointer">
+              <input ref={fileInputRef} type="file" accept=".xlsx" className="hidden" onChange={handleFileChange} />
+              <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 pointer-events-none" asChild>
+                <div>
+                  {perfHook.importing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                  <span className="hidden md:inline">{perfHook.importing ? 'Importando...' : 'Importar Excel'}</span>
+                </div>
+              </Button>
+            </label>
+          </div>
+        }
+      />
 
       <div className="pt-4 pb-24 md:pb-6 space-y-4">
         {/* Data source badges */}
