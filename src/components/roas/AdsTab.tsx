@@ -617,6 +617,33 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
           onUnlink={() => { if (!selectedDetail.id.startsWith('api-campaign-')) { unlinkProduct(selectedDetail.id); setSelectedDetail(null); } }}
           onChangeLink={() => { if (!selectedDetail.id.startsWith('api-campaign-')) { setLinkTarget(selectedDetail.id); } }}
           onRefreshProduct={selectedDetail.id.startsWith('api-campaign-') ? (itemId: number) => handleRefreshProduct(itemId) : undefined}
+          onMetricsImported={async (updates) => {
+            // Update shopee_ads_by_product for API campaigns
+            if (selectedDetail.id.startsWith('api-campaign-') && selectedDetail.shopee_product_id && user) {
+              const shopeeItemId = parseInt(selectedDetail.shopee_product_id);
+              if (!isNaN(shopeeItemId) && updates.posicao_media !== undefined) {
+                await supabase.from('shopee_ads_by_product')
+                  .update({ avg_position: updates.posicao_media } as any)
+                  .eq('user_id', user.id)
+                  .eq('item_id', shopeeItemId);
+              }
+            }
+            // Update ads_data for CSV campaigns
+            if (!selectedDetail.id.startsWith('api-campaign-') && user && updates.posicao_media !== undefined) {
+              await supabase.from('ads_data' as any)
+                .update({ posicao_media: updates.posicao_media, posicao_importada: true })
+                .eq('id', selectedDetail.id)
+                .eq('user_id', user.id);
+            }
+            // Refresh selectedDetail state
+            setSelectedDetail({
+              ...selectedDetail,
+              posicao_media: updates.posicao_media ?? selectedDetail.posicao_media,
+              posicao_importada: updates.posicao_media !== null && updates.posicao_media !== undefined ? true : selectedDetail.posicao_importada,
+            });
+            invalidatePersistedAds();
+            reload();
+          }}
         />
       ) : (
         <>
