@@ -276,8 +276,8 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                   </div>
                   <div className="flex justify-between items-center">
                     <div>
-                      <span className="text-[13px] text-text-2">Ideal</span>
-                      <span className="text-[10px] text-text-3 ml-1.5">escalar com segurança</span>
+                      <span className="text-[13px] text-foreground/80">Ideal</span>
+                      <span className="text-[10px] text-muted-foreground ml-1.5">escalar com segurança</span>
                     </div>
                     <span className="font-mono text-[14px] font-bold font-mono-num text-primary">{result.roasIdeal > 0 ? result.roasIdeal.toFixed(2) : '--'}</span>
                   </div>
