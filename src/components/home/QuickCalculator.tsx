@@ -368,7 +368,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
 function CostRow({ label, value, format, bold }: {label: string; value: number; format: (v: number) => string; bold?: boolean;}) {
   return (
     <div className="flex justify-between">
-      <span className={cn('text-[13px] text-text-2', bold && 'font-semibold')}>{label}</span>
+      <span className={cn('text-[13px] text-foreground/80', bold && 'font-semibold')}>{label}</span>
       <span className={cn('font-mono text-[14px] font-mono-num text-foreground', bold ? 'font-bold' : 'font-bold')}>{format(value)}</span>
     </div>
   );
