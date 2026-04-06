@@ -305,35 +305,6 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             </div>
           </div>
 
-          {/* Optional Costs */}
-          <Collapsible open={optionalCostsOpen} onOpenChange={setOptionalCostsOpen}>
-            <CollapsibleTrigger asChild>
-              <button type="button" className="w-full surface-card p-3.5 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Settings2 className="w-4 h-4 text-text-2" />
-                  <span className="text-sm font-medium text-foreground">Custos Opcionais</span>
-                </div>
-                <ChevronDown className={cn("w-4 h-4 text-text-3 transition-transform duration-150", optionalCostsOpen && "rotate-180")} />
-              </button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="pt-2 space-y-2">
-              <div className="surface-card p-3.5 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-foreground">Shopee Ads</span>
-                  <Switch checked={enableAds} onCheckedChange={setEnableAds} />
-                </div>
-                {enableAds && (
-                  <div className="space-y-1.5">
-                    <label className="section-label">Custo de Ads (R$)</label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-2">R$</span>
-                      <Input type="number" inputMode="decimal" step="0.01" min="0" value={adsCostValue} onChange={(e) => setAdsCostValue(e.target.value)} placeholder="0,00" className="pl-12 h-10 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num" />
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
 
           {/* Outros Canais */}
           <Collapsible open={outrosCanaisOpen} onOpenChange={setOutrosCanaisOpen}>
