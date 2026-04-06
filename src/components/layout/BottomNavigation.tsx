@@ -8,7 +8,7 @@ const navItems = [
   { icon: ShoppingBag, label: 'Produtos', path: '/products' },
   { icon: BarChart2, label: 'Ads', path: '/roas' },
   { icon: TrendingUp, label: 'Performance', path: '/performance' },
-  { icon: Settings2, label: 'Configurações', path: '/settings' },
+  { icon: Settings2, label: 'Config', path: '/settings' },
 ];
 
 export const BottomNavigation = React.forwardRef<HTMLElement, Record<string, never>>(function BottomNavigation(_props, ref) {
