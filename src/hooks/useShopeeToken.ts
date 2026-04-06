@@ -105,13 +105,13 @@ export function useShopeeToken(appType?: AppType, storeId?: string) {
   // Só marca expirado quando o backend retorna needs_reauth (refresh token morreu).
   const isTokenExpired = needsReauth;
 
-  const startOAuth = async (oauthAppType: AppType = 'seller') => {
+  const startOAuth = async (oauthAppType: AppType = 'seller', oauthStoreId?: string) => {
     const { data: session } = await supabase.auth.getSession();
     const res = await supabase.functions.invoke('shopee-auth', {
       headers: {
         Authorization: `Bearer ${session.session?.access_token}`,
       },
-      body: { app_type: oauthAppType },
+      body: { app_type: oauthAppType, store_id: oauthStoreId || storeId },
     });
 
     if (res.error) {
