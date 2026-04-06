@@ -484,6 +484,7 @@ export default function Home() {
 
       {showProductForm && <ProductForm product={prefillProduct as any} onClose={() => { setShowProductForm(false); setPrefillProduct(null); }} onSave={handleSaveProduct} />}
       <SubscriptionModal open={showPaywall} onClose={() => setShowPaywall(false)} />
+      {showTutorial && <InstallTutorial onClose={markAsSeen} onInstall={installApp} hasNativePrompt={!!deferredPrompt} />}
     </AppLayout>
   );
 }
