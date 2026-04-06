@@ -183,14 +183,32 @@ export default function Education() {
                   </div>
                 ) : (
                   <>
-                    <div className="aspect-video bg-muted relative">
-                      <iframe
-                        src={`https://www.youtube.com/embed/${video.content_data?.youtube_id}`}
-                        title={video.title}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        className="absolute inset-0 w-full h-full"
-                      />
+                    <div className="aspect-video bg-muted relative rounded-t-xl overflow-hidden">
+                      {playingId === video.id ? (
+                        <iframe
+                          src={`https://www.youtube.com/embed/${video.content_data?.youtube_id}?autoplay=1&rel=0`}
+                          title={video.title}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="absolute inset-0 w-full h-full"
+                        />
+                      ) : (
+                        <div
+                          className="absolute inset-0 cursor-pointer group"
+                          onClick={() => setPlayingId(video.id)}
+                        >
+                          <img
+                            src={`https://img.youtube.com/vi/${video.content_data?.youtube_id}/hqdefault.jpg`}
+                            alt={video.title}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
+                            <div className="w-14 h-14 rounded-full bg-red-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                              <Play className="w-6 h-6 text-white fill-white ml-0.5" />
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div className="p-4">
                       <div className="flex items-start justify-between gap-2">
