@@ -613,7 +613,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
   const opLogImportTriggerRef = useRef<(() => void) | null>(null);
 
   const [editingCosts, setEditingCosts] = useState(false);
-  const [costForm, setCostForm] = useState({ salePrice: 0, costPrice: 0, commissionPct: 14, shippingCost: 0 });
+  const [costFormCost, setCostFormCost] = useState(0);
   const [savingCosts, setSavingCosts] = useState(false);
   const { updateProduct } = useStore();
 
