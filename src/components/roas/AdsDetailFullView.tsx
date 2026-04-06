@@ -43,6 +43,7 @@ interface Props {
   onUnlink?: () => void;
   onChangeLink?: () => void;
   onRefreshProduct?: (itemId: number) => void;
+  onMetricsImported?: (updates: { posicao_media?: number | null }) => void;
 }
 
 // ═══ Operation Log Timeline ═══
@@ -109,7 +110,7 @@ function formatLogDate(ts: string): string {
   return `${dd}/${mm} ${hh}:${min}`;
 }
 
-function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLogLoaded }: { adProductId: string | null; adShopeeProductId: string | null; roasEmpate: number | null; onLogLoaded?: (log: OperationLogEntry[]) => void }) {
+function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLogLoaded, onMetricsImported }: { adProductId: string | null; adShopeeProductId: string | null; roasEmpate: number | null; onLogLoaded?: (log: OperationLogEntry[]) => void; onMetricsImported?: (updates: { posicao_media?: number | null }) => void }) {
   const { user } = useAuth();
   const [operationLog, setOperationLog] = useState<OperationLogEntry[] | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -221,6 +222,10 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
           period_end: m.periodEnd || new Date().toISOString().slice(0, 10),
         } as any);
         toast.success('Dados de performance do produto importados');
+        // Notify parent about position update so UI refreshes
+        if (m.avgPosition !== null && m.avgPosition !== undefined) {
+          onMetricsImported?.({ posicao_media: m.avgPosition });
+        }
       } else {
         toast.error('CSV não reconhecido. Use o relatório "Por Produto" ou "Registro de Operações" da Shopee.');
       }
@@ -543,7 +548,7 @@ function KpiCard({ label, value, sub, subColor, icon: Icon, highlight, colorClas
 
 // ═══ Main Component ═══
 
-export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPosition, onLink, onQuickRegister, onReimport, onUnlink, onChangeLink, onRefreshProduct }: Props) {
+export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPosition, onLink, onQuickRegister, onReimport, onUnlink, onChangeLink, onRefreshProduct, onMetricsImported }: Props) {
   const { currentStore } = useStore();
   const isMobile = useIsMobile();
   const config = currentStore?.config;
@@ -1489,7 +1494,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
             </div>
 
             {/* Histórico de Performance */}
-            <OperationLogTimeline adProductId={ad.product_id} adShopeeProductId={ad.shopee_product_id} roasEmpate={roasEmpate} onLogLoaded={setOpLog} />
+            <OperationLogTimeline adProductId={ad.product_id} adShopeeProductId={ad.shopee_product_id} roasEmpate={roasEmpate} onLogLoaded={setOpLog} onMetricsImported={onMetricsImported} />
 
             {/* Excel Performance Analysis */}
             <input ref={excelInputRef} type="file" accept=".xlsx" onChange={handleExcelUpload} className="hidden" />

@@ -2,6 +2,8 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ApiAdsDashboard } from './ApiAdsDashboard';
 import { useStore } from '@/contexts/StoreContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { useAdsData, EnrichedAdsData } from '@/hooks/useAdsData';
 import { useShopeeToken } from '@/hooks/useShopeeToken';
 import { useApiAdsData, buildApiAdsDataFromRows } from '@/hooks/useApiAdsData';
@@ -9,7 +11,7 @@ import { useAdsImportJob } from '@/hooks/useAdsImportJob';
 import { Upload, Trash2, MapPin, Calendar as CalendarIcon, ShoppingBag, CheckCircle2, Download, AlertTriangle } from 'lucide-react';
 import { formatDistanceToNow, subDays, subMonths, startOfDay, endOfDay, startOfMonth, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { parseShopeeAdsCSV, validateCSVSecurity } from '@/lib/shopeeAdsParser';
+import { parseShopeeAdsCSV, validateCSVSecurity, detectAndParseCSV } from '@/lib/shopeeAdsParser';
 import { AdsDetailFullView } from './AdsDetailFullView';
 import { AdsLinkModal } from './AdsLinkModal';
 import { QuickRegisterModal } from './QuickRegisterModal';
@@ -202,6 +204,7 @@ function AdsHeader({ periodLabel, onImportCSV, onImportAds, syncing, dateFrom, d
 
 /* ═══ Main AdsTab ═══ */
 export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => void }) {
+  const { user } = useAuth();
   const { currentStore } = useStore();
   const { data, loading, operating, importGeneralCSV, importProductCSV, importFromApi, linkProduct, unlinkProduct, reload, deleteAdsData, deleteAll } = useAdsData();
   const { isConnected, syncAdsOnly, isExpired, needsReauth, startOAuth } = useShopeeToken('ads');
@@ -498,16 +501,40 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
 
   const handlePositionFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !user) return;
     const text = await file.text();
     const targetId = positionTarget;
+
+    // Parse CSV to extract position data
+    const parsed = parseShopeeAdsCSV(text);
+    const avgPosition = parsed?.metrics?.[0]?.avgPosition ?? null;
+    const isApiCampaign = selectedDetail?.id.startsWith('api-campaign-');
+
+    // For API campaigns: also update shopee_ads_by_product directly
+    if (isApiCampaign && selectedDetail?.shopee_product_id) {
+      const shopeeItemId = parseInt(selectedDetail.shopee_product_id);
+      if (!isNaN(shopeeItemId) && avgPosition !== null) {
+        await supabase.from('shopee_ads_by_product')
+          .update({ avg_position: avgPosition } as any)
+          .eq('user_id', user.id)
+          .eq('item_id', shopeeItemId);
+      }
+    }
+
+    // Save to ads_data (for CSV campaigns) or product_ads_metrics (history)
     await importProductCSV(text, targetId);
     setPositionTarget(undefined);
     if (positionFileRef.current) positionFileRef.current.value = '';
     await reload();
-    // Refresh detail view if still open
+    invalidatePersistedAds();
+
+    // Refresh selectedDetail with new position
     if (selectedDetail) {
-      invalidatePersistedAds();
+      setSelectedDetail({
+        ...selectedDetail,
+        posicao_media: avgPosition ?? selectedDetail.posicao_media,
+        posicao_importada: avgPosition !== null ? true : selectedDetail.posicao_importada,
+      });
     }
   };
 
@@ -590,6 +617,33 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
           onUnlink={() => { if (!selectedDetail.id.startsWith('api-campaign-')) { unlinkProduct(selectedDetail.id); setSelectedDetail(null); } }}
           onChangeLink={() => { if (!selectedDetail.id.startsWith('api-campaign-')) { setLinkTarget(selectedDetail.id); } }}
           onRefreshProduct={selectedDetail.id.startsWith('api-campaign-') ? (itemId: number) => handleRefreshProduct(itemId) : undefined}
+          onMetricsImported={async (updates) => {
+            // Update shopee_ads_by_product for API campaigns
+            if (selectedDetail.id.startsWith('api-campaign-') && selectedDetail.shopee_product_id && user) {
+              const shopeeItemId = parseInt(selectedDetail.shopee_product_id);
+              if (!isNaN(shopeeItemId) && updates.posicao_media !== undefined) {
+                await supabase.from('shopee_ads_by_product')
+                  .update({ avg_position: updates.posicao_media } as any)
+                  .eq('user_id', user.id)
+                  .eq('item_id', shopeeItemId);
+              }
+            }
+            // Update ads_data for CSV campaigns
+            if (!selectedDetail.id.startsWith('api-campaign-') && user && updates.posicao_media !== undefined) {
+              await supabase.from('ads_data' as any)
+                .update({ posicao_media: updates.posicao_media, posicao_importada: true })
+                .eq('id', selectedDetail.id)
+                .eq('user_id', user.id);
+            }
+            // Refresh selectedDetail state
+            setSelectedDetail({
+              ...selectedDetail,
+              posicao_media: updates.posicao_media ?? selectedDetail.posicao_media,
+              posicao_importada: updates.posicao_media !== null && updates.posicao_media !== undefined ? true : selectedDetail.posicao_importada,
+            });
+            invalidatePersistedAds();
+            reload();
+          }}
         />
       ) : (
         <>
