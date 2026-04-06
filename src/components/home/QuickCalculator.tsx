@@ -179,7 +179,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               )}>
                 {formatCurrency(result.netProfit)}
               </p>
-              <p className="text-[10px] font-medium text-text-3 tracking-wider mt-0.5">Lucro líquido</p>
+              <p className="text-[10px] font-semibold text-muted-foreground tracking-wider mt-0.5">Lucro líquido</p>
             </div>
 
             {/* ROAS Empate */}
