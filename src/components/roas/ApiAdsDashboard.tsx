@@ -127,10 +127,10 @@ export function ApiAdsDashboard({ data, products = [] }: { data: ApiAdsData; pro
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
         {kpis.map(({ label, value, icon: Icon, color, iconColor }, idx) => (
-          <div key={label} className="rounded-2xl border border-border bg-card p-3 md:p-5 min-w-0 overflow-hidden relative">
-            <Icon className={cn('absolute top-3 right-3 w-7 h-7 md:w-9 md:h-9', iconColor)} />
+          <div key={label} className="rounded-2xl border border-border bg-card p-2.5 md:p-5 min-w-0 overflow-hidden relative">
+            <Icon className={cn('absolute top-2.5 right-2.5 w-5 h-5 md:w-9 md:h-9', iconColor)} />
             <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
-            <p className={cn('text-xl md:text-3xl font-black font-mono tabular-nums mt-1 truncate', color)}>{value}</p>
+            <p className={cn('text-lg md:text-3xl font-black font-mono tabular-nums mt-1 break-all', color)}>{value}</p>
             {idx === 2 && (
               <div className="mt-2 space-y-1">
                 <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
@@ -152,10 +152,10 @@ export function ApiAdsDashboard({ data, products = [] }: { data: ApiAdsData; pro
       {/* Secondary metrics */}
       <div className="grid grid-cols-4 gap-2">
         {secondaryKpis.map(({ label, value, icon: Icon }) => (
-          <div key={label} className="rounded-xl border border-border bg-card p-2.5 text-center">
-            <Icon className="w-4 h-4 text-muted-foreground mx-auto mb-1" />
-            <p className="text-sm md:text-base font-bold font-mono tabular-nums text-foreground">{value}</p>
-            <p className="text-[9px] text-muted-foreground uppercase tracking-wide">{label}</p>
+          <div key={label} className="rounded-xl border border-border bg-card p-2 md:p-2.5 text-center">
+            <Icon className="w-3.5 h-3.5 md:w-4 md:h-4 text-muted-foreground mx-auto mb-1" />
+            <p className="text-xs md:text-base font-bold font-mono tabular-nums text-foreground">{value}</p>
+            <p className="text-[8px] md:text-[9px] text-muted-foreground uppercase tracking-wide">{label}</p>
           </div>
         ))}
       </div>
