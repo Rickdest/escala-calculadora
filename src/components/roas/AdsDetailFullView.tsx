@@ -623,11 +623,12 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
     setExcelData(null);
     setOpLog([]);
     setEditingCosts(false);
+    const fallbackPrice = Math.round((ad.itens_vendidos > 0 ? ad.gmv / ad.itens_vendidos : ad.gmv) * 100) / 100;
     if (ad.product) {
       setCostFormCost(ad.product.costPrice || 0);
-      setCostFormSalePrice(ad.product.salePrice && ad.product.salePrice > 0 ? ad.product.salePrice : (ad.itens_vendidos > 0 ? ad.gmv / ad.itens_vendidos : ad.gmv));
+      setCostFormSalePrice(ad.product.salePrice && ad.product.salePrice > 0 ? Math.round(ad.product.salePrice * 100) / 100 : fallbackPrice);
     } else {
-      setCostFormSalePrice(ad.itens_vendidos > 0 ? ad.gmv / ad.itens_vendidos : ad.gmv);
+      setCostFormSalePrice(fallbackPrice);
     }
   }, [ad.id]);
 
