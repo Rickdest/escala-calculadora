@@ -8,7 +8,7 @@ import {
   TrendingUp, TrendingDown, AlertTriangle, Target, Zap, MapPin,
   Eye, MousePointerClick, ShoppingCart, DollarSign, Percent, Upload,
   Link2, BarChart3, Info, Clock, Wallet, Package, Plus, LineChart,
-  History, Settings, Sparkles, ArrowRight, RefreshCw,
+  History, Settings, Sparkles, ArrowRight, RefreshCw, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
