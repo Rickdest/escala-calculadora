@@ -131,7 +131,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
         </div>
       </div>
       <div className="mb-3">
-        <label className="section-label mb-1.5 block text-[10px]">EMBALAGEM (OPCIONAL)</label>
+        <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">EMBALAGEM (OPCIONAL)</label>
         <div className="relative">
           <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-1.5">R$</span>
           <input
