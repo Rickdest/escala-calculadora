@@ -220,16 +220,16 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
   if (!operationLog || operationLog.length === 0) {
     return (
       <div className="rounded-2xl border border-border bg-card p-5 space-y-3 shadow-lg">
-        <input ref={fileInputRef} type="file" accept=".csv" onChange={handleImportLog} className="hidden" />
+        <input ref={fileInputRef} type="file" accept=".csv" onChange={handleImportCSV} className="hidden" />
         <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
           <LineChart className="w-4 h-4 text-primary dark:text-blue-400" /> Histórico de Performance
         </p>
         <div className="flex flex-col items-center justify-center py-8 text-center">
           <LineChart className="w-10 h-10 text-text-3 mb-3" />
-          <p className="text-base font-bold text-foreground">Importe o log de operações</p>
-          <p className="text-sm text-text-2 mt-1">para ver o histórico de ajustes de ROAS e orçamento.</p>
+          <p className="text-base font-bold text-foreground">Importe CSV de Ads</p>
+          <p className="text-sm text-text-2 mt-1">Aceita relatório de produto ou log de operações (detecção automática).</p>
           <Button onClick={() => fileInputRef.current?.click()} size="sm" variant="outline" className="mt-3 gap-1.5 border-border text-text-2 hover:bg-surface-2">
-            <Upload className="w-3.5 h-3.5" /> Importar CSV de Operações
+            <Upload className="w-3.5 h-3.5" /> Importar CSV
           </Button>
         </div>
       </div>
