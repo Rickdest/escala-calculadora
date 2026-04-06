@@ -164,8 +164,8 @@ export function useShopeeToken(appType?: AppType, storeId?: string) {
       body: itemId ? { item_id: itemId } : undefined,
     });
     if (res.error) {
-      const msg = res.error?.message || 'Erro ao importar ads';
-      toast.error(msg);
+      const errorMsg = res.error?.message || 'Erro ao importar ads';
+      toast.error(errorMsg);
       throw res.error;
     }
     if (res.data?.error) {
