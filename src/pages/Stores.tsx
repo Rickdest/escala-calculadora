@@ -29,6 +29,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 export default function Stores() {
   const { stores, currentStore, setCurrentStore, addStore, updateStore, deleteStore, getStoreStats } = useStore();
