@@ -188,8 +188,8 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
         await upsertMetrics({ operation_log: detected.operationLog as any });
         toast.success('Log de operações importado');
         loadLog();
-      } else if (detected.type === 'performance' && detected.metrics?.length) {
-        const m = detected.metrics[0];
+      } else if (detected.type === 'performance' && detected.performanceData?.metrics?.length) {
+        const m = detected.performanceData.metrics[0];
         await upsertMetrics({
           impressions: m.impressions,
           clicks: m.clicks,
