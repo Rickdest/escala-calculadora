@@ -824,6 +824,7 @@ export type Database = {
           roas: number | null
           shop_id: number
           status: string | null
+          store_id: string | null
           updated_at: string | null
           user_id: string
         }
@@ -854,6 +855,7 @@ export type Database = {
           roas?: number | null
           shop_id: number
           status?: string | null
+          store_id?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -884,6 +886,7 @@ export type Database = {
           roas?: number | null
           shop_id?: number
           status?: string | null
+          store_id?: string | null
           updated_at?: string | null
           user_id?: string
         }
@@ -925,6 +928,7 @@ export type Database = {
           created_at: string
           id: string
           state: string
+          store_id: string | null
           user_id: string
         }
         Insert: {
@@ -932,6 +936,7 @@ export type Database = {
           created_at?: string
           id?: string
           state: string
+          store_id?: string | null
           user_id: string
         }
         Update: {
@@ -939,6 +944,7 @@ export type Database = {
           created_at?: string
           id?: string
           state?: string
+          store_id?: string | null
           user_id?: string
         }
         Relationships: []
@@ -988,6 +994,7 @@ export type Database = {
           id: string
           refresh_token: string
           shop_id: number
+          store_id: string | null
           token_created_at: string
           updated_at: string
           user_id: string
@@ -1000,6 +1007,7 @@ export type Database = {
           id?: string
           refresh_token: string
           shop_id: number
+          store_id?: string | null
           token_created_at?: string
           updated_at?: string
           user_id: string
@@ -1012,6 +1020,7 @@ export type Database = {
           id?: string
           refresh_token?: string
           shop_id?: number
+          store_id?: string | null
           token_created_at?: string
           updated_at?: string
           user_id?: string
