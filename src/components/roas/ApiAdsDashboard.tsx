@@ -131,7 +131,25 @@ export function ApiAdsDashboard({ data, products = [] }: { data: ApiAdsData; pro
             <Icon className={cn('absolute top-2.5 right-2.5 w-5 h-5 md:w-9 md:h-9', iconColor)} />
             <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
             <p className={cn('text-lg md:text-3xl font-black font-mono tabular-nums mt-1 break-all', color)}>{value}</p>
-...
+            {idx === 2 && (
+              <div className="mt-2 space-y-1">
+                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                  <span className="w-1.5 h-1.5 rounded-full bg-success inline-block shrink-0" />
+                  <span>Meta 3.0</span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-secondary/80 overflow-hidden">
+                  <div className="h-full rounded-full transition-all duration-500" style={{
+                    width: `${roasBarWidth}%`, minWidth: summary.roas_geral > 0 ? '4px' : '0px',
+                    backgroundColor: summary.roas_geral >= 5 ? 'hsl(var(--success))' : summary.roas_geral >= 3 ? 'hsl(var(--primary))' : summary.roas_geral >= 1 ? 'hsl(var(--warning))' : 'hsl(var(--destructive))',
+                  }} />
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Secondary metrics */}
       <div className="grid grid-cols-4 gap-2">
         {secondaryKpis.map(({ label, value, icon: Icon }) => (
           <div key={label} className="rounded-xl border border-border bg-card p-2 md:p-2.5 text-center">
