@@ -38,12 +38,12 @@ export function PageHeader({ title, subtitle, showStoreSelector = true, action }
             <div className="md:hidden flex-shrink-0">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-card border border-border hover:border-primary/30 transition-colors">
+                 <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-card border border-border/80 hover:border-primary/30 transition-colors">
                   <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                  <span className="text-body text-muted-foreground max-w-[80px] truncate">
+                  <span className="text-body text-foreground/70 max-w-[80px] truncate">
                     {currentStore.name}
                   </span>
-                  <ChevronDown className="w-3 h-3 text-text-3" />
+                  <ChevronDown className="w-3 h-3 text-muted-foreground" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
