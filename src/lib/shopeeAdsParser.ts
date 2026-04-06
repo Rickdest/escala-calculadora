@@ -650,9 +650,17 @@ export function parseOperationLogCSV(csvContent: string): OperationLogEntry[] {
       if (cols.length < 4) continue;
 
       const rawTimestamp = cols[0]?.trim();
-      if (!rawTimestamp || !/^\d{4}-\d{2}-\d{2}/.test(rawTimestamp)) continue;
+      if (!rawTimestamp) continue;
 
-      const timestamp = rawTimestamp.replace(' ', 'T');
+      // Accept both ISO (2026-04-03 13:40) and JS Date string (Fri Apr 03 2026...)
+      let timestamp: string;
+      if (/^\d{4}-\d{2}-\d{2}/.test(rawTimestamp)) {
+        timestamp = rawTimestamp.replace(' ', 'T');
+      } else {
+        const parsed = new Date(rawTimestamp);
+        if (isNaN(parsed.getTime())) continue;
+        timestamp = parsed.toISOString();
+      }
       const eventType = (cols[3] || '').trim();
       const details = (cols[4] || '').trim();
 

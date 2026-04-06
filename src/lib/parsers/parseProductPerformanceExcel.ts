@@ -53,8 +53,14 @@ export async function parseProductPerformanceExcel(
   const buffer = await file.arrayBuffer();
   const wb = read(buffer);
 
-  const ws = wb.Sheets['Produtos com Melhor Desempenho'];
-  if (!ws) throw new Error('Aba "Produtos com Melhor Desempenho" não encontrada');
+  let ws = wb.Sheets['Produtos com Melhor Desempenho'];
+  if (!ws) {
+    // Fallback: use first available sheet
+    const firstSheetName = wb.SheetNames[0];
+    if (!firstSheetName) throw new Error('Nenhuma aba encontrada no arquivo');
+    ws = wb.Sheets[firstSheetName];
+    if (!ws) throw new Error('Aba vazia no arquivo');
+  }
 
   const rows: any[][] = utils.sheet_to_json(ws, { header: 1, defval: '-' });
   const dataRows = rows.slice(1);
