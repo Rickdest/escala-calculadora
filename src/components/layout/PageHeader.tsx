@@ -19,6 +19,7 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, subtitle, showStoreSelector = true, action }: PageHeaderProps) {
   const { stores, currentStore, setCurrentStore } = useStore();
+  const navigate = useNavigate();
 
   return (
     <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border px-4 py-3 safe-top md:hidden">
