@@ -257,8 +257,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, [user, invalidate]);
 
   const deleteProduct = useCallback(async (productId: string) => {
-    if (user) await deleteProductImage(user.id, productId);
-    const { error } = await supabase.from('products').delete().eq('id', productId);
+    if (!user) return;
+    await deleteProductImage(user.id, productId);
+    const { error } = await supabase.from('products').delete().eq('id', productId).eq('user_id', user.id);
     if (error) { toast.error('Erro ao excluir produto'); return; }
     invalidate();
   }, [user, invalidate]);

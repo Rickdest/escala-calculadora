@@ -165,7 +165,7 @@ const App = () => (
                   <Route path="/performance" element={<ProtectedRoute><Performance /></ProtectedRoute>} />
                   <Route path="/performance/:itemId" element={<ProtectedRoute><PerformanceProductDetail /></ProtectedRoute>} />
                   <Route path="/paywall" element={<PaywallRoute><Paywall /></PaywallRoute>} />
-                  <Route path="/shopee-callback" element={<ShopeeCallback />} />
+                  <Route path="/shopee-callback" element={<ProtectedRoute><ShopeeCallback /></ProtectedRoute>} />
                   <Route path="/admin/banners" element={<AdminRoute><AdminBanners /></AdminRoute>} />
                   <Route path="/calculadoras" element={<ProtectedRoute><Calculators /></ProtectedRoute>} />
                   <Route path="/configuracoes/integracoes" element={<ProtectedRoute><Integracoes /></ProtectedRoute>} />
