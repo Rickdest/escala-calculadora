@@ -240,7 +240,7 @@ export default function Home() {
 
         {/* Outras plataformas */}
         <div className="animate-fade-up">
-          <p className="section-label mb-3">Outras plataformas</p>
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Outras plataformas</p>
           <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
             {MARKETPLACE_SHORTCUTS.map((mp) => (
               <button
