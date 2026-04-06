@@ -1,19 +1,31 @@
 
 
-## Plano: Corrigir header mobile saindo da margem
+## Plano: Trocar iframe do YouTube por thumbnail clicável
 
 ### Problema
-No viewport 390px, o título + subtítulo + seletor de loja competem pelo espaço horizontal. O subtítulo empurra o seletor de loja para fora da tela, cortando o texto "Minha Loja".
+O embed do YouTube via iframe mostra controles poluídos (botões de compartilhar, relógio, logo YouTube, etc.) diretamente na listagem de vídeos.
 
 ### Mudança
 
-**Arquivo: `src/components/layout/PageHeader.tsx`**
+**Arquivo: `src/pages/Education.tsx`**
 
-1. **Título e subtítulo em linhas separadas** — Trocar de `flex items-baseline gap-2` (lado a lado) para empilhamento vertical (`flex-col`), com o subtítulo abaixo do título em `text-xs`
-2. **Seletor de loja com `flex-shrink-0`** — Garantir que o botão do seletor nunca seja comprimido
-3. **Reduzir `max-w` do nome da loja** — De `max-w-[100px]` para `max-w-[80px]` para caber melhor em telas estreitas
-4. **Adicionar `overflow-hidden`** no container principal para evitar qualquer transbordamento
+1. **Adicionar estado `playingId`** — controla qual vídeo está tocando (`null` = nenhum)
+2. **Substituir o iframe por thumbnail** — Usar a imagem `https://img.youtube.com/vi/{youtube_id}/hqdefault.jpg` como fundo, com um ícone de play centralizado (círculo vermelho + triângulo branco, estilo YouTube)
+3. **Ao clicar na thumbnail** — Setar `playingId = video.id`, que troca a thumbnail pelo iframe com `?autoplay=1` para começar a tocar automaticamente
+4. **Ao clicar em outro vídeo** — O anterior volta a ser thumbnail (só um iframe ativo por vez, melhor performance)
 
-### Resultado
-Título na primeira linha, subtítulo abaixo em tamanho menor, seletor de loja sempre visível e alinhado à direita sem sair da tela.
+### Resultado visual
+```text
+┌─────────────────────────┐
+│                         │
+│   [thumbnail do video]  │
+│       ▶ (play icon)     │
+│                         │
+├─────────────────────────┤
+│ Título do vídeo         │
+│ Descrição curta         │
+└─────────────────────────┘
+```
+
+Ao clicar → thumbnail vira player com autoplay. Layout limpo, sem poluição visual.
 
