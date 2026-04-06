@@ -89,7 +89,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
     <div className="bg-card rounded-2xl p-4 animate-fade-up" style={{ border: '1px solid rgba(232, 93, 0, 0.30)', boxShadow: '0 0 20px rgba(232, 93, 0, 0.07)' }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <p className="section-label">CALCULADORA RÁPIDA</p>
+        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">CALCULADORA RÁPIDA</p>
         <Badge className="text-[10px] font-medium px-2.5 py-0.5 border-0 bg-primary text-primary-foreground rounded-[20px]">
           Shopee
         </Badge>
