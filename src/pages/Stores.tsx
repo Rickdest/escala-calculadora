@@ -242,6 +242,14 @@ export default function Stores() {
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={(e) => { 
+                            e.stopPropagation(); 
+                            setCurrentStore(store);
+                            navigate('/configuracoes/integracoes');
+                          }}>
+                            <Link2 className="w-4 h-4 mr-2" />
+                            Conectar Shopee
+                          </DropdownMenuItem>
                           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleStartEdit(store); }}>
                             <Edit2 className="w-4 h-4 mr-2" />
                             Renomear
