@@ -110,11 +110,17 @@ function formatLogDate(ts: string): string {
   return `${dd}/${mm} ${hh}:${min}`;
 }
 
-function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLogLoaded, onMetricsImported }: { adProductId: string | null; adShopeeProductId: string | null; roasEmpate: number | null; onLogLoaded?: (log: OperationLogEntry[]) => void; onMetricsImported?: (updates: { posicao_media?: number | null }) => void }) {
+function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLogLoaded, onMetricsImported, importTriggerRef }: { adProductId: string | null; adShopeeProductId: string | null; roasEmpate: number | null; onLogLoaded?: (log: OperationLogEntry[]) => void; onMetricsImported?: (updates: { posicao_media?: number | null }) => void; importTriggerRef?: React.MutableRefObject<(() => void) | null> }) {
   const { user } = useAuth();
   const [operationLog, setOperationLog] = useState<OperationLogEntry[] | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (importTriggerRef) {
+      importTriggerRef.current = () => fileInputRef.current?.click();
+    }
+    return () => { if (importTriggerRef) importTriggerRef.current = null; };
+  }, [importTriggerRef]);
   const loadLog = useCallback(async () => {
     if (!user) return;
     if (adProductId) {
