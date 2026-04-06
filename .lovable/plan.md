@@ -1,16 +1,24 @@
 
 
-## Plano: Melhorar contraste do botão "Minha Loja" no header
+## Plano: Alinhar campos de "Outros Canais" no formulário de produto com as calculadoras
 
 ### Problema
-O texto e borda do seletor de loja estão muito apagados (`text-muted-foreground`, `border-border`, `text-text-3`).
+O campo de peso da Shein no formulário de produto é um input numérico livre, enquanto na aba de calculadoras é um `select` com faixas de peso pré-definidas (0.3kg, 1kg, 2kg, 5kg, 9kg). Isso obriga o usuário a digitar manualmente um valor que já poderia estar pré-selecionado.
 
-### Mudança em `src/components/layout/PageHeader.tsx`
+### Mudanças em `src/components/forms/ProductForm.tsx`
 
-1. **Texto da loja**: `text-muted-foreground` → `text-foreground/70` (mais visível sem ser branco puro)
-2. **Borda do botão**: `border-border` → `border-border/80` (sutil melhoria)
-3. **Ícone chevron**: `text-text-3` → `text-muted-foreground` (acompanha o texto)
-4. **Dot indicador**: manter `bg-primary` (já tem contraste)
+1. **Shein — Peso**: Trocar o `Input` numérico por um `select` com as mesmas faixas de peso da calculadora:
+   - Até 300g — R$4,00
+   - 300g até 1kg — R$5,00
+   - 1kg até 2kg — R$5,00
+   - 2kg até 5kg — R$6,00
+   - 5kg até 9kg — R$7,00
+   - Default ao ativar: `0.3` (já está correto)
 
-Resultado: botão mais legível sem chamar atenção excessiva — meio termo entre apagado e destacado.
+2. **Amazon — Defaults ao ativar**: Adicionar `categoryRate: 0.15` e `plan: 'profissional'` ao estado inicial (já tem `categoryRate` no select mas falta no toggle)
+
+3. **Mercado Livre — Defaults ao ativar**: Adicionar `categoryIndex: 0`, `anuncio: 'classico'` ao estado inicial do toggle
+
+### Resultado
+Campos de "Outros Canais" ficam consistentes com as calculadoras — selects pré-preenchidos em vez de inputs vazios.
 
