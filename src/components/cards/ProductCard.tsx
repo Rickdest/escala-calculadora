@@ -161,13 +161,22 @@ export function ProductCard({
 
   return (
     <div
-      className="rounded-card border border-border bg-card p-4 cursor-pointer select-none active:scale-[0.995] transition-all hover:border-primary/30"
+      className={cn(
+        "rounded-card border bg-card p-4 cursor-pointer select-none active:scale-[0.995] transition-all",
+        missingCost ? "border-warning/50" : "border-border hover:border-primary/30"
+      )}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       onTouchMove={handleTouchMove}
       onClick={handleClick}
     >
       {cardHeader}
+
+      {missingCost && (
+        <div className="mt-2 flex items-center gap-1.5 text-[11px] text-warning bg-warning/10 border border-warning/20 rounded px-2 py-1">
+          ⚠ Custo não informado — preencha para calcular margem real
+        </div>
+      )}
 
       {/* ── METRICS: inline 3-column ── */}
       <div className="mt-3 grid grid-cols-3 gap-2">
