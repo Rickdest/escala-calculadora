@@ -103,8 +103,14 @@ export default function Stores() {
         subtitle={`${stores.length} loja${stores.length !== 1 ? 's' : ''}`}
         showStoreSelector={false}
         action={
-          <Button size="sm" onClick={() => setIsAdding(true)} className="gradient-primary">
-            <Plus className="w-4 h-4" />
+          <Button
+            size="sm"
+            onClick={() => canAddStore && setIsAdding(true)}
+            disabled={isAtLimit}
+            className="gradient-primary"
+            title={isAtLimit ? `Limite de ${limit} lojas atingido` : 'Adicionar loja'}
+          >
+            {isAtLimit ? <Lock className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
           </Button>
         }
       />
