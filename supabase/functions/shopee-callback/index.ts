@@ -120,10 +120,11 @@ Deno.serve(async (req) => {
       return Response.redirect(`${appUrl}/configuracoes/integracoes?shopee_error=${isDomainError ? 'redirect_domain' : 'token_failed'}&app_type=${appType}`, 302);
     }
 
-    const upsertPayload = {
+    const upsertPayload: Record<string, unknown> = {
       user_id: userId,
       shop_id: Number(shopId),
       app_type: appType,
+      store_id: storeId,
       access_token: tokenData.access_token as string,
       refresh_token: tokenData.refresh_token as string,
       expire_in: (tokenData.expire_in as number) || 0,
@@ -135,12 +136,13 @@ Deno.serve(async (req) => {
       user_id: upsertPayload.user_id,
       shop_id: upsertPayload.shop_id,
       app_type: upsertPayload.app_type,
+      store_id: upsertPayload.store_id,
       expire_in: upsertPayload.expire_in,
     });
 
     const { error: upsertError } = await supabaseAdmin
       .from("shopee_tokens")
-      .upsert(upsertPayload, { onConflict: "user_id,shop_id,app_type" });
+      .upsert(upsertPayload, { onConflict: "user_id,store_id,shop_id,app_type" });
 
     if (upsertError) {
       console.error("[SHOPEE CALLBACK] Upsert error:", JSON.stringify(upsertError));

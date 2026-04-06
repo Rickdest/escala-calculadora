@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
 
     const { error: stateError } = await supabaseAdmin
       .from("shopee_auth_states")
-      .insert({ user_id: user.id, state, app_type: appType });
+      .insert({ user_id: user.id, state, app_type: appType, store_id: storeId });
 
     if (stateError) {
       console.error("[SHOPEE AUTH] State insert error:", stateError);
