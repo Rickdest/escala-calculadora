@@ -1,30 +1,26 @@
 
 
-## Plano: Corrigir navegação entre produtos no detalhe de Ads
+## Plano: Mostrar posição nos cards da lista e ordenar por GMV
 
-### Bug identificado
+### Bug 1 — Posição não aparece nos cards
 
-Ao navegar entre produtos pelas setas `< 10/11 >`, o `ad` prop muda, mas os estados internos do `AdsDetailFullView` **não resetam**:
+**Causa**: Linha 309 de `AdsTab.tsx` hardcoda `posicao_importada: false` para campanhas da API. O `AdsProductCard` só mostra posição quando `posicao_importada === true && posicao_media > 0`.
 
-1. **`excelData`** — Linha 864: `if (!user || excelData) return;` impede o carregamento de novos dados porque o estado anterior ainda está preenchido
-2. **`opLog`** — permanece com os dados do produto anterior
-
-### Correção
-
-Adicionar um `useEffect` que reseta `excelData` e `opLog` quando o `ad.id` muda:
-
+**Correção**: Mudar linha 308-309 para:
 ```typescript
-useEffect(() => {
-  setExcelData(null);
-  setOpLog([]);
-}, [ad.id]);
+posicao_media: campaign.avg_position,
+posicao_importada: campaign.avg_position !== null && campaign.avg_position > 0,
 ```
 
-Isso garante que:
-- O efeito de carregamento do Excel (linha 863) será re-executado porque `excelData` voltará a `null`
-- O `OperationLogTimeline` já recarrega automaticamente via `loadLog` quando `adProductId`/`adShopeeProductId` mudam
-- O scroll já reseta (linha 900)
+### Bug 2 — Lista não ordenada por GMV
+
+**Causa**: `filteredMerged` (linha 457-469) aplica filtros mas não ordena. A ordenação por GMV só existe no `filtered` (CSV puro, linha 429), que é ignorado quando há dados de API.
+
+**Correção**: Adicionar `.sort()` ao final de `filteredMerged`:
+```typescript
+return result.sort((a, b) => (b.ad.gmv || 0) - (a.ad.gmv || 0));
+```
 
 ### Arquivo modificado
-- `src/components/roas/AdsDetailFullView.tsx` — adicionar useEffect de reset após linha 612
+- `src/components/roas/AdsTab.tsx` — 2 alterações pontuais
 
