@@ -1554,10 +1554,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                 <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
                   <BarChart3 className="w-3.5 h-3.5" /> Análise de Performance Diária
                 </p>
-                <p className="text-sm text-text-2">Importe o Excel do Shopee Analytics para análise detalhada com gráficos, fontes de tráfego e correlação com ajustes.</p>
-                <Button onClick={() => excelInputRef.current?.click()} size="sm" variant="outline" className="gap-1.5 border-border text-text-2 hover:bg-surface-2">
-                  <Upload className="w-3.5 h-3.5" /> Importar Excel (.xlsx)
-                </Button>
+                <p className="text-sm text-text-2">gráfico disponível após importar o Excel Analytics</p>
               </div>
             ) : (
               <>
