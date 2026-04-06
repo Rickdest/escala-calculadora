@@ -312,8 +312,8 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               {/* Projeção Mensal */}
               <div className="pt-3">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider">Projeção mensal</p>
-                  <span className="text-[10px] text-text-3">vendas/mês</span>
+                   <p className="uppercase text-[10px] font-semibold text-muted-foreground tracking-wider">Projeção mensal</p>
+                   <span className="text-[10px] text-muted-foreground">vendas/mês</span>
                 </div>
                 <div className="flex items-center justify-center gap-3 mb-4">
                   <button
