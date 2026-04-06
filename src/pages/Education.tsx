@@ -337,66 +337,66 @@ export default function Education() {
                 </div>
               </div>
             ) : (
-              <div className="glass-card p-5 border border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 rounded-xl gradient-primary shrink-0">
-                    <GraduationCap className="w-6 h-6 text-primary-foreground" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <span className="text-xs font-semibold text-primary uppercase tracking-wider">
-                          Oferta Especial
-                        </span>
-                        <h3 className="font-bold text-foreground text-lg mt-1">
-                          {offer.title}
-                        </h3>
-                        <p className="text-sm text-muted-foreground mt-2">
-                          {offer.description}
-                        </p>
-                      </div>
-                      {isAdmin && (
-                        <Button onClick={() => startEditing(offer)} variant="ghost" size="sm">
-                          <Edit2 className="w-4 h-4" />
-                        </Button>
-                      )}
+              <div className="rounded-2xl border border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent p-6 space-y-5">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 rounded-xl gradient-primary shrink-0">
+                      <GraduationCap className="w-6 h-6 text-primary-foreground" />
                     </div>
-                    
-                    <div className="mt-4 space-y-3">
-                      {offer.content_data?.video_url && (
-                        <div className="aspect-video bg-muted/50 rounded-xl overflow-hidden relative">
-                          <iframe
-                            src={`https://www.youtube.com/embed/${offer.content_data.video_url}`}
-                            title="Apresentação do Curso"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                            className="absolute inset-0 w-full h-full"
-                          />
-                        </div>
-                      )}
-                      
-                      {offer.content_data?.features && (
-                        <ul className="text-sm text-muted-foreground space-y-1">
-                          {offer.content_data.features.map((feature: string, index: number) => (
-                            <li key={index} className="flex items-center gap-2">
-                              <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                              {feature}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-
-                      <Button 
-                        className="w-full h-11 font-bold"
-                        variant="outline"
-                        onClick={() => window.open(offer.content_data?.button_link || '#', '_blank', 'noopener,noreferrer')}
-                      >
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        {offer.content_data?.button_text || 'Conhecer o Curso'}
-                      </Button>
+                    <div>
+                      <span className="text-xs font-semibold text-primary uppercase tracking-wider">
+                        Oferta Especial
+                      </span>
+                      <h3 className="font-bold text-foreground text-lg">
+                        {offer.title}
+                      </h3>
                     </div>
                   </div>
+                  {isAdmin && (
+                    <Button onClick={() => startEditing(offer)} variant="ghost" size="sm">
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
+
+                <p className="text-sm text-muted-foreground">
+                  {offer.description}
+                </p>
+
+                {offer.content_data?.video_url && (
+                  <div className="aspect-video bg-muted/50 rounded-xl overflow-hidden relative">
+                    <iframe
+                      src={`https://www.youtube.com/embed/${offer.content_data.video_url}`}
+                      title="Apresentação do Curso"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="absolute inset-0 w-full h-full"
+                    />
+                  </div>
+                )}
+
+                {offer.content_data?.features && (
+                  <ul className="text-sm text-muted-foreground space-y-2">
+                    {offer.content_data.features.map((feature: string, index: number) => (
+                      <li key={index} className="flex items-center gap-2.5">
+                        <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <button 
+                  className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-[15px] flex items-center justify-center gap-2 transition-colors active:scale-[0.98]"
+                  onClick={() => window.open(
+                    offer.content_data?.button_link || 'https://pay.hotmart.com/B76259249Y?off=2stbfayb&checkoutMode=10',
+                    '_blank',
+                    'noopener,noreferrer'
+                  )}
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  {offer.content_data?.button_text || 'Quero Aprender Agora'}
+                </button>
               </div>
             )}
           </section>
