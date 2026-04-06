@@ -29,6 +29,7 @@ import {
   calcAdEfficiencyScore, calcHaloEffect, calcCostVsMarginAlert,
   type Classificacao,
 } from '@/lib/adsLogic';
+import { calcFullRoas } from '@/lib/roasUtils';
 import { fmt, fmtShort, getClassCor, getRoasColor, getDiasPeriodo } from './adsHelpers';
 
 interface Props {
@@ -612,7 +613,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
   const opLogImportTriggerRef = useRef<(() => void) | null>(null);
 
   const [editingCosts, setEditingCosts] = useState(false);
-  const [costForm, setCostForm] = useState({ salePrice: 0, costPrice: 0, commissionPct: 14, shippingCost: 0 });
+  const [costFormCost, setCostFormCost] = useState(0);
   const [savingCosts, setSavingCosts] = useState(false);
   const { updateProduct } = useStore();
 
@@ -622,12 +623,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
     setOpLog([]);
     setEditingCosts(false);
     if (ad.product) {
-      setCostForm({
-        salePrice: ad.product.salePrice || 0,
-        costPrice: ad.product.costPrice || 0,
-        commissionPct: 14,
-        shippingCost: ad.product.packagingCost || 0,
-      });
+      setCostFormCost(ad.product.costPrice || 0);
     }
   }, [ad.id]);
 
@@ -1317,115 +1313,117 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
               {(() => {
                 const hasCosts = product && product.costPrice > 0;
                 const showEditMode = !hasCosts || editingCosts;
-                const ticket = ad.itens_vendidos > 0 ? ad.gmv / ad.itens_vendidos : ad.gmv;
-                const commissionCalc = costForm.salePrice * (costForm.commissionPct / 100);
                 const acosPerUnit = custoPorUnidade;
-                const realTimeLucro = costForm.salePrice - costForm.costPrice - commissionCalc - costForm.shippingCost - acosPerUnit;
+
+                // Use calcFullRoas to get Shopee fees from store config
+                const activeCostPrice = showEditMode ? costFormCost : (product?.costPrice || 0);
+                const salePrice = product?.salePrice || (ad.itens_vendidos > 0 ? ad.gmv / ad.itens_vendidos : ad.gmv);
+                const roasCalc = config
+                  ? calcFullRoas(salePrice, activeCostPrice, config, product?.packagingCost || 0)
+                  : null;
+                const taxaShopee = roasCalc?.costs.shopeeFee || 0;
+                const lucroCalc = salePrice - activeCostPrice - taxaShopee - acosPerUnit;
 
                 const handleSaveCosts = async () => {
                   if (!product) return;
                   setSavingCosts(true);
                   try {
-                    await updateProduct(product.id, {
-                      costPrice: costForm.costPrice,
-                      salePrice: costForm.salePrice,
-                      packagingCost: costForm.shippingCost,
-                    });
+                    await updateProduct(product.id, { costPrice: costFormCost });
                     setEditingCosts(false);
-                    toast.success('Custos salvos no produto');
+                    toast.success('Custo salvo no produto');
                   } catch {
-                    toast.error('Erro ao salvar custos');
+                    toast.error('Erro ao salvar custo');
                   } finally {
                     setSavingCosts(false);
                   }
                 };
+
+                // Shared cost lines
+                const costLines = (
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-[13px] text-text-2">Preço de venda</span>
+                      <span className="text-[13px] font-bold font-mono tabular-nums text-foreground">{fmt(salePrice)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[13px] text-text-2">Custo do produto</span>
+                      <span className="text-[13px] font-bold font-mono tabular-nums text-foreground">{fmt(activeCostPrice)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[13px] text-text-2">Taxas Shopee</span>
+                      <span className="text-[13px] font-bold font-mono tabular-nums text-foreground">{fmt(taxaShopee)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-[13px]" style={{ color: '#e85d00' }}>Gasto com ads (ACOS {ad.acos ? `${ad.acos.toFixed(1)}%` : ''})</span>
+                      <span className="text-[13px] font-bold font-mono tabular-nums" style={{ color: '#e85d00' }}>− {fmt(acosPerUnit)}</span>
+                    </div>
+                  </div>
+                );
+
+                // Shared profit block
+                const profitBlock = (label: string) => (
+                  <div className="border-t border-border pt-3">
+                    <div className="rounded-lg p-3" style={{ background: 'rgba(34,197,94,0.06)' }}>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[13px] text-text-2">{label}</span>
+                        <span className={cn('text-base font-extrabold font-mono tabular-nums', lucroCalc >= 0 ? 'text-success' : 'text-destructive')}>
+                          {lucroCalc >= 0 ? '+' : ''} {fmt(lucroCalc)}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-[11px] mt-1.5 text-text-3">● Taxas calculadas pela Calculadora Shopee</p>
+                  </div>
+                );
 
                 if (showEditMode) {
                   return (
                     <div className="rounded-2xl border border-border bg-card p-5 shadow-lg space-y-4">
                       <div className="flex items-center justify-between">
                         <p className="text-[10px] uppercase tracking-wider font-bold text-text-3">Economia por Venda</p>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-text-3">Custos não configurados</span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-text-3">Custo não informado</span>
                       </div>
-                      <div className="space-y-2.5">
-                        {[
-                          { label: 'Preço de venda (R$)', key: 'salePrice' as const },
-                          { label: 'Custo do produto (R$)', key: 'costPrice' as const },
-                          { label: 'Comissão Shopee (%)', key: 'commissionPct' as const },
-                          { label: 'Frete subsidiado (R$)', key: 'shippingCost' as const },
-                        ].map(({ label, key }) => (
-                          <div key={key} className="flex items-center justify-between gap-2">
-                            <span className="text-[13px] text-text-2">{label}</span>
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={costForm[key] || ''}
-                              onChange={e => setCostForm(prev => ({ ...prev, [key]: parseFloat(e.target.value) || 0 }))}
-                              className="w-[100px] text-right text-sm font-mono bg-surface-2 border border-border rounded-lg px-2 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                      <div className="border-t border-border pt-3">
-                        <div className="rounded-lg p-3" style={{ background: 'rgba(34,197,94,0.06)' }}>
-                          <div className="flex justify-between items-center">
-                            <span className="text-[13px] text-text-2">Lucro por venda</span>
-                            <span className={cn('text-base font-extrabold font-mono tabular-nums', realTimeLucro >= 0 ? 'text-success' : 'text-destructive')}>
-                              {realTimeLucro >= 0 ? '+' : ''} {fmt(realTimeLucro)}
-                            </span>
-                          </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[13px] text-text-2">Custo do produto (R$)</span>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[13px] text-text-3">R$</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={costFormCost || ''}
+                            onChange={e => setCostFormCost(parseFloat(e.target.value) || 0)}
+                            className="w-[120px] text-right text-sm font-mono rounded-lg px-2 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                            style={{ background: '#111', border: '1px solid rgba(255,255,255,0.15)' }}
+                            placeholder="0,00"
+                          />
                         </div>
                       </div>
+                      {costLines}
+                      {profitBlock('Lucro por venda estimado')}
                       <Button
                         onClick={handleSaveCosts}
-                        disabled={savingCosts || !product}
-                        className="w-full font-bold"
+                        disabled={savingCosts || !product || costFormCost <= 0}
+                        className="w-full font-bold text-white"
                         style={{ background: '#e85d00' }}
                       >
-                        {savingCosts ? 'Salvando...' : 'Salvar custos no produto'}
+                        {savingCosts ? 'Salvando...' : 'Salvar custo no produto'}
                       </Button>
-                      <p className="text-[11px] text-center" style={{ color: '#999' }}>Esses dados serão salvos no cadastro do produto</p>
+                      <p className="text-[11px] text-center text-text-3">Esses dados serão salvos no cadastro do produto</p>
                     </div>
                   );
                 }
 
                 // Estado 1 — com custos cadastrados
-                const prodCommission = product ? product.salePrice * 0.14 : 0;
-                const lucroDisplay = product ? product.salePrice - product.costPrice - prodCommission - (product.packagingCost || 0) - acosPerUnit : 0;
-
                 return (
                   <div className="rounded-2xl border border-border bg-card p-5 shadow-lg space-y-4">
                     <div className="flex items-center justify-between">
                       <p className="text-[10px] uppercase tracking-wider font-bold text-text-3">Economia por Venda</p>
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-success/20 text-success">Produto vinculado</span>
-                        <button onClick={() => { setCostForm({ salePrice: product!.salePrice, costPrice: product!.costPrice, commissionPct: 14, shippingCost: product!.packagingCost || 0 }); setEditingCosts(true); }} className="text-[11px] text-primary hover:underline">Editar custos</button>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-success/20 text-success">Configurado</span>
+                        <button onClick={() => { setCostFormCost(product!.costPrice); setEditingCosts(true); }} className="text-[11px] border border-border rounded px-2 py-0.5 text-text-2 hover:text-foreground">Editar</button>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-[13px] text-text-2">Custo do produto</span>
-                        <span className="text-[13px] font-bold font-mono tabular-nums text-foreground">{fmt(product?.costPrice || 0)}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-[13px] text-text-2">Comissão Shopee</span>
-                        <span className="text-[13px] font-bold font-mono tabular-nums text-foreground">{fmt(prodCommission)}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-[13px]" style={{ color: '#e85d00' }}>Gasto com ads (ACOS)</span>
-                        <span className="text-[13px] font-bold font-mono tabular-nums" style={{ color: '#e85d00' }}>{fmt(acosPerUnit)}</span>
-                      </div>
-                    </div>
-                    <div className="border-t border-border pt-3">
-                      <div className="rounded-lg p-3" style={{ background: 'rgba(34,197,94,0.06)' }}>
-                        <div className="flex justify-between items-center">
-                          <span className="text-[13px] text-text-2">Lucro por venda</span>
-                          <span className={cn('text-base font-extrabold font-mono tabular-nums', lucroDisplay >= 0 ? 'text-success' : 'text-destructive')}>
-                            {lucroDisplay >= 0 ? '+' : ''} {fmt(lucroDisplay)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                    {costLines}
+                    {profitBlock('Lucro por venda')}
                     {lucroTotalPeriodo !== null && (
                       <div className="flex justify-between text-sm">
                         <span className="text-text-2">{lucroTotalPeriodo >= 0 ? 'Lucro total período:' : 'Prejuízo total:'}</span>
