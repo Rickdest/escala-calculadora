@@ -1,17 +1,35 @@
 
 
-## Plano: Adicionar botão "Nova Loja" no dropdown de seleção de loja
+## Plano: Corrigir checkout no SubscriptionModal e limpar código morto
 
-### Mudança
+### Problema principal
 
-No `PageHeader.tsx`, adicionar um item separado no final do `DropdownMenuContent` com um botão "Adicionar loja" que navega para `/stores`.
+O `SubscriptionModal` (usado na Home) chama `openCheckout()` que depende de `VITE_CAKTO_URL` — variável **não configurada**. O botão "Quero acesso completo" falha silenciosamente.
 
-### Detalhes técnicos
+Já o `Paywall.tsx` funciona porque usa URLs hardcoded do `PRICING`.
 
-**Arquivo: `src/components/layout/PageHeader.tsx`**
+### Correções
 
-- Importar `useNavigate` de `react-router-dom` e `Plus` de `lucide-react`
-- Adicionar `DropdownMenuSeparator` aos imports do dropdown
-- Após o `.map()` das lojas, inserir um `DropdownMenuSeparator` e um `DropdownMenuItem` com ícone `Plus` e texto "Adicionar loja"
-- Ao clicar, `navigate('/stores')`
+#### 1. Unificar checkout via PRICING (sem depender de env var)
+
+**`src/services/checkout.service.ts`** — Alterar `openCheckout` para usar `PRICING.checkoutMonthly` como fallback quando `VITE_CAKTO_URL` não está definido:
+
+```typescript
+import { PRICING } from '@/constants/pricing';
+
+export function openCheckout(email?: string) {
+  const url = buildCheckoutUrl(email);
+  const fallback = PRICING.checkoutMonthly;
+  const target = url || fallback;
+  window.open(target, '_blank', 'noopener,noreferrer');
+}
+```
+
+#### 2. Remover código morto
+
+- Deletar `src/components/TrialExpiredBlock.tsx` — não é importado em nenhum lugar
+
+### Arquivos modificados
+- `src/services/checkout.service.ts` — fallback para PRICING
+- `src/components/TrialExpiredBlock.tsx` — deletar
 
