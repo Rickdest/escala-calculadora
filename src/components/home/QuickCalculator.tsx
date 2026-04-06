@@ -187,7 +187,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               <p className="font-mono text-[18px] font-extrabold font-mono-num leading-tight truncate w-full text-warning">
                 {result.roasEmpate > 0 ? `${result.roasEmpate.toFixed(2)}x` : '—'}
               </p>
-              <p className="text-[10px] font-medium text-text-3 tracking-wider mt-0.5">ROAS empate</p>
+              <p className="text-[10px] font-semibold text-muted-foreground tracking-wider mt-0.5">ROAS empate</p>
             </div>
           </div>
 
