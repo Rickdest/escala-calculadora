@@ -269,8 +269,8 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                   </div>
                   <div className="flex justify-between items-center">
                     <div>
-                      <span className="text-[13px] text-text-2">Saudável</span>
-                      <span className="text-[10px] text-text-3 ml-1.5">lucro consistente</span>
+                      <span className="text-[13px] text-foreground/80">Saudável</span>
+                      <span className="text-[10px] text-muted-foreground ml-1.5">lucro consistente</span>
                     </div>
                     <span className="font-mono text-[14px] font-bold font-mono-num text-foreground">{result.roasSaudavel > 0 ? result.roasSaudavel.toFixed(2) : '--'}</span>
                   </div>
