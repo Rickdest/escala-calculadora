@@ -38,6 +38,7 @@ export default function Stores() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const { canAddStore, isAtLimit, limit, storeCount } = useStoreLimit();
 
   // Fetch all shopee tokens for this user to show badges per store
   const { data: shopeeTokens } = useQuery({
