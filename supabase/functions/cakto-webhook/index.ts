@@ -114,7 +114,8 @@ Deno.serve(async (req) => {
     const orderId = payload.id?.slice(0, 100) ?? null;
     const refId = payload.refId?.slice(0, 100) ?? null;
     const subscriptionId = payload.subscription?.id?.slice(0, 100) ?? null;
-    const planName = (payload.product?.name ?? "pro").slice(0, 50);
+    const rawPlanName = (payload.product?.name ?? "pro").slice(0, 50);
+    const planName = normalizePlanName(rawPlanName);
 
     const allowedEvents = [
       "purchase_approved",
