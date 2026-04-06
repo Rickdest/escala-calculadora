@@ -6,13 +6,24 @@ import logoIcon from '@/assets/skalify-logo.png';
 import { PRICING } from '@/constants/pricing';
 import { cn } from '@/lib/utils';
 
-const benefits = [
+const monthlyBenefits = [
   'Cálculo automático de taxas da Shopee',
   'Lucro líquido real por produto, sem achismo',
   'ROAS de empate: saiba quando o anúncio lucra',
   'Gestão de produtos com histórico na nuvem',
   'Análise de Ads com classificação automática',
   'Controle de estoque com alertas críticos',
+  'Até 2 lojas',
+];
+
+const yearlyBenefits = [
+  'Cálculo automático de taxas da Shopee',
+  'Lucro líquido real por produto, sem achismo',
+  'ROAS de empate: saiba quando o anúncio lucra',
+  'Gestão de produtos com histórico na nuvem',
+  'Análise de Ads com classificação automática',
+  'Controle de estoque com alertas críticos',
+  'Até 7 lojas — gerencie toda a sua operação',
 ];
 
 export default function Paywall() {
@@ -27,6 +38,7 @@ export default function Paywall() {
 
   const isYearly = plan === 'yearly';
   const monthlyEquiv = (PRICING.yearly / 12).toFixed(2).replace('.', ',');
+  const benefits = isYearly ? yearlyBenefits : monthlyBenefits;
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-5 py-8">
@@ -156,7 +168,7 @@ export default function Paywall() {
             {benefits.map((b) => (
               <div key={b} className="flex items-start gap-2.5">
                 <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" strokeWidth={2} />
-                <span className="text-foreground/80" style={{ fontSize: '13px', lineHeight: '1.35' }}>{b}</span>
+                <span className={cn("text-foreground/80", b.includes('lojas') && isYearly && 'text-primary font-semibold')} style={{ fontSize: '13px', lineHeight: '1.35' }}>{b}</span>
               </div>
             ))}
           </div>

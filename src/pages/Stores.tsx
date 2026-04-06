@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Store, MoreVertical, Trash2, Edit2, Check, X, Package, Link2 } from 'lucide-react';
+import { Plus, Store, MoreVertical, Trash2, Edit2, Check, X, Package, Link2, Lock } from 'lucide-react';
+import { useStoreLimit } from '@/hooks/useStoreLimit';
 import { useStore } from '@/contexts/StoreContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
@@ -37,6 +38,7 @@ export default function Stores() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const { canAddStore, isAtLimit, limit, storeCount } = useStoreLimit();
 
   // Fetch all shopee tokens for this user to show badges per store
   const { data: shopeeTokens } = useQuery({
@@ -101,13 +103,39 @@ export default function Stores() {
         subtitle={`${stores.length} loja${stores.length !== 1 ? 's' : ''}`}
         showStoreSelector={false}
         action={
-          <Button size="sm" onClick={() => setIsAdding(true)} className="gradient-primary">
-            <Plus className="w-4 h-4" />
+          <Button
+            size="sm"
+            onClick={() => canAddStore && setIsAdding(true)}
+            disabled={isAtLimit}
+            className="gradient-primary"
+            title={isAtLimit ? `Limite de ${limit} lojas atingido` : 'Adicionar loja'}
+          >
+            {isAtLimit ? <Lock className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
           </Button>
         }
       />
 
       <div className="py-6 md:py-8 space-y-4">
+        {isAtLimit && (
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <Lock className="w-5 h-5 text-primary shrink-0" />
+                <div>
+                  <p className="text-sm font-bold text-foreground">
+                    Limite de lojas atingido ({storeCount}/{limit})
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Faça upgrade para o plano anual e gerencie até 7 lojas.
+                  </p>
+                </div>
+              </div>
+              <Button size="sm" onClick={() => navigate('/paywall')}>
+                Upgrade
+              </Button>
+            </div>
+          </div>
+        )}
         {/* Add New Store */}
         {isAdding && (
           <div className="glass-card p-4 animate-scale-up">
