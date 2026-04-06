@@ -697,7 +697,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
 
       setExcelData(parsed);
       if (isSkuFormat) {
-        toast.success(`${products?.length || 0} produtos importados (formato SKU — sem breakdown diário)`);
+        toast.success('Produtos importados (formato SKU — sem breakdown diário)');
       } else {
         toast.success(`${parsed.totalDias} dias importados`);
       }
