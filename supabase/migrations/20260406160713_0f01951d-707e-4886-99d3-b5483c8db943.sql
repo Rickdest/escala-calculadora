@@ -1,0 +1,1 @@
+UPDATE education_content SET content_data = jsonb_set(content_data::jsonb, '{button_link}', '"https://pay.hotmart.com/B76259249Y?off=2stbfayb&checkoutMode=10"') WHERE id = 'ba8a8a1a-0f19-4cae-b2b0-eef448b8ce3f';
