@@ -3,6 +3,8 @@
  * Centralizes all payment link logic.
  */
 
+import { PRICING } from '@/constants/pricing';
+
 const CHECKOUT_URL = import.meta.env.VITE_CAKTO_URL ?? '';
 
 export function buildCheckoutUrl(email?: string): string | null {
@@ -18,9 +20,6 @@ export function buildCheckoutUrl(email?: string): string | null {
 
 export function openCheckout(email?: string) {
   const url = buildCheckoutUrl(email);
-  if (!url) {
-    console.error('VITE_CAKTO_URL não configurado ou inválido');
-    return;
-  }
-  window.open(url, '_blank', 'noopener,noreferrer');
+  const target = url || PRICING.checkoutMonthly;
+  window.open(target, '_blank', 'noopener,noreferrer');
 }
