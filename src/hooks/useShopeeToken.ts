@@ -199,10 +199,10 @@ export function useShopeeToken(appType?: AppType, storeId?: string) {
   };
 }
 
-/** Hook to check both seller and ads token status */
-export function useShopeeTokenStatus() {
-  const seller = useShopeeToken('seller');
-  const ads = useShopeeToken('ads');
+/** Hook to check both seller and ads token status for a specific store */
+export function useShopeeTokenStatus(storeId?: string) {
+  const seller = useShopeeToken('seller', storeId);
+  const ads = useShopeeToken('ads', storeId);
 
   return {
     sellerConnected: seller.isConnected,
