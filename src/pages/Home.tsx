@@ -56,6 +56,7 @@ export default function Home() {
   const [onboardingDismissed, setOnboardingDismissed] = useState(() => localStorage.getItem('shopee_onboarding_dismissed') === '1');
 
   const { isConnected: shopeeConnected, token: shopeeToken } = useShopeeToken('seller');
+  const { showTutorial, markAsSeen, deferredPrompt, installApp } = useInstallPrompt();
 
   const dismissOnboarding = useCallback(() => {
     setOnboardingDismissed(true);
