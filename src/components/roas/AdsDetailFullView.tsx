@@ -548,7 +548,7 @@ function ImportFileColumn({ title, subtitle, imported, onImport, steps }: {
   title: string; subtitle: string; imported: boolean;
   onImport: () => void; steps: React.ReactNode[];
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(!imported);
   return (
     <div className={cn(
       'rounded-lg border p-2 flex flex-col gap-1',
@@ -556,20 +556,20 @@ function ImportFileColumn({ title, subtitle, imported, onImport, steps }: {
     )}>
       <div className="flex items-start justify-between gap-1">
         <div>
-          <p className="text-[11px] font-bold text-foreground leading-tight">{title}</p>
-          <p className="text-[9px] text-text-3">{subtitle}</p>
+          <p className="text-xs font-bold text-foreground leading-tight">{title}</p>
+          <p className="text-[11px] text-text-3">{subtitle}</p>
         </div>
         {imported ? (
-          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-success/20 text-success whitespace-nowrap">Importado</span>
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-success/20 text-success whitespace-nowrap">Importado</span>
         ) : (
-          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-warning/20 text-warning whitespace-nowrap">Pendente</span>
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-warning/20 text-warning whitespace-nowrap">Pendente</span>
         )}
       </div>
 
       {/* Como obter? toggle */}
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors mt-0.5 w-fit"
+        className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors mt-0.5 w-fit"
       >
         <Info className="w-3 h-3" />
         <span>Como obter</span>
@@ -578,11 +578,11 @@ function ImportFileColumn({ title, subtitle, imported, onImport, steps }: {
 
       {open && (
         <div className="rounded-md border border-border/50 bg-background/50 p-2 mt-0.5">
-          <p className="text-[8px] uppercase tracking-wider text-text-3 font-bold mb-1">Onde baixar na Shopee</p>
+          <p className="text-[9px] uppercase tracking-wider text-text-3 font-bold mb-1">Onde baixar na Shopee</p>
           <ol className="space-y-0.5">
             {steps.map((step, i) => (
-              <li key={i} className="flex items-start gap-1.5 text-[9px] text-text-2">
-                <span className="flex-shrink-0 w-3.5 h-3.5 rounded-full bg-muted flex items-center justify-center text-[8px] font-bold text-foreground mt-px">{i + 1}</span>
+              <li key={i} className="flex items-start gap-1.5 text-[11px] text-text-2">
+                <span className="flex-shrink-0 w-4 h-4 rounded-full bg-muted flex items-center justify-center text-[9px] font-bold text-foreground mt-px">{i + 1}</span>
                 <span>{step}</span>
               </li>
             ))}
@@ -591,7 +591,7 @@ function ImportFileColumn({ title, subtitle, imported, onImport, steps }: {
       )}
 
       {!imported && (
-        <Button onClick={onImport} size="sm" variant="outline" className="mt-auto h-7 text-[10px] gap-1 border-primary/30 text-primary hover:bg-primary/10 w-full">
+        <Button onClick={onImport} size="sm" variant="outline" className="mt-auto h-7 text-xs gap-1 border-primary/30 text-primary hover:bg-primary/10 w-full">
           <Plus className="w-3 h-3" /> Importar arquivo
         </Button>
       )}
