@@ -36,22 +36,24 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Resolve user_id and app_type from state token
+    // Resolve user_id, app_type, and store_id from state token
     let userId: string | null = null;
     let appType = 'seller';
+    let storeId: string | null = null;
 
     if (state) {
       const { data: stateRow, error: stateError } = await supabaseAdmin
         .from("shopee_auth_states")
-        .select("user_id, app_type")
+        .select("user_id, app_type, store_id")
         .eq("state", state)
         .maybeSingle();
 
-      console.log("[SHOPEE CALLBACK] State lookup result:", { stateRow: stateRow ? { user_id: stateRow.user_id, app_type: stateRow.app_type } : null, stateError });
+      console.log("[SHOPEE CALLBACK] State lookup result:", { stateRow: stateRow ? { user_id: stateRow.user_id, app_type: stateRow.app_type, store_id: stateRow.store_id } : null, stateError });
 
       if (stateRow) {
         userId = stateRow.user_id;
         appType = stateRow.app_type || 'seller';
+        storeId = stateRow.store_id || null;
         await supabaseAdmin
           .from("shopee_auth_states")
           .delete()
