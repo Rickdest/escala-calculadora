@@ -624,6 +624,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
     setExcelData(null);
     setOpLog([]);
     setEditingCosts(false);
+    if (autoSaveTimer) clearTimeout(autoSaveTimer);
     const fallbackPrice = Math.round((ad.itens_vendidos > 0 ? ad.gmv / ad.itens_vendidos : ad.gmv) * 100) / 100;
     if (ad.product) {
       setCostFormCost(ad.product.costPrice || 0);
