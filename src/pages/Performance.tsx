@@ -46,6 +46,7 @@ export default function Performance() {
   const { startJob: startAdsImport, isImporting: adsImporting } = useAdsImportJob();
   const perfHook = useProductPerformance();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>('excel');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const hasExcelData = perfHook.data.length > 0;
