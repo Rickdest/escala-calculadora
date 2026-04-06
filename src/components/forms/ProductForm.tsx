@@ -463,7 +463,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                           delete next.amazon;
                           setOutrosCanais(next);
                         } else {
-                          setOutrosCanais(prev => ({ ...prev, amazon: { costPrice: parseFloat(costPrice) || 0, salePrice: parseFloat(salePrice) || 0 } }));
+                          setOutrosCanais(prev => ({ ...prev, amazon: { costPrice: parseFloat(costPrice) || 0, salePrice: parseFloat(salePrice) || 0, categoryRate: 0.15, plan: 'profissional' as const, packagingCost: 0 } }));
                         }
                       }}
                     />
