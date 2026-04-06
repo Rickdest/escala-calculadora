@@ -611,10 +611,24 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
   const excelInputRef = useRef<HTMLInputElement>(null);
   const opLogImportTriggerRef = useRef<(() => void) | null>(null);
 
+  const [editingCosts, setEditingCosts] = useState(false);
+  const [costForm, setCostForm] = useState({ salePrice: 0, costPrice: 0, commissionPct: 14, shippingCost: 0 });
+  const [savingCosts, setSavingCosts] = useState(false);
+  const { updateProduct } = useStore();
+
   // Reset internal state when navigating between products
   useEffect(() => {
     setExcelData(null);
     setOpLog([]);
+    setEditingCosts(false);
+    if (ad.product) {
+      setCostForm({
+        salePrice: ad.product.salePrice || 0,
+        costPrice: ad.product.costPrice || 0,
+        commissionPct: 14,
+        shippingCost: ad.product.packagingCost || 0,
+      });
+    }
   }, [ad.id]);
 
   const isApiCampaign = ad.id.startsWith('api-campaign-');
