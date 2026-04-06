@@ -517,7 +517,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                           delete next.ml;
                           setOutrosCanais(next);
                         } else {
-                          setOutrosCanais(prev => ({ ...prev, ml: { costPrice: parseFloat(costPrice) || 0, salePrice: parseFloat(salePrice) || 0 } }));
+                          setOutrosCanais(prev => ({ ...prev, ml: { costPrice: parseFloat(costPrice) || 0, salePrice: parseFloat(salePrice) || 0, categoryIndex: 0, anuncio: 'classico' as const, freightCost: 0, packagingCost: 0 } }));
                         }
                       }}
                     />
