@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Store, MoreVertical, Trash2, Edit2, Check, X, Package, Link2, Lock } from 'lucide-react';
 import { useStoreLimit } from '@/hooks/useStoreLimit';
+import { PRICING } from '@/constants/pricing';
 import { useStore } from '@/contexts/StoreContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
