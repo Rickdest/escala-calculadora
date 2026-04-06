@@ -198,7 +198,7 @@ export default function Stores() {
                       ) : (
                         <>
                           <p className="font-bold text-foreground truncate text-lg">{store.name}</p>
-                          <div className="flex items-center gap-4 mt-1">
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
                             <span className="text-xs text-muted-foreground flex items-center gap-1 font-medium">
                               <Package className="w-3 h-3" />
                               {stats.totalProducts} produtos
@@ -212,6 +212,24 @@ export default function Stores() {
                               </span>
                             )}
                           </div>
+                          {(() => {
+                            const integrations = getStoreIntegrations(store.id);
+                            if (!integrations.seller && !integrations.ads) return null;
+                            return (
+                              <div className="flex items-center gap-1.5 mt-1.5">
+                                {integrations.seller && (
+                                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 gap-1">
+                                    🛍 Seller ✓
+                                  </Badge>
+                                )}
+                                {integrations.ads && (
+                                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-5 gap-1">
+                                    📊 Ads ✓
+                                  </Badge>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </>
                       )}
                     </div>
