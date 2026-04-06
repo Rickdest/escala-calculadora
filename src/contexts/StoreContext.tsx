@@ -147,7 +147,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (config.enableShopeeCampaigns !== undefined) dbConfig.enable_shopee_campaigns = config.enableShopeeCampaigns;
     if (config.shopeeAcelera !== undefined) dbConfig.shopee_acelera = config.shopeeAcelera;
 
-    const { error } = await supabase.from('stores').update(dbConfig).eq('id', storeId);
+    if (!user) return;
+    const { error } = await supabase.from('stores').update(dbConfig).eq('id', storeId).eq('user_id', user.id);
     if (error) { toast.error('Erro ao atualizar configuração'); return; }
     invalidate();
   }, [invalidate]);
