@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, ShoppingBag, Check, RefreshCw } from 'lucide-react';
+import { Loader2, ShoppingBag, Check, RefreshCw, Zap } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useShopeeToken } from '@/hooks/useShopeeToken';
+import { useStore } from '@/contexts/StoreContext';
 import { cn } from '@/lib/utils';
 
 export interface ShopeeProduct {
@@ -15,6 +16,7 @@ export interface ShopeeProduct {
   image_url?: string;
   already_imported: boolean;
   price_changed?: boolean;
+  is_ads_stub?: boolean;
 }
 
 interface ShopeeImportModalProps {
@@ -25,28 +27,38 @@ interface ShopeeImportModalProps {
 
 export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportModalProps) {
   const { user } = useAuth();
-  const { syncStoreData, isConnected } = useShopeeToken();
+  const { currentStore } = useStore();
+  const sellerToken = useShopeeToken('seller');
+  const adsToken = useShopeeToken('ads');
   const [products, setProducts] = useState<ShopeeProduct[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<'seller' | 'ads' | 'none'>('none');
 
   useEffect(() => {
     if (!isOpen) return;
-    if (!isConnected) {
-      setLoading(false);
-      setError('Conta Shopee Seller não conectada. Vá em Integrações para conectar.');
-      return;
-    }
-    fetchShopeeProducts();
-  }, [isOpen, isConnected]);
 
-  async function fetchShopeeProducts() {
+    if (sellerToken.isConnected) {
+      setMode('seller');
+      fetchViaSellerApi();
+    } else if (adsToken.isConnected) {
+      setMode('ads');
+      fetchViaAdsApi();
+    } else {
+      setMode('none');
+      setLoading(false);
+      setError('Nenhuma conta Shopee conectada. Vá em Integrações para conectar Seller ou Ads.');
+    }
+  }, [isOpen, sellerToken.isConnected, adsToken.isConnected]);
+
+  // --- Seller API flow (original) ---
+  async function fetchViaSellerApi() {
     setLoading(true);
     setError(null);
     try {
-      const result = await syncStoreData();
+      const result = await sellerToken.syncStoreData();
       const details = result?.results?.product_details?.response?.item_list || [];
       const modelsMap = result?.results?.product_models || {};
 
@@ -110,10 +122,7 @@ export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportMod
       });
 
       setProducts(mapped);
-
-      const autoSelect = mapped
-        .filter(p => !p.already_imported || p.price_changed)
-        .map(p => p.item_id);
+      const autoSelect = mapped.filter(p => !p.already_imported || p.price_changed).map(p => p.item_id);
       setSelected(new Set(autoSelect));
     } catch (e) {
       console.error('Shopee fetch error:', e);
@@ -122,6 +131,77 @@ export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportMod
       setLoading(false);
     }
   }
+
+  // --- Ads API flow: list products already in DB from ads sync ---
+  async function fetchViaAdsApi() {
+    setLoading(true);
+    setError(null);
+    try {
+      // First try to refresh ads data
+      try {
+        await adsToken.syncAdsOnly();
+      } catch {
+        // Non-blocking — we still list existing products
+      }
+
+      // Fetch products created by ads API (draft stubs or with shopee_item_id)
+      const { data: adsProducts, error: dbError } = await supabase
+        .from('products')
+        .select('id, name, sale_price, cost_price, stock_quantity, image_url, shopee_item_id, shopee_product_id, draft, source')
+        .eq('user_id', user?.id || '')
+        .eq('store_id', currentStore?.id || '')
+        .not('shopee_item_id', 'is', null);
+
+      if (dbError) throw dbError;
+
+      // Also check for ads-only products from shopee_ads_by_product that haven't been imported yet
+      const { data: adsOnlyProducts } = await supabase
+        .from('shopee_ads_by_product')
+        .select('item_id, item_name')
+        .eq('user_id', user?.id || '');
+
+      const existingItemIds = new Set((adsProducts || []).map(p => p.shopee_item_id).filter(Boolean));
+
+      const mapped: ShopeeProduct[] = (adsProducts || []).map(p => ({
+        item_id: p.shopee_item_id!,
+        item_name: p.name,
+        price: p.sale_price || 0,
+        stock: p.stock_quantity || 0,
+        image_url: p.image_url || undefined,
+        already_imported: !p.draft && (p.cost_price || 0) > 0,
+        is_ads_stub: p.draft === true || p.source === 'ads_api',
+      }));
+
+      // Add products from ads that aren't in products table yet
+      (adsOnlyProducts || []).forEach(ad => {
+        if (!existingItemIds.has(ad.item_id)) {
+          mapped.push({
+            item_id: ad.item_id,
+            item_name: ad.item_name || `Produto #${ad.item_id}`,
+            price: 0,
+            stock: 0,
+            already_imported: false,
+            is_ads_stub: true,
+          });
+        }
+      });
+
+      setProducts(mapped);
+      const autoSelect = mapped.filter(p => !p.already_imported).map(p => p.item_id);
+      setSelected(new Set(autoSelect));
+
+      if (mapped.length === 0) {
+        setError('Nenhum produto encontrado via Ads. Sincronize seus anúncios primeiro em Análise de Ads.');
+      }
+    } catch (e) {
+      console.error('Ads products fetch error:', e);
+      setError('Erro ao buscar produtos via Ads.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const fetchProducts = mode === 'seller' ? fetchViaSellerApi : fetchViaAdsApi;
 
   const importableProducts = products.filter(p => !p.already_imported || p.price_changed);
   const allImportableSelected = importableProducts.length > 0 && importableProducts.every(p => selected.has(p.item_id));
@@ -149,7 +229,13 @@ export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportMod
     }
   };
 
-  const formatPrice = (v: number) => `R$ ${v.toFixed(2).replace('.', ',')}`;
+  const formatPrice = (v: number) => v > 0 ? `R$ ${v.toFixed(2).replace('.', ',')}` : '—';
+
+  const descriptionText = loading
+    ? 'Buscando produtos...'
+    : mode === 'ads'
+      ? `${products.length} produtos encontrados via Ads · selecione quais ativar`
+      : `${products.length} produtos encontrados · selecione quais importar`;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -158,11 +244,14 @@ export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportMod
           <DialogTitle className="flex items-center gap-2 text-base">
             <ShoppingBag className="w-5 h-5 text-primary" />
             Importar da Shopee
+            {mode === 'ads' && (
+              <span className="text-[10px] bg-primary/15 text-primary rounded px-1.5 py-0.5 font-normal">
+                via Ads
+              </span>
+            )}
           </DialogTitle>
           <DialogDescription className="text-xs">
-            {loading
-              ? 'Buscando produtos...'
-              : `${products.length} produtos encontrados · selecione quais importar`}
+            {descriptionText}
           </DialogDescription>
         </DialogHeader>
 
@@ -170,7 +259,9 @@ export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportMod
           {loading ? (
             <div className="py-12 text-center">
               <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground mb-2" />
-              <p className="text-sm text-muted-foreground">Carregando produtos da Shopee...</p>
+              <p className="text-sm text-muted-foreground">
+                {mode === 'ads' ? 'Sincronizando dados de Ads...' : 'Carregando produtos da Shopee...'}
+              </p>
             </div>
           ) : error ? (
             <div className="py-8 text-center text-sm text-destructive">{error}</div>
@@ -243,9 +334,14 @@ export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportMod
                           <p className="text-xs font-medium truncate text-foreground">
                             {product.item_name}
                           </p>
-                          {!product.already_imported && (
+                          {!product.already_imported && !product.is_ads_stub && (
                             <span className="text-[10px] bg-accent text-accent-foreground rounded px-1.5 py-0.5 flex-shrink-0">
                               novo
+                            </span>
+                          )}
+                          {product.is_ads_stub && (
+                            <span className="text-[10px] bg-primary/15 text-primary rounded px-1.5 py-0.5 flex-shrink-0 flex items-center gap-0.5">
+                              <Zap className="w-2.5 h-2.5" /> ads
                             </span>
                           )}
                           {product.price_changed && (
@@ -255,7 +351,8 @@ export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportMod
                           )}
                         </div>
                         <p className="text-[11px] text-muted-foreground mt-0.5">
-                          {formatPrice(product.price)} · estoque: {product.stock} un
+                          {formatPrice(product.price)}
+                          {product.stock > 0 && ` · estoque: ${product.stock} un`}
                           {product.already_imported && !product.price_changed && (
                             <span className="text-muted-foreground/60"> · já cadastrado</span>
                           )}
@@ -267,7 +364,9 @@ export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportMod
               </div>
 
               <div className="text-[11px] text-muted-foreground bg-muted rounded-md p-2.5 mt-3 leading-relaxed">
-                🔒 Preço de venda e estoque serão importados como somente leitura. Você preencherá o custo depois.
+                {mode === 'ads'
+                  ? '📊 Produtos detectados via API de Ads. Dados limitados (sem estoque). Preencha o custo após importar.'
+                  : '🔒 Preço de venda e estoque serão importados como somente leitura. Você preencherá o custo depois.'}
               </div>
             </>
           )}
@@ -284,7 +383,7 @@ export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportMod
               Carregando...
             </Button>
           ) : error || products.length === 0 ? (
-            <Button onClick={fetchShopeeProducts} className="gap-1.5">
+            <Button onClick={fetchProducts} className="gap-1.5">
               <RefreshCw className="w-4 h-4" />
               Tentar novamente
             </Button>
@@ -305,4 +404,3 @@ export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportMod
     </Dialog>
   );
 }
-
