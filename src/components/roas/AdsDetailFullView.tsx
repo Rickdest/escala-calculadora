@@ -43,6 +43,7 @@ interface Props {
   onUnlink?: () => void;
   onChangeLink?: () => void;
   onRefreshProduct?: (itemId: number) => void;
+  onMetricsImported?: (updates: { posicao_media?: number | null }) => void;
 }
 
 // ═══ Operation Log Timeline ═══

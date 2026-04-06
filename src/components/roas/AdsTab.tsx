@@ -498,16 +498,40 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
 
   const handlePositionFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !user) return;
     const text = await file.text();
     const targetId = positionTarget;
+
+    // Parse CSV to extract position data
+    const parsed = parseShopeeAdsCSV(text);
+    const avgPosition = parsed?.metrics?.[0]?.avgPosition ?? null;
+    const isApiCampaign = selectedDetail?.id.startsWith('api-campaign-');
+
+    // For API campaigns: also update shopee_ads_by_product directly
+    if (isApiCampaign && selectedDetail?.shopee_product_id) {
+      const shopeeItemId = parseInt(selectedDetail.shopee_product_id);
+      if (!isNaN(shopeeItemId) && avgPosition !== null) {
+        await supabase.from('shopee_ads_by_product')
+          .update({ avg_position: avgPosition } as any)
+          .eq('user_id', user.id)
+          .eq('item_id', shopeeItemId);
+      }
+    }
+
+    // Save to ads_data (for CSV campaigns) or product_ads_metrics (history)
     await importProductCSV(text, targetId);
     setPositionTarget(undefined);
     if (positionFileRef.current) positionFileRef.current.value = '';
     await reload();
-    // Refresh detail view if still open
+    invalidatePersistedAds();
+
+    // Refresh selectedDetail with new position
     if (selectedDetail) {
-      invalidatePersistedAds();
+      setSelectedDetail({
+        ...selectedDetail,
+        posicao_media: avgPosition ?? selectedDetail.posicao_media,
+        posicao_importada: avgPosition !== null ? true : selectedDetail.posicao_importada,
+      });
     }
   };
 
