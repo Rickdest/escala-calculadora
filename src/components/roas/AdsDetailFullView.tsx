@@ -149,53 +149,71 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
 
   useEffect(() => { loadLog(); }, [loadLog]);
 
-  const handleImportLog = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const upsertMetrics = async (payload: Record<string, any>) => {
+    if (!user || (!adProductId && !adShopeeProductId)) return;
+    let updateQuery = supabase.from('product_ads_metrics').update(payload).eq('user_id', user.id);
+    if (adProductId) updateQuery = updateQuery.eq('product_id', adProductId);
+    else updateQuery = updateQuery.eq('shopee_product_id', adShopeeProductId!);
+    await updateQuery;
+    const checkQuery = supabase.from('product_ads_metrics').select('id').eq('user_id', user.id);
+    const checkResult = adProductId
+      ? await checkQuery.eq('product_id', adProductId).limit(1)
+      : await checkQuery.eq('shopee_product_id', adShopeeProductId!).limit(1);
+    if (!checkResult.data || checkResult.data.length === 0) {
+      const today = new Date().toISOString().slice(0, 10);
+      await supabase.from('product_ads_metrics').insert({
+        user_id: user.id,
+        product_id: adProductId || null,
+        shopee_product_id: adShopeeProductId || null,
+        period_start: today,
+        period_end: today,
+        ...payload,
+      } as any);
+    }
+  };
+
+  const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
     try {
       const text = await file.text();
       const validation = validateCSVSecurity(file, text);
       if (!validation.valid) { toast.error(validation.error || 'Arquivo inválido'); return; }
-      const detected = detectAndParseCSV(text);
-      if (detected.type !== 'operation_log' || !detected.operationLog?.length) {
-        toast.error('Este CSV não é um log de operações válido');
-        return;
-      }
       if (!adProductId && !adShopeeProductId) {
         toast.error('Produto não vinculado'); return;
       }
-      // Try update first
-      let updateFilter = supabase.from('product_ads_metrics').update({ operation_log: detected.operationLog as any }).eq('user_id', user.id);
-      if (adProductId) {
-        updateFilter = updateFilter.eq('product_id', adProductId);
+      const detected = detectAndParseCSV(text);
+
+      if (detected.type === 'operation_log' && detected.operationLog?.length) {
+        await upsertMetrics({ operation_log: detected.operationLog as any });
+        toast.success('Log de operações importado');
+        loadLog();
+      } else if (detected.type === 'performance' && detected.metrics?.length) {
+        const m = detected.metrics[0];
+        await upsertMetrics({
+          impressions: m.impressions,
+          clicks: m.clicks,
+          items_sold: m.itemsSold,
+          gmv: m.gmv,
+          spend: m.spend,
+          roas: m.roas,
+          acos: m.acos,
+          ctr: m.ctr,
+          conv_rate: m.convRate,
+          avg_position: m.avgPosition,
+          direct_roas: m.directRoas,
+          direct_acos: m.directAcos,
+          cost_per_conv: m.costPerConv,
+          shopee_product_name: m.shopeeProductName || null,
+          shopee_product_id: m.shopeeProductId || adShopeeProductId || null,
+          period_start: m.periodStart || new Date().toISOString().slice(0, 10),
+          period_end: m.periodEnd || new Date().toISOString().slice(0, 10),
+        } as any);
+        toast.success('Dados de performance do produto importados');
       } else {
-        updateFilter = updateFilter.eq('shopee_product_id', adShopeeProductId!);
+        toast.error('CSV não reconhecido. Use o relatório "Por Produto" ou "Registro de Operações" da Shopee.');
       }
-      const { error, count } = await updateFilter.select('id').maybeSingle();
-      if (error && error.code !== 'PGRST116') { toast.error('Erro ao salvar log'); return; }
-      // If no row was updated, insert a new one
-      if (!count && !error) {
-        // Check if update actually matched
-        const checkQuery = supabase.from('product_ads_metrics').select('id').eq('user_id', user.id);
-        const checkResult = adProductId
-          ? await checkQuery.eq('product_id', adProductId).limit(1)
-          : await checkQuery.eq('shopee_product_id', adShopeeProductId!).limit(1);
-        if (!checkResult.data || checkResult.data.length === 0) {
-          // No existing row — insert
-          const today = new Date().toISOString().slice(0, 10);
-          await supabase.from('product_ads_metrics').insert({
-            user_id: user.id,
-            product_id: adProductId || null,
-            shopee_product_id: adShopeeProductId || null,
-            period_start: today,
-            period_end: today,
-            operation_log: detected.operationLog as any,
-          } as any);
-        }
-      }
-      toast.success('Log de operações importado');
-      loadLog();
-    } catch { toast.error('Erro ao importar'); }
+    } catch { toast.error('Erro ao importar CSV'); }
     finally { if (fileInputRef.current) fileInputRef.current.value = ''; }
   };
 
