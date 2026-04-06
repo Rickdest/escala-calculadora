@@ -89,7 +89,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
     <div className="bg-card rounded-2xl p-4 animate-fade-up" style={{ border: '1px solid rgba(232, 93, 0, 0.30)', boxShadow: '0 0 20px rgba(232, 93, 0, 0.07)' }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <p className="section-label">CALCULADORA RÁPIDA</p>
+        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">CALCULADORA RÁPIDA</p>
         <Badge className="text-[10px] font-medium px-2.5 py-0.5 border-0 bg-primary text-primary-foreground rounded-[20px]">
           Shopee
         </Badge>
@@ -98,9 +98,9 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
       {/* Inputs */}
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div>
-          <label className="section-label mb-1.5 block text-[10px]">CUSTO</label>
+          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">CUSTO</label>
           <div className="relative">
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-1.5">R$</span>
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-sm border-r border-border pr-1.5">R$</span>
             <input
               type="number"
               inputMode="decimal"
@@ -114,9 +114,9 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
           </div>
         </div>
         <div>
-          <label className="section-label mb-1.5 block text-[10px]">PREÇO DE VENDA</label>
+          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">PREÇO DE VENDA</label>
           <div className="relative">
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-1.5">R$</span>
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-sm border-r border-border pr-1.5">R$</span>
             <input
               type="number"
               inputMode="decimal"
@@ -131,9 +131,9 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
         </div>
       </div>
       <div className="mb-3">
-        <label className="section-label mb-1.5 block text-[10px]">EMBALAGEM (OPCIONAL)</label>
+        <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">EMBALAGEM (OPCIONAL)</label>
         <div className="relative">
-          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-1.5">R$</span>
+          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-sm border-r border-border pr-1.5">R$</span>
           <input
             type="number"
             inputMode="decimal"
@@ -163,7 +163,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                   <p className={cn('font-mono text-[18px] font-extrabold font-mono-num leading-tight truncate w-full', status.color)}>
                     {result.realMargin.toFixed(1)}%
                   </p>
-                  <p className="text-[10px] font-medium text-text-3 tracking-wider mt-0.5">Margem real</p>
+                  <p className="text-[10px] font-semibold text-muted-foreground tracking-wider mt-0.5">Margem real</p>
                 </div>
               );
             })()}
@@ -179,7 +179,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               )}>
                 {formatCurrency(result.netProfit)}
               </p>
-              <p className="text-[10px] font-medium text-text-3 tracking-wider mt-0.5">Lucro líquido</p>
+              <p className="text-[10px] font-semibold text-muted-foreground tracking-wider mt-0.5">Lucro líquido</p>
             </div>
 
             {/* ROAS Empate */}
@@ -187,7 +187,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               <p className="font-mono text-[18px] font-extrabold font-mono-num leading-tight truncate w-full text-warning">
                 {result.roasEmpate > 0 ? `${result.roasEmpate.toFixed(2)}x` : '—'}
               </p>
-              <p className="text-[10px] font-medium text-text-3 tracking-wider mt-0.5">ROAS empate</p>
+              <p className="text-[10px] font-semibold text-muted-foreground tracking-wider mt-0.5">ROAS empate</p>
             </div>
           </div>
 
@@ -210,7 +210,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
 
           <button
             onClick={() => setShowAnalysis(!showAnalysis)}
-            className="w-full flex items-center justify-center gap-1.5 text-[12px] text-text-3 hover:text-primary transition-colors py-1"
+            className="w-full flex items-center justify-center gap-1.5 text-[12px] text-muted-foreground hover:text-primary transition-colors py-1"
           >
             {showAnalysis ? (
               <>Fechar análise <ChevronUp className="w-3.5 h-3.5" /></>
@@ -224,7 +224,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
             <div className="bg-surface-2 rounded-[10px] p-3 animate-fade-up space-y-0">
               {/* Custos */}
               <div className="pb-3">
-                <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-2">Custos</p>
+                <p className="uppercase text-[10px] font-semibold text-muted-foreground tracking-wider mb-2">Custos</p>
                 <div className="space-y-1.5">
                   <CostRow label="Taxa Shopee" value={result.totalShopeeFee} format={formatCurrency} />
                   {result.packagingCost > 0 && <CostRow label="Embalagem e Insumos" value={result.packagingCost} format={formatCurrency} />}
@@ -258,26 +258,26 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
 
               {/* ROAS */}
               <div className="py-3">
-                <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-2">ROAS</p>
+                <p className="uppercase text-[10px] font-semibold text-muted-foreground tracking-wider mb-2">ROAS</p>
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center">
                     <div>
-                      <span className="text-[13px] text-text-2">Empate</span>
-                      <span className="text-[10px] text-text-3 ml-1.5">abaixo disso = prejuízo</span>
+                      <span className="text-[13px] text-foreground/80">Empate</span>
+                      <span className="text-[10px] text-muted-foreground ml-1.5">abaixo disso = prejuízo</span>
                     </div>
                     <span className="font-mono text-[14px] font-bold font-mono-num text-foreground">{result.roasEmpate > 0 ? result.roasEmpate.toFixed(2) : '--'}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <div>
-                      <span className="text-[13px] text-text-2">Saudável</span>
-                      <span className="text-[10px] text-text-3 ml-1.5">lucro consistente</span>
+                      <span className="text-[13px] text-foreground/80">Saudável</span>
+                      <span className="text-[10px] text-muted-foreground ml-1.5">lucro consistente</span>
                     </div>
                     <span className="font-mono text-[14px] font-bold font-mono-num text-foreground">{result.roasSaudavel > 0 ? result.roasSaudavel.toFixed(2) : '--'}</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <div>
-                      <span className="text-[13px] text-text-2">Ideal</span>
-                      <span className="text-[10px] text-text-3 ml-1.5">escalar com segurança</span>
+                      <span className="text-[13px] text-foreground/80">Ideal</span>
+                      <span className="text-[10px] text-muted-foreground ml-1.5">escalar com segurança</span>
                     </div>
                     <span className="font-mono text-[14px] font-bold font-mono-num text-primary">{result.roasIdeal > 0 ? result.roasIdeal.toFixed(2) : '--'}</span>
                   </div>
@@ -312,8 +312,8 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
               {/* Projeção Mensal */}
               <div className="pt-3">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider">Projeção mensal</p>
-                  <span className="text-[10px] text-text-3">vendas/mês</span>
+                   <p className="uppercase text-[10px] font-semibold text-muted-foreground tracking-wider">Projeção mensal</p>
+                   <span className="text-[10px] text-muted-foreground">vendas/mês</span>
                 </div>
                 <div className="flex items-center justify-center gap-3 mb-4">
                   <button
@@ -350,7 +350,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                     </div>
                   </div>
                   <div className="flex justify-between items-center pt-1">
-                    <span className="text-[13px] text-text-2">Status</span>
+                    <span className="text-[13px] text-foreground/80">Status</span>
                     <span className={cn('text-[13px] font-semibold', getMarginStatus(result.realMargin).color)}>
                       {getMarginStatus(result.realMargin).emoji} {getMarginStatus(result.realMargin).label}
                     </span>
@@ -368,7 +368,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
 function CostRow({ label, value, format, bold }: {label: string; value: number; format: (v: number) => string; bold?: boolean;}) {
   return (
     <div className="flex justify-between">
-      <span className={cn('text-[13px] text-text-2', bold && 'font-semibold')}>{label}</span>
+      <span className={cn('text-[13px] text-foreground/80', bold && 'font-semibold')}>{label}</span>
       <span className={cn('font-mono text-[14px] font-mono-num text-foreground', bold ? 'font-bold' : 'font-bold')}>{format(value)}</span>
     </div>
   );
