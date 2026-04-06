@@ -623,12 +623,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
     setOpLog([]);
     setEditingCosts(false);
     if (ad.product) {
-      setCostForm({
-        salePrice: ad.product.salePrice || 0,
-        costPrice: ad.product.costPrice || 0,
-        commissionPct: 14,
-        shippingCost: ad.product.packagingCost || 0,
-      });
+      setCostFormCost(ad.product.costPrice || 0);
     }
   }, [ad.id]);
 
