@@ -40,7 +40,7 @@ export function PageHeader({ title, subtitle, showStoreSelector = true, action }
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-card border border-border hover:border-primary/30 transition-colors">
                   <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
-                  <span className="text-body text-text-2 max-w-[100px] truncate">
+                  <span className="text-body text-muted-foreground max-w-[80px] truncate">
                     {currentStore.name}
                   </span>
                   <ChevronDown className="w-3 h-3 text-text-3" />
