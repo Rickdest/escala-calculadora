@@ -16,6 +16,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { EnrichedAdsData } from '@/hooks/useAdsData';
 import { OperationLogEntry, detectAndParseCSV, validateCSVSecurity } from '@/lib/shopeeAdsParser';
 import { parseShopeeExcel, validateExcelFile, ExcelPerformanceData } from '@/lib/shopeeExcelParser';
+import { parseProductPerformanceExcel } from '@/lib/parsers/parseProductPerformanceExcel';
 import { ExcelAnalysis } from './ExcelAnalysis';
 import { toast } from 'sonner';
 import {
@@ -148,69 +149,87 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
 
   useEffect(() => { loadLog(); }, [loadLog]);
 
-  const handleImportLog = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const upsertMetrics = async (payload: Record<string, any>) => {
+    if (!user || (!adProductId && !adShopeeProductId)) return;
+    let updateQuery = supabase.from('product_ads_metrics').update(payload).eq('user_id', user.id);
+    if (adProductId) updateQuery = updateQuery.eq('product_id', adProductId);
+    else updateQuery = updateQuery.eq('shopee_product_id', adShopeeProductId!);
+    await updateQuery;
+    const checkQuery = supabase.from('product_ads_metrics').select('id').eq('user_id', user.id);
+    const checkResult = adProductId
+      ? await checkQuery.eq('product_id', adProductId).limit(1)
+      : await checkQuery.eq('shopee_product_id', adShopeeProductId!).limit(1);
+    if (!checkResult.data || checkResult.data.length === 0) {
+      const today = new Date().toISOString().slice(0, 10);
+      await supabase.from('product_ads_metrics').insert({
+        user_id: user.id,
+        product_id: adProductId || null,
+        shopee_product_id: adShopeeProductId || null,
+        period_start: today,
+        period_end: today,
+        ...payload,
+      } as any);
+    }
+  };
+
+  const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
     try {
       const text = await file.text();
       const validation = validateCSVSecurity(file, text);
       if (!validation.valid) { toast.error(validation.error || 'Arquivo inválido'); return; }
-      const detected = detectAndParseCSV(text);
-      if (detected.type !== 'operation_log' || !detected.operationLog?.length) {
-        toast.error('Este CSV não é um log de operações válido');
-        return;
-      }
       if (!adProductId && !adShopeeProductId) {
         toast.error('Produto não vinculado'); return;
       }
-      // Try update first
-      let updateFilter = supabase.from('product_ads_metrics').update({ operation_log: detected.operationLog as any }).eq('user_id', user.id);
-      if (adProductId) {
-        updateFilter = updateFilter.eq('product_id', adProductId);
+      const detected = detectAndParseCSV(text);
+
+      if (detected.type === 'operation_log' && detected.operationLog?.length) {
+        await upsertMetrics({ operation_log: detected.operationLog as any });
+        toast.success('Log de operações importado');
+        loadLog();
+      } else if (detected.type === 'performance' && detected.performanceData?.metrics?.length) {
+        const m = detected.performanceData.metrics[0];
+        await upsertMetrics({
+          impressions: m.impressions,
+          clicks: m.clicks,
+          items_sold: m.itemsSold,
+          gmv: m.gmv,
+          spend: m.spend,
+          roas: m.roas,
+          acos: m.acos,
+          ctr: m.ctr,
+          conv_rate: m.convRate,
+          avg_position: m.avgPosition,
+          direct_roas: m.directRoas,
+          direct_acos: m.directAcos,
+          cost_per_conv: m.costPerConv,
+          shopee_product_name: m.shopeeProductName || null,
+          shopee_product_id: m.shopeeProductId || adShopeeProductId || null,
+          period_start: m.periodStart || new Date().toISOString().slice(0, 10),
+          period_end: m.periodEnd || new Date().toISOString().slice(0, 10),
+        } as any);
+        toast.success('Dados de performance do produto importados');
       } else {
-        updateFilter = updateFilter.eq('shopee_product_id', adShopeeProductId!);
+        toast.error('CSV não reconhecido. Use o relatório "Por Produto" ou "Registro de Operações" da Shopee.');
       }
-      const { error, count } = await updateFilter.select('id').maybeSingle();
-      if (error && error.code !== 'PGRST116') { toast.error('Erro ao salvar log'); return; }
-      // If no row was updated, insert a new one
-      if (!count && !error) {
-        // Check if update actually matched
-        const checkQuery = supabase.from('product_ads_metrics').select('id').eq('user_id', user.id);
-        const checkResult = adProductId
-          ? await checkQuery.eq('product_id', adProductId).limit(1)
-          : await checkQuery.eq('shopee_product_id', adShopeeProductId!).limit(1);
-        if (!checkResult.data || checkResult.data.length === 0) {
-          // No existing row — insert
-          const today = new Date().toISOString().slice(0, 10);
-          await supabase.from('product_ads_metrics').insert({
-            user_id: user.id,
-            product_id: adProductId || null,
-            shopee_product_id: adShopeeProductId || null,
-            period_start: today,
-            period_end: today,
-            operation_log: detected.operationLog as any,
-          } as any);
-        }
-      }
-      toast.success('Log de operações importado');
-      loadLog();
-    } catch { toast.error('Erro ao importar'); }
+    } catch { toast.error('Erro ao importar CSV'); }
     finally { if (fileInputRef.current) fileInputRef.current.value = ''; }
   };
 
   if (!operationLog || operationLog.length === 0) {
     return (
       <div className="rounded-2xl border border-border bg-card p-5 space-y-3 shadow-lg">
-        <input ref={fileInputRef} type="file" accept=".csv" onChange={handleImportLog} className="hidden" />
+        <input ref={fileInputRef} type="file" accept=".csv" onChange={handleImportCSV} className="hidden" />
         <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
           <LineChart className="w-4 h-4 text-primary dark:text-blue-400" /> Histórico de Performance
         </p>
         <div className="flex flex-col items-center justify-center py-8 text-center">
           <LineChart className="w-10 h-10 text-text-3 mb-3" />
-          <p className="text-base font-bold text-foreground">Importe o log de operações</p>
-          <p className="text-sm text-text-2 mt-1">para ver o histórico de ajustes de ROAS e orçamento.</p>
+          <p className="text-base font-bold text-foreground">Importe CSV de Ads</p>
+          <p className="text-sm text-text-2 mt-1">Aceita relatório de produto ou log de operações (detecção automática).</p>
           <Button onClick={() => fileInputRef.current?.click()} size="sm" variant="outline" className="mt-3 gap-1.5 border-border text-text-2 hover:bg-surface-2">
-            <Upload className="w-3.5 h-3.5" /> Importar CSV de Operações
+            <Upload className="w-3.5 h-3.5" /> Importar CSV
           </Button>
         </div>
       </div>
@@ -270,7 +289,7 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-lg">
-      <input ref={fileInputRef} type="file" accept=".csv" onChange={handleImportLog} className="hidden" />
+      <input ref={fileInputRef} type="file" accept=".csv" onChange={handleImportCSV} className="hidden" />
       <div className="flex items-center justify-between">
         <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
           <History className="w-3.5 h-3.5 text-success" /> Histórico de Performance
@@ -628,9 +647,60 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
       const validation = validateExcelFile(file);
       if (!validation.valid) { toast.error(validation.error!); return; }
       const buffer = await file.arrayBuffer();
-      const parsed = parseShopeeExcel(buffer);
+
+      let parsed: ExcelPerformanceData | null = null;
+      let isSkuFormat = false;
+
+      // Try primary parser (daily performance format)
+      try {
+        parsed = parseShopeeExcel(buffer);
+      } catch {
+        // Fallback: try parentskudetail format
+        try {
+          const { products, period_start, period_end } = await parseProductPerformanceExcel(file);
+          if (products.length > 0) {
+            isSkuFormat = true;
+            // Convert to ExcelPerformanceData shape (aggregated, no daily breakdown)
+            const totals = products.reduce((acc, p) => ({
+              impressoes: acc.impressoes + p.impressoes,
+              vendasBrl: acc.vendasBrl + p.vendas_pago,
+              compradores: acc.compradores + p.compradores_pagos,
+            }), { impressoes: 0, vendasBrl: 0, compradores: 0 });
+
+            const startISO = `${period_start.slice(0,4)}-${period_start.slice(4,6)}-${period_start.slice(6,8)}`;
+            const endISO = `${period_end.slice(0,4)}-${period_end.slice(4,6)}-${period_end.slice(6,8)}`;
+
+            parsed = {
+              dataRange: { inicio: startISO, fim: endISO },
+              dadosDiarios: [{
+                data: startISO, dataLabel: startISO.slice(8,10) + '/' + startISO.slice(5,7),
+                impressoes: totals.impressoes, cliques: 0, ctr: 0,
+                compradores: totals.compradores, unidades: 0, vendasBrl: totals.vendasBrl,
+              }],
+              totalDias: 1,
+              dataPrimeiraVenda: startISO,
+              totais: totals,
+              fontes: [],
+              produtoNome: products[0]?.nome || '',
+              shopeeProductId: products[0]?.item_id || '',
+            };
+          }
+        } catch (fallbackErr) {
+          console.error('Fallback Excel parser failed:', fallbackErr);
+        }
+      }
+
+      if (!parsed) {
+        toast.error('Formato de Excel não reconhecido. Use "Performance do Produto" ou "parentskudetail".');
+        return;
+      }
+
       setExcelData(parsed);
-      toast.success(`${parsed.totalDias} dias importados`);
+      if (isSkuFormat) {
+        toast.success('Produtos importados (formato SKU — sem breakdown diário)');
+      } else {
+        toast.success(`${parsed.totalDias} dias importados`);
+      }
 
       // Persist Excel data to database
       const productIdForSave = ad.product_id || null;
@@ -648,7 +718,6 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
             importedAt: new Date().toISOString(),
           } as any,
         };
-        // Try update first
         let updateQuery = supabase
           .from('product_ads_metrics')
           .update(savePayload)
@@ -662,7 +731,6 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         if (saveError) {
           console.error('Erro ao salvar Excel (update):', saveError.message);
         }
-        // Check if any row was actually updated; if not, insert
         const checkQuery = supabase.from('product_ads_metrics').select('id').eq('user_id', user.id);
         const checkResult = productIdForSave
           ? await checkQuery.eq('product_id', productIdForSave).limit(1)
