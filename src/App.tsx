@@ -52,6 +52,12 @@ function PageLoader() {
 }
 
 function ErrorRetry({ onRetry }: { onRetry: () => void }) {
+  const handleLogout = async () => {
+    const { supabase } = await import('@/integrations/supabase/client');
+    await supabase.auth.signOut();
+    window.location.href = '/auth';
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
       <p className="text-muted-foreground text-sm">Erro ao verificar sua assinatura.</p>
@@ -60,6 +66,12 @@ function ErrorRetry({ onRetry }: { onRetry: () => void }) {
         className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm"
       >
         Tentar novamente
+      </button>
+      <button
+        onClick={handleLogout}
+        className="px-4 py-2 text-destructive text-sm underline"
+      >
+        Sair da conta
       </button>
     </div>
   );

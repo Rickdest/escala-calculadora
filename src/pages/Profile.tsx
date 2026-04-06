@@ -130,9 +130,10 @@ export default function Profile() {
               <Input
                 id="displayName"
                 value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
+                onChange={(e) => setDisplayName(e.target.value.slice(0, 100))}
                 placeholder="Seu nome"
                 className="input-modern h-12"
+                maxLength={100}
               />
             </div>
 

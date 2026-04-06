@@ -157,6 +157,7 @@ export default function Stores() {
                   onChange={(e) => setNewStoreName(e.target.value)}
                   placeholder="Nome da nova loja..."
                   className="input-modern h-12"
+                  maxLength={100}
                   autoFocus
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleAddStore();
