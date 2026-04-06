@@ -1,32 +1,39 @@
 
 
-## Plano: Adicionar botão "Sair da conta" na página Perfil (mobile)
+## Plano: Dar mais destaque à integração Shopee na aba Ads
 
 ### Problema
-No mobile, o header com dropdown de logout é oculto (`hidden md:flex`). A página de Perfil não possui botão de sair, deixando o usuário sem forma óbvia de fazer logout quando está nessa tela.
+O botão "Conectar Shopee para importar Ads" fica escondido lá embaixo, após os 3 passos do CSV e o botão de importar CSV. A integração via API deveria ter mais destaque pois é a opção mais prática.
 
 ### Mudança
 
-**Arquivo: `src/pages/Profile.tsx`**
+**Arquivo: `src/components/roas/AdsEmptyState.tsx`**
 
-Adicionar um botão "Sair da conta" no final da página, após o card de Alterar Senha:
+Reorganizar a ordem para colocar a integração Shopee **primeiro**, como opção principal:
 
-1. Importar `useSignOut` e o ícone `LogOut`
-2. Adicionar um botão vermelho (destructive) com ícone de logout no fim da seção `space-y-6`
+1. **Ícone + título** — Manter o ícone e título atuais
+2. **Botão Shopee como primário** — Mover para cima, com estilo `bg-[#EE4D2D]` (fundo laranja Shopee, texto branco), tamanho h-12, como CTA principal. Adicionar subtexto "Importe ROAS, campanhas e métricas automaticamente"
+3. **Separador "ou importe manualmente"** — após o botão Shopee
+4. **Passos do CSV colapsados** — Mover os 3 passos + botão CSV para baixo, com visual secundário (outline)
 
-```tsx
-// Após o card de Alterar Senha
-<button
-  onClick={handleSignOut}
-  className="w-full h-12 rounded-xl border border-destructive/30 text-destructive 
-             flex items-center justify-center gap-2 text-sm font-semibold 
-             hover:bg-destructive/10 transition-colors"
->
-  <LogOut className="w-4 h-4" />
-  Sair da conta
-</button>
+### Layout final (não conectado)
+```text
+[Ícone BarChart3]
+"Analise seus Shopee Ads"
+"Conecte sua conta ou importe CSV"
+
+[🟠 Conectar Shopee para importar Ads]  ← primário, bg laranja
+"Importe automaticamente via API"
+
+── ou importe manualmente ──
+
+[1] Acesse o Seller Center
+[2] Vá em Marketing → Shopee Ads  
+[3] Exporte o CSV
+
+[Importar CSV]  ← outline/secundário
 ```
 
 ### Arquivo modificado
-- `src/pages/Profile.tsx` — adicionar import do hook + botão de logout
+- `src/components/roas/AdsEmptyState.tsx`
 
