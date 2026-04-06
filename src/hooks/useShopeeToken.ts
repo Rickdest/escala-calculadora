@@ -139,8 +139,8 @@ export function useShopeeToken(appType?: AppType, storeId?: string) {
       },
     });
     if (res.error) {
-      const msg = res.error?.message || 'Erro ao sincronizar dados da loja';
-      // Don't toast here — let the caller handle it
+      throw res.error;
+    }
       throw res.error;
     }
     // If needs_reauth, set flag but DON'T throw — return data so caller can check
