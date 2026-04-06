@@ -579,11 +579,11 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                 </div>
               </div>
             ) : (
-              <div className="flex items-start gap-2">
-                <Info className="w-4 h-4 text-text-3 mt-0.5 flex-shrink-0" />
+              <div className="flex items-start gap-3 bg-primary/5 border border-primary/20 rounded-xl p-3.5">
+                <Info className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
                 <div>
-                  <p className="text-xs text-text-2">Configure taxas globais em Configurações para aplicar automaticamente.</p>
-                  <a href="/settings" className="text-xs text-primary hover:underline inline-flex items-center gap-1 mt-1 font-medium">
+                  <p className="text-xs text-foreground/70 font-medium">Configure taxas globais em Configurações para aplicar automaticamente.</p>
+                  <a href="/settings" className="text-xs text-primary hover:underline inline-flex items-center gap-1 mt-1.5 font-semibold">
                     Ir para Configurações <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
