@@ -1,21 +1,21 @@
 
 
-## Plano: Simplificar thumbnails dos vídeos na Educação
+## Plano: Melhorar contraste dos textos na Calculadora Rápida (Home)
 
 ### Problema
-As thumbnails com `maxresdefault.jpg` podem não existir para todos os vídeos, causando um flash estranho antes do fallback. O overlay customizado com botão de play vermelho pode estar ficando deslocado visualmente.
+Os labels e textos da calculadora rápida estão usando `text-text-3` e `section-label` que resultam em cinza muito apagado (#444 ou 60% lightness), dificultando a leitura no tema escuro.
 
-### Mudança
+### Mudanças no arquivo `src/components/home/QuickCalculator.tsx`
 
-**Arquivo: `src/pages/Education.tsx`**
-
-1. **Usar `mqdefault.jpg`** como fonte primária (320x180, 16:9 nativo, sempre disponível) — sem necessidade de fallback
-2. **Simplificar o overlay** — remover o botão de play grande vermelho, deixar apenas um ícone de play sutil centralizado com fundo semi-transparente
-3. **Manter o comportamento de click-to-play** — ao clicar na thumb, carrega o iframe com autoplay
+1. **Labels dos campos (CUSTO, PREÇO DE VENDA, EMBALAGEM)** — trocar de `section-label` para classe com `text-muted-foreground font-semibold` e cor mais clara
+2. **Prefixo "R$"** — trocar `text-text-3` por `text-muted-foreground` (mais visível)
+3. **Título "CALCULADORA RÁPIDA"** — adicionar `text-foreground` ou `text-muted-foreground` com `font-semibold`
+4. **Labels das métricas ("Margem real", "Lucro líquido", etc.)** — trocar `text-text-3` por `text-muted-foreground`
+5. **Textos da análise completa** — mesma melhoria em `text-text-2` → `text-foreground/80` e `text-text-3` → `text-muted-foreground`
 
 ### Resultado
-Thumbnails limpas do próprio YouTube, sem imagens quebradas, sem botões grandes — visual simples e funcional.
+Textos levemente mais grossos (font-semibold onde cabe) e mais brancos/claros, sem perder hierarquia visual. Melhor legibilidade no tema escuro mantendo a identidade do app.
 
 ### Arquivo modificado
-- `src/pages/Education.tsx`
+- `src/components/home/QuickCalculator.tsx`
 
