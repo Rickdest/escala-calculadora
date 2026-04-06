@@ -239,6 +239,15 @@ export default function Profile() {
             )}
           </Button>
         </div>
+
+        {/* Sign Out */}
+        <button
+          onClick={handleSignOut}
+          className="w-full h-12 rounded-xl border border-destructive/30 text-destructive flex items-center justify-center gap-2 text-sm font-semibold hover:bg-destructive/10 transition-colors"
+        >
+          <LogOut className="w-4 h-4" />
+          Sair da conta
+        </button>
       </div>
     </AppLayout>
   );
