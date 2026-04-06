@@ -1370,21 +1370,32 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                 const costPriceChanged = product && activeCostPrice !== (product.costPrice || 0);
                 const hasChanges = salePriceChanged || costPriceChanged;
 
-                const handleSaveCosts = async () => {
+                const handleSaveCosts = async (sp?: number, cp?: number) => {
                   if (!product) return;
+                  const finalSp = sp ?? activeSalePrice;
+                  const finalCp = cp ?? activeCostPrice;
+                  if (finalSp === (product.salePrice || 0) && finalCp === (product.costPrice || 0)) return;
                   setSavingCosts(true);
                   try {
                     await updateProduct(product.id, {
-                      salePrice: activeSalePrice,
-                      costPrice: activeCostPrice,
+                      salePrice: finalSp,
+                      costPrice: finalCp,
                     });
-                    setEditingCosts(false);
                     toast.success('Dados salvos no produto');
                   } catch {
                     toast.error('Erro ao salvar');
                   } finally {
                     setSavingCosts(false);
                   }
+                };
+
+                const triggerAutoSave = (newSalePrice: number, newCostPrice: number) => {
+                  if (!product) return;
+                  if (autoSaveTimer) clearTimeout(autoSaveTimer);
+                  const timer = setTimeout(() => {
+                    handleSaveCosts(newSalePrice, newCostPrice);
+                  }, 1500);
+                  setAutoSaveTimer(timer);
                 };
 
                 return (
