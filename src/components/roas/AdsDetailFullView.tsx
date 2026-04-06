@@ -1317,7 +1317,10 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
 
                 // Use calcFullRoas to get Shopee fees from store config
                 const activeCostPrice = showEditMode ? costFormCost : (product?.costPrice || 0);
-                const salePrice = product?.salePrice || (ad.itens_vendidos > 0 ? ad.gmv / ad.itens_vendidos : ad.gmv);
+                const salePrice = product?.salePrice && product.salePrice > 0
+                  ? product.salePrice
+                  : (ad.itens_vendidos > 0 ? ad.gmv / ad.itens_vendidos : ad.gmv);
+                const salePriceEstimated = !(product?.salePrice && product.salePrice > 0);
                 const roasCalc = config
                   ? calcFullRoas(salePrice, activeCostPrice, config, product?.packagingCost || 0)
                   : null;
@@ -1342,7 +1345,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                 const costLines = (
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                      <span className="text-[13px] text-text-2">Preço de venda</span>
+                      <span className="text-[13px] text-text-2">Preço de venda {salePriceEstimated && <span className="text-[11px] text-muted-foreground">(estimado)</span>}</span>
                       <span className="text-[13px] font-bold font-mono tabular-nums text-foreground">{fmt(salePrice)}</span>
                     </div>
                     <div className="flex justify-between items-center">
