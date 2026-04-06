@@ -142,94 +142,114 @@ export default function Education() {
           </h2>
 
           <div className="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
-            {videos.map((video) => (
-              <div key={video.id} className="glass-card overflow-hidden rounded-2xl shadow-sm">
-                {editingId === video.id ? (
-                  <div className="p-4 space-y-4">
-                    <div className="space-y-2">
-                      <Label>Título</Label>
-                      <Input
-                        value={editForm.title}
-                        onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                        className="input-modern"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Descrição</Label>
-                      <Textarea
-                        value={editForm.description}
-                        onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                        className="input-modern"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>ID do YouTube</Label>
-                      <Input
-                        value={editForm.youtube_id || ''}
-                        onChange={(e) => setEditForm({ ...editForm, youtube_id: e.target.value })}
-                        placeholder="Ex: dQw4w9WgXcQ"
-                        className="input-modern"
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <Button onClick={() => saveEdit(video)} disabled={saving} className="flex-1">
-                        {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                        Salvar
-                      </Button>
-                      <Button onClick={cancelEditing} variant="outline">
-                        <X className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="aspect-video bg-muted relative rounded-t-2xl overflow-hidden">
-                      {playingId === video.id ? (
-                        <iframe
-                          src={`https://www.youtube.com/embed/${video.content_data?.youtube_id}?autoplay=1&rel=0`}
-                          title={video.title}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                          className="absolute inset-0 w-full h-full"
+            {videos.map((video) => {
+              const rawYoutubeValue =
+                typeof video.content_data?.youtube_id === 'string'
+                  ? video.content_data.youtube_id.trim()
+                  : '';
+              const youtubeId = rawYoutubeValue.match(/[a-zA-Z0-9_-]{11}/)?.[0] ?? '';
+
+              return (
+                <div key={video.id} className="glass-card overflow-hidden rounded-2xl shadow-sm">
+                  {editingId === video.id ? (
+                    <div className="p-4 space-y-4">
+                      <div className="space-y-2">
+                        <Label>Título</Label>
+                        <Input
+                          value={editForm.title}
+                          onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                          className="input-modern"
                         />
-                      ) : (
-                        <div
-                          className="absolute inset-0 cursor-pointer group"
-                          onClick={() => setPlayingId(video.id)}
-                        >
-                          <img
-                            src={`https://img.youtube.com/vi/${video.content_data?.youtube_id}/maxresdefault.jpg`}
-                            alt={video.title}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${video.content_data?.youtube_id}/hqdefault.jpg`;
-                            }}
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/30 transition-colors">
-                            <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
-                              <Play className="w-7 h-7 text-white fill-white ml-0.5" />
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <h3 className="font-bold text-foreground">{video.title}</h3>
-                          <p className="text-sm text-muted-foreground mt-1">{video.description}</p>
-                        </div>
-                        {isAdmin && (
-                          <Button onClick={() => startEditing(video)} variant="ghost" size="sm">
-                            <Edit2 className="w-4 h-4" />
-                          </Button>
-                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Descrição</Label>
+                        <Textarea
+                          value={editForm.description}
+                          onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                          className="input-modern"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>ID do YouTube</Label>
+                        <Input
+                          value={editForm.youtube_id || ''}
+                          onChange={(e) => setEditForm({ ...editForm, youtube_id: e.target.value })}
+                          placeholder="Ex: dQw4w9WgXcQ"
+                          className="input-modern"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button onClick={() => saveEdit(video)} disabled={saving} className="flex-1">
+                          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                          Salvar
+                        </Button>
+                        <Button onClick={cancelEditing} variant="outline">
+                          <X className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
-                  </>
-                )}
-              </div>
-            ))}
+                  ) : (
+                    <>
+                      <div className="aspect-video bg-muted relative rounded-t-2xl overflow-hidden">
+                        {playingId === video.id && youtubeId ? (
+                          <iframe
+                            src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0`}
+                            title={video.title}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            className="absolute inset-0 w-full h-full"
+                          />
+                        ) : (
+                          <div
+                            className={`absolute inset-0 group ${youtubeId ? 'cursor-pointer' : 'cursor-default'}`}
+                            onClick={() => {
+                              if (youtubeId) {
+                                setPlayingId(video.id);
+                              }
+                            }}
+                          >
+                            {youtubeId ? (
+                              <>
+                                <img
+                                  src={`https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`}
+                                  alt={video.title}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg`;
+                                  }}
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/30 transition-colors">
+                                  <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
+                                    <Play className="w-7 h-7 text-white fill-white ml-0.5" />
+                                  </div>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="flex h-full items-center justify-center bg-muted">
+                                <span className="text-sm text-muted-foreground">Vídeo indisponível</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <h3 className="font-bold text-foreground">{video.title}</h3>
+                            <p className="text-sm text-muted-foreground mt-1">{video.description}</p>
+                          </div>
+                          {isAdmin && (
+                            <Button onClick={() => startEditing(video)} variant="ghost" size="sm">
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </section>
 
