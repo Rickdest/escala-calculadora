@@ -611,10 +611,24 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
   const excelInputRef = useRef<HTMLInputElement>(null);
   const opLogImportTriggerRef = useRef<(() => void) | null>(null);
 
+  const [editingCosts, setEditingCosts] = useState(false);
+  const [costForm, setCostForm] = useState({ salePrice: 0, costPrice: 0, commissionPct: 14, shippingCost: 0 });
+  const [savingCosts, setSavingCosts] = useState(false);
+  const { updateProduct } = useStore();
+
   // Reset internal state when navigating between products
   useEffect(() => {
     setExcelData(null);
     setOpLog([]);
+    setEditingCosts(false);
+    if (ad.product) {
+      setCostForm({
+        salePrice: ad.product.salePrice || 0,
+        costPrice: ad.product.costPrice || 0,
+        commissionPct: 14,
+        shippingCost: ad.product.packagingCost || 0,
+      });
+    }
   }, [ad.id]);
 
   const isApiCampaign = ad.id.startsWith('api-campaign-');
@@ -1064,14 +1078,14 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
             className="flex-1 h-9 rounded-lg text-xs sm:text-sm font-bold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=inactive]:text-foreground/70"
           >
             <Target className="w-3.5 h-3.5" />
-            Diagnóstico
+            IA &amp; Ação
           </TabsTrigger>
           <TabsTrigger
             value="metricas"
             className="flex-1 h-9 rounded-lg text-xs sm:text-sm font-bold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=inactive]:text-foreground/70"
           >
             <TrendingUp className="w-3.5 h-3.5" />
-            Métricas
+            Performance Ads
           </TabsTrigger>
         </TabsList>
 
@@ -1299,44 +1313,128 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                 </div>
               )}
 
-              {/* Economia por Venda */}
-              {empateResult && ad.itens_vendidos > 0 ? (
-                <div className="rounded-2xl border border-border bg-card p-5 shadow-lg space-y-4">
-                  <p className="text-[10px] uppercase tracking-wider font-bold text-text-3">
-                    Economia por Venda <span className="text-text-3">(Ticket: {fmt(ad.gmv / (ad.itens_vendidos || 1))})</span>
-                  </p>
-                  <div className="space-y-2.5">
-                    <div className="flex justify-between items-center p-3 rounded-xl bg-surface-2/50">
-                      <span className="text-sm text-text-2">Custo Produto + Taxas</span>
-                      <span className="text-sm font-bold font-mono tabular-nums text-foreground">{fmt(empateResult.lucroPorUnidade > 0 ? (ad.gmv / (ad.itens_vendidos || 1)) - empateResult.lucroPorUnidade : 0)}</span>
+              {/* Economia por Venda — Two states */}
+              {(() => {
+                const hasCosts = product && product.costPrice > 0;
+                const showEditMode = !hasCosts || editingCosts;
+                const ticket = ad.itens_vendidos > 0 ? ad.gmv / ad.itens_vendidos : ad.gmv;
+                const commissionCalc = costForm.salePrice * (costForm.commissionPct / 100);
+                const acosPerUnit = custoPorUnidade;
+                const realTimeLucro = costForm.salePrice - costForm.costPrice - commissionCalc - costForm.shippingCost - acosPerUnit;
+
+                const handleSaveCosts = async () => {
+                  if (!product) return;
+                  setSavingCosts(true);
+                  try {
+                    await updateProduct(product.id, {
+                      costPrice: costForm.costPrice,
+                      salePrice: costForm.salePrice,
+                      packagingCost: costForm.shippingCost,
+                    });
+                    setEditingCosts(false);
+                    toast.success('Custos salvos no produto');
+                  } catch {
+                    toast.error('Erro ao salvar custos');
+                  } finally {
+                    setSavingCosts(false);
+                  }
+                };
+
+                if (showEditMode) {
+                  return (
+                    <div className="rounded-2xl border border-border bg-card p-5 shadow-lg space-y-4">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] uppercase tracking-wider font-bold text-text-3">Economia por Venda</p>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-muted text-text-3">Custos não configurados</span>
+                      </div>
+                      <div className="space-y-2.5">
+                        {[
+                          { label: 'Preço de venda (R$)', key: 'salePrice' as const },
+                          { label: 'Custo do produto (R$)', key: 'costPrice' as const },
+                          { label: 'Comissão Shopee (%)', key: 'commissionPct' as const },
+                          { label: 'Frete subsidiado (R$)', key: 'shippingCost' as const },
+                        ].map(({ label, key }) => (
+                          <div key={key} className="flex items-center justify-between gap-2">
+                            <span className="text-[13px] text-text-2">{label}</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={costForm[key] || ''}
+                              onChange={e => setCostForm(prev => ({ ...prev, [key]: parseFloat(e.target.value) || 0 }))}
+                              className="w-[100px] text-right text-sm font-mono bg-surface-2 border border-border rounded-lg px-2 py-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="border-t border-border pt-3">
+                        <div className="rounded-lg p-3" style={{ background: 'rgba(34,197,94,0.06)' }}>
+                          <div className="flex justify-between items-center">
+                            <span className="text-[13px] text-text-2">Lucro por venda</span>
+                            <span className={cn('text-base font-extrabold font-mono tabular-nums', realTimeLucro >= 0 ? 'text-success' : 'text-destructive')}>
+                              {realTimeLucro >= 0 ? '+' : ''} {fmt(realTimeLucro)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={handleSaveCosts}
+                        disabled={savingCosts || !product}
+                        className="w-full font-bold"
+                        style={{ background: '#e85d00' }}
+                      >
+                        {savingCosts ? 'Salvando...' : 'Salvar custos no produto'}
+                      </Button>
+                      <p className="text-[11px] text-center" style={{ color: '#999' }}>Esses dados serão salvos no cadastro do produto</p>
                     </div>
-                    <div className="flex justify-between items-center p-3 rounded-xl bg-warning/10 border border-warning/20">
-                      <span className="text-sm text-warning">Custo Anúncio (CPA)</span>
-                      <span className="text-sm font-bold font-mono tabular-nums text-warning">{fmt(custoPorUnidade)}</span>
+                  );
+                }
+
+                // Estado 1 — com custos cadastrados
+                const prodCommission = product ? product.salePrice * 0.14 : 0;
+                const lucroDisplay = product ? product.salePrice - product.costPrice - prodCommission - (product.packagingCost || 0) - acosPerUnit : 0;
+
+                return (
+                  <div className="rounded-2xl border border-border bg-card p-5 shadow-lg space-y-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] uppercase tracking-wider font-bold text-text-3">Economia por Venda</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-success/20 text-success">Produto vinculado</span>
+                        <button onClick={() => { setCostForm({ salePrice: product!.salePrice, costPrice: product!.costPrice, commissionPct: 14, shippingCost: product!.packagingCost || 0 }); setEditingCosts(true); }} className="text-[11px] text-primary hover:underline">Editar custos</button>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center p-3 rounded-xl bg-success/10 dark:bg-success/20 border border-success/20">
-                      <span className="text-sm text-success font-bold">Lucro Limpo</span>
-                      <span className={cn('text-lg font-extrabold font-mono tabular-nums', sobraPorVenda !== null && sobraPorVenda >= 0 ? 'text-success' : 'text-destructive')}>
-                        {sobraPorVenda !== null ? fmt(sobraPorVenda) : '—'}
-                      </span>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[13px] text-text-2">Custo do produto</span>
+                        <span className="text-[13px] font-bold font-mono tabular-nums text-foreground">{fmt(product?.costPrice || 0)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[13px] text-text-2">Comissão Shopee</span>
+                        <span className="text-[13px] font-bold font-mono tabular-nums text-foreground">{fmt(prodCommission)}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[13px]" style={{ color: '#e85d00' }}>Gasto com ads (ACOS)</span>
+                        <span className="text-[13px] font-bold font-mono tabular-nums" style={{ color: '#e85d00' }}>{fmt(acosPerUnit)}</span>
+                      </div>
                     </div>
+                    <div className="border-t border-border pt-3">
+                      <div className="rounded-lg p-3" style={{ background: 'rgba(34,197,94,0.06)' }}>
+                        <div className="flex justify-between items-center">
+                          <span className="text-[13px] text-text-2">Lucro por venda</span>
+                          <span className={cn('text-base font-extrabold font-mono tabular-nums', lucroDisplay >= 0 ? 'text-success' : 'text-destructive')}>
+                            {lucroDisplay >= 0 ? '+' : ''} {fmt(lucroDisplay)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    {lucroTotalPeriodo !== null && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-text-2">{lucroTotalPeriodo >= 0 ? 'Lucro total período:' : 'Prejuízo total:'}</span>
+                        <span className={cn('font-bold font-mono tabular-nums', lucroTotalPeriodo >= 0 ? 'text-success' : 'text-destructive')}>{fmt(Math.abs(lucroTotalPeriodo))}</span>
+                      </div>
+                    )}
                   </div>
-                  {lucroTotalPeriodo !== null && (
-                    <div className="pt-2 border-t border-border flex justify-between text-sm">
-                      <span className="text-text-2">{lucroTotalPeriodo >= 0 ? 'Lucro total período:' : 'Prejuízo total:'}</span>
-                      <span className={cn('font-bold font-mono tabular-nums', lucroTotalPeriodo >= 0 ? 'text-success' : 'text-destructive')}>{fmt(Math.abs(lucroTotalPeriodo))}</span>
-                    </div>
-                  )}
-                  {pctConsumo !== null && (
-                    <p className="text-[11px] text-text-3">O ads consome {pctConsumo.toFixed(1)}% do lucro por unidade.</p>
-                  )}
-                </div>
-              ) : (
-                <div className="rounded-2xl border border-border bg-card p-5 shadow-lg">
-                  <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 mb-3">Economia por Venda</p>
-                  <p className="text-sm text-text-2">Vincule um produto para análise.</p>
-                </div>
-              )}
+                );
+              })()}
             </div>
 
             {/* Halo Effect */}
