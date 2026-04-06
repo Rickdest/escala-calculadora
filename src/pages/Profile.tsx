@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { openCheckout } from '@/services/checkout.service';
 import { supabase } from '@/integrations/supabase/client';
+import { useSignOut } from '@/hooks/useSignOut';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { UserAvatar } from '@/components/UserAvatar';
