@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { checkSubscription } from '@/services/billing.service';
+import { useQueryClient } from '@tanstack/react-query';
 
 type SubscriptionStatus = 'free' | 'active' | 'canceled' | 'past_due' | 'expired' | 'loading' | 'error';
 
@@ -25,6 +26,7 @@ const STATUS_MAP: Record<string, SubscriptionStatus> = {
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { user, session, loading: authLoading } = useAuth();
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState<SubscriptionStatus>('loading');
   const [plan, setPlan] = useState('free');
   const [loading, setLoading] = useState(true);
@@ -100,7 +102,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const refreshSubscription = useCallback(async () => {
     await fetchSubscription(true);
-  }, [fetchSubscription]);
+    queryClient.invalidateQueries({ queryKey: ['stores-and-products'] });
+  }, [fetchSubscription, queryClient]);
 
   return (
     <SubscriptionContext.Provider

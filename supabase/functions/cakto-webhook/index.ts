@@ -114,7 +114,8 @@ Deno.serve(async (req) => {
     const orderId = payload.id?.slice(0, 100) ?? null;
     const refId = payload.refId?.slice(0, 100) ?? null;
     const subscriptionId = payload.subscription?.id?.slice(0, 100) ?? null;
-    const planName = (payload.product?.name ?? "pro").slice(0, 50);
+    const rawPlanName = (payload.product?.name ?? "pro").slice(0, 50);
+    const planName = normalizePlanName(rawPlanName);
 
     const allowedEvents = [
       "purchase_approved",
@@ -242,7 +243,29 @@ Deno.serve(async (req) => {
   }
 });
 
+function normalizePlanName(name: string): string {
+  const lower = name.toLowerCase();
+  if (lower.includes("anual") || lower.includes("yearly")) return "yearly";
+  if (lower.includes("mensal") || lower.includes("monthly")) return "monthly";
+  if (lower === "pro") return "monthly";
+  return lower;
+}
+
 function getStatusForEvent(event: string): string {
+  switch (event) {
+    case "purchase_approved":
+    case "subscription_renewed":
+      return "active";
+    case "refund":
+    case "chargeback":
+    case "subscription_canceled":
+      return "canceled";
+    case "subscription_renewal_refused":
+      return "past_due";
+    default:
+      return "free";
+  }
+}
   switch (event) {
     case "purchase_approved":
     case "subscription_renewed":
