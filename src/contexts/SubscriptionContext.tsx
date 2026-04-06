@@ -26,6 +26,7 @@ const STATUS_MAP: Record<string, SubscriptionStatus> = {
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { user, session, loading: authLoading } = useAuth();
+  const queryClient = useQueryClient();
   const [status, setStatus] = useState<SubscriptionStatus>('loading');
   const [plan, setPlan] = useState('free');
   const [loading, setLoading] = useState(true);
