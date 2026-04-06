@@ -2,6 +2,8 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ApiAdsDashboard } from './ApiAdsDashboard';
 import { useStore } from '@/contexts/StoreContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { useAdsData, EnrichedAdsData } from '@/hooks/useAdsData';
 import { useShopeeToken } from '@/hooks/useShopeeToken';
 import { useApiAdsData, buildApiAdsDataFromRows } from '@/hooks/useApiAdsData';
