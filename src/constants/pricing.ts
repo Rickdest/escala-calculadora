@@ -1,5 +1,6 @@
 export const PLAN_STORE_LIMITS: Record<string, number> = {
   free: 0,
+  pro: 2,
   monthly: 2,
   yearly: 7,
 };

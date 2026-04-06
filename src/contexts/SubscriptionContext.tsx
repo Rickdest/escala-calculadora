@@ -102,7 +102,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
   const refreshSubscription = useCallback(async () => {
     await fetchSubscription(true);
-  }, [fetchSubscription]);
+    queryClient.invalidateQueries({ queryKey: ['stores-and-products'] });
+  }, [fetchSubscription, queryClient]);
 
   return (
     <SubscriptionContext.Provider
