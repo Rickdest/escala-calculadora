@@ -151,22 +151,33 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
 
   const upsertMetrics = async (payload: Record<string, any>) => {
     if (!user || (!adProductId && !adShopeeProductId)) return;
-    let updateQuery = supabase.from('product_ads_metrics').update(payload).eq('user_id', user.id);
-    if (adProductId) updateQuery = updateQuery.eq('product_id', adProductId);
-    else updateQuery = updateQuery.eq('shopee_product_id', adShopeeProductId!);
-    await updateQuery;
-    const checkQuery = supabase.from('product_ads_metrics').select('id').eq('user_id', user.id);
-    const checkResult = adProductId
-      ? await checkQuery.eq('product_id', adProductId).limit(1)
-      : await checkQuery.eq('shopee_product_id', adShopeeProductId!).limit(1);
-    if (!checkResult.data || checkResult.data.length === 0) {
+
+    // Try update by shopee_product_id first (more reliable for API campaigns)
+    let updated = false;
+    if (adShopeeProductId) {
+      const { data } = await supabase.from('product_ads_metrics')
+        .update(payload).eq('user_id', user.id)
+        .eq('shopee_product_id', adShopeeProductId)
+        .select('id');
+      if (data && data.length > 0) updated = true;
+    }
+    // Fallback: try by product_id
+    if (!updated && adProductId) {
+      const { data } = await supabase.from('product_ads_metrics')
+        .update(payload).eq('user_id', user.id)
+        .eq('product_id', adProductId)
+        .select('id');
+      if (data && data.length > 0) updated = true;
+    }
+    // If no row was updated, insert new
+    if (!updated) {
       const today = new Date().toISOString().slice(0, 10);
       await supabase.from('product_ads_metrics').insert({
         user_id: user.id,
         product_id: adProductId || null,
         shopee_product_id: adShopeeProductId || null,
-        period_start: today,
-        period_end: today,
+        period_start: payload.period_start || today,
+        period_end: payload.period_end || today,
         ...payload,
       } as any);
     }
