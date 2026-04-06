@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ShoppingBag, Zap, RefreshCw, FileX, Loader2, CheckCircle2, Package, ShoppingCart, ChevronDown, ChevronUp, AlertTriangle, TrendingUp, BarChart3, Search } from 'lucide-react';
 import { useShopeeToken, useShopeeTokenStatus } from '@/hooks/useShopeeToken';
 import { useAdmin } from '@/hooks/useAdmin';
+import { useStore } from '@/contexts/StoreContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
