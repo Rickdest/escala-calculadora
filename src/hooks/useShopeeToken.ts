@@ -73,23 +73,26 @@ async function parseShopeeInvokeError(invokeError: unknown, appType: AppType): P
   };
 }
 
-export function useShopeeToken(appType?: AppType) {
+export function useShopeeToken(appType?: AppType, storeId?: string) {
   const { user } = useAuth();
   const [needsReauth, setNeedsReauth] = useState(false);
 
   const { data: token, isLoading, refetch } = useQuery({
-    queryKey: ['shopee-token', user?.id, appType],
+    queryKey: ['shopee-token', user?.id, appType, storeId],
     queryFn: async () => {
-      const baseQuery = supabase
+      let query = supabase
         .from('shopee_tokens')
         .select('*')
         .eq('user_id', user!.id);
 
-      const finalQuery = appType
-        ? (baseQuery as any).eq('app_type', appType)
-        : baseQuery;
+      if (appType) {
+        query = (query as any).eq('app_type', appType);
+      }
+      if (storeId) {
+        query = (query as any).eq('store_id', storeId);
+      }
 
-      const { data, error } = await finalQuery.limit(1).maybeSingle();
+      const { data, error } = await query.limit(1).maybeSingle();
       if (error) throw error;
       return data;
     },
