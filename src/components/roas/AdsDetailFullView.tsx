@@ -671,24 +671,31 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
           const { products, period_start, period_end } = await parseProductPerformanceExcel(file);
           if (products.length > 0) {
             isSkuFormat = true;
-            // Convert to ExcelPerformanceData shape (aggregated, no daily breakdown)
+            // Convert to ExcelPerformanceData with per-product daily entries
+            const startISO = `${period_start.slice(0,4)}-${period_start.slice(4,6)}-${period_start.slice(6,8)}`;
+            const endISO = `${period_end.slice(0,4)}-${period_end.slice(4,6)}-${period_end.slice(6,8)}`;
+
+            const dadosDiarios = products.map(p => ({
+              data: startISO,
+              dataLabel: p.nome || p.item_id,
+              impressoes: p.impressoes,
+              cliques: p.cliques,
+              ctr: p.ctr,
+              compradores: p.compradores_pagos,
+              unidades: p.unidades_pagas,
+              vendasBrl: p.vendas_pago,
+            }));
+
             const totals = products.reduce((acc, p) => ({
               impressoes: acc.impressoes + p.impressoes,
               vendasBrl: acc.vendasBrl + p.vendas_pago,
               compradores: acc.compradores + p.compradores_pagos,
             }), { impressoes: 0, vendasBrl: 0, compradores: 0 });
 
-            const startISO = `${period_start.slice(0,4)}-${period_start.slice(4,6)}-${period_start.slice(6,8)}`;
-            const endISO = `${period_end.slice(0,4)}-${period_end.slice(4,6)}-${period_end.slice(6,8)}`;
-
             parsed = {
               dataRange: { inicio: startISO, fim: endISO },
-              dadosDiarios: [{
-                data: startISO, dataLabel: startISO.slice(8,10) + '/' + startISO.slice(5,7),
-                impressoes: totals.impressoes, cliques: 0, ctr: 0,
-                compradores: totals.compradores, unidades: 0, vendasBrl: totals.vendasBrl,
-              }],
-              totalDias: 1,
+              dadosDiarios,
+              totalDias: products.length,
               dataPrimeiraVenda: startISO,
               totais: totals,
               fontes: [],
