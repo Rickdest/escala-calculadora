@@ -116,7 +116,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
         <div>
           <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">PREÇO DE VENDA</label>
           <div className="relative">
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-1.5">R$</span>
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-sm border-r border-border pr-1.5">R$</span>
             <input
               type="number"
               inputMode="decimal"
