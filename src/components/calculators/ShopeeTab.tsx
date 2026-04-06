@@ -56,7 +56,7 @@ export function ShopeeTab() {
 
   const costs: CostLine[] = [
     { label: 'Custo do produto', value: cp },
-    { label: `Taxa Shopee (${feeRange.percent}% + ${fmt(feeRange.fixed)})`, value: shopeeFee },
+    { label: `Taxa Shopee (${feeRange.percent}% + ${fmt(feeRange.fixed)}${cpfAdditional > 0 ? ' + R$3 CPF' : ''})`, value: shopeeFee },
     ...(pkg > 0 ? [{ label: 'Embalagem', value: pkg }] : []),
     ...(taxesCost > 0 ? [{ label: `Impostos (${tax}%)`, value: taxesCost }] : []),
     ...(affiliateCost > 0 ? [{ label: `Afiliado (${aff}%)`, value: affiliateCost }] : []),

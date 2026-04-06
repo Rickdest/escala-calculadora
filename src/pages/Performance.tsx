@@ -182,7 +182,7 @@ export default function Performance() {
 
         {/* Main content */}
         {(hasExcelData || hasApiData) ? (
-          <Tabs value={hasExcelData ? 'excel' : 'api'} onValueChange={() => {}}>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
             {hasExcelData && hasApiData && (
               <TabsList className="w-full">
                 <TabsTrigger value="excel" className="flex-1 gap-1.5">

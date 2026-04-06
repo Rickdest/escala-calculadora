@@ -32,7 +32,7 @@ export function InsightsPanel({ produto }: Props) {
   }
 
   if (produto.ads_gmv && produto.ads_gmv > 0) {
-    const organicoReceita = produto.vendas_pago - produto.ads_gmv;
+    const organicoReceita = Math.max(0, produto.vendas_pago - produto.ads_gmv);
     if (organicoReceita > 0) {
       insights.push(`R$ ${organicoReceita.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} veio de forma orgânica (sem custo de Ads)`);
     }

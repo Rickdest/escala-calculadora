@@ -45,8 +45,9 @@ export async function parseProductPerformanceExcel(
 ): Promise<{ products: ProductPerformanceRow[]; period_start: string; period_end: string }> {
   // Extrair período do nome: parentskudetail.YYYYMMDD_YYYYMMDD.xlsx ou parentskudetail_YYYYMMDD_YYYYMMDD.xlsx
   const match = file.name.match(/(\d{8})[_.](\d{8})/);
-  const period_start = match ? match[1] : '';
-  const period_end = match ? match[2] : '';
+  const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const period_start = match ? match[1] : today;
+  const period_end = match ? match[2] : today;
 
   const { read, utils } = await import('xlsx');
   const buffer = await file.arrayBuffer();
