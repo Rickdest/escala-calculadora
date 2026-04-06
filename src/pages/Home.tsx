@@ -21,6 +21,8 @@ import { BannerCarousel } from '@/components/home/BannerCarousel';
 import { useAdmin } from '@/hooks/useAdmin';
 import { MARKETPLACE_SHORTCUTS } from '@/lib/marketplaceShortcuts';
 import type { Product } from '@/types/store';
+import { useInstallPrompt } from '@/hooks/useInstallPrompt';
+import { InstallTutorial } from '@/components/InstallTutorial';
 
 const toolItems = [
   { icon: Calculator, label: 'Precificar', isAccent: true, action: 'addProduct' as const, iconBg: '', iconColor: '' },
