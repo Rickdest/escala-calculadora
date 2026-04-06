@@ -80,14 +80,13 @@ export function useShopeeToken(appType?: AppType, storeId?: string) {
   const { data: token, isLoading, refetch } = useQuery({
     queryKey: ['shopee-token', user?.id, appType, storeId],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_shopee_token_metadata', {
+      const { data, error } = await (supabase.rpc as any)('get_shopee_token_metadata', {
         p_app_type: appType || null,
         p_store_id: storeId || null,
       });
       if (error) throw error;
-      // RPC returns an array; take first row or null
       const row = Array.isArray(data) ? data[0] ?? null : data;
-      return row;
+      return row as { id: string; shop_id: number; app_type: string; store_id: string | null; expire_in: number; token_created_at: string } | null;
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
