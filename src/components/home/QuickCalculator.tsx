@@ -163,7 +163,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                   <p className={cn('font-mono text-[18px] font-extrabold font-mono-num leading-tight truncate w-full', status.color)}>
                     {result.realMargin.toFixed(1)}%
                   </p>
-                  <p className="text-[10px] font-medium text-text-3 tracking-wider mt-0.5">Margem real</p>
+                  <p className="text-[10px] font-semibold text-muted-foreground tracking-wider mt-0.5">Margem real</p>
                 </div>
               );
             })()}
