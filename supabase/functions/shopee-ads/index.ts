@@ -585,6 +585,7 @@ async function processJob(jobId: string, userId: string) {
     }
 
     const shopeeToken = tokens[0];
+    const storeId = shopeeToken.store_id || null;
     const { token: currentAccessToken, needs_reauth: refreshFailed } = await refreshTokenIfNeeded(shopeeToken, supabaseAdmin);
 
     if (refreshFailed) {
@@ -596,15 +597,18 @@ async function processJob(jobId: string, userId: string) {
 
     // Upsert ads_by_campaign to database
     if (adsPerformance.ads_by_campaign.length > 0) {
-      await supabaseAdmin
+      const deleteQuery = supabaseAdmin
         .from("shopee_ads_by_product")
         .delete()
         .eq("user_id", userId)
         .neq("period_start", adsPerformance.period_start);
+      if (storeId) deleteQuery.eq("store_id", storeId);
+      await deleteQuery;
 
       for (const c of adsPerformance.ads_by_campaign) {
         await supabaseAdmin.from("shopee_ads_by_product").upsert({
           user_id: userId, shop_id: Number(shopeeToken.shop_id),
+          store_id: storeId,
           campaign_id: c.campaign_id, item_id: c.item_id,
           item_name: c.item_name, status: c.status || 'ended',
           period_start: adsPerformance.period_start,
