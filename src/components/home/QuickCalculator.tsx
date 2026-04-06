@@ -262,8 +262,8 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center">
                     <div>
-                      <span className="text-[13px] text-text-2">Empate</span>
-                      <span className="text-[10px] text-text-3 ml-1.5">abaixo disso = prejuízo</span>
+                      <span className="text-[13px] text-foreground/80">Empate</span>
+                      <span className="text-[10px] text-muted-foreground ml-1.5">abaixo disso = prejuízo</span>
                     </div>
                     <span className="font-mono text-[14px] font-bold font-mono-num text-foreground">{result.roasEmpate > 0 ? result.roasEmpate.toFixed(2) : '--'}</span>
                   </div>
