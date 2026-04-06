@@ -224,7 +224,7 @@ export function QuickCalculator({ onSaveProduct }: QuickCalculatorProps) {
             <div className="bg-surface-2 rounded-[10px] p-3 animate-fade-up space-y-0">
               {/* Custos */}
               <div className="pb-3">
-                <p className="uppercase text-[10px] font-medium text-text-3 tracking-wider mb-2">Custos</p>
+                <p className="uppercase text-[10px] font-semibold text-muted-foreground tracking-wider mb-2">Custos</p>
                 <div className="space-y-1.5">
                   <CostRow label="Taxa Shopee" value={result.totalShopeeFee} format={formatCurrency} />
                   {result.packagingCost > 0 && <CostRow label="Embalagem e Insumos" value={result.packagingCost} format={formatCurrency} />}
