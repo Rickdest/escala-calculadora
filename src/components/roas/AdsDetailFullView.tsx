@@ -651,6 +651,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
   }, [product, config]);
 
   const roasEmpate = empateResult?.roasEmpate ?? (ad.roas_empate || null);
+  const roasSaudavel = roasEmpate && roasEmpate > 0 && roasEmpate !== Infinity ? parseFloat((roasEmpate / 0.61).toFixed(2)) : null;
   const margemContrib = empateResult?.margemContribuicao ?? (ad.margem_contribuicao || null);
 
   const classification = useMemo(() => {
@@ -716,9 +717,36 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
   const folgaAcosMargem = margemContrib !== null ? margemContrib - acosDireto : null;
 
   const custoConversao = ad.custo_por_conversao || custoPorPedido;
-  const orcamentoProtecao = custoConversao * 5;
-  const orcamentoMinimo = custoConversao * 3;
   const convPorDia = dias > 0 ? (ad.conversoes || 0) / dias : 0;
+  const orcamentoAtualDia = ad.despesas / (dias || 1);
+  const pisoBudget = custoConversao * 5;
+
+  const orcamentoSugerido = useMemo(() => {
+    if (custoConversao <= 0) return 0;
+    const roasAtual = ad.roas_direto ?? ad.roas ?? 0;
+    const re = roasEmpate ?? Infinity;
+    const rs = roasSaudavel ?? Infinity;
+
+    if (re === Infinity || rs === Infinity || re <= 0) return Math.min(pisoBudget, orcamentoAtualDia);
+
+    if (roasAtual >= rs) return orcamentoAtualDia; // lucrativo — manter
+    if (roasAtual >= re) {
+      const proporcional = custoConversao * convPorDia * (roasAtual / rs);
+      return Math.max(proporcional, pisoBudget);
+    }
+    return pisoBudget; // prejuízo
+  }, [custoConversao, ad.roas_direto, ad.roas, roasEmpate, roasSaudavel, pisoBudget, orcamentoAtualDia, convPorDia]);
+
+  const budgetAdequado = orcamentoSugerido >= orcamentoAtualDia * 0.9;
+  const budgetMotivo = (() => {
+    const roasAtual = ad.roas_direto ?? ad.roas ?? 0;
+    const re = roasEmpate ?? Infinity;
+    const rs = roasSaudavel ?? Infinity;
+    if (re === Infinity || rs === Infinity) return '';
+    if (roasAtual >= rs) return 'Campanha lucrativa';
+    if (roasAtual >= re) return 'Margem apertada';
+    return 'Prejuízo — reduza';
+  })();
   const qualificaProtecao = convPorDia >= 5;
 
   const isMetaRoas = ad.metodo_lance?.toLowerCase().includes('meta de roas') || ad.metodo_lance?.toLowerCase().includes('target roas');
@@ -1239,30 +1267,38 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
               {custoConversao > 0 ? (
                 <div className="rounded-2xl border border-border bg-card p-5 shadow-lg space-y-4">
                   <p className="text-[10px] uppercase tracking-wider font-bold text-text-3">Orçamento Diário</p>
-                  <div className="flex items-center justify-center gap-4">
-                    <div className="text-center">
-                      <p className="text-[10px] text-text-3 uppercase font-bold">Atual</p>
-                      <p className="text-2xl font-black font-mono tabular-nums text-foreground">{fmt(ad.despesas / (dias || 1))}</p>
+                  {budgetAdequado ? (
+                    <div className="text-center space-y-2">
+                      <p className="text-2xl font-black font-mono tabular-nums text-success">{fmt(orcamentoAtualDia)}</p>
                       <p className="text-[10px] text-text-3">/dia</p>
+                      <p className="text-xs font-bold text-success">✅ Orçamento adequado — {budgetMotivo}</p>
                     </div>
-                    <ArrowRight className="w-5 h-5 text-text-3" />
-                    <div className="text-center">
-                      <p className="text-[10px] text-text-3 uppercase font-bold">Sugerido</p>
-                      <p className="text-2xl font-black font-mono tabular-nums text-success">{fmt(orcamentoProtecao)}</p>
-                      <p className="text-[10px] text-text-3">/dia</p>
+                  ) : (
+                    <div className="flex items-center justify-center gap-4">
+                      <div className="text-center">
+                        <p className="text-[10px] text-text-3 uppercase font-bold">Atual</p>
+                        <p className="text-2xl font-black font-mono tabular-nums text-foreground">{fmt(orcamentoAtualDia)}</p>
+                        <p className="text-[10px] text-text-3">/dia</p>
+                      </div>
+                      <ArrowRight className="w-5 h-5 text-text-3" />
+                      <div className="text-center">
+                        <p className="text-[10px] text-text-3 uppercase font-bold">Sugerido</p>
+                        <p className="text-2xl font-black font-mono tabular-nums text-warning">{fmt(orcamentoSugerido)}</p>
+                        <p className="text-[10px] text-text-3">/dia</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
+                  {!budgetAdequado && budgetMotivo && (
+                    <p className="text-xs font-bold text-center text-warning">⚠️ {budgetMotivo}</p>
+                  )}
                   <p className="text-xs text-text-3 text-center">
-                    Custo por conversão: <span className="text-foreground font-bold">{fmt(custoConversao)}</span>
+                    Baseado em {convPorDia.toFixed(1)} conv/dia × {fmt(custoConversao)}/conv
                   </p>
                   <p className={cn('text-xs font-bold text-center', qualificaProtecao ? 'text-success' : 'text-warning')}>
                     {qualificaProtecao
                       ? `✅ Proteção ativa (${convPorDia.toFixed(1)} conv/dia)`
                       : `⚠️ Aumente para proteção (${convPorDia.toFixed(1)} conv/dia)`}
                   </p>
-                  <Button className="w-full rounded-xl h-12 text-sm font-bold bg-success hover:bg-success/90 text-success-foreground">
-                    Aplicar Sugestão na Shopee
-                  </Button>
                 </div>
               ) : (
                 <div className="rounded-2xl border border-border bg-card p-5 shadow-lg">
