@@ -1266,30 +1266,38 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
               {custoConversao > 0 ? (
                 <div className="rounded-2xl border border-border bg-card p-5 shadow-lg space-y-4">
                   <p className="text-[10px] uppercase tracking-wider font-bold text-text-3">Orçamento Diário</p>
-                  <div className="flex items-center justify-center gap-4">
-                    <div className="text-center">
-                      <p className="text-[10px] text-text-3 uppercase font-bold">Atual</p>
-                      <p className="text-2xl font-black font-mono tabular-nums text-foreground">{fmt(ad.despesas / (dias || 1))}</p>
+                  {budgetAdequado ? (
+                    <div className="text-center space-y-2">
+                      <p className="text-2xl font-black font-mono tabular-nums text-success">{fmt(orcamentoAtualDia)}</p>
                       <p className="text-[10px] text-text-3">/dia</p>
+                      <p className="text-xs font-bold text-success">✅ Orçamento adequado — {budgetMotivo}</p>
                     </div>
-                    <ArrowRight className="w-5 h-5 text-text-3" />
-                    <div className="text-center">
-                      <p className="text-[10px] text-text-3 uppercase font-bold">Sugerido</p>
-                      <p className="text-2xl font-black font-mono tabular-nums text-success">{fmt(orcamentoProtecao)}</p>
-                      <p className="text-[10px] text-text-3">/dia</p>
+                  ) : (
+                    <div className="flex items-center justify-center gap-4">
+                      <div className="text-center">
+                        <p className="text-[10px] text-text-3 uppercase font-bold">Atual</p>
+                        <p className="text-2xl font-black font-mono tabular-nums text-foreground">{fmt(orcamentoAtualDia)}</p>
+                        <p className="text-[10px] text-text-3">/dia</p>
+                      </div>
+                      <ArrowRight className="w-5 h-5 text-text-3" />
+                      <div className="text-center">
+                        <p className="text-[10px] text-text-3 uppercase font-bold">Sugerido</p>
+                        <p className="text-2xl font-black font-mono tabular-nums text-warning">{fmt(orcamentoSugerido)}</p>
+                        <p className="text-[10px] text-text-3">/dia</p>
+                      </div>
                     </div>
-                  </div>
+                  )}
+                  {!budgetAdequado && budgetMotivo && (
+                    <p className="text-xs font-bold text-center text-warning">⚠️ {budgetMotivo}</p>
+                  )}
                   <p className="text-xs text-text-3 text-center">
-                    Custo por conversão: <span className="text-foreground font-bold">{fmt(custoConversao)}</span>
+                    Baseado em {convPorDia.toFixed(1)} conv/dia × {fmt(custoConversao)}/conv
                   </p>
                   <p className={cn('text-xs font-bold text-center', qualificaProtecao ? 'text-success' : 'text-warning')}>
                     {qualificaProtecao
                       ? `✅ Proteção ativa (${convPorDia.toFixed(1)} conv/dia)`
                       : `⚠️ Aumente para proteção (${convPorDia.toFixed(1)} conv/dia)`}
                   </p>
-                  <Button className="w-full rounded-xl h-12 text-sm font-bold bg-success hover:bg-success/90 text-success-foreground">
-                    Aplicar Sugestão na Shopee
-                  </Button>
                 </div>
               ) : (
                 <div className="rounded-2xl border border-border bg-card p-5 shadow-lg">
