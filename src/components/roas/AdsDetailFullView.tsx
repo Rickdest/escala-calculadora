@@ -647,9 +647,60 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
       const validation = validateExcelFile(file);
       if (!validation.valid) { toast.error(validation.error!); return; }
       const buffer = await file.arrayBuffer();
-      const parsed = parseShopeeExcel(buffer);
+
+      let parsed: ExcelPerformanceData | null = null;
+      let isSkuFormat = false;
+
+      // Try primary parser (daily performance format)
+      try {
+        parsed = parseShopeeExcel(buffer);
+      } catch {
+        // Fallback: try parentskudetail format
+        try {
+          const { products, period_start, period_end } = await parseProductPerformanceExcel(file);
+          if (products.length > 0) {
+            isSkuFormat = true;
+            // Convert to ExcelPerformanceData shape (aggregated, no daily breakdown)
+            const totals = products.reduce((acc, p) => ({
+              impressoes: acc.impressoes + p.impressoes,
+              vendasBrl: acc.vendasBrl + p.vendas_pago,
+              compradores: acc.compradores + p.compradores_pagos,
+            }), { impressoes: 0, vendasBrl: 0, compradores: 0 });
+
+            const startISO = `${period_start.slice(0,4)}-${period_start.slice(4,6)}-${period_start.slice(6,8)}`;
+            const endISO = `${period_end.slice(0,4)}-${period_end.slice(4,6)}-${period_end.slice(6,8)}`;
+
+            parsed = {
+              dataRange: { inicio: startISO, fim: endISO },
+              dadosDiarios: [{
+                data: startISO, dataLabel: startISO.slice(8,10) + '/' + startISO.slice(5,7),
+                impressoes: totals.impressoes, cliques: 0, ctr: 0,
+                compradores: totals.compradores, unidades: 0, vendasBrl: totals.vendasBrl,
+              }],
+              totalDias: 1,
+              dataPrimeiraVenda: startISO,
+              totais: totals,
+              fontes: [],
+              produtoNome: products[0]?.nome || '',
+              shopeeProductId: products[0]?.item_id || '',
+            };
+          }
+        } catch (fallbackErr) {
+          console.error('Fallback Excel parser failed:', fallbackErr);
+        }
+      }
+
+      if (!parsed) {
+        toast.error('Formato de Excel não reconhecido. Use "Performance do Produto" ou "parentskudetail".');
+        return;
+      }
+
       setExcelData(parsed);
-      toast.success(`${parsed.totalDias} dias importados`);
+      if (isSkuFormat) {
+        toast.success(`${products?.length || 0} produtos importados (formato SKU — sem breakdown diário)`);
+      } else {
+        toast.success(`${parsed.totalDias} dias importados`);
+      }
 
       // Persist Excel data to database
       const productIdForSave = ad.product_id || null;
@@ -667,7 +718,6 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
             importedAt: new Date().toISOString(),
           } as any,
         };
-        // Try update first
         let updateQuery = supabase
           .from('product_ads_metrics')
           .update(savePayload)
@@ -681,7 +731,6 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         if (saveError) {
           console.error('Erro ao salvar Excel (update):', saveError.message);
         }
-        // Check if any row was actually updated; if not, insert
         const checkQuery = supabase.from('product_ads_metrics').select('id').eq('user_id', user.id);
         const checkResult = productIdForSave
           ? await checkQuery.eq('product_id', productIdForSave).limit(1)
