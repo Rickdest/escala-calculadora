@@ -64,11 +64,20 @@ export default function Stores() {
   };
 
   const handleAddStore = async () => {
-    if (newStoreName.trim()) {
-      const store = await addStore(newStoreName.trim());
+    const name = newStoreName.trim().slice(0, 100);
+    if (!name) return;
+    try {
+      const store = await addStore(name);
       setCurrentStore(store);
       setNewStoreName('');
       setIsAdding(false);
+    } catch (err: any) {
+      const msg = err?.message || '';
+      if (msg.includes('Store limit reached')) {
+        toast.error('Limite de lojas atingido', {
+          description: 'Faça upgrade do seu plano para criar mais lojas.',
+        });
+      }
     }
   };
 
