@@ -433,8 +433,14 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                           </select>
                         </div>
                         <div className="space-y-1">
-                          <label className="section-label">Peso (kg)</label>
-                          <Input type="number" inputMode="decimal" step="0.1" min="0" value={outrosCanais.shein.weightKg || ''} onChange={(e) => setOutrosCanais(prev => ({ ...prev, shein: { ...prev.shein!, weightKg: parseFloat(e.target.value) || 0 } }))} className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num" />
+                          <label className="section-label">Peso</label>
+                          <select value={outrosCanais.shein.weightKg ?? 0.3} onChange={(e) => setOutrosCanais(prev => ({ ...prev, shein: { ...prev.shein!, weightKg: parseFloat(e.target.value) } }))} className="h-10 w-full bg-surface-2 border border-border rounded-lg text-xs px-2 text-foreground">
+                            <option value={0.3}>Até 300g — R$4</option>
+                            <option value={1}>300g–1kg — R$5</option>
+                            <option value={2}>1kg–2kg — R$5</option>
+                            <option value={5}>2kg–5kg — R$6</option>
+                            <option value={9}>5kg–9kg — R$7</option>
+                          </select>
                         </div>
                         <div className="space-y-1">
                           <label className="section-label">Embalagem</label>
@@ -457,7 +463,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                           delete next.amazon;
                           setOutrosCanais(next);
                         } else {
-                          setOutrosCanais(prev => ({ ...prev, amazon: { costPrice: parseFloat(costPrice) || 0, salePrice: parseFloat(salePrice) || 0 } }));
+                          setOutrosCanais(prev => ({ ...prev, amazon: { costPrice: parseFloat(costPrice) || 0, salePrice: parseFloat(salePrice) || 0, categoryRate: 0.15, plan: 'profissional' as const, packagingCost: 0 } }));
                         }
                       }}
                     />
@@ -511,7 +517,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                           delete next.ml;
                           setOutrosCanais(next);
                         } else {
-                          setOutrosCanais(prev => ({ ...prev, ml: { costPrice: parseFloat(costPrice) || 0, salePrice: parseFloat(salePrice) || 0 } }));
+                          setOutrosCanais(prev => ({ ...prev, ml: { costPrice: parseFloat(costPrice) || 0, salePrice: parseFloat(salePrice) || 0, categoryIndex: 0, anuncio: 'classico' as const, freightCost: 0, packagingCost: 0 } }));
                         }
                       }}
                     />
