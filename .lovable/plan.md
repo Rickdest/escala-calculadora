@@ -1,32 +1,21 @@
 
 
-## Plano: Tornar Preço de Venda editável no card Economia por Venda
+## Plano: Ajustar importação de produtos para usar dados da API de Ads
 
 ### Problema
-O preço de venda mostra 51.53 (fallback GMV) mesmo com produto cadastrado a 49.90. O usuário quer poder editar tanto o preço de venda quanto o custo, e ao salvar, atualizar o produto na aba Produtos.
+O botão "Importar da Shopee" chama `shopee-sync` (requer token Seller), mas o usuário só tem token Ads. Os produtos já existem via `source: "ads_api"`.
 
-### Mudanças
+### Correção
 
-**Arquivo: `src/components/roas/AdsDetailFullView.tsx`**
+**Arquivo: `src/components/produtos/ShopeeImportModal.tsx`**
 
-1. **Adicionar estado `costFormSalePrice`** junto ao `costFormCost` existente, inicializado com `product.salePrice` ou fallback GMV
+1. Quando não há token Seller conectado, em vez de mostrar erro genérico, verificar se há token Ads disponível
+2. Se há token Ads: usar a função `shopee-ads` para sincronizar dados de produtos via API de Ads (que já cria stubs de produtos), e depois listar os produtos existentes no banco com `source = 'ads_api'` para o usuário selecionar quais ativar/importar
+3. Alterar o fluxo do modal:
+   - Sem token Seller + Com token Ads: buscar produtos direto da tabela `products` onde `source = 'ads_api'` e `draft = true`, permitindo ao usuário "ativar" esses produtos (tirar do draft)
+   - Sem nenhum token: mostrar mensagem para conectar em Integrações
+4. Adicionar opção de "Atualizar via Ads" que chama `syncAdsOnly()` para refresh dos dados
 
-2. **Ambos os estados do card mostram inputs editáveis** para Preço de Venda e Custo do Produto:
-   - Inputs com fundo `#111`, border visível, sempre editáveis
-   - Preço de venda pré-preenchido com `product.salePrice` (ou fallback GMV se não houver)
-   - Custo pré-preenchido com `product.costPrice`
-
-3. **Recalcular em tempo real** usando `costFormSalePrice` em vez de `salePrice` fixo:
-   ```
-   roasCalc = calcFullRoas(costFormSalePrice, costFormCost, config, ...)
-   lucro = costFormSalePrice - costFormCost - taxaShopee - acosPerUnit
-   ```
-
-4. **Ao salvar, persistir ambos** — `updateProduct(product.id, { salePrice: costFormSalePrice, costPrice: costFormCost })`
-
-5. **Reset dos estados** no useEffect de `ad.id` para re-inicializar com dados do novo produto
-
-6. **Unificar os dois estados visuais** — sempre mostrar os inputs editáveis. A diferença será apenas:
-   - Se `costPrice > 0`: badge "Configurado" verde + botão "Salvar alterações" (só aparece se houve mudança)
-   - Se `costPrice === 0`: badge "Custo não informado" cinza + botão "Salvar custo no produto"
+### Arquivo modificado
+- `src/components/produtos/ShopeeImportModal.tsx`
 
