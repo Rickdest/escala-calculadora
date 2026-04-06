@@ -30,11 +30,35 @@ import { cn } from '@/lib/utils';
 
 export default function Stores() {
   const { stores, currentStore, setCurrentStore, addStore, updateStore, deleteStore, getStoreStats } = useStore();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [isAdding, setIsAdding] = useState(false);
   const [newStoreName, setNewStoreName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  // Fetch all shopee tokens for this user to show badges per store
+  const { data: shopeeTokens } = useQuery({
+    queryKey: ['shopee-tokens-all', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('shopee_tokens')
+        .select('store_id, app_type, shop_id')
+        .eq('user_id', user!.id);
+      return data || [];
+    },
+    enabled: !!user,
+    staleTime: 30 * 1000,
+  });
+
+  const getStoreIntegrations = (storeId: string) => {
+    if (!shopeeTokens) return { seller: false, ads: false };
+    return {
+      seller: shopeeTokens.some(t => t.store_id === storeId && t.app_type === 'seller'),
+      ads: shopeeTokens.some(t => t.store_id === storeId && t.app_type === 'ads'),
+    };
+  };
 
   const handleAddStore = async () => {
     if (newStoreName.trim()) {
