@@ -214,7 +214,7 @@ export default function Profile() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••••"
                   className="pl-11 h-12 input-modern"
-                  minLength={6}
+                  minLength={8}
                 />
               </div>
             </div>
