@@ -143,7 +143,7 @@ export default function Education() {
 
           <div className="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
             {videos.map((video) => (
-              <div key={video.id} className="glass-card overflow-hidden">
+              <div key={video.id} className="glass-card overflow-hidden rounded-2xl shadow-sm">
                 {editingId === video.id ? (
                   <div className="p-4 space-y-4">
                     <div className="space-y-2">
@@ -183,7 +183,7 @@ export default function Education() {
                   </div>
                 ) : (
                   <>
-                    <div className="aspect-video bg-muted relative rounded-t-xl overflow-hidden">
+                    <div className="aspect-video bg-muted relative rounded-t-2xl overflow-hidden">
                       {playingId === video.id ? (
                         <iframe
                           src={`https://www.youtube.com/embed/${video.content_data?.youtube_id}?autoplay=1&rel=0`}
@@ -198,13 +198,16 @@ export default function Education() {
                           onClick={() => setPlayingId(video.id)}
                         >
                           <img
-                            src={`https://img.youtube.com/vi/${video.content_data?.youtube_id}/hqdefault.jpg`}
+                            src={`https://img.youtube.com/vi/${video.content_data?.youtube_id}/maxresdefault.jpg`}
                             alt={video.title}
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${video.content_data?.youtube_id}/hqdefault.jpg`;
+                            }}
                           />
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
-                            <div className="w-14 h-14 rounded-full bg-red-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                              <Play className="w-6 h-6 text-white fill-white ml-0.5" />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/30 transition-colors">
+                            <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
+                              <Play className="w-7 h-7 text-white fill-white ml-0.5" />
                             </div>
                           </div>
                         </div>
