@@ -25,7 +25,7 @@ interface ShopeeImportModalProps {
 
 export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportModalProps) {
   const { user } = useAuth();
-  const { syncStoreData } = useShopeeToken();
+  const { syncStoreData, isConnected } = useShopeeToken();
   const [products, setProducts] = useState<ShopeeProduct[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -34,8 +34,13 @@ export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportMod
 
   useEffect(() => {
     if (!isOpen) return;
+    if (!isConnected) {
+      setLoading(false);
+      setError('Conta Shopee Seller não conectada. Vá em Integrações para conectar.');
+      return;
+    }
     fetchShopeeProducts();
-  }, [isOpen]);
+  }, [isOpen, isConnected]);
 
   async function fetchShopeeProducts() {
     setLoading(true);
