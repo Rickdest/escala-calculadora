@@ -233,7 +233,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
 
     if (Object.keys(dbUpdates).length > 0) {
-      const { error } = await supabase.from('products').update(dbUpdates).eq('id', productId);
+      if (!user) return;
+      const { error } = await supabase.from('products').update(dbUpdates).eq('id', productId).eq('user_id', user.id);
       if (error) { toast.error('Erro ao atualizar produto'); return; }
     }
 
