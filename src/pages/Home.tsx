@@ -25,7 +25,7 @@ import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 import { InstallTutorial } from '@/components/InstallTutorial';
 
 const toolItems = [
-  { icon: Calculator, label: 'Precificar', isAccent: true, action: 'addProduct' as const, iconBg: '', iconColor: '' },
+  { icon: Calculator, label: 'Precificar', route: '/calculadoras', isAccent: true, iconBg: '', iconColor: '' },
   { icon: ShoppingBag, label: 'Produtos', route: '/products', iconBg: '', iconColor: '' },
   { icon: BarChart2, label: 'Ads', route: '/roas', iconBg: '', iconColor: '' },
   { icon: GraduationCap, label: 'Educação', route: '/education', iconBg: '', iconColor: '' },
