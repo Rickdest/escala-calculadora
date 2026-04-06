@@ -1,18 +1,20 @@
 
 
-## Plano: Corrigir thumbnails dos vídeos na aba Educação
+## Plano: Simplificar thumbnails dos vídeos na Educação
 
 ### Problema
-As thumbnails estão com barras cinzas (letterboxing) porque `hqdefault.jpg` do YouTube tem proporção 4:3 (480x360) sendo forçada em container 16:9.
+As thumbnails com `maxresdefault.jpg` podem não existir para todos os vídeos, causando um flash estranho antes do fallback. O overlay customizado com botão de play vermelho pode estar ficando deslocado visualmente.
 
 ### Mudança
 
 **Arquivo: `src/pages/Education.tsx`**
 
-1. Trocar `hqdefault.jpg` por `maxresdefault.jpg` (1280x720, 16:9 nativo) — elimina barras cinzas
-2. Adicionar fallback com `onError` para `hqdefault.jpg` caso o vídeo não tenha resolução máxima
-3. Manter `object-cover` + `aspect-video` para garantir preenchimento total
-4. Melhorar visual geral dos cards: `rounded-2xl`, sombra sutil, overlay de play com `shadow-xl`
+1. **Usar `mqdefault.jpg`** como fonte primária (320x180, 16:9 nativo, sempre disponível) — sem necessidade de fallback
+2. **Simplificar o overlay** — remover o botão de play grande vermelho, deixar apenas um ícone de play sutil centralizado com fundo semi-transparente
+3. **Manter o comportamento de click-to-play** — ao clicar na thumb, carrega o iframe com autoplay
+
+### Resultado
+Thumbnails limpas do próprio YouTube, sem imagens quebradas, sem botões grandes — visual simples e funcional.
 
 ### Arquivo modificado
 - `src/pages/Education.tsx`
