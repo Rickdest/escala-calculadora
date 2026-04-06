@@ -1,9 +1,11 @@
-import { ChevronDown, Store } from 'lucide-react';
+import { ChevronDown, Plus, Store } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
@@ -17,6 +19,7 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, subtitle, showStoreSelector = true, action }: PageHeaderProps) {
   const { stores, currentStore, setCurrentStore } = useStore();
+  const navigate = useNavigate();
 
   return (
     <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border px-4 py-3 safe-top md:hidden">
@@ -57,6 +60,14 @@ export function PageHeader({ title, subtitle, showStoreSelector = true, action }
                     {store.name}
                   </DropdownMenuItem>
                 ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="cursor-pointer text-primary"
+                  onClick={() => navigate('/stores')}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar loja
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             </div>
