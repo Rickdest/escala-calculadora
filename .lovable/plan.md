@@ -1,24 +1,35 @@
 
 
-## Plano: Melhorar layout dos KPI cards na aba Análise de Ads (mobile)
+## Plano: Corrigir lógica de Orçamento Diário Sugerido
 
 ### Problema
-No viewport de 390px, os valores monetários nos cards KPI (Gasto Total, Receita GMV, ROAS, Lucro Est.) são cortados com "…" porque o espaço horizontal é insuficiente para 2 colunas com `text-xl` + ícone absoluto.
+A fórmula atual é simplesmente `custoConversao × 5` (linha 719). Com custo por conversão de R$3,99, isso dá R$19,95 — um corte de 76% num orçamento que já está performando bem com 20,9 conv/dia. A sugestão não considera se a campanha é lucrativa ou não.
 
-### Mudanças
+### Lógica corrigida
 
-**Arquivo: `src/components/roas/ApiAdsDashboard.tsx`** (linhas 128-149)
+O orçamento sugerido deve ser contextual:
 
-1. **Reduzir font-size no mobile** — Trocar `text-xl` por `text-lg` no mobile para os valores, mantendo `md:text-3xl` no desktop
+1. **Se ROAS atual ≥ ROAS saudável** → campanha lucrativa, sugerir manter ou otimizar levemente:
+   - `sugerido = orçamento atual` (manter)
+   - Mostrar texto "Orçamento adequado — campanha lucrativa"
 
-2. **Reduzir tamanho do ícone no mobile** — De `w-7 h-7` para `w-5 h-5` (mantendo `md:w-9 md:h-9`) para dar mais espaço ao texto
+2. **Se ROAS atual ≥ ROAS empate mas < saudável** → margem apertada:
+   - `sugerido = custoConversao × convPorDia × (roasAtual / roasSaudavel)`
+   - Redução proporcional para melhorar margem
 
-3. **Ajustar padding** — De `p-3` para `p-2.5` no mobile para ganhar pixels
+3. **Se ROAS atual < ROAS empate** → prejuízo:
+   - `sugerido = custoConversao × 5` (mínimo de proteção)
+   - Reduzir ao mínimo viável até otimizar
 
-4. **Permitir quebra controlada** — Substituir `truncate` por `break-all` nos valores para que valores como "R$ 34.305,07" apareçam inteiros em vez de cortados com "…"
+4. **Piso**: nunca sugerir abaixo de `custoConversao × 5` (proteção do algoritmo)
+5. **Teto**: nunca sugerir acima do orçamento atual (não faz sentido sugerir gastar mais sem dados)
 
-5. **Cards secundários** — Reduzir font de `text-sm` para `text-xs` no mobile (manter `md:text-base`) para que Impressões/Cliques/Pedidos/CTR caibam sem corte
+### Mudanças no card visual
 
-### Resultado esperado
-Todos os valores numéricos visíveis sem corte no viewport 390px, mantendo o layout 2x2 (KPIs) e 4-col (secundários).
+- Quando sugerido ≈ atual (diferença < 10%): mostrar "✅ Orçamento adequado" em verde, sem seta de redução
+- Quando sugerido < atual: mostrar a seta atual → sugerido com o motivo ("Margem apertada" ou "Prejuízo — reduza")
+- Adicionar linha explicativa: "Baseado em {convPorDia} conv/dia × R$ {custoConversao}/conv"
+
+### Arquivo
+- `src/components/roas/AdsDetailFullView.tsx` — linhas 718-722 (cálculo) e 1239-1266 (UI)
 
