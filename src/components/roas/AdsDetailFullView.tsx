@@ -1317,7 +1317,10 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
 
                 // Use calcFullRoas to get Shopee fees from store config
                 const activeCostPrice = showEditMode ? costFormCost : (product?.costPrice || 0);
-                const salePrice = product?.salePrice || (ad.itens_vendidos > 0 ? ad.gmv / ad.itens_vendidos : ad.gmv);
+                const salePrice = product?.salePrice && product.salePrice > 0
+                  ? product.salePrice
+                  : (ad.itens_vendidos > 0 ? ad.gmv / ad.itens_vendidos : ad.gmv);
+                const salePriceEstimated = !(product?.salePrice && product.salePrice > 0);
                 const roasCalc = config
                   ? calcFullRoas(salePrice, activeCostPrice, config, product?.packagingCost || 0)
                   : null;
