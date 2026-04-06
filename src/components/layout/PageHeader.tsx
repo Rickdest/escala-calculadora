@@ -60,6 +60,14 @@ export function PageHeader({ title, subtitle, showStoreSelector = true, action }
                     {store.name}
                   </DropdownMenuItem>
                 ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="cursor-pointer text-primary"
+                  onClick={() => navigate('/stores')}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar loja
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             </div>
