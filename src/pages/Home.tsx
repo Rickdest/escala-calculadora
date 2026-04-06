@@ -135,7 +135,7 @@ export default function Home() {
   const productsSection = topProducts.length > 0 ? (
     <div className="space-y-2 animate-fade-up stagger-4">
       <div className="flex items-center justify-between">
-        <p className="section-label">Seus Produtos</p>
+        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Seus Produtos</p>
         <button onClick={() => navigate('/products')} className="text-xs text-primary font-medium flex items-center gap-0.5">
           Ver Todos <ChevronRight className="w-3.5 h-3.5" />
         </button>
@@ -240,7 +240,7 @@ export default function Home() {
 
         {/* Outras plataformas */}
         <div className="animate-fade-up">
-          <p className="section-label mb-3">Outras plataformas</p>
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Outras plataformas</p>
           <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-4 px-4">
             {MARKETPLACE_SHORTCUTS.map((mp) => (
               <button
@@ -254,8 +254,8 @@ export default function Home() {
                 >
                   {mp.sigla}
                 </div>
-                <span className="text-micro normal-case tracking-normal font-semibold text-text-2 text-center leading-tight whitespace-nowrap">{mp.name}</span>
-                <span className="text-micro normal-case tracking-normal text-text-3 whitespace-nowrap">{mp.rate}</span>
+                <span className="text-micro normal-case tracking-normal font-semibold text-foreground/80 text-center leading-tight whitespace-nowrap">{mp.name}</span>
+                <span className="text-micro normal-case tracking-normal text-muted-foreground whitespace-nowrap">{mp.rate}</span>
               </button>
             ))}
           </div>
@@ -263,7 +263,7 @@ export default function Home() {
 
         {/* Tools Grid */}
         <div className="animate-fade-up">
-          <p className="section-label mb-3">Ferramentas</p>
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-3">Ferramentas</p>
           <div className="grid grid-cols-4 gap-y-3 gap-x-2">
             {toolItems.map((item) => {
               const isAccent = 'isAccent' in item && item.isAccent;
