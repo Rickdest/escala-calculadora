@@ -110,7 +110,7 @@ function formatLogDate(ts: string): string {
   return `${dd}/${mm} ${hh}:${min}`;
 }
 
-function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLogLoaded }: { adProductId: string | null; adShopeeProductId: string | null; roasEmpate: number | null; onLogLoaded?: (log: OperationLogEntry[]) => void }) {
+function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLogLoaded, onMetricsImported }: { adProductId: string | null; adShopeeProductId: string | null; roasEmpate: number | null; onLogLoaded?: (log: OperationLogEntry[]) => void; onMetricsImported?: (updates: { posicao_media?: number | null }) => void }) {
   const { user } = useAuth();
   const [operationLog, setOperationLog] = useState<OperationLogEntry[] | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
