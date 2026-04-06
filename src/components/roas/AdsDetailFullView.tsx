@@ -716,9 +716,36 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
   const folgaAcosMargem = margemContrib !== null ? margemContrib - acosDireto : null;
 
   const custoConversao = ad.custo_por_conversao || custoPorPedido;
-  const orcamentoProtecao = custoConversao * 5;
-  const orcamentoMinimo = custoConversao * 3;
   const convPorDia = dias > 0 ? (ad.conversoes || 0) / dias : 0;
+  const orcamentoAtualDia = ad.despesas / (dias || 1);
+  const pisoBudget = custoConversao * 5;
+
+  const orcamentoSugerido = useMemo(() => {
+    if (custoConversao <= 0) return 0;
+    const roasAtual = ad.roas_direto ?? ad.roas ?? 0;
+    const re = roasEmpate ?? Infinity;
+    const rs = roasSaudavel ?? Infinity;
+
+    if (re === Infinity || rs === Infinity || re <= 0) return Math.min(pisoBudget, orcamentoAtualDia);
+
+    if (roasAtual >= rs) return orcamentoAtualDia; // lucrativo — manter
+    if (roasAtual >= re) {
+      const proporcional = custoConversao * convPorDia * (roasAtual / rs);
+      return Math.max(proporcional, pisoBudget);
+    }
+    return pisoBudget; // prejuízo
+  }, [custoConversao, ad.roas_direto, ad.roas, roasEmpate, roasSaudavel, pisoBudget, orcamentoAtualDia, convPorDia]);
+
+  const budgetAdequado = orcamentoSugerido >= orcamentoAtualDia * 0.9;
+  const budgetMotivo = (() => {
+    const roasAtual = ad.roas_direto ?? ad.roas ?? 0;
+    const re = roasEmpate ?? Infinity;
+    const rs = roasSaudavel ?? Infinity;
+    if (re === Infinity || rs === Infinity) return '';
+    if (roasAtual >= rs) return 'Campanha lucrativa';
+    if (roasAtual >= re) return 'Margem apertada';
+    return 'Prejuízo — reduza';
+  })();
   const qualificaProtecao = convPorDia >= 5;
 
   const isMetaRoas = ad.metodo_lance?.toLowerCase().includes('meta de roas') || ad.metodo_lance?.toLowerCase().includes('target roas');
