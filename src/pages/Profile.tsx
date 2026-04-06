@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 
 export default function Profile() {
   const { user } = useAuth();
+  const { handleSignOut } = useSignOut();
 
   const [displayName, setDisplayName] = useState('');
   const [newPassword, setNewPassword] = useState('');
