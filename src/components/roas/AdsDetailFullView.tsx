@@ -625,6 +625,9 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
     setEditingCosts(false);
     if (ad.product) {
       setCostFormCost(ad.product.costPrice || 0);
+      setCostFormSalePrice(ad.product.salePrice && ad.product.salePrice > 0 ? ad.product.salePrice : (ad.itens_vendidos > 0 ? ad.gmv / ad.itens_vendidos : ad.gmv));
+    } else {
+      setCostFormSalePrice(ad.itens_vendidos > 0 ? ad.gmv / ad.itens_vendidos : ad.gmv);
     }
   }, [ad.id]);
 
