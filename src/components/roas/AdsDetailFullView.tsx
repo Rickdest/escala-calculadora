@@ -289,7 +289,7 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 space-y-4 shadow-lg">
-      <input ref={fileInputRef} type="file" accept=".csv" onChange={handleImportLog} className="hidden" />
+      <input ref={fileInputRef} type="file" accept=".csv" onChange={handleImportCSV} className="hidden" />
       <div className="flex items-center justify-between">
         <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
           <History className="w-3.5 h-3.5 text-success" /> Histórico de Performance
