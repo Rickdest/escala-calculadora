@@ -61,6 +61,7 @@ export function ProductCard({
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isLongPress = useRef(false);
 
+  const missingCost = !product.costPrice || product.costPrice <= 0;
   const status = getMarginStatus(calculation.realMargin);
 
   const handleTouchStart = useCallback(() => {
