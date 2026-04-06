@@ -29,6 +29,7 @@ import {
   calcAdEfficiencyScore, calcHaloEffect, calcCostVsMarginAlert,
   type Classificacao,
 } from '@/lib/adsLogic';
+import { calcFullRoas } from '@/lib/roasUtils';
 import { fmt, fmtShort, getClassCor, getRoasColor, getDiasPeriodo } from './adsHelpers';
 
 interface Props {
