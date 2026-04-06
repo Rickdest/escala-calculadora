@@ -110,11 +110,17 @@ function formatLogDate(ts: string): string {
   return `${dd}/${mm} ${hh}:${min}`;
 }
 
-function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLogLoaded, onMetricsImported }: { adProductId: string | null; adShopeeProductId: string | null; roasEmpate: number | null; onLogLoaded?: (log: OperationLogEntry[]) => void; onMetricsImported?: (updates: { posicao_media?: number | null }) => void }) {
+function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLogLoaded, onMetricsImported, importTriggerRef }: { adProductId: string | null; adShopeeProductId: string | null; roasEmpate: number | null; onLogLoaded?: (log: OperationLogEntry[]) => void; onMetricsImported?: (updates: { posicao_media?: number | null }) => void; importTriggerRef?: React.MutableRefObject<(() => void) | null> }) {
   const { user } = useAuth();
   const [operationLog, setOperationLog] = useState<OperationLogEntry[] | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  useEffect(() => {
+    if (importTriggerRef) {
+      importTriggerRef.current = () => fileInputRef.current?.click();
+    }
+    return () => { if (importTriggerRef) importTriggerRef.current = null; };
+  }, [importTriggerRef]);
   const loadLog = useCallback(async () => {
     if (!user) return;
     if (adProductId) {
@@ -240,14 +246,7 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
         <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
           <LineChart className="w-4 h-4 text-primary dark:text-blue-400" /> Histórico de Performance
         </p>
-        <div className="flex flex-col items-center justify-center py-8 text-center">
-          <LineChart className="w-10 h-10 text-text-3 mb-3" />
-          <p className="text-base font-bold text-foreground">Importe CSV de Ads</p>
-          <p className="text-sm text-text-2 mt-1">Aceita relatório de produto ou log de operações (detecção automática).</p>
-          <Button onClick={() => fileInputRef.current?.click()} size="sm" variant="outline" className="mt-3 gap-1.5 border-border text-text-2 hover:bg-surface-2">
-            <Upload className="w-3.5 h-3.5" /> Importar CSV
-          </Button>
-        </div>
+        <p className="text-sm text-text-2 text-center py-6">gráfico disponível após importar o CSV de Ads</p>
       </div>
     );
   }
@@ -310,9 +309,6 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
         <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
           <History className="w-3.5 h-3.5 text-success" /> Histórico de Performance
         </p>
-        <Button onClick={() => fileInputRef.current?.click()} size="sm" variant="outline" className="h-7 text-[10px] gap-1 border-border text-text-2 hover:bg-surface-2">
-          <Upload className="w-3 h-3" /> Atualizar CSV
-        </Button>
       </div>
 
       {showChart && (
@@ -556,6 +552,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
   const [opLog, setOpLog] = useState<OperationLogEntry[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const excelInputRef = useRef<HTMLInputElement>(null);
+  const opLogImportTriggerRef = useRef<(() => void) | null>(null);
 
   const isApiCampaign = ad.id.startsWith('api-campaign-');
   const itemId = ad.shopee_product_id ? Number(ad.shopee_product_id) : null;
@@ -1332,6 +1329,68 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         {/* ═══ Tab 2: Métricas & Histórico ═══ */}
         <TabsContent value="metricas">
           <div className="space-y-4">
+            {/* Dados Importados Card */}
+            <div className="rounded-xl border border-border bg-card px-3 py-2.5 shadow-sm">
+              <p className="text-[9px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5 mb-2">
+                <Upload className="w-3 h-3" /> Dados Importados
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {/* CSV de Ads */}
+                <div className={cn(
+                  'rounded-lg border p-2 flex flex-col gap-1',
+                  opLog.length > 0 ? 'border-success/30 bg-success/5' : 'border-warning/30 bg-warning/5'
+                )}>
+                  <p className="text-[11px] font-bold text-foreground leading-tight">CSV de Ads</p>
+                  <p className="text-[9px] text-text-3">Log de operações</p>
+                  {opLog.length > 0 ? (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-success/20 text-success w-fit mt-auto">Importado</span>
+                  ) : (
+                    <>
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-warning/20 text-warning w-fit">Pendente</span>
+                      <Button onClick={() => opLogImportTriggerRef.current?.()} size="sm" variant="outline" className="mt-auto h-7 text-[10px] gap-1 border-primary/30 text-primary hover:bg-primary/10 w-full">
+                        <Plus className="w-3 h-3" /> Importar
+                      </Button>
+                    </>
+                  )}
+                </div>
+                {/* CSV Individual */}
+                <div className={cn(
+                  'rounded-lg border p-2 flex flex-col gap-1',
+                  ad.posicao_media !== null ? 'border-success/30 bg-success/5' : 'border-warning/30 bg-warning/5'
+                )}>
+                  <p className="text-[11px] font-bold text-foreground leading-tight">CSV Individual</p>
+                  <p className="text-[9px] text-text-3">Posicionamento</p>
+                  {ad.posicao_media !== null ? (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-success/20 text-success w-fit mt-auto">Importado</span>
+                  ) : (
+                    <>
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-warning/20 text-warning w-fit">Pendente</span>
+                      <Button onClick={onImportPosition} size="sm" variant="outline" className="mt-auto h-7 text-[10px] gap-1 border-primary/30 text-primary hover:bg-primary/10 w-full">
+                        <Plus className="w-3 h-3" /> Importar
+                      </Button>
+                    </>
+                  )}
+                </div>
+                {/* Excel Analytics */}
+                <div className={cn(
+                  'rounded-lg border p-2 flex flex-col gap-1',
+                  excelData ? 'border-success/30 bg-success/5' : 'border-warning/30 bg-warning/5'
+                )}>
+                  <p className="text-[11px] font-bold text-foreground leading-tight">Excel Analytics</p>
+                  <p className="text-[9px] text-text-3">Performance diária</p>
+                  {excelData ? (
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-success/20 text-success w-fit mt-auto">Importado</span>
+                  ) : (
+                    <>
+                      <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-warning/20 text-warning w-fit">Pendente</span>
+                      <Button onClick={() => excelInputRef.current?.click()} size="sm" variant="outline" className="mt-auto h-7 text-[10px] gap-1 border-primary/30 text-primary hover:bg-primary/10 w-full">
+                        <Plus className="w-3 h-3" /> Importar
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
             {/* Posicionamento + Geral vs Direto — TOPO */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
               {/* Posicionamento */}
@@ -1345,12 +1404,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                     <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-primary dark:text-blue-400" /> Posicionamento
                     </p>
-                    <div className="flex items-center gap-3">
-                      <Button onClick={onImportPosition} size="sm" variant="ghost" className="h-6 text-[10px] gap-1 text-text-3 hover:text-foreground hover:bg-surface-2 px-2">
-                        <Upload className="w-3 h-3" /> Atualizar
-                      </Button>
-                      <span className="text-xl md:text-3xl font-black font-mono tabular-nums text-foreground">#{ad.posicao_media}</span>
-                    </div>
+                    <span className="text-xl md:text-3xl font-black font-mono tabular-nums text-foreground">#{ad.posicao_media}</span>
                   </div>
 
                   {/* Content: 2 columns on md+, stacked on mobile */}
@@ -1421,10 +1475,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                   <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-text-3" /> Posicionamento
                   </p>
-                  <p className="text-sm text-text-2">Importe o CSV individual para ver a posição nos resultados de busca.</p>
-                  <Button onClick={onImportPosition} size="sm" variant="outline" className="gap-1.5 text-sm border-border text-text-2 hover:bg-surface-2">
-                    <Upload className="w-4 h-4" /> Importar CSV do Produto
-                  </Button>
+                  <p className="text-sm text-text-2">Posição disponível após importar o CSV Individual.</p>
                 </div>
               )}
 
@@ -1494,7 +1545,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
             </div>
 
             {/* Histórico de Performance */}
-            <OperationLogTimeline adProductId={ad.product_id} adShopeeProductId={ad.shopee_product_id} roasEmpate={roasEmpate} onLogLoaded={setOpLog} onMetricsImported={onMetricsImported} />
+            <OperationLogTimeline adProductId={ad.product_id} adShopeeProductId={ad.shopee_product_id} roasEmpate={roasEmpate} onLogLoaded={setOpLog} onMetricsImported={onMetricsImported} importTriggerRef={opLogImportTriggerRef} />
 
             {/* Excel Performance Analysis */}
             <input ref={excelInputRef} type="file" accept=".xlsx" onChange={handleExcelUpload} className="hidden" />
@@ -1503,18 +1554,12 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                 <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
                   <BarChart3 className="w-3.5 h-3.5" /> Análise de Performance Diária
                 </p>
-                <p className="text-sm text-text-2">Importe o Excel do Shopee Analytics para análise detalhada com gráficos, fontes de tráfego e correlação com ajustes.</p>
-                <Button onClick={() => excelInputRef.current?.click()} size="sm" variant="outline" className="gap-1.5 border-border text-text-2 hover:bg-surface-2">
-                  <Upload className="w-3.5 h-3.5" /> Importar Excel (.xlsx)
-                </Button>
+                <p className="text-sm text-text-2">gráfico disponível após importar o Excel Analytics</p>
               </div>
             ) : (
               <>
                 <div className="flex items-center justify-between">
                   <p className="text-[10px] uppercase tracking-wider font-bold text-text-3">Análise de Performance ({excelData.totalDias} dias)</p>
-                  <Button onClick={() => excelInputRef.current?.click()} size="sm" variant="ghost" className="h-7 text-[11px] text-text-2 gap-1">
-                    <Upload className="w-3 h-3" /> Reimportar
-                  </Button>
                 </div>
                 <ExcelAnalysis data={excelData} operationLog={opLog.length > 0 ? opLog : undefined} />
               </>
