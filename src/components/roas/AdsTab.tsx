@@ -504,8 +504,10 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
     await importProductCSV(text, targetId);
     setPositionTarget(undefined);
     if (positionFileRef.current) positionFileRef.current.value = '';
-    if (selectedDetail && targetId) {
-      await reload();
+    await reload();
+    // Refresh detail view if still open
+    if (selectedDetail) {
+      invalidatePersistedAds();
     }
   };
 
