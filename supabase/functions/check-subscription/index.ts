@@ -1,16 +1,25 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // --- CORS headers ---
-const ALLOWED_ORIGIN = Deno.env.get("ALLOWED_ORIGIN") || "*";
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get("Origin") || "";
+  const allowed = Deno.env.get("ALLOWED_ORIGIN") || "";
+  
+  // Allow the configured origin, any lovable.app subdomain (previews), and localhost
+  const isAllowed =
+    origin === allowed ||
+    origin.endsWith(".lovable.app") ||
+    origin.startsWith("http://localhost");
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, cache-control, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Max-Age": "86400",
-  "Vary": "Origin",
-};
+  return {
+    "Access-Control-Allow-Origin": isAllowed ? origin : allowed,
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type, cache-control, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Max-Age": "86400",
+    "Vary": "Origin",
+  };
+}
 
 // --- Helper: resolve subscription status from DB row ---
 function resolveStatus(sub: {
