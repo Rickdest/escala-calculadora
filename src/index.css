@@ -191,7 +191,7 @@
   /* Label for form fields */
   .label-field {
     @apply uppercase tracking-[0.08em] font-medium text-muted-foreground block mb-1.5;
-    font-size: 10px;
+    font-size: 11px;
   }
 
   /* Metric label below numbers */
