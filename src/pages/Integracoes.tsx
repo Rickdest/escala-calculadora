@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { useShopeeToken } from '@/hooks/useShopeeToken';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStore } from '@/contexts/StoreContext';
 import { toast } from 'sonner';
 import { formatDistanceToNow, addSeconds } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
