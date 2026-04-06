@@ -198,17 +198,12 @@ export default function Education() {
                           onClick={() => setPlayingId(video.id)}
                         >
                           <img
-                            src={`https://img.youtube.com/vi/${video.content_data?.youtube_id}/maxresdefault.jpg`}
+                            src={`https://img.youtube.com/vi/${video.content_data?.youtube_id}/mqdefault.jpg`}
                             alt={video.title}
                             className="w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${video.content_data?.youtube_id}/hqdefault.jpg`;
-                            }}
                           />
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/30 transition-colors">
-                            <div className="w-16 h-16 rounded-full bg-red-600 flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
-                              <Play className="w-7 h-7 text-white fill-white ml-0.5" />
-                            </div>
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-colors">
+                            <Play className="w-10 h-10 text-white/90 fill-white/90 drop-shadow-lg group-hover:scale-110 transition-transform" />
                           </div>
                         </div>
                       )}
