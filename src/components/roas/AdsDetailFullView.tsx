@@ -1064,14 +1064,14 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
             className="flex-1 h-9 rounded-lg text-xs sm:text-sm font-bold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=inactive]:text-foreground/70"
           >
             <Target className="w-3.5 h-3.5" />
-            Diagnóstico
+            IA &amp; Ação
           </TabsTrigger>
           <TabsTrigger
             value="metricas"
             className="flex-1 h-9 rounded-lg text-xs sm:text-sm font-bold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=inactive]:text-foreground/70"
           >
             <TrendingUp className="w-3.5 h-3.5" />
-            Métricas
+            Performance Ads
           </TabsTrigger>
         </TabsList>
 
