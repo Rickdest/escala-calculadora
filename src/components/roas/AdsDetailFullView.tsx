@@ -1469,12 +1469,18 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                       <p className="text-[11px] mt-1.5 text-text-3">● Taxas calculadas pela Calculadora Shopee</p>
                     </div>
 
-                    {/* Auto-save indicator */}
+                    {/* Save button */}
+                    {product && hasChanges && !savingCosts && (
+                      <Button
+                        size="sm"
+                        className="w-full"
+                        onClick={() => handleSaveCosts()}
+                      >
+                        Salvar alterações
+                      </Button>
+                    )}
                     {product && savingCosts && (
                       <p className="text-[11px] text-center text-warning animate-pulse">Salvando...</p>
-                    )}
-                    {product && hasChanges && !savingCosts && (
-                      <p className="text-[11px] text-center text-text-3">Salvo automaticamente ao parar de digitar</p>
                     )}
 
                     {lucroTotalPeriodo !== null && (
