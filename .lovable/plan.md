@@ -1,57 +1,55 @@
 
-## Plano: corrigir erro ao logar
+
+## Plano: Corrigir margem e meta ROAS incorretas nos Ads
 
 ### Diagnóstico
-O login em si está funcionando, mas o app quebra logo depois ao validar a assinatura.
 
-Evidências da análise:
-- Os logs de autenticação mostram `POST /token` com `status 200` e evento `Login`
-- Os logs da função `check-subscription` mostram sucesso: `Found by user_id: active monthly`
-- Porém, no navegador, as chamadas para `POST .../functions/v1/check-subscription` falham com `Failed to fetch`
-- A origem real do preview é `https://663ad348-e18a-4674-a7c5-186feeae7832.lovableproject.com`
-- O CORS atual da função só aceita:
-  - `ALLOWED_ORIGIN`
-  - domínios `*.lovable.app`
-  - `localhost`
+Em `AdsTab.tsx` (linhas 267-280), ao montar dados de campanhas da API, a margem e o ROAS de empate são calculados com uma **fórmula simplificada**:
 
-Ou seja: a função responde no servidor, mas o navegador bloqueia a resposta por CORS porque `*.lovableproject.com` não está liberado.
+```ts
+const margin = (salePrice - costPrice) / salePrice;
+roasEmpate = 1 / margin;
+```
 
-### O que corrigir
-#### 1. Ajustar CORS em `supabase/functions/check-subscription/index.ts`
-Atualizar a lógica de `getCorsHeaders(req)` para aceitar também previews em:
-- `*.lovableproject.com`
+Essa fórmula ignora **todos os custos operacionais**: taxa Shopee (14-20%), impostos, embalagem, comissão de afiliado, Acelera, etc. Resultado:
+- **Margem inflada** (ex: 1214% ao invés de ~12%)
+- **ROAS empate muito baixo** (ex: 1.0 ao invés de ~8)
+- **Meta ROAS errada** (1.1 ao invés de ~9)
+- **Classificação incorreta** (tudo aparece como "Lucrativo")
 
-Manter o restante:
-- `ALLOWED_ORIGIN`
-- `*.lovable.app`
-- `localhost`
+A função `calcularRoasEmpate` em `adsLogic.ts` já faz o cálculo correto usando `calcFullRoas` com todos os custos. Ela só não está sendo usada nesse trecho.
 
-#### 2. Garantir fallback seguro
-Revisar o retorno de `Access-Control-Allow-Origin` para nunca devolver origem vazia quando o origin não bater com a allowlist.
+### Correção
 
-#### 3. Não mexer no fluxo de login
-Não faz sentido alterar:
-- `AuthContext`
-- `Auth.tsx`
-- `billing.service.ts`
+#### `src/components/roas/AdsTab.tsx` (linhas 267-280)
 
-Esses arquivos não são a causa principal do erro atual.
+Substituir o cálculo simplificado por `calcularRoasEmpate(product, config)`:
 
-### Arquivo a modificar
-- `supabase/functions/check-subscription/index.ts`
+1. Importar `calcularRoasEmpate` de `@/lib/adsLogic`
+2. Obter `currentStore.config` (já disponível via `useStore`)
+3. Trocar o bloco de cálculo manual pelo resultado de `calcularRoasEmpate(matchedProduct, currentStore.config)`
+
+**Antes:**
+```ts
+const margin = salePrice > 0 ? ((salePrice - costPrice) / salePrice) : 0;
+margemContribuicao = margin * 100;
+roasEmpate = margin > 0 ? (1 / margin) : null;
+```
+
+**Depois:**
+```ts
+const empResult = calcularRoasEmpate(matchedProduct as Product, currentStore.config);
+margemContribuicao = empResult.margemContribuicao;
+roasEmpate = empResult.roasEmpate !== Infinity ? empResult.roasEmpate : null;
+```
+
+A classificação subsequente (linhas 274-279) continua funcionando com o `roasEmpate` correto.
+
+### Arquivo modificado
+- `src/components/roas/AdsTab.tsx`
 
 ### Resultado esperado
-Após a correção:
-- o usuário consegue logar normalmente
-- a validação da assinatura deixa de cair em `Failed to fetch`
-- a tela “Erro ao verificar sua assinatura” para de aparecer no preview
+- Margem exibida reflete custos reais (Shopee, impostos, embalagem, etc.)
+- Meta de ROAS condiz com a realidade operacional
+- Classificação dos anúncios fica correta
 
-### Observações
-- O warning de React sobre `ref` em `ProtectedRoute` apareceu no console, mas é secundário e não é o motivo do bloqueio no login.
-- A função backend está saudável; o problema é especificamente de CORS no ambiente de preview.
-
-### Validação após implementar
-1. Fazer login no preview
-2. Confirmar que a chamada `check-subscription` retorna sem `Failed to fetch`
-3. Verificar se o usuário entra na Home em vez da tela de erro
-4. Testar também no domínio publicado para garantir que nada regrediu
