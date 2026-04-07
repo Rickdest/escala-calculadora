@@ -648,9 +648,17 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
 
   // ═══ Calculations ═══
   const empateResult = useMemo(() => {
-    if (!product || !config) return null;
-    return calcularRoasEmpate(product, config);
-  }, [product, config]);
+    if (product && config) return calcularRoasEmpate(product, config);
+    if (!product && config && costFormSalePrice > 0 && costFormCost > 0) {
+      const syntheticProduct = {
+        salePrice: costFormSalePrice,
+        costPrice: costFormCost,
+        packagingCost: 0,
+      } as any;
+      return calcularRoasEmpate(syntheticProduct, config);
+    }
+    return null;
+  }, [product, config, costFormSalePrice, costFormCost]);
 
   const roasEmpate = empateResult?.roasEmpate ?? (ad.roas_empate || null);
   const roasSaudavel = roasEmpate && roasEmpate > 0 && roasEmpate !== Infinity ? parseFloat((roasEmpate / 0.61).toFixed(2)) : null;
@@ -1177,12 +1185,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                   </>
                 ) : (
                   <div className="space-y-3 py-4">
-                    <p className="text-sm text-text-2">Dados insuficientes para classificação.</p>
-                    {!product && (
-                      <Button onClick={onLink} variant="outline" size="sm" className="gap-1.5 text-xs border-border text-text-2 hover:bg-surface-2">
-                        <Link2 className="w-3.5 h-3.5" /> Vincular Produto
-                      </Button>
-                    )}
+                    <p className="text-sm text-text-2">Preencha preço de venda e custo na seção "Economia por Venda" abaixo para ver a classificação.</p>
                   </div>
                 )}
               </div>
