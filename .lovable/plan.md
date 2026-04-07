@@ -1,52 +1,37 @@
 
 
-## Plano: Bloquear acesso para quem não comprou
+## Plano: Atualizar informações do Paywall com dados da imagem de referência
 
-### Causa raiz
+Manter o layout atual (toggle mensal/anual, card único, hero, logo) mas atualizar textos, preços riscados, descontos e benefícios conforme a imagem.
 
-O trigger `handle_new_user_trial()` no banco de dados cria automaticamente uma assinatura com `status = 'active'` e `plan = 'monthly'` para **todo novo usuário** que se cadastra. Isso significa que qualquer pessoa que cria uma conta recebe acesso completo imediatamente, sem precisar pagar.
+### Mudanças em `src/constants/pricing.ts`
+- Adicionar `monthlyOriginal: 59.90` e `yearlyOriginal: 497.00`
+- Atualizar `yearlySavingPct: 60` (imagem mostra -60%)
+- Adicionar labels: `monthlyOriginalLabel: "R$ 59,90"`, `yearlyOriginalLabel: "R$ 497,00"`, `monthlyDiscountPct: 33`
 
-### Solução
+### Mudanças em `src/pages/Paywall.tsx`
 
-1. **Alterar o trigger `handle_new_user_trial()`** para criar a assinatura com `status = 'free'` e `plan = 'free'` em vez de `active`/`monthly`. Assim, novos usuários caem no paywall e só ganham acesso após pagamento via Cakto.
+**Benefícios atualizados conforme imagem:**
+- Mensal: Precificação inteligente, Análise de Shopee Ads, Análise de produto, Análise de Anúncio, Performance por produto, Mapa de oportunidades, Dados que o painel da Shopee não mostra, 2 lojas conectadas
+- Anual: mesmos + Múltiplas lojas (até 7), Suporte prioritário
 
-2. **Limpar assinaturas indevidas já criadas**: executar um UPDATE nas assinaturas que foram criadas pelo trigger (status `active`, plan `monthly`) mas que **não têm** um `cakto_order_id` — ou seja, nunca pagaram. Essas serão alteradas para `free`/`free`.
+**Seção de preço atualizada:**
+- Mensal: mostrar preço original riscado "R$ 59,90/mês" + badge "-33% OFF" + preço R$ 39,90/mês + "Sem fidelidade · cancele quando quiser"
+- Anual: mostrar preço original riscado "R$ 497,00/ano" + badge "-60% OFF" + preço R$ 197,00/ano + destaque "Apenas R$ 16,42/mês · você economiza R$ 300,00"
 
-### Mudanças
+**Subtítulos dos planos:**
+- Mensal: nome "Essencial - Mensal", subtítulo "Ideal para: quem está começando a vender na Shopee e quer clareza nos números."
+- Anual: nome "Skalify Pro", subtítulo "Ideal para: sellers sérios que querem controle total e escalar com inteligência."
 
-**Migration SQL:**
-```sql
--- 1. Corrigir o trigger para novos cadastros
-CREATE OR REPLACE FUNCTION public.handle_new_user_trial()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $$
-BEGIN
-  INSERT INTO public.subscriptions (user_id, email, status, plan)
-  VALUES (
-    NEW.id,
-    COALESCE(NEW.email, ''),
-    'free',
-    'free'
-  )
-  ON CONFLICT DO NOTHING;
-  RETURN NEW;
-END;
-$$;
+**CTA:**
+- Mensal: "Quero começar agora →"
+- Anual: "Quero o Skalify Pro →"
 
--- 2. Revogar acesso de quem nunca pagou
-UPDATE public.subscriptions
-SET status = 'free', plan = 'free', updated_at = now()
-WHERE status = 'active'
-  AND plan = 'monthly'
-  AND cakto_order_id IS NULL
-  AND cakto_subscription_id IS NULL;
-```
+**Trust line:** "Garantia de 7 dias · Acesso imediato"
 
-### Resultado
-- Novos cadastros caem direto no paywall
-- Usuários que já pagaram via Cakto (possuem `cakto_order_id`) não são afetados
-- Acesso só é liberado quando o webhook da Cakto confirma o pagamento
+**Lojas conectadas:** Indicador visual abaixo do CTA: "2 lojas conectadas" (mensal) / "Até 7 lojas conectadas" (anual)
+
+### Arquivo modificado
+- `src/constants/pricing.ts`
+- `src/pages/Paywall.tsx`
 
