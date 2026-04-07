@@ -1,29 +1,27 @@
 import { useState } from 'react';
 import { useBilling } from '@/hooks/useBilling';
 import { useSignOut } from '@/hooks/useSignOut';
-import { Check } from 'lucide-react';
+import { Check, Store } from 'lucide-react';
 import logoIcon from '@/assets/skalify-logo.png';
 import { PRICING } from '@/constants/pricing';
 import { cn } from '@/lib/utils';
 
-const monthlyBenefits = [
-  'Cálculo automático de taxas da Shopee',
-  'Lucro líquido real por produto, sem achismo',
-  'ROAS de empate: saiba quando o anúncio lucra',
-  'Gestão de produtos com histórico na nuvem',
-  'Análise de Ads com classificação automática',
-  'Controle de estoque com alertas críticos',
-  'Até 2 lojas',
+const sharedBenefits = [
+  'Precificação inteligente',
+  'Análise de Shopee Ads',
+  'Análise de produto',
+  'Análise de Anúncio',
+  'Performance por produto',
+  'Mapa de oportunidades',
+  'Dados que o painel da Shopee não mostra',
 ];
 
+const monthlyBenefits = [...sharedBenefits, '2 lojas conectadas'];
+
 const yearlyBenefits = [
-  'Cálculo automático de taxas da Shopee',
-  'Lucro líquido real por produto, sem achismo',
-  'ROAS de empate: saiba quando o anúncio lucra',
-  'Gestão de produtos com histórico na nuvem',
-  'Análise de Ads com classificação automática',
-  'Controle de estoque com alertas críticos',
-  'Até 7 lojas — gerencie toda a sua operação',
+  ...sharedBenefits,
+  'Múltiplas lojas (até 7)',
+  'Suporte prioritário',
 ];
 
 export default function Paywall() {
@@ -112,16 +110,42 @@ export default function Paywall() {
           </button>
         </div>
 
-        {/* Price */}
+        {/* Plan name & subtitle */}
         <div className="text-center" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <p className="text-foreground font-bold" style={{ fontSize: '16px' }}>
+            {isYearly ? 'Skalify Pro' : 'Essencial - Mensal'}
+          </p>
+          <p className="text-muted-foreground px-6" style={{ fontSize: '12px', lineHeight: '1.4', fontStyle: 'italic' }}>
+            {isYearly
+              ? 'Ideal para: sellers sérios que querem controle total e escalar com inteligência.'
+              : 'Ideal para: quem está começando a vender na Shopee e quer clareza nos números.'}
+          </p>
+        </div>
+
+        {/* Price */}
+        <div className="text-center" style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center' }}>
+          {/* Original price + discount badge */}
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground line-through" style={{ fontSize: '14px' }}>
+              {isYearly ? `${PRICING.yearlyOriginalLabel}/ano` : `${PRICING.monthlyOriginalLabel}/mês`}
+            </span>
+            <span
+              className="rounded-full bg-primary/15 text-primary font-bold"
+              style={{ fontSize: '11px', padding: '2px 8px' }}
+            >
+              -{isYearly ? PRICING.yearlySavingPct : PRICING.monthlyDiscountPct}% OFF
+            </span>
+          </div>
+
+          {/* Current price */}
           {isYearly ? (
             <>
               <p className="text-foreground font-bold font-mono" style={{ fontSize: '36px', lineHeight: '1.1' }}>
-                R$ {monthlyEquiv}
-                <span className="font-sans text-muted-foreground" style={{ fontSize: '16px', fontWeight: 400 }}> /mês</span>
+                {PRICING.yearlyLabel}
+                <span className="font-sans text-muted-foreground" style={{ fontSize: '16px', fontWeight: 400 }}> /ano</span>
               </p>
-              <p className="text-muted-foreground" style={{ fontSize: '13px' }}>
-                Cobrado como {PRICING.yearlyLabel}/ano
+              <p className="text-primary font-semibold" style={{ fontSize: '13px' }}>
+                Apenas R$ {monthlyEquiv}/mês · você economiza R$ {PRICING.yearlySaving},00
               </p>
             </>
           ) : (
@@ -131,7 +155,7 @@ export default function Paywall() {
                 <span className="font-sans text-muted-foreground" style={{ fontSize: '16px', fontWeight: 400 }}> /mês</span>
               </p>
               <p className="text-muted-foreground" style={{ fontSize: '13px' }}>
-                Ou {PRICING.yearlyLabel}/ano e economize {PRICING.yearlySavingPct}%
+                Sem fidelidade · cancele quando quiser
               </p>
             </>
           )}
@@ -144,13 +168,19 @@ export default function Paywall() {
             className="w-full rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground transition-colors active:scale-[0.98]"
             style={{ height: '54px', fontSize: '16px', fontWeight: 700, borderRadius: '14px', boxShadow: '0 4px 20px -4px hsl(var(--primary) / 0.5)' }}
           >
-            ✦ {isYearly ? 'Assinar plano anual' : 'Assinar plano mensal'}
+            {isYearly ? 'Quero o Skalify Pro →' : 'Quero começar agora →'}
           </button>
+        </div>
+
+        {/* Store indicator */}
+        <div className="flex items-center justify-center gap-1.5 text-muted-foreground" style={{ fontSize: '12px' }}>
+          <Store className="w-3.5 h-3.5" />
+          <span>{isYearly ? 'Até 7 lojas conectadas' : '2 lojas conectadas'}</span>
         </div>
 
         {/* Trust */}
         <p className="text-center text-muted-foreground/60" style={{ fontSize: '11px' }}>
-          🔒 Pagamento seguro · Cancele quando quiser · Acesso imediato
+          🔒 Garantia de 7 dias · Acesso imediato
         </p>
 
         {/* Benefits */}
@@ -168,7 +198,7 @@ export default function Paywall() {
             {benefits.map((b) => (
               <div key={b} className="flex items-start gap-2.5">
                 <Check className="w-4 h-4 text-primary mt-0.5 shrink-0" strokeWidth={2} />
-                <span className={cn("text-foreground/80", b.includes('lojas') && isYearly && 'text-primary font-semibold')} style={{ fontSize: '13px', lineHeight: '1.35' }}>{b}</span>
+                <span className={cn("text-foreground/80", (b.includes('lojas') || b.includes('prioritário')) && 'text-primary font-semibold')} style={{ fontSize: '13px', lineHeight: '1.35' }}>{b}</span>
               </div>
             ))}
           </div>
