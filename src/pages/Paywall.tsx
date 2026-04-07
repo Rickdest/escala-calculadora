@@ -82,8 +82,8 @@ export default function Paywall() {
             onClick={() => setPlan('monthly')}
             className={cn(
               'flex-1 rounded-[10px] transition-all',
-              !isYearly
-                ? 'bg-card text-foreground border border-border/60 shadow-sm'
+            !isYearly
+                ? 'bg-primary text-primary-foreground shadow-sm'
                 : 'text-muted-foreground border border-transparent'
             )}
             style={{ padding: '10px 0', fontSize: '13px', fontWeight: 600 }}
