@@ -1,23 +1,52 @@
 
 
-## Plano: Corrigir "Dados insuficientes" na aba IA & Ação
+## Plano: Bloquear acesso para quem não comprou
 
-### Problema
-Mesmo com preço (49,9) e custo (20) preenchidos na seção "Economia por Venda", o card "Status ROAS Real vs Empate" mostra "Dados insuficientes para classificação" e exibe um botão "Vincular Produto" redundante. Isso acontece porque a classificação depende de `empateResult`, que só é calculado quando há um `product` vinculado. Os valores digitados manualmente não alimentam os cálculos de classificação.
+### Causa raiz
+
+O trigger `handle_new_user_trial()` no banco de dados cria automaticamente uma assinatura com `status = 'active'` e `plan = 'monthly'` para **todo novo usuário** que se cadastra. Isso significa que qualquer pessoa que cria uma conta recebe acesso completo imediatamente, sem precisar pagar.
 
 ### Solução
 
-Usar `costFormSalePrice` e `costFormCost` como fallback para calcular `roasEmpate` quando não há produto vinculado, permitindo que todos os cards de IA funcionem com dados manuais.
+1. **Alterar o trigger `handle_new_user_trial()`** para criar a assinatura com `status = 'free'` e `plan = 'free'` em vez de `active`/`monthly`. Assim, novos usuários caem no paywall e só ganham acesso após pagamento via Cakto.
 
-### Mudanças em `src/components/roas/AdsDetailFullView.tsx`
+2. **Limpar assinaturas indevidas já criadas**: executar um UPDATE nas assinaturas que foram criadas pelo trigger (status `active`, plan `monthly`) mas que **não têm** um `cakto_order_id` — ou seja, nunca pagaram. Essas serão alteradas para `free`/`free`.
 
-1. **Fallback no `empateResult`** (linha ~650): quando `product` é null mas `costFormSalePrice > 0` e `costFormCost > 0`, construir um produto sintético com esses valores e calcular `calcularRoasEmpate` com ele e o `config` da loja.
+### Mudanças
 
-2. **Remover botão "Vincular Produto" redundante** do card de Status (linha ~1182): já existe esse botão na seção superior do detalhe; o duplicado dentro do "dados insuficientes" confunde.
+**Migration SQL:**
+```sql
+-- 1. Corrigir o trigger para novos cadastros
+CREATE OR REPLACE FUNCTION public.handle_new_user_trial()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+BEGIN
+  INSERT INTO public.subscriptions (user_id, email, status, plan)
+  VALUES (
+    NEW.id,
+    COALESCE(NEW.email, ''),
+    'free',
+    'free'
+  )
+  ON CONFLICT DO NOTHING;
+  RETURN NEW;
+END;
+$$;
 
-3. **Trocar mensagem fallback**: em vez de "Dados insuficientes", mostrar "Preencha preço e custo abaixo para ver a classificação" — orientando o usuário a usar a seção Economia por Venda.
+-- 2. Revogar acesso de quem nunca pagou
+UPDATE public.subscriptions
+SET status = 'free', plan = 'free', updated_at = now()
+WHERE status = 'active'
+  AND plan = 'monthly'
+  AND cakto_order_id IS NULL
+  AND cakto_subscription_id IS NULL;
+```
 
 ### Resultado
-- Com preço e custo preenchidos, classificação, meta ROAS e diagnóstico IA funcionam mesmo sem produto vinculado
-- UX mais clara: o usuário sabe o que fazer para ativar a análise
+- Novos cadastros caem direto no paywall
+- Usuários que já pagaram via Cakto (possuem `cakto_order_id`) não são afetados
+- Acesso só é liberado quando o webhook da Cakto confirma o pagamento
 
