@@ -1,4 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
+import { calcularRoasEmpate, classificarAnuncio } from '@/lib/adsLogic';
+import { Product } from '@/types/store';
 import { useSearchParams } from 'react-router-dom';
 import { ApiAdsDashboard } from './ApiAdsDashboard';
 import { useStore } from '@/contexts/StoreContext';
