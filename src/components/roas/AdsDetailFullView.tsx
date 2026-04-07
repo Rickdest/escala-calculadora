@@ -1390,13 +1390,8 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                   }
                 };
 
-                const triggerAutoSave = (newSalePrice: number, newCostPrice: number) => {
-                  if (!product) return;
-                  if (autoSaveTimer) clearTimeout(autoSaveTimer);
-                  const timer = setTimeout(() => {
-                    handleSaveCosts(newSalePrice, newCostPrice);
-                  }, 1500);
-                  setAutoSaveTimer(timer);
+                const triggerAutoSave = (_newSalePrice: number, _newCostPrice: number) => {
+                  // No-op: save is now manual via button
                 };
 
                 return (
