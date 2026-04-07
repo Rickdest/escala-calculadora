@@ -1,21 +1,17 @@
 
 
-## Plano: Corrigir segredo do webhook Cakto
+## Plano: Toggle laranja no Paywall
 
-### Problema
-O `CAKTO_WEBHOOK_SECRET` salvo na edge function **não corresponde** ao segredo configurado no painel da Cakto (`f6a2ad49-5818-49f8-bb7f-7f1527483f71`). Todas as requisições da Cakto estão retornando 401, e por isso nenhum pagamento foi processado automaticamente.
+Alterar o toggle Mensal/Anual para que o botão selecionado tenha fundo laranja (`bg-primary`) com texto branco, em vez do estilo atual com `bg-card` e borda.
 
-### Solução
-Atualizar o segredo `CAKTO_WEBHOOK_SECRET` para o valor correto que aparece na Cakto: `f6a2ad49-5818-49f8-bb7f-7f1527483f71`.
+### Mudança em `src/pages/Paywall.tsx`
 
-### Ação
-- Usar a ferramenta `update_secret` para atualizar `CAKTO_WEBHOOK_SECRET` com o valor correto.
+No toggle, trocar as classes do botão ativo:
+- **Antes**: `bg-card text-foreground border border-border/60 shadow-sm`
+- **Depois**: `bg-primary text-primary-foreground shadow-sm`
 
-### Nenhuma mudança de código necessária
-O código da edge function está correto. O problema é exclusivamente a divergência do segredo.
+E o botão inativo mantém o estilo transparente atual.
 
-### Resultado esperado
-- Webhooks da Cakto passarão a ser aceitos (200 OK)
-- Pagamentos futuros ativarão assinaturas automaticamente
-- A tabela `subscription_events` passará a registrar eventos
+### Arquivo modificado
+- `src/pages/Paywall.tsx` (apenas as classes CSS do toggle)
 
