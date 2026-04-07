@@ -1,4 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
+import { calcularRoasEmpate, classificarAnuncio } from '@/lib/adsLogic';
+import { Product } from '@/types/store';
 import { useSearchParams } from 'react-router-dom';
 import { ApiAdsDashboard } from './ApiAdsDashboard';
 import { useStore } from '@/contexts/StoreContext';
@@ -265,17 +267,13 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
     let margemContribuicao: number | null = null;
 
     if (matchedProduct && campaign.expense > 0) {
-      const salePrice = (matchedProduct as any).salePrice || 0;
-      const costPrice = (matchedProduct as any).costPrice || 0;
-      const margin = salePrice > 0 ? ((salePrice - costPrice) / salePrice) : 0;
-      margemContribuicao = margin * 100;
-      roasEmpate = margin > 0 ? (1 / margin) : null;
+      const empResult = calcularRoasEmpate(matchedProduct as unknown as Product, currentStore.config);
+      margemContribuicao = empResult.margemContribuicao;
+      roasEmpate = empResult.roasEmpate !== Infinity ? empResult.roasEmpate : null;
       const roas = campaign.roas || 0;
       if (roasEmpate !== null) {
-        if (roas >= roasEmpate * 1.5) classificacao = 'LUCRATIVO';
-        else if (roas >= roasEmpate) classificacao = 'MARGEM_APERTADA';
-        else if (roas >= roasEmpate * 0.5) classificacao = 'ABAIXO_EMPATE';
-        else classificacao = 'PREJUIZO';
+        const cls = classificarAnuncio(roas, roasEmpate);
+        classificacao = cls.classificacao;
       }
     }
 
