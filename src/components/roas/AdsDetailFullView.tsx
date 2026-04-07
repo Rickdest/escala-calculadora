@@ -648,9 +648,17 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
 
   // ═══ Calculations ═══
   const empateResult = useMemo(() => {
-    if (!product || !config) return null;
-    return calcularRoasEmpate(product, config);
-  }, [product, config]);
+    if (product && config) return calcularRoasEmpate(product, config);
+    if (!product && config && costFormSalePrice > 0 && costFormCost > 0) {
+      const syntheticProduct = {
+        salePrice: costFormSalePrice,
+        costPrice: costFormCost,
+        packagingCost: 0,
+      } as any;
+      return calcularRoasEmpate(syntheticProduct, config);
+    }
+    return null;
+  }, [product, config, costFormSalePrice, costFormCost]);
 
   const roasEmpate = empateResult?.roasEmpate ?? (ad.roas_empate || null);
   const roasSaudavel = roasEmpate && roasEmpate > 0 && roasEmpate !== Infinity ? parseFloat((roasEmpate / 0.61).toFixed(2)) : null;
