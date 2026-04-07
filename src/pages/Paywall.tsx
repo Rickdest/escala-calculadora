@@ -95,7 +95,7 @@ export default function Paywall() {
             className={cn(
               'flex-1 rounded-[10px] transition-all relative',
               isYearly
-                ? 'bg-card text-foreground border border-border/60 shadow-sm'
+                ? 'bg-primary text-primary-foreground shadow-sm'
                 : 'text-muted-foreground border border-transparent'
             )}
             style={{ padding: '10px 0', fontSize: '13px', fontWeight: 600 }}
