@@ -370,7 +370,15 @@ function GraficoTendencia({ data, operationLog }: { data: ExcelPerformanceData; 
                 yAxisId="left"
                 stroke="hsl(var(--warning))"
                 strokeDasharray="4 4"
-                strokeWidth={1.5}
+                strokeWidth={1}
+                opacity={0.5}
+                label={{
+                  value: '⚙',
+                  position: 'top',
+                  fill: 'hsl(var(--warning))',
+                  fontSize: 14,
+                  offset: 5,
+                }}
               />
             ))}
             <Area yAxisId="left" type="monotone" dataKey="impressoes" fill="hsl(var(--primary) / 0.1)" stroke="hsl(var(--primary))" strokeWidth={2} name="impressoes" />
@@ -381,7 +389,7 @@ function GraficoTendencia({ data, operationLog }: { data: ExcelPerformanceData; 
       <div className="flex items-center justify-center gap-4 text-[11px] text-text-3">
         <span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-primary inline-block rounded" /> Impressões</span>
         <span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-success inline-block rounded" /> Compradores</span>
-        <span className="flex items-center gap-1"><span className="w-3 h-0.5 bg-warning inline-block rounded border-dashed" /> Ajuste</span>
+        <span className="flex items-center gap-1">⚙ <span className="text-warning">Ajuste</span></span>
       </div>
     </div>
   );
