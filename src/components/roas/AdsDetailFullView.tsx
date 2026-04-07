@@ -1172,7 +1172,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                         <p className="text-2xl font-black font-mono tabular-nums text-text-2">{roasEmpate.toFixed(2)}</p>
                       </div>
                       <div className="text-center">
-                        <p className="text-[10px] text-text-3 uppercase font-bold">Margem Seg.</p>
+                        <p className="text-[10px] text-text-3 uppercase font-bold">Folga vs Empate</p>
                         <p className={cn('text-2xl font-black font-mono tabular-nums', roasDireto >= roasEmpate ? 'text-success' : 'text-destructive')}>
                           {roasDireto >= roasEmpate ? '+' : ''}{(((roasDireto / roasEmpate) - 1) * 100).toFixed(0)}%
                         </p>
