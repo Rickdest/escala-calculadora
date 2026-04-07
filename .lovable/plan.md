@@ -1,55 +1,23 @@
 
 
-## Plano: Corrigir margem e meta ROAS incorretas nos Ads
+## Plano: Corrigir "Dados insuficientes" na aba IA & Ação
 
-### Diagnóstico
+### Problema
+Mesmo com preço (49,9) e custo (20) preenchidos na seção "Economia por Venda", o card "Status ROAS Real vs Empate" mostra "Dados insuficientes para classificação" e exibe um botão "Vincular Produto" redundante. Isso acontece porque a classificação depende de `empateResult`, que só é calculado quando há um `product` vinculado. Os valores digitados manualmente não alimentam os cálculos de classificação.
 
-Em `AdsTab.tsx` (linhas 267-280), ao montar dados de campanhas da API, a margem e o ROAS de empate são calculados com uma **fórmula simplificada**:
+### Solução
 
-```ts
-const margin = (salePrice - costPrice) / salePrice;
-roasEmpate = 1 / margin;
-```
+Usar `costFormSalePrice` e `costFormCost` como fallback para calcular `roasEmpate` quando não há produto vinculado, permitindo que todos os cards de IA funcionem com dados manuais.
 
-Essa fórmula ignora **todos os custos operacionais**: taxa Shopee (14-20%), impostos, embalagem, comissão de afiliado, Acelera, etc. Resultado:
-- **Margem inflada** (ex: 1214% ao invés de ~12%)
-- **ROAS empate muito baixo** (ex: 1.0 ao invés de ~8)
-- **Meta ROAS errada** (1.1 ao invés de ~9)
-- **Classificação incorreta** (tudo aparece como "Lucrativo")
+### Mudanças em `src/components/roas/AdsDetailFullView.tsx`
 
-A função `calcularRoasEmpate` em `adsLogic.ts` já faz o cálculo correto usando `calcFullRoas` com todos os custos. Ela só não está sendo usada nesse trecho.
+1. **Fallback no `empateResult`** (linha ~650): quando `product` é null mas `costFormSalePrice > 0` e `costFormCost > 0`, construir um produto sintético com esses valores e calcular `calcularRoasEmpate` com ele e o `config` da loja.
 
-### Correção
+2. **Remover botão "Vincular Produto" redundante** do card de Status (linha ~1182): já existe esse botão na seção superior do detalhe; o duplicado dentro do "dados insuficientes" confunde.
 
-#### `src/components/roas/AdsTab.tsx` (linhas 267-280)
+3. **Trocar mensagem fallback**: em vez de "Dados insuficientes", mostrar "Preencha preço e custo abaixo para ver a classificação" — orientando o usuário a usar a seção Economia por Venda.
 
-Substituir o cálculo simplificado por `calcularRoasEmpate(product, config)`:
-
-1. Importar `calcularRoasEmpate` de `@/lib/adsLogic`
-2. Obter `currentStore.config` (já disponível via `useStore`)
-3. Trocar o bloco de cálculo manual pelo resultado de `calcularRoasEmpate(matchedProduct, currentStore.config)`
-
-**Antes:**
-```ts
-const margin = salePrice > 0 ? ((salePrice - costPrice) / salePrice) : 0;
-margemContribuicao = margin * 100;
-roasEmpate = margin > 0 ? (1 / margin) : null;
-```
-
-**Depois:**
-```ts
-const empResult = calcularRoasEmpate(matchedProduct as Product, currentStore.config);
-margemContribuicao = empResult.margemContribuicao;
-roasEmpate = empResult.roasEmpate !== Infinity ? empResult.roasEmpate : null;
-```
-
-A classificação subsequente (linhas 274-279) continua funcionando com o `roasEmpate` correto.
-
-### Arquivo modificado
-- `src/components/roas/AdsTab.tsx`
-
-### Resultado esperado
-- Margem exibida reflete custos reais (Shopee, impostos, embalagem, etc.)
-- Meta de ROAS condiz com a realidade operacional
-- Classificação dos anúncios fica correta
+### Resultado
+- Com preço e custo preenchidos, classificação, meta ROAS e diagnóstico IA funcionam mesmo sem produto vinculado
+- UX mais clara: o usuário sabe o que fazer para ativar a análise
 
