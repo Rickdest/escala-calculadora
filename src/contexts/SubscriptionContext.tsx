@@ -25,7 +25,7 @@ const STATUS_MAP: Record<string, SubscriptionStatus> = {
 };
 
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
-  const { user, session, loading: authLoading } = useAuth();
+  const { user, session, loading: authLoading, authReady } = useAuth();
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<SubscriptionStatus>('loading');
   const [plan, setPlan] = useState('free');
@@ -37,12 +37,14 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const hasResolved = useRef(false);
 
   const fetchSubscription = useCallback(async (noCache = false, retryCount = 0) => {
-    if (authLoading) return;
+    // Don't do anything until auth is fully ready
+    if (!authReady || authLoading) return;
 
+    // No user or no valid token — set free immediately
     if (!userId || !accessToken) {
       resolvedUserId.current = null;
       lastKnownStatus.current = null;
-      hasResolved.current = false;
+      hasResolved.current = true;
       setStatus('free');
       setPlan('free');
       setLoading(false);
@@ -91,14 +93,14 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       hasResolved.current = true;
       setLoading(false);
     }
-  }, [accessToken, authLoading, userId]);
+  }, [accessToken, authLoading, authReady, userId]);
 
   useEffect(() => {
     fetchSubscription();
   }, [fetchSubscription]);
 
   const isActive = status === 'active';
-  const effectiveLoading = loading || (!!userId && (!hasResolved.current || resolvedUserId.current !== userId));
+  const effectiveLoading = loading || (!authReady) || (!!userId && (!hasResolved.current || resolvedUserId.current !== userId));
 
   const refreshSubscription = useCallback(async () => {
     await fetchSubscription(true);
