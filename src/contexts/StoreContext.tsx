@@ -49,7 +49,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   } = useQuery({
     queryKey,
     queryFn: () => fetchStoresAndProducts(user!.id),
-    enabled: !!user,
+    enabled: authReady && !!user,
     staleTime: 5 * 60 * 1000,
     retry: 1,
     meta: { errorMessage: 'Erro ao carregar dados da nuvem' },

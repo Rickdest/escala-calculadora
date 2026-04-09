@@ -52,9 +52,10 @@ function PageLoader() {
 }
 
 function ErrorRetry({ onRetry }: { onRetry: () => void }) {
+  const { signOut } = useAuth();
+
   const handleLogout = async () => {
-    const { supabase } = await import('@/integrations/supabase/client');
-    await supabase.auth.signOut();
+    await signOut();
     window.location.href = '/auth';
   };
 
@@ -78,15 +79,22 @@ function ErrorRetry({ onRetry }: { onRetry: () => void }) {
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, session, loading, authReady } = useAuth();
   const { status, loading: subLoading, refreshSubscription } = useSubscription();
 
-  if (loading || subLoading || status === 'loading') {
+  // Wait for auth to fully resolve
+  if (!authReady || loading) {
     return <PageLoader />;
   }
 
-  if (!user) {
+  // No valid session — go to auth
+  if (!user || !session?.access_token) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Subscription still loading
+  if (subLoading || status === 'loading') {
+    return <PageLoader />;
   }
 
   // Technical error — show retry, NOT paywall
@@ -103,14 +111,14 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function PaywallRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, session, loading, authReady } = useAuth();
   const { status, loading: subLoading } = useSubscription();
 
-  if (loading || subLoading || status === 'loading') {
+  if (!authReady || loading || subLoading || status === 'loading') {
     return <PageLoader />;
   }
 
-  if (!user) {
+  if (!user || !session?.access_token) {
     return <Navigate to="/auth" replace />;
   }
 
@@ -122,13 +130,14 @@ function PaywallRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AuthRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, session, loading, authReady } = useAuth();
 
-  if (loading) {
+  if (!authReady || loading) {
     return <PageLoader />;
   }
 
-  if (user) {
+  // Only redirect if we have a real valid session, not just a cached user
+  if (user && session?.access_token) {
     return <Navigate to="/" replace />;
   }
 
@@ -136,10 +145,10 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, authReady } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
 
-  if (authLoading || adminLoading) {
+  if (!authReady || authLoading || adminLoading) {
     return <PageLoader />;
   }
 
