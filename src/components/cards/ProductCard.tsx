@@ -207,7 +207,7 @@ export function ProductCard({
       </div>
 
       {/* ── PLATFORMS: 2×2 grid with best highlighted ── */}
-      {config && (
+      {config && product.outrosCanais && Object.keys(product.outrosCanais).length > 0 && (
         <div className="mt-3">
           <p className="label-metric mb-1.5">
             Margem em outras plataformas
