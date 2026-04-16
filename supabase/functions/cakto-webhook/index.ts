@@ -34,12 +34,13 @@ function maskEmail(email: string): string {
 }
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "https://pay.cakto.com.br",
+  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-webhook-secret, x-signature",
 };
 
 Deno.serve(async (req) => {
+  console.log(">>> cakto-webhook hit:", req.method, new Date().toISOString());
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
