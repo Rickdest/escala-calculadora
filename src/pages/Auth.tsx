@@ -18,6 +18,8 @@ function traduzirErro(mensagem: string): string {
     return 'Confirme seu email antes de entrar.';
   if (mensagem.includes('Password should be'))
     return 'Senha deve ter no mínimo 8 caracteres.';
+  if (mensagem.toLowerCase().includes('weak') || mensagem.toLowerCase().includes('pwned') || mensagem.toLowerCase().includes('known to be weak') || mensagem.toLowerCase().includes('compromised'))
+    return 'Esta senha é muito comum ou foi vazada em outros sites. Use uma senha única com letras, números e símbolos.';
   if (mensagem.includes('after') && mensagem.includes('seconds'))
     return 'Aguarde alguns segundos antes de tentar novamente.';
   if (mensagem.includes('rate limit') || mensagem.includes('too many requests'))
@@ -61,10 +63,30 @@ export default function Auth() {
     }
   };
 
+  const isWeakPassword = (pwd: string): string | null => {
+    if (pwd.length < 8) return 'Senha deve ter no mínimo 8 caracteres.';
+    if (/^\d+$/.test(pwd)) return 'Senha não pode ser só números. Adicione letras e símbolos.';
+    if (/^[a-zA-Z]+$/.test(pwd)) return 'Senha não pode ser só letras. Adicione números e símbolos.';
+    const lower = pwd.toLowerCase();
+    const blocked = ['senha', 'password', '12345678', '123456789', 'qwerty', 'abc123', 'skalify'];
+    if (blocked.some((b) => lower.includes(b))) return 'Esta senha é muito comum. Escolha uma senha única e mais forte.';
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent, isLogin: boolean) => {
     e.preventDefault();
-    setLoading(true);
     setErrorMessage('');
+
+    if (!isLogin) {
+      const weak = isWeakPassword(password);
+      if (weak) {
+        setErrorMessage(weak);
+        toast.error(weak, { duration: 4000 });
+        return;
+      }
+    }
+
+    setLoading(true);
     try {
       if (isLogin) {
         const { error } = await signIn(email, password);
@@ -78,14 +100,19 @@ export default function Auth() {
       } else {
         const { error, data } = await signUp(email, password);
         if (error) {
+          const msg = traduzirErro(error.message);
           if (error.message.includes('already registered') || error.message.includes('User already registered')) {
-            setErrorMessage(traduzirErro(error.message));
+            setErrorMessage(msg);
+            toast.error(msg, { duration: 4000 });
             setActiveTab('login');
           } else {
-            setErrorMessage(traduzirErro(error.message));
+            setErrorMessage(msg);
+            toast.error(msg, { duration: 5000 });
           }
         } else if (data?.user?.identities?.length === 0) {
-          setErrorMessage('Este email já está cadastrado. Faça login.');
+          const msg = 'Este email já está cadastrado. Faça login.';
+          setErrorMessage(msg);
+          toast.error(msg, { duration: 4000 });
           setActiveTab('login');
         } else {
           toast.success('Conta criada!', { description: 'Verifique seu email para confirmar o cadastro.' });
@@ -185,7 +212,7 @@ export default function Auth() {
                   autoComplete={isLogin ? 'current-password' : 'new-password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="mínimo 8 caracteres"
+                  placeholder={isLogin ? 'sua senha' : 'mín. 8 caracteres, letras+números+símbolos'}
                   className="w-full h-12 rounded-lg px-3 pr-11 text-[15px] focus:outline-none transition-colors"
                   style={{
                     background: '#1a1a1a',
@@ -206,6 +233,11 @@ export default function Auth() {
                   {showPassword ? <EyeOff className="w-[18px] h-[18px]" /> : <Eye className="w-[18px] h-[18px]" />}
                 </button>
               </div>
+              {!isLogin && (
+                <p className="text-[11px] mt-1.5 leading-snug" style={{ color: '#666666' }}>
+                  Evite senhas comuns como "12345678" ou "senha123" — elas serão rejeitadas por segurança.
+                </p>
+              )}
             </div>
 
             {/* Terms checkbox - signup only */}
