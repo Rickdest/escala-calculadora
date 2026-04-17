@@ -18,6 +18,8 @@ function traduzirErro(mensagem: string): string {
     return 'Confirme seu email antes de entrar.';
   if (mensagem.includes('Password should be'))
     return 'Senha deve ter no mínimo 8 caracteres.';
+  if (mensagem.toLowerCase().includes('weak') || mensagem.toLowerCase().includes('pwned') || mensagem.toLowerCase().includes('known to be weak') || mensagem.toLowerCase().includes('compromised'))
+    return 'Esta senha é muito comum ou foi vazada em outros sites. Use uma senha única com letras, números e símbolos.';
   if (mensagem.includes('after') && mensagem.includes('seconds'))
     return 'Aguarde alguns segundos antes de tentar novamente.';
   if (mensagem.includes('rate limit') || mensagem.includes('too many requests'))
