@@ -233,6 +233,11 @@ export default function Auth() {
                   {showPassword ? <EyeOff className="w-[18px] h-[18px]" /> : <Eye className="w-[18px] h-[18px]" />}
                 </button>
               </div>
+              {!isLogin && (
+                <p className="text-[11px] mt-1.5 leading-snug" style={{ color: '#666666' }}>
+                  Evite senhas comuns como "12345678" ou "senha123" — elas serão rejeitadas por segurança.
+                </p>
+              )}
             </div>
 
             {/* Terms checkbox - signup only */}
