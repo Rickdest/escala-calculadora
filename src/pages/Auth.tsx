@@ -212,7 +212,7 @@ export default function Auth() {
                   autoComplete={isLogin ? 'current-password' : 'new-password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="mínimo 8 caracteres"
+                  placeholder={isLogin ? 'sua senha' : 'mín. 8 caracteres, letras+números+símbolos'}
                   className="w-full h-12 rounded-lg px-3 pr-11 text-[15px] focus:outline-none transition-colors"
                   style={{
                     background: '#1a1a1a',
