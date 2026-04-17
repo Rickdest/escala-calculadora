@@ -1,41 +1,36 @@
 
 
-## Diagnóstico: Webhook Cakto configurado mas nunca chamado
+## Diagnóstico: 422 weak_password (HIBP)
 
-### O que encontrei
-1. A edge function `cakto-webhook` **está deployada e funcional** — retornou 400 corretamente para payload inválido de teste
-2. **Zero chamadas** foram recebidas da Cakto — nunca, em nenhum momento
-3. A URL no painel Cakto está correta: `https://ymliqayraprjwdcesvqc.supabase.co/functions/v1/cakto-webhook`
-4. O secret `CAKTO_WEBHOOK_SECRET` existe no sistema
+Reproduzi o erro chamando `/auth/v1/signup` direto:
+- Senha `123456` → `422 weak_password / pwned`
+- Senha `password123` → `422 weak_password / pwned`
+- Senha forte → `200 OK` (signup funciona)
 
-### Causa provável
-Algumas plataformas de pagamento (incluindo a Cakto) enviam um **preflight OPTIONS** ou verificam CORS antes de enviar o webhook. O CORS atual está restrito a `https://pay.cakto.com.br`, o que pode bloquear chamadas vindas de outro domínio/servidor da Cakto. Além disso, os headers permitidos são limitados.
+O Supabase está com **Leaked Password Protection (HIBP)** ativo, rejeitando qualquer senha que já apareceu em vazamentos. A mensagem volta em inglês: *"Password is known to be weak and easy to guess"*.
 
-### Ações necessárias
+A função `traduzirErro` em `src/pages/Auth.tsx` **não trata** esse erro nem `error_code: weak_password`, então cai no fallback genérico "Erro ao processar. Tente novamente." — e o usuário fica perdido, tentando a mesma senha várias vezes (vide os 10+ POSTs em sequência nos logs do `app.skalify.com.br`).
 
-**Ação manual sua (verificar no painel Cakto):**
-- Confirme que o secret no painel Cakto (`f6a2ad49-5818-49f8-bb7f-7f1527483f71` na imagem) é **idêntico** ao valor salvo em `CAKTO_WEBHOOK_SECRET`. Se não for, atualize o secret no sistema.
-- Verifique se o webhook está **ativo/salvo** na Cakto — algumas plataformas exigem clicar "Salvar" E "Ativar"
-- Tente disparar um **webhook de teste** pelo painel Cakto, se disponível
+## Solução
 
-**Mudanças no código — `supabase/functions/cakto-webhook/index.ts`:**
-
-1. **Abrir CORS para `*`** — Webhooks server-to-server não deveriam precisar de CORS, mas abrir garante que nenhum preflight seja bloqueado:
-```typescript
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-webhook-secret, x-signature",
-};
+### 1. Tratar o erro `weak_password` em `src/pages/Auth.tsx`
+Adicionar na função `traduzirErro`:
+```ts
+if (mensagem.includes('weak') || mensagem.includes('pwned') || mensagem.includes('known to be weak'))
+  return 'Esta senha é muito comum e foi vazada em outros sites. Use uma senha única com letras, números e símbolos.';
 ```
 
-2. **Adicionar log no início absoluto** (antes de qualquer validação) para confirmar que chamadas chegam:
-```typescript
-Deno.serve(async (req) => {
-  console.log(">>> cakto-webhook hit:", req.method, new Date().toISOString());
-```
+### 2. Melhorar UX do campo de senha (signup)
+- Trocar placeholder de "mínimo 8 caracteres" para "mín. 8 caracteres, mistura letras+números+símbolos"
+- Adicionar texto auxiliar abaixo do campo no modo signup: "Evite senhas comuns como '12345678' ou 'senha123' — elas serão rejeitadas por segurança."
+- Aumentar `minLength` para 8 (já está) e validar client-side antes de enviar: rejeitar se for só números, só letras, ou contiver "senha"/"password"/"123456".
 
-3. **Re-deploy** a função após as mudanças
+### 3. Mostrar erro em toast também (signup)
+Hoje só mostra o `errorMessage` no banner vermelho do topo, que some em 4s. Adicionar `toast.error(msg)` no catch do signup (igual já é feito no signIn) para garantir visibilidade.
 
 ### Arquivo modificado
-- `supabase/functions/cakto-webhook/index.ts` (2 pontos: CORS headers e log inicial)
+- `src/pages/Auth.tsx` (3 mudanças pequenas: tradução do erro, dica de senha forte, toast no signup)
+
+### Resumo
+Não é bug do fluxo — é mensagem de erro mal traduzida. Após o fix, o usuário vai ver claramente "Esta senha é muito comum e foi vazada..." e saberá criar uma mais forte.
 
