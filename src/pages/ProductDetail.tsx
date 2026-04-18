@@ -8,25 +8,11 @@ import { cn, getMarginStatus } from '@/lib/utils';
 import { Slider } from '@/components/ui/slider';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProductForm } from '@/components/forms/ProductForm';
+import { calcOutrosCanais } from '@/lib/outrosCanaisUtils';
 import { toast } from 'sonner';
 
 const fmt = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
-
-const PLATFORM_FEES = [
-  { id: 'shopee', name: 'Shopee', feePercent: 20, feeFixed: 4 },
-  { id: 'amazon', name: 'Amazon', feePercent: 15, feeFixed: 0 },
-  { id: 'shein', name: 'Shein', feePercent: 20, feeFixed: 0 },
-  { id: 'ml', name: 'Mercado Livre', feePercent: 14, feeFixed: 0 },
-  { id: 'tiktok', name: 'TikTok Shop', feePercent: 12, feeFixed: 4 },
-];
-
-function calcPlatformMargin(sp: number, cp: number, pkg: number, fp: number, ff: number, tax: number) {
-  const fee = sp * (fp / 100) + ff;
-  const t = sp * (tax / 100);
-  const net = sp - cp - pkg - fee - t;
-  return sp > 0 ? (net / sp) * 100 : 0;
-}
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
@@ -63,13 +49,18 @@ export default function ProductDetail() {
   const marginDiff = calculation.marginDifference;
   const fee = getShopeeFeeForPrice(product.salePrice);
 
-  const allPlatformMargins = PLATFORM_FEES.map(p => ({
-    ...p,
-    margin: calcPlatformMargin(product.salePrice, product.costPrice, product.packagingCost, p.feePercent, p.feeFixed, config.taxes ?? 0),
-  })).sort((a, b) => b.margin - a.margin);
-
-  const bestPlatform = allPlatformMargins[0];
-  const shopeeMargin = allPlatformMargins.find(p => p.id === 'shopee');
+  // Canais cadastrados pelo usuário em "Outros Canais" (cálculo real por canal)
+  const outrosCanaisResults = calcOutrosCanais(product.outrosCanais ?? {}, config.taxes ?? 0);
+  const shopeeChannel = {
+    key: 'shopee',
+    label: 'Shopee',
+    margin: calculation.realMargin,
+    netProfit: calculation.netProfit,
+    salePrice: product.salePrice,
+  };
+  const allChannels = [shopeeChannel, ...outrosCanaisResults].sort((a, b) => b.margin - a.margin);
+  const bestChannel = allChannels[0];
+  const hasOutrosCanais = outrosCanaisResults.length > 0;
 
   const costItems = [
     { label: 'Custo do produto', value: product.costPrice, dot: 'bg-blue-400' },
@@ -231,34 +222,50 @@ export default function ProductDetail() {
           </div>
         )}
 
-        {/* Channels */}
+        {/* Channels — somente canais com dados reais cadastrados */}
         <div className="surface-card p-5">
           <p className="section-label mb-3">Comparativo de Canais</p>
-          <div className="grid grid-cols-2 gap-2">
-            {allPlatformMargins.map(p => (
-              <div key={p.id} className={cn(
-                'bg-secondary/50 border rounded-lg px-3 py-2.5 flex items-center justify-between',
-                p.id === bestPlatform?.id ? 'border-primary/25' : 'border-border'
-              )}>
-                <span className="text-small text-muted-foreground flex items-center gap-1">
-                  {p.id === bestPlatform?.id && <span className="text-primary text-micro">🏆</span>}
-                  {p.name}
-                </span>
-                <span className={cn('font-mono text-small font-bold',
-                  p.margin >= config.desiredMargin ? 'text-success' :
-                  p.margin >= 0 ? 'text-foreground' : 'text-destructive'
-                )}>
-                  {p.margin.toFixed(1)}%
-                </span>
+          {hasOutrosCanais ? (
+            <>
+              <div className="grid grid-cols-2 gap-2">
+                {allChannels.map(c => (
+                  <div key={c.key} className={cn(
+                    'bg-secondary/50 border rounded-lg px-3 py-2.5 flex items-center justify-between',
+                    c.key === bestChannel?.key ? 'border-primary/25' : 'border-border'
+                  )}>
+                    <span className="text-small text-muted-foreground flex items-center gap-1">
+                      {c.key === bestChannel?.key && <span className="text-primary text-micro">🏆</span>}
+                      {c.label}
+                    </span>
+                    <span className={cn('font-mono text-small font-bold',
+                      c.margin >= config.desiredMargin ? 'text-success' :
+                      c.margin >= 0 ? 'text-foreground' : 'text-destructive'
+                    )}>
+                      {c.margin.toFixed(1)}%
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          {bestPlatform && shopeeMargin && bestPlatform.id !== 'shopee' && (
-            <div className="mt-3 bg-secondary/30 border border-border rounded-lg p-3">
-              <p className="text-small font-semibold text-foreground">{bestPlatform.name} — {bestPlatform.margin.toFixed(1)}% de margem</p>
-              <p className="text-small text-muted-foreground mt-0.5">
-                {fmt(((bestPlatform.margin - shopeeMargin.margin) / 100) * product.salePrice)}/un a mais que na Shopee
+              {bestChannel && bestChannel.key !== 'shopee' && (
+                <div className="mt-3 bg-secondary/30 border border-border rounded-lg p-3">
+                  <p className="text-small font-semibold text-foreground">{bestChannel.label} — {bestChannel.margin.toFixed(1)}% de margem</p>
+                  <p className="text-small text-muted-foreground mt-0.5">
+                    {fmt(bestChannel.netProfit - calculation.netProfit)}/un a mais que na Shopee
+                  </p>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="bg-secondary/30 border border-dashed border-border rounded-lg p-4 text-center">
+              <p className="text-small text-muted-foreground mb-2">
+                Nenhum outro canal cadastrado para este produto.
               </p>
+              <button
+                onClick={() => setShowProductForm(true)}
+                className="text-small font-semibold text-primary hover:text-primary/80 transition-colors"
+              >
+                Preencher "Outros Canais" →
+              </button>
             </div>
           )}
         </div>

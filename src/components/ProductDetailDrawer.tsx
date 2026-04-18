@@ -3,27 +3,13 @@ import { X, Trash2, Share2, Pencil, Package } from 'lucide-react';
 import { Product, ProductCalculation, StoreConfig, getShopeeFeeForPrice } from '@/types/store';
 import { calculateProduct } from '@/lib/calculateProduct';
 import { calcFullRoas } from '@/lib/roasUtils';
+import { calcOutrosCanais } from '@/lib/outrosCanaisUtils';
 import { cn, getMarginStatus } from '@/lib/utils';
 import { toast } from 'sonner';
 import { Slider } from '@/components/ui/slider';
 
 const fmt = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
-
-const PLATFORM_FEES = [
-  { id: 'shopee', name: 'Shopee', feePercent: 20, feeFixed: 4 },
-  { id: 'amazon', name: 'Amazon', feePercent: 15, feeFixed: 0 },
-  { id: 'shein', name: 'Shein', feePercent: 20, feeFixed: 0 },
-  { id: 'ml', name: 'Mercado Livre', feePercent: 14, feeFixed: 0 },
-  { id: 'tiktok', name: 'TikTok Shop', feePercent: 12, feeFixed: 4 },
-];
-
-function calcPlatformMargin(sp: number, cp: number, pkg: number, fp: number, ff: number, tax: number) {
-  const fee = sp * (fp / 100) + ff;
-  const t = sp * (tax / 100);
-  const net = sp - cp - pkg - fee - t;
-  return sp > 0 ? (net / sp) * 100 : 0;
-}
 
 interface ProductDetailDrawerProps {
   product: Product;
@@ -58,13 +44,19 @@ export function ProductDetailDrawer({
   const editCalc = useMemo(() => calculateProduct(product, config), [product, config]);
   const editRoas = useMemo(() => calcFullRoas(product.salePrice, product.costPrice, config, product.packagingCost), [product, config]);
 
-  const allPlatformMargins = useMemo(() => {
-    const taxes = config.taxes ?? 0;
-    return PLATFORM_FEES.map(p => ({
-      ...p,
-      margin: calcPlatformMargin(product.salePrice, product.costPrice, product.packagingCost, p.feePercent, p.feeFixed, taxes),
-    })).sort((a, b) => b.margin - a.margin);
-  }, [product, config]);
+  // Canais cadastrados pelo usuário em "Outros Canais" (cálculo real por canal)
+  const { allChannels, bestChannel, hasOutrosCanais } = useMemo(() => {
+    const outros = calcOutrosCanais(product.outrosCanais ?? {}, config.taxes ?? 0);
+    const shopee = {
+      key: 'shopee',
+      label: 'Shopee',
+      margin: editCalc.realMargin,
+      netProfit: editCalc.netProfit,
+      salePrice: product.salePrice,
+    };
+    const all = [shopee, ...outros].sort((a, b) => b.margin - a.margin);
+    return { allChannels: all, bestChannel: all[0], hasOutrosCanais: outros.length > 0 };
+  }, [product, config, editCalc]);
 
   const projection = useMemo(() => {
     const revenue = product.salePrice * monthlySales;
@@ -78,8 +70,6 @@ export function ProductDetailDrawer({
   const status = getMarginStatus(editCalc.realMargin);
   const fee = getShopeeFeeForPrice(product.salePrice);
   const marginDiff = editCalc.marginDifference;
-  const bestPlatform = allPlatformMargins[0];
-  const shopeeMargin = allPlatformMargins.find(p => p.id === 'shopee');
 
   const statusBadge = (() => {
     if (editCalc.realMargin < 0) return { text: '✕ Prejuízo', cls: 'bg-destructive/10 text-destructive border-destructive/30' };
@@ -223,37 +213,53 @@ export function ProductDetailDrawer({
             </div>
           )}
 
-          {/* Margem por Canal */}
+          {/* Comparativo de Canais — só canais cadastrados */}
           <div className="border-t border-border px-4 py-3">
-            <p className="section-label mb-2.5">Margem em Outras Plataformas</p>
-            <div className="grid grid-cols-2 gap-1.5">
-              {allPlatformMargins.map(p => (
-                <div key={p.id} className={cn(
-                  'bg-secondary/50 border rounded-lg px-2.5 py-2 flex items-center justify-between',
-                  p.id === bestPlatform?.id ? 'border-primary/25' : 'border-border'
-                )}>
-                  <span className="text-small text-muted-foreground flex items-center gap-1">
-                    {p.id === bestPlatform?.id && <span className="text-primary text-micro">★</span>}
-                    {p.name}
-                  </span>
-                  <span className={cn('font-mono text-small font-bold',
-                    p.margin >= config.desiredMargin ? 'text-success' :
-                    p.margin >= 0 ? 'text-foreground' : 'text-destructive'
-                  )}>
-                    {p.margin.toFixed(1)}%
-                  </span>
+            <p className="section-label mb-2.5">Comparativo de Canais</p>
+            {hasOutrosCanais ? (
+              <>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {allChannels.map(c => (
+                    <div key={c.key} className={cn(
+                      'bg-secondary/50 border rounded-lg px-2.5 py-2 flex items-center justify-between',
+                      c.key === bestChannel?.key ? 'border-primary/25' : 'border-border'
+                    )}>
+                      <span className="text-small text-muted-foreground flex items-center gap-1">
+                        {c.key === bestChannel?.key && <span className="text-primary text-micro">★</span>}
+                        {c.label}
+                      </span>
+                      <span className={cn('font-mono text-small font-bold',
+                        c.margin >= config.desiredMargin ? 'text-success' :
+                        c.margin >= 0 ? 'text-foreground' : 'text-destructive'
+                      )}>
+                        {c.margin.toFixed(1)}%
+                      </span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            {bestPlatform && shopeeMargin && (
-              <div className="mt-3 bg-secondary/50 border border-border rounded-input p-3">
-                <p className="label-metric mb-1.5">🏆 Melhor canal</p>
-                <p className="text-body font-semibold text-foreground">{bestPlatform.name} — {bestPlatform.margin.toFixed(1)}% de margem</p>
-                {bestPlatform.id !== 'shopee' && (
-                  <p className="text-small text-muted-foreground mt-0.5">
-                    {fmt(((bestPlatform.margin - shopeeMargin.margin) / 100) * product.salePrice)}/un a mais que na Shopee
-                  </p>
+                {bestChannel && (
+                  <div className="mt-3 bg-secondary/50 border border-border rounded-input p-3">
+                    <p className="label-metric mb-1.5">🏆 Melhor canal</p>
+                    <p className="text-body font-semibold text-foreground">{bestChannel.label} — {bestChannel.margin.toFixed(1)}% de margem</p>
+                    {bestChannel.key !== 'shopee' && (
+                      <p className="text-small text-muted-foreground mt-0.5">
+                        {fmt(bestChannel.netProfit - editCalc.netProfit)}/un a mais que na Shopee
+                      </p>
+                    )}
+                  </div>
                 )}
+              </>
+            ) : (
+              <div className="bg-secondary/30 border border-dashed border-border rounded-lg p-4 text-center">
+                <p className="text-small text-muted-foreground mb-2">
+                  Nenhum outro canal cadastrado para este produto.
+                </p>
+                <button
+                  onClick={() => { onEdit(product); onClose(); }}
+                  className="text-small font-semibold text-primary hover:text-primary/80 transition-colors"
+                >
+                  Preencher "Outros Canais" →
+                </button>
               </div>
             )}
           </div>

@@ -3,35 +3,13 @@ import { Package, MoreVertical, Copy, Trash2, Edit, ChevronRight } from 'lucide-
 import { Product, ProductCalculation, StoreConfig } from '@/types/store';
 import { cn, getMarginStatus } from '@/lib/utils';
 import { calcFullRoas } from '@/lib/roasUtils';
+import { calcOutrosCanais } from '@/lib/outrosCanaisUtils';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-// ── Taxas por plataforma (faixa única simplificada para comparação rápida) ──
-const PLATFORM_FEES: { id: string; name: string; feePercent: number; feeFixed: number }[] = [
-  { id: 'shopee',  name: 'Shopee',        feePercent: 20,  feeFixed: 4   },
-  { id: 'amazon',  name: 'Amazon',         feePercent: 15,  feeFixed: 0   },
-  { id: 'shein',   name: 'Shein',          feePercent: 20,  feeFixed: 0   },
-  { id: 'ml',      name: 'Mercado Livre',  feePercent: 14,  feeFixed: 0   },
-  { id: 'tiktok',  name: 'TikTok Shop',    feePercent: 12,  feeFixed: 4   },
-];
-
-function calcPlatformMargin(
-  salePrice: number,
-  costPrice: number,
-  packagingCost: number,
-  feePercent: number,
-  feeFixed: number,
-  taxes: number
-): number {
-  const fee = salePrice * (feePercent / 100) + feeFixed;
-  const tax = salePrice * (taxes / 100);
-  const net = salePrice - costPrice - packagingCost - fee - tax;
-  return salePrice > 0 ? (net / salePrice) * 100 : 0;
-}
 
 interface ProductCardProps {
   product: Product;
@@ -138,23 +116,11 @@ export function ProductCard({
     </div>
   );
 
-  // ── Platform margins ──
-  const platformMargins = PLATFORM_FEES
-    .filter(p => p.id !== 'shopee')
-    .map(p => ({
-      ...p,
-      margin: calcPlatformMargin(
-        product.salePrice,
-        product.costPrice,
-        product.packagingCost,
-        p.feePercent,
-        p.feeFixed,
-        taxes
-      ),
-    }))
-    .sort((a, b) => b.margin - a.margin);
-
-  const bestPlatform = platformMargins[0];
+  // ── Comparativo de Canais — apenas canais com dados reais cadastrados ──
+  const channelResults = product.outrosCanais
+    ? calcOutrosCanais(product.outrosCanais, taxes)
+    : [];
+  const bestChannel = channelResults[0];
 
   const roasResult = config ? calcFullRoas(product.salePrice, product.costPrice, config, product.packagingCost) : null;
   const roasEmpate = roasResult?.roasEmpate;
@@ -206,26 +172,26 @@ export function ProductCard({
         </div>
       </div>
 
-      {/* ── PLATFORMS: 2×2 grid with best highlighted ── */}
-      {config && product.outrosCanais && Object.keys(product.outrosCanais).length > 0 && (
+      {/* ── COMPARATIVO DE CANAIS: só canais cadastrados em "Outros Canais" ── */}
+      {config && channelResults.length > 0 && (
         <div className="mt-3">
           <p className="label-metric mb-1.5">
-            Margem em outras plataformas
+            Comparativo de canais
           </p>
           <div className="grid grid-cols-2 gap-1.5">
-            {platformMargins.map(p => (
-              <div key={p.id} className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-secondary/50">
+            {channelResults.map(c => (
+              <div key={c.key} className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-secondary/50">
                 <span className="text-small font-medium text-foreground truncate">
-                  {p.id === bestPlatform.id && (
+                  {c.key === bestChannel?.key && (
                     <span className="text-warning mr-0.5">★</span>
                   )}
-                  {p.name}
+                  {c.label}
                 </span>
-                <span className={cn('text-small font-bold font-mono', 
-                  p.margin >= desiredMargin ? 'text-success' :
-                  p.margin >= 0 ? 'text-foreground' : 'text-destructive'
+                <span className={cn('text-small font-bold font-mono',
+                  c.margin >= desiredMargin ? 'text-success' :
+                  c.margin >= 0 ? 'text-foreground' : 'text-destructive'
                 )}>
-                  {p.margin.toFixed(1)}%
+                  {c.margin.toFixed(1)}%
                 </span>
               </div>
             ))}
