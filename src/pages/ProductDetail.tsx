@@ -385,6 +385,16 @@ export default function ProductDetail() {
         </div>
       </div>
 
+      {/* CTA flutuante mobile-only — acima do BottomNavigation */}
+      <div className="md:hidden fixed bottom-16 left-0 right-0 z-40 px-4 py-3 bg-background/95 backdrop-blur-sm border-t border-border">
+        <button
+          onClick={() => setShowProductForm(true)}
+          className="w-full h-12 rounded-xl bg-primary text-primary-foreground text-sm font-semibold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors active:scale-[0.98]"
+        >
+          <Pencil className="w-4 h-4" /> Editar produto
+        </button>
+      </div>
+
       {/* ProductForm Modal */}
       {showProductForm && (
         <ProductForm
