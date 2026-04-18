@@ -181,28 +181,38 @@ export default function ProductDetail() {
           </div>
         </div>
 
+        {/* Status badge — mobile only (desktop é inline no header) */}
+        <div className="md:hidden mb-4 -mt-2">
+          <span className={cn('inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full border', statusBadge.cls)}>
+            {statusBadge.text}
+          </span>
+        </div>
+
         {/* Hero Metrics — 4 KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5 md:mb-6">
           <div className="surface-card p-4">
-            <p className={cn('font-mono text-xl md:text-2xl font-bold', calculation.netProfit >= 0 ? 'text-success' : 'text-destructive')}>
+            <p className={cn('font-mono text-2xl md:text-2xl font-bold', calculation.netProfit >= 0 ? 'text-success' : 'text-destructive')}>
               {fmt(calculation.netProfit)}
             </p>
             <p className="label-metric mt-1">Lucro/un</p>
           </div>
-          <div className="surface-card p-4">
-            <p className={cn('font-mono text-xl md:text-2xl font-bold', status.color)}>
+          <div className={cn('surface-card p-4 border-l-2',
+            calculation.realMargin < 0 ? 'border-l-destructive' :
+            calculation.realMargin < 10 ? 'border-l-warning' : 'border-l-success'
+          )}>
+            <p className={cn('font-mono text-2xl md:text-2xl font-bold', status.color)}>
               {calculation.realMargin.toFixed(1)}%
             </p>
             <p className="label-metric mt-1">Margem real</p>
           </div>
           <div className="surface-card p-4">
-            <p className={cn('font-mono text-xl md:text-2xl font-bold', marginDiff >= 0 ? 'text-primary' : 'text-destructive')}>
+            <p className={cn('font-mono text-2xl md:text-2xl font-bold', marginDiff >= 0 ? 'text-primary' : 'text-destructive')}>
               {marginDiff >= 0 ? '+' : ''}{marginDiff.toFixed(1)}%
             </p>
             <p className="label-metric mt-1">vs Meta {config.desiredMargin}%</p>
           </div>
           <div className="surface-card p-4">
-            <p className={cn('font-mono text-xl md:text-2xl font-bold', roas.roasEmpate ? 'text-foreground' : 'text-muted-foreground/50')}>
+            <p className={cn('font-mono text-2xl md:text-2xl font-bold', roas.roasEmpate ? 'text-foreground' : 'text-muted-foreground/50')}>
               {roas.roasEmpate ? `${roas.roasEmpate.toFixed(2)}x` : '—'}
             </p>
             <p className="label-metric mt-1">ROAS empate</p>
