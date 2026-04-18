@@ -746,8 +746,11 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
         </form>
 
         {/* Footer */}
-        <div className="p-4 border-t border-border mobile-sheet-footer md:pb-4 bg-surface relative z-[60] flex-shrink-0">
-          <Button type="submit" onClick={handleSubmit} className="w-full h-12 text-[15px] font-semibold bg-primary hover:bg-primary/90 rounded-[10px] transition-colors active:scale-[0.98]" disabled={!isValid || isSaving}>
+        <div className="px-5 md:px-8 py-4 border-t border-border mobile-sheet-footer md:pb-4 bg-surface/95 backdrop-blur-sm relative z-[60] flex-shrink-0 flex flex-col-reverse md:flex-row md:justify-end gap-2 md:gap-3">
+          <Button type="button" variant="ghost" onClick={onClose} className="h-11 md:w-auto md:px-6 text-sm font-medium" disabled={isSaving}>
+            Cancelar
+          </Button>
+          <Button type="submit" onClick={handleSubmit} className="h-11 md:w-auto md:px-8 text-[15px] font-semibold bg-primary hover:bg-primary/90 rounded-[10px] transition-colors active:scale-[0.98]" disabled={!isValid || isSaving}>
             {isSaving ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Salvando...</>) : (<><Save className="w-4 h-4 mr-2" />{product ? 'Salvar Alterações' : 'Salvar Produto'}</>)}
           </Button>
         </div>
