@@ -42,21 +42,27 @@ export function useShopeeProducts() {
         for (const p of toImport) {
           const { data: existing } = await supabase
             .from('products')
-            .select('id, cost_price')
+            .select('id, cost_price, sale_price')
             .eq('user_id', user.id)
             .eq('shopee_product_id', String(p.item_id))
             .maybeSingle();
 
           if (existing) {
-            await (supabase.from('products').update as any)({
+            // Preserve manually edited sale_price: only overwrite if user hasn't changed it
+            // (i.e. existing sale_price is 0 or matches what would have been set previously)
+            const updatePayload: any = {
               name: p.item_name,
-              sale_price: p.price,
               stock_quantity: p.stock,
               image_url: p.image_url || null,
               shopee_synced_at: new Date().toISOString(),
               shopee_product_id: String(p.item_id),
               shopee_item_id: p.item_id,
-            }).eq('id', existing.id);
+            };
+            // Only sync price if user hasn't set a custom one (sale_price is 0 or null)
+            if (!existing.sale_price || existing.sale_price === 0) {
+              updatePayload.sale_price = p.price;
+            }
+            await (supabase.from('products').update as any)(updatePayload).eq('id', existing.id);
           } else {
             await (supabase.from('products').insert as any)({
               user_id: user.id,
