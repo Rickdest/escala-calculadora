@@ -276,7 +276,7 @@ export default function ProductDetail() {
             )}
 
             {/* Canais */}
-            <div className="surface-card p-5">
+            <div className="surface-card p-5 order-2 md:order-none">
               <p className="section-label mb-3 flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-primary" />
                 Comparativo de Canais
