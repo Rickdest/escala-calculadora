@@ -1,98 +1,112 @@
 
 
-## Diagnóstico visual — Editar Produto sem respiro
+## Análise da página de detalhe do produto (rota `/products/:id`)
 
-Olhando a screenshot e o `ProductForm.tsx` (linha 212):
+Olhando a screenshot e o `ProductDetail.tsx`, identifico os problemas e as melhorias:
 
-```tsx
-<div className="fixed inset-0 ... md:inset-x-0 md:bottom-0 md:top-auto md:max-h-[92vh] md:rounded-t-2xl">
-```
+### Problemas atuais
 
-Em desktop (≥768px) o modal é uma "bottom sheet" que ocupa **100% da largura da tela** (`inset-x-0`), sem `max-width`. Isso explica o que você está vendo:
-- Inputs gigantes esticando de ponta a ponta (preço de custo com 800px de largura)
-- Imagem do produto sozinha no meio, isolada, com vazio enorme em volta
-- Conteúdo cola nas bordas laterais (só tem `p-4` = 16px) → parece "sem margem"
-- A largura horizontal mata a hierarquia: o olho não sabe onde focar
+1. **Sobra enorme à direita** — o conteúdo usa `max-w-3xl` (768px) mas o viewport útil tem ~1500px → metade direita vazia
+2. **Header empilhado/apertado** — "Produtos ← / imagem / nome / preço / Editar / Share / Lixeira" tudo numa linha só, espremido. O nome longo é truncado.
+3. **Cards isolados em coluna única** — Breakdown, ROAS, Canais, Projeção, Estoque são todos `surface-card` empilhados verticalmente, deixando o lado direito vazio em desktop
+4. **KPIs subutilizados** — só 3 números no topo (Lucro/un, Margem, vs Meta) num card largo, podia ter mais densidade
+5. **Hierarquia visual fraca** — todos os cards têm o mesmo peso visual; nenhum "destaque" para o que importa mais (margem, ROAS)
+6. **Estoque jogado no final** — informação importante (alerta de estoque baixo) fica perdida lá embaixo
+7. **Botão "Compartilhar" e "Excluir"** ocupam espaço de header sendo pouco usados — deveriam estar num menu "..."
 
-Em mobile o layout faz sentido (é uma sheet). Em desktop, fica feio porque sheet ≠ modal.
+### Solução proposta — Layout em grid 2 colunas (desktop)
 
-## Solução — redesenho no estilo Claude/Opus 4.7 Designer
+**Princípio Claude/Opus 4.7 Designer:** densidade informacional + hierarquia clara + espaço respirando, sem desperdiçar viewport.
 
-Princípios aplicados:
-1. **Container com largura máxima** em desktop (`max-w-3xl`, centralizado) — fim do "esticadão"
-2. **Header sticky com hierarquia** — título + badge Shopee + close em linha equilibrada, com sub-info do produto (nome em itálico discreto)
-3. **Hero da imagem reformulado** — imagem 96×96 alinhada à esquerda + bloco de identificação (nome do produto + chip "Shopee") ao lado, em vez de imagem solitária centralizada
-4. **Seções em "cards" agrupados** — Identificação / Precificação / Embalagem viram um único card com divisores internos sutis (border-border/40), em vez de campos soltos com `space-y-4`
-5. **Grid de precificação em 2 colunas com gap melhor** + labels com ícone `R$` integrado ao input (não como prefix bagunçado)
-6. **Footer sticky com fundo blur** e botão alinhado à direita em desktop (não 100% width quando há espaço)
-7. **Padding lateral responsivo**: `px-4 md:px-8` no conteúdo, `py-6 md:py-8`
-
-### Mudanças concretas em `src/components/forms/ProductForm.tsx`
-
-**Container (linha 211-212):**
-```tsx
-<div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-6">
-  <div className="bg-surface w-full md:max-w-3xl md:rounded-2xl border-t md:border border-border 
-                  h-[100dvh] md:h-auto md:max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
-```
-
-**Header refinado (linhas 214-229):**
-- Padding `px-5 md:px-8 py-4`
-- Título à esquerda, badge Shopee como chip arredondado pill ao centro/direita, X num botão ghost circular
-- Adicionar subtítulo discreto com nome do produto truncado quando em modo edição
-
-**Hero — imagem + identidade (linhas 240-264 unificadas):**
-- Em desktop: layout horizontal — imagem 96×96 à esquerda + à direita bloco com label "Nome do produto" e o input grande
-- Em mobile: mantém vertical (imagem centralizada + nome embaixo)
-- Substitui o "círculo flutuante no vácuo"
-
-**Card de Precificação (linhas 266-306):**
-- Envolver Custo + Venda + Embalagem num único `surface-card p-4 md:p-5 space-y-4`
-- Título da seção: "Precificação" com ícone 💰
-- Inputs com altura `h-11`, ícone `R$` num "addon" cinza colado à esquerda (estilo input-group), borda do input suaviza no foco com ring primary
-
-**Conteúdo:**
-- `px-5 md:px-8 py-5 md:py-6 space-y-5`
-
-**Footer (linhas 735-739):**
-- Fundo com `bg-surface/95 backdrop-blur` 
-- Em desktop: dois botões alinhados à direita (Cancelar ghost + Salvar primary com ícone), `w-auto`
-- Em mobile: botão full-width (mantém)
-
-### Resultado visual esperado
-
-Desktop:
 ```text
-┌─────────────────────────────────────────────────┐
-│  Editar Produto       [Importado Shopee]    [×] │
-├─────────────────────────────────────────────────┤
-│                                                  │
-│  ┌──────┐  NOME DO PRODUTO *                    │
-│  │ img  │  ┌────────────────────────────────┐   │
-│  │ 96px │  │ Calça Legging Feminina...      │   │
-│  └──────┘  └────────────────────────────────┘   │
-│                                                  │
-│  💰 Precificação                                 │
-│  ┌─────────────────────────────────────────┐    │
-│  │ Custo *           Venda * (Shopee)      │    │
-│  │ [R$ 24,00]        [R$ 54,90 🔒]         │    │
-│  │ ─────────────────────────────────────   │    │
-│  │ Embalagem e insumos                     │    │
-│  │ [R$ 0,00]                               │    │
-│  └─────────────────────────────────────────┘    │
-│                                                  │
-│  🌐 Outros canais        [opcional]      ▼     │
-│                                                  │
-├─────────────────────────────────────────────────┤
-│                       [Cancelar] [💾 Salvar]    │
-└─────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│ ← Produtos                                                          │
+│                                                                     │
+│ ┌───┐  Calça Legging Feminina Canelada 3D Premium                  │
+│ │img│  R$ 54,90 venda · custo R$ 24,00      [✓ Lucrativo +14%]    │
+│ │64 │                                                               │
+│ └───┘                              [Editar]  [⋯ menu: share/del]   │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│ ┌──── HERO METRICS (col-span-2) ────────────────────────────────┐  │
+│ │ R$ 15,92        29.0%         +14.0%        2.45x              │ │
+│ │ Lucro/un        Margem real   vs Meta 15%   ROAS empate        │ │
+│ └────────────────────────────────────────────────────────────────┘  │
+│                                                                     │
+│ ┌──── COLUNA ESQUERDA ─────┐  ┌──── COLUNA DIREITA ─────────────┐  │
+│ │ 💰 Breakdown de Custos   │  │ 🎯 ROAS de Referência           │  │
+│ │ • Custo produto  R$24,00 │  │ Empate ──────  2.45x            │  │
+│ │ • Taxa Shopee    R$14,98 │  │ Saudável ─────  3.10x           │  │
+│ │ • Embalagem        —     │  │ Ideal ────────  4.50x           │  │
+│ │ • Impostos         —     │  │                                  │  │
+│ │ • Afiliados        —     │  ├──────────────────────────────────┤  │
+│ │ • Campanhas        —     │  │ 📊 Comparativo de Canais        │  │
+│ │ • Acelera          —     │  │ [CTA preencher outros canais]   │  │
+│ │ ────────────────────     │  │                                  │  │
+│ │ Total       R$ 38,98     │  ├──────────────────────────────────┤  │
+│ └──────────────────────────┘  │ 📦 Estoque                       │  │
+│                               │ 0 unidades  ⚠ abaixo do mínimo  │  │
+│ ┌──── PROJEÇÃO MENSAL (col-span-2) ────────────────────────────┐  │
+│ │ Slider 50 vendas/mês                                          │ │
+│ │ Receita R$2.745  | Custos R$1.949 | Lucro R$796 | 29%        │ │
+│ └───────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-### Arquivo único modificado
-- `src/components/forms/ProductForm.tsx` — apenas estrutura/className do shell, header, hero e card de precificação. Toda a lógica (cálculos, estados, submit, outros canais, projeção) **fica intacta**.
+### Mudanças concretas em `src/pages/ProductDetail.tsx`
 
-### Sem mudanças em
-- Tokens de design (continua usando `surface`, `surface-card`, `border-border`)
-- Componentes Input/Button/Switch
-- Lógica de cálculo, validação ou Supabase
+**1. Container principal**
+- `max-w-3xl` → `max-w-6xl mx-auto` (usa toda a largura útil sem grudar nas bordas)
+- Padding: `px-4 md:px-8`
+
+**2. Header reorganizado em 2 linhas**
+- Linha 1: Breadcrumb "← Produtos" sozinho, pequeno
+- Linha 2: Imagem 64×64 + título grande + meta info + badge de status à direita + botões "Editar" e menu "⋯" (compartilhar/excluir colapsados num dropdown)
+- Status badge (Lucrativo/Atenção/Prejuízo) sobe pro header em vez de ficar solto
+
+**3. Hero Metrics (faixa com 4 KPIs)**
+- Grid 4 colunas em desktop, 2×2 em mobile
+- Adicionar **ROAS de empate** como 4º KPI (hoje só tem 3) — informação crítica que merece destaque
+- Cards individuais com border sutil, em vez de um card só
+
+**4. Layout em grid 2 colunas (md:)**
+```tsx
+<div className="grid md:grid-cols-2 gap-5">
+  <div>Breakdown</div>
+  <div className="space-y-5">
+    <ROAS />
+    <Canais />
+    <Estoque />
+  </div>
+</div>
+```
+- Em mobile: tudo em coluna única (mantém comportamento atual)
+- Em desktop: Breakdown ocupa coluna esquerda inteira (é longo, 7 itens), coluna direita empilha ROAS + Canais + Estoque
+
+**5. Projeção Mensal full-width abaixo**
+- Como é interativa (slider) e tem 4 KPIs em grid, fica melhor sozinha embaixo ocupando todo o width
+
+**6. Menu "⋯" para ações secundárias**
+- Substituir botões soltos de Compartilhar e Excluir por um `DropdownMenu` (já existe em `components/ui/dropdown-menu.tsx`) com ícone "MoreVertical"
+- Itens: Compartilhar, Excluir (em vermelho)
+- Libera espaço no header para o título respirar
+
+**7. Card de Estoque com mais peso visual**
+- Quando estoque ≤ mínimo: borda amarela + badge "⚠ Reposição"
+- Botão "Ajustar estoque" → abre o ProductForm direto na seção de estoque (futuro)
+
+### Arquivos modificados
+- `src/pages/ProductDetail.tsx` — único arquivo (apenas layout/className + adição de DropdownMenu para ações secundárias)
+
+### Sem mudanças
+- `ProductForm` (modal de edição) — fluxo mantido como você pediu
+- `ProductDetailDrawer` — não usado nesta rota
+- Lógica de cálculo, ROAS, canais — tudo intacto
+- Tokens de design — mesma paleta
+
+### Resultado
+- Aproveita toda a largura do desktop (878px CSS no viewport atual → cabe bem no `max-w-6xl`)
+- Hero metrics dão destaque imediato aos números que importam
+- Grid 2 colunas elimina a "torre vertical" e o vazio à direita
+- Header limpo com ações secundárias agrupadas no menu
 
