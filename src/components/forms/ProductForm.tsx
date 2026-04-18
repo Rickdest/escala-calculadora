@@ -292,20 +292,16 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
               <div className="space-y-1.5">
                 <label className="section-label flex items-center gap-1.5">
                   Preço de Venda *
-                  {isShopeeProduct && <span className="text-[9px] bg-muted/60 text-muted-foreground/70 rounded px-1.5 py-0.5 flex items-center gap-0.5"><Lock className="w-2.5 h-2.5" /> Shopee</span>}
+                  {isShopeeProduct && <span className="text-[9px] bg-[#EE4D2D]/15 text-[#EE4D2D] rounded px-1.5 py-0.5">editável</span>}
                 </label>
-                {isShopeeProduct ? (
-                  <div className="relative h-11 bg-muted/30 border border-border rounded-lg flex items-center px-3 cursor-not-allowed">
-                    <span className="text-sm font-medium text-muted-foreground font-mono font-mono-num">
-                      R$ {(parseFloat(salePrice) || 0).toFixed(2).replace('.', ',')}
-                    </span>
-                    <span className="absolute right-3 text-[10px] text-muted-foreground/50 hidden md:inline">Seller Center</span>
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <span className="absolute left-0 top-0 bottom-0 w-10 flex items-center justify-center text-text-3 text-sm border-r border-border bg-surface-2/60 rounded-l-lg pointer-events-none">R$</span>
-                    <Input type="number" inputMode="decimal" step="0.01" min="0" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} placeholder="0,00" className="pl-12 h-11 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num" required />
-                  </div>
+                <div className="relative">
+                  <span className="absolute left-0 top-0 bottom-0 w-10 flex items-center justify-center text-text-3 text-sm border-r border-border bg-surface-2/60 rounded-l-lg pointer-events-none">R$</span>
+                  <Input type="number" inputMode="decimal" step="0.01" min="0" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} placeholder="0,00" className={cn("pl-12 h-11 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num", isShopeeProduct && "border-l-2 border-l-[#EE4D2D]/40 bg-[#EE4D2D]/[0.03]")} required />
+                </div>
+                {isShopeeProduct && (
+                  <p className="text-[10px] text-muted-foreground/70 leading-snug">
+                    Sincronizado da Shopee. Edite se o valor estiver incorreto (comum em produtos com variação). Pode ser sobrescrito na próxima sincronização.
+                  </p>
                 )}
               </div>
             </div>
