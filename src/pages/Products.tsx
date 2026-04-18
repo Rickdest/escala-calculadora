@@ -168,7 +168,7 @@ export default function Products() {
         title="Produtos"
       />
 
-      <div className="pt-2 pb-24 md:pb-6 space-y-2.5 md:pt-6">
+      <div className="page-container pt-2 pb-24 md:pb-6 space-y-2.5 md:pt-6">
         {/* Draft filter banner */}
         {draftFilter === 'draft' && (
           <div className="flex items-center gap-2 text-sm text-warning bg-warning/10 border border-warning/20 rounded-lg px-4 py-3">

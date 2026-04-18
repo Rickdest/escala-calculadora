@@ -406,6 +406,22 @@
 }
 
 @layer utilities {
+  /* ─── Page containers (unified layout system) ─── */
+  .page-container {
+    @apply w-full mx-auto;
+    max-width: 1200px;
+  }
+
+  .page-container-narrow {
+    @apply w-full mx-auto;
+    max-width: 720px;
+  }
+
+  .page-container-wide {
+    @apply w-full mx-auto;
+    max-width: 1400px;
+  }
+
   .safe-bottom {
     padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
   }

@@ -169,7 +169,7 @@ export default function Performance() {
         }
       />
 
-      <div className="pt-4 pb-24 md:pb-6 space-y-4">
+      <div className="page-container-wide pt-4 pb-24 md:pb-6 space-y-4">
         {/* Data source badges */}
         <div className="flex items-center gap-2 text-xs flex-wrap px-4 md:px-0">
           {hasExcelEnriched && (

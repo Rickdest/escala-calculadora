@@ -182,7 +182,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════
           MOBILE LAYOUT — identical to before
           ══════════════════════════════════════════════ */}
-      <div className="md:hidden pt-3 pb-6 space-y-3">
+      <div className="md:hidden page-container pt-3 pb-6 space-y-3">
         {/* Shopee connection status */}
         {shopeeConnected && (
           <button
@@ -314,7 +314,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════
           DESKTOP LAYOUT — redesigned
           ══════════════════════════════════════════════ */}
-      <div className="hidden md:block py-4">
+      <div className="hidden md:block page-container py-4">
         {/* Shopee connection status — desktop */}
         {shopeeConnected && (
           <button

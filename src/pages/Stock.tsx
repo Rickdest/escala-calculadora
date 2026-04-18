@@ -89,7 +89,7 @@ export default function Stock() {
     <AppLayout>
       <PageHeader title="Estoque" />
 
-      <div className="pt-2 pb-24 md:pb-6 md:pt-6 space-y-2.5">
+      <div className="page-container pt-2 pb-24 md:pb-6 md:pt-6 space-y-2.5">
         {/* Stats row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 animate-fade-up md:flex md:gap-3">
           {[

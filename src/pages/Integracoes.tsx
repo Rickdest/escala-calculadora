@@ -224,7 +224,7 @@ export default function Integracoes() {
     <AppLayout>
       <PageHeader title="Integrações" subtitle={currentStore ? `Loja: ${currentStore.name}` : 'Gerencie as conexões com marketplaces e plataformas'} />
 
-      <div className="max-w-2xl mx-auto pt-6 pb-8 space-y-5">
+      <div className="page-container-narrow pt-6 pb-8 space-y-5">
 
         {/* ═══ SHOP MISMATCH WARNING ═══ */}
         {shopMismatch && (
