@@ -135,27 +135,27 @@ export default function ProductDetail() {
         </button>
 
         {/* Header */}
-        <div className="flex items-start gap-4 pb-6 border-b border-border mb-6">
+        <div className="flex items-start gap-3 md:gap-4 pb-5 md:pb-6 border-b border-border mb-5 md:mb-6">
           {product.imageUrl ? (
-            <img src={product.imageUrl} alt="" className="w-16 h-16 md:w-20 md:h-20 rounded-2xl object-cover shrink-0" />
+            <img src={product.imageUrl} alt="" className="w-12 h-12 md:w-20 md:h-20 rounded-xl md:rounded-2xl object-cover shrink-0" />
           ) : (
-            <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-secondary flex items-center justify-center shrink-0">
-              <Package className="w-7 h-7 text-muted-foreground" />
+            <div className="w-12 h-12 md:w-20 md:h-20 rounded-xl md:rounded-2xl bg-secondary flex items-center justify-center shrink-0">
+              <Package className="w-5 h-5 md:w-7 md:h-7 text-muted-foreground" />
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <h1 className="font-bold text-foreground text-lg md:text-xl leading-tight mb-1.5">{product.name}</h1>
-            <p className="text-sm text-muted-foreground font-mono mb-2">
-              <span className="text-primary font-semibold">{fmt(product.salePrice)}</span> venda · custo {fmt(product.costPrice)}
+            <h1 className="font-bold text-foreground text-base md:text-xl leading-tight mb-1 md:mb-1.5 line-clamp-2">{product.name}</h1>
+            <p className="text-xs md:text-sm text-muted-foreground font-mono mb-1.5 md:mb-2">
+              <span className="text-primary font-semibold">{fmt(product.salePrice)}</span> <span className="hidden md:inline">venda · </span><span className="md:hidden">·</span> custo {fmt(product.costPrice)}
             </p>
-            <span className={cn('inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full border', statusBadge.cls)}>
+            <span className={cn('hidden md:inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full border', statusBadge.cls)}>
               {statusBadge.text}
             </span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => setShowProductForm(true)}
-              className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-semibold flex items-center gap-1.5 hover:bg-primary/90 transition-colors"
+              className="hidden md:flex h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-semibold items-center gap-1.5 hover:bg-primary/90 transition-colors"
             >
               <Pencil className="w-3.5 h-3.5" /> Editar
             </button>
