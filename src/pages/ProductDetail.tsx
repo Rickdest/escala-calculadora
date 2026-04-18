@@ -124,7 +124,7 @@ export default function ProductDetail() {
 
   return (
     <AppLayout>
-      <div className="max-w-6xl mx-auto px-4 md:px-8 pb-12">
+      <div className="max-w-6xl mx-auto px-4 md:px-8 pb-28 md:pb-12">
         {/* Breadcrumb */}
         <button
           onClick={() => navigate('/products')}
