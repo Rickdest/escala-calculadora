@@ -247,7 +247,7 @@ export default function ProductDetail() {
           </div>
 
           {/* Coluna direita — ROAS + Canais + Estoque */}
-          <div className="space-y-5">
+          <div className="flex flex-col gap-5">
             {/* ROAS */}
             {!roas.margemInsuficiente && roas.roasEmpate && (
               <div className="surface-card p-5">
