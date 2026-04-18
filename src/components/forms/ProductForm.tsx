@@ -222,7 +222,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
               )}
             </div>
             {product && name && (
-              <p className="text-xs text-muted-foreground truncate mt-0.5 italic">{name}</p>
+              <p className="hidden md:block text-xs text-muted-foreground truncate mt-0.5 italic">{name}</p>
             )}
           </div>
           <button onClick={onClose} className="w-9 h-9 flex items-center justify-center hover:bg-surface-2 rounded-full transition-colors flex-shrink-0">
