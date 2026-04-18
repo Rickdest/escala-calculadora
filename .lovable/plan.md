@@ -1,61 +1,98 @@
 
 
-## Diagnóstico: por que o Comparativo de Canais mostra valores sem você ter preenchido preço
+## Diagnóstico visual — Editar Produto sem respiro
 
-### O que está acontecendo
+Olhando a screenshot e o `ProductForm.tsx` (linha 212):
 
-Existem **dois fluxos paralelos** no app calculando margem de outros marketplaces, e eles funcionam de formas diferentes:
-
-**1. ProductForm (formulário de edição) — CORRETO**
-Em `ProductForm.tsx` o "Comparativo de canais — tempo real" só aparece quando você preenche manualmente preço de venda + custo do TikTok/Shein/Amazon/ML em "Outros Canais". Usa o helper `calcOutrosCanais` em cima do objeto `product.outrosCanais` com taxas detalhadas por categoria (TikTok, Shein, etc.).
-
-**2. ProductDetail e ProductDetailDrawer (telas de visualização) — É O CULPADO**
-Essas duas telas usam uma lógica simplificada e **independente** do `outrosCanais`:
-
-```ts
-// src/pages/ProductDetail.tsx (linhas 16-22) e ProductDetailDrawer.tsx (linhas 13-19)
-const PLATFORM_FEES = [
-  { id: 'shopee', feePercent: 20, feeFixed: 4 },
-  { id: 'amazon', feePercent: 15, feeFixed: 0 },
-  { id: 'shein',  feePercent: 20, feeFixed: 0 },
-  { id: 'ml',     feePercent: 14, feeFixed: 0 },
-  { id: 'tiktok', feePercent: 12, feeFixed: 4 },
-];
-
-// margem = preço_shopee - custo - embalagem - (preço_shopee × taxa_fixa%) - impostos
+```tsx
+<div className="fixed inset-0 ... md:inset-x-0 md:bottom-0 md:top-auto md:max-h-[92vh] md:rounded-t-2xl">
 ```
 
-Ou seja: ela pega o **mesmo preço de venda da Shopee** e simula "e se eu vendesse esse mesmo produto, pelo mesmo preço, em outra plataforma, com uma taxa fixa simplificada?". Não usa os preços por canal cadastrados e não considera frete/categoria/comissão real do marketplace.
+Em desktop (≥768px) o modal é uma "bottom sheet" que ocupa **100% da largura da tela** (`inset-x-0`), sem `max-width`. Isso explica o que você está vendo:
+- Inputs gigantes esticando de ponta a ponta (preço de custo com 800px de largura)
+- Imagem do produto sozinha no meio, isolada, com vazio enorme em volta
+- Conteúdo cola nas bordas laterais (só tem `p-4` = 16px) → parece "sem margem"
+- A largura horizontal mata a hierarquia: o olho não sabe onde focar
 
-Por isso aparecem valores como "Mercado Livre 42,3%" sem você ter preenchido nada — é uma **simulação hipotética em cima do preço da Shopee**, não o cálculo real do canal.
+Em mobile o layout faz sentido (é uma sheet). Em desktop, fica feio porque sheet ≠ modal.
 
-### Problemas dessa lógica simplificada
+## Solução — redesenho no estilo Claude/Opus 4.7 Designer
 
-- **Confunde o usuário** (seu caso): parece que o app "inventou" preços
-- **Diverge do ProductForm**: o formulário usa cálculo detalhado (`calcOutrosCanais`) com taxas por categoria; as telas de detalhe usam taxa única fixa — mesmos dados → resultados diferentes
-- **Viola memória do projeto** (`mem://logic/multi-channel-margin-calculation`): a regra é usar `OtherChannels` com campos detalhados, não taxa fixa simplificada
-- **Não respeita o que foi cadastrado**: se o usuário preencheu `outrosCanais` com preço/custo/frete específicos, essa info é ignorada nas telas de detalhe
+Princípios aplicados:
+1. **Container com largura máxima** em desktop (`max-w-3xl`, centralizado) — fim do "esticadão"
+2. **Header sticky com hierarquia** — título + badge Shopee + close em linha equilibrada, com sub-info do produto (nome em itálico discreto)
+3. **Hero da imagem reformulado** — imagem 96×96 alinhada à esquerda + bloco de identificação (nome do produto + chip "Shopee") ao lado, em vez de imagem solitária centralizada
+4. **Seções em "cards" agrupados** — Identificação / Precificação / Embalagem viram um único card com divisores internos sutis (border-border/40), em vez de campos soltos com `space-y-4`
+5. **Grid de precificação em 2 colunas com gap melhor** + labels com ícone `R$` integrado ao input (não como prefix bagunçado)
+6. **Footer sticky com fundo blur** e botão alinhado à direita em desktop (não 100% width quando há espaço)
+7. **Padding lateral responsivo**: `px-4 md:px-8` no conteúdo, `py-6 md:py-8`
 
-### Solução proposta
+### Mudanças concretas em `src/components/forms/ProductForm.tsx`
 
-Unificar para que **ProductDetail** e **ProductDetailDrawer** sigam a mesma regra do **ProductForm**:
+**Container (linha 211-212):**
+```tsx
+<div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm flex items-end md:items-center justify-center p-0 md:p-6">
+  <div className="bg-surface w-full md:max-w-3xl md:rounded-2xl border-t md:border border-border 
+                  h-[100dvh] md:h-auto md:max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+```
 
-1. **Se o produto tem `outrosCanais` preenchido** → usar `calcOutrosCanais` (cálculo real por canal, com taxas detalhadas)
-2. **Se não tem** → exibir card vazio com CTA "Preencha 'Outros Canais' no produto para ver a comparação real" em vez de mostrar simulação enganosa
-3. **Manter Shopee sempre visível** (margem real do produto) como referência
+**Header refinado (linhas 214-229):**
+- Padding `px-5 md:px-8 py-4`
+- Título à esquerda, badge Shopee como chip arredondado pill ao centro/direita, X num botão ghost circular
+- Adicionar subtítulo discreto com nome do produto truncado quando em modo edição
 
-Vou também:
-- Remover o array `PLATFORM_FEES` duplicado e a função `calcPlatformMargin` dos dois arquivos
-- Renomear o título de "Margem em Outras Plataformas" → "Comparativo de Canais" para alinhar com o ProductForm
-- Atualizar o badge "Melhor canal" para considerar só canais efetivamente cadastrados
+**Hero — imagem + identidade (linhas 240-264 unificadas):**
+- Em desktop: layout horizontal — imagem 96×96 à esquerda + à direita bloco com label "Nome do produto" e o input grande
+- Em mobile: mantém vertical (imagem centralizada + nome embaixo)
+- Substitui o "círculo flutuante no vácuo"
 
-### Arquivos a modificar
+**Card de Precificação (linhas 266-306):**
+- Envolver Custo + Venda + Embalagem num único `surface-card p-4 md:p-5 space-y-4`
+- Título da seção: "Precificação" com ícone 💰
+- Inputs com altura `h-11`, ícone `R$` num "addon" cinza colado à esquerda (estilo input-group), borda do input suaviza no foco com ring primary
 
-- `src/pages/ProductDetail.tsx` — substituir lógica de PLATFORM_FEES por `calcOutrosCanais`
-- `src/components/ProductDetailDrawer.tsx` — mesma substituição
-- `src/components/cards/ProductCard.tsx` — já tem guarda `product.outrosCanais && Object.keys(...).length > 0` mas calcula com `PLATFORM_FEES` simplificado. Trocar para usar `calcOutrosCanais` e mostrar só canais cadastrados
+**Conteúdo:**
+- `px-5 md:px-8 py-5 md:py-6 space-y-5`
 
-### Memória a salvar
+**Footer (linhas 735-739):**
+- Fundo com `bg-surface/95 backdrop-blur` 
+- Em desktop: dois botões alinhados à direita (Cancelar ghost + Salvar primary com ícone), `w-auto`
+- Em mobile: botão full-width (mantém)
 
-Atualizar `mem://logic/multi-channel-margin-calculation` reforçando: **toda exibição de margem de outros canais (cards, drawer, página de detalhe) deve usar `calcOutrosCanais` em cima de `product.outrosCanais`. Nunca simular com taxa fixa em cima do preço da Shopee.**
+### Resultado visual esperado
+
+Desktop:
+```text
+┌─────────────────────────────────────────────────┐
+│  Editar Produto       [Importado Shopee]    [×] │
+├─────────────────────────────────────────────────┤
+│                                                  │
+│  ┌──────┐  NOME DO PRODUTO *                    │
+│  │ img  │  ┌────────────────────────────────┐   │
+│  │ 96px │  │ Calça Legging Feminina...      │   │
+│  └──────┘  └────────────────────────────────┘   │
+│                                                  │
+│  💰 Precificação                                 │
+│  ┌─────────────────────────────────────────┐    │
+│  │ Custo *           Venda * (Shopee)      │    │
+│  │ [R$ 24,00]        [R$ 54,90 🔒]         │    │
+│  │ ─────────────────────────────────────   │    │
+│  │ Embalagem e insumos                     │    │
+│  │ [R$ 0,00]                               │    │
+│  └─────────────────────────────────────────┘    │
+│                                                  │
+│  🌐 Outros canais        [opcional]      ▼     │
+│                                                  │
+├─────────────────────────────────────────────────┤
+│                       [Cancelar] [💾 Salvar]    │
+└─────────────────────────────────────────────────┘
+```
+
+### Arquivo único modificado
+- `src/components/forms/ProductForm.tsx` — apenas estrutura/className do shell, header, hero e card de precificação. Toda a lógica (cálculos, estados, submit, outros canais, projeção) **fica intacta**.
+
+### Sem mudanças em
+- Tokens de design (continua usando `surface`, `surface-card`, `border-border`)
+- Componentes Input/Button/Switch
+- Lógica de cálculo, validação ou Supabase
 
