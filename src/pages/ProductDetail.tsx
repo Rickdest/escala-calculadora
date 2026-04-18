@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Trash2, Share2, Package, Pencil } from 'lucide-react';
+import { ArrowLeft, Trash2, Share2, Package, Pencil, MoreVertical, Wallet, Target, BarChart3, Boxes } from 'lucide-react';
 import { useStore } from '@/contexts/StoreContext';
 import { getShopeeFeeForPrice } from '@/types/store';
 import { calcFullRoas } from '@/lib/roasUtils';
@@ -9,6 +9,13 @@ import { Slider } from '@/components/ui/slider';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { calcOutrosCanais } from '@/lib/outrosCanaisUtils';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 
 const fmt = (v: number) =>
@@ -86,6 +93,8 @@ export default function ProductDetail() {
     return { text: `✓ ${status.label} · ${diff}% vs meta`, cls: 'bg-success/10 text-success border-success/30' };
   })();
 
+  const stockLow = product.stockQuantity <= (product.minStockQuantity ?? 5);
+
   const handleDelete = async () => {
     await deleteProduct(product.id);
     navigate('/products', { replace: true });
@@ -115,162 +124,228 @@ export default function ProductDetail() {
 
   return (
     <AppLayout>
-      {/* Header */}
-      <div className="flex items-center gap-3 py-4 border-b border-border mb-6">
-        <button onClick={() => navigate('/products')} className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
-          <ArrowLeft className="w-4 h-4" />
+      <div className="max-w-6xl mx-auto px-4 md:px-8 pb-12">
+        {/* Breadcrumb */}
+        <button
+          onClick={() => navigate('/products')}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-4"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
           Produtos
         </button>
-        <div className="flex-1 flex items-center gap-3 min-w-0">
+
+        {/* Header */}
+        <div className="flex items-start gap-4 pb-6 border-b border-border mb-6">
           {product.imageUrl ? (
-            <img src={product.imageUrl} alt="" className="w-10 h-10 rounded-xl object-cover shrink-0" />
+            <img src={product.imageUrl} alt="" className="w-16 h-16 md:w-20 md:h-20 rounded-2xl object-cover shrink-0" />
           ) : (
-            <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center shrink-0">
-              <Package className="w-5 h-5 text-muted-foreground" />
+            <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-secondary flex items-center justify-center shrink-0">
+              <Package className="w-7 h-7 text-muted-foreground" />
             </div>
           )}
-          <div className="min-w-0">
-            <h1 className="font-bold text-foreground text-base truncate">{product.name}</h1>
-            <p className="text-xs text-muted-foreground font-mono">
-              <span className="text-primary font-medium">{fmt(product.salePrice)}</span> venda · custo {fmt(product.costPrice)}
+          <div className="flex-1 min-w-0">
+            <h1 className="font-bold text-foreground text-lg md:text-xl leading-tight mb-1.5">{product.name}</h1>
+            <p className="text-sm text-muted-foreground font-mono mb-2">
+              <span className="text-primary font-semibold">{fmt(product.salePrice)}</span> venda · custo {fmt(product.costPrice)}
             </p>
+            <span className={cn('inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full border', statusBadge.cls)}>
+              {statusBadge.text}
+            </span>
           </div>
-        </div>
-        <button onClick={() => setShowProductForm(true)} className="h-9 px-4 rounded-lg bg-primary text-primary-foreground text-xs font-semibold flex items-center gap-1.5 hover:bg-primary/90 transition-colors">
-          <Pencil className="w-3.5 h-3.5" /> Editar
-        </button>
-        <button onClick={handleShare} className="h-9 px-3 rounded-lg border border-border text-muted-foreground text-xs font-medium flex items-center gap-1.5 hover:bg-secondary transition-colors">
-          <Share2 className="w-3.5 h-3.5" />
-        </button>
-        <button onClick={handleDelete} className="h-9 px-3 rounded-lg border border-destructive/30 text-destructive text-xs font-medium flex items-center gap-1.5 hover:bg-destructive/5 transition-colors">
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
-      </div>
-
-      {/* Results */}
-      <div className="max-w-3xl space-y-5 pb-12">
-        {/* Status badge */}
-        <span className={cn('inline-flex items-center text-small font-semibold px-3 py-1 rounded-full border', statusBadge.cls)}>
-          {statusBadge.text}
-        </span>
-
-        {/* Key Metrics */}
-        <div className="surface-card p-5">
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <p className={cn('font-mono text-2xl font-bold', calculation.netProfit >= 0 ? 'text-success' : 'text-destructive')}>
-                {fmt(calculation.netProfit)}
-              </p>
-              <p className="label-metric">Lucro/un</p>
-            </div>
-            <div>
-              <p className={cn('font-mono text-2xl font-bold', status.color)}>
-                {calculation.realMargin.toFixed(1)}%
-              </p>
-              <p className="label-metric">Margem real</p>
-            </div>
-            <div>
-              <p className={cn('font-mono text-2xl font-bold', marginDiff >= 0 ? 'text-primary' : 'text-destructive')}>
-                {marginDiff >= 0 ? '+' : ''}{marginDiff.toFixed(1)}%
-              </p>
-              <p className="label-metric">vs Meta {config.desiredMargin}%</p>
-            </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setShowProductForm(true)}
+              className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-semibold flex items-center gap-1.5 hover:bg-primary/90 transition-colors"
+            >
+              <Pencil className="w-3.5 h-3.5" /> Editar
+            </button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="h-10 w-10 rounded-lg border border-border text-muted-foreground flex items-center justify-center hover:bg-secondary transition-colors">
+                  <MoreVertical className="w-4 h-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={handleShare} className="cursor-pointer">
+                  <Share2 className="w-4 h-4 mr-2" /> Compartilhar análise
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleDelete}
+                  className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" /> Excluir produto
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
-        {/* Breakdown */}
-        <div className="surface-card p-5 space-y-2">
-          <p className="section-label mb-3">Breakdown de Custos</p>
-          {costItems.map((item, i) => (
-            <div key={i} className="flex items-center justify-between py-1">
-              <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span className={cn('w-2 h-2 rounded-full', item.dot)} />
-                {item.label}
-              </span>
-              <span className={cn('font-mono text-sm font-medium', item.value > 0 ? 'text-foreground' : 'text-muted-foreground/50')}>
-                {item.value > 0 ? fmt(item.value) : '—'}
-              </span>
-            </div>
-          ))}
-          <div className="border-t border-border pt-2 mt-2 flex justify-between">
-            <span className="text-sm font-semibold text-foreground">Total de custos</span>
-            <span className="font-mono text-sm font-bold text-destructive">{fmt(calculation.totalCosts)}</span>
+        {/* Hero Metrics — 4 KPIs */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+          <div className="surface-card p-4">
+            <p className={cn('font-mono text-xl md:text-2xl font-bold', calculation.netProfit >= 0 ? 'text-success' : 'text-destructive')}>
+              {fmt(calculation.netProfit)}
+            </p>
+            <p className="label-metric mt-1">Lucro/un</p>
+          </div>
+          <div className="surface-card p-4">
+            <p className={cn('font-mono text-xl md:text-2xl font-bold', status.color)}>
+              {calculation.realMargin.toFixed(1)}%
+            </p>
+            <p className="label-metric mt-1">Margem real</p>
+          </div>
+          <div className="surface-card p-4">
+            <p className={cn('font-mono text-xl md:text-2xl font-bold', marginDiff >= 0 ? 'text-primary' : 'text-destructive')}>
+              {marginDiff >= 0 ? '+' : ''}{marginDiff.toFixed(1)}%
+            </p>
+            <p className="label-metric mt-1">vs Meta {config.desiredMargin}%</p>
+          </div>
+          <div className="surface-card p-4">
+            <p className={cn('font-mono text-xl md:text-2xl font-bold', roas.roasEmpate ? 'text-foreground' : 'text-muted-foreground/50')}>
+              {roas.roasEmpate ? `${roas.roasEmpate.toFixed(2)}x` : '—'}
+            </p>
+            <p className="label-metric mt-1">ROAS empate</p>
           </div>
         </div>
 
-        {/* ROAS */}
-        {!roas.margemInsuficiente && roas.roasEmpate && (
+        {/* Grid 2 colunas */}
+        <div className="grid md:grid-cols-2 gap-5 mb-5">
+          {/* Coluna esquerda — Breakdown */}
           <div className="surface-card p-5">
-            <p className="section-label mb-3">ROAS de Referência (Ads)</p>
-            <div className="space-y-2">
-              {[
-                { label: 'Ponto de empate', value: roas.roasEmpate, color: 'text-destructive', bg: 'bg-destructive', w: 30 },
-                { label: 'Saudável', value: roas.roasSaudavel, color: 'text-warning', bg: 'bg-warning', w: 50 },
-                { label: 'Ideal', value: roas.roasIdeal, color: 'text-success', bg: 'bg-success', w: 77 },
-              ].map((row) => row.value != null && (
-                <div key={row.label} className="flex items-center gap-3">
-                  <span className="text-sm text-muted-foreground w-32 shrink-0">{row.label}</span>
-                  <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
-                    <div className={cn('h-full rounded-full', row.bg)} style={{ width: `${row.w}%` }} />
-                  </div>
-                  <span className={cn('font-mono text-sm font-bold w-12 text-right', row.color)}>
-                    {row.value.toFixed(2)}
+            <p className="section-label mb-3 flex items-center gap-2">
+              <Wallet className="w-4 h-4 text-primary" />
+              Breakdown de Custos
+            </p>
+            <div className="space-y-1">
+              {costItems.map((item, i) => (
+                <div key={i} className="flex items-center justify-between py-1.5">
+                  <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span className={cn('w-2 h-2 rounded-full', item.dot)} />
+                    {item.label}
+                  </span>
+                  <span className={cn('font-mono text-sm font-medium', item.value > 0 ? 'text-foreground' : 'text-muted-foreground/50')}>
+                    {item.value > 0 ? fmt(item.value) : '—'}
                   </span>
                 </div>
               ))}
             </div>
+            <div className="border-t border-border pt-3 mt-3 flex justify-between">
+              <span className="text-sm font-semibold text-foreground">Total de custos</span>
+              <span className="font-mono text-sm font-bold text-destructive">{fmt(calculation.totalCosts)}</span>
+            </div>
           </div>
-        )}
 
-        {/* Channels — somente canais com dados reais cadastrados */}
-        <div className="surface-card p-5">
-          <p className="section-label mb-3">Comparativo de Canais</p>
-          {hasOutrosCanais ? (
-            <>
-              <div className="grid grid-cols-2 gap-2">
-                {allChannels.map(c => (
-                  <div key={c.key} className={cn(
-                    'bg-secondary/50 border rounded-lg px-3 py-2.5 flex items-center justify-between',
-                    c.key === bestChannel?.key ? 'border-primary/25' : 'border-border'
-                  )}>
-                    <span className="text-small text-muted-foreground flex items-center gap-1">
-                      {c.key === bestChannel?.key && <span className="text-primary text-micro">🏆</span>}
-                      {c.label}
-                    </span>
-                    <span className={cn('font-mono text-small font-bold',
-                      c.margin >= config.desiredMargin ? 'text-success' :
-                      c.margin >= 0 ? 'text-foreground' : 'text-destructive'
-                    )}>
-                      {c.margin.toFixed(1)}%
-                    </span>
-                  </div>
-                ))}
+          {/* Coluna direita — ROAS + Canais + Estoque */}
+          <div className="space-y-5">
+            {/* ROAS */}
+            {!roas.margemInsuficiente && roas.roasEmpate && (
+              <div className="surface-card p-5">
+                <p className="section-label mb-3 flex items-center gap-2">
+                  <Target className="w-4 h-4 text-primary" />
+                  ROAS de Referência (Ads)
+                </p>
+                <div className="space-y-2.5">
+                  {[
+                    { label: 'Ponto de empate', value: roas.roasEmpate, color: 'text-destructive', bg: 'bg-destructive', w: 30 },
+                    { label: 'Saudável', value: roas.roasSaudavel, color: 'text-warning', bg: 'bg-warning', w: 50 },
+                    { label: 'Ideal', value: roas.roasIdeal, color: 'text-success', bg: 'bg-success', w: 77 },
+                  ].map((row) => row.value != null && (
+                    <div key={row.label} className="flex items-center gap-3">
+                      <span className="text-sm text-muted-foreground w-32 shrink-0">{row.label}</span>
+                      <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
+                        <div className={cn('h-full rounded-full', row.bg)} style={{ width: `${row.w}%` }} />
+                      </div>
+                      <span className={cn('font-mono text-sm font-bold w-12 text-right', row.color)}>
+                        {row.value.toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              {bestChannel && bestChannel.key !== 'shopee' && (
-                <div className="mt-3 bg-secondary/30 border border-border rounded-lg p-3">
-                  <p className="text-small font-semibold text-foreground">{bestChannel.label} — {bestChannel.margin.toFixed(1)}% de margem</p>
-                  <p className="text-small text-muted-foreground mt-0.5">
-                    {fmt(bestChannel.netProfit - calculation.netProfit)}/un a mais que na Shopee
+            )}
+
+            {/* Canais */}
+            <div className="surface-card p-5">
+              <p className="section-label mb-3 flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-primary" />
+                Comparativo de Canais
+              </p>
+              {hasOutrosCanais ? (
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                    {allChannels.map(c => (
+                      <div key={c.key} className={cn(
+                        'bg-secondary/50 border rounded-lg px-3 py-2.5 flex items-center justify-between',
+                        c.key === bestChannel?.key ? 'border-primary/25' : 'border-border'
+                      )}>
+                        <span className="text-small text-muted-foreground flex items-center gap-1">
+                          {c.key === bestChannel?.key && <span className="text-primary text-micro">🏆</span>}
+                          {c.label}
+                        </span>
+                        <span className={cn('font-mono text-small font-bold',
+                          c.margin >= config.desiredMargin ? 'text-success' :
+                          c.margin >= 0 ? 'text-foreground' : 'text-destructive'
+                        )}>
+                          {c.margin.toFixed(1)}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  {bestChannel && bestChannel.key !== 'shopee' && (
+                    <div className="mt-3 bg-secondary/30 border border-border rounded-lg p-3">
+                      <p className="text-small font-semibold text-foreground">{bestChannel.label} — {bestChannel.margin.toFixed(1)}% de margem</p>
+                      <p className="text-small text-muted-foreground mt-0.5">
+                        {fmt(bestChannel.netProfit - calculation.netProfit)}/un a mais que na Shopee
+                      </p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="bg-secondary/30 border border-dashed border-border rounded-lg p-4 text-center">
+                  <p className="text-small text-muted-foreground mb-2">
+                    Nenhum outro canal cadastrado para este produto.
                   </p>
+                  <button
+                    onClick={() => setShowProductForm(true)}
+                    className="text-small font-semibold text-primary hover:text-primary/80 transition-colors"
+                  >
+                    Preencher "Outros Canais" →
+                  </button>
                 </div>
               )}
-            </>
-          ) : (
-            <div className="bg-secondary/30 border border-dashed border-border rounded-lg p-4 text-center">
-              <p className="text-small text-muted-foreground mb-2">
-                Nenhum outro canal cadastrado para este produto.
-              </p>
-              <button
-                onClick={() => setShowProductForm(true)}
-                className="text-small font-semibold text-primary hover:text-primary/80 transition-colors"
-              >
-                Preencher "Outros Canais" →
-              </button>
             </div>
-          )}
+
+            {/* Estoque */}
+            <div className={cn(
+              'surface-card p-5 border',
+              stockLow ? 'border-warning/40' : 'border-border'
+            )}>
+              <div className="flex items-center justify-between mb-2">
+                <p className="section-label flex items-center gap-2">
+                  <Boxes className="w-4 h-4 text-primary" />
+                  Estoque
+                </p>
+                {stockLow && (
+                  <span className="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/30">
+                    ⚠ Reposição
+                  </span>
+                )}
+              </div>
+              <div className="flex items-baseline justify-between">
+                <span className="text-sm text-muted-foreground">Quantidade atual</span>
+                <span className="font-mono text-2xl font-bold text-foreground">{product.stockQuantity} un.</span>
+              </div>
+              {stockLow && (
+                <p className="text-small text-warning font-medium mt-2">
+                  Abaixo do mínimo ({product.minStockQuantity ?? 5} un.)
+                </p>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Projection */}
+        {/* Projeção Mensal — full width */}
         <div className="surface-card p-5">
           <p className="section-label mb-3">Projeção Mensal</p>
           <div className="flex items-center gap-3 mb-3">
@@ -279,7 +354,7 @@ export default function ProductDetail() {
               type="number" className="w-16 h-9 bg-secondary border border-border rounded-lg text-center font-mono text-sm font-semibold text-primary outline-none" />
           </div>
           <Slider value={[monthlySales]} onValueChange={([v]) => setMonthlySales(v)} min={1} max={1000} step={1} className="mb-4" />
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             <div className="bg-secondary/50 border border-border rounded-lg p-3">
               <p className="font-mono text-base font-bold text-success">{fmt(projection.revenue)}</p>
               <p className="label-metric text-muted-foreground">Receita bruta</p>
@@ -297,20 +372,6 @@ export default function ProductDetail() {
               <p className="label-metric text-muted-foreground">Margem</p>
             </div>
           </div>
-        </div>
-
-        {/* Stock */}
-        <div className="surface-card p-5">
-          <p className="section-label mb-3">Estoque</p>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">Quantidade atual</span>
-            <span className="font-mono text-2xl font-bold text-foreground">{product.stockQuantity} un.</span>
-          </div>
-          {product.stockQuantity <= (product.minStockQuantity ?? 5) && (
-            <p className="text-small text-warning font-medium mt-1.5">
-              ⚠ Abaixo do mínimo ({product.minStockQuantity ?? 5} un.)
-            </p>
-          )}
         </div>
       </div>
 
