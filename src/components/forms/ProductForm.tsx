@@ -278,33 +278,33 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
               <h3 className="text-sm font-semibold text-foreground">Precificação</h3>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               <div className="space-y-1.5">
                 <label className="section-label flex items-center gap-1.5">
-                  Preço de Custo *
-                  {isShopeeProduct && <span className="text-[9px] bg-[#EE4D2D]/15 text-[#EE4D2D] rounded px-1.5 py-0.5">editável</span>}
+                  Custo *
+                  {isShopeeProduct && <span className="hidden md:inline text-[9px] bg-[#EE4D2D]/15 text-[#EE4D2D] rounded px-1.5 py-0.5">editável</span>}
                 </label>
                 <div className="relative">
-                  <span className="absolute left-0 top-0 bottom-0 w-10 flex items-center justify-center text-text-3 text-sm border-r border-border bg-surface-2/60 rounded-l-lg pointer-events-none">R$</span>
-                  <Input type="number" inputMode="decimal" step="0.01" min="0" value={costPrice} onChange={(e) => setCostPrice(e.target.value)} placeholder="0,00" className={cn("pl-12 h-11 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num", isShopeeProduct && "border-l-2 border-l-[#EE4D2D]/40 bg-[#EE4D2D]/[0.03]")} required />
+                  <span className="absolute left-0 top-0 bottom-0 w-9 md:w-10 flex items-center justify-center text-text-3 text-xs md:text-sm border-r border-border bg-surface-2/60 rounded-l-lg pointer-events-none">R$</span>
+                  <Input type="number" inputMode="decimal" step="0.01" min="0" value={costPrice} onChange={(e) => setCostPrice(e.target.value)} placeholder="0,00" className={cn("pl-11 md:pl-12 h-10 md:h-11 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num", isShopeeProduct && "border-l-2 border-l-[#EE4D2D]/40 bg-[#EE4D2D]/[0.03]")} required />
                 </div>
               </div>
               <div className="space-y-1.5">
                 <label className="section-label flex items-center gap-1.5">
-                  Preço de Venda *
-                  {isShopeeProduct && <span className="text-[9px] bg-[#EE4D2D]/15 text-[#EE4D2D] rounded px-1.5 py-0.5">editável</span>}
+                  Venda *
+                  {isShopeeProduct && <span className="hidden md:inline text-[9px] bg-[#EE4D2D]/15 text-[#EE4D2D] rounded px-1.5 py-0.5">editável</span>}
                 </label>
                 <div className="relative">
-                  <span className="absolute left-0 top-0 bottom-0 w-10 flex items-center justify-center text-text-3 text-sm border-r border-border bg-surface-2/60 rounded-l-lg pointer-events-none">R$</span>
-                  <Input type="number" inputMode="decimal" step="0.01" min="0" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} placeholder="0,00" className={cn("pl-12 h-11 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num", isShopeeProduct && "border-l-2 border-l-[#EE4D2D]/40 bg-[#EE4D2D]/[0.03]")} required />
+                  <span className="absolute left-0 top-0 bottom-0 w-9 md:w-10 flex items-center justify-center text-text-3 text-xs md:text-sm border-r border-border bg-surface-2/60 rounded-l-lg pointer-events-none">R$</span>
+                  <Input type="number" inputMode="decimal" step="0.01" min="0" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} placeholder="0,00" className={cn("pl-11 md:pl-12 h-10 md:h-11 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num", isShopeeProduct && "border-l-2 border-l-[#EE4D2D]/40 bg-[#EE4D2D]/[0.03]")} required />
                 </div>
-                {isShopeeProduct && (
-                  <p className="text-[10px] text-muted-foreground/70 leading-snug">
-                    Sincronizado da Shopee. Edite se o valor estiver incorreto (comum em produtos com variação). Pode ser sobrescrito na próxima sincronização.
-                  </p>
-                )}
               </div>
             </div>
+            {isShopeeProduct && (
+              <p className="text-[10px] text-muted-foreground/70 leading-snug -mt-2">
+                Preços sincronizados da Shopee. Edite se estiverem incorretos (comum em variações). Podem ser sobrescritos na próxima sincronização.
+              </p>
+            )}
 
             <div className="pt-3 border-t border-border/40 space-y-1.5">
               <label className="section-label">Embalagem e Insumos</label>
