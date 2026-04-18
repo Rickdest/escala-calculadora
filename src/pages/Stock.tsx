@@ -89,18 +89,21 @@ export default function Stock() {
     <AppLayout>
       <PageHeader title="Estoque" />
 
-      <div className="pt-2 pb-24 md:pb-6 md:pt-6 space-y-2.5">
+      <div className="page-container pt-2 pb-24 md:pb-6 md:pt-6 space-y-2.5">
         {/* Stats row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 animate-fade-up md:flex md:gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 animate-fade-up">
           {[
-            { label: 'Total', value: stats.total, color: 'text-foreground' },
-            { label: 'Ativo', value: stats.ativo, color: 'text-success' },
-            { label: 'Baixo', value: stats.baixo, color: 'text-warning' },
-            { label: 'Zerado', value: stats.zerado, color: 'text-destructive' },
+            { label: 'Total', value: stats.total, color: 'text-foreground', icon: '📦' },
+            { label: 'Ativo', value: stats.ativo, color: 'text-success', icon: '✓' },
+            { label: 'Baixo', value: stats.baixo, color: 'text-warning', icon: '⚠' },
+            { label: 'Zerado', value: stats.zerado, color: 'text-destructive', icon: '✕' },
           ].map((s, i) => (
-            <div key={s.label} className={cn('surface-card p-3 text-center md:w-[200px]', i < 2 ? 'stagger-1' : 'stagger-2')}>
-              <p className={cn('text-2xl font-bold font-mono font-mono-num', s.color)}>{s.value}</p>
-              <p className="section-label mt-0.5">{s.label}</p>
+            <div key={s.label} className={cn('surface-card p-4 md:p-5', i < 2 ? 'stagger-1' : 'stagger-2')}>
+              <div className="flex items-center justify-between mb-2">
+                <p className="section-label">{s.label}</p>
+                <span className="text-xs opacity-60">{s.icon}</span>
+              </div>
+              <p className={cn('text-3xl md:text-4xl font-bold font-mono font-mono-num leading-none', s.color)}>{s.value}</p>
             </div>
           ))}
         </div>
@@ -190,7 +193,7 @@ export default function Stock() {
             })}
           </div>
         ) : (
-          <div className="text-center py-16">
+          <div className="surface-card text-center py-16 px-6 max-w-md mx-auto">
             <div className="w-14 h-14 rounded-xl bg-surface-2 mx-auto flex items-center justify-center mb-3">
               <Package className="w-7 h-7 text-text-3" />
             </div>

@@ -195,7 +195,7 @@ export default function AdminBanners() {
         <h1 className="text-lg font-bold text-foreground">Gerenciar Banners</h1>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+      <div className="page-container-narrow px-4 py-6 space-y-4">
         {/* Add button */}
         {editingId !== 'new' && (
           <Button onClick={startNew} className="w-full gap-2">

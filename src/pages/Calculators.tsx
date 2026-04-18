@@ -42,7 +42,7 @@ export default function Calculators() {
     <AppLayout>
       <PageHeader title="Calculadoras" subtitle="Compare custos entre marketplaces" showStoreSelector={false} />
 
-      <div className="py-4 space-y-5 max-w-4xl mx-auto">
+      <div className="page-container py-4 space-y-5">
         {/* Tab bar */}
         <div className="flex gap-1 rounded-[10px] bg-surface-2 border border-border p-1">
           {TABS.map(({ key, label }) => (
