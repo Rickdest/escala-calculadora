@@ -222,7 +222,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
               )}
             </div>
             {product && name && (
-              <p className="text-xs text-muted-foreground truncate mt-0.5 italic">{name}</p>
+              <p className="hidden md:block text-xs text-muted-foreground truncate mt-0.5 italic">{name}</p>
             )}
           </div>
           <button onClick={onClose} className="w-9 h-9 flex items-center justify-center hover:bg-surface-2 rounded-full transition-colors flex-shrink-0">
@@ -242,20 +242,20 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
 
           {/* Hero — Imagem + Nome (horizontal em desktop, vertical em mobile) */}
           <div className="surface-card p-4 md:p-5">
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-5">
+            <div className="flex flex-row md:items-start items-center gap-3 md:gap-5">
               <label className="cursor-pointer group flex-shrink-0">
                 <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                 {imageUrl ? (
                   <div className="relative">
-                    <img src={imageUrl} alt="Preview" className="w-24 h-24 rounded-xl object-cover ring-1 ring-border group-hover:ring-primary transition-all" />
+                    <img src={imageUrl} alt="Preview" className="w-16 h-16 md:w-24 md:h-24 rounded-xl object-cover ring-1 ring-border group-hover:ring-primary transition-all" />
                     <div className="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Camera className="w-6 h-6 text-white" />
+                      <Camera className="w-5 h-5 md:w-6 md:h-6 text-white" />
                     </div>
                   </div>
                 ) : (
-                  <div className="w-24 h-24 rounded-xl bg-surface-2 border border-dashed border-border flex flex-col items-center justify-center gap-1.5 group-hover:border-primary/40 transition-colors">
-                    <Camera className="w-6 h-6 text-text-3" />
-                    <span className="text-[10px] text-text-3">Adicionar</span>
+                  <div className="w-16 h-16 md:w-24 md:h-24 rounded-xl bg-surface-2 border border-dashed border-border flex flex-col items-center justify-center gap-1 md:gap-1.5 group-hover:border-primary/40 transition-colors">
+                    <Camera className="w-5 h-5 md:w-6 md:h-6 text-text-3" />
+                    <span className="hidden md:inline text-[10px] text-text-3">Adicionar</span>
                   </div>
                 )}
               </label>
@@ -278,33 +278,33 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
               <h3 className="text-sm font-semibold text-foreground">Precificação</h3>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               <div className="space-y-1.5">
                 <label className="section-label flex items-center gap-1.5">
-                  Preço de Custo *
-                  {isShopeeProduct && <span className="text-[9px] bg-[#EE4D2D]/15 text-[#EE4D2D] rounded px-1.5 py-0.5">editável</span>}
+                  Custo *
+                  {isShopeeProduct && <span className="hidden md:inline text-[9px] bg-[#EE4D2D]/15 text-[#EE4D2D] rounded px-1.5 py-0.5">editável</span>}
                 </label>
                 <div className="relative">
-                  <span className="absolute left-0 top-0 bottom-0 w-10 flex items-center justify-center text-text-3 text-sm border-r border-border bg-surface-2/60 rounded-l-lg pointer-events-none">R$</span>
-                  <Input type="number" inputMode="decimal" step="0.01" min="0" value={costPrice} onChange={(e) => setCostPrice(e.target.value)} placeholder="0,00" className={cn("pl-12 h-11 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num", isShopeeProduct && "border-l-2 border-l-[#EE4D2D]/40 bg-[#EE4D2D]/[0.03]")} required />
+                  <span className="absolute left-0 top-0 bottom-0 w-9 md:w-10 flex items-center justify-center text-text-3 text-xs md:text-sm border-r border-border bg-surface-2/60 rounded-l-lg pointer-events-none">R$</span>
+                  <Input type="number" inputMode="decimal" step="0.01" min="0" value={costPrice} onChange={(e) => setCostPrice(e.target.value)} placeholder="0,00" className={cn("pl-11 md:pl-12 h-10 md:h-11 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num", isShopeeProduct && "border-l-2 border-l-[#EE4D2D]/40 bg-[#EE4D2D]/[0.03]")} required />
                 </div>
               </div>
               <div className="space-y-1.5">
                 <label className="section-label flex items-center gap-1.5">
-                  Preço de Venda *
-                  {isShopeeProduct && <span className="text-[9px] bg-[#EE4D2D]/15 text-[#EE4D2D] rounded px-1.5 py-0.5">editável</span>}
+                  Venda *
+                  {isShopeeProduct && <span className="hidden md:inline text-[9px] bg-[#EE4D2D]/15 text-[#EE4D2D] rounded px-1.5 py-0.5">editável</span>}
                 </label>
                 <div className="relative">
-                  <span className="absolute left-0 top-0 bottom-0 w-10 flex items-center justify-center text-text-3 text-sm border-r border-border bg-surface-2/60 rounded-l-lg pointer-events-none">R$</span>
-                  <Input type="number" inputMode="decimal" step="0.01" min="0" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} placeholder="0,00" className={cn("pl-12 h-11 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num", isShopeeProduct && "border-l-2 border-l-[#EE4D2D]/40 bg-[#EE4D2D]/[0.03]")} required />
+                  <span className="absolute left-0 top-0 bottom-0 w-9 md:w-10 flex items-center justify-center text-text-3 text-xs md:text-sm border-r border-border bg-surface-2/60 rounded-l-lg pointer-events-none">R$</span>
+                  <Input type="number" inputMode="decimal" step="0.01" min="0" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} placeholder="0,00" className={cn("pl-11 md:pl-12 h-10 md:h-11 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num", isShopeeProduct && "border-l-2 border-l-[#EE4D2D]/40 bg-[#EE4D2D]/[0.03]")} required />
                 </div>
-                {isShopeeProduct && (
-                  <p className="text-[10px] text-muted-foreground/70 leading-snug">
-                    Sincronizado da Shopee. Edite se o valor estiver incorreto (comum em produtos com variação). Pode ser sobrescrito na próxima sincronização.
-                  </p>
-                )}
               </div>
             </div>
+            {isShopeeProduct && (
+              <p className="text-[10px] text-muted-foreground/70 leading-snug -mt-2">
+                Preços sincronizados da Shopee. Edite se estiverem incorretos (comum em variações). Podem ser sobrescritos na próxima sincronização.
+              </p>
+            )}
 
             <div className="pt-3 border-t border-border/40 space-y-1.5">
               <label className="section-label">Embalagem e Insumos</label>
@@ -742,12 +742,12 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
         </form>
 
         {/* Footer */}
-        <div className="px-5 md:px-8 py-4 border-t border-border mobile-sheet-footer md:pb-4 bg-surface/95 backdrop-blur-sm relative z-[60] flex-shrink-0 flex flex-col-reverse md:flex-row md:justify-end gap-2 md:gap-3">
-          <Button type="button" variant="ghost" onClick={onClose} className="h-11 md:w-auto md:px-6 text-sm font-medium" disabled={isSaving}>
+        <div className="px-4 md:px-8 py-3 md:py-4 border-t border-border mobile-sheet-footer md:pb-4 bg-surface/95 backdrop-blur-sm relative z-[60] flex-shrink-0 flex flex-row md:justify-end gap-2 md:gap-3">
+          <Button type="button" variant="outline" onClick={onClose} className="h-11 flex-1 md:flex-initial md:w-auto md:px-6 text-sm font-medium" disabled={isSaving}>
             Cancelar
           </Button>
-          <Button type="submit" onClick={handleSubmit} className="h-11 md:w-auto md:px-8 text-[15px] font-semibold bg-primary hover:bg-primary/90 rounded-[10px] transition-colors active:scale-[0.98]" disabled={!isValid || isSaving}>
-            {isSaving ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Salvando...</>) : (<><Save className="w-4 h-4 mr-2" />{product ? 'Salvar Alterações' : 'Salvar Produto'}</>)}
+          <Button type="submit" onClick={handleSubmit} className="h-11 flex-[1.5] md:flex-initial md:w-auto md:px-8 text-[15px] font-semibold bg-primary hover:bg-primary/90 rounded-[10px] transition-colors active:scale-[0.98]" disabled={!isValid || isSaving}>
+            {isSaving ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Salvando...</>) : (<><Save className="w-4 h-4 mr-2" />{product ? 'Salvar' : 'Salvar Produto'}</>)}
           </Button>
         </div>
       </div>

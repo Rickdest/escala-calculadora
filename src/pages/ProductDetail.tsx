@@ -124,7 +124,7 @@ export default function ProductDetail() {
 
   return (
     <AppLayout>
-      <div className="max-w-6xl mx-auto px-4 md:px-8 pb-12">
+      <div className="max-w-6xl mx-auto px-4 md:px-8 pb-28 md:pb-12">
         {/* Breadcrumb */}
         <button
           onClick={() => navigate('/products')}
@@ -135,27 +135,27 @@ export default function ProductDetail() {
         </button>
 
         {/* Header */}
-        <div className="flex items-start gap-4 pb-6 border-b border-border mb-6">
+        <div className="flex items-start gap-3 md:gap-4 pb-5 md:pb-6 border-b border-border mb-5 md:mb-6">
           {product.imageUrl ? (
-            <img src={product.imageUrl} alt="" className="w-16 h-16 md:w-20 md:h-20 rounded-2xl object-cover shrink-0" />
+            <img src={product.imageUrl} alt="" className="w-12 h-12 md:w-20 md:h-20 rounded-xl md:rounded-2xl object-cover shrink-0" />
           ) : (
-            <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-secondary flex items-center justify-center shrink-0">
-              <Package className="w-7 h-7 text-muted-foreground" />
+            <div className="w-12 h-12 md:w-20 md:h-20 rounded-xl md:rounded-2xl bg-secondary flex items-center justify-center shrink-0">
+              <Package className="w-5 h-5 md:w-7 md:h-7 text-muted-foreground" />
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <h1 className="font-bold text-foreground text-lg md:text-xl leading-tight mb-1.5">{product.name}</h1>
-            <p className="text-sm text-muted-foreground font-mono mb-2">
-              <span className="text-primary font-semibold">{fmt(product.salePrice)}</span> venda · custo {fmt(product.costPrice)}
+            <h1 className="font-bold text-foreground text-base md:text-xl leading-tight mb-1 md:mb-1.5 line-clamp-2">{product.name}</h1>
+            <p className="text-xs md:text-sm text-muted-foreground font-mono mb-1.5 md:mb-2">
+              <span className="text-primary font-semibold">{fmt(product.salePrice)}</span> <span className="hidden md:inline">venda · </span><span className="md:hidden">·</span> custo {fmt(product.costPrice)}
             </p>
-            <span className={cn('inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full border', statusBadge.cls)}>
+            <span className={cn('hidden md:inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full border', statusBadge.cls)}>
               {statusBadge.text}
             </span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => setShowProductForm(true)}
-              className="h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-semibold flex items-center gap-1.5 hover:bg-primary/90 transition-colors"
+              className="hidden md:flex h-10 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-semibold items-center gap-1.5 hover:bg-primary/90 transition-colors"
             >
               <Pencil className="w-3.5 h-3.5" /> Editar
             </button>
@@ -181,28 +181,38 @@ export default function ProductDetail() {
           </div>
         </div>
 
+        {/* Status badge — mobile only (desktop é inline no header) */}
+        <div className="md:hidden mb-4 -mt-2">
+          <span className={cn('inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full border', statusBadge.cls)}>
+            {statusBadge.text}
+          </span>
+        </div>
+
         {/* Hero Metrics — 4 KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5 md:mb-6">
           <div className="surface-card p-4">
-            <p className={cn('font-mono text-xl md:text-2xl font-bold', calculation.netProfit >= 0 ? 'text-success' : 'text-destructive')}>
+            <p className={cn('font-mono text-2xl md:text-2xl font-bold', calculation.netProfit >= 0 ? 'text-success' : 'text-destructive')}>
               {fmt(calculation.netProfit)}
             </p>
             <p className="label-metric mt-1">Lucro/un</p>
           </div>
-          <div className="surface-card p-4">
-            <p className={cn('font-mono text-xl md:text-2xl font-bold', status.color)}>
+          <div className={cn('surface-card p-4 border-l-2',
+            calculation.realMargin < 0 ? 'border-l-destructive' :
+            calculation.realMargin < 10 ? 'border-l-warning' : 'border-l-success'
+          )}>
+            <p className={cn('font-mono text-2xl md:text-2xl font-bold', status.color)}>
               {calculation.realMargin.toFixed(1)}%
             </p>
             <p className="label-metric mt-1">Margem real</p>
           </div>
           <div className="surface-card p-4">
-            <p className={cn('font-mono text-xl md:text-2xl font-bold', marginDiff >= 0 ? 'text-primary' : 'text-destructive')}>
+            <p className={cn('font-mono text-2xl md:text-2xl font-bold', marginDiff >= 0 ? 'text-primary' : 'text-destructive')}>
               {marginDiff >= 0 ? '+' : ''}{marginDiff.toFixed(1)}%
             </p>
             <p className="label-metric mt-1">vs Meta {config.desiredMargin}%</p>
           </div>
           <div className="surface-card p-4">
-            <p className={cn('font-mono text-xl md:text-2xl font-bold', roas.roasEmpate ? 'text-foreground' : 'text-muted-foreground/50')}>
+            <p className={cn('font-mono text-2xl md:text-2xl font-bold', roas.roasEmpate ? 'text-foreground' : 'text-muted-foreground/50')}>
               {roas.roasEmpate ? `${roas.roasEmpate.toFixed(2)}x` : '—'}
             </p>
             <p className="label-metric mt-1">ROAS empate</p>
@@ -237,7 +247,7 @@ export default function ProductDetail() {
           </div>
 
           {/* Coluna direita — ROAS + Canais + Estoque */}
-          <div className="space-y-5">
+          <div className="flex flex-col gap-5">
             {/* ROAS */}
             {!roas.margemInsuficiente && roas.roasEmpate && (
               <div className="surface-card p-5">
@@ -266,7 +276,7 @@ export default function ProductDetail() {
             )}
 
             {/* Canais */}
-            <div className="surface-card p-5">
+            <div className="surface-card p-5 order-2 md:order-none">
               <p className="section-label mb-3 flex items-center gap-2">
                 <BarChart3 className="w-4 h-4 text-primary" />
                 Comparativo de Canais
@@ -318,7 +328,7 @@ export default function ProductDetail() {
 
             {/* Estoque */}
             <div className={cn(
-              'surface-card p-5 border',
+              'surface-card p-5 border order-1 md:order-none',
               stockLow ? 'border-warning/40' : 'border-border'
             )}>
               <div className="flex items-center justify-between mb-2">
@@ -373,6 +383,16 @@ export default function ProductDetail() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* CTA flutuante mobile-only — acima do BottomNavigation */}
+      <div className="md:hidden fixed bottom-16 left-0 right-0 z-40 px-4 py-3 bg-background/95 backdrop-blur-sm border-t border-border">
+        <button
+          onClick={() => setShowProductForm(true)}
+          className="w-full h-12 rounded-xl bg-primary text-primary-foreground text-sm font-semibold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors active:scale-[0.98]"
+        >
+          <Pencil className="w-4 h-4" /> Editar produto
+        </button>
       </div>
 
       {/* ProductForm Modal */}
