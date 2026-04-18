@@ -1,112 +1,135 @@
 
 
-## Análise da página de detalhe do produto (rota `/products/:id`)
+## Diagnóstico geral — auditoria de layout de toda a ferramenta
 
-Olhando a screenshot e o `ProductDetail.tsx`, identifico os problemas e as melhorias:
+Após capturar todas as telas principais (Home, Produtos, Calculadoras, Performance, Ads/ROAS, Integrações, Estoque) e cruzar com o código, identifiquei **um problema-raiz** que se manifesta em diferentes graus em quase todas as páginas:
 
-### Problemas atuais
+### Problema raiz: ausência de container global com largura máxima
 
-1. **Sobra enorme à direita** — o conteúdo usa `max-w-3xl` (768px) mas o viewport útil tem ~1500px → metade direita vazia
-2. **Header empilhado/apertado** — "Produtos ← / imagem / nome / preço / Editar / Share / Lixeira" tudo numa linha só, espremido. O nome longo é truncado.
-3. **Cards isolados em coluna única** — Breakdown, ROAS, Canais, Projeção, Estoque são todos `surface-card` empilhados verticalmente, deixando o lado direito vazio em desktop
-4. **KPIs subutilizados** — só 3 números no topo (Lucro/un, Margem, vs Meta) num card largo, podia ter mais densidade
-5. **Hierarquia visual fraca** — todos os cards têm o mesmo peso visual; nenhum "destaque" para o que importa mais (margem, ROAS)
-6. **Estoque jogado no final** — informação importante (alerta de estoque baixo) fica perdida lá embaixo
-7. **Botão "Compartilhar" e "Excluir"** ocupam espaço de header sendo pouco usados — deveriam estar num menu "..."
+`AppLayout` (linha 50) define `<main className="w-full px-4 md:px-8 xl:px-12">` **sem `max-width`**. Cada página então decide seu próprio max-width (alguns têm, outros não), gerando inconsistência:
 
-### Solução proposta — Layout em grid 2 colunas (desktop)
+| Página | max-width atual | Status |
+|---|---|---|
+| Home | nenhum (`w-full`) | ❌ Cards cortam à direita |
+| Produtos | nenhum | ❌ Conteúdo cola na borda direita |
+| Performance | nenhum | ❌ Tabela corta, KPIs muito largos |
+| ROAS / Ads | nenhum | ❌ Inputs gigantes, conteúdo grudado |
+| Estoque | nenhum | ❌ Vazio enorme no centro |
+| Integrações | `max-w-2xl` (672px) | ⚠️ Estreito demais |
+| Calculadoras | `max-w-4xl` (896px) | ⚠️ Card de resultado vazio à direita |
+| AdminBanners | `max-w-2xl` | ⚠️ Estreito demais |
+| ProductDetail | `max-w-6xl` (1152px) | ✅ OK (já refatoramos) |
 
-**Princípio Claude/Opus 4.7 Designer:** densidade informacional + hierarquia clara + espaço respirando, sem desperdiçar viewport.
+### Outros problemas transversais
 
-```text
-┌─────────────────────────────────────────────────────────────────────┐
-│ ← Produtos                                                          │
-│                                                                     │
-│ ┌───┐  Calça Legging Feminina Canelada 3D Premium                  │
-│ │img│  R$ 54,90 venda · custo R$ 24,00      [✓ Lucrativo +14%]    │
-│ │64 │                                                               │
-│ └───┘                              [Editar]  [⋯ menu: share/del]   │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│ ┌──── HERO METRICS (col-span-2) ────────────────────────────────┐  │
-│ │ R$ 15,92        29.0%         +14.0%        2.45x              │ │
-│ │ Lucro/un        Margem real   vs Meta 15%   ROAS empate        │ │
-│ └────────────────────────────────────────────────────────────────┘  │
-│                                                                     │
-│ ┌──── COLUNA ESQUERDA ─────┐  ┌──── COLUNA DIREITA ─────────────┐  │
-│ │ 💰 Breakdown de Custos   │  │ 🎯 ROAS de Referência           │  │
-│ │ • Custo produto  R$24,00 │  │ Empate ──────  2.45x            │  │
-│ │ • Taxa Shopee    R$14,98 │  │ Saudável ─────  3.10x           │  │
-│ │ • Embalagem        —     │  │ Ideal ────────  4.50x           │  │
-│ │ • Impostos         —     │  │                                  │  │
-│ │ • Afiliados        —     │  ├──────────────────────────────────┤  │
-│ │ • Campanhas        —     │  │ 📊 Comparativo de Canais        │  │
-│ │ • Acelera          —     │  │ [CTA preencher outros canais]   │  │
-│ │ ────────────────────     │  │                                  │  │
-│ │ Total       R$ 38,98     │  ├──────────────────────────────────┤  │
-│ └──────────────────────────┘  │ 📦 Estoque                       │  │
-│                               │ 0 unidades  ⚠ abaixo do mínimo  │  │
-│ ┌──── PROJEÇÃO MENSAL (col-span-2) ────────────────────────────┐  │
-│ │ Slider 50 vendas/mês                                          │ │
-│ │ Receita R$2.745  | Custos R$1.949 | Lucro R$796 | 29%        │ │
-│ └───────────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────────┘
+1. **Páginas com Tab bar (Produtos, Calculadoras)** — tabs ocupam largura inteira sem alinhamento com o conteúdo, ficam esticadas
+2. **Cards de KPI inconsistentes** — Performance tem 4 cards em linha bonita; Estoque tem 4 cards minúsculos no topo; Home tem CalculadoraRápida com inputs em 1 coluna desperdiçando espaço
+3. **CTA flutuante "Novo Produto"** sobreposto ao conteúdo — ok em mobile, mas em desktop polui o card embaixo
+4. **Sidebar cinza-fora** — quando a sidebar está aberta (200px), o conteúdo útil em viewport 1024 fica com ~720px, mas o app trata como desktop "cheio"
+5. **Padding lateral inconsistente** — alguns cards usam `p-4`, outros `p-5`, outros `p-6`
+
+## Solução — sistema de layout unificado (Opus 4.7 Designer)
+
+Princípio: **um container global responsivo + decisões de densidade por página**, sem refazer cada tela do zero.
+
+### 1. AppLayout: criar wrapper de conteúdo com max-width semântico
+
+Em vez de cada página repetir `max-w-Xxl mx-auto`, padronizar via classe utilitária no `index.css`:
+
+```css
+.page-container {
+  @apply w-full mx-auto;
+  max-width: 1200px;        /* ~7xl, cabe bem em 1366+ com sidebar */
+}
+.page-container-narrow {     /* formulários, settings */
+  @apply w-full mx-auto;
+  max-width: 720px;
+}
+.page-container-wide {       /* tabelas pesadas (Performance) */
+  @apply w-full mx-auto;
+  max-width: 1400px;
+}
 ```
 
-### Mudanças concretas em `src/pages/ProductDetail.tsx`
+E `AppLayout` mantém o padding lateral, mas ganha um wrapper interno opcional. Isso preserva o comportamento atual de páginas que já têm seu próprio max-w.
 
-**1. Container principal**
-- `max-w-3xl` → `max-w-6xl mx-auto` (usa toda a largura útil sem grudar nas bordas)
-- Padding: `px-4 md:px-8`
+### 2. Aplicar containers por página (mudança 1 linha cada)
 
-**2. Header reorganizado em 2 linhas**
-- Linha 1: Breadcrumb "← Produtos" sozinho, pequeno
-- Linha 2: Imagem 64×64 + título grande + meta info + badge de status à direita + botões "Editar" e menu "⋯" (compartilhar/excluir colapsados num dropdown)
-- Status badge (Lucrativo/Atenção/Prejuízo) sobe pro header em vez de ficar solto
+| Página | Atual | Novo |
+|---|---|---|
+| Home | `w-full` | `page-container` |
+| Produtos | `w-full` | `page-container` |
+| Performance | `w-full` | `page-container-wide` (tem tabela) |
+| ROAS / Ads | `w-full` | `page-container` |
+| Estoque | `w-full` | `page-container` |
+| Calculadoras | `max-w-4xl` | `page-container` (mais largo) |
+| Integrações | `max-w-2xl` | `page-container-narrow` (720px em vez de 672) |
+| AdminBanners | `max-w-2xl` | `page-container-narrow` |
 
-**3. Hero Metrics (faixa com 4 KPIs)**
-- Grid 4 colunas em desktop, 2×2 em mobile
-- Adicionar **ROAS de empate** como 4º KPI (hoje só tem 3) — informação crítica que merece destaque
-- Cards individuais com border sutil, em vez de um card só
+### 3. Refinos pontuais de alta prioridade
 
-**4. Layout em grid 2 colunas (md:)**
-```tsx
-<div className="grid md:grid-cols-2 gap-5">
-  <div>Breakdown</div>
-  <div className="space-y-5">
-    <ROAS />
-    <Canais />
-    <Estoque />
-  </div>
-</div>
+**Home** (problema visível na screenshot — cards cortam):
+- CalculadoraRápida vai para grid 2 colunas em desktop (custo + preço lado a lado, embalagem embaixo) em vez da coluna única atual
+- Bloco "Outras Plataformas" vira carrossel ou grid 5 colunas em vez de scroll horizontal cortado
+
+**Estoque** (KPIs mínimos + vazio gigantesco):
+- Aumentar peso visual dos 4 KPIs (como em Performance) — adicionar valores em destaque, não só ícone
+- Empty state centralizado com max-w controlado, não esticado
+
+**Calculadoras** (card de resultado vazio à direita):
+- Em vez de 1:1, usar grid `md:grid-cols-[1fr_1fr] xl:grid-cols-[2fr_3fr]` — formulário menor, resultado maior (resultado tem mais info)
+- Quando vazio, mostrar preview/exemplo em cinza claro em vez de string solta
+
+**Tabs (Produtos, Calculadoras, Ads)**:
+- Limitar largura das tabs ao container (já vai resolver com page-container)
+- Padronizar altura `h-11`, fonte `text-sm font-semibold`
+
+**Integrações**:
+- 720px em vez de 672 dá respiro real
+- Cards Shopee Seller / Shopee Ads em grid 2 colunas em desktop xl, em vez de empilhados
+
+### 4. Tokens de espaçamento consolidados
+
+Adicionar ao `index.css`:
+```css
+.surface-card { @apply bg-surface border border-border rounded-2xl p-5; }
+.section-gap > * + * { margin-top: 1.25rem; }  /* 20px entre seções */
 ```
-- Em mobile: tudo em coluna única (mantém comportamento atual)
-- Em desktop: Breakdown ocupa coluna esquerda inteira (é longo, 7 itens), coluna direita empilha ROAS + Canais + Estoque
 
-**5. Projeção Mensal full-width abaixo**
-- Como é interativa (slider) e tem 4 KPIs em grid, fica melhor sozinha embaixo ocupando todo o width
+Substitui `space-y-5` solto por classe semântica.
 
-**6. Menu "⋯" para ações secundárias**
-- Substituir botões soltos de Compartilhar e Excluir por um `DropdownMenu` (já existe em `components/ui/dropdown-menu.tsx`) com ícone "MoreVertical"
-- Itens: Compartilhar, Excluir (em vermelho)
-- Libera espaço no header para o título respirar
+## Arquivos a modificar
 
-**7. Card de Estoque com mais peso visual**
-- Quando estoque ≤ mínimo: borda amarela + badge "⚠ Reposição"
-- Botão "Ajustar estoque" → abre o ProductForm direto na seção de estoque (futuro)
+**Setup (1 arquivo):**
+- `src/index.css` — adicionar 3 utilitárias (`.page-container`, `.page-container-narrow`, `.page-container-wide`)
 
-### Arquivos modificados
-- `src/pages/ProductDetail.tsx` — único arquivo (apenas layout/className + adição de DropdownMenu para ações secundárias)
+**Aplicação do container (8 arquivos, 1-2 linhas cada):**
+- `src/pages/Home.tsx`
+- `src/pages/Products.tsx`
+- `src/pages/Performance.tsx`
+- `src/pages/Roas.tsx`
+- `src/pages/Stock.tsx`
+- `src/pages/Calculators.tsx`
+- `src/pages/Integracoes.tsx`
+- `src/pages/AdminBanners.tsx`
 
-### Sem mudanças
-- `ProductForm` (modal de edição) — fluxo mantido como você pediu
-- `ProductDetailDrawer` — não usado nesta rota
-- Lógica de cálculo, ROAS, canais — tudo intacto
-- Tokens de design — mesma paleta
+**Refinos visuais pontuais (3 arquivos):**
+- `src/components/home/QuickCalculator.tsx` — grid 2 colunas em desktop
+- `src/pages/Stock.tsx` — KPIs com valores em destaque + empty state controlado
+- `src/pages/Calculators.tsx` — proporção do grid resultado/formulário
 
-### Resultado
-- Aproveita toda a largura do desktop (878px CSS no viewport atual → cabe bem no `max-w-6xl`)
-- Hero metrics dão destaque imediato aos números que importam
-- Grid 2 colunas elimina a "torre vertical" e o vazio à direita
-- Header limpo com ações secundárias agrupadas no menu
+## O que **NÃO** muda
+
+- Tokens de cor (Bg #111111, Cards #1a1a1a, Accent #e85d00) — intactos
+- Sidebar, BottomNavigation, DesktopHeader — intactos
+- Lógica de cálculo, estados, hooks — intactos
+- ProductDetail e ProductForm — já refatorados, ficam
+- Mobile — todos os max-w já vinham de breakpoints `md:`, mobile mantém comportamento atual
+
+## Resultado esperado
+
+- Conteúdo nunca mais cola na borda direita (sumiço do "vazio à direita")
+- Largura visual consistente em todas as telas (sensação de "produto único", não 8 páginas com regras próprias)
+- Tabelas e KPIs respiram nos cantos, com hierarquia clara
+- Em desktop largo (1920px), conteúdo não estica grotescamente — fica centrado num "cartão de leitura" largo
 
