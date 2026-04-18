@@ -328,7 +328,7 @@ export default function ProductDetail() {
 
             {/* Estoque */}
             <div className={cn(
-              'surface-card p-5 border',
+              'surface-card p-5 border order-1 md:order-none',
               stockLow ? 'border-warning/40' : 'border-border'
             )}>
               <div className="flex items-center justify-between mb-2">
