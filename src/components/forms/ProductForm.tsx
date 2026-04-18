@@ -242,20 +242,20 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
 
           {/* Hero — Imagem + Nome (horizontal em desktop, vertical em mobile) */}
           <div className="surface-card p-4 md:p-5">
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-5">
+            <div className="flex flex-row md:items-start items-center gap-3 md:gap-5">
               <label className="cursor-pointer group flex-shrink-0">
                 <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                 {imageUrl ? (
                   <div className="relative">
-                    <img src={imageUrl} alt="Preview" className="w-24 h-24 rounded-xl object-cover ring-1 ring-border group-hover:ring-primary transition-all" />
+                    <img src={imageUrl} alt="Preview" className="w-16 h-16 md:w-24 md:h-24 rounded-xl object-cover ring-1 ring-border group-hover:ring-primary transition-all" />
                     <div className="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Camera className="w-6 h-6 text-white" />
+                      <Camera className="w-5 h-5 md:w-6 md:h-6 text-white" />
                     </div>
                   </div>
                 ) : (
-                  <div className="w-24 h-24 rounded-xl bg-surface-2 border border-dashed border-border flex flex-col items-center justify-center gap-1.5 group-hover:border-primary/40 transition-colors">
-                    <Camera className="w-6 h-6 text-text-3" />
-                    <span className="text-[10px] text-text-3">Adicionar</span>
+                  <div className="w-16 h-16 md:w-24 md:h-24 rounded-xl bg-surface-2 border border-dashed border-border flex flex-col items-center justify-center gap-1 md:gap-1.5 group-hover:border-primary/40 transition-colors">
+                    <Camera className="w-5 h-5 md:w-6 md:h-6 text-text-3" />
+                    <span className="hidden md:inline text-[10px] text-text-3">Adicionar</span>
                   </div>
                 )}
               </label>
