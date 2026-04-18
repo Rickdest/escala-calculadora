@@ -208,28 +208,30 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
     parseFloat(salePrice) > 0;
 
   return (
-    <div className="fixed inset-0 z-[70] bg-black/50 backdrop-blur-sm animate-fade-up">
-      <div className="fixed inset-0 z-[70] bg-surface animate-slide-up overflow-hidden flex flex-col md:inset-x-0 md:bottom-0 md:top-auto md:max-h-[92vh] md:rounded-t-2xl md:border-t md:border-border">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <h2 className="text-base font-bold text-foreground">{product ? 'Editar Produto' : 'Novo Produto'}</h2>
-          {isShopeeProduct && (
-            <span className="text-[11px] text-[#EE4D2D] flex items-center gap-1 ml-2">
-              🛍 Importado da Shopee
-              {(product as any)?.shopeeSyncedAt && (
-                <span className="text-muted-foreground/60">
-                  · sync {new Date((product as any).shopeeSyncedAt).toLocaleDateString('pt-BR')}
+    <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm animate-fade-up flex items-end md:items-center justify-center md:p-6">
+      <div className="bg-surface w-full md:max-w-3xl h-[100dvh] md:h-auto md:max-h-[90vh] flex flex-col overflow-hidden border-t md:border md:border-border md:rounded-2xl md:shadow-2xl animate-slide-up">
+        {/* Header — sticky, com hierarquia */}
+        <div className="flex items-center gap-3 px-5 md:px-8 py-4 border-b border-border bg-surface/95 backdrop-blur-sm flex-shrink-0">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-base md:text-lg font-bold text-foreground">{product ? 'Editar Produto' : 'Novo Produto'}</h2>
+              {isShopeeProduct && (
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#EE4D2D] bg-[#EE4D2D]/10 border border-[#EE4D2D]/20 px-2 py-0.5 rounded-full">
+                  🛍 Shopee
                 </span>
               )}
-            </span>
-          )}
-          <button onClick={onClose} className="p-2 hover:bg-surface-2 rounded-lg transition-colors">
+            </div>
+            {product && name && (
+              <p className="text-xs text-muted-foreground truncate mt-0.5 italic">{name}</p>
+            )}
+          </div>
+          <button onClick={onClose} className="w-9 h-9 flex items-center justify-center hover:bg-surface-2 rounded-full transition-colors flex-shrink-0">
             <X className="w-5 h-5 text-text-2" />
           </button>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 pb-20 space-y-4">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-5 md:px-8 py-5 md:py-6 pb-24 md:pb-6 space-y-5">
           {/* Shopee cost alert */}
           {isShopeeProduct && (!product?.costPrice || product.costPrice === 0) && (
             <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-3">
@@ -237,71 +239,83 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
               Preencha o custo para ver margem real e ROAS de empate
             </div>
           )}
-          {/* Image Upload */}
-          <div className="flex justify-center">
-            <label className="cursor-pointer group">
-              <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-              {imageUrl ? (
-                <div className="relative">
-                  <img src={imageUrl} alt="Preview" className="w-24 h-24 rounded-xl object-cover ring-1 ring-border group-hover:ring-primary transition-all" />
-                  <div className="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Camera className="w-6 h-6 text-white" />
+
+          {/* Hero — Imagem + Nome (horizontal em desktop, vertical em mobile) */}
+          <div className="surface-card p-4 md:p-5">
+            <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-5">
+              <label className="cursor-pointer group flex-shrink-0">
+                <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                {imageUrl ? (
+                  <div className="relative">
+                    <img src={imageUrl} alt="Preview" className="w-24 h-24 rounded-xl object-cover ring-1 ring-border group-hover:ring-primary transition-all" />
+                    <div className="absolute inset-0 bg-black/40 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Camera className="w-6 h-6 text-white" />
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="w-24 h-24 rounded-xl bg-surface-2 border border-border flex flex-col items-center justify-center gap-1.5 group-hover:border-primary/30 transition-colors">
-                  <Camera className="w-6 h-6 text-text-3" />
-                  <span className="text-[10px] text-text-3">Adicionar</span>
-                </div>
-              )}
-            </label>
-          </div>
-
-          {/* Nome */}
-          <div className="space-y-1.5">
-            <label className="section-label">Nome do Produto *</label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Camiseta Básica" className="h-12 bg-surface-2 border-border rounded-lg focus:border-primary" required />
-          </div>
-
-          {/* Custo + Venda */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="section-label flex items-center gap-1.5">
-                {isShopeeProduct ? '✏ ' : ''}Preço de Custo *
-                {isShopeeProduct && <span className="text-[9px] bg-[#EE4D2D]/15 text-[#EE4D2D] rounded px-1.5 py-0.5">editável</span>}
+                ) : (
+                  <div className="w-24 h-24 rounded-xl bg-surface-2 border border-dashed border-border flex flex-col items-center justify-center gap-1.5 group-hover:border-primary/40 transition-colors">
+                    <Camera className="w-6 h-6 text-text-3" />
+                    <span className="text-[10px] text-text-3">Adicionar</span>
+                  </div>
+                )}
               </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-2">R$</span>
-                <Input type="number" inputMode="decimal" step="0.01" min="0" value={costPrice} onChange={(e) => setCostPrice(e.target.value)} placeholder="0,00" className={cn("pl-12 h-12 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num", isShopeeProduct && "border-l-2 border-l-[#EE4D2D]/40 bg-[#EE4D2D]/[0.03]")} required />
+              <div className="flex-1 w-full space-y-1.5">
+                <label className="section-label">Nome do Produto *</label>
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Camiseta Básica" className="h-11 bg-surface-2 border-border rounded-lg focus:border-primary" required />
+                {isShopeeProduct && (product as any)?.shopeeSyncedAt && (
+                  <p className="text-[10px] text-muted-foreground/60">
+                    Sincronizado em {new Date((product as any).shopeeSyncedAt).toLocaleDateString('pt-BR')}
+                  </p>
+                )}
               </div>
             </div>
-            <div className="space-y-1.5">
-              <label className="section-label flex items-center gap-1.5">
-                Preço de Venda *
-                {isShopeeProduct && <span className="text-[9px] bg-muted/60 text-muted-foreground/60 rounded px-1.5 py-0.5 flex items-center gap-0.5"><Lock className="w-2.5 h-2.5" /> Shopee</span>}
-              </label>
-              {isShopeeProduct ? (
-                <div className="relative h-12 bg-muted/30 border border-border rounded-lg flex items-center px-3 cursor-not-allowed">
-                  <span className="text-sm font-medium text-muted-foreground font-mono font-mono-num">
-                    R$ {(parseFloat(salePrice) || 0).toFixed(2).replace('.', ',')}
-                  </span>
-                  <span className="absolute right-3 text-[10px] text-muted-foreground/50">Editar no Seller Center</span>
-                </div>
-              ) : (
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-2">R$</span>
-                  <Input type="number" inputMode="decimal" step="0.01" min="0" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} placeholder="0,00" className="pl-12 h-12 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num" required />
-                </div>
-              )}
-            </div>
           </div>
 
-          {/* Embalagem */}
-          <div className="space-y-1.5">
-            <label className="section-label">Embalagem e Insumos</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm border-r border-border pr-2">R$</span>
-              <Input type="number" inputMode="decimal" step="0.01" min="0" value={packagingCost} onChange={(e) => setPackagingCost(e.target.value)} placeholder="0,00" className="pl-12 h-12 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num" />
+          {/* Card de Precificação — Custo + Venda + Embalagem agrupados */}
+          <div className="surface-card p-4 md:p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="text-base">💰</span>
+              <h3 className="text-sm font-semibold text-foreground">Precificação</h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="section-label flex items-center gap-1.5">
+                  Preço de Custo *
+                  {isShopeeProduct && <span className="text-[9px] bg-[#EE4D2D]/15 text-[#EE4D2D] rounded px-1.5 py-0.5">editável</span>}
+                </label>
+                <div className="relative">
+                  <span className="absolute left-0 top-0 bottom-0 w-10 flex items-center justify-center text-text-3 text-sm border-r border-border bg-surface-2/60 rounded-l-lg pointer-events-none">R$</span>
+                  <Input type="number" inputMode="decimal" step="0.01" min="0" value={costPrice} onChange={(e) => setCostPrice(e.target.value)} placeholder="0,00" className={cn("pl-12 h-11 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num", isShopeeProduct && "border-l-2 border-l-[#EE4D2D]/40 bg-[#EE4D2D]/[0.03]")} required />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="section-label flex items-center gap-1.5">
+                  Preço de Venda *
+                  {isShopeeProduct && <span className="text-[9px] bg-muted/60 text-muted-foreground/70 rounded px-1.5 py-0.5 flex items-center gap-0.5"><Lock className="w-2.5 h-2.5" /> Shopee</span>}
+                </label>
+                {isShopeeProduct ? (
+                  <div className="relative h-11 bg-muted/30 border border-border rounded-lg flex items-center px-3 cursor-not-allowed">
+                    <span className="text-sm font-medium text-muted-foreground font-mono font-mono-num">
+                      R$ {(parseFloat(salePrice) || 0).toFixed(2).replace('.', ',')}
+                    </span>
+                    <span className="absolute right-3 text-[10px] text-muted-foreground/50 hidden md:inline">Seller Center</span>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <span className="absolute left-0 top-0 bottom-0 w-10 flex items-center justify-center text-text-3 text-sm border-r border-border bg-surface-2/60 rounded-l-lg pointer-events-none">R$</span>
+                    <Input type="number" inputMode="decimal" step="0.01" min="0" value={salePrice} onChange={(e) => setSalePrice(e.target.value)} placeholder="0,00" className="pl-12 h-11 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num" required />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-border/40 space-y-1.5">
+              <label className="section-label">Embalagem e Insumos</label>
+              <div className="relative md:max-w-[50%]">
+                <span className="absolute left-0 top-0 bottom-0 w-10 flex items-center justify-center text-text-3 text-sm border-r border-border bg-surface-2/60 rounded-l-lg pointer-events-none">R$</span>
+                <Input type="number" inputMode="decimal" step="0.01" min="0" value={packagingCost} onChange={(e) => setPackagingCost(e.target.value)} placeholder="0,00" className="pl-12 h-11 bg-surface-2 border-border rounded-lg focus:border-primary font-mono font-mono-num" />
+              </div>
             </div>
           </div>
 
@@ -732,8 +746,11 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
         </form>
 
         {/* Footer */}
-        <div className="p-4 border-t border-border mobile-sheet-footer md:pb-4 bg-surface relative z-[60] flex-shrink-0">
-          <Button type="submit" onClick={handleSubmit} className="w-full h-12 text-[15px] font-semibold bg-primary hover:bg-primary/90 rounded-[10px] transition-colors active:scale-[0.98]" disabled={!isValid || isSaving}>
+        <div className="px-5 md:px-8 py-4 border-t border-border mobile-sheet-footer md:pb-4 bg-surface/95 backdrop-blur-sm relative z-[60] flex-shrink-0 flex flex-col-reverse md:flex-row md:justify-end gap-2 md:gap-3">
+          <Button type="button" variant="ghost" onClick={onClose} className="h-11 md:w-auto md:px-6 text-sm font-medium" disabled={isSaving}>
+            Cancelar
+          </Button>
+          <Button type="submit" onClick={handleSubmit} className="h-11 md:w-auto md:px-8 text-[15px] font-semibold bg-primary hover:bg-primary/90 rounded-[10px] transition-colors active:scale-[0.98]" disabled={!isValid || isSaving}>
             {isSaving ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Salvando...</>) : (<><Save className="w-4 h-4 mr-2" />{product ? 'Salvar Alterações' : 'Salvar Produto'}</>)}
           </Button>
         </div>
