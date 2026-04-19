@@ -1,103 +1,92 @@
 
 
-## Diagnóstico mobile (390px) — 2 telas com problemas distintos
+## Auditoria de Segurança, Bugs e Melhorias — abril 2026
 
-### Tela 1 — `ProductDetail` em mobile (screenshot image-237)
+Rodei o scanner de segurança, o linter Supabase, inspecionei as 22 tabelas, todas as 75 RLS policies, policies de storage e bati contra as memórias do projeto (findings já justificados).
 
-| Problema | Evidência |
-|---|---|
-| Header pesado: imagem 64px + título grande + subtítulo + badge ocupam ~30% da viewport antes do scroll | KPIs aparecem só após scroll |
-| 3 KPIs em linha única (sem o 4º "ROAS empate") | Layout `grid-cols-2 md:grid-cols-4` quebra mal em 390px com 3 cards forçados em uma linha apertada |
-| Footer flutuante inesperado: lixeira + share + "Editar produto" colado no rodapé | Não existe esse footer no código atual de `ProductDetail.tsx` (ele tem só dropdown menu). Isso é o `BottomNavigation` da AppLayout sobreposto pelos botões "Editar" empurrados pra baixo. Esse padrão está quebrado em mobile. |
-| Padding lateral 16px certo, mas cards grudados verticalmente sem hierarquia | Falta de "respirar" entre header e KPIs |
+### 1. Achados de SEGURANÇA
 
-### Tela 2 — `ProductForm` (modal de edição) em mobile (screenshot image-236)
+**🟢 Já justificados (manter ignorados — alinhado com `mem://security/ignored-findings-rationale`)**
+- `shopee_tokens` sem INSERT/UPDATE para usuários — **correto**: tokens só são gravados via Edge Functions com service_role. Confirmei que `shopee-callback` usa service role.
+- `subscription_events` sem SELECT para usuários — **correto**: log de auditoria, payload só visível ao admin.
 
-| Problema | Evidência |
-|---|---|
-| Hero card com imagem **centralizada empilhada** acima do nome | Linha 245: `flex-col md:flex-row` — em mobile ocupa ~280px de altura desperdiçada. Imagem 96×96 num modal mobile é exagero. |
-| Header: nome em itálico truncado debaixo de "Editar Produto" | Linha 224-226: subtítulo redundante (o nome já aparece no hero card abaixo) |
-| Card "Precificação" com label "PREÇO DE CUSTO * [EDITÁVEL]" + Input em **coluna única** | Linhas 281-307: `grid-cols-1 md:grid-cols-2` — em mobile cada input fica gigante, força scroll exagerado |
-| Badge "EDITÁVEL" laranja vivo do mesmo tamanho do label | Tira foco do que importa (o valor) |
-| Footer com botão "Salvar Alterações" laranja gigante + "Cancelar" como link de texto | Linhas 745-751: ordem invertida com `flex-col-reverse` deixa "Cancelar" embaixo, longe do polegar. Em mobile o padrão correto é Cancelar à esquerda + Salvar à direita lado a lado. |
+**🟡 Achado real a corrigir (1)**
+- **`shopee_auth_states` sem DELETE policy** — usuários não conseguem limpar seus próprios state tokens após o OAuth. Hoje só o trigger `cleanup_old_shopee_states` (10 min) limpa, ok como rede de segurança, mas o ideal é apagar imediatamente após troca por token bem-sucedida.
+- **Ação:** adicionar policy `DELETE USING (auth.uid() = user_id)` + chamar `delete()` no `shopee-callback` após sucesso.
 
-## Plano de melhoria mobile (sem mexer no desktop)
+**🟡 Storage buckets públicos com listing aberto (`banners`, `product-images`)**
+- Hoje qualquer um pode **listar** todos os arquivos do bucket via `storage.objects.select`.
+- Para `banners`: aceitável (conteúdo público gerenciado por admin), mas vamos restringir SELECT a `bucket_id` apenas para os arquivos referenciados na tabela `banners` (impede enumeração).
+- Para `product-images`: **vazamento real** — qualquer usuário lista todas as imagens de produtos de outros usuários. A policy atual `Product images are publicly accessible` é `bucket_id = 'product-images'` sem nenhum filtro. As URLs já são públicas (ok para `<img src>`), mas listing não deveria ser. **Ação:** restringir SELECT a `(storage.foldername(name))[1] = auth.uid()::text` (usuário vê só as suas), e manter URLs públicas para renderização (acesso direto por URL continua funcionando, só listing fica bloqueado).
 
-Tudo via classes Tailwind responsivas (`md:` mantém o comportamento desktop atual intacto).
+### 2. BUGS funcionais identificados
 
-### A) `ProductDetail.tsx` — mobile mais denso e útil
+**Bug 1 — Sincronização Shopee pode reiniciar `sale_price` editado**
+Acabamos de implementar a preservação no `useShopeeProducts`, mas a Edge Function `shopee-sync` **não tem essa proteção**. Se a sync for via API (não via importProducts do hook), o preço editado é sobrescrito. Precisa replicar a regra `if (existing.sale_price === 0 || null) updatePrice` lá também.
 
-1. **Header compacto em mobile**
-   - Imagem **48×48** em mobile, mantém 64×64 a partir de `md:` (linhas 140-143)
-   - Título `text-base` em mobile (atual `text-lg`)
-   - Remover badge de status do header em mobile e movê-lo para **dentro** do primeiro KPI (Lucro/un fica com pílula colorida no canto)
-   - Botões "Editar" + menu "⋯" colados ao header em mobile (atual já está, mas botão Editar sai com `flex-1` ocupando largura útil)
+**Bug 2 — `subscription_events.user_id` é nullable e nunca preenchido em alguns paths**
+A tabela permite `user_id NULL` (necessário para webhooks pré-vinculação), mas hoje **nenhum job retroativo** vincula `user_id` quando o usuário se cadastra depois. A reconciliação descrita em `mem://auth/subscription-reconciliation-logic` cobre `subscriptions`, mas `subscription_events` fica órfão. Adicionar trigger `AFTER INSERT ON profiles` que faz `UPDATE subscription_events SET user_id = NEW.user_id WHERE email = NEW.email AND user_id IS NULL`.
 
-2. **KPIs: 2×2 grid em mobile, 1×4 em desktop**
-   - Atual `grid-cols-2 md:grid-cols-4` ✓ ok
-   - Aumentar destaque do valor: `text-2xl` em mobile (atual `text-xl`)
-   - Adicionar borda colorida sutil de status no card "Margem real" (verde/amarelo/vermelho)
+**Bug 3 — `shopee_auth_states` permite múltiplos states ativos por usuário**
+Não há `UNIQUE(user_id, app_type)`. Se o usuário clica "Conectar Shopee" 2x rápido, gera 2 states e o callback consome o errado. Adicionar índice único parcial: `UNIQUE(user_id, app_type) WHERE created_at > now() - interval '10 min'` — ou simplesmente fazer o insert com `ON CONFLICT DO UPDATE`.
 
-3. **CTA flutuante mobile**
-   - Adicionar barra fixa na base com **"Editar produto"** full-width acima do `BottomNavigation` (z-index correto, padding-bottom de 80px no scroll-content para não cobrir)
-   - Em desktop esse CTA fica oculto (`md:hidden`) — o botão Editar do header é o suficiente
-   - Substitui a sensação atual de "botões flutuando à toa"
+**Bug 4 — `enforce_store_limit` não considera plano `essencial` novo**
+A função tem `'monthly' → 2, 'yearly' → 7, 'pro' → 2` mas as memórias dizem "Essencial 2 lojas, Pro 7 lojas" (`mem://business/pricing-plans`). Se o `subscriptions.plan` for gravado como `'essencial'` ou `'skalify_pro'`, cai no fallback `0`. Precisa alinhar os literais com o que o webhook Cakto grava.
 
-4. **Cards do grid em coluna única no mobile (já é o caso)**
-   - Reordenar: **Estoque** antes de **Comparativo de canais** em mobile (alerta de reposição é mais acionável que comparativo vazio)
+### 3. MELHORIAS de robustez
 
-### B) `ProductForm.tsx` — modal de edição mais usável em mobile
+**M1 — 140 chamadas de `console.log/error` nas Edge Functions**
+Logs desestruturados podem vazar tokens/payloads em produção. Padronizar wrapper `logger.info/warn/error` que faz redaction automática de campos `access_token`, `refresh_token`, `partner_key`, `email` (mascarado).
 
-1. **Hero compacto: imagem inline com nome em mobile**
-   - Em mobile: `flex-row` com imagem **64×64** à esquerda + nome ocupando o restante (mesma linha, como no card de produto)
-   - Em desktop: mantém `md:flex-row` com imagem 96×96 (estado atual)
-   - Remover subtítulo italic redundante do header (linhas 224-226)
+**M2 — Falta rate limiting em endpoints públicos**
+- `cakto-webhook` (`verify_jwt = false`) — só valida secret, mas sem throttle por IP
+- `shopee-callback` (`verify_jwt = false`) — qualquer um pode bater com `?code=...&state=...` aleatórios. Adicionar rate limit (10/min/IP) via tabela `rate_limits` ou contador em memória.
 
-2. **Precificação: Custo + Venda lado a lado em mobile**
-   - Trocar `grid-cols-1 md:grid-cols-2` por `grid-cols-2 gap-3` puro (já cabe em 390px com prefix R$ compacto)
-   - Embalagem mantém linha própria embaixo (já está)
-   - Reduzir altura dos inputs de `h-11` para `h-10` em mobile para densidade
-   - Badge "editável": mover para tooltip/ícone `Info` ao lado do label em vez de pílula laranja inline (chama atenção apenas em hover)
+**M3 — Senhas: HIBP check desligado**
+O scan não acusou, mas vale checar via `configure_auth`. Se desligado, ativar `password_hibp_enabled: true` para bloquear senhas vazadas.
 
-3. **Footer mobile: botões lado a lado**
-   - Trocar `flex-col-reverse md:flex-row` por `flex-row gap-2` (Cancelar 40% + Salvar 60%)
-   - "Cancelar" vira `Button variant="outline"` em vez de ghost para ter peso visual
-   - Footer com `pb-[env(safe-area-inset-bottom)]` para iPhone
+**M4 — `profiles.push_subscription` (jsonb) sem validação de schema**
+Se for usado para web push notifications, pode receber JSON malformado. Validar com Zod no client antes de gravar.
 
-4. **Header limpo**
-   - Remover linha do nome italic (já está no hero card embaixo)
-   - Badge "🛍 Shopee" do lado do título — mantém
+**M5 — Índices ausentes em queries frequentes**
+- `ads_data(user_id, periodo_fim DESC)` — dashboard filtra por isso
+- `product_performance(user_id, period_end DESC)` — idem
+- `shopee_ads_by_product(user_id, store_id, period_end DESC)`
+Verificar com `EXPLAIN ANALYZE` se há sequential scan e adicionar índices compostos.
 
-### C) Refinos transversais mobile
+### 4. MELHORIAS de UX/qualidade
 
-- Padding lateral do modal: `px-4` em mobile (atual `px-5`) → mais espaço útil
-- Espaçamento vertical entre seções: `space-y-4` em mobile (atual `space-y-5`) → menos scroll
-- `surface-card` com `p-4` em mobile (atual `p-5` em alguns) → consistência
+**UX1 — Auth: mensagem genérica em erros 500 do `signUp`**
+Hoje cai no "Erro ao processar. Tente novamente." Adicionar telemetria (Sentry-like) para ver erros reais sem expor ao usuário.
 
-## Arquivos modificados (somente mobile, sem afetar desktop)
+**UX2 — `useShopeeProducts.importProducts` não mostra progresso**
+Em loja com 200+ produtos, a UI fica "carregando" sem feedback. Adicionar progress bar (X/Y processados) via state local.
 
-1. **`src/pages/ProductDetail.tsx`**
-   - Header: imagem 48px mobile, título menor, badge no KPI
-   - KPIs: typography mais forte, borda de status
-   - Adicionar CTA flutuante mobile-only "Editar produto"
-   - Reordenar cards da coluna direita em mobile
+**UX3 — Preço editado manualmente: sem indicador visual na lista**
+Já implementado o lock no sync, falta mostrar uma pílula "Preço customizado" na lista de produtos quando `sale_price !== shopee_price_snapshot`. Requer adicionar coluna `shopee_sale_price` em `products` (snapshot da última sync) para comparar.
 
-2. **`src/components/forms/ProductForm.tsx`**
-   - Hero card horizontal em mobile (img + nome lado a lado)
-   - Precificação grid 2 colunas em mobile
-   - Footer mobile com botões lado a lado
-   - Remover subtítulo italic redundante do header
+**UX4 — Modal de edição: campo `cost_price` não tem mesma proteção do `sale_price`**
+Custo também vem da Shopee (quando há `mtsku`), e hoje pode ser sobrescrito sem aviso. Aplicar a mesma lógica de "preservar se já editado".
 
-## O que **NÃO** muda
+### 5. Plano de execução proposto (priorizado)
 
-- Desktop (≥768px): tudo permanece exatamente igual ao estado atual
-- Lógica de cálculo, ROAS, comparativo, projeção
-- Tokens de cor, fontes, ícones
-- Modal de edição: continua sendo bottom-sheet em mobile, modal centrado em desktop
-- Hook `useShopeeProducts` e a lógica de preservar preço editado (já implementada)
+| # | Item | Impacto | Esforço |
+|---|---|---|---|
+| 1 | DELETE policy + delete imediato em `shopee_auth_states` | Médio (segurança) | Baixo |
+| 2 | Restringir SELECT em `product-images` (anti-enumeração) | Alto (privacidade) | Baixo |
+| 3 | Replicar preservação de `sale_price` no `shopee-sync` edge | Alto (bug usuário) | Baixo |
+| 4 | Alinhar literais de plano em `enforce_store_limit` | Alto (bug billing) | Baixo |
+| 5 | UNIQUE em `shopee_auth_states(user_id, app_type)` | Médio | Baixo |
+| 6 | Trigger reconciliação `subscription_events.user_id` | Médio | Baixo |
+| 7 | Logger com redaction nas Edge Functions | Médio (segurança) | Médio |
+| 8 | Rate limiting `cakto-webhook` e `shopee-callback` | Médio (DoS) | Médio |
+| 9 | Indicador visual de "preço customizado" + snapshot Shopee | Baixo (UX) | Médio |
+| 10 | Progresso de importação Shopee (X/Y) | Baixo (UX) | Baixo |
 
-## Resultado esperado
+### Atualizações de memória após implementação
+- Atualizar `mem://security/ignored-findings-rationale` adicionando `product-images` listing como **corrigido** (não mais ignorado).
+- Criar `mem://security/storage-bucket-policies` documentando a regra "buckets públicos sem listing aberto".
 
-- Mobile do detalhe: header consome 30% menos vertical, KPIs em 2×2 com peso visual real, CTA "Editar" sempre acessível na base
-- Mobile do form: hero ocupa 1 linha em vez de 3, custo+venda visíveis sem scroll, botões salvar/cancelar lado a lado no padrão iOS/Android
+### Pergunta
+Quer que eu execute **todos os 10 itens em sequência** ou prefere começar só pelos críticos (1–6, todos baixo esforço)?
 
