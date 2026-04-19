@@ -23,9 +23,11 @@ interface ShopeeImportModalProps {
   isOpen: boolean;
   onClose: () => void;
   onImport: (selectedIds: number[], products: ShopeeProduct[]) => Promise<void>;
+  /** Optional progress feed from the importer hook */
+  progress?: { current: number; total: number } | null;
 }
 
-export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportModalProps) {
+export function ShopeeImportModal({ isOpen, onClose, onImport, progress }: ShopeeImportModalProps) {
   const { user } = useAuth();
   const { currentStore } = useStore();
   const sellerToken = useShopeeToken('seller');
@@ -393,7 +395,12 @@ export function ShopeeImportModal({ isOpen, onClose, onImport }: ShopeeImportMod
               disabled={selected.size === 0 || importing}
             >
               {importing ? (
-                <><Loader2 className="w-4 h-4 mr-1.5 animate-spin" />Importando...</>
+                <>
+                  <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                  {progress
+                    ? `Importando ${progress.current}/${progress.total}...`
+                    : 'Importando...'}
+                </>
               ) : (
                 `Importar ${selected.size} produto${selected.size !== 1 ? 's' : ''} →`
               )}

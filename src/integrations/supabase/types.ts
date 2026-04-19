@@ -674,6 +674,7 @@ export type Database = {
           shopee_acelera: string | null
           shopee_item_id: number | null
           shopee_product_id: string | null
+          shopee_sale_price: number | null
           shopee_synced_at: string | null
           source: string | null
           stock_quantity: number | null
@@ -702,6 +703,7 @@ export type Database = {
           shopee_acelera?: string | null
           shopee_item_id?: number | null
           shopee_product_id?: string | null
+          shopee_sale_price?: number | null
           shopee_synced_at?: string | null
           source?: string | null
           stock_quantity?: number | null
@@ -730,6 +732,7 @@ export type Database = {
           shopee_acelera?: string | null
           shopee_item_id?: number | null
           shopee_product_id?: string | null
+          shopee_sale_price?: number | null
           shopee_synced_at?: string | null
           source?: string | null
           stock_quantity?: number | null

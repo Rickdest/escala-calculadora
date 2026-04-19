@@ -48,7 +48,7 @@ export default function Products() {
   const { metricsMap, reload: reloadAds } = useProductAdsMetrics();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { importProducts, importing, isConnected: shopeeConnected } = useShopeeProducts();
+  const { importProducts, importing, progress: importProgress, isConnected: shopeeConnected } = useShopeeProducts();
   
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -473,6 +473,7 @@ export default function Products() {
         <ShopeeImportModal
           isOpen={importModalOpen}
           onClose={() => setImportModalOpen(false)}
+          progress={importProgress}
           onImport={async (selectedIds, shopeeProducts) => {
             const result = await importProducts(selectedIds, shopeeProducts);
             if (result) retryLoad();
