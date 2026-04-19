@@ -176,6 +176,8 @@ export interface Product {
   outrosCanais?: OutrosCanais;
   shopeeItemId?: number;
   shopeeProductId?: string;
+  /** Snapshot do preço da Shopee na última sincronização, usado para detectar edição manual */
+  shopeeSalePrice?: number;
   draft?: boolean;
   source?: string;
   createdAt: Date;

@@ -39,6 +39,7 @@ export function mapDbProduct(p: Tables<'products'>): Product {
     outrosCanais: (p.outros_canais as unknown as Product['outrosCanais']) ?? undefined,
     shopeeItemId: p.shopee_item_id ? Number(p.shopee_item_id) : undefined,
     shopeeProductId: p.shopee_product_id || undefined,
+    shopeeSalePrice: p.shopee_sale_price != null ? Number(p.shopee_sale_price) : undefined,
     draft: (p as any).draft ?? false,
     source: (p as any).source || 'manual',
     createdAt: new Date(p.created_at),
