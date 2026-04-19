@@ -29,6 +29,11 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
   const { currentStore } = useStore();
   const config = currentStore?.config;
   const isShopeeProduct = !!product?.shopeeItemId || !!product?.shopeeProductId;
+  const shopeeSnapshotPrice = (product as any)?.shopeeSalePrice as number | undefined;
+  const hasCustomPrice = isShopeeProduct
+    && shopeeSnapshotPrice != null
+    && product?.salePrice != null
+    && Math.abs(Number(product.salePrice) - Number(shopeeSnapshotPrice)) > 0.001;
 
   const [name, setName] = useState(product?.name || '');
   const [costPrice, setCostPrice] = useState(product?.costPrice?.toString() || '');
@@ -292,7 +297,12 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
               <div className="space-y-1.5">
                 <label className="section-label flex items-center gap-1.5">
                   Venda *
-                  {isShopeeProduct && <span className="hidden md:inline text-[9px] bg-[#EE4D2D]/15 text-[#EE4D2D] rounded px-1.5 py-0.5">editável</span>}
+                  {isShopeeProduct && !hasCustomPrice && <span className="hidden md:inline text-[9px] bg-[#EE4D2D]/15 text-[#EE4D2D] rounded px-1.5 py-0.5">editável</span>}
+                  {hasCustomPrice && (
+                    <span title={`Preço Shopee: R$ ${Number(shopeeSnapshotPrice).toFixed(2)}`} className="text-[9px] bg-success/15 text-success rounded px-1.5 py-0.5">
+                      customizado
+                    </span>
+                  )}
                 </label>
                 <div className="relative">
                   <span className="absolute left-0 top-0 bottom-0 w-9 md:w-10 flex items-center justify-center text-text-3 text-xs md:text-sm border-r border-border bg-surface-2/60 rounded-l-lg pointer-events-none">R$</span>
@@ -302,7 +312,9 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             </div>
             {isShopeeProduct && (
               <p className="text-[10px] text-muted-foreground/70 leading-snug -mt-2">
-                Preços sincronizados da Shopee. Edite se estiverem incorretos (comum em variações). Podem ser sobrescritos na próxima sincronização.
+                {hasCustomPrice
+                  ? `Preço editado manualmente (Shopee: R$ ${Number(shopeeSnapshotPrice).toFixed(2)}). Sincronizações futuras NÃO sobrescrevem este valor.`
+                  : 'Preços sincronizados da Shopee. Edite se estiverem incorretos (comum em variações). Após editar, o valor fica protegido contra sobrescrita.'}
               </p>
             )}
 
