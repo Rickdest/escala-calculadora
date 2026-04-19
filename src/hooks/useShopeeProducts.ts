@@ -6,17 +6,15 @@ import { useShopeeToken } from '@/hooks/useShopeeToken';
 import { toast } from 'sonner';
 import type { ShopeeProduct } from '@/components/produtos/ShopeeImportModal';
 
+export type ImportProgress = { current: number; total: number } | null;
+
 export function useShopeeProducts() {
   const { user } = useAuth();
   const { currentStore } = useStore();
   const { isConnected } = useShopeeToken();
   const [importing, setImporting] = useState(false);
+  const [progress, setProgress] = useState<ImportProgress>(null);
 
-  /**
-   * Import selected products from Shopee.
-   * When called with selectedIds + shopeeProducts (from modal), only imports those.
-   * When called without args, imports all (legacy).
-   */
   const importProducts = async (
     selectedIds?: number[],
     shopeeProducts?: ShopeeProduct[]
@@ -28,8 +26,8 @@ export function useShopeeProducts() {
 
     try {
       setImporting(true);
+      setProgress(null);
 
-      // If we have pre-fetched products from the modal, use them directly
       if (selectedIds && shopeeProducts) {
         const toImport = shopeeProducts.filter(p => selectedIds.includes(p.item_id));
 
@@ -39,17 +37,17 @@ export function useShopeeProducts() {
         }
 
         let imported = 0;
+        setProgress({ current: 0, total: toImport.length });
+
         for (const p of toImport) {
           const { data: existing } = await supabase
             .from('products')
-            .select('id, cost_price, sale_price')
+            .select('id, cost_price, sale_price, shopee_sale_price')
             .eq('user_id', user.id)
             .eq('shopee_product_id', String(p.item_id))
             .maybeSingle();
 
           if (existing) {
-            // Preserve manually edited sale_price: only overwrite if user hasn't changed it
-            // (i.e. existing sale_price is 0 or matches what would have been set previously)
             const updatePayload: any = {
               name: p.item_name,
               stock_quantity: p.stock,
@@ -57,8 +55,10 @@ export function useShopeeProducts() {
               shopee_synced_at: new Date().toISOString(),
               shopee_product_id: String(p.item_id),
               shopee_item_id: p.item_id,
+              // Snapshot do preço Shopee atual — usado para badge "preço customizado"
+              shopee_sale_price: p.price,
             };
-            // Only sync price if user hasn't set a custom one (sale_price is 0 or null)
+            // Só sincroniza preço se o usuário ainda não customizou
             if (!existing.sale_price || existing.sale_price === 0) {
               updatePayload.sale_price = p.price;
             }
@@ -69,6 +69,7 @@ export function useShopeeProducts() {
               store_id: currentStore.id,
               name: p.item_name,
               sale_price: p.price,
+              shopee_sale_price: p.price,
               cost_price: 0,
               stock_quantity: p.stock,
               image_url: p.image_url || null,
@@ -78,6 +79,7 @@ export function useShopeeProducts() {
             } as any);
           }
           imported++;
+          setProgress({ current: imported, total: toImport.length });
         }
 
         const { data: noCost } = await supabase
@@ -97,7 +99,6 @@ export function useShopeeProducts() {
         return { imported, withoutCost };
       }
 
-      // Legacy: shouldn't be called anymore but kept for safety
       return { imported: 0, withoutCost: 0 };
     } catch (e) {
       console.error('Shopee import error:', e);
@@ -105,8 +106,9 @@ export function useShopeeProducts() {
       return null;
     } finally {
       setImporting(false);
+      setProgress(null);
     }
   };
 
-  return { importProducts, importing, isConnected };
+  return { importProducts, importing, progress, isConnected };
 }
