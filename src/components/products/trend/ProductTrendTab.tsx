@@ -475,7 +475,7 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
 
       {/* Ciclo sazonal + Regiões — lado a lado em md+ */}
       {!lowQuality && (seasonalCycle.length > 0 || regions.length > 0) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {seasonalCycle.length > 0 && <SeasonalCycleChart cycle={seasonalCycle} />}
           {regions.length > 0 && <RegionsBreakdown regions={regions} />}
         </div>
@@ -484,7 +484,7 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
 
       {/* Oportunidades de mercado — buscas relacionadas (top + rising) */}
       {(relatedRising.length > 0 || relatedTop.length > 0) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {/* Em alta agora (rising) */}
           {relatedRising.length > 0 && (
             <div className="surface-card p-5">
