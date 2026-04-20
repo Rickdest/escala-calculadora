@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Search, SlidersHorizontal, Package, TrendingUp, TrendingDown, Percent, DollarSign, Download, FileSpreadsheet, FileText, ArrowUpDown, ChevronRight, ShoppingBag, Loader2, AlertCircle } from 'lucide-react';
+import { Plus, Search, SlidersHorizontal, Package, TrendingUp, TrendingDown, Percent, DollarSign, Download, FileSpreadsheet, FileText, ArrowUpDown, ChevronRight, ShoppingBag, Loader2, AlertCircle, Target, Trophy, AlertTriangle } from 'lucide-react';
 import { useProductAdsMetrics } from '@/hooks/useProductAdsMetrics';
 import { useStore } from '@/contexts/StoreContext';
 import { Product, SortOption } from '@/types/store';
@@ -55,6 +55,8 @@ export default function Products() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [analysisSortBy, setAnalysisSortBy] = useState<SortOption>('margin-high');
+  const [analysisSearch, setAnalysisSearch] = useState('');
+  const [analysisFilter, setAnalysisFilter] = useState<'all' | 'profitable' | 'healthy' | 'attention' | 'loss'>('all');
   
   const [importModalOpen, setImportModalOpen] = useState(false);
 
@@ -80,21 +82,49 @@ export default function Products() {
     }
   }, [currentStore, searchQuery, sortBy, calculateProduct, draftFilter]);
 
-  const { stats, analysisProducts, summary } = useMemo(() => {
-    if (!currentStore) return { stats: null, analysisProducts: [], summary: null };
+  const { stats, analysisProducts, summary, filterCounts, missingCost } = useMemo(() => {
+    if (!currentStore) return { stats: null, analysisProducts: [], summary: null, filterCounts: { all: 0, profitable: 0, healthy: 0, attention: 0, loss: 0 }, missingCost: 0 };
     const storeStats = getStoreStats(currentStore);
     const withCalc = currentStore.products.map(p => ({ product: p, calc: calculateProduct(p, currentStore.config) }));
-    let sorted = [...withCalc];
+
+    // Filter counts (independent of active filter)
+    const counts = {
+      all: withCalc.length,
+      profitable: withCalc.filter(x => x.calc.realMargin >= 17).length,
+      healthy: withCalc.filter(x => x.calc.realMargin >= 10 && x.calc.realMargin < 17).length,
+      attention: withCalc.filter(x => x.calc.realMargin >= 0 && x.calc.realMargin < 10).length,
+      loss: withCalc.filter(x => x.calc.realMargin < 0).length,
+    };
+    const noCost = currentStore.products.filter(p => !p.costPrice || p.costPrice === 0).length;
+
+    // Apply search + filter
+    let filtered = withCalc.filter(({ product }) =>
+      product.name.toLowerCase().includes(analysisSearch.toLowerCase())
+    );
+    if (analysisFilter === 'profitable') filtered = filtered.filter(x => x.calc.realMargin >= 17);
+    else if (analysisFilter === 'healthy') filtered = filtered.filter(x => x.calc.realMargin >= 10 && x.calc.realMargin < 17);
+    else if (analysisFilter === 'attention') filtered = filtered.filter(x => x.calc.realMargin >= 0 && x.calc.realMargin < 10);
+    else if (analysisFilter === 'loss') filtered = filtered.filter(x => x.calc.realMargin < 0);
+
+    let sorted = [...filtered];
     switch (analysisSortBy) {
       case 'margin-high': sorted.sort((a, b) => b.calc.realMargin - a.calc.realMargin); break;
       case 'margin-low': sorted.sort((a, b) => a.calc.realMargin - b.calc.realMargin); break;
       case 'profit-high': sorted.sort((a, b) => b.calc.netProfit - a.calc.netProfit); break;
       case 'profit-low': sorted.sort((a, b) => a.calc.netProfit - b.calc.netProfit); break;
     }
-    const bestMargin = withCalc.length > 0 ? Math.max(...withCalc.map(p => p.calc.realMargin)) : 0;
-    const worstMargin = withCalc.length > 0 ? Math.min(...withCalc.map(p => p.calc.realMargin)) : 0;
-    return { stats: storeStats, analysisProducts: sorted, summary: { bestMargin, worstMargin } };
-  }, [currentStore, analysisSortBy, calculateProduct, getStoreStats]);
+
+    const best = withCalc.length > 0 ? withCalc.reduce((a, b) => a.calc.realMargin >= b.calc.realMargin ? a : b) : null;
+    const worst = withCalc.length > 0 ? withCalc.reduce((a, b) => a.calc.realMargin <= b.calc.realMargin ? a : b) : null;
+
+    return {
+      stats: storeStats,
+      analysisProducts: sorted,
+      summary: { best, worst },
+      filterCounts: counts,
+      missingCost: noCost,
+    };
+  }, [currentStore, analysisSortBy, analysisSearch, analysisFilter, calculateProduct, getStoreStats]);
 
   const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
@@ -312,99 +342,282 @@ export default function Products() {
           </TabsContent>
 
           <TabsContent value="analysis" className="space-y-4 mt-3">
-            {stats && analysisProducts.length > 0 ? (
+            {stats && currentStore.products.length > 0 ? (
               <>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  <div className="surface-card p-4 animate-fade-up">
-                    <p className="section-label mb-1">Margem Média</p>
-                    <p className={cn('font-mono text-2xl font-bold font-mono-num', getMarginStatus(stats.avgMargin).color)}>
+                {/* Hero KPI tiles */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+                  <div className={cn(
+                    'surface-card p-3 border-l-2 animate-fade-up',
+                    stats.avgMargin >= currentStore.config.desiredMargin ? 'border-l-success' :
+                    stats.avgMargin >= 0 ? 'border-l-warning' : 'border-l-destructive'
+                  )}>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Percent className="w-3.5 h-3.5 text-text-3" />
+                      <p className="section-label">Margem</p>
+                    </div>
+                    <p className={cn('font-mono text-xl font-bold font-mono-num', getMarginStatus(stats.avgMargin).color)}>
                       {stats.avgMargin.toFixed(1)}%
                     </p>
+                    <p className="text-[10px] text-text-3 mt-0.5">meta {currentStore.config.desiredMargin}%</p>
                   </div>
-                  <div className="surface-card p-4 animate-fade-up stagger-1">
-                    <p className="section-label mb-1">Lucro Total</p>
+
+                  <div className={cn(
+                    'surface-card p-3 border-l-2 animate-fade-up stagger-1',
+                    stats.totalProfit >= 0 ? 'border-l-success' : 'border-l-destructive'
+                  )}>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <DollarSign className="w-3.5 h-3.5 text-text-3" />
+                      <p className="section-label">Lucro</p>
+                    </div>
                     <p className={cn('font-mono text-xl font-bold font-mono-num', stats.totalProfit >= 0 ? 'text-success' : 'text-destructive')}>
                       {formatCurrency(stats.totalProfit)}
+                    </p>
+                    <p className="text-[10px] text-text-3 mt-0.5">{stats.totalProducts} produtos</p>
+                  </div>
+
+                  <div className="surface-card p-3 border-l-2 border-l-primary animate-fade-up stagger-2">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Target className="w-3.5 h-3.5 text-text-3" />
+                      <p className="section-label">Na Meta</p>
+                    </div>
+                    <p className="font-mono text-xl font-bold font-mono-num text-foreground">
+                      {stats.productsAboveTarget}
+                      <span className="text-sm text-text-3 font-normal"> / {stats.totalProducts}</span>
+                    </p>
+                    <p className="text-[10px] text-text-3 mt-0.5">
+                      {stats.totalProducts > 0 ? ((stats.productsAboveTarget / stats.totalProducts) * 100).toFixed(0) : 0}% no alvo
+                    </p>
+                  </div>
+
+                  <div className={cn(
+                    'surface-card p-3 border-l-2 animate-fade-up stagger-3',
+                    missingCost > 0 ? 'border-l-warning' : 'border-l-success'
+                  )}>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <AlertCircle className="w-3.5 h-3.5 text-text-3" />
+                      <p className="section-label">Sem Custo</p>
+                    </div>
+                    <p className={cn('font-mono text-xl font-bold font-mono-num', missingCost > 0 ? 'text-warning' : 'text-success')}>
+                      {missingCost}
+                    </p>
+                    <p className="text-[10px] text-text-3 mt-0.5">
+                      {missingCost > 0 ? 'preencher custo' : 'tudo certo'}
                     </p>
                   </div>
                 </div>
 
-                {summary && (
-                  <div className="surface-card p-4 animate-fade-up stagger-2">
-                    <p className="text-sm font-semibold text-foreground mb-3">Resumo de Performance</p>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-3">
-                        <div>
-                          <p className="section-label">Melhor Margem</p>
-                          <p className="font-mono text-lg font-bold text-success font-mono-num">{summary.bestMargin.toFixed(1)}%</p>
-                        </div>
-                        <div>
-                          <p className="section-label">Pior Margem</p>
-                          <p className="font-mono text-lg font-bold text-destructive font-mono-num">{summary.worstMargin.toFixed(1)}%</p>
-                        </div>
+                {/* Best/Worst highlight */}
+                {summary?.best && summary?.worst && summary.best.product.id !== summary.worst.product.id && (
+                  <div className="grid grid-cols-2 gap-2.5 animate-fade-up">
+                    <button
+                      onClick={() => navigate(`/products/${summary.best!.product.id}`)}
+                      className="surface-card p-3 text-left hover:border-success/40 transition-colors group"
+                    >
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Trophy className="w-3.5 h-3.5 text-success" />
+                        <p className="section-label text-success">Melhor margem</p>
                       </div>
-                      <div className="space-y-3">
-                        <div>
-                          <p className="section-label">Na Meta</p>
-                          <p className="font-mono text-lg font-bold text-success font-mono-num">{stats.productsAboveTarget}</p>
-                        </div>
-                        <div>
-                          <p className="section-label">Fora da Meta</p>
-                          <p className="font-mono text-lg font-bold text-destructive font-mono-num">{stats.productsBelowTarget}</p>
-                        </div>
+                      <p className="text-sm font-medium text-foreground truncate group-hover:text-primary">
+                        {summary.best.product.name}
+                      </p>
+                      <p className="font-mono text-base font-bold text-success font-mono-num mt-0.5">
+                        {summary.best.calc.realMargin.toFixed(1)}%
+                      </p>
+                    </button>
+                    <button
+                      onClick={() => navigate(`/products/${summary.worst!.product.id}`)}
+                      className="surface-card p-3 text-left hover:border-destructive/40 transition-colors group"
+                    >
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <AlertTriangle className="w-3.5 h-3.5 text-destructive" />
+                        <p className="section-label text-destructive">Pior margem</p>
                       </div>
-                    </div>
-                    <div className="pt-3 mt-3 border-t border-border flex items-center justify-between text-sm">
-                      <span className="text-text-2">Meta de Margem</span>
-                      <span className="font-bold font-mono font-mono-num text-primary">{currentStore.config.desiredMargin}%</span>
-                    </div>
+                      <p className="text-sm font-medium text-foreground truncate group-hover:text-primary">
+                        {summary.worst.product.name}
+                      </p>
+                      <p className="font-mono text-base font-bold text-destructive font-mono-num mt-0.5">
+                        {summary.worst.calc.realMargin.toFixed(1)}%
+                      </p>
+                    </button>
                   </div>
                 )}
 
-                <div className="space-y-4 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 md:space-y-0">
+                {/* Charts */}
+                <div className="space-y-3 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-3 md:space-y-0">
                   <MarginDistributionChart />
                   <TopProductsChart />
                   <ProfitSummaryChart />
                 </div>
 
-                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
-                  {analysisSortOptions.map((option) => (
-                    <Button key={option.value} variant={analysisSortBy === option.value ? 'default' : 'outline'} size="sm" onClick={() => setAnalysisSortBy(option.value)}
-                      className={cn('flex-shrink-0 rounded-[6px] text-xs', analysisSortBy === option.value ? 'bg-primary' : 'bg-surface-2 border-border text-text-2')}>
-                      <ArrowUpDown className="w-3 h-3 mr-1" />{option.label}
-                    </Button>
-                  ))}
-                </div>
-
-                <div className="space-y-0 md:max-w-[800px]">
-                  <p className="text-sm font-semibold text-foreground mb-2">Ranking de Produtos</p>
-                  <div className="surface-card divide-y divide-border">
-                    {analysisProducts.map(({ product, calc }, index) => (
-                      <div key={product.id} className="px-4 py-3 flex items-center gap-3 animate-fade-up" style={{ animationDelay: `${index * 30}ms` }}>
-                        <div className={cn(
-                          'w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold font-mono-num flex-shrink-0',
-                          index < 3 ? 'bg-primary text-primary-foreground' : 'bg-surface-2 text-text-2'
-                        )}>
-                          #{index + 1}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-foreground truncate text-sm">{product.name}</p>
-                          <p className="text-xs text-text-2 font-mono font-mono-num">{formatCurrency(product.salePrice)}</p>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <div className="flex items-center gap-1.5 justify-end">
-                            {calc.realMargin >= 0 ? <TrendingUp className={cn('w-3.5 h-3.5', getMarginStatus(calc.realMargin).color)} /> : <TrendingDown className={cn('w-3.5 h-3.5', getMarginStatus(calc.realMargin).color)} />}
-                            <span className={cn('font-mono font-bold text-base font-mono-num', getMarginStatus(calc.realMargin).color)}>
-                              {calc.realMargin.toFixed(1)}%
-                            </span>
-                          </div>
-                          <p className={cn('text-sm font-mono font-mono-num', calc.netProfit >= 0 ? 'text-foreground' : 'text-destructive')}>
-                            {formatCurrency(calc.netProfit)}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                {/* Ranking section */}
+                <div className="space-y-3 md:max-w-[900px]">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-foreground">Ranking de Produtos</p>
+                    <span className="text-[11px] text-text-3 font-mono font-mono-num">
+                      {analysisProducts.length} de {filterCounts.all}
+                    </span>
                   </div>
+
+                  {/* Search + sort */}
+                  <div className="flex gap-2">
+                    <div className="flex-1 relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-3" />
+                      <Input
+                        value={analysisSearch}
+                        onChange={(e) => setAnalysisSearch(e.target.value)}
+                        placeholder="Buscar no ranking..."
+                        className="pl-10 h-10 bg-surface-2 border-border rounded-lg focus:border-primary"
+                      />
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="h-10 px-3 border-border bg-surface-2 gap-1.5">
+                          <ArrowUpDown className="w-4 h-4 text-text-2" />
+                          <span className="hidden sm:inline text-xs">Ordenar</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {analysisSortOptions.map((option) => (
+                          <DropdownMenuItem
+                            key={option.value}
+                            onClick={() => setAnalysisSortBy(option.value)}
+                            className={cn('cursor-pointer text-xs', analysisSortBy === option.value && 'text-primary')}
+                          >
+                            {option.label}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  {/* Filter chips */}
+                  <div className="flex gap-1.5 overflow-x-auto scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0 pb-1">
+                    {([
+                      { key: 'all', label: 'Todos', dot: null, count: filterCounts.all },
+                      { key: 'profitable', label: 'Lucrativos', dot: 'bg-success', count: filterCounts.profitable },
+                      { key: 'healthy', label: 'Saudáveis', dot: 'bg-success/60', count: filterCounts.healthy },
+                      { key: 'attention', label: 'Atenção', dot: 'bg-warning', count: filterCounts.attention },
+                      { key: 'loss', label: 'Prejuízo', dot: 'bg-destructive', count: filterCounts.loss },
+                    ] as const).filter(f => f.key === 'all' || f.count > 0).map(f => {
+                      const isActive = analysisFilter === f.key;
+                      return (
+                        <button
+                          key={f.key}
+                          onClick={() => setAnalysisFilter(f.key)}
+                          className={cn(
+                            'shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all border flex items-center gap-1.5',
+                            isActive
+                              ? 'bg-primary text-primary-foreground border-primary'
+                              : 'bg-surface-2 border-border text-text-2 hover:text-foreground'
+                          )}
+                        >
+                          {f.dot && <span className={cn('w-1.5 h-1.5 rounded-full', f.dot)} />}
+                          {f.label}
+                          <span className="opacity-60 font-mono-num">({f.count})</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Ranking list */}
+                  {analysisProducts.length > 0 ? (
+                    <div className="surface-card divide-y divide-border overflow-hidden">
+                      {analysisProducts.map(({ product, calc }, index) => {
+                        const status = getMarginStatus(calc.realMargin);
+                        const target = currentStore.config.desiredMargin || 1;
+                        const barPct = Math.max(0, Math.min(100, (calc.realMargin / target) * 100));
+                        const noCost = !product.costPrice || product.costPrice === 0;
+                        return (
+                          <button
+                            key={product.id}
+                            onClick={() => navigate(`/products/${product.id}`)}
+                            className={cn(
+                              'w-full px-3 py-3 flex items-center gap-3 text-left transition-colors hover:bg-surface-2/50 animate-fade-up',
+                              index < 3 && 'bg-primary/5'
+                            )}
+                            style={{ animationDelay: `${Math.min(index * 25, 400)}ms` }}
+                          >
+                            <div className={cn(
+                              'w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold font-mono-num flex-shrink-0',
+                              index === 0 ? 'bg-success text-white' :
+                              index < 3 ? 'bg-primary/20 text-primary' :
+                              'bg-surface-2 text-text-3'
+                            )}>
+                              {index + 1}
+                            </div>
+
+                            <ProductThumbnail
+                              productId={product.id}
+                              productName={product.name}
+                              imageUrl={product.imageUrl}
+                            />
+
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-foreground truncate text-sm leading-tight">
+                                {product.name}
+                              </p>
+                              <div className="flex items-center gap-2 mt-0.5 text-[10px] text-text-3 font-mono font-mono-num">
+                                <span>{formatCurrency(product.salePrice)}</span>
+                                {!noCost && (
+                                  <>
+                                    <span className="text-text-3/50">·</span>
+                                    <span>custo {formatCurrency(product.costPrice)}</span>
+                                  </>
+                                )}
+                                {noCost && (
+                                  <span className="text-warning">⚠ sem custo</span>
+                                )}
+                              </div>
+                              {/* Margin bar */}
+                              <div className="mt-1.5 h-1 bg-surface-2 rounded-full overflow-hidden">
+                                <div
+                                  className={cn(
+                                    'h-full rounded-full transition-all',
+                                    calc.realMargin < 0 ? 'bg-destructive' :
+                                    calc.realMargin < 10 ? 'bg-warning' :
+                                    'bg-success'
+                                  )}
+                                  style={{ width: `${barPct}%` }}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="text-right flex-shrink-0">
+                              <div className="flex items-center gap-1 justify-end">
+                                {calc.realMargin >= 0 ? (
+                                  <TrendingUp className={cn('w-3 h-3', status.color)} />
+                                ) : (
+                                  <TrendingDown className={cn('w-3 h-3', status.color)} />
+                                )}
+                                <span className={cn('font-mono font-bold text-sm font-mono-num', status.color)}>
+                                  {calc.realMargin.toFixed(1)}%
+                                </span>
+                              </div>
+                              <p className={cn(
+                                'text-[11px] font-mono font-mono-num mt-0.5',
+                                calc.netProfit >= 0 ? 'text-text-2' : 'text-destructive'
+                              )}>
+                                {formatCurrency(calc.netProfit)}
+                              </p>
+                            </div>
+
+                            <ChevronRight className="w-4 h-4 text-text-3 flex-shrink-0 hidden md:block" />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="surface-card py-10 text-center">
+                      <Search className="w-8 h-8 text-text-3 mx-auto mb-2" />
+                      <p className="text-sm text-text-2">Nenhum produto encontrado</p>
+                      <button
+                        onClick={() => { setAnalysisSearch(''); setAnalysisFilter('all'); }}
+                        className="text-xs text-primary underline mt-2"
+                      >
+                        Limpar filtros
+                      </button>
+                    </div>
+                  )}
                 </div>
               </>
             ) : (
