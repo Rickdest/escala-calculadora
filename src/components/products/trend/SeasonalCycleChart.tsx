@@ -45,7 +45,7 @@ export function SeasonalCycleChart({ cycle }: SeasonalCycleChartProps) {
           "Sem padrão sazonal claro"
         )}
       </p>
-      <div className="h-44">
+      <div className="h-36 sm:h-44">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={fullCycle} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
             <XAxis
