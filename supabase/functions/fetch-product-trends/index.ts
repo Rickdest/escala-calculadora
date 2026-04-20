@@ -979,6 +979,16 @@ Deno.serve(async (req) => {
           stock_recommendation: stockRecommendation,
           forecast_3m,
           category_hint: categoryHint,
+          // Insights extras
+          market_score,
+          volatility,
+          volatility_label,
+          current_month_status,
+          vs_last_year,
+          vs_all_time_peak,
+          next_30d_estimate,
+          best_growth_month,
+          market_saturation,
           // Qualidade / status
           low_quality: lowQuality,
           suggestions,
