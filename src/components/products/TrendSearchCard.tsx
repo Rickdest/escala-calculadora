@@ -336,8 +336,9 @@ export function TrendSearchCard({
 
   return (
     <div className={cn(
-      "animate-fade-up surface-card p-4 sm:p-5",
-      !isEmbedded && "border-l-4 border-l-primary/70",
+      "animate-fade-up",
+      hideOuterBorder ? "p-0" : "surface-card p-4 sm:p-5",
+      !isEmbedded && !hideOuterBorder && "border-l-4 border-l-primary/70",
     )}>
       {/* Header (oculto em embedded) */}
       {!isEmbedded && (
