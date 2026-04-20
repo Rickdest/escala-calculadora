@@ -326,15 +326,23 @@ type RelatedKeyword = {
   formattedValue: string; // ex: "+250%", "Em alta", "100"
 };
 
+type RegionEntry = {
+  region: string;
+  value: number;
+};
+
 type TrendsResult = {
   timeline: Array<{ period_date: string; interest_score: number }>;
   relatedTop: RelatedKeyword[];
   relatedRising: RelatedKeyword[];
+  regions: RegionEntry[];
 };
 
-async function fetchGoogleTrends(keyword: string): Promise<TrendsResult> {
+async function fetchGoogleTrends(
+  keyword: string,
+  timeRange: string = "today 5-y",
+): Promise<TrendsResult> {
   const geo = "BR";
-  const time = "today 12-m";
   const ua = pickUA();
   const cookies = await getCookies(ua);
   const headers = buildHeaders(ua, cookies);
@@ -345,7 +353,7 @@ async function fetchGoogleTrends(keyword: string): Promise<TrendsResult> {
   exploreUrl.searchParams.set(
     "req",
     JSON.stringify({
-      comparisonItem: [{ keyword, geo, time }],
+      comparisonItem: [{ keyword, geo, time: timeRange }],
       category: 0,
       property: "",
     }),
