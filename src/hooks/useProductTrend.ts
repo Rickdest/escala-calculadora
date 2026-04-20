@@ -56,6 +56,8 @@ export function useProductTrend(productId: string | undefined) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [relatedTop, setRelatedTop] = useState<RelatedKeyword[]>([]);
   const [relatedRising, setRelatedRising] = useState<RelatedKeyword[]>([]);
+  const [regions, setRegions] = useState<RegionEntry[]>([]);
+  const [seasonalCycle, setSeasonalCycle] = useState<SeasonalMonth[]>([]);
 
   const loadFromDb = useCallback(async () => {
     if (!productId) return;
