@@ -126,8 +126,21 @@ function formatTickByTimeframe(d: string, timeframe: Timeframe): string {
   }
 }
 
-export function TrendSearchCard() {
-  const [input, setInput] = useState("");
+export interface TrendSearchCardProps {
+  /** Pré-popula input e dispara busca automática no mount */
+  initialKeyword?: string;
+  /** "embedded" remove header e borda lateral (uso dentro de outras telas) */
+  variant?: "standalone" | "embedded";
+  /** Slot opcional renderizado abaixo dos accordions (ex: keywords Shopee) */
+  extraFooter?: React.ReactNode;
+}
+
+export function TrendSearchCard({
+  initialKeyword,
+  variant = "standalone",
+  extraFooter,
+}: TrendSearchCardProps = {}) {
+  const [input, setInput] = useState(initialKeyword ?? "");
   const [collapsed, setCollapsed] = useState(false);
   const [timeframe, setTimeframe] = useState<Timeframe>("today 5-y");
   const [compareTerms, setCompareTerms] = useState<string[]>([]);
@@ -165,6 +178,15 @@ export function TrendSearchCard() {
     setShowCountries(false);
     clear();
   };
+
+  // Auto-search no mount quando initialKeyword é fornecido
+  useEffect(() => {
+    const kw = initialKeyword?.trim();
+    if (!kw) return;
+    setInput(kw);
+    search(kw, { timeframe: "today 5-y", compareKeywords: [] });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialKeyword]);
 
   const handleTimeframeChange = (tf: Timeframe) => {
     if (tf === timeframe) return;
@@ -307,33 +329,40 @@ export function TrendSearchCard() {
     return parts.join(" ");
   }, [result, slopeMeta]);
 
+  const isEmbedded = variant === "embedded";
+
   return (
-    <div className="surface-card p-4 sm:p-5 border-l-4 border-l-primary/70 animate-fade-up">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="flex items-start gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/25 to-primary/5 border border-primary/20 flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-5 h-5 text-primary" />
+    <div className={cn(
+      "animate-fade-up surface-card p-4 sm:p-5",
+      !isEmbedded && "border-l-4 border-l-primary/70",
+    )}>
+      {/* Header (oculto em embedded) */}
+      {!isEmbedded && (
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <div className="flex items-start gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/25 to-primary/5 border border-primary/20 flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-5 h-5 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-foreground leading-tight">
+                Análise de demanda
+              </p>
+              <p className="text-[11px] text-text-3 mt-0.5 leading-tight">
+                Descubra o potencial de qualquer produto antes de cadastrar.
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="text-sm font-bold text-foreground leading-tight">
-              Análise de demanda
-            </p>
-            <p className="text-[11px] text-text-3 mt-0.5 leading-tight">
-              Descubra o potencial de qualquer produto antes de cadastrar.
-            </p>
-          </div>
+          {result && (
+            <button
+              onClick={() => setCollapsed((v) => !v)}
+              className="text-text-3 hover:text-foreground transition-colors flex-shrink-0"
+              aria-label={collapsed ? "Expandir" : "Recolher"}
+            >
+              {collapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+            </button>
+          )}
         </div>
-        {result && (
-          <button
-            onClick={() => setCollapsed((v) => !v)}
-            className="text-text-3 hover:text-foreground transition-colors flex-shrink-0"
-            aria-label={collapsed ? "Expandir" : "Recolher"}
-          >
-            {collapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
-          </button>
-        )}
-      </div>
+      )}
 
       {!collapsed && (
         <>
@@ -1021,6 +1050,9 @@ export function TrendSearchCard() {
                       )}
                     </div>
                   )}
+
+                  {/* Extra footer slot (ex: keywords Shopee no contexto do produto) */}
+                  {extraFooter}
                 </>
               )}
             </div>
