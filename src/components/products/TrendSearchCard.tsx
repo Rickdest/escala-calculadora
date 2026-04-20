@@ -126,8 +126,21 @@ function formatTickByTimeframe(d: string, timeframe: Timeframe): string {
   }
 }
 
-export function TrendSearchCard() {
-  const [input, setInput] = useState("");
+export interface TrendSearchCardProps {
+  /** Pré-popula input e dispara busca automática no mount */
+  initialKeyword?: string;
+  /** "embedded" remove header e borda lateral (uso dentro de outras telas) */
+  variant?: "standalone" | "embedded";
+  /** Slot opcional renderizado abaixo dos accordions (ex: keywords Shopee) */
+  extraFooter?: React.ReactNode;
+}
+
+export function TrendSearchCard({
+  initialKeyword,
+  variant = "standalone",
+  extraFooter,
+}: TrendSearchCardProps = {}) {
+  const [input, setInput] = useState(initialKeyword ?? "");
   const [collapsed, setCollapsed] = useState(false);
   const [timeframe, setTimeframe] = useState<Timeframe>("today 5-y");
   const [compareTerms, setCompareTerms] = useState<string[]>([]);
