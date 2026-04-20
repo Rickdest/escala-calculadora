@@ -82,21 +82,49 @@ export default function Products() {
     }
   }, [currentStore, searchQuery, sortBy, calculateProduct, draftFilter]);
 
-  const { stats, analysisProducts, summary } = useMemo(() => {
-    if (!currentStore) return { stats: null, analysisProducts: [], summary: null };
+  const { stats, analysisProducts, summary, filterCounts, missingCost } = useMemo(() => {
+    if (!currentStore) return { stats: null, analysisProducts: [], summary: null, filterCounts: { all: 0, profitable: 0, healthy: 0, attention: 0, loss: 0 }, missingCost: 0 };
     const storeStats = getStoreStats(currentStore);
     const withCalc = currentStore.products.map(p => ({ product: p, calc: calculateProduct(p, currentStore.config) }));
-    let sorted = [...withCalc];
+
+    // Filter counts (independent of active filter)
+    const counts = {
+      all: withCalc.length,
+      profitable: withCalc.filter(x => x.calc.realMargin >= 17).length,
+      healthy: withCalc.filter(x => x.calc.realMargin >= 10 && x.calc.realMargin < 17).length,
+      attention: withCalc.filter(x => x.calc.realMargin >= 0 && x.calc.realMargin < 10).length,
+      loss: withCalc.filter(x => x.calc.realMargin < 0).length,
+    };
+    const noCost = currentStore.products.filter(p => !p.costPrice || p.costPrice === 0).length;
+
+    // Apply search + filter
+    let filtered = withCalc.filter(({ product }) =>
+      product.name.toLowerCase().includes(analysisSearch.toLowerCase())
+    );
+    if (analysisFilter === 'profitable') filtered = filtered.filter(x => x.calc.realMargin >= 17);
+    else if (analysisFilter === 'healthy') filtered = filtered.filter(x => x.calc.realMargin >= 10 && x.calc.realMargin < 17);
+    else if (analysisFilter === 'attention') filtered = filtered.filter(x => x.calc.realMargin >= 0 && x.calc.realMargin < 10);
+    else if (analysisFilter === 'loss') filtered = filtered.filter(x => x.calc.realMargin < 0);
+
+    let sorted = [...filtered];
     switch (analysisSortBy) {
       case 'margin-high': sorted.sort((a, b) => b.calc.realMargin - a.calc.realMargin); break;
       case 'margin-low': sorted.sort((a, b) => a.calc.realMargin - b.calc.realMargin); break;
       case 'profit-high': sorted.sort((a, b) => b.calc.netProfit - a.calc.netProfit); break;
       case 'profit-low': sorted.sort((a, b) => a.calc.netProfit - b.calc.netProfit); break;
     }
-    const bestMargin = withCalc.length > 0 ? Math.max(...withCalc.map(p => p.calc.realMargin)) : 0;
-    const worstMargin = withCalc.length > 0 ? Math.min(...withCalc.map(p => p.calc.realMargin)) : 0;
-    return { stats: storeStats, analysisProducts: sorted, summary: { bestMargin, worstMargin } };
-  }, [currentStore, analysisSortBy, calculateProduct, getStoreStats]);
+
+    const best = withCalc.length > 0 ? withCalc.reduce((a, b) => a.calc.realMargin >= b.calc.realMargin ? a : b) : null;
+    const worst = withCalc.length > 0 ? withCalc.reduce((a, b) => a.calc.realMargin <= b.calc.realMargin ? a : b) : null;
+
+    return {
+      stats: storeStats,
+      analysisProducts: sorted,
+      summary: { best, worst },
+      filterCounts: counts,
+      missingCost: noCost,
+    };
+  }, [currentStore, analysisSortBy, analysisSearch, analysisFilter, calculateProduct, getStoreStats]);
 
   const formatCurrency = (value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
