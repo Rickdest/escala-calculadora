@@ -1,101 +1,89 @@
 
 
-## Análise do problema
+## Entendendo o pedido
 
-A aba **Análise** está visualmente datada vs o resto do app que já tem o "Claude Designer" aplicado (Detalhe do Produto, Tendência). Hoje:
+O usuário quer 2 coisas na aba **Análise** (`/products` → tab Análise):
 
-- 2 KPIs gigantes em cima (Margem Média + Lucro Total) — pouco denso
-- Card "Resumo de Performance" repete 4 números num grid 2x2 sem cor/hierarquia
-- 3 charts em cards `glass-card` genéricos, sem coesão
-- **Sem busca** no ranking — impossível achar um produto específico entre 32+
-- Ranking sem barras visuais, sem custos/preço, sem indicador de problema
-- Sort como pills horizontais com scroll lateral (UX antiga)
+1. **Melhorar o design** geral (visual mais polido, estilo Claude Designer)
+2. **Adicionar busca de tendência avulsa** — um campo onde digita qualquer termo (ex: "vestido feminino", "tênis nike") e recebe a mesma análise de tendência que aparece no detalhe do produto (gráfico 5 anos, ciclo sazonal, regiões, buscas relacionadas) — **sem precisar cadastrar o produto**.
 
-## Solução: redesign + busca no ranking
+## Análise técnica
 
-### S1 — Hero de KPIs 2x2 (estilo ProductDetail)
+**Como funciona hoje a tendência por produto:**
+- `useProductTrend(productId)` → chama edge function `fetch-product-trends` com `{ productId, force, keywordOverride? }`
+- A function persiste em `product_trends` (RLS por `user_id` + `product_id`)
+- Retorna timeline Google Trends, ciclo sazonal, regiões, related top/rising
 
-Trocar os 2 KPIs por **4 stat tiles densos** com ícone + border-l semântica:
+**Problema pra busca avulsa:** a tabela e a function exigem `product_id`. Pra busca livre, precisamos de um caminho que **não persista** (ou persista num bucket separado) e use só keyword.
 
-| Tile | Métrica | Ícone | Cor borda |
-|---|---|---|---|
-| Margem média | `8.5%` | `Percent` | semântica (success/warning/danger) |
-| Lucro total | `R$ 1.234` | `DollarSign` | success/danger |
-| Na meta | `1 de 32` | `Target` | primary |
-| Sem custo | `31` (alerta) | `AlertCircle` | warning/danger |
+## Solução
 
-Mobile: `grid-cols-2`, valores `text-xl` (não `text-2xl`).
+### Parte A — Backend: modo "keyword-only"
 
-### S2 — Remover card "Resumo de Performance" redundante
+Adicionar suporte na edge function `fetch-product-trends` para receber `{ keywordOnly: string }` (sem `productId`). Nesse modo:
+- Pula `extractKeyword` (usa o termo direto)
+- Pula `buildKeywordCascade` por padrão (respeita o que o usuário digitou)
+- **Não persiste no banco** — retorna tudo inline na response: `{ google_series, related_top, related_rising, regions, seasonal_cycle, low_quality, suggestions }`
+- Aceita opcional `forceCascade: true` se a primeira tentativa der vazio
 
-Os 4 números (melhor/pior margem, na/fora meta) já viram parte do hero ou ficam num **mini-card de "destaque" compacto** abaixo:
-- Melhor produto → nome + margem (verde) — clicável
-- Pior produto → nome + margem (vermelho) — clicável
-- Linha "Meta de margem: 15%" mantida só como sub-info
+Vantagens: zero migração, sem lixo no banco, sem necessidade de tornar `product_id` nullable em `product_trends`.
 
-### S3 — Charts mais coesos (estilo unificado)
+### Parte B — Hook novo: `useTrendSearch`
 
-Substituir `glass-card p-5` por `surface-card p-4` (mesma classe usada no resto) com:
-- Header padrão com `section-label` + valor sumário pequeno à direita
-- Charts com altura `h-[160px]` (mais densos)
-- Mobile: `grid-cols-1`, desktop `grid-cols-3`
-- **Distribuição de Margem**: virar **stack bar horizontal** em vez de pizza (mais legível em mobile, padrão Claude). Mostra "Acima 1 (3%)" + "Abaixo 31 (97%)" com barra vermelha+verde
-- **Top 5 e Lucro por Produto**: manter mas com cores semânticas (positivo=success, negativo=destructive)
+Espelha a interface do `useProductTrend` mas:
+- `search(keyword)` → chama function com `{ keywordOnly: keyword }`
+- Mantém estado local (sem `loadFromDb`)
+- Cache em memória das últimas 5 buscas (sessão), pra alternar rápido sem refazer chamada
+- Expõe: `searching, googleSeries, relatedTop, relatedRising, regions, seasonalCycle, lowQuality, suggestions, search(kw), clear()`
 
-### S4 — **Campo de busca + filtros no ranking** (principal pedido)
+### Parte C — UI: novo card "Pesquisar tendência" no topo da aba Análise
 
-Acima da lista "Ranking de Produtos", adicionar:
+Posicionado **logo abaixo do hero de KPIs**, antes dos charts existentes. Padrão Claude Designer:
 
 ```
-┌──────────────────────────────────────────┐
-│ 🔍 Buscar produto...        [⇅ ordenar] │
-├──────────────────────────────────────────┤
-│ [Todos] [Lucrativos] [Atenção] [Prejuízo]│
-└──────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│ 🔍 Pesquisar tendência de mercado                   │
+│ Descubra o interesse por qualquer produto, sem      │
+│ precisar cadastrar.                                 │
+│                                                     │
+│ [ vestido feminino...              ] [ Analisar ]   │
+│                                                     │
+│ Tente: vestido feminino · tênis nike · cropped       │
+└─────────────────────────────────────────────────────┘
 ```
 
-- Input de busca igual à aba Produtos (`Search` icon, `h-10`, `bg-surface-2`)
-- Dropdown de ordenação substitui as pills horizontais
-- **Chips de filtro rápido por status de margem** (Todos/Lucrativo ≥17%/Saudável 10-17%/Atenção 0-10%/Prejuízo <0%) com contagem
+Quando o usuário pesquisa:
+- Card **expande inline** mostrando: gráfico 5 anos compacto + ciclo sazonal + top regiões + buscas em alta
+- Reusa os componentes `SeasonalCycleChart` e `RegionsBreakdown` (já existem, são genéricos por dados)
+- Botão "✕ Limpar" / "🔁 Nova busca"
+- Loading state com skeleton estilo Claude
 
-### S5 — Ranking aprimorado
+### Parte D — Polimento visual da aba Análise
 
-Cada linha vira:
-```
-#1  [thumb 36px] Calça Legging…      29.0%  ↗
-                R$ 39,90 · custo R$ 18  R$ 11,52
-                ━━━━━━━━━━━━━━━━━░░ (barra de margem)
-```
-
-- Thumbnail pequeno do produto (já tem `ProductThumbnail`)
-- Nome truncado + preço/custo na sub-linha
-- Margem grande à direita com seta
-- **Barra horizontal proporcional** mostrando margem vs meta
-- Click → navega pra `/products/:id` (já existe pattern)
-- Top 3 ganham destaque visual (`bg-primary/5`)
-
-### S6 — Mobile-first refinado
-
-- Hero: `grid-cols-2 gap-2`, padding reduzido
-- Charts: 1 coluna empilhada
-- Ranking: thumb 32px, fontes menores
-- Sticky header dos filtros (igual TabsList) `sticky top-0` opcional
+Pequenos ajustes pra fechar o look Claude Designer:
+- **Hero de KPIs**: aumentar `border-l` semântica (atual já tem mas em mobile some); adicionar microcopy `meta 15%`, `32 produtos` etc com mais consistência tipográfica
+- **Cards "Melhor/Pior margem"**: trocar emoji `🏆/⚠️` por ícones lucide (`Trophy`, `AlertTriangle`) com cor semântica; adicionar seta `→` indicando clicável
+- **Charts**: padronizar header `section-label` em todos 3, mostrar valor sumário à direita (já parcial)
+- **Ranking "Atenção"**: o chip "Atenção (31)" tá amarelo; OK
+- **Filtros**: adicionar chip "Saudáveis (X)" e "Prejuízo (Y)" caso tenha — hoje só mostra os que existem? (verificar)
 
 ## Arquivos a alterar
 
 | Arquivo | Mudança |
 |---|---|
-| `src/pages/Products.tsx` | Reescrever conteúdo da aba `analysis`: hero 4 tiles, busca+filtros+sort, ranking aprimorado, remover card resumo redundante |
-| `src/components/charts/AnalyticsCharts.tsx` | Trocar `glass-card` → `surface-card`, `MarginDistributionChart` virar stack bar, alturas reduzidas, cores semânticas |
+| `supabase/functions/fetch-product-trends/index.ts` | Aceitar `keywordOnly` no body; rota alternativa que não persiste e retorna tudo inline |
+| `src/hooks/useTrendSearch.ts` | **Novo hook** pra busca avulsa, cache em memória |
+| `src/components/products/TrendSearchCard.tsx` | **Novo componente** card de busca + resultados inline |
+| `src/pages/Products.tsx` | Inserir `<TrendSearchCard />` após o hero de KPIs na aba Análise; pequenos ajustes visuais (ícones, microcopy) |
 
-Sem novos arquivos. Sem mudança de lógica/cálculos.
+Sem migrações de banco. Reusa `SeasonalCycleChart` e `RegionsBreakdown` existentes.
 
 ## Trade-offs
 
-- ✅ Visual unificado com ProductDetail (filosofia Claude Designer)
-- ✅ Busca + filtros por status resolvem o problema de "não acho meu produto" com 32+ itens
-- ✅ Stack bar substitui pizza (mais legível em mobile estreito)
-- ✅ Ranking com barra visual mostra margem vs meta de forma instantânea
-- ⚠️ Remover "Resumo de Performance" pode incomodar usuários acostumados — mitigado pelos 4 tiles + destaques de melhor/pior produto
-- ⚠️ Adicionar busca/filtros adiciona ~80px de altura — vale pela funcionalidade
+- ✅ Funcionalidade nova de alto valor (descoberta de produtos antes de cadastrar)
+- ✅ Sem persistência → sem lixo no banco, sem custos de storage
+- ✅ Reusa componentes de tendência existentes (consistência visual garantida)
+- ⚠️ Cada busca avulsa custa 1 chamada Google Trends (~3-8s + risco de rate-limit) — mitigado por cache em memória de 5 buscas/sessão
+- ⚠️ Sem histórico persistente — usuário perde busca ao recarregar (aceitável: é exploratório)
+- ⚠️ Adiciona ~200px de altura na aba — colocado num card colapsável (começa minimizado se usuário já buscou antes via `localStorage` flag)
 
