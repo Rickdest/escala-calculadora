@@ -727,6 +727,7 @@ export type Database = {
           source: string | null
           stock_quantity: number | null
           store_id: string
+          trend_keyword_override: string | null
           updated_at: string
           user_id: string
           variations: Json | null
@@ -756,6 +757,7 @@ export type Database = {
           source?: string | null
           stock_quantity?: number | null
           store_id: string
+          trend_keyword_override?: string | null
           updated_at?: string
           user_id: string
           variations?: Json | null
@@ -785,6 +787,7 @@ export type Database = {
           source?: string | null
           stock_quantity?: number | null
           store_id?: string
+          trend_keyword_override?: string | null
           updated_at?: string
           user_id?: string
           variations?: Json | null

@@ -18,7 +18,7 @@ export type TrendDiagnostic = {
   slopePct: number;
   peakMonth: string | null;
   valleyMonth: string | null;
-  nextPeakIn: number | null; // dias até próximo pico esperado
+  nextPeakIn: number | null;
   hasSeasonality: boolean;
 };
 
@@ -30,20 +30,34 @@ export function useProductTrend(productId: string | undefined) {
   const [googleSeries, setGoogleSeries] = useState<TrendPoint[]>([]);
   const [shopeeKeywords, setShopeeKeywords] = useState<ShopeeKeyword[]>([]);
   const [keyword, setKeyword] = useState<string | null>(null);
+  const [keywordOverride, setKeywordOverrideState] = useState<string | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
+  const [lowQuality, setLowQuality] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
 
   const loadFromDb = useCallback(async () => {
     if (!productId) return;
     setLoading(true);
     setError(null);
     try {
-      const { data, error: dbErr } = await supabase
-        .from("product_trends")
-        .select("*")
-        .eq("product_id", productId)
-        .order("period_date", { ascending: true });
+      const [{ data, error: dbErr }, { data: prod }] = await Promise.all([
+        supabase
+          .from("product_trends")
+          .select("*")
+          .eq("product_id", productId)
+          .order("period_date", { ascending: true }),
+        supabase
+          .from("products")
+          .select("trend_keyword_override")
+          .eq("id", productId)
+          .maybeSingle(),
+      ]);
 
       if (dbErr) throw dbErr;
+
+      setKeywordOverrideState(prod?.trend_keyword_override ?? null);
 
       const rows = data ?? [];
       setHasData(rows.length > 0);
@@ -56,6 +70,14 @@ export function useProductTrend(productId: string | undefined) {
             r.interest_score !== null ? Number(r.interest_score) : null,
         }));
       setGoogleSeries(google);
+
+      // Detecta baixa qualidade localmente também (evita gráfico falso após reload)
+      if (google.length > 0) {
+        const zeros = google.filter((p) => (p.interest_score ?? 0) === 0).length;
+        setLowQuality(zeros / google.length > 0.8);
+      } else {
+        setLowQuality(false);
+      }
 
       const shopee = rows
         .filter((r) => r.source === "shopee_keywords")
@@ -84,19 +106,23 @@ export function useProductTrend(productId: string | undefined) {
   }, [productId]);
 
   const refresh = useCallback(
-    async (force = true) => {
+    async (force = true, overrideKeyword?: string) => {
       if (!productId) return;
       setRefreshing(true);
       setError(null);
+      setSuggestions([]);
       try {
+        const payload: Record<string, unknown> = { productId, force };
+        if (overrideKeyword !== undefined) {
+          payload.keywordOverride = overrideKeyword;
+        }
         const { data, error: fnErr } = await supabase.functions.invoke(
           "fetch-product-trends",
-          { body: { productId, force } },
+          { body: payload },
         );
         if (fnErr) throw fnErr;
         if (data?.error) throw new Error(data.error);
 
-        // Se nada foi salvo e há erro de rate limit, mostra mensagem amigável
         if (
           data?.google_saved === 0 &&
           data?.shopee_saved === 0 &&
@@ -113,6 +139,13 @@ export function useProductTrend(productId: string | undefined) {
           }
         }
 
+        if (Array.isArray(data?.suggestions)) {
+          setSuggestions(data.suggestions);
+        }
+        if (typeof data?.low_quality === "boolean") {
+          setLowQuality(data.low_quality);
+        }
+
         await loadFromDb();
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
@@ -121,6 +154,16 @@ export function useProductTrend(productId: string | undefined) {
       }
     },
     [productId, loadFromDb],
+  );
+
+  const setKeywordOverride = useCallback(
+    async (newKeyword: string) => {
+      const trimmed = newKeyword.trim();
+      if (!productId) return;
+      // refresh já persiste no backend e re-busca
+      await refresh(true, trimmed);
+    },
+    [productId, refresh],
   );
 
   useEffect(() => {
@@ -136,7 +179,6 @@ export function useProductTrend(productId: string | undefined) {
       .filter((v): v is number => v !== null);
     if (values.length < 4) return null;
 
-    // Slope dos últimos 90 dias (12 pontos semanais ou 3 mensais)
     const recent = values.slice(-12);
     const n = recent.length;
     const sumX = (n * (n - 1)) / 2;
@@ -151,7 +193,6 @@ export function useProductTrend(productId: string | undefined) {
     if (slopePct > 2) direction = "up";
     else if (slopePct < -2) direction = "down";
 
-    // Pico e vale
     let peakIdx = 0;
     let valleyIdx = 0;
     googleSeries.forEach((p, i) => {
@@ -174,12 +215,10 @@ export function useProductTrend(productId: string | undefined) {
       return d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
     };
 
-    // Sazonalidade: variação > 40%
     const max = Math.max(...values);
     const min = Math.min(...values);
     const hasSeasonality = max > 0 && (max - min) / max > 0.4;
 
-    // Próximo pico: assume mesmo mês do ano anterior
     let nextPeakIn: number | null = null;
     if (hasSeasonality) {
       const peakDate = new Date(googleSeries[peakIdx].period_date);
@@ -215,8 +254,12 @@ export function useProductTrend(productId: string | undefined) {
     googleSeries,
     shopeeKeywords,
     keyword,
+    keywordOverride,
     diagnostic,
     error,
+    lowQuality,
+    suggestions,
     refresh,
+    setKeywordOverride,
   };
 }

@@ -26,23 +26,244 @@ function pickUA(): string {
 let cachedCookies: { value: string; expiresAt: number } | null = null;
 const COOKIE_TTL_MS = 30 * 60 * 1000; // 30 min
 
-// Limpa o nome do produto para extrair keyword principal
-function extractKeyword(productName: string): string {
-  return productName
+// ============================================================
+// EXTRAÇÃO INTELIGENTE DE KEYWORD
+// ============================================================
+
+// Stop-words gerais + ruído de marketing de e-commerce BR
+const STOP_WORDS = new Set([
+  // conectores
+  "com", "e", "para", "de", "do", "da", "dos", "das", "sem", "em", "no", "na",
+  "ou", "a", "o", "os", "as", "que", "por", "ao", "à",
+  // marketing genérico
+  "elegancia", "elegância", "conforto", "premium", "original", "oficial",
+  "novo", "nova", "novidade", "luxo", "top", "qualidade", "importado",
+  "lancamento", "lançamento", "exclusivo", "exclusiva", "perfeito", "perfeita",
+  "ideal", "melhor", "super", "ultra", "mega", "promocao", "promoção",
+  "barato", "barata", "oferta", "frete", "gratis", "grátis", "envio",
+  "rapido", "rápido", "entrega", "garantia", "garantido",
+  // unidades / quantidade
+  "kit", "pacote", "combo", "unid", "un", "pç", "pcs", "peças", "peca", "peça", "pc",
+  "par", "pares", "pares",
+  // outros ruídos
+  "tipo", "estilo", "modelo", "linha", "colecao", "coleção",
+]);
+
+// Frases promocionais de moda / casa / beleza (multi-palavra)
+const MARKETING_PHRASES = [
+  "empina bumbum", "levanta bumbum", "modela corpo", "modela cintura",
+  "costas abertas", "decote profundo", "decote v", "cintura alta", "cintura baixa",
+  "push up", "push-up", "anti celulite", "anti-celulite",
+  "nao marca", "não marca", "nao transparente", "não transparente",
+  "secagem rapida", "secagem rápida", "alta performance",
+  "uso diario", "uso diário", "dia a dia",
+  "longa duracao", "longa duração",
+];
+
+// Núcleos de produto (categorias) — ~250 itens dos verticais mais comuns no BR
+const PRODUCT_CATEGORIES = new Set([
+  // moda feminina/masculina
+  "vestido", "calça", "calca", "legging", "short", "shorts", "saia", "blusa",
+  "camisa", "camiseta", "regata", "top", "cropped", "body", "macacao", "macacão",
+  "macaquinho", "conjunto", "jaqueta", "casaco", "blazer", "moletom", "sueter",
+  "suéter", "cardigan", "colete", "jeans", "bermuda", "kimono", "robe", "pijama",
+  "camisola", "lingerie", "calcinha", "sutiã", "sutia", "biquini", "biquíni",
+  "maio", "maiô", "saida", "saída",
+  // calçados / acessórios
+  "tenis", "tênis", "sapato", "sandalia", "sandália", "chinelo", "bota", "botina",
+  "rasteirinha", "scarpin", "salto", "mocassim", "papete", "sapatilha",
+  "bolsa", "mochila", "carteira", "necessaire", "necessaire", "pochete",
+  "cinto", "relogio", "relógio", "oculos", "óculos", "boné", "bone", "chapéu", "chapeu",
+  "lenço", "lenco", "echarpe", "cachecol", "luva", "meia", "gravata",
+  "brinco", "colar", "anel", "pulseira", "tornozeleira", "piercing",
+  // beleza / cosméticos
+  "shampoo", "condicionador", "mascara", "máscara", "creme", "hidratante",
+  "perfume", "colonia", "colônia", "batom", "gloss", "rímel", "rimel",
+  "delineador", "lapis", "lápis", "base", "po", "pó", "blush", "iluminador",
+  "esmalte", "removedor", "sabonete", "protetor", "bronzeador", "leave",
+  "umectacao", "umectação", "progressiva", "tonalizante", "tintura", "henna",
+  "escova", "secador", "chapinha", "babyliss",
+  // casa
+  "sofa", "sofá", "cadeira", "mesa", "poltrona", "rack", "estante", "guarda",
+  "cama", "cabeceira", "colchao", "colchão", "travesseiro", "lençol", "lencol",
+  "fronha", "edredom", "manta", "cobertor", "cortina", "tapete", "almofada",
+  "puff", "luminaria", "luminária", "abajur", "ventilador", "umidificador",
+  "panela", "frigideira", "talher", "prato", "copo", "taça", "taca", "xicara",
+  "xícara", "garrafa", "squeeze", "marmita", "lancheira", "tupperware",
+  "organizador", "cesto", "balde", "vassoura", "rodo", "esfregão", "esfregao",
+  // eletrônicos / tech
+  "fone", "headphone", "earphone", "caixinha", "caixa", "som", "speaker",
+  "smartwatch", "smartband", "celular", "smartphone", "tablet", "notebook",
+  "carregador", "cabo", "adaptador", "suporte", "case", "capa", "pelicula",
+  "película", "teclado", "mouse", "webcam", "microfone", "controle", "joystick",
+  "ssd", "hd", "pendrive", "memoria", "memória",
+  // infantil
+  "fralda", "mamadeira", "chupeta", "carrinho", "bebe", "bebê", "berço", "berco",
+  "brinquedo", "boneca", "boneco", "carrinho", "pelucia", "pelúcia",
+  // pet
+  "racao", "ração", "petisco", "coleira", "guia", "casinha", "comedouro", "bebedouro",
+  // fitness / esportes
+  "halter", "anilha", "esteira", "bicicleta", "patinete", "skate", "bola",
+  "corda", "elastico", "elástico", "tapete", "colchonete", "luvas", "joelheira",
+  // ferramentas / automotivo
+  "furadeira", "parafusadeira", "serra", "martelo", "chave", "alicate",
+  "pneu", "calota", "tapete", "capa",
+]);
+
+// Modificadores genéricos comuns (qualidades buscáveis)
+const GENERIC_MODIFIERS = new Set([
+  "longo", "longa", "curto", "curta", "medio", "médio", "media", "média",
+  "social", "casual", "esportivo", "esportiva", "fitness", "academia",
+  "infantil", "adulto", "juvenil",
+  "canelada", "canelado", "suplex", "lycra", "elastano", "algodao", "algodão",
+  "couro", "jeans", "linho", "seda", "veludo", "renda",
+  "estampada", "estampado", "lisa", "liso", "listrada", "listrado", "floral",
+  "manga", "curta", "longa",
+  "intimo", "íntimo", "noite", "festa", "praia", "verao", "verão", "inverno",
+  "termico", "térmico", "termica", "térmica",
+  "redondo", "redonda", "quadrado", "quadrada", "oval",
+  "grande", "pequeno", "pequena", "medio", "mini", "maxi",
+  "classico", "clássico", "moderno", "vintage", "retro", "retrô",
+  "sem fio", "bluetooth", "wireless", "gamer", "profissional",
+]);
+
+// Públicos-alvo (geralmente vão pro fim da query)
+const AUDIENCES = new Set([
+  "feminino", "feminina", "masculino", "masculina",
+  "infantil", "unissex", "bebe", "bebê", "kids",
+]);
+
+function normalizeWord(w: string): string {
+  return w.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function tokenize(name: string): string[] {
+  return name
     .toLowerCase()
-    .replace(/\b(kit|pacote|combo|unid|un|pç|pcs|peças|peca|pc)\b/gi, "")
-    .replace(/\b\d+\s*(g|kg|ml|l|cm|mm|m)\b/gi, "")
-    .replace(/\b\d+\s*x\s*\d+\b/gi, "")
-    .replace(/\b\d+\b/g, "")
+    .replace(/\b\d+\s*(g|kg|ml|l|cm|mm|m|w|v)\b/gi, " ")
+    .replace(/\b\d+\s*x\s*\d+\b/gi, " ")
+    .replace(/\b\d+\b/g, " ")
     .replace(/[^\p{L}\s]/gu, " ")
     .replace(/\s+/g, " ")
     .trim()
     .split(" ")
-    .slice(0, 4)
-    .join(" ");
+    .filter(Boolean);
 }
 
-// Bate em trends.google.com home pra capturar Set-Cookie (NID, CONSENT, SOCS)
+/**
+ * Extração inteligente:
+ * 1) Remove frases de marketing
+ * 2) Tokeniza, remove números/medidas/pontuação
+ * 3) Remove stop-words
+ * 4) Detecta categoria (núcleo do produto)
+ * 5) Pega 1-2 modificadores genéricos relevantes
+ * 6) Adiciona público-alvo (se houver)
+ * 7) Ignora palavras "estranhas" (provável nome de modelo) — só mantém se categoria/modifier/audience
+ *
+ * Fallback: se não achar categoria, usa as 3 primeiras palavras "limpas".
+ */
+function extractKeyword(productName: string): string {
+  let cleaned = productName.toLowerCase();
+
+  // Remove frases promocionais multi-palavra
+  for (const phrase of MARKETING_PHRASES) {
+    const norm = normalizeWord(phrase);
+    cleaned = cleaned
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(new RegExp(`\\b${norm}\\b`, "gi"), " ");
+    cleaned = cleaned.replace(new RegExp(`\\b${phrase}\\b`, "gi"), " ");
+  }
+
+  const tokens = tokenize(cleaned);
+  const normTokens = tokens.map(normalizeWord);
+
+  // Detecta categoria (primeira ocorrência)
+  let category: string | null = null;
+  let categoryIdx = -1;
+  for (let i = 0; i < normTokens.length; i++) {
+    if (PRODUCT_CATEGORIES.has(normTokens[i])) {
+      category = tokens[i];
+      categoryIdx = i;
+      break;
+    }
+  }
+
+  // Coleta modificadores genéricos (após a categoria, ou em qualquer lugar se não houver)
+  const modifiers: string[] = [];
+  for (let i = 0; i < normTokens.length; i++) {
+    if (i === categoryIdx) continue;
+    if (GENERIC_MODIFIERS.has(normTokens[i]) && modifiers.length < 2) {
+      modifiers.push(tokens[i]);
+    }
+  }
+
+  // Detecta público-alvo
+  let audience: string | null = null;
+  for (let i = 0; i < normTokens.length; i++) {
+    if (AUDIENCES.has(normTokens[i])) {
+      audience = tokens[i];
+      break;
+    }
+  }
+
+  if (category) {
+    const parts = [category, ...modifiers];
+    if (audience && !parts.some((p) => normalizeWord(p) === normalizeWord(audience!))) {
+      parts.push(audience);
+    }
+    return parts.slice(0, 4).join(" ").trim();
+  }
+
+  // Fallback: limpa stop-words e pega 3 primeiras
+  const cleanTokens = tokens.filter((t, i) => !STOP_WORDS.has(normTokens[i]));
+  return cleanTokens.slice(0, 3).join(" ").trim();
+}
+
+/**
+ * Sugere termos alternativos quando o resultado for ruim.
+ * Estratégia: gera variações simplificando (categoria + audiência, categoria + modifier, só categoria).
+ */
+function suggestAlternatives(productName: string, currentKeyword: string): string[] {
+  const tokens = tokenize(productName);
+  const normTokens = tokens.map(normalizeWord);
+
+  let category: string | null = null;
+  for (let i = 0; i < normTokens.length; i++) {
+    if (PRODUCT_CATEGORIES.has(normTokens[i])) {
+      category = tokens[i];
+      break;
+    }
+  }
+
+  let audience: string | null = null;
+  for (let i = 0; i < normTokens.length; i++) {
+    if (AUDIENCES.has(normTokens[i])) {
+      audience = tokens[i];
+      break;
+    }
+  }
+
+  const modifiers: string[] = [];
+  for (let i = 0; i < normTokens.length; i++) {
+    if (GENERIC_MODIFIERS.has(normTokens[i])) modifiers.push(tokens[i]);
+  }
+
+  const out = new Set<string>();
+  if (category && audience) out.add(`${category} ${audience}`);
+  if (category && modifiers[0]) out.add(`${category} ${modifiers[0]}`);
+  if (category) out.add(category);
+  if (modifiers[0] && audience) out.add(`${modifiers[0]} ${audience}`);
+
+  // Remove a atual
+  out.delete(currentKeyword.toLowerCase().trim());
+  return Array.from(out).slice(0, 3);
+}
+
+// ============================================================
+// GOOGLE TRENDS (cookies + UAs rotativos)
+// ============================================================
+
 async function getCookies(ua: string): Promise<string> {
   if (cachedCookies && cachedCookies.expiresAt > Date.now()) {
     return cachedCookies.value;
@@ -60,7 +281,6 @@ async function getCookies(ua: string): Promise<string> {
     },
   });
 
-  // getSetCookie() retorna array com todos os Set-Cookie headers separados
   const setCookies =
     typeof (res.headers as any).getSetCookie === "function"
       ? (res.headers as any).getSetCookie()
@@ -74,7 +294,6 @@ async function getCookies(ua: string): Promise<string> {
     }
   }
 
-  // Adiciona CONSENT manual se não veio (necessário pra contornar tela de consentimento UE)
   if (!cookieParts.some((c) => c.startsWith("CONSENT="))) {
     cookieParts.push("CONSENT=YES+cb.20210720-07-p0.pt-BR+FX+410");
   }
@@ -100,7 +319,6 @@ function buildHeaders(ua: string, cookies: string) {
   };
 }
 
-// Busca Google Trends — interesse 12 meses
 async function fetchGoogleTrends(
   keyword: string,
 ): Promise<Array<{ period_date: string; interest_score: number }>> {
@@ -110,7 +328,6 @@ async function fetchGoogleTrends(
   const cookies = await getCookies(ua);
   const headers = buildHeaders(ua, cookies);
 
-  // Step 1: explore — pega o widget token
   const exploreUrl = new URL("https://trends.google.com/trends/api/explore");
   exploreUrl.searchParams.set("hl", "pt-BR");
   exploreUrl.searchParams.set("tz", "180");
@@ -126,7 +343,6 @@ async function fetchGoogleTrends(
   const exploreRes = await fetch(exploreUrl.toString(), { headers });
 
   if (exploreRes.status === 429) {
-    // Invalida cookies — provavelmente expiraram ou foram bloqueados
     cachedCookies = null;
     throw new Error("RATE_LIMITED");
   }
@@ -150,7 +366,6 @@ async function fetchGoogleTrends(
     throw new Error("Google Trends widget missing");
   }
 
-  // Step 2: multiline — pega a série temporal
   const multiUrl = new URL(
     "https://trends.google.com/trends/api/widgetdata/multiline",
   );
@@ -220,6 +435,10 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const productId = body?.productId as string | undefined;
     const force = Boolean(body?.force);
+    const keywordOverrideInput =
+      typeof body?.keywordOverride === "string"
+        ? body.keywordOverride.trim().slice(0, 100)
+        : null;
 
     if (!productId || typeof productId !== "string") {
       return new Response(
@@ -235,7 +454,7 @@ Deno.serve(async (req) => {
 
     const { data: product, error: productErr } = await admin
       .from("products")
-      .select("id, name, user_id, shopee_item_id")
+      .select("id, name, user_id, shopee_item_id, trend_keyword_override")
       .eq("id", productId)
       .eq("user_id", userId)
       .maybeSingle();
@@ -248,6 +467,16 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         },
       );
+    }
+
+    // Se veio override no body, persistir antes (e usar para a busca)
+    if (keywordOverrideInput !== null) {
+      await admin
+        .from("products")
+        .update({ trend_keyword_override: keywordOverrideInput || null })
+        .eq("id", productId)
+        .eq("user_id", userId);
+      product.trend_keyword_override = keywordOverrideInput || null;
     }
 
     // Cache de 7 dias (não invalida em erro — só conta sucesso anterior)
@@ -277,7 +506,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    const keyword = extractKeyword(product.name);
+    const keyword =
+      product.trend_keyword_override?.trim() || extractKeyword(product.name);
     if (!keyword) {
       return new Response(
         JSON.stringify({ error: "Não foi possível extrair palavra-chave" }),
@@ -288,13 +518,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    logger.info("fetch_start", { productId, keyword });
+    logger.info("fetch_start", {
+      productId,
+      keyword,
+      override: !!product.trend_keyword_override,
+    });
 
     let googleSaved = 0;
     let googleError: string | null = null;
     let rateLimited = false;
+    let lowQuality = false;
+    let zerosPct = 0;
 
-    // Google Trends com retry e backoff maior (2s, 5s, 12s)
+    // Google Trends com retry e backoff (2s, 5s, 12s)
     try {
       const delays = [2000, 5000, 12000];
       let trendsData: Array<{ period_date: string; interest_score: number }> =
@@ -317,12 +553,16 @@ Deno.serve(async (req) => {
       if (lastErr) throw lastErr;
 
       if (trendsData.length > 0) {
+        // Detecta baixa qualidade (>80% zeros)
+        const zeros = trendsData.filter((p) => p.interest_score === 0).length;
+        zerosPct = (zeros / trendsData.length) * 100;
+        lowQuality = zerosPct > 80;
+
         await admin
           .from("product_trends")
           .delete()
           .eq("product_id", productId)
-          .eq("source", "google_trends")
-          .eq("keyword", keyword);
+          .eq("source", "google_trends");
 
         const rows = trendsData.map((p) => ({
           user_id: userId,
@@ -400,6 +640,10 @@ Deno.serve(async (req) => {
       }
     }
 
+    const suggestions = lowQuality
+      ? suggestAlternatives(product.name, keyword)
+      : [];
+
     logger.info("fetch_done", {
       productId,
       keyword,
@@ -407,17 +651,22 @@ Deno.serve(async (req) => {
       shopeeSaved,
       googleError,
       rateLimited,
+      lowQuality,
+      zerosPct: Math.round(zerosPct),
     });
 
-    // Se ambas as fontes falharam totalmente, devolve erro 200 com flag (frontend mostra mensagem amigável)
     return new Response(
       JSON.stringify({
         cached: false,
         keyword,
+        keyword_override: product.trend_keyword_override ?? null,
         google_saved: googleSaved,
         shopee_saved: shopeeSaved,
         google_error: googleError,
         rate_limited: rateLimited,
+        low_quality: lowQuality,
+        zeros_pct: Math.round(zerosPct),
+        suggestions,
       }),
       {
         status: 200,
