@@ -651,20 +651,24 @@ Deno.serve(async (req) => {
 
     let googleSaved = 0;
     let relatedSaved = 0;
+    let regionsSaved = 0;
+    let cycleSaved = 0;
     let googleError: string | null = null;
     let rateLimited = false;
     let lowQuality = false;
     let zerosPct = 0;
     let relatedTopOut: RelatedKeyword[] = [];
     let relatedRisingOut: RelatedKeyword[] = [];
+    let regionsOut: RegionEntry[] = [];
 
-    // Google Trends com retry e backoff (2s, 5s, 12s)
+    // Google Trends com retry e backoff (2s, 5s, 12s) — janela de 5 anos
     try {
       const delays = [2000, 5000, 12000];
       let trendsResult: TrendsResult = {
         timeline: [],
         relatedTop: [],
         relatedRising: [],
+        regions: [],
       };
       let lastErr: unknown = null;
 
