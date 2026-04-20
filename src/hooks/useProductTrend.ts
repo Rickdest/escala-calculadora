@@ -43,6 +43,8 @@ export function useProductTrend(productId: string | undefined) {
   const [error, setError] = useState<string | null>(null);
   const [lowQuality, setLowQuality] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [relatedTop, setRelatedTop] = useState<RelatedKeyword[]>([]);
+  const [relatedRising, setRelatedRising] = useState<RelatedKeyword[]>([]);
 
   const loadFromDb = useCallback(async () => {
     if (!productId) return;
