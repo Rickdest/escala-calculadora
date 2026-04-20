@@ -67,48 +67,18 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
     await setKeywordOverride(trimmed);
   };
 
-  // Volume Shopee max para classificação
-  const shopeeFooter = useMemo(() => {
-    if (shopeeKeywords.length === 0) return null;
-    const maxVolume = Math.max(...shopeeKeywords.map((k) => k.search_volume), 1);
-    const classifyVolume = (v: number) => {
-      const pct = v / maxVolume;
-      if (pct > 0.66) return { label: "Alta", cls: "text-success bg-success/10 border-success/30" };
-      if (pct > 0.33) return { label: "Média", cls: "text-warning bg-warning/10 border-warning/30" };
-      return { label: "Baixa", cls: "text-muted-foreground bg-secondary border-border" };
-    };
-    return (
-      <div className="surface-card p-4 sm:p-5">
-        <p className="section-label mb-3">Palavras-chave Shopee — volume real</p>
-        <div className="space-y-1.5">
-          {shopeeKeywords.slice(0, 10).map((kw, i) => {
-            const cls = classifyVolume(kw.search_volume);
-            return (
-              <div
-                key={`${kw.keyword}-${i}`}
-                className="flex items-center justify-between gap-2 sm:gap-3 py-2 border-b border-border last:border-0"
-              >
-                <span className="text-sm text-foreground truncate flex-1 min-w-0">
-                  {kw.keyword}
-                </span>
-                <span className={cn("text-micro font-semibold px-2 py-0.5 rounded-full border shrink-0 hidden sm:inline-block", cls.cls)}>
-                  {cls.label}
-                </span>
-                <span className="font-mono text-small text-muted-foreground w-12 sm:w-16 text-right shrink-0">
-                  {fmtNumber(kw.search_volume)}
-                </span>
-                {kw.suggested_bid > 0 && (
-                  <span className="font-mono text-small text-primary w-14 text-right shrink-0">
-                    R${kw.suggested_bid.toFixed(2)}
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+  // Match: a keyword analisada bate com alguma da Shopee?
+  const matchedShopeeVolume = useMemo(() => {
+    if (!keyword || shopeeKeywords.length === 0) return null;
+    const target = normalize(keyword);
+    const exact = shopeeKeywords.find((k) => normalize(k.keyword) === target);
+    if (exact) return exact;
+    // Fallback: contém ou é contido
+    const partial = shopeeKeywords.find(
+      (k) => normalize(k.keyword).includes(target) || target.includes(normalize(k.keyword)),
     );
-  }, [shopeeKeywords]);
+    return partial ?? null;
+  }, [keyword, shopeeKeywords]);
 
   // Loading inicial (primeira carga sem dados)
   if (loading && !hasData && !lowQuality && !keyword) {
