@@ -819,6 +819,107 @@ Deno.serve(async (req) => {
         }
       }
 
+      // ============== INSIGHTS EXTRAS ==============
+      const meanY = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+      const maxY = values.length > 0 ? Math.max(...values) : 0;
+      const latestY = values.length > 0 ? values[values.length - 1] : 0;
+
+      // marketScore (0-100) — composto: nível médio (50%) + momentum normalizado (30%) + slope normalizado (20%)
+      let market_score: number | null = null;
+      if (values.length >= 8) {
+        const avgComponent = Math.min(100, meanY); // já 0-100
+        const momComponent = momentum30d !== null ? Math.max(0, Math.min(100, momentum30d + 50)) : 50;
+        const slopeNormFinal = meanY > 0 ? (slope * values.length) / meanY : 0;
+        const slopeComponent = Math.max(0, Math.min(100, (slopeNormFinal + 0.5) * 100));
+        market_score = Math.round(avgComponent * 0.5 + momComponent * 0.3 + slopeComponent * 0.2);
+      }
+
+      // Volatilidade — coef. variação (desvio padrão / média)
+      let volatility: number | null = null;
+      let volatility_label: "estavel" | "volatil" | "muito_volatil" | null = null;
+      if (values.length >= 8 && meanY > 0) {
+        const variance = values.reduce((acc, v) => acc + (v - meanY) ** 2, 0) / values.length;
+        const stdDev = Math.sqrt(variance);
+        const cv = stdDev / meanY;
+        volatility = Math.round(cv * 100);
+        if (cv < 0.25) volatility_label = "estavel";
+        else if (cv < 0.5) volatility_label = "volatil";
+        else volatility_label = "muito_volatil";
+      }
+
+      // Status do mês atual vs ciclo sazonal
+      let current_month_status: {
+        status: "pico" | "alta" | "neutro" | "baixa";
+        delta_pct: number;
+      } | null = null;
+      if (seasonal_cycle.length >= 6) {
+        const currentMonth = new Date().getUTCMonth() + 1;
+        const currentEntry = seasonal_cycle.find((c) => c.month === currentMonth);
+        const cycleAvg = seasonal_cycle.reduce((a, c) => a + c.avg, 0) / seasonal_cycle.length;
+        if (currentEntry && cycleAvg > 0) {
+          const deltaPct = Math.round(((currentEntry.avg - cycleAvg) / cycleAvg) * 100);
+          let status: "pico" | "alta" | "neutro" | "baixa";
+          if (deltaPct >= 25) status = "pico";
+          else if (deltaPct >= 8) status = "alta";
+          else if (deltaPct <= -15) status = "baixa";
+          else status = "neutro";
+          current_month_status = { status, delta_pct: deltaPct };
+        }
+      }
+
+      // Vs ano passado — só com 5y, pega ponto ~52 semanas atrás
+      let vs_last_year: { delta_pct: number; value_now: number; value_past: number } | null = null;
+      if (timeframeInput === "today 5-y" && values.length >= 60) {
+        const idxNow = values.length - 1;
+        const idxPast = Math.max(0, idxNow - 52);
+        const valNow = values[idxNow];
+        const valPast = values[idxPast];
+        if (valPast > 0) {
+          vs_last_year = {
+            delta_pct: Math.round(((valNow - valPast) / valPast) * 100),
+            value_now: valNow,
+            value_past: valPast,
+          };
+        }
+      }
+
+      // Vs pico histórico
+      let vs_all_time_peak: number | null = null;
+      if (maxY > 0) vs_all_time_peak = Math.round((latestY / maxY) * 100);
+
+      // Próximos 30 dias estimados — slope projetado relativo ao último valor
+      let next_30d_estimate: { delta_pct: number; direction: "subir" | "cair" | "estavel" } | null = null;
+      if (values.length >= 30 && latestY > 0) {
+        const stepsAhead = Math.max(1, Math.round(values.length / 12)); // ~30 dias em pontos
+        const projected = latestY + slope * stepsAhead;
+        const deltaPct = Math.round(((projected - latestY) / latestY) * 100);
+        const direction: "subir" | "cair" | "estavel" =
+          deltaPct >= 5 ? "subir" : deltaPct <= -5 ? "cair" : "estavel";
+        next_30d_estimate = { delta_pct: deltaPct, direction };
+      }
+
+      // Melhor mês pra começar a anunciar — maior crescimento mês-a-mês
+      let best_growth_month: number | null = null;
+      if (seasonal_cycle.length >= 6) {
+        const sortedCycle = [...seasonal_cycle].sort((a, b) => a.month - b.month);
+        let maxDelta = -Infinity;
+        for (let i = 0; i < sortedCycle.length; i++) {
+          const prev = sortedCycle[(i - 1 + sortedCycle.length) % sortedCycle.length];
+          const curr = sortedCycle[i];
+          const delta = curr.avg - prev.avg;
+          if (delta > maxDelta) {
+            maxDelta = delta;
+            best_growth_month = curr.month;
+          }
+        }
+      }
+
+      // Saturação de mercado (proxy via quantidade de termos relacionados)
+      const totalRelated = trendsResult.relatedTop.length + trendsResult.relatedRising.length;
+      let market_saturation: "morno" | "ativo" | "quente" = "morno";
+      if (totalRelated >= 20) market_saturation = "quente";
+      else if (totalRelated >= 8) market_saturation = "ativo";
+
       // Categoria detectada (autocomplete leve, falha gracioso)
       let categoryHint: string | null = null;
       try {
@@ -878,6 +979,16 @@ Deno.serve(async (req) => {
           stock_recommendation: stockRecommendation,
           forecast_3m,
           category_hint: categoryHint,
+          // Insights extras
+          market_score,
+          volatility,
+          volatility_label,
+          current_month_status,
+          vs_last_year,
+          vs_all_time_peak,
+          next_30d_estimate,
+          best_growth_month,
+          market_saturation,
           // Qualidade / status
           low_quality: lowQuality,
           suggestions,

@@ -16,6 +16,13 @@ import {
   Globe,
   Lightbulb,
   Tag,
+  Activity,
+  Calendar,
+  Crosshair,
+  BarChart3,
+  Gauge,
+  Target,
+  Zap,
 } from "lucide-react";
 import {
   AreaChart,
@@ -34,6 +41,9 @@ import {
   useTrendSearch,
   type Timeframe,
   type SlopeLabel,
+  type VolatilityLabel,
+  type CurrentMonthStatus,
+  type MarketSaturation,
 } from "@/hooks/useTrendSearch";
 import type { RegionEntry } from "@/hooks/useProductTrend";
 import { SeasonalCycleChart } from "@/components/products/trend/SeasonalCycleChart";
@@ -42,12 +52,12 @@ import { cn } from "@/lib/utils";
 
 const SUGGESTIONS = ["vestido feminino", "tênis nike", "cropped", "kit maquiagem", "tapete sala"];
 
-const TIMEFRAMES: Array<{ id: Timeframe; label: string }> = [
-  { id: "now 7-d", label: "7d" },
-  { id: "today 1-m", label: "30d" },
-  { id: "today 3-m", label: "90d" },
-  { id: "today 12-m", label: "12m" },
-  { id: "today 5-y", label: "5a" },
+const TIMEFRAMES: Array<{ id: Timeframe; label: string; longLabel: string }> = [
+  { id: "now 7-d", label: "7d", longLabel: "últimos 7 dias" },
+  { id: "today 1-m", label: "30d", longLabel: "últimos 30 dias" },
+  { id: "today 3-m", label: "90d", longLabel: "últimos 90 dias" },
+  { id: "today 12-m", label: "12m", longLabel: "últimos 12 meses" },
+  { id: "today 5-y", label: "5a", longLabel: "últimos 5 anos" },
 ];
 
 const COMPARE_COLORS = [
@@ -62,11 +72,59 @@ const SLOPE_META: Record<SlopeLabel, { label: string; icon: typeof TrendingUp; c
   subindo_forte: { label: "Em alta forte", icon: TrendingUp, cls: "text-success bg-success/10 border-success/30" },
   subindo: { label: "Crescendo", icon: TrendingUp, cls: "text-success bg-success/10 border-success/20" },
   estavel: { label: "Estável", icon: Minus, cls: "text-text-3 bg-surface-2 border-border" },
-  caindo: { label: "Caindo", icon: TrendingDown, cls: "text-warning bg-warning/10 border-warning/20" },
+  caindo: { label: "Em queda", icon: TrendingDown, cls: "text-warning bg-warning/10 border-warning/20" },
   caindo_forte: { label: "Caindo forte", icon: TrendingDown, cls: "text-destructive bg-destructive/10 border-destructive/30" },
 };
 
+const VOLATILITY_META: Record<VolatilityLabel, { label: string; cls: string }> = {
+  estavel: { label: "Estável", cls: "text-success" },
+  volatil: { label: "Volátil", cls: "text-warning" },
+  muito_volatil: { label: "Muito volátil", cls: "text-destructive" },
+};
+
+const MONTH_STATUS_META: Record<CurrentMonthStatus, { label: string; cls: string }> = {
+  pico: { label: "Pico sazonal", cls: "text-success" },
+  alta: { label: "Alta procura", cls: "text-success" },
+  neutro: { label: "Demanda neutra", cls: "text-text-2" },
+  baixa: { label: "Baixa procura", cls: "text-warning" },
+};
+
+const SATURATION_META: Record<MarketSaturation, { label: string; cls: string }> = {
+  morno: { label: "Mercado morno", cls: "text-text-3" },
+  ativo: { label: "Mercado ativo", cls: "text-primary" },
+  quente: { label: "Mercado quente", cls: "text-warning" },
+};
+
 const MONTH_NAMES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+const MONTH_NAMES_LONG = [
+  "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+  "julho", "agosto", "setembro", "outubro", "novembro", "dezembro",
+];
+
+function getScoreMeta(score: number): { label: string; cls: string; barCls: string } {
+  if (score >= 75) return { label: "Mercado quente", cls: "text-success", barCls: "bg-success" };
+  if (score >= 55) return { label: "Em equilíbrio", cls: "text-primary", barCls: "bg-primary" };
+  if (score >= 35) return { label: "Mercado morno", cls: "text-warning", barCls: "bg-warning" };
+  return { label: "Mercado fraco", cls: "text-destructive", barCls: "bg-destructive" };
+}
+
+function formatTickByTimeframe(d: string, timeframe: Timeframe): string {
+  const date = new Date(d);
+  const WEEKDAYS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+  switch (timeframe) {
+    case "now 7-d":
+      return `${WEEKDAYS[date.getUTCDay()]} ${date.getUTCDate()}`;
+    case "today 1-m":
+      return `${date.getUTCDate()}/${MONTH_NAMES[date.getUTCMonth()].toLowerCase()}`;
+    case "today 3-m":
+      return `${MONTH_NAMES[date.getUTCMonth()].toLowerCase()} ${date.getUTCDate()}`;
+    case "today 12-m":
+      return `${MONTH_NAMES[date.getUTCMonth()].toLowerCase()}/${String(date.getUTCFullYear()).slice(-2)}`;
+    case "today 5-y":
+    default:
+      return String(date.getUTCFullYear()).slice(-2);
+  }
+}
 
 export function TrendSearchCard() {
   const [input, setInput] = useState("");
@@ -89,7 +147,6 @@ export function TrendSearchCard() {
     const term = (kw ?? input).trim();
     if (!term) return;
     setInput(term);
-    // Reset geo lazy state ao mudar busca
     setCities(null);
     setCountries(null);
     setShowCities(false);
@@ -178,9 +235,11 @@ export function TrendSearchCard() {
       .map((p) => p.interest_score)
       .filter((v): v is number => v !== null);
     if (values.length === 0) return null;
+    const max = Math.max(...values);
     return {
-      max: Math.max(...values),
+      max,
       avg: Math.round(values.reduce((a, b) => a + b, 0) / values.length),
+      yMax: max < 50 ? Math.min(100, Math.ceil((max + 10) / 10) * 10) : 100,
     };
   }, [result]);
 
@@ -190,53 +249,78 @@ export function TrendSearchCard() {
     return result.comparisonSeries.map((p) => {
       const obj: Record<string, number | null | string> = { period_date: p.period_date };
       const allKeys = [result.keyword, ...result.compareKeywords];
-      allKeys.forEach((k, i) => {
+      allKeys.forEach((_k, i) => {
         obj[`v${i}`] = p.values[i] ?? null;
       });
       return obj;
     });
   }, [result]);
 
-  // Dados pra gráfico com forecast (linha real + projeção tracejada)
-  const chartWithForecast = useMemo(() => {
+  // Dados pra gráfico série única — sempre tem chave `real`; só anexa forecast quando 5y
+  const chartData = useMemo(() => {
     if (!result || result.googleSeries.length === 0) return null;
     const real = result.googleSeries.map((p) => ({
       period_date: p.period_date,
       real: p.interest_score,
-      forecast: null as number | null,
     }));
-    if (result.forecast3m.length === 0 || result.timeframe !== "today 5-y") return real;
-    // Conecta o último ponto real à projeção
-    const lastReal = real[real.length - 1];
-    const projection: Array<{ period_date: string; real: null; forecast: number }> = [];
-    result.forecast3m.forEach((f) => {
-      const dateStr = `${f.year}-${String(f.month).padStart(2, "0")}-15`;
-      projection.push({ period_date: dateStr, real: null, forecast: f.predicted });
-    });
+    return real;
+  }, [result]);
+
+  const chartForecastData = useMemo(() => {
+    if (!result || result.timeframe !== "today 5-y") return null;
+    if (!result.forecast3m.length || !result.googleSeries.length) return null;
+    const lastPoint = result.googleSeries[result.googleSeries.length - 1];
+    const projection = result.forecast3m.map((f) => ({
+      period_date: `${f.year}-${String(f.month).padStart(2, "0")}-15`,
+      forecast: f.predicted,
+    }));
     return [
-      ...real,
-      // Bridge: último real serve como início da projeção
-      { period_date: lastReal.period_date, real: null, forecast: lastReal.real ?? 0 },
+      { period_date: lastPoint.period_date, forecast: lastPoint.interest_score ?? 0 },
       ...projection,
     ];
   }, [result]);
 
   const slopeMeta = result ? SLOPE_META[result.slopeLabel] : null;
+  const scoreMeta = result?.marketScore !== null && result?.marketScore !== undefined ? getScoreMeta(result.marketScore) : null;
+  const currentTfLong = TIMEFRAMES.find((t) => t.id === (result?.timeframe ?? timeframe))?.longLabel ?? "";
+
+  // Banner de ação consolidado
+  const actionInsight = useMemo(() => {
+    if (!result) return null;
+    const parts: string[] = [];
+    if (slopeMeta) {
+      if (result.slopeLabel === "subindo_forte" || result.slopeLabel === "subindo") {
+        parts.push(`Demanda em **${slopeMeta.label.toLowerCase()}**.`);
+      } else if (result.slopeLabel === "estavel") {
+        parts.push("Demanda **estável** ao longo do período.");
+      } else {
+        parts.push(`Atenção: demanda **${slopeMeta.label.toLowerCase()}**.`);
+      }
+    }
+    if (result.currentMonthStatus) {
+      const cm = MONTH_STATUS_META[result.currentMonthStatus.status];
+      parts.push(`Estamos em **${cm.label.toLowerCase()}** ${result.currentMonthStatus.deltaPct >= 0 ? "+" : ""}${result.currentMonthStatus.deltaPct}% vs média anual.`);
+    }
+    if (result.peakMonth && result.bestGrowthMonth) {
+      parts.push(`Pico anual em **${MONTH_NAMES_LONG[result.peakMonth - 1]}**, comece a estocar em **${MONTH_NAMES_LONG[result.bestGrowthMonth - 1]}**.`);
+    }
+    return parts.join(" ");
+  }, [result, slopeMeta]);
 
   return (
-    <div className="surface-card p-4 sm:p-5 border-l-2 border-l-primary/60 animate-fade-up">
+    <div className="surface-card p-4 sm:p-5 border-l-4 border-l-primary/70 animate-fade-up">
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="flex items-start gap-2.5 min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <Sparkles className="w-4 h-4 text-primary" />
+        <div className="flex items-start gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/25 to-primary/5 border border-primary/20 flex items-center justify-center flex-shrink-0">
+            <Sparkles className="w-5 h-5 text-primary" />
           </div>
           <div className="min-w-0">
             <p className="text-sm font-bold text-foreground leading-tight">
-              Pesquisar tendência de mercado
+              Análise de demanda
             </p>
             <p className="text-[11px] text-text-3 mt-0.5 leading-tight">
-              Descubra o interesse por qualquer produto — sem precisar cadastrar.
+              Descubra o potencial de qualquer produto antes de cadastrar.
             </p>
           </div>
         </div>
@@ -352,14 +436,14 @@ export function TrendSearchCard() {
               onClick={() => setShowCompare(true)}
               className="mt-2 text-[11px] text-primary hover:underline inline-flex items-center gap-1"
             >
-              <Plus className="w-3 h-3" /> Comparar com outro termo
+              <Plus className="w-3 h-3" /> Comparar com outro produto
             </button>
           )}
 
           {/* Timeframe chips */}
           {(result || searching) && (
             <div className="mt-3 flex items-center gap-1.5 flex-wrap">
-              <span className="text-[10px] text-text-3 uppercase tracking-wide font-bold mr-1">Janela:</span>
+              <span className="text-[10px] text-text-3 uppercase tracking-wide font-bold mr-1">Período:</span>
               {TIMEFRAMES.map((tf) => (
                 <button
                   key={tf.id}
@@ -402,27 +486,31 @@ export function TrendSearchCard() {
             </div>
           )}
 
-          {/* Loading skeleton */}
+          {/* Loading skeleton — espelha layout final */}
           {searching && (
             <div className="mt-4 space-y-3 animate-pulse">
-              <div className="h-10 bg-surface-2 rounded-lg" />
-              <div className="h-32 bg-surface-2 rounded-lg" />
-              <div className="grid grid-cols-2 gap-3">
-                <div className="h-24 bg-surface-2 rounded-lg" />
-                <div className="h-24 bg-surface-2 rounded-lg" />
+              {/* Hero score skeleton */}
+              <div className="h-20 bg-surface-2 rounded-xl" />
+              {/* 6 cards skeleton */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="h-16 bg-surface-2 rounded-lg" />
+                ))}
               </div>
+              {/* Chart skeleton */}
+              <div className="h-40 bg-surface-2 rounded-lg" />
             </div>
           )}
 
           {/* Results */}
           {result && !searching && (
             <div className="mt-4 space-y-3 animate-fade-up">
-              {/* Result header com keyword + categoria + estatísticas */}
+              {/* Result header */}
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="text-[11px] text-text-3">
-                    Resultado para{" "}
-                    <span className="text-foreground font-semibold">"{result.keyword}"</span>
+                    Análise:{" "}
+                    <span className="text-foreground font-semibold">{result.keyword}</span>
                   </p>
                   {result.categoryHint && (
                     <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary bg-primary/10 border border-primary/20 rounded-full px-2 py-0.5">
@@ -434,7 +522,7 @@ export function TrendSearchCard() {
                 {stats && (
                   <div className="flex items-center gap-3 text-[10px] font-mono font-mono-num text-text-3">
                     <span>
-                      pico <span className="text-foreground font-bold">{stats.max}</span>
+                      demanda máx <span className="text-foreground font-bold">{stats.max}</span>
                     </span>
                     <span>
                       média <span className="text-foreground font-bold">{stats.avg}</span>
@@ -468,65 +556,184 @@ export function TrendSearchCard() {
                 </div>
               ) : (
                 <>
-                  {/* INSIGHT BOX */}
-                  {(slopeMeta || result.momentum30d !== null || result.stockRecommendation) && (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      {/* Tendência */}
-                      {slopeMeta && (
-                        <div className={cn("flex items-center gap-2 rounded-lg border px-3 py-2", slopeMeta.cls)}>
-                          <slopeMeta.icon className="w-4 h-4 flex-shrink-0" />
-                          <div className="min-w-0">
-                            <p className="text-[10px] uppercase tracking-wide opacity-70 font-bold leading-none">Tendência</p>
-                            <p className="text-xs font-bold mt-0.5 truncate">{slopeMeta.label}</p>
-                          </div>
+                  {/* HERO: Potencial de mercado */}
+                  {scoreMeta && result.marketScore !== null && (
+                    <div className="rounded-xl border border-border bg-gradient-to-br from-surface-2/60 to-surface-2/20 p-4">
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div className="flex items-center gap-2">
+                          <Gauge className={cn("w-4 h-4", scoreMeta.cls)} />
+                          <span className="text-[10px] uppercase tracking-wide font-bold text-text-3">
+                            Potencial de mercado
+                          </span>
                         </div>
-                      )}
-                      {/* Momentum */}
-                      {result.momentum30d !== null && (
+                        <span className={cn("text-[11px] font-bold", scoreMeta.cls)}>
+                          {scoreMeta.label}
+                        </span>
+                      </div>
+                      <div className="flex items-baseline gap-2 mb-2">
+                        <span className="text-3xl font-black text-foreground font-mono font-mono-num leading-none">
+                          {result.marketScore}
+                        </span>
+                        <span className="text-sm font-bold text-text-3">/ 100</span>
+                        <span className="text-[10px] text-text-3 ml-auto">estimativa composta</span>
+                      </div>
+                      <div className="h-2 bg-surface-2 rounded-full overflow-hidden">
                         <div
-                          className={cn(
-                            "flex items-center gap-2 rounded-lg border px-3 py-2",
-                            result.momentum30d >= 10
-                              ? "text-success bg-success/10 border-success/20"
-                              : result.momentum30d <= -10
-                                ? "text-destructive bg-destructive/10 border-destructive/20"
-                                : "text-text-3 bg-surface-2 border-border",
-                          )}
-                        >
-                          {result.momentum30d >= 0 ? (
-                            <TrendingUp className="w-4 h-4 flex-shrink-0" />
-                          ) : (
-                            <TrendingDown className="w-4 h-4 flex-shrink-0" />
-                          )}
-                          <div className="min-w-0">
-                            <p className="text-[10px] uppercase tracking-wide opacity-70 font-bold leading-none">Momento</p>
-                            <p className="text-xs font-bold mt-0.5 font-mono font-mono-num">
-                              {result.momentum30d > 0 ? "+" : ""}
-                              {result.momentum30d}% vs período anterior
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                      {/* Recomendação */}
-                      {result.stockRecommendation && (
-                        <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
-                          <Lightbulb className="w-4 h-4 flex-shrink-0 text-primary" />
-                          <div className="min-w-0">
-                            <p className="text-[10px] uppercase tracking-wide text-primary/80 font-bold leading-none">Sazonalidade</p>
-                            <p className="text-xs font-semibold mt-0.5 text-foreground leading-tight">
-                              {result.stockRecommendation}
-                            </p>
-                          </div>
-                        </div>
-                      )}
+                          className={cn("h-full rounded-full transition-all duration-700", scoreMeta.barCls)}
+                          style={{ width: `${result.marketScore}%` }}
+                        />
+                      </div>
                     </div>
                   )}
 
-                  {/* GRÁFICO PRINCIPAL: comparação OU série única com forecast */}
+                  {/* GRID 6 mini-cards de insights */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {/* Tendência */}
+                    {slopeMeta && (
+                      <InsightCard
+                        icon={Zap}
+                        label="Tendência"
+                        value={slopeMeta.label}
+                        cls={slopeMeta.cls}
+                      />
+                    )}
+                    {/* Momento */}
+                    {result.momentum30d !== null && (
+                      <InsightCard
+                        icon={result.momentum30d >= 0 ? TrendingUp : TrendingDown}
+                        label="Momento"
+                        value={`${result.momentum30d > 0 ? "+" : ""}${result.momentum30d}% no período`}
+                        cls={cn(
+                          result.momentum30d >= 10
+                            ? "text-success bg-success/10 border-success/20"
+                            : result.momentum30d <= -10
+                              ? "text-destructive bg-destructive/10 border-destructive/20"
+                              : "text-text-2 bg-surface-2 border-border",
+                        )}
+                      />
+                    )}
+                    {/* Volatilidade */}
+                    {result.volatilityLabel && (
+                      <InsightCard
+                        icon={Activity}
+                        label="Volatilidade"
+                        value={VOLATILITY_META[result.volatilityLabel].label}
+                        cls={cn(
+                          "border bg-surface-2/60",
+                          result.volatilityLabel === "estavel"
+                            ? "border-success/20"
+                            : result.volatilityLabel === "volatil"
+                              ? "border-warning/20"
+                              : "border-destructive/20",
+                          VOLATILITY_META[result.volatilityLabel].cls,
+                        )}
+                      />
+                    )}
+                    {/* Mês atual */}
+                    {result.currentMonthStatus && (
+                      <InsightCard
+                        icon={Calendar}
+                        label="Mês atual"
+                        value={`${MONTH_STATUS_META[result.currentMonthStatus.status].label} (${result.currentMonthStatus.deltaPct >= 0 ? "+" : ""}${result.currentMonthStatus.deltaPct}%)`}
+                        cls={cn(
+                          "border bg-surface-2/60",
+                          result.currentMonthStatus.status === "pico" || result.currentMonthStatus.status === "alta"
+                            ? "border-success/20 text-success"
+                            : result.currentMonthStatus.status === "baixa"
+                              ? "border-warning/20 text-warning"
+                              : "border-border text-text-2",
+                        )}
+                      />
+                    )}
+                    {/* Vs ano passado */}
+                    {result.vsLastYear && (
+                      <InsightCard
+                        icon={Target}
+                        label="Vs ano passado"
+                        value={`${result.vsLastYear.deltaPct >= 0 ? "+" : ""}${result.vsLastYear.deltaPct}%`}
+                        cls={cn(
+                          "border bg-surface-2/60",
+                          result.vsLastYear.deltaPct >= 0
+                            ? "border-success/20 text-success"
+                            : "border-destructive/20 text-destructive",
+                        )}
+                      />
+                    )}
+                    {/* Vs pico histórico */}
+                    {result.vsAllTimePeak !== null && !result.vsLastYear && (
+                      <InsightCard
+                        icon={Crosshair}
+                        label="Vs pico histórico"
+                        value={`${result.vsAllTimePeak}%`}
+                        cls={cn(
+                          "border bg-surface-2/60",
+                          result.vsAllTimePeak >= 80
+                            ? "border-success/20 text-success"
+                            : result.vsAllTimePeak >= 50
+                              ? "border-primary/20 text-primary"
+                              : "border-warning/20 text-warning",
+                        )}
+                      />
+                    )}
+                    {/* Próximos 30 dias */}
+                    {result.next30dEstimate && (
+                      <InsightCard
+                        icon={BarChart3}
+                        label="Próximos 30 dias"
+                        value={
+                          result.next30dEstimate.direction === "subir"
+                            ? `Tendência de subir +${Math.abs(result.next30dEstimate.deltaPct)}%`
+                            : result.next30dEstimate.direction === "cair"
+                              ? `Tendência de cair ${result.next30dEstimate.deltaPct}%`
+                              : "Tendência estável"
+                        }
+                        cls={cn(
+                          "border bg-surface-2/60",
+                          result.next30dEstimate.direction === "subir"
+                            ? "border-success/20 text-success"
+                            : result.next30dEstimate.direction === "cair"
+                              ? "border-warning/20 text-warning"
+                              : "border-border text-text-2",
+                        )}
+                      />
+                    )}
+                    {/* Saturação */}
+                    <InsightCard
+                      icon={Flame}
+                      label="Concorrência"
+                      value={SATURATION_META[result.marketSaturation].label}
+                      cls={cn(
+                        "border bg-surface-2/60",
+                        result.marketSaturation === "quente"
+                          ? "border-warning/20 text-warning"
+                          : result.marketSaturation === "ativo"
+                            ? "border-primary/20 text-primary"
+                            : "border-border text-text-3",
+                      )}
+                    />
+                  </div>
+
+                  {/* Banner de ação interpretado */}
+                  {actionInsight && (
+                    <div className="flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
+                      <Lightbulb className="w-4 h-4 flex-shrink-0 text-primary mt-0.5" />
+                      <p
+                        className="text-xs text-foreground leading-relaxed"
+                        dangerouslySetInnerHTML={{
+                          __html: actionInsight.replace(
+                            /\*\*(.+?)\*\*/g,
+                            '<strong class="font-bold text-foreground">$1</strong>',
+                          ),
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* GRÁFICO PRINCIPAL: comparação OU série única + forecast */}
                   {compareChartData && compareChartData.length > 0 ? (
                     <div className="bg-surface-2/40 rounded-lg p-3">
                       <div className="flex items-center justify-between mb-2">
-                        <p className="section-label">Comparação de termos</p>
+                        <p className="section-label">Comparativo de produtos</p>
                         <span className="text-[10px] text-text-3">
                           {[result.keyword, ...result.compareKeywords].length} termos
                         </span>
@@ -536,21 +743,16 @@ export function TrendSearchCard() {
                           <LineChart data={compareChartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
                             <XAxis
                               dataKey="period_date"
-                              tickFormatter={(d) => {
-                                const date = new Date(d);
-                                return result.timeframe === "today 5-y"
-                                  ? date.toLocaleDateString("pt-BR", { year: "2-digit" })
-                                  : date.toLocaleDateString("pt-BR", { month: "short" });
-                              }}
+                              tickFormatter={(d) => formatTickByTimeframe(d, result.timeframe)}
                               stroke="hsl(var(--muted-foreground))"
                               fontSize={9}
                               tickLine={false}
                               axisLine={false}
                               interval="preserveStartEnd"
-                              minTickGap={40}
+                              minTickGap={25}
                             />
                             <YAxis
-                              domain={[0, 100]}
+                              domain={[0, stats?.yMax ?? 100]}
                               stroke="hsl(var(--muted-foreground))"
                               fontSize={9}
                               tickLine={false}
@@ -582,7 +784,6 @@ export function TrendSearchCard() {
                           </LineChart>
                         </ResponsiveContainer>
                       </div>
-                      {/* Legenda */}
                       <div className="flex items-center gap-3 mt-2 flex-wrap">
                         {[result.keyword, ...result.compareKeywords].map((kw, i) => (
                           <div key={kw} className="flex items-center gap-1.5">
@@ -596,24 +797,19 @@ export function TrendSearchCard() {
                       </div>
                     </div>
                   ) : (
-                    chartWithForecast && (
+                    chartData && (
                       <div className="bg-surface-2/40 rounded-lg p-3">
                         <div className="flex items-center justify-between mb-2">
-                          <p className="section-label">
-                            Interesse —{" "}
-                            {TIMEFRAMES.find((t) => t.id === result.timeframe)?.label === "5a"
-                              ? "últimos 5 anos"
-                              : `últimos ${TIMEFRAMES.find((t) => t.id === result.timeframe)?.label}`}
-                          </p>
-                          {result.forecast3m.length > 0 && result.timeframe === "today 5-y" && (
+                          <p className="section-label">Demanda nos {currentTfLong}</p>
+                          {chartForecastData && (
                             <span className="text-[10px] text-text-3 inline-flex items-center gap-1">
-                              <span className="w-3 border-t border-dashed border-primary" /> projeção 3m
+                              <span className="w-3 border-t border-dashed border-primary" /> previsão dos próximos 3 meses
                             </span>
                           )}
                         </div>
                         <div className="h-32">
                           <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={chartWithForecast} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                            <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
                               <defs>
                                 <linearGradient id="trendGradSearch" x1="0" y1="0" x2="0" y2="1">
                                   <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.6} />
@@ -622,21 +818,16 @@ export function TrendSearchCard() {
                               </defs>
                               <XAxis
                                 dataKey="period_date"
-                                tickFormatter={(d) => {
-                                  const date = new Date(d);
-                                  return result.timeframe === "today 5-y"
-                                    ? date.toLocaleDateString("pt-BR", { year: "2-digit" })
-                                    : date.toLocaleDateString("pt-BR", { month: "short", day: "2-digit" });
-                                }}
+                                tickFormatter={(d) => formatTickByTimeframe(d, result.timeframe)}
                                 stroke="hsl(var(--muted-foreground))"
                                 fontSize={9}
                                 tickLine={false}
                                 axisLine={false}
                                 interval="preserveStartEnd"
-                                minTickGap={40}
+                                minTickGap={25}
                               />
                               <YAxis
-                                domain={[0, 100]}
+                                domain={[0, stats?.yMax ?? 100]}
                                 stroke="hsl(var(--muted-foreground))"
                                 fontSize={9}
                                 tickLine={false}
@@ -652,12 +843,9 @@ export function TrendSearchCard() {
                                 labelFormatter={(d) =>
                                   new Date(d).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
                                 }
-                                formatter={(v: number, name: string) => [
-                                  v,
-                                  name === "real" ? "Interesse" : "Projeção",
-                                ]}
+                                formatter={(v: number) => [v, "Demanda"]}
                               />
-                              {stats && (
+                              {stats && stats.avg > 0 && (
                                 <ReferenceLine
                                   y={stats.avg}
                                   stroke="hsl(var(--muted-foreground))"
@@ -671,21 +859,32 @@ export function TrendSearchCard() {
                                 stroke="hsl(var(--primary))"
                                 strokeWidth={1.8}
                                 fill="url(#trendGradSearch)"
-                                connectNulls={false}
-                              />
-                              <Area
-                                type="monotone"
-                                dataKey="forecast"
-                                stroke="hsl(var(--primary))"
-                                strokeWidth={1.5}
-                                strokeDasharray="4 3"
-                                fill="hsl(var(--primary))"
-                                fillOpacity={0.05}
-                                connectNulls={false}
+                                isAnimationActive={false}
+                                connectNulls
                               />
                             </AreaChart>
                           </ResponsiveContainer>
                         </div>
+                        {/* Forecast secundário (só pra 5y) */}
+                        {chartForecastData && (
+                          <div className="h-12 -mt-2">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <LineChart data={chartForecastData} margin={{ top: 0, right: 5, left: -25, bottom: 0 }}>
+                                <XAxis dataKey="period_date" hide />
+                                <YAxis domain={[0, stats?.yMax ?? 100]} hide />
+                                <Line
+                                  type="monotone"
+                                  dataKey="forecast"
+                                  stroke="hsl(var(--primary))"
+                                  strokeWidth={1.5}
+                                  strokeDasharray="4 3"
+                                  dot={false}
+                                  isAnimationActive={false}
+                                />
+                              </LineChart>
+                            </ResponsiveContainer>
+                          </div>
+                        )}
                       </div>
                     )
                   )}
@@ -702,7 +901,6 @@ export function TrendSearchCard() {
 
                   {/* Accordions: Cidades + Países */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {/* Cidades */}
                     <div className="surface-card p-0 overflow-hidden">
                       <button
                         onClick={() => setShowCities((v) => !v)}
@@ -710,7 +908,7 @@ export function TrendSearchCard() {
                       >
                         <div className="flex items-center gap-2">
                           <MapPin className="w-4 h-4 text-primary" />
-                          <span className="text-xs font-bold text-foreground">Top cidades (BR)</span>
+                          <span className="text-xs font-bold text-foreground">Cidades com maior demanda</span>
                         </div>
                         <ChevronDown className={cn("w-4 h-4 text-text-3 transition-transform", showCities && "rotate-180")} />
                       </button>
@@ -732,7 +930,6 @@ export function TrendSearchCard() {
                         </div>
                       )}
                     </div>
-                    {/* Países */}
                     <div className="surface-card p-0 overflow-hidden">
                       <button
                         onClick={() => setShowCountries((v) => !v)}
@@ -740,7 +937,7 @@ export function TrendSearchCard() {
                       >
                         <div className="flex items-center gap-2">
                           <Globe className="w-4 h-4 text-primary" />
-                          <span className="text-xs font-bold text-foreground">Interesse mundial</span>
+                          <span className="text-xs font-bold text-foreground">Demanda por país</span>
                         </div>
                         <ChevronDown className={cn("w-4 h-4 text-text-3 transition-transform", showCountries && "rotate-180")} />
                       </button>
@@ -771,7 +968,7 @@ export function TrendSearchCard() {
                         <div className="surface-card p-4">
                           <div className="flex items-center gap-2 mb-2">
                             <Flame className="w-4 h-4 text-warning" />
-                            <p className="section-label">Em alta agora</p>
+                            <p className="section-label">Termos bombando</p>
                           </div>
                           <div className="space-y-1.5">
                             {result.relatedRising.slice(0, 5).map((r) => (
@@ -802,7 +999,7 @@ export function TrendSearchCard() {
                         <div className="surface-card p-4">
                           <div className="flex items-center gap-2 mb-2">
                             <TrendingUp className="w-4 h-4 text-primary" />
-                            <p className="section-label">Buscas populares</p>
+                            <p className="section-label">Termos mais buscados</p>
                           </div>
                           <div className="space-y-1.5">
                             {result.relatedTop.slice(0, 5).map((r) => (
@@ -830,6 +1027,29 @@ export function TrendSearchCard() {
           )}
         </>
       )}
+    </div>
+  );
+}
+
+// Mini-card de insight reusável
+function InsightCard({
+  icon: Icon,
+  label,
+  value,
+  cls,
+}: {
+  icon: typeof TrendingUp;
+  label: string;
+  value: string;
+  cls: string;
+}) {
+  return (
+    <div className={cn("flex items-center gap-2 rounded-lg border px-2.5 py-2 min-h-[64px]", cls)}>
+      <Icon className="w-3.5 h-3.5 flex-shrink-0" />
+      <div className="min-w-0 flex-1">
+        <p className="text-[9px] uppercase tracking-wide opacity-70 font-bold leading-none">{label}</p>
+        <p className="text-[11px] font-bold mt-1 leading-tight line-clamp-2">{value}</p>
+      </div>
     </div>
   );
 }
