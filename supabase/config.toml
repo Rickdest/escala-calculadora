@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.shopee-seller-discovery]
 verify_jwt = false
+
+[functions.fetch-product-trends]
+verify_jwt = false
