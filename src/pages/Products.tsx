@@ -229,60 +229,44 @@ export default function Products() {
           </div>
         )}
         <Tabs defaultValue="products" className="w-full">
-          {/* Toolbar unificada: tabs compactas + ações */}
-          <div className="flex flex-wrap items-center gap-2">
-            <TabsList className="h-9 inline-flex w-auto rounded-lg bg-surface-2 border border-border p-0.5">
-              <TabsTrigger
-                value="products"
-                className="h-8 px-3 rounded-md text-xs font-semibold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-foreground/70"
+          {/* Toolbar superior: ações + chip "sem custo" */}
+          <div className="flex flex-wrap items-center gap-2 mb-2.5">
+            {shopeeConnected && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setImportModalOpen(true)}
+                className="h-9 border-[#EE4D2D]/30 text-[#EE4D2D] hover:bg-[#EE4D2D]/5 text-xs"
               >
-                Produtos <span className="opacity-70 font-mono font-mono-num">({stats?.totalProducts || 0})</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="analysis"
-                className="h-8 px-3 rounded-md text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-foreground/70"
-              >
-                Análise
-              </TabsTrigger>
-            </TabsList>
+                <ShoppingBag className="w-3.5 h-3.5 mr-1.5" />
+                <span className="hidden sm:inline">Importar da</span> Shopee
+              </Button>
+            )}
 
-            {/* Spacer + chip "sem custo" clicável */}
-            <div className="flex items-center gap-2 ml-auto flex-wrap">
-              {(() => {
-                const noCost = currentStore?.products?.filter(p => !p.costPrice || p.costPrice === 0).length || 0;
-                if (noCost === 0) return null;
-                const isActive = draftFilter === 'sem-custo';
-                return (
-                  <button
-                    type="button"
-                    onClick={() => setSearchParams(isActive ? {} : { filter: 'sem-custo' })}
-                    className={cn(
-                      "h-9 inline-flex items-center gap-1.5 text-xs font-medium rounded-lg px-3 border transition-colors",
-                      isActive
-                        ? "bg-destructive/20 border-destructive/40 text-destructive"
-                        : "bg-destructive/10 border-destructive/20 text-destructive hover:bg-destructive/15 hover:border-destructive/30",
-                    )}
-                  >
-                    <AlertTriangle className="w-3.5 h-3.5" />
-                    <span className="font-mono font-mono-num">{noCost}</span>
-                    <span className="hidden sm:inline">sem custo</span>
-                    <ArrowRight className="w-3 h-3 opacity-70" />
-                  </button>
-                );
-              })()}
-
-              {shopeeConnected && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setImportModalOpen(true)}
-                  className="h-9 border-[#EE4D2D]/30 text-[#EE4D2D] hover:bg-[#EE4D2D]/5 text-xs"
+            {(() => {
+              const noCost = currentStore?.products?.filter(p => !p.costPrice || p.costPrice === 0).length || 0;
+              if (noCost === 0) return null;
+              const isActive = draftFilter === 'sem-custo';
+              return (
+                <button
+                  type="button"
+                  onClick={() => setSearchParams(isActive ? {} : { filter: 'sem-custo' })}
+                  className={cn(
+                    "h-9 inline-flex items-center gap-1.5 text-xs font-medium rounded-lg px-3 border transition-colors",
+                    isActive
+                      ? "bg-destructive/20 border-destructive/40 text-destructive"
+                      : "bg-destructive/10 border-destructive/20 text-destructive hover:bg-destructive/15 hover:border-destructive/30",
+                  )}
                 >
-                  <ShoppingBag className="w-3.5 h-3.5 mr-1.5" />
-                  <span className="hidden sm:inline">Importar da</span> Shopee
-                </Button>
-              )}
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <span className="font-mono font-mono-num">{noCost}</span>
+                  <span>sem custo</span>
+                  <ArrowRight className="w-3 h-3 opacity-70" />
+                </button>
+              );
+            })()}
 
+            <div className="ml-auto">
               {analysisProducts.length > 0 && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -303,6 +287,22 @@ export default function Products() {
               )}
             </div>
           </div>
+
+          {/* Tabs grandes full-width — controle de navegação principal */}
+          <TabsList className="w-full grid grid-cols-2 h-11 rounded-lg bg-surface-2 border border-border p-1">
+            <TabsTrigger
+              value="products"
+              className="h-9 rounded-md text-sm font-semibold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-foreground/70"
+            >
+              Produtos <span className="opacity-70 font-mono font-mono-num">({stats?.totalProducts || 0})</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="analysis"
+              className="h-9 rounded-md text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-foreground/70"
+            >
+              Análise
+            </TabsTrigger>
+          </TabsList>
 
           <TabsContent value="products" className="space-y-3 mt-3">
             {/* Margin bar */}
@@ -426,7 +426,8 @@ export default function Products() {
                     )}
                   </div>
 
-                  <div className="surface-card p-3 animate-fade-up stagger-1 flex flex-col min-h-[160px]">
+                  {/* LUCRO — sem barra fake; rodapé com contexto real */}
+                  <div className="surface-card p-3.5 animate-fade-up stagger-1 flex flex-col min-h-[160px]">
                     <div className="flex items-center gap-1.5 mb-1">
                       <DollarSign className={cn('w-4 h-4', stats.totalProfit >= 0 ? 'text-success' : 'text-destructive')} />
                       <p className="section-label">Lucro</p>
@@ -434,26 +435,23 @@ export default function Products() {
                     <p className={cn('font-mono text-lg md:text-xl font-bold font-mono-num leading-tight', stats.totalProfit >= 0 ? 'text-success' : 'text-destructive')}>
                       {formatCurrency(stats.totalProfit)}
                     </p>
-                    <div className="mt-1.5 h-1.5 bg-surface-2 rounded-full overflow-hidden">
-                      <div
-                        className={cn('h-full rounded-full', stats.totalProfit >= 0 ? 'bg-success' : 'bg-destructive')}
-                        style={{ width: stats.totalProfit >= 0 ? '100%' : '40%' }}
-                      />
-                    </div>
-                    <p className="text-[10px] text-text-3 mt-1">{stats.totalProducts} produtos</p>
+                    <p className="text-[10px] text-text-2 mt-1 flex items-center gap-1">
+                      {stats.totalProfit >= 0 ? (
+                        <TrendingUp className="w-3 h-3 text-success" />
+                      ) : (
+                        <TrendingDown className="w-3 h-3 text-destructive" />
+                      )}
+                      Lucro líquido total
+                    </p>
                     <div className="mt-auto pt-2 border-t border-border/60">
-                      <p className="text-[10px] text-text-3 flex items-center gap-1">
-                        {stats.totalProfit >= 0 ? (
-                          <TrendingUp className="w-3 h-3 text-success" />
-                        ) : (
-                          <TrendingDown className="w-3 h-3 text-destructive" />
-                        )}
-                        Lucro líquido total
+                      <p className="text-[10px] text-text-3">
+                        Soma de {stats.totalProducts} {stats.totalProducts === 1 ? 'produto' : 'produtos'}
                       </p>
                     </div>
                   </div>
 
-                  <div className="surface-card p-3 animate-fade-up stagger-2 flex flex-col min-h-[160px]">
+                  {/* NA META — barra mais visível com gradient + contraste no rodapé */}
+                  <div className="surface-card p-3.5 animate-fade-up stagger-2 flex flex-col min-h-[160px]">
                     <div className="flex items-center gap-1.5 mb-1">
                       <Target className="w-4 h-4 text-primary" />
                       <p className="section-label">Na Meta</p>
@@ -462,28 +460,29 @@ export default function Products() {
                       {stats.productsAboveTarget}
                       <span className="text-sm text-text-3 font-normal"> / {stats.totalProducts}</span>
                     </p>
-                    <div className="mt-1.5 h-1.5 bg-surface-2 rounded-full overflow-hidden">
+                    <div className="mt-2 h-2 bg-surface-2 rounded-full overflow-hidden border border-border/60">
                       <div
-                        className="h-full rounded-full bg-primary transition-all"
-                        style={{ width: `${stats.totalProducts > 0 ? (stats.productsAboveTarget / stats.totalProducts) * 100 : 0}%` }}
+                        className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all"
+                        style={{ width: `${stats.totalProducts > 0 ? Math.max(2, (stats.productsAboveTarget / stats.totalProducts) * 100) : 0}%` }}
                       />
                     </div>
-                    <p className="text-[10px] text-text-3 mt-1">
+                    <p className="text-[10px] text-text-2 mt-1.5 font-medium">
                       {stats.totalProducts > 0 ? ((stats.productsAboveTarget / stats.totalProducts) * 100).toFixed(0) : 0}% no alvo
                     </p>
                     <div className="mt-auto pt-2 border-t border-border/60">
-                      <p className="text-[10px] text-text-3">
-                        Acima de {currentStore.config.desiredMargin}% de margem
+                      <p className="text-[10px] text-text-2">
+                        Acima de <span className="font-mono font-mono-num font-semibold text-foreground">{currentStore.config.desiredMargin}%</span> de margem
                       </p>
                     </div>
                   </div>
 
+                  {/* SEM CUSTO — barra com proporção real (não full-width enganoso) */}
                   <button
                     type="button"
                     onClick={() => missingCost > 0 && setSearchParams({ filter: 'sem-custo' })}
                     disabled={missingCost === 0}
                     className={cn(
-                      "surface-card p-3 animate-fade-up stagger-3 flex flex-col min-h-[160px] text-left transition-colors",
+                      "surface-card p-3.5 animate-fade-up stagger-3 flex flex-col min-h-[160px] text-left transition-colors",
                       missingCost > 0 && "hover:border-destructive/40 cursor-pointer",
                       missingCost === 0 && "cursor-default",
                     )}
@@ -494,19 +493,22 @@ export default function Products() {
                     </div>
                     <p className={cn('font-mono text-lg md:text-xl font-bold font-mono-num leading-tight', missingCost > 0 ? 'text-destructive' : 'text-success')}>
                       {missingCost}
+                      <span className="text-sm text-text-3 font-normal"> / {stats.totalProducts}</span>
                     </p>
-                    <div className="mt-1.5 h-1.5 bg-surface-2 rounded-full overflow-hidden">
+                    <div className="mt-2 h-2 bg-surface-2 rounded-full overflow-hidden border border-border/60">
                       <div
-                        className={cn('h-full rounded-full', missingCost > 0 ? 'bg-destructive' : 'bg-success')}
-                        style={{ width: missingCost > 0 ? `${Math.min(100, (missingCost / Math.max(stats.totalProducts, 1)) * 100)}%` : '100%' }}
+                        className={cn('h-full rounded-full transition-all', missingCost > 0 ? 'bg-gradient-to-r from-destructive to-destructive/70' : 'bg-success')}
+                        style={{ width: missingCost > 0 ? `${Math.min(100, Math.max(2, (missingCost / Math.max(stats.totalProducts, 1)) * 100))}%` : '100%' }}
                       />
                     </div>
-                    <p className="text-[10px] text-text-3 mt-1">
-                      {missingCost > 0 ? 'preencher custo' : 'tudo certo'}
+                    <p className="text-[10px] text-text-2 mt-1.5">
+                      {missingCost > 0
+                        ? `${((missingCost / Math.max(stats.totalProducts, 1)) * 100).toFixed(0)}% sem preço de custo`
+                        : 'tudo certo'}
                     </p>
                     <div className="mt-auto pt-2 border-t border-border/60">
                       {missingCost > 0 ? (
-                        <p className="text-[10px] text-destructive flex items-center gap-1 font-medium">
+                        <p className="text-[10px] text-destructive flex items-center gap-1 font-semibold">
                           Toque para filtrar
                           <ArrowRight className="w-3 h-3" />
                         </p>
