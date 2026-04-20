@@ -1,27 +1,44 @@
 ---
 name: Product Market Trend Module
-description: Aba "Tendência" no detalhe do produto combinando Google Trends (12 meses) e Shopee Ads keywords, edge function fetch-product-trends, cache de 7 dias
+description: Aba "Tendência" no detalhe do produto com extração inteligente de keyword, override manual, validação de qualidade (>80% zeros = low_quality) e sugestões alternativas
 type: feature
 ---
 
 Módulo de tendência de mercado por produto na rota `/products/:id`, aba "Tendência".
 
 **Fontes:**
-- Google Trends (não-oficial, gratuito) — interesse 0-100 nos últimos 12 meses, com retry exponencial 3x
+- Google Trends (não-oficial, gratuito, cookies + UAs rotativos) — interesse 0-100 últimos 12m
 - Shopee Ads `keywords[]` (já em `shopee_ads_by_product.keywords`) — volume real e bid sugerido
 
-**Backend:**
-- Tabela `product_trends` (RLS: dono apenas, insert exige `has_active_subscription()`)
-- Unique index em `(product_id, source, keyword, period_date)` evita duplicados
-- Edge function `fetch-product-trends` (verify_jwt=false, valida JWT no código via auth.getUser)
-- Cache de 7 dias: se houver registro recente e `force=false`, retorna cached
-- Extração de keyword via `extractKeyword()` — limpa "kit/pacote/un/dimensões/números"
+**Backend (`fetch-product-trends`):**
+- Tabela `product_trends` (RLS dono, insert exige `has_active_subscription()`)
+- Coluna `products.trend_keyword_override` (TEXT) — termo customizado pelo usuário, prioritário sobre extração
+- Cache 7d quando `force=false`
+- Aceita body: `{ productId, force, keywordOverride? }` — se `keywordOverride` vier, persiste em `products` antes da busca
+- Retorna: `{ keyword, low_quality, zeros_pct, suggestions, google_saved, shopee_saved, rate_limited, google_error }`
 
-**Frontend:**
-- `useProductTrend(productId)` — carrega + permite refresh, calcula diagnóstico (slope 90d, pico/vale, próximo pico esperado, sazonalidade > 40%)
-- `ProductTrendTab` — estado vazio com CTA "Analisar tendência", gráfico Recharts 12m, top 10 keywords classificadas por volume (Alta/Média/Baixa)
+**Algoritmo de extração inteligente (`extractKeyword`):**
+1. Remove frases de marketing (empina bumbum, costas abertas, push up, etc.)
+2. Tokeniza, remove medidas/números/pontuação
+3. Remove stop-words (elegância, premium, original, kit, combo, conectores)
+4. Detecta CATEGORIA via dicionário `PRODUCT_CATEGORIES` (~250 itens: moda, casa, beleza, tech, infantil, pet, fitness)
+5. Coleta até 2 MODIFICADORES genéricos (`GENERIC_MODIFIERS`: longo, suplex, gamer, etc.)
+6. Adiciona PÚBLICO (`AUDIENCES`: feminino, masculino, infantil, unissex)
+7. Resultado: `[categoria] + [1-2 modificadores] + [audience]` máx 4 palavras
+8. Fallback se não achar categoria: 3 primeiras palavras limpas
+
+**Validação de qualidade:**
+- Após buscar Google Trends, calcula % de zeros na série
+- Se >80% zeros → `low_quality: true`, gera 3 sugestões via `suggestAlternatives()`
+- Frontend esconde gráfico/diagnóstico, mostra aviso + chips clicáveis com sugestões + botão editar manualmente
+
+**Frontend (`ProductTrendTab` + `useProductTrend`):**
+- Header mostra "Termo analisado: X" + badge "personalizado" se override + ícone ✏️ pra editar inline
+- Editor: Input + botões check/cancelar; Enter salva, Escape cancela
+- Hook expõe: `keyword, keywordOverride, lowQuality, suggestions, setKeywordOverride(kw)`
+- `setKeywordOverride` chama `refresh(true, kw)` que persiste no backend e re-busca
 
 **Limitações conhecidas:**
+- Categorias de nicho (umectação capilar, ferramentas raras) podem não bater no dicionário → fallback ou override manual
 - Google Trends é interesse relativo (0-100), não volume absoluto
-- Trends pode falhar (429); fallback exibe só dados Shopee
-- Produtos genéricos ("camisa azul") trazem ruído; específicos funcionam melhor
+- Trends pode 429; cookies invalidados nesse caso, retry com backoff (2s/5s/12s)
