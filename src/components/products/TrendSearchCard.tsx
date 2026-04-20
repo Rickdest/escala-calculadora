@@ -135,6 +135,8 @@ export interface TrendSearchCardProps {
   extraFooter?: React.ReactNode;
   /** Remove a borda externa e padding pra evitar duplicação visual quando aninhado em outro card/Collapsible */
   hideOuterBorder?: boolean;
+  /** Esconde o header interno (Sparkles + "Análise de demanda") — útil quando o trigger pai já tem título */
+  hideHeader?: boolean;
 }
 
 export function TrendSearchCard({
@@ -142,6 +144,7 @@ export function TrendSearchCard({
   variant = "standalone",
   extraFooter,
   hideOuterBorder = false,
+  hideHeader = false,
 }: TrendSearchCardProps = {}) {
   const [input, setInput] = useState(initialKeyword ?? "");
   const [collapsed, setCollapsed] = useState(false);
