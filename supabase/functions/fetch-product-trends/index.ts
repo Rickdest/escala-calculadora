@@ -260,6 +260,75 @@ function suggestAlternatives(productName: string, currentKeyword: string): strin
   return Array.from(out).slice(0, 3);
 }
 
+/**
+ * Constrói cascata de variações da keyword, do mais específico ao mais genérico.
+ * Ex: "vestido longo suplex feminino" → ["vestido longo suplex feminino", "vestido longo feminino", "vestido feminino", "vestido"]
+ *
+ * Estratégia:
+ * 1ª) keyword principal (categoria + 1-2 modifiers + audience)
+ * 2ª) categoria + 1 modifier + audience (drop o modifier mais "raro" — o último coletado)
+ * 3ª) categoria + audience
+ * 4ª) só categoria
+ */
+function buildKeywordCascade(productName: string): string[] {
+  const primary = extractKeyword(productName);
+  const cascade: string[] = [primary];
+
+  // Re-extrai partes pra montar variações
+  let cleaned = productName.toLowerCase();
+  for (const phrase of MARKETING_PHRASES) {
+    const norm = normalizeWord(phrase);
+    cleaned = cleaned
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(new RegExp(`\\b${norm}\\b`, "gi"), " ");
+    cleaned = cleaned.replace(new RegExp(`\\b${phrase}\\b`, "gi"), " ");
+  }
+  const tokens = tokenize(cleaned);
+  const normTokens = tokens.map(normalizeWord);
+
+  let category: string | null = null;
+  let categoryIdx = -1;
+  for (let i = 0; i < normTokens.length; i++) {
+    if (PRODUCT_CATEGORIES.has(normTokens[i])) {
+      category = tokens[i];
+      categoryIdx = i;
+      break;
+    }
+  }
+
+  const modifiers: string[] = [];
+  for (let i = 0; i < normTokens.length; i++) {
+    if (i === categoryIdx) continue;
+    if (GENERIC_MODIFIERS.has(normTokens[i])) modifiers.push(tokens[i]);
+  }
+
+  let audience: string | null = null;
+  for (let i = 0; i < normTokens.length; i++) {
+    if (AUDIENCES.has(normTokens[i])) {
+      audience = tokens[i];
+      break;
+    }
+  }
+
+  if (category) {
+    // Variação intermediária: categoria + primeiro modifier + audience
+    if (modifiers[0]) {
+      const v = [category, modifiers[0], audience].filter(Boolean).join(" ").trim();
+      if (v && !cascade.includes(v)) cascade.push(v);
+    }
+    // categoria + audience
+    if (audience) {
+      const v = `${category} ${audience}`.trim();
+      if (!cascade.includes(v)) cascade.push(v);
+    }
+    // só categoria (última cartada)
+    if (!cascade.includes(category)) cascade.push(category);
+  }
+
+  return cascade.slice(0, 4);
+}
+
 // ============================================================
 // GOOGLE TRENDS (cookies + UAs rotativos)
 // ============================================================
