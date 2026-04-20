@@ -354,6 +354,7 @@ export function useProductTrend(productId: string | undefined) {
     relatedRising,
     regions,
     seasonalCycle,
+    autoSimplified,
     refresh,
     setKeywordOverride,
   };
