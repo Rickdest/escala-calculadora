@@ -61,6 +61,15 @@ export default function Products() {
   const [analysisFilter, setAnalysisFilter] = useState<'all' | 'profitable' | 'healthy' | 'attention' | 'loss'>('all');
   
   const [importModalOpen, setImportModalOpen] = useState(false);
+  const [trendOpen, setTrendOpen] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('products-trend-open') === '1';
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem('products-trend-open', trendOpen ? '1' : '0');
+  }, [trendOpen]);
 
   const draftFilter = searchParams.get('filter');
 
