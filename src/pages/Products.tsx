@@ -482,7 +482,7 @@ export default function Products() {
                   <div className={cn(
                     "rounded-xl overflow-hidden transition-all",
                     trendOpen
-                      ? "border border-primary/40 bg-card"
+                      ? "border border-primary/30 bg-gradient-to-r from-primary/[0.04] to-transparent"
                       : "border border-primary/30 bg-gradient-to-br from-primary/[0.08] via-card to-card hover:border-primary/50 hover:from-primary/[0.12] shadow-sm",
                   )}>
                     <CollapsibleTrigger asChild>
