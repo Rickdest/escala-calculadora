@@ -319,9 +319,20 @@ function buildHeaders(ua: string, cookies: string) {
   };
 }
 
-async function fetchGoogleTrends(
-  keyword: string,
-): Promise<Array<{ period_date: string; interest_score: number }>> {
+type RelatedKeyword = {
+  keyword: string;
+  value: number; // top: 0-100; rising: % growth (9999 = Breakout)
+  isBreakout: boolean;
+  formattedValue: string; // ex: "+250%", "Em alta", "100"
+};
+
+type TrendsResult = {
+  timeline: Array<{ period_date: string; interest_score: number }>;
+  relatedTop: RelatedKeyword[];
+  relatedRising: RelatedKeyword[];
+};
+
+async function fetchGoogleTrends(keyword: string): Promise<TrendsResult> {
   const geo = "BR";
   const time = "today 12-m";
   const ua = pickUA();
@@ -359,23 +370,28 @@ async function fetchGoogleTrends(
   } catch {
     throw new Error("Google Trends explore returned non-JSON");
   }
-  const widget = exploreData.widgets?.find(
-    (w: any) => w.id === "TIMESERIES",
-  );
-  if (!widget?.token || !widget?.request) {
+
+  const widgets: any[] = exploreData.widgets ?? [];
+  const timeWidget = widgets.find((w) => w.id === "TIMESERIES");
+  if (!timeWidget?.token || !timeWidget?.request) {
     throw new Error("Google Trends widget missing");
   }
 
+  // RELATED_QUERIES vem como array com 2 widgets (top, rising) — id "RELATED_QUERIES"
+  const relatedWidgets = widgets.filter(
+    (w) => w.id === "RELATED_QUERIES" || (typeof w.id === "string" && w.id.startsWith("RELATED_QUERIES")),
+  );
+
+  // 1) Timeline
   const multiUrl = new URL(
     "https://trends.google.com/trends/api/widgetdata/multiline",
   );
   multiUrl.searchParams.set("hl", "pt-BR");
   multiUrl.searchParams.set("tz", "180");
-  multiUrl.searchParams.set("req", JSON.stringify(widget.request));
-  multiUrl.searchParams.set("token", widget.token);
+  multiUrl.searchParams.set("req", JSON.stringify(timeWidget.request));
+  multiUrl.searchParams.set("token", timeWidget.token);
 
   const multiRes = await fetch(multiUrl.toString(), { headers });
-
   if (multiRes.status === 429) {
     cachedCookies = null;
     throw new Error("RATE_LIMITED");
@@ -383,18 +399,79 @@ async function fetchGoogleTrends(
   if (!multiRes.ok) {
     throw new Error(`Google Trends multiline HTTP ${multiRes.status}`);
   }
-
   const multiText = await multiRes.text();
-  const cleanedMulti = multiText.replace(/^\)\]\}'\,?\n?/, "");
-  const multiData = JSON.parse(cleanedMulti);
-
+  const multiData = JSON.parse(multiText.replace(/^\)\]\}'\,?\n?/, ""));
   const timelineData = multiData.default?.timelineData ?? [];
-  return timelineData.map((point: any) => ({
+  const timeline = timelineData.map((point: any) => ({
     period_date: new Date(parseInt(point.time) * 1000)
       .toISOString()
       .split("T")[0],
     interest_score: point.value?.[0] ?? 0,
   }));
+
+  // 2) Related queries (top + rising) — falha gracioso, não derruba a função
+  let relatedTop: RelatedKeyword[] = [];
+  let relatedRising: RelatedKeyword[] = [];
+
+  try {
+    for (const rw of relatedWidgets) {
+      if (!rw.token || !rw.request) continue;
+      const url = new URL(
+        "https://trends.google.com/trends/api/widgetdata/relatedsearches",
+      );
+      url.searchParams.set("hl", "pt-BR");
+      url.searchParams.set("tz", "180");
+      url.searchParams.set("req", JSON.stringify(rw.request));
+      url.searchParams.set("token", rw.token);
+
+      const r = await fetch(url.toString(), { headers });
+      if (!r.ok) {
+        logger.warn("related_failed", { status: r.status });
+        continue;
+      }
+      const txt = await r.text();
+      const data = JSON.parse(txt.replace(/^\)\]\}'\,?\n?/, ""));
+      const ranked: any[] = data.default?.rankedList ?? [];
+
+      // rankedList[0] = top (mais buscadas), rankedList[1] = rising (em alta)
+      // mas dependendo do widget vem só um deles
+      const requestType = rw.request?.restriction?.complexKeywordsRestriction
+        ? "rising"
+        : null;
+
+      for (let listIdx = 0; listIdx < ranked.length; listIdx++) {
+        const items: any[] = ranked[listIdx]?.rankedKeyword ?? [];
+        // heurística: se o primeiro item tem formattedValue tipo "+250%" ou "Em alta" → rising
+        const firstFmt = String(items[0]?.formattedValue ?? "");
+        const isRising =
+          requestType === "rising" ||
+          /\+\d|alta|breakout|aumento/i.test(firstFmt);
+
+        const parsed: RelatedKeyword[] = items.slice(0, 10).map((it: any) => {
+          const fmt = String(it.formattedValue ?? "");
+          const isBreakout = /breakout|alta|aumento/i.test(fmt);
+          return {
+            keyword: String(it.query ?? "").slice(0, 200),
+            value: isBreakout ? 9999 : Number(it.value ?? 0),
+            isBreakout,
+            formattedValue: fmt,
+          };
+        }).filter((k: RelatedKeyword) => k.keyword.length > 0);
+
+        if (isRising) {
+          if (relatedRising.length === 0) relatedRising = parsed;
+        } else {
+          if (relatedTop.length === 0) relatedTop = parsed;
+        }
+      }
+    }
+  } catch (e) {
+    logger.warn("related_parse_error", {
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+
+  return { timeline, relatedTop, relatedRising };
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -525,21 +602,27 @@ Deno.serve(async (req) => {
     });
 
     let googleSaved = 0;
+    let relatedSaved = 0;
     let googleError: string | null = null;
     let rateLimited = false;
     let lowQuality = false;
     let zerosPct = 0;
+    let relatedTopOut: RelatedKeyword[] = [];
+    let relatedRisingOut: RelatedKeyword[] = [];
 
     // Google Trends com retry e backoff (2s, 5s, 12s)
     try {
       const delays = [2000, 5000, 12000];
-      let trendsData: Array<{ period_date: string; interest_score: number }> =
-        [];
+      let trendsResult: TrendsResult = {
+        timeline: [],
+        relatedTop: [],
+        relatedRising: [],
+      };
       let lastErr: unknown = null;
 
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
-          trendsData = await fetchGoogleTrends(keyword);
+          trendsResult = await fetchGoogleTrends(keyword);
           lastErr = null;
           break;
         } catch (e) {
@@ -551,6 +634,10 @@ Deno.serve(async (req) => {
       }
 
       if (lastErr) throw lastErr;
+
+      const trendsData = trendsResult.timeline;
+      relatedTopOut = trendsResult.relatedTop;
+      relatedRisingOut = trendsResult.relatedRising;
 
       if (trendsData.length > 0) {
         // Detecta baixa qualidade (>80% zeros)
@@ -582,6 +669,55 @@ Deno.serve(async (req) => {
           googleError = insertErr.message;
         } else {
           googleSaved = rows.length;
+        }
+      }
+
+      // Persiste related (top + rising) — sempre que tivermos algo
+      if (relatedTopOut.length > 0 || relatedRisingOut.length > 0) {
+        const today = new Date().toISOString().split("T")[0];
+
+        await admin
+          .from("product_trends")
+          .delete()
+          .eq("product_id", productId)
+          .in("source", ["google_related_top", "google_related_rising"]);
+
+        const relatedRows = [
+          ...relatedTopOut.map((r) => ({
+            user_id: userId,
+            product_id: productId,
+            source: "google_related_top",
+            keyword: r.keyword,
+            period_date: today,
+            interest_score: r.value,
+            metadata: {
+              type: "top",
+              formatted_value: r.formattedValue,
+              parent_keyword: keyword,
+            },
+          })),
+          ...relatedRisingOut.map((r) => ({
+            user_id: userId,
+            product_id: productId,
+            source: "google_related_rising",
+            keyword: r.keyword,
+            period_date: today,
+            interest_score: r.value,
+            metadata: {
+              type: "rising",
+              is_breakout: r.isBreakout,
+              formatted_value: r.formattedValue,
+              parent_keyword: keyword,
+            },
+          })),
+        ];
+
+        if (relatedRows.length > 0) {
+          const { error: relErr } = await admin
+            .from("product_trends")
+            .insert(relatedRows);
+          if (!relErr) relatedSaved = relatedRows.length;
+          else logger.warn("related_insert_failed", { error: relErr.message });
         }
       }
     } catch (e) {
@@ -640,15 +776,24 @@ Deno.serve(async (req) => {
       }
     }
 
-    const suggestions = lowQuality
-      ? suggestAlternatives(product.name, keyword)
-      : [];
+    // Sugestões: prioriza related top REAIS do Google (3 primeiros) > algoritmo
+    let suggestions: string[] = [];
+    if (lowQuality) {
+      const fromRelated = [
+        ...relatedTopOut.slice(0, 3).map((r) => r.keyword),
+        ...relatedRisingOut.slice(0, 2).map((r) => r.keyword),
+      ].filter((k) => k && k.toLowerCase() !== keyword.toLowerCase());
+      suggestions = fromRelated.length > 0
+        ? Array.from(new Set(fromRelated)).slice(0, 3)
+        : suggestAlternatives(product.name, keyword);
+    }
 
     logger.info("fetch_done", {
       productId,
       keyword,
       googleSaved,
       shopeeSaved,
+      relatedSaved,
       googleError,
       rateLimited,
       lowQuality,
@@ -662,6 +807,7 @@ Deno.serve(async (req) => {
         keyword_override: product.trend_keyword_override ?? null,
         google_saved: googleSaved,
         shopee_saved: shopeeSaved,
+        related_saved: relatedSaved,
         google_error: googleError,
         rate_limited: rateLimited,
         low_quality: lowQuality,

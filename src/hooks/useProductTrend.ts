@@ -13,6 +13,13 @@ export type ShopeeKeyword = {
   competition_level: string | null;
 };
 
+export type RelatedKeyword = {
+  keyword: string;
+  value: number;
+  isBreakout: boolean;
+  formattedValue: string;
+};
+
 export type TrendDiagnostic = {
   direction: "up" | "down" | "stable";
   slopePct: number;
@@ -36,6 +43,8 @@ export function useProductTrend(productId: string | undefined) {
   const [error, setError] = useState<string | null>(null);
   const [lowQuality, setLowQuality] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [relatedTop, setRelatedTop] = useState<RelatedKeyword[]>([]);
+  const [relatedRising, setRelatedRising] = useState<RelatedKeyword[]>([]);
 
   const loadFromDb = useCallback(async () => {
     if (!productId) return;
@@ -89,6 +98,23 @@ export function useProductTrend(productId: string | undefined) {
         }))
         .sort((a, b) => b.search_volume - a.search_volume);
       setShopeeKeywords(shopee);
+
+      const parseRelated = (source: string): RelatedKeyword[] =>
+        rows
+          .filter((r) => r.source === source)
+          .map((r) => {
+            const meta = (r.metadata as Record<string, unknown> | null) ?? {};
+            return {
+              keyword: r.keyword,
+              value: Number(r.interest_score ?? 0),
+              isBreakout: Boolean(meta.is_breakout),
+              formattedValue: String(meta.formatted_value ?? ""),
+            };
+          })
+          .sort((a, b) => b.value - a.value);
+
+      setRelatedTop(parseRelated("google_related_top"));
+      setRelatedRising(parseRelated("google_related_rising"));
 
       if (rows.length > 0) {
         const captured = rows
@@ -259,6 +285,8 @@ export function useProductTrend(productId: string | undefined) {
     error,
     lowQuality,
     suggestions,
+    relatedTop,
+    relatedRising,
     refresh,
     setKeywordOverride,
   };

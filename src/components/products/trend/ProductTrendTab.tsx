@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TrendingUp, TrendingDown, Minus, Loader2, RefreshCw, Sparkles, Flame, AlertTriangle, Calendar, Pencil, Check, X } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Loader2, RefreshCw, Sparkles, Flame, AlertTriangle, Calendar, Pencil, Check, X, Search, Zap } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceDot } from "recharts";
 import { cn } from "@/lib/utils";
 import { useProductTrend } from "@/hooks/useProductTrend";
@@ -34,6 +34,8 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
     error,
     lowQuality,
     suggestions,
+    relatedTop,
+    relatedRising,
     refresh,
     setKeywordOverride,
   } = useProductTrend(productId);
@@ -367,6 +369,114 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
         </div>
       )}
 
+      {/* Oportunidades de mercado — buscas relacionadas (top + rising) */}
+      {(relatedRising.length > 0 || relatedTop.length > 0) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* Em alta agora (rising) */}
+          {relatedRising.length > 0 && (
+            <div className="surface-card p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-destructive/10">
+                  <Zap className="w-4 h-4 text-destructive" />
+                </div>
+                <div>
+                  <p className="section-label leading-none">Em alta agora</p>
+                  <p className="text-micro text-muted-foreground mt-0.5">Buscas crescendo no Google</p>
+                </div>
+              </div>
+              <div className="space-y-1">
+                {relatedRising.slice(0, 8).map((kw, i) => {
+                  const breakout = kw.isBreakout || kw.value >= 5000;
+                  const isHot = !breakout && kw.value >= 100;
+                  const isWarm = !breakout && !isHot && kw.value >= 25;
+                  return (
+                    <button
+                      key={`${kw.keyword}-${i}`}
+                      onClick={() => setKeywordOverride(kw.keyword)}
+                      disabled={refreshing}
+                      className="w-full flex items-center justify-between gap-3 py-2 px-2 -mx-2 rounded-md hover:bg-secondary/60 transition-colors group disabled:opacity-50"
+                      title="Analisar este termo"
+                    >
+                      <span className="text-sm text-foreground truncate flex-1 text-left group-hover:text-primary transition-colors">
+                        {kw.keyword}
+                      </span>
+                      {breakout ? (
+                        <span className="text-micro font-bold px-2 py-0.5 rounded-full bg-destructive text-destructive-foreground">
+                          BOMBANDO
+                        </span>
+                      ) : isHot ? (
+                        <span className="text-micro font-semibold px-2 py-0.5 rounded-full bg-warning/15 text-warning border border-warning/30">
+                          +{kw.value}%
+                        </span>
+                      ) : isWarm ? (
+                        <span className="text-micro font-semibold px-2 py-0.5 rounded-full bg-success/10 text-success border border-success/30">
+                          +{kw.value}%
+                        </span>
+                      ) : (
+                        <span className="text-micro text-muted-foreground">
+                          {kw.formattedValue || `+${kw.value}%`}
+                        </span>
+                      )}
+                      <Search className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-micro text-muted-foreground/70 mt-3 pt-3 border-t border-border">
+                Clique pra analisar o termo
+              </p>
+            </div>
+          )}
+
+          {/* Buscas populares (top) */}
+          {relatedTop.length > 0 && (
+            <div className="surface-card p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10">
+                  <Search className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <p className="section-label leading-none">Buscas populares</p>
+                  <p className="text-micro text-muted-foreground mt-0.5">Variações mais buscadas</p>
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                {relatedTop.slice(0, 8).map((kw, i) => {
+                  const pct = Math.max(0, Math.min(100, kw.value));
+                  return (
+                    <button
+                      key={`${kw.keyword}-${i}`}
+                      onClick={() => setKeywordOverride(kw.keyword)}
+                      disabled={refreshing}
+                      className="w-full py-1.5 px-2 -mx-2 rounded-md hover:bg-secondary/60 transition-colors group disabled:opacity-50 block"
+                      title="Analisar este termo"
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-sm text-foreground truncate flex-1 text-left group-hover:text-primary transition-colors">
+                          {kw.keyword}
+                        </span>
+                        <span className="font-mono text-micro text-muted-foreground shrink-0">
+                          {pct}
+                        </span>
+                      </div>
+                      <div className="h-1 bg-secondary rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary/60 group-hover:bg-primary transition-colors"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-micro text-muted-foreground/70 mt-3 pt-3 border-t border-border">
+                Use no título do anúncio pra captar mais buscas
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Top keywords Shopee */}
       {shopeeKeywords.length > 0 && (
         <div className="surface-card p-5">
@@ -400,7 +510,7 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
         </div>
       )}
 
-      {!googleSeries.length && !shopeeKeywords.length && hasData && (
+      {!googleSeries.length && !shopeeKeywords.length && !relatedTop.length && !relatedRising.length && hasData && (
         <div className="surface-card p-5 text-center">
           <AlertTriangle className="w-5 h-5 text-warning mx-auto mb-2" />
           <p className="text-small text-muted-foreground">
