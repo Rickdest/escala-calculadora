@@ -62,8 +62,10 @@ export default function Products() {
   
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [trendOpen, setTrendOpen] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem('products-trend-open') === '1';
+    if (typeof window === 'undefined') return true;
+    const saved = window.localStorage.getItem('products-trend-open');
+    // Default to OPEN — only stay closed if user explicitly closed it before
+    return saved === null ? true : saved === '1';
   });
 
   useEffect(() => {
@@ -455,17 +457,20 @@ export default function Products() {
                 </div>
 
                 {/* Saúde da carteira (charts) */}
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="flex items-end justify-between gap-2">
                     <div>
-                      <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                      <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
                         <BarChart3 className="w-4 h-4 text-primary" />
                         Saúde da carteira
                       </h2>
-                      <p className="text-[11px] text-text-3 mt-0.5">Distribuição de margens, ranking e saúde financeira</p>
+                      <p className="text-[11px] text-text-3 mt-1">Distribuição de margens, ranking e saúde financeira</p>
                     </div>
+                    <span className="text-[10px] font-medium uppercase tracking-wider px-2 py-0.5 rounded-full bg-surface-2 text-text-3 border border-border/50">
+                      3 visões
+                    </span>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <MarginDistributionChart />
                     <TopProductsChart />
                     <ProfitSummaryChart />
@@ -477,7 +482,7 @@ export default function Products() {
                   <div className={cn(
                     "rounded-xl overflow-hidden transition-all",
                     trendOpen
-                      ? "border border-primary/40 bg-card"
+                      ? "border border-primary/30 bg-gradient-to-r from-primary/[0.04] to-transparent"
                       : "border border-primary/30 bg-gradient-to-br from-primary/[0.08] via-card to-card hover:border-primary/50 hover:from-primary/[0.12] shadow-sm",
                   )}>
                     <CollapsibleTrigger asChild>
