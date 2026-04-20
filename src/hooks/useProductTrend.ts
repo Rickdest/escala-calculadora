@@ -117,12 +117,18 @@ export function useProductTrend(productId: string | undefined) {
 
       const shopee = rows
         .filter((r) => r.source === "shopee_keywords")
-        .map((r) => ({
-          keyword: r.keyword,
-          search_volume: Number(r.search_volume ?? 0),
-          suggested_bid: Number(r.suggested_bid ?? 0),
-          competition_level: r.competition_level,
-        }))
+        .map((r) => {
+          const meta = (r.metadata as Record<string, unknown> | null) ?? {};
+          const qs = meta.quality_score;
+          return {
+            keyword: r.keyword,
+            search_volume: Number(r.search_volume ?? 0),
+            suggested_bid: Number(r.suggested_bid ?? 0),
+            competition_level: r.competition_level,
+            quality_score:
+              qs !== null && qs !== undefined && qs !== "" ? Number(qs) : null,
+          };
+        })
         .sort((a, b) => b.search_volume - a.search_volume);
       setShopeeKeywords(shopee);
 
