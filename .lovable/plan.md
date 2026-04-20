@@ -1,112 +1,65 @@
 
 
-## Diagnóstico (prints 266-267)
+## Diagnóstico
 
-Olhando o estado atual, identifico 4 problemas reais:
+Pelos prints anteriores e estado atual do código:
 
-### 1. Card "Pesquisar tendência" duplicado e apagado (print 267)
-Quando expande, aparece **dois headers idênticos**:
-- O trigger do Collapsible: "Pesquisar tendência de mercado / Avalie a demanda..."
-- Logo abaixo, dentro do TrendSearchCard: "Análise de demanda / Descubra o potencial..."
+1. **Trend collapsible fechado por padrão** esconde o que é a ferramenta — usuário não percebe que existe pesquisa de demanda. Usuário pediu pra **abrir por padrão**.
+2. **Cards de "Saúde da carteira" ainda parecem amadores**: tamanhos inconsistentes, donut pequeno (96px) com tipografia pequena ao redor, lista do Top 5 com barras finas demais (h-1) e ranks pequenos, stat card de Saúde Financeira com 3 mini-tiles cinzas que ficam apertados no breakpoint atual (878px viewport = quebra em 2 colunas e o 3º card vai pra próxima linha sozinho).
 
-Causa: `hideOuterBorder` removeu só a borda, mas não escondeu o header interno do `TrendSearchCard`. Resultado: dois títulos quase iguais, empilhados.
+## Plano
 
-Além disso, o trigger fechado tem **cor muito sutil** (bg neutro + texto pálido) — não parece um botão clicável, parece label. Não comunica "ferramenta poderosa".
+### A. Trend aberto por padrão
 
-### 2. Gráficos da "Saúde da carteira" feios (print 266)
-- **Distribuição de margem**: barra horizontal vermelha + 80% de espaço vazio embaixo. Card desperdiça altura.
-- **Top 5 Margens**: labels truncados ("Calça Leggin…" 5x, indistinguíveis), apenas 1 barra visível claramente
-- **Lucro por produto**: 6 barras com labels rotacionados ilegíveis, eixo Y com R$ 0/4/8/12/16 mas só 1 barra tem valor — desproporcional
-- Os 3 cards têm **alturas diferentes** (visual desalinhado) e **densidade inconsistente**
+`Products.tsx`:
+- Mudar `useState<boolean>` inicial: se `localStorage` não tiver valor salvo, default = **`true`** (aberto). Só respeitar localStorage quando explicitamente salvo como `'0'`.
+- Quando aberto, o header do trigger continua visível (funciona como header da seção) com chevron rotacionado — comunica claramente "esta é uma ferramenta de pesquisa" sem precisar clicar.
+- Refinar visual do trigger quando **aberto**: hoje fica neutro demais (`bg-card`). Manter um leve `bg-gradient-to-r from-primary/[0.04] to-transparent` e borda `border-primary/30` pra continuar destacado como ferramenta.
 
-### 3. Hierarquia ainda confusa
-KPIs (4) → Best/Worst (2 cards) → Saúde carteira (3) → Trend → Ranking. Muitas seções competindo. Best/Worst ainda solto sem agrupar com KPIs.
+### B. Redesign dos 3 cards de Saúde da carteira
 
-### 4. Botão "Novo Produto" flutuante mal posicionado
-Aparece sobreposto ao Trend collapsible (print 266) e ao Ranking (print 267) — esconde conteúdo.
+Problema central: viewport 878px cai em `md:grid-cols-2` → quebra layout 2+1 (ruim). 
 
-## Estratégia de redesign
+**Solução grid**: forçar `grid-cols-1 md:grid-cols-3` direto (sem breakpoint intermediário 2-col). Em mobile stack, em desktop 3 lado a lado. Aumentar `min-h` de 260px → **300px** pra cards respirarem.
 
-### A. Trend collapsible — fix duplicação + destaque visual
+**MarginDistributionChart** (`AnalyticsCharts.tsx`):
+- Aumentar donut de 96px → **128px** com stroke 12 (mais presente)
+- Tipografia central: % `text-2xl font-bold` em vez de `text-lg`
+- Stat tiles laterais: substituir as 3 linhas finas por 3 **mini-cards verticais** com bg semântico sutil (success/15, warning/15, destructive/15) — pílulas pequenas em vez de linhas
+- Footer com "meta: X%" alinhado embaixo
 
-**Solução duplicação**: criar prop `hideHeader?: boolean` no `TrendSearchCard` (separado do `hideOuterBorder`) que esconde o `<header>` interno (Sparkles + "Análise de demanda"). Quando dentro do Collapsible, usar `hideHeader + hideOuterBorder`.
+**TopProductsChart** (lista Top 5):
+- Aumentar barra de `h-1` → `h-1.5` com gradiente (ex: `from-success to-success/60`)
+- Rank: badge circular numerado 20px com cor (1º dourado, 2º prata, 3º bronze, 4-5 cinza) em vez de número solto
+- Nome em `text-xs` (era 11px) com mais respiro entre linhas (`space-y-3` em vez de `space-y-2`)
+- Linha separadora sutil entre itens
 
-**Destaque visual do trigger fechado**: substituir o card sutil atual por um **CTA com gradiente sutil + borda primary/30 + ícone com bg-primary/15**. Comunica "ferramenta especial". Usar copy mais direta: "**Descobrir produtos vencedores**" + "Pesquise qualquer termo e veja potencial de mercado, sazonalidade e concorrência".
+**ProfitSummaryChart** (Saúde financeira):
+- Hoje: número grande no topo + 3 mini-tiles cinzas embaixo. Os tiles cinzas escuros desentoam dos outros 2 cards.
+- Refazer: lucro consolidado grande no topo (manter), abaixo **2 colunas** de stats (não 3): coluna esquerda "Médio · Mediana", coluna direita "% Lucrativos" com barra de progresso visual horizontal (não só número). Visual mais limpo, mais espaço pra cada métrica respirar.
+- Remover bg `surface-2/60` dos mini-tiles → usar `border-t border-border/50` como separador, sem caixinhas internas (mais clean, alinha com estilo dos outros 2)
 
-```
-┌──────────────────────────────────────────────────┐
-│ [✨]  Descobrir produtos vencedores         [→]  │  ← gradient + border
-│       Pesquise demanda, sazonalidade...          │
-└──────────────────────────────────────────────────┘
-```
+### C. Header da seção "Saúde da carteira"
 
-Quando aberto, o chevron rotaciona e o card vira só o conteúdo do Trend (sem header duplicado).
+- Aumentar `h2` de `text-sm` → `text-base font-semibold`
+- Adicionar contador discreto à direita: "3 visões" com chip sutil
+- Mais respiro vertical entre header e grid (`space-y-4` em vez de `space-y-3`)
 
-### B. Gráficos "Saúde da carteira" — redesign
-
-**Distribuição de margem** (componente `MarginDistributionChart`):
-- Adicionar **donut SVG 96px** ao lado da barra, com % no centro
-- Ou: substituir barra horizontal + labels por **3 stat tiles** mini (Acima / Na meta / Abaixo) com %, números e mini-bar em cada
-- Eliminar espaço vazio
-
-**Top 5 Margens** (componente `TopProductsChart`):
-- Trocar BarChart Recharts por **lista vertical custom** (mais legível em altura limitada):
-  ```
-  #1 Calça Legging Feminina...    ▓▓▓▓▓▓▓▓▓ 29.0%
-  #2 Vestido Longo Safira...      ▓▓▓ 8.2%
-  ...
-  ```
-- Cada linha: rank colorido + nome (truncate ok mas com `title`), barra proporcional fina, valor à direita
-- Sem labels rotacionados, sem eixos confusos
-
-**Lucro por produto** (componente `ProfitSummaryChart`):
-- Mesmo tratamento: lista vertical com nome + barra proporcional + R$ valor
-- OU substituir por **scatter/treemap simples**: blocos coloridos onde tamanho = lucro
-- Mais útil seria mostrar **distribuição** (quantos lucram X) que repetir Top5 em outro formato
-
-**Decisão**: trocar `TopProductsChart` por lista vertical, e trocar `ProfitSummaryChart` por **um único stat card grande** com: Lucro total + média + mediana + % produtos lucrativos. Evita repetir o "ranking" 3x.
-
-**Alturas uniformes**: todos os 3 com `min-h-[260px]` + `flex flex-col` + footer alinhado.
-
-### C. Hierarquia compactada — fundir Best/Worst nos KPIs
-
-Hoje "Melhor margem" + "Pior margem" são 2 cards de ~80px cada = 160px de viewport. 
-
-**Solução**: remover essa seção e adicionar no rodapé do KPI "Margem" um mini-rodapé clicável:
-```
-┌─ MARGEM ───────────────┐
-│ %  0.9%                │
-│ meta 15%               │
-├────────────────────────┤
-│ ↑ Calça Legging  29.0% │  ← mini-row best
-│ ↓ Vestido Safira 0.0%  │  ← mini-row worst
-└────────────────────────┘
-```
-Economiza 1 seção inteira, mantém a info onde faz sentido (dentro do contexto "margem").
-
-### D. Botão "Novo Produto" flutuante
-
-Hoje é `fixed` ou `sticky` mal posicionado. Solução: garantir que tem `bottom: calc(safe-area + 80px)` em mobile e em desktop fica no header da seção Ranking (não flutuante).
-
-Verificar onde é renderizado em `Products.tsx` — provavelmente um FAB. Movê-lo pro topo da aba Produtos (não da aba Análise) ou pro header global da página.
-
-## Resumo das mudanças
+## Arquivos
 
 | Arquivo | Mudança |
 |---|---|
-| `src/components/products/TrendSearchCard.tsx` | Adicionar prop `hideHeader?: boolean` que esconde o `<header>` "Análise de demanda" interno |
-| `src/pages/Products.tsx` | (1) Trigger Collapsible com gradient + border-primary/30 + copy "Descobrir produtos vencedores"; (2) Passar `hideHeader + hideOuterBorder` no TrendSearchCard; (3) Remover seção Best/Worst standalone, fundir como mini-rodapé do KPI Margem; (4) Reposicionar botão Novo Produto |
-| `src/components/charts/AnalyticsCharts.tsx` | (1) `MarginDistributionChart`: donut SVG 96px + mini-stats laterais; (2) `TopProductsChart`: lista vertical custom (sem Recharts) com rank + nome + barra inline + %; (3) `ProfitSummaryChart`: substituir por stat card de "Saúde financeira" com 4 métricas (lucro total, médio, mediana, % lucrativos). Alturas uniformes `min-h-[260px]` |
+| `src/pages/Products.tsx` | (1) Default `trendOpen = true` quando não há valor no localStorage; (2) Trigger no estado aberto mantém gradient sutil + border-primary/30; (3) Grid de charts: `grid-cols-1 md:grid-cols-3` (remover breakpoint 2-col); (4) Header "Saúde da carteira" maior + chip contador |
+| `src/components/charts/AnalyticsCharts.tsx` | (1) Donut 128px com tipografia maior + stat tiles como pílulas semânticas; (2) Top 5 com badges de rank coloridos + barras h-1.5 gradient + espaçamento maior; (3) Saúde financeira em 2 col com barra de progresso pra "% lucrativos" + remover mini-tiles cinzas; (4) `min-h-[300px]` em todos |
 
-Sem migrações. Sem mudança no backend. Sem mudança em outras telas.
+Sem migrações. Sem mudanças no backend.
 
 ## Trade-offs
 
-- ✅ Trigger do Trend agora se destaca como ferramenta poderosa (gradient + border)
-- ✅ Sem duplicação de header quando expandido
-- ✅ Gráficos legíveis em qualquer altura, sem labels truncados/rotacionados
-- ✅ Best/Worst integrado ao KPI Margem (-1 seção, +1 contexto)
-- ✅ `ProfitSummaryChart` vira stat card útil em vez de repetir Top 5
-- ⚠️ Lista vertical em vez de BarChart Recharts no Top 5 = perde tooltip do Recharts (mitigado: hover state CSS + valor sempre visível)
-- ⚠️ Stat card de saúde financeira é **diferente** dos 2 anteriores — quebra simetria visual mas entrega mais valor
+- ✅ Ferramenta de pesquisa visível imediatamente (resolve "não dá pra saber que tem ferramenta ali")
+- ✅ Charts maiores e com tipografia respirável — sai do amador
+- ✅ Grid 3-col direto evita quebra feia 2+1 no viewport ~880px
+- ✅ Visual semântico (cores nos rank badges, barras gradient) eleva o nível
+- ⚠️ Trend aberto por padrão consome ~600px da viewport — mitigado: usuário pode fechar e a preferência fica salva
+- ⚠️ Cards de 300px min-height aumentam scroll inicial — aceitável, é a seção de análise
 
