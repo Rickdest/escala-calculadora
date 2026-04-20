@@ -11,6 +11,7 @@ export type ShopeeKeyword = {
   search_volume: number;
   suggested_bid: number;
   competition_level: string | null;
+  quality_score: number | null;
 };
 
 export type RelatedKeyword = {
