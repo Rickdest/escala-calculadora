@@ -387,15 +387,15 @@ export default function Products() {
                 {/* Hero KPI tiles */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
                   {/* MARGEM — com mini-rodapé Best/Worst clicável */}
-                  <div className="surface-card p-2.5 animate-fade-up flex flex-col">
+                  <div className="surface-card p-3 animate-fade-up flex flex-col min-h-[160px]">
                     <div className="flex items-center gap-1.5 mb-1">
-                      <Percent className="w-3.5 h-3.5 text-text-3" />
+                      <Percent className="w-4 h-4 text-primary" />
                       <p className="section-label">Margem</p>
                     </div>
                     <p className={cn('font-mono text-lg md:text-xl font-bold font-mono-num leading-tight', getMarginStatus(stats.avgMargin).color)}>
                       {stats.avgMargin.toFixed(1)}%
                     </p>
-                    <div className="mt-1 h-1 bg-surface-2 rounded-full overflow-hidden">
+                    <div className="mt-1.5 h-1.5 bg-surface-2 rounded-full overflow-hidden">
                       <div
                         className={cn('h-full rounded-full transition-all', getMarginStatus(stats.avgMargin).color.replace('text-', 'bg-'))}
                         style={{ width: `${Math.min(100, (stats.avgMargin / Math.max(currentStore.config.desiredMargin, 1)) * 100)}%` }}
@@ -405,7 +405,7 @@ export default function Products() {
 
                     {/* Best/Worst mini-rows */}
                     {summary?.best && summary?.worst && summary.best.product.id !== summary.worst.product.id && (
-                      <div className="mt-2 pt-2 border-t border-border/60 space-y-1">
+                      <div className="mt-auto pt-2 border-t border-border/60 space-y-1">
                         <button
                           onClick={() => navigate(`/products/${summary.best!.product.id}`)}
                           className="w-full flex items-center gap-1.5 text-[10px] text-left hover:text-success transition-colors group"
@@ -426,33 +426,43 @@ export default function Products() {
                     )}
                   </div>
 
-                  <div className="surface-card p-2.5 animate-fade-up stagger-1 flex flex-col">
+                  <div className="surface-card p-3 animate-fade-up stagger-1 flex flex-col min-h-[160px]">
                     <div className="flex items-center gap-1.5 mb-1">
-                      <DollarSign className="w-3.5 h-3.5 text-text-3" />
+                      <DollarSign className={cn('w-4 h-4', stats.totalProfit >= 0 ? 'text-success' : 'text-destructive')} />
                       <p className="section-label">Lucro</p>
                     </div>
                     <p className={cn('font-mono text-lg md:text-xl font-bold font-mono-num leading-tight', stats.totalProfit >= 0 ? 'text-success' : 'text-destructive')}>
                       {formatCurrency(stats.totalProfit)}
                     </p>
-                    <div className="mt-1 h-1 bg-surface-2 rounded-full overflow-hidden">
+                    <div className="mt-1.5 h-1.5 bg-surface-2 rounded-full overflow-hidden">
                       <div
                         className={cn('h-full rounded-full', stats.totalProfit >= 0 ? 'bg-success' : 'bg-destructive')}
                         style={{ width: stats.totalProfit >= 0 ? '100%' : '40%' }}
                       />
                     </div>
                     <p className="text-[10px] text-text-3 mt-1">{stats.totalProducts} produtos</p>
+                    <div className="mt-auto pt-2 border-t border-border/60">
+                      <p className="text-[10px] text-text-3 flex items-center gap-1">
+                        {stats.totalProfit >= 0 ? (
+                          <TrendingUp className="w-3 h-3 text-success" />
+                        ) : (
+                          <TrendingDown className="w-3 h-3 text-destructive" />
+                        )}
+                        Lucro líquido total
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="surface-card p-2.5 animate-fade-up stagger-2 flex flex-col">
+                  <div className="surface-card p-3 animate-fade-up stagger-2 flex flex-col min-h-[160px]">
                     <div className="flex items-center gap-1.5 mb-1">
-                      <Target className="w-3.5 h-3.5 text-text-3" />
+                      <Target className="w-4 h-4 text-primary" />
                       <p className="section-label">Na Meta</p>
                     </div>
                     <p className="font-mono text-lg md:text-xl font-bold font-mono-num text-foreground leading-tight">
                       {stats.productsAboveTarget}
                       <span className="text-sm text-text-3 font-normal"> / {stats.totalProducts}</span>
                     </p>
-                    <div className="mt-1 h-1 bg-surface-2 rounded-full overflow-hidden">
+                    <div className="mt-1.5 h-1.5 bg-surface-2 rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full bg-primary transition-all"
                         style={{ width: `${stats.totalProducts > 0 ? (stats.productsAboveTarget / stats.totalProducts) * 100 : 0}%` }}
@@ -461,26 +471,50 @@ export default function Products() {
                     <p className="text-[10px] text-text-3 mt-1">
                       {stats.totalProducts > 0 ? ((stats.productsAboveTarget / stats.totalProducts) * 100).toFixed(0) : 0}% no alvo
                     </p>
+                    <div className="mt-auto pt-2 border-t border-border/60">
+                      <p className="text-[10px] text-text-3">
+                        Acima de {currentStore.config.desiredMargin}% de margem
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="surface-card p-2.5 animate-fade-up stagger-3 flex flex-col">
+                  <button
+                    type="button"
+                    onClick={() => missingCost > 0 && setSearchParams({ filter: 'sem-custo' })}
+                    disabled={missingCost === 0}
+                    className={cn(
+                      "surface-card p-3 animate-fade-up stagger-3 flex flex-col min-h-[160px] text-left transition-colors",
+                      missingCost > 0 && "hover:border-destructive/40 cursor-pointer",
+                      missingCost === 0 && "cursor-default",
+                    )}
+                  >
                     <div className="flex items-center gap-1.5 mb-1">
-                      <AlertCircle className="w-3.5 h-3.5 text-text-3" />
+                      <AlertTriangle className={cn('w-4 h-4', missingCost > 0 ? 'text-destructive' : 'text-success')} />
                       <p className="section-label">Sem Custo</p>
                     </div>
-                    <p className={cn('font-mono text-lg md:text-xl font-bold font-mono-num leading-tight', missingCost > 0 ? 'text-warning' : 'text-success')}>
+                    <p className={cn('font-mono text-lg md:text-xl font-bold font-mono-num leading-tight', missingCost > 0 ? 'text-destructive' : 'text-success')}>
                       {missingCost}
                     </p>
-                    <div className="mt-1 h-1 bg-surface-2 rounded-full overflow-hidden">
+                    <div className="mt-1.5 h-1.5 bg-surface-2 rounded-full overflow-hidden">
                       <div
-                        className={cn('h-full rounded-full', missingCost > 0 ? 'bg-warning' : 'bg-success')}
+                        className={cn('h-full rounded-full', missingCost > 0 ? 'bg-destructive' : 'bg-success')}
                         style={{ width: missingCost > 0 ? `${Math.min(100, (missingCost / Math.max(stats.totalProducts, 1)) * 100)}%` : '100%' }}
                       />
                     </div>
                     <p className="text-[10px] text-text-3 mt-1">
                       {missingCost > 0 ? 'preencher custo' : 'tudo certo'}
                     </p>
-                  </div>
+                    <div className="mt-auto pt-2 border-t border-border/60">
+                      {missingCost > 0 ? (
+                        <p className="text-[10px] text-destructive flex items-center gap-1 font-medium">
+                          Toque para filtrar
+                          <ArrowRight className="w-3 h-3" />
+                        </p>
+                      ) : (
+                        <p className="text-[10px] text-text-3">Todos os produtos OK</p>
+                      )}
+                    </div>
+                  </button>
                 </div>
 
                 {/* Saúde da carteira (charts) */}
