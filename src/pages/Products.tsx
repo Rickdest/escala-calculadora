@@ -228,53 +228,80 @@ export default function Products() {
             </button>
           </div>
         )}
-        {/* Shopee import + cost chip */}
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            {shopeeConnected && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setImportModalOpen(true)}
-                className="border-[#EE4D2D]/30 text-[#EE4D2D] hover:bg-[#EE4D2D]/5 text-xs"
-              >
-                <ShoppingBag className="w-3.5 h-3.5 mr-1.5" />
-                Importar da Shopee
-              </Button>
-            )}
-            {(() => {
-              const noCost = currentStore?.products?.filter(p => !p.costPrice || p.costPrice === 0).length || 0;
-              if (noCost === 0) return null;
-              return (
-                <span className="flex items-center gap-1.5 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-full px-3 py-1">
-                  <AlertCircle className="w-3 h-3" />
-                  {noCost} sem custo
-                </span>
-              );
-            })()}
-          </div>
-        </div>
         <Tabs defaultValue="products" className="w-full">
-          <div className="flex items-center gap-2">
-            <TabsList className="flex-1 grid grid-cols-2 h-11 rounded-xl bg-secondary/80 border border-border p-1">
-              <TabsTrigger value="products" className="flex-1 h-9 rounded-lg text-xs font-bold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=inactive]:text-foreground/70">
-                Produtos <span className="ml-1 opacity-70">({stats?.totalProducts || 0})</span>
+          {/* Toolbar unificada: tabs compactas + ações */}
+          <div className="flex flex-wrap items-center gap-2">
+            <TabsList className="h-9 inline-flex w-auto rounded-lg bg-surface-2 border border-border p-0.5">
+              <TabsTrigger
+                value="products"
+                className="h-8 px-3 rounded-md text-xs font-semibold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-foreground/70"
+              >
+                Produtos <span className="opacity-70 font-mono font-mono-num">({stats?.totalProducts || 0})</span>
               </TabsTrigger>
-              <TabsTrigger value="analysis" className="flex-1 h-9 rounded-lg text-xs font-bold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md data-[state=inactive]:text-foreground/70">
+              <TabsTrigger
+                value="analysis"
+                className="h-8 px-3 rounded-md text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-foreground/70"
+              >
                 Análise
               </TabsTrigger>
             </TabsList>
-            {analysisProducts.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="outline" className="h-9 w-9 p-0 border-border bg-surface-2 flex-shrink-0"><Download className="w-4 h-4" /></Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleExportCSV}><FileSpreadsheet className="w-4 h-4 mr-2" />Exportar CSV</DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleExportPDF}><FileText className="w-4 h-4 mr-2" />Exportar PDF</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+
+            {/* Spacer + chip "sem custo" clicável */}
+            <div className="flex items-center gap-2 ml-auto flex-wrap">
+              {(() => {
+                const noCost = currentStore?.products?.filter(p => !p.costPrice || p.costPrice === 0).length || 0;
+                if (noCost === 0) return null;
+                const isActive = draftFilter === 'sem-custo';
+                return (
+                  <button
+                    type="button"
+                    onClick={() => setSearchParams(isActive ? {} : { filter: 'sem-custo' })}
+                    className={cn(
+                      "h-9 inline-flex items-center gap-1.5 text-xs font-medium rounded-lg px-3 border transition-colors",
+                      isActive
+                        ? "bg-destructive/20 border-destructive/40 text-destructive"
+                        : "bg-destructive/10 border-destructive/20 text-destructive hover:bg-destructive/15 hover:border-destructive/30",
+                    )}
+                  >
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    <span className="font-mono font-mono-num">{noCost}</span>
+                    <span className="hidden sm:inline">sem custo</span>
+                    <ArrowRight className="w-3 h-3 opacity-70" />
+                  </button>
+                );
+              })()}
+
+              {shopeeConnected && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setImportModalOpen(true)}
+                  className="h-9 border-[#EE4D2D]/30 text-[#EE4D2D] hover:bg-[#EE4D2D]/5 text-xs"
+                >
+                  <ShoppingBag className="w-3.5 h-3.5 mr-1.5" />
+                  <span className="hidden sm:inline">Importar da</span> Shopee
+                </Button>
+              )}
+
+              {analysisProducts.length > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-9 w-9 p-0 border-border bg-surface-2 flex-shrink-0"
+                      aria-label="Exportar análise"
+                    >
+                      <Download className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={handleExportCSV}><FileSpreadsheet className="w-4 h-4 mr-2" />Exportar CSV</DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleExportPDF}><FileText className="w-4 h-4 mr-2" />Exportar PDF</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
           </div>
 
           <TabsContent value="products" className="space-y-3 mt-3">
