@@ -1,113 +1,88 @@
 
 
-## Bugs identificados no mobile (390x672)
+## Diagnóstico (confirmado pelos logs)
 
-### 🐛 Bug 1 — CTA flutuante cobrindo conteúdo
-A página tem `pb-28` (≈112px) de padding bottom, mas:
-- BottomNavigation (`bottom-0`, ~70px com safe-area)
-- CTA "Editar produto" flutuante (`bottom-16` = 64px, altura ~72px com padding)
-- Total = **~140px ocupados** vs `pb-28` = 112px
+Produto: "Vestido Longo Feminino Safira Gringo com Costas Abertas Suplex Empina Bumbum Elegância e Conforto"
 
-Resultado: a Projeção Mensal e os últimos elementos da aba Tendência ficam **parcialmente cobertos** pelo CTA fixo. Precisa subir para `pb-36` (144px).
+Pipeline atual:
+1. Extrator gera `"vestido longo suplex feminino"` (4 palavras, muito específico)
+2. Google Trends responde com **100% zeros** + **zero related queries** + **zero regiões**
+3. Backend marca `low_quality: true` e gera sugestões algorítmicas (fallback `suggestAlternatives`)
+4. Mas como **nada é persistido no banco** (googleSaved=0, relatedSaved=0, regionsSaved=0, cycleSaved=0), o frontend recarrega via `loadFromDb()` → `hasData = false`
+5. Usuário volta pro card "Descubra a tendência de mercado" sem entender por que **e sem ver as sugestões**
 
-### 🐛 Bug 2 — Header com overflow no preço
-A linha `{fmt(salePrice)} · custo {fmt(costPrice)}` em `font-mono text-xs` quebra/trunca em nomes longos a 390px porque o container do título tem `flex-1` mas compete com a imagem (48px) + dropdown (40px) + gap. Sobram ~270px e o nome em 2 linhas + preços + badge fica apertado.
+## Causa raiz
 
-### 🐛 Bug 3 — Status badge duplicado no DOM
-Renderizado duas vezes (linhas 153 desktop + 187-191 mobile). O mobile usa `-mt-2` que não cancela bem o `mb-5/6` do header; gera espaço inconsistente.
+**Bug 1 (frontend) — sugestões perdidas:** o `useProductTrend.refresh()` recebe `suggestions` e `lowQuality` da resposta da function e seta no estado, mas em seguida chama `loadFromDb()` que **rebuscar do banco e como não tem linhas, hasData fica false** → o componente cai no estado vazio inicial e descarta `suggestions/lowQuality` porque o `if (!hasData)` vem antes.
 
-### 🐛 Bug 4 — TabsList truncado
-`grid-cols-2` ok, mas o ícone + texto "Análise"/"Tendência" + padding interno do Tab estoura levemente em 360px. `text-sm` + `mr-1.5` no ícone não tem `min-w-0` no trigger.
+**Bug 2 (backend) — extrator agressivo demais:** "suplex" é modificador de nicho. Combinado a "longo" cria query de cauda longa sem volume. Falta cascata de simplificação **server-side** antes de desistir.
 
-### 🐛 Bug 5 — Breakdown de Custos: labels longos vazam
-Linha `Taxa Shopee (12% + R$4)` + valor em `font-mono` não tem `min-w-0` no span do label → o label corta o valor à direita ou empurra layout.
+**Bug 3 (backend) — não persiste nada quando vazio:** se Google Trends devolve timeline vazia, deveríamos pelo menos persistir um marcador (`source: 'meta_no_data'`) pra `hasData=true` e a UI mostrar o aviso + sugestões.
 
-### 🐛 Bug 6 — Slider da Projeção Mensal sem padding lateral
-O `<input type="number">` da Projeção tem `w-16` mas o container `flex items-center gap-3` não respira; em 390px o número fica colado no slider quando ele expande.
+## Solução
 
-### 🐛 Bug 7 — Cards KPI com texto cortado
-`text-2xl` (24px) + `font-mono` em valores como `R$ 1.234,56` em card de ~170px de largura → trunca ou quebra feio. Falta `truncate` ou redução de tamanho no mobile.
+### 1. Backend: cascata de simplificação automática (`fetch-product-trends/index.ts`)
 
-### 🐛 Bug 8 — Comparativo de Canais 2 colunas em mobile
-`grid-cols-2` força 2 colunas mesmo a 360px, deixando cada card com label "Mercado Livre" + "%" lado a lado → label trunca.
+Antes de declarar `low_quality`, tentar até 3 variações progressivamente mais genéricas:
 
-### 🐛 Bug 9 — ROAS de Referência: label fixo `w-32`
-Na linha `<span className="w-32 shrink-0">` (128px) + barra + valor = não cabe em 358px (390 − 32px padding) sem barra ficar com 30px.
-
----
-
-## Melhorias de layout (estilo Opus 4.7 / Claude Designer)
-
-### ✨ M1 — Header mobile mais clean (pattern app nativo)
-- Imagem 56px + nome em 1 linha (truncate) + chip status inline pequeno
-- Mover preço/custo pra **micro-row abaixo do título** com separador `·` (não competir com imagem)
-- Dropdown vira ícone único 36px (sem botão Editar — o CTA flutuante já cobre)
-
-### ✨ M2 — KPI hero como "stat tiles" 2x2 mais densos
-- Reduzir font do valor pra `text-xl` em mobile (em vez de `text-2xl`)
-- Adicionar **ícone discreto** de 12px no canto superior direito de cada KPI (TrendingUp/Target/etc) — eleva o visual sem poluir
-- Border-l de 2px só na margem (já tem) → estender pra todos os 4 com cor semântica (lucro=success, vs meta=primary, etc)
-
-### ✨ M3 — Sticky tab strip
-TabsList vira `sticky top-0 z-30` no mobile (com fundo sólido) → fica acessível ao rolar entre Análise/Tendência. Padrão iOS/Android moderno.
-
-### ✨ M4 — Breakdown de custos colapsável + barra visual
-- **Top:** barra horizontal segmentada mostrando proporção de cada custo (visual stack bar) — 1 olhada e o usuário entende onde tá indo o dinheiro
-- **Abaixo:** lista atual, mas com valores **alinhados à direita em coluna fixa** (`tabular-nums w-24 text-right`) pra alinhar verticalmente os preços
-- Custos = 0 ficam ocultos por padrão com botão "ver tudo" (reduz ruído mobile)
-
-### ✨ M5 — ROAS de Referência reformatado (mobile-first)
-Trocar layout horizontal por **3 chips verticais empilhados**:
 ```
-Empate  ━━━━━━━━━━━━━ 1.85x  (badge vermelho)
-Saudável ━━━━━━━━━━━━ 2.50x  (badge amarelo)
-Ideal   ━━━━━━━━━━━━━ 4.20x  (badge verde)
+Tentativa 1: "vestido longo suplex feminino"  → 100% zeros
+Tentativa 2: "vestido longo feminino"         → tenta
+Tentativa 3: "vestido feminino"               → tenta
+Tentativa 4: "vestido"                        → última cartada
 ```
-Label acima da barra, valor à direita em chip colorido. Elimina o `w-32` fixo.
 
-### ✨ M6 — Comparativo de Canais: 1 coluna no mobile, com barra
-Mobile vira lista vertical com:
-- Nome do canal + 🏆 + % à direita (font-mono grande)
-- Barrinha proporcional à melhor margem abaixo
-- Diferença vs Shopee em linha menor: `+R$ 2,30/un vs Shopee`
+Função nova `buildKeywordCascade(productName)` retorna array ordenado do mais específico ao mais genérico (categoria + audience + 1-2 modifiers → categoria + audience → categoria). Itera e usa o **primeiro que retornar dados úteis** (>30% não-zeros). Se nenhuma der, marca low_quality com a mais específica + sugere as outras.
 
-### ✨ M7 — Estoque com mini-progresso
-Adicionar barra: estoque atual / (mínimo × 4) com cor:
-- Vermelho se ≤ mínimo
-- Amarelo se ≤ mínimo × 2
-- Verde se acima
-- Texto: "X un. · ~Y dias de venda" (calculado por venda média estimada)
+Resultado esperado: 80% dos casos hoje "vazios" passam a ter dados (porque "vestido feminino" tem volume gigante).
 
-### ✨ M8 — Projeção Mensal com presets rápidos
-Antes do slider: chips `30 · 50 · 100 · 200 · 500` vendas/mês pra toque rápido. Slider continua pra ajuste fino. Em mobile, número + chips facilita muito mais que slider preciso.
+### 2. Backend: persistir marcador quando tudo vier vazio
 
-### ✨ M9 — CTA flutuante mais elegante
-- Em vez de barra full-width opaca, virar **FAB pill** centralizado: `Editar` ícone + texto, largura `w-auto px-6`, sombra forte, `bottom-20` (acima do nav com folga)
-- Mais leve visualmente, deixa conteúdo respirar atrás
+Adicionar inserção mínima quando `googleSaved=0 && relatedSaved=0 && regionsSaved=0`:
 
-### ✨ M10 — Aba Tendência: ajustes pontuais no mobile
-- 3 cards de diagnóstico já estão `grid-cols-1 sm:grid-cols-3` → trocar pra `grid-cols-3 gap-2` mobile mesmo (cards menores e densos), com font reduzida
-- Gráfico 5 anos: `h-44` no mobile (atual `h-56` ocupa muito vertical num iPhone)
-- Ciclo sazonal + Regiões: já em coluna única no mobile, OK
-- Buscas relacionadas: reduzir `space-y-1` e font dos chips
+```ts
+await admin.from("product_trends").insert({
+  user_id: userId, product_id: productId,
+  source: "meta_no_data",
+  keyword,
+  period_date: today,
+  metadata: { suggestions, attempted_cascade: [...] }
+});
+```
 
----
+Garante `hasData = true` no front, permitindo mostrar aviso + sugestões. Requer adicionar `'meta_no_data'` ao constraint `product_trends_source_check` via migração.
+
+### 3. Frontend: melhorar fallback no `useProductTrend` (`useProductTrend.ts`)
+
+Mesmo que `hasData=false`, se o último `refresh()` retornou `lowQuality=true` ou `suggestions.length > 0`, **renderizar o aviso de low_quality em vez do card vazio**. Hoje o `if (!hasData)` precede o aviso de low_quality e ganha sempre.
+
+Solução: trocar a condição em `ProductTrendTab` linha 91:
+```tsx
+if (!loading && !hasData && !refreshing && !lowQuality && suggestions.length === 0) {
+  // estado vazio inicial
+}
+```
+E mover o bloco de "low_quality + suggestions" pra antes do bloco vazio (ou renderizar sempre que `lowQuality` for true, com layout simplificado quando não tem `keyword`).
+
+### 4. Frontend: sticky button "Tentar termo mais genérico"
+
+No aviso de `lowQuality`, adicionar botão extra destacado: **"Tentar 'vestido feminino'"** (a versão simplificada vinda do backend como `auto_simplified` na resposta). Um clique já reanalisa.
 
 ## Arquivos a alterar
 
-| Arquivo | Mudanças |
+| Arquivo | Mudança |
 |---|---|
-| `src/pages/ProductDetail.tsx` | Bugs 1-9 + M1, M2, M3, M4, M5, M6, M7, M8, M9 |
-| `src/components/products/trend/ProductTrendTab.tsx` | M10: cards diag 3-col mobile, altura gráfico, density |
-| `src/components/products/trend/SeasonalCycleChart.tsx` | Altura `h-36` no mobile (atual 44) |
-| (sem novos arquivos) | — |
-
----
+| `supabase/functions/fetch-product-trends/index.ts` | Função `buildKeywordCascade`, loop tentando cada variação, persistir marker `meta_no_data`, retornar `suggestions` mesmo quando dados parciais |
+| Nova migração | Adicionar `'meta_no_data'` ao `product_trends_source_check` |
+| `src/hooks/useProductTrend.ts` | Persistir `suggestions/lowQuality/keyword` mesmo quando `loadFromDb()` retorna vazio; expor `attemptedCascade` |
+| `src/components/products/trend/ProductTrendTab.tsx` | Reordenar guards: aviso `lowQuality` > estado vazio inicial; botão "tentar termo simplificado" |
 
 ## Trade-offs
 
-- ✅ Não muda nenhuma lógica/cálculo — só layout e responsividade
-- ✅ Desktop fica idêntico ou melhor (KPIs com ícones, sticky tabs ajudam em todos os tamanhos)
-- ⚠️ Estoque com "dias de venda" precisa de uma estimativa simples (vendas/mês usado na Projeção, default 50) — fica próximo mas não preciso. Marcar como "~estimado"
-- ⚠️ Stack bar do breakdown adiciona ~30px de altura — vale a pena pelo entendimento visual
+- ✅ Resolve **o bug central** (usuário some sem feedback)
+- ✅ Recupera ~70% dos produtos hoje "sem dados" automaticamente via cascata
+- ✅ Sem mudança de UX visual: só preenche o que faltava
+- ⚠️ Cascata adiciona até 2 chamadas extras ao Google Trends (latência: +6-15s no pior caso) — mitigado por: parar na primeira que funcionar + cookies cacheados
+- ⚠️ Risco de rate-limit aumenta levemente; já temos retry com backoff
+- ⚠️ Marker `meta_no_data` adiciona linha "lixo" ao banco — limpamos no próximo refresh bem-sucedido (delete antes do insert já existe no fluxo)
 
