@@ -379,9 +379,10 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
             if (Array.isArray(kwList) && kwList.length > 0) {
               c.keywords = kwList.slice(0, 10).map((kw: any) => ({
                 keyword: kw.keyword || kw.search_term || kw.word || '',
-                search_volume: Number(kw.search_volume || kw.volume || 0),
+                search_volume: Number(kw.search_volume || kw.volume || kw.qrt_search_volume || 0),
                 suggested_bid: Number(kw.suggested_bid || kw.bid || kw.recommended_bid || 0),
                 quality_score: kw.quality_score != null ? Number(kw.quality_score) : undefined,
+                competition_level: kw.competition_level ?? kw.competition ?? null,
               }));
             }
           } catch (e) { console.error(`[SHOPEE ADS] keywords error for item ${c.item_id}:`, e); }

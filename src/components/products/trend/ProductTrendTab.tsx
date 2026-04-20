@@ -7,21 +7,30 @@ import {
   Pencil,
   Check,
   X,
+  TrendingUp,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useProductTrend } from "@/hooks/useProductTrend";
 import { Input } from "@/components/ui/input";
 import { TrendSearchCard } from "@/components/products/TrendSearchCard";
+import { ShopeeKeywordsCard } from "@/components/products/trend/ShopeeKeywordsCard";
 
 interface ProductTrendTabProps {
   productId: string;
   productName: string;
 }
 
-const fmtNumber = (n: number) => {
+const fmtVolume = (n: number) => {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
   return String(n);
 };
+
+const normalize = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
 
 export function ProductTrendTab({ productId, productName }: ProductTrendTabProps) {
   const {
@@ -58,48 +67,18 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
     await setKeywordOverride(trimmed);
   };
 
-  // Volume Shopee max para classificação
-  const shopeeFooter = useMemo(() => {
-    if (shopeeKeywords.length === 0) return null;
-    const maxVolume = Math.max(...shopeeKeywords.map((k) => k.search_volume), 1);
-    const classifyVolume = (v: number) => {
-      const pct = v / maxVolume;
-      if (pct > 0.66) return { label: "Alta", cls: "text-success bg-success/10 border-success/30" };
-      if (pct > 0.33) return { label: "Média", cls: "text-warning bg-warning/10 border-warning/30" };
-      return { label: "Baixa", cls: "text-muted-foreground bg-secondary border-border" };
-    };
-    return (
-      <div className="surface-card p-4 sm:p-5">
-        <p className="section-label mb-3">Palavras-chave Shopee — volume real</p>
-        <div className="space-y-1.5">
-          {shopeeKeywords.slice(0, 10).map((kw, i) => {
-            const cls = classifyVolume(kw.search_volume);
-            return (
-              <div
-                key={`${kw.keyword}-${i}`}
-                className="flex items-center justify-between gap-2 sm:gap-3 py-2 border-b border-border last:border-0"
-              >
-                <span className="text-sm text-foreground truncate flex-1 min-w-0">
-                  {kw.keyword}
-                </span>
-                <span className={cn("text-micro font-semibold px-2 py-0.5 rounded-full border shrink-0 hidden sm:inline-block", cls.cls)}>
-                  {cls.label}
-                </span>
-                <span className="font-mono text-small text-muted-foreground w-12 sm:w-16 text-right shrink-0">
-                  {fmtNumber(kw.search_volume)}
-                </span>
-                {kw.suggested_bid > 0 && (
-                  <span className="font-mono text-small text-primary w-14 text-right shrink-0">
-                    R${kw.suggested_bid.toFixed(2)}
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+  // Match: a keyword analisada bate com alguma da Shopee?
+  const matchedShopeeVolume = useMemo(() => {
+    if (!keyword || shopeeKeywords.length === 0) return null;
+    const target = normalize(keyword);
+    const exact = shopeeKeywords.find((k) => normalize(k.keyword) === target);
+    if (exact) return exact;
+    // Fallback: contém ou é contido
+    const partial = shopeeKeywords.find(
+      (k) => normalize(k.keyword).includes(target) || target.includes(normalize(k.keyword)),
     );
-  }, [shopeeKeywords]);
+    return partial ?? null;
+  }, [keyword, shopeeKeywords]);
 
   // Loading inicial (primeira carga sem dados)
   if (loading && !hasData && !lowQuality && !keyword) {
@@ -308,24 +287,59 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
         </div>
       )}
 
-      {/* Card de análise rica reusado da Análise de demanda */}
-      {keyword && !lowQuality && (
-        <TrendSearchCard
-          key={keyword}
-          initialKeyword={keyword}
-          variant="embedded"
-          extraFooter={shopeeFooter}
-        />
+      {/* Faixa comparativa: termo analisado bate com volume real Shopee */}
+      {matchedShopeeVolume && !lowQuality && (
+        <div className="rounded-lg border border-primary/30 bg-primary/5 px-3.5 py-2.5 flex items-center gap-2.5 flex-wrap">
+          <TrendingUp className="w-4 h-4 text-primary shrink-0" />
+          <p className="text-small text-foreground flex-1 min-w-0">
+            Esse termo tem{" "}
+            <strong className="font-bold text-primary">
+              {fmtVolume(matchedShopeeVolume.search_volume)} buscas/7d
+            </strong>{" "}
+            na Shopee
+            {matchedShopeeVolume.suggested_bid > 0 && (
+              <>
+                {" "}
+                <span className="text-muted-foreground">
+                  · Lance sugerido R$ {matchedShopeeVolume.suggested_bid.toFixed(2)}
+                </span>
+              </>
+            )}
+          </p>
+        </div>
       )}
 
-      {/* Se baixa qualidade mas tem keywords Shopee, mostra mesmo assim */}
-      {lowQuality && shopeeFooter}
+      {/* Layout em grid 2-col: Shopee (esq) + Google Trends (dir) no desktop, empilhado no mobile */}
+      {keyword && !lowQuality && (
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-4 sm:gap-5 items-start">
+          <ShopeeKeywordsCard
+            keywords={shopeeKeywords}
+            onAnalyzeKeyword={setKeywordOverride}
+            refreshing={refreshing}
+          />
+          <TrendSearchCard
+            key={keyword}
+            initialKeyword={keyword}
+            variant="embedded"
+          />
+        </div>
+      )}
+
+      {/* Se baixa qualidade, mostra só Shopee se tiver dados */}
+      {lowQuality && shopeeKeywords.length > 0 && (
+        <ShopeeKeywordsCard
+          keywords={shopeeKeywords}
+          onAnalyzeKeyword={setKeywordOverride}
+          refreshing={refreshing}
+        />
+      )}
 
       {error && !lowQuality && (
         <div className="surface-card p-3 border-destructive/30">
           <p className="text-small text-destructive">{error}</p>
         </div>
       )}
+
     </div>
   );
 }
