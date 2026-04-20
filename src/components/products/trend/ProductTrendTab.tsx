@@ -287,24 +287,59 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
         </div>
       )}
 
-      {/* Card de análise rica reusado da Análise de demanda */}
-      {keyword && !lowQuality && (
-        <TrendSearchCard
-          key={keyword}
-          initialKeyword={keyword}
-          variant="embedded"
-          extraFooter={shopeeFooter}
-        />
+      {/* Faixa comparativa: termo analisado bate com volume real Shopee */}
+      {matchedShopeeVolume && !lowQuality && (
+        <div className="rounded-lg border border-primary/30 bg-primary/5 px-3.5 py-2.5 flex items-center gap-2.5 flex-wrap">
+          <TrendingUp className="w-4 h-4 text-primary shrink-0" />
+          <p className="text-small text-foreground flex-1 min-w-0">
+            Esse termo tem{" "}
+            <strong className="font-bold text-primary">
+              {fmtVolume(matchedShopeeVolume.search_volume)} buscas/7d
+            </strong>{" "}
+            na Shopee
+            {matchedShopeeVolume.suggested_bid > 0 && (
+              <>
+                {" "}
+                <span className="text-muted-foreground">
+                  · Lance sugerido R$ {matchedShopeeVolume.suggested_bid.toFixed(2)}
+                </span>
+              </>
+            )}
+          </p>
+        </div>
       )}
 
-      {/* Se baixa qualidade mas tem keywords Shopee, mostra mesmo assim */}
-      {lowQuality && shopeeFooter}
+      {/* Layout em grid 2-col: Shopee (esq) + Google Trends (dir) no desktop, empilhado no mobile */}
+      {keyword && !lowQuality && (
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] gap-4 sm:gap-5 items-start">
+          <ShopeeKeywordsCard
+            keywords={shopeeKeywords}
+            onAnalyzeKeyword={setKeywordOverride}
+            refreshing={refreshing}
+          />
+          <TrendSearchCard
+            key={keyword}
+            initialKeyword={keyword}
+            variant="embedded"
+          />
+        </div>
+      )}
+
+      {/* Se baixa qualidade, mostra só Shopee se tiver dados */}
+      {lowQuality && shopeeKeywords.length > 0 && (
+        <ShopeeKeywordsCard
+          keywords={shopeeKeywords}
+          onAnalyzeKeyword={setKeywordOverride}
+          refreshing={refreshing}
+        />
+      )}
 
       {error && !lowQuality && (
         <div className="surface-card p-3 border-destructive/30">
           <p className="text-small text-destructive">{error}</p>
         </div>
       )}
+
     </div>
   );
 }
