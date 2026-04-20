@@ -357,101 +357,102 @@ export default function Products() {
               <>
                 {/* Hero KPI tiles */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-                  <div className={cn(
-                    'surface-card p-3 border-l-2 animate-fade-up',
-                    stats.avgMargin >= currentStore.config.desiredMargin ? 'border-l-success' :
-                    stats.avgMargin >= 0 ? 'border-l-warning' : 'border-l-destructive'
-                  )}>
+                  {/* MARGEM — com mini-rodapé Best/Worst clicável */}
+                  <div className="surface-card p-2.5 animate-fade-up flex flex-col">
                     <div className="flex items-center gap-1.5 mb-1">
                       <Percent className="w-3.5 h-3.5 text-text-3" />
                       <p className="section-label">Margem</p>
                     </div>
-                    <p className={cn('font-mono text-xl font-bold font-mono-num', getMarginStatus(stats.avgMargin).color)}>
+                    <p className={cn('font-mono text-lg md:text-xl font-bold font-mono-num leading-tight', getMarginStatus(stats.avgMargin).color)}>
                       {stats.avgMargin.toFixed(1)}%
                     </p>
-                    <p className="text-[10px] text-text-3 mt-0.5">meta {currentStore.config.desiredMargin}%</p>
+                    <div className="mt-1 h-1 bg-surface-2 rounded-full overflow-hidden">
+                      <div
+                        className={cn('h-full rounded-full transition-all', getMarginStatus(stats.avgMargin).color.replace('text-', 'bg-'))}
+                        style={{ width: `${Math.min(100, (stats.avgMargin / Math.max(currentStore.config.desiredMargin, 1)) * 100)}%` }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-text-3 mt-1">meta {currentStore.config.desiredMargin}%</p>
+
+                    {/* Best/Worst mini-rows */}
+                    {summary?.best && summary?.worst && summary.best.product.id !== summary.worst.product.id && (
+                      <div className="mt-2 pt-2 border-t border-border/60 space-y-1">
+                        <button
+                          onClick={() => navigate(`/products/${summary.best!.product.id}`)}
+                          className="w-full flex items-center gap-1.5 text-[10px] text-left hover:text-success transition-colors group"
+                        >
+                          <Trophy className="w-3 h-3 text-success flex-shrink-0" />
+                          <span className="flex-1 truncate text-text-2 group-hover:text-success">{summary.best.product.name}</span>
+                          <span className="font-mono font-bold text-success font-mono-num">{summary.best.calc.realMargin.toFixed(1)}%</span>
+                        </button>
+                        <button
+                          onClick={() => navigate(`/products/${summary.worst!.product.id}`)}
+                          className="w-full flex items-center gap-1.5 text-[10px] text-left hover:text-destructive transition-colors group"
+                        >
+                          <AlertTriangle className="w-3 h-3 text-destructive flex-shrink-0" />
+                          <span className="flex-1 truncate text-text-2 group-hover:text-destructive">{summary.worst.product.name}</span>
+                          <span className="font-mono font-bold text-destructive font-mono-num">{summary.worst.calc.realMargin.toFixed(1)}%</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
 
-                  <div className={cn(
-                    'surface-card p-3 border-l-2 animate-fade-up stagger-1',
-                    stats.totalProfit >= 0 ? 'border-l-success' : 'border-l-destructive'
-                  )}>
+                  <div className="surface-card p-2.5 animate-fade-up stagger-1 flex flex-col">
                     <div className="flex items-center gap-1.5 mb-1">
                       <DollarSign className="w-3.5 h-3.5 text-text-3" />
                       <p className="section-label">Lucro</p>
                     </div>
-                    <p className={cn('font-mono text-xl font-bold font-mono-num', stats.totalProfit >= 0 ? 'text-success' : 'text-destructive')}>
+                    <p className={cn('font-mono text-lg md:text-xl font-bold font-mono-num leading-tight', stats.totalProfit >= 0 ? 'text-success' : 'text-destructive')}>
                       {formatCurrency(stats.totalProfit)}
                     </p>
-                    <p className="text-[10px] text-text-3 mt-0.5">{stats.totalProducts} produtos</p>
+                    <div className="mt-1 h-1 bg-surface-2 rounded-full overflow-hidden">
+                      <div
+                        className={cn('h-full rounded-full', stats.totalProfit >= 0 ? 'bg-success' : 'bg-destructive')}
+                        style={{ width: stats.totalProfit >= 0 ? '100%' : '40%' }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-text-3 mt-1">{stats.totalProducts} produtos</p>
                   </div>
 
-                  <div className="surface-card p-3 border-l-2 border-l-primary animate-fade-up stagger-2">
+                  <div className="surface-card p-2.5 animate-fade-up stagger-2 flex flex-col">
                     <div className="flex items-center gap-1.5 mb-1">
                       <Target className="w-3.5 h-3.5 text-text-3" />
                       <p className="section-label">Na Meta</p>
                     </div>
-                    <p className="font-mono text-xl font-bold font-mono-num text-foreground">
+                    <p className="font-mono text-lg md:text-xl font-bold font-mono-num text-foreground leading-tight">
                       {stats.productsAboveTarget}
                       <span className="text-sm text-text-3 font-normal"> / {stats.totalProducts}</span>
                     </p>
-                    <p className="text-[10px] text-text-3 mt-0.5">
+                    <div className="mt-1 h-1 bg-surface-2 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-primary transition-all"
+                        style={{ width: `${stats.totalProducts > 0 ? (stats.productsAboveTarget / stats.totalProducts) * 100 : 0}%` }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-text-3 mt-1">
                       {stats.totalProducts > 0 ? ((stats.productsAboveTarget / stats.totalProducts) * 100).toFixed(0) : 0}% no alvo
                     </p>
                   </div>
 
-                  <div className={cn(
-                    'surface-card p-3 border-l-2 animate-fade-up stagger-3',
-                    missingCost > 0 ? 'border-l-warning' : 'border-l-success'
-                  )}>
+                  <div className="surface-card p-2.5 animate-fade-up stagger-3 flex flex-col">
                     <div className="flex items-center gap-1.5 mb-1">
                       <AlertCircle className="w-3.5 h-3.5 text-text-3" />
                       <p className="section-label">Sem Custo</p>
                     </div>
-                    <p className={cn('font-mono text-xl font-bold font-mono-num', missingCost > 0 ? 'text-warning' : 'text-success')}>
+                    <p className={cn('font-mono text-lg md:text-xl font-bold font-mono-num leading-tight', missingCost > 0 ? 'text-warning' : 'text-success')}>
                       {missingCost}
                     </p>
-                    <p className="text-[10px] text-text-3 mt-0.5">
+                    <div className="mt-1 h-1 bg-surface-2 rounded-full overflow-hidden">
+                      <div
+                        className={cn('h-full rounded-full', missingCost > 0 ? 'bg-warning' : 'bg-success')}
+                        style={{ width: missingCost > 0 ? `${Math.min(100, (missingCost / Math.max(stats.totalProducts, 1)) * 100)}%` : '100%' }}
+                      />
+                    </div>
+                    <p className="text-[10px] text-text-3 mt-1">
                       {missingCost > 0 ? 'preencher custo' : 'tudo certo'}
                     </p>
                   </div>
                 </div>
-
-                {/* Best/Worst highlight */}
-                {summary?.best && summary?.worst && summary.best.product.id !== summary.worst.product.id && (
-                  <div className="grid grid-cols-2 gap-2.5 animate-fade-up">
-                    <button
-                      onClick={() => navigate(`/products/${summary.best!.product.id}`)}
-                      className="surface-card p-3 text-left hover:border-success/40 transition-colors group"
-                    >
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <Trophy className="w-3.5 h-3.5 text-success" />
-                        <p className="section-label text-success">Melhor margem</p>
-                      </div>
-                      <p className="text-sm font-medium text-foreground truncate group-hover:text-primary">
-                        {summary.best.product.name}
-                      </p>
-                      <p className="font-mono text-base font-bold text-success font-mono-num mt-0.5">
-                        {summary.best.calc.realMargin.toFixed(1)}%
-                      </p>
-                    </button>
-                    <button
-                      onClick={() => navigate(`/products/${summary.worst!.product.id}`)}
-                      className="surface-card p-3 text-left hover:border-destructive/40 transition-colors group"
-                    >
-                      <div className="flex items-center gap-1.5 mb-1">
-                        <AlertTriangle className="w-3.5 h-3.5 text-destructive" />
-                        <p className="section-label text-destructive">Pior margem</p>
-                      </div>
-                      <p className="text-sm font-medium text-foreground truncate group-hover:text-primary">
-                        {summary.worst.product.name}
-                      </p>
-                      <p className="font-mono text-base font-bold text-destructive font-mono-num mt-0.5">
-                        {summary.worst.calc.realMargin.toFixed(1)}%
-                      </p>
-                    </button>
-                  </div>
-                )}
 
                 {/* Saúde da carteira (charts) */}
                 <div className="space-y-3">
@@ -461,7 +462,7 @@ export default function Products() {
                         <BarChart3 className="w-4 h-4 text-primary" />
                         Saúde da carteira
                       </h2>
-                      <p className="text-[11px] text-text-3 mt-0.5">Visão consolidada de margens e lucro por produto</p>
+                      <p className="text-[11px] text-text-3 mt-0.5">Distribuição de margens, ranking e saúde financeira</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -471,26 +472,40 @@ export default function Products() {
                   </div>
                 </div>
 
-                {/* Pesquisar tendência (colapsável) */}
+                {/* Pesquisar tendência (colapsável com CTA destacado) */}
                 <Collapsible open={trendOpen} onOpenChange={setTrendOpen}>
                   <div className={cn(
-                    "surface-card overflow-hidden transition-colors",
-                    trendOpen ? "border-primary/40" : "hover:border-primary/30",
+                    "rounded-xl overflow-hidden transition-all",
+                    trendOpen
+                      ? "border border-primary/40 bg-card"
+                      : "border border-primary/30 bg-gradient-to-br from-primary/[0.08] via-card to-card hover:border-primary/50 hover:from-primary/[0.12] shadow-sm",
                   )}>
                     <CollapsibleTrigger asChild>
                       <button
                         type="button"
-                        className="w-full flex items-center gap-3 p-3.5 text-left group"
+                        className="w-full flex items-center gap-3 p-4 text-left group"
                       >
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/25 to-primary/5 border border-primary/20 flex items-center justify-center flex-shrink-0">
-                          <Sparkles className="w-5 h-5 text-primary" />
+                        <div className={cn(
+                          "w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform",
+                          trendOpen
+                            ? "bg-primary/15 border border-primary/30"
+                            : "bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/30 group-hover:scale-105",
+                        )}>
+                          <Sparkles className={cn("w-5 h-5", trendOpen ? "text-primary" : "text-primary")} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-foreground">
-                            Pesquisar tendência de mercado
-                          </p>
-                          <p className="text-[11px] text-text-3 mt-0.5 truncate">
-                            Avalie a demanda de um termo antes de cadastrar o produto
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm font-bold text-foreground">
+                              Descobrir produtos vencedores
+                            </p>
+                            {!trendOpen && (
+                              <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/15 text-primary border border-primary/20">
+                                Ferramenta
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-text-2 mt-0.5 leading-snug">
+                            Pesquise demanda, sazonalidade e concorrência antes de cadastrar
                           </p>
                         </div>
                         <ChevronDown
@@ -503,7 +518,7 @@ export default function Products() {
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                       <div className="border-t border-border p-3.5">
-                        <TrendSearchCard hideOuterBorder />
+                        <TrendSearchCard hideOuterBorder hideHeader />
                       </div>
                     </CollapsibleContent>
                   </div>
