@@ -130,7 +130,7 @@ export default function ProductDetail() {
         {/* Breadcrumb */}
         <button
           onClick={() => navigate('/products')}
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-4"
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-3 md:py-4"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           Produtos
@@ -191,7 +191,7 @@ export default function ProductDetail() {
         </div>
 
         <Tabs defaultValue="analise" className="w-full">
-          <TabsList className="bg-secondary/50 border border-border h-10 mb-5">
+          <TabsList className="bg-secondary/50 border border-border h-10 mb-5 w-full grid grid-cols-2 md:inline-flex md:w-auto">
             <TabsTrigger value="analise" className="text-sm data-[state=active]:bg-background">
               <BarChart3 className="w-3.5 h-3.5 mr-1.5" /> Análise
             </TabsTrigger>
