@@ -255,7 +255,7 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
 
       {/* Diagnóstico — cards de insight */}
       {diagnostic && !lowQuality && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
           <div className="surface-card p-4">
             <div className="flex items-center gap-2 mb-1">
               {diagnostic.direction === "up" && <TrendingUp className="w-4 h-4 text-success" />}
@@ -380,7 +380,7 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
                 </div>
               </div>
             </div>
-            <div className="h-64 mt-3">
+            <div className="h-56 sm:h-64 mt-3 -ml-2 sm:ml-0">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={googleSeries} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                   <defs>
