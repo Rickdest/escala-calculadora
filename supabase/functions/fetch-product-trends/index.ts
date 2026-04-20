@@ -1018,15 +1018,52 @@ Deno.serve(async (req) => {
     }
 
     // Sugestões: prioriza related top REAIS do Google (3 primeiros) > algoritmo
+    // Mesmo se NÃO for low_quality podemos retornar sugestões do related (UI ignora se não for low)
     let suggestions: string[] = [];
     if (lowQuality) {
       const fromRelated = [
         ...relatedTopOut.slice(0, 3).map((r) => r.keyword),
         ...relatedRisingOut.slice(0, 2).map((r) => r.keyword),
       ].filter((k) => k && k.toLowerCase() !== keyword.toLowerCase());
-      suggestions = fromRelated.length > 0
-        ? Array.from(new Set(fromRelated)).slice(0, 3)
-        : suggestAlternatives(product.name, keyword);
+
+      // Adiciona variações restantes da cascata como fallback (mais genéricas que a atual)
+      const cascadeFallback = cascadeKeywords
+        .filter((k) => k.toLowerCase() !== keyword.toLowerCase())
+        .slice(0, 3);
+
+      const merged = fromRelated.length > 0
+        ? Array.from(new Set([...fromRelated, ...cascadeFallback])).slice(0, 4)
+        : Array.from(new Set([...cascadeFallback, ...suggestAlternatives(product.name, keyword)])).slice(0, 4);
+
+      suggestions = merged;
+    }
+
+    // Marker meta_no_data: garante hasData=true no front quando NADA foi salvo,
+    // permitindo a UI mostrar aviso + sugestões em vez do estado vazio inicial.
+    if (googleSaved === 0 && relatedSaved === 0 && regionsSaved === 0 && cycleSaved === 0) {
+      const today = new Date().toISOString().split("T")[0];
+      await admin
+        .from("product_trends")
+        .delete()
+        .eq("product_id", productId)
+        .eq("source", "meta_no_data");
+
+      const { error: metaErr } = await admin.from("product_trends").insert({
+        user_id: userId,
+        product_id: productId,
+        source: "meta_no_data",
+        keyword,
+        period_date: today,
+        metadata: {
+          suggestions,
+          attempted_cascade: attemptedCascade,
+          auto_simplified: autoSimplified,
+          zeros_pct: Math.round(zerosPct),
+          google_error: googleError,
+          rate_limited: rateLimited,
+        },
+      });
+      if (metaErr) logger.warn("meta_no_data_insert_failed", { error: metaErr.message });
     }
 
     logger.info("fetch_done", {
@@ -1040,6 +1077,8 @@ Deno.serve(async (req) => {
       googleError,
       rateLimited,
       lowQuality,
+      autoSimplified,
+      cascade: cascadeKeywords,
       zerosPct: Math.round(zerosPct),
     });
 
@@ -1048,6 +1087,8 @@ Deno.serve(async (req) => {
         cached: false,
         keyword,
         keyword_override: product.trend_keyword_override ?? null,
+        auto_simplified: autoSimplified,
+        attempted_cascade: attemptedCascade,
         google_saved: googleSaved,
         shopee_saved: shopeeSaved,
         related_saved: relatedSaved,
