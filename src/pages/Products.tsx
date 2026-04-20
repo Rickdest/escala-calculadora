@@ -55,6 +55,8 @@ export default function Products() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [analysisSortBy, setAnalysisSortBy] = useState<SortOption>('margin-high');
+  const [analysisSearch, setAnalysisSearch] = useState('');
+  const [analysisFilter, setAnalysisFilter] = useState<'all' | 'profitable' | 'healthy' | 'attention' | 'loss'>('all');
   
   const [importModalOpen, setImportModalOpen] = useState(false);
 
