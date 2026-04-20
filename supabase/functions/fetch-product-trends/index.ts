@@ -484,7 +484,42 @@ async function fetchGoogleTrends(
     });
   }
 
-  return { timeline, relatedTop, relatedRising };
+  // 3) Geo map (interesse por região / estado) — falha gracioso
+  let regions: RegionEntry[] = [];
+  try {
+    if (geoWidget?.token && geoWidget?.request) {
+      const url = new URL(
+        "https://trends.google.com/trends/api/widgetdata/comparedgeo",
+      );
+      url.searchParams.set("hl", "pt-BR");
+      url.searchParams.set("tz", "180");
+      url.searchParams.set("req", JSON.stringify(geoWidget.request));
+      url.searchParams.set("token", geoWidget.token);
+
+      const r = await fetch(url.toString(), { headers });
+      if (r.ok) {
+        const txt = await r.text();
+        const data = JSON.parse(txt.replace(/^\)\]\}'\,?\n?/, ""));
+        const geoData: any[] = data.default?.geoMapData ?? [];
+        regions = geoData
+          .map((g: any) => ({
+            region: String(g.geoName ?? "").slice(0, 100),
+            value: Number(g.value?.[0] ?? 0),
+          }))
+          .filter((g) => g.region.length > 0 && g.value > 0)
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 10);
+      } else {
+        logger.warn("geo_failed", { status: r.status });
+      }
+    }
+  } catch (e) {
+    logger.warn("geo_parse_error", {
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+
+  return { timeline, relatedTop, relatedRising, regions };
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
