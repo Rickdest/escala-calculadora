@@ -1,92 +1,101 @@
 
 
-## Auditoria de Segurança, Bugs e Melhorias — abril 2026
+## Análise: o que dá pra puxar de tendência de mercado
 
-Rodei o scanner de segurança, o linter Supabase, inspecionei as 22 tabelas, todas as 75 RLS policies, policies de storage e bati contra as memórias do projeto (findings já justificados).
+Como a Seller API só funciona pra sua conta (não dá pra usar como base de mercado externo), e os dados de pedidos da sua loja não representam "mercado", precisamos buscar fontes externas. Vou listar o que é viável:
 
-### 1. Achados de SEGURANÇA
+### Fontes possíveis
 
-**🟢 Já justificados (manter ignorados — alinhado com `mem://security/ignored-findings-rationale`)**
-- `shopee_tokens` sem INSERT/UPDATE para usuários — **correto**: tokens só são gravados via Edge Functions com service_role. Confirmei que `shopee-callback` usa service role.
-- `subscription_events` sem SELECT para usuários — **correto**: log de auditoria, payload só visível ao admin.
+**1. Shopee Ads — Keyword Suggestions API (já temos integrada)**
+Já usamos via `shopee-ads` edge function. Retorna por palavra-chave:
+- `search_volume` — volume de busca real **na Shopee** (mercado interno)
+- `suggested_bid` — bid sugerido (proxy de competitividade)
+- `quality_score`, `competition_level`
+- Limitação: precisa partir de uma keyword (do nome do produto). Não dá histórico temporal — é snapshot atual.
 
-**🟡 Achado real a corrigir (1)**
-- **`shopee_auth_states` sem DELETE policy** — usuários não conseguem limpar seus próprios state tokens após o OAuth. Hoje só o trigger `cleanup_old_shopee_states` (10 min) limpa, ok como rede de segurança, mas o ideal é apagar imediatamente após troca por token bem-sucedida.
-- **Ação:** adicionar policy `DELETE USING (auth.uid() = user_id)` + chamar `delete()` no `shopee-callback` após sucesso.
+**2. Google Trends (não-oficial, gratuito)**
+Endpoint público `trends.google.com/trends/api/explore`:
+- Interesse relativo 0-100 nos últimos 12 meses
+- Sazonalidade, picos, quedas, comparativo entre termos
+- Sem custo, mas instável (rate limit 429 frequente, precisa retry + cache)
+- É **interesse macro** (Google inteiro, não só Shopee)
 
-**🟡 Storage buckets públicos com listing aberto (`banners`, `product-images`)**
-- Hoje qualquer um pode **listar** todos os arquivos do bucket via `storage.objects.select`.
-- Para `banners`: aceitável (conteúdo público gerenciado por admin), mas vamos restringir SELECT a `bucket_id` apenas para os arquivos referenciados na tabela `banners` (impede enumeração).
-- Para `product-images`: **vazamento real** — qualquer usuário lista todas as imagens de produtos de outros usuários. A policy atual `Product images are publicly accessible` é `bucket_id = 'product-images'` sem nenhum filtro. As URLs já são públicas (ok para `<img src>`), mas listing não deveria ser. **Ação:** restringir SELECT a `(storage.foldername(name))[1] = auth.uid()::text` (usuário vê só as suas), e manter URLs públicas para renderização (acesso direto por URL continua funcionando, só listing fica bloqueado).
+**3. Combinação dos dois (recomendado)**
+- Shopee Keywords = "quanto buscam HOJE dentro do canal de venda"
+- Google Trends = "tendência macro nos últimos 12 meses, sazonalidade, quando vai bombar"
 
-### 2. BUGS funcionais identificados
+### O que dá pra construir
 
-**Bug 1 — Sincronização Shopee pode reiniciar `sale_price` editado**
-Acabamos de implementar a preservação no `useShopeeProducts`, mas a Edge Function `shopee-sync` **não tem essa proteção**. Se a sync for via API (não via importProducts do hook), o preço editado é sobrescrito. Precisa replicar a regra `if (existing.sale_price === 0 || null) updatePrice` lá também.
+**Aba "Tendência de Mercado" no produto:**
 
-**Bug 2 — `subscription_events.user_id` é nullable e nunca preenchido em alguns paths**
-A tabela permite `user_id NULL` (necessário para webhooks pré-vinculação), mas hoje **nenhum job retroativo** vincula `user_id` quando o usuário se cadastra depois. A reconciliação descrita em `mem://auth/subscription-reconciliation-logic` cobre `subscriptions`, mas `subscription_events` fica órfão. Adicionar trigger `AFTER INSERT ON profiles` que faz `UPDATE subscription_events SET user_id = NEW.user_id WHERE email = NEW.email AND user_id IS NULL`.
+1. **Curva 12 meses (Google Trends)**
+   - Linha de interesse 0-100 do termo principal do produto
+   - Marcadores de pico (mês mais alto) e vale (mês mais baixo)
+   - Comparativo ano vs ano se houver histórico
 
-**Bug 3 — `shopee_auth_states` permite múltiplos states ativos por usuário**
-Não há `UNIQUE(user_id, app_type)`. Se o usuário clica "Conectar Shopee" 2x rápido, gera 2 states e o callback consome o errado. Adicionar índice único parcial: `UNIQUE(user_id, app_type) WHERE created_at > now() - interval '10 min'` — ou simplesmente fazer o insert com `ON CONFLICT DO UPDATE`.
+2. **Volume Shopee atual (Ads Keyword API)**
+   - Top 10 palavras relacionadas com volume de busca
+   - Bid sugerido (oportunidade vs saturação)
+   - Tag "Alta demanda / Média / Baixa" baseado na distribuição
 
-**Bug 4 — `enforce_store_limit` não considera plano `essencial` novo**
-A função tem `'monthly' → 2, 'yearly' → 7, 'pro' → 2` mas as memórias dizem "Essencial 2 lojas, Pro 7 lojas" (`mem://business/pricing-plans`). Se o `subscriptions.plan` for gravado como `'essencial'` ou `'skalify_pro'`, cai no fallback `0`. Precisa alinhar os literais com o que o webhook Cakto grava.
+3. **Diagnóstico automático**
+   - "📈 Tendência: subindo" (slope positivo nos últimos 90d Google)
+   - "🔥 Pico esperado em ~30 dias" (baseado em sazonalidade do ano anterior)
+   - "💎 Oportunidade: volume alto na Shopee + bid baixo"
+   - "⚠️ Mercado saturado: bid 3x acima da média"
 
-### 3. MELHORIAS de robustez
+4. **Sugestões acionáveis**
+   - "Reforce estoque antes de [mês]"
+   - "Considere boost de orçamento Ads"
+   - "Pause ads — interesse em queda há 60 dias"
 
-**M1 — 140 chamadas de `console.log/error` nas Edge Functions**
-Logs desestruturados podem vazar tokens/payloads em produção. Padronizar wrapper `logger.info/warn/error` que faz redaction automática de campos `access_token`, `refresh_token`, `partner_key`, `email` (mascarado).
+### O que precisa ser construído
 
-**M2 — Falta rate limiting em endpoints públicos**
-- `cakto-webhook` (`verify_jwt = false`) — só valida secret, mas sem throttle por IP
-- `shopee-callback` (`verify_jwt = false`) — qualquer um pode bater com `?code=...&state=...` aleatórios. Adicionar rate limit (10/min/IP) via tabela `rate_limits` ou contador em memória.
+**Backend:**
+- Tabela `product_trends`: `product_id, source, keyword, period_date, interest_score, search_volume, captured_at`
+- Edge function `fetch-product-trends`:
+  - Recebe `product_id`
+  - Extrai keyword principal do nome do produto (limpa "Kit", "Pacote 10un", etc.)
+  - Chama Google Trends (com retry exponencial + cache 7 dias)
+  - Reaproveita keywords Shopee já em `shopee_ads_by_product.keywords`
+  - Salva série temporal
+- Botão "Atualizar tendência" manual no produto (cache de 7 dias evita abuso)
 
-**M3 — Senhas: HIBP check desligado**
-O scan não acusou, mas vale checar via `configure_auth`. Se desligado, ativar `password_hibp_enabled: true` para bloquear senhas vazadas.
+**Frontend (em `/products/:id`):**
+- Nova aba **"Tendência"** entre as abas existentes
+- `TrendChart` — linha 12 meses com Recharts (já no projeto)
+- `MarketDiagnosticCard` — pílula de status + texto explicativo
+- `ShopeeKeywordsPanel` — top 10 keywords com volume + bid
+- `SeasonalityIndicator` — barra horizontal mostrando intensidade por mês
 
-**M4 — `profiles.push_subscription` (jsonb) sem validação de schema**
-Se for usado para web push notifications, pode receber JSON malformado. Validar com Zod no client antes de gravar.
+### Limitações honestas
 
-**M5 — Índices ausentes em queries frequentes**
-- `ads_data(user_id, periodo_fim DESC)` — dashboard filtra por isso
-- `product_performance(user_id, period_end DESC)` — idem
-- `shopee_ads_by_product(user_id, store_id, period_end DESC)`
-Verificar com `EXPLAIN ANALYZE` se há sequential scan e adicionar índices compostos.
+| Limite | Por que |
+|---|---|
+| Google Trends é interesse relativo, não volume absoluto | API pública gratuita não retorna volume real |
+| Não conseguimos volume de busca de outras plataformas (TikTok, ML) | Sem API gratuita para isso |
+| Tradução de "produto" para "keyword" pode falhar em produtos genéricos | "Camisa azul" vai trazer ruído; "Cafeteira italiana 6 xícaras" funciona melhor |
+| Google Trends pode falhar (429) — precisa fallback gracioso | Mostramos só os dados Shopee se Trends cair |
 
-### 4. MELHORIAS de UX/qualidade
+### Esforço estimado
 
-**UX1 — Auth: mensagem genérica em erros 500 do `signUp`**
-Hoje cai no "Erro ao processar. Tente novamente." Adicionar telemetria (Sentry-like) para ver erros reais sem expor ao usuário.
+| Etapa | Esforço |
+|---|---|
+| Migration `product_trends` + índices | Baixo |
+| Edge function Google Trends + extração de keyword + cache | Médio (Trends é instável) |
+| Reaproveitar keywords Shopee | Baixo |
+| UI: aba + gráfico + cards | Médio |
+| Diagnóstico automático (sazonalidade + slope) | Baixo |
 
-**UX2 — `useShopeeProducts.importProducts` não mostra progresso**
-Em loja com 200+ produtos, a UI fica "carregando" sem feedback. Adicionar progress bar (X/Y processados) via state local.
+### Fluxo do usuário
 
-**UX3 — Preço editado manualmente: sem indicador visual na lista**
-Já implementado o lock no sync, falta mostrar uma pílula "Preço customizado" na lista de produtos quando `sale_price !== shopee_price_snapshot`. Requer adicionar coluna `shopee_sale_price` em `products` (snapshot da última sync) para comparar.
+1. Usuário entra em `/products/:id` → clica aba "Tendência"
+2. Se nunca foi buscado: mostra botão "Analisar tendência deste produto"
+3. Edge function busca Google Trends + Shopee Keywords (5-15s)
+4. Renderiza: gráfico 12m + top keywords + diagnóstico
+5. Cache de 7 dias (botão "Atualizar" reroda manual)
 
-**UX4 — Modal de edição: campo `cost_price` não tem mesma proteção do `sale_price`**
-Custo também vem da Shopee (quando há `mtsku`), e hoje pode ser sobrescrito sem aviso. Aplicar a mesma lógica de "preservar se já editado".
+### Pergunta antes de implementar
 
-### 5. Plano de execução proposto (priorizado)
-
-| # | Item | Impacto | Esforço |
-|---|---|---|---|
-| 1 | DELETE policy + delete imediato em `shopee_auth_states` | Médio (segurança) | Baixo |
-| 2 | Restringir SELECT em `product-images` (anti-enumeração) | Alto (privacidade) | Baixo |
-| 3 | Replicar preservação de `sale_price` no `shopee-sync` edge | Alto (bug usuário) | Baixo |
-| 4 | Alinhar literais de plano em `enforce_store_limit` | Alto (bug billing) | Baixo |
-| 5 | UNIQUE em `shopee_auth_states(user_id, app_type)` | Médio | Baixo |
-| 6 | Trigger reconciliação `subscription_events.user_id` | Médio | Baixo |
-| 7 | Logger com redaction nas Edge Functions | Médio (segurança) | Médio |
-| 8 | Rate limiting `cakto-webhook` e `shopee-callback` | Médio (DoS) | Médio |
-| 9 | Indicador visual de "preço customizado" + snapshot Shopee | Baixo (UX) | Médio |
-| 10 | Progresso de importação Shopee (X/Y) | Baixo (UX) | Baixo |
-
-### Atualizações de memória após implementação
-- Atualizar `mem://security/ignored-findings-rationale` adicionando `product-images` listing como **corrigido** (não mais ignorado).
-- Criar `mem://security/storage-bucket-policies` documentando a regra "buckets públicos sem listing aberto".
-
-### Pergunta
-Quer que eu execute **todos os 10 itens em sequência** ou prefere começar só pelos críticos (1–6, todos baixo esforço)?
+Antes de fechar o plano técnico, preciso confirmar 2 pontos:
 
