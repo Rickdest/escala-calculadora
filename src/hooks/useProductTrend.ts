@@ -99,6 +99,23 @@ export function useProductTrend(productId: string | undefined) {
         .sort((a, b) => b.search_volume - a.search_volume);
       setShopeeKeywords(shopee);
 
+      const parseRelated = (source: string): RelatedKeyword[] =>
+        rows
+          .filter((r) => r.source === source)
+          .map((r) => {
+            const meta = (r.metadata as Record<string, unknown> | null) ?? {};
+            return {
+              keyword: r.keyword,
+              value: Number(r.interest_score ?? 0),
+              isBreakout: Boolean(meta.is_breakout),
+              formattedValue: String(meta.formatted_value ?? ""),
+            };
+          })
+          .sort((a, b) => b.value - a.value);
+
+      setRelatedTop(parseRelated("google_related_top"));
+      setRelatedRising(parseRelated("google_related_rising"));
+
       if (rows.length > 0) {
         const captured = rows
           .map((r) => r.captured_at)
