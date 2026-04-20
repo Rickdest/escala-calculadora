@@ -773,6 +773,15 @@ export function TrendSearchCard({
                             : "border-border text-text-3",
                       )}
                     />
+                    {/* Próx pico sazonal */}
+                    {result.bestGrowthMonth && (
+                      <InsightCard
+                        icon={Calendar}
+                        label="Próx pico sazonal"
+                        value={MONTH_NAMES_LONG[result.bestGrowthMonth - 1]}
+                        cls="border border-primary/20 bg-surface-2/60 text-primary"
+                      />
+                    )}
                   </div>
 
                   {/* Banner de ação interpretado */}
