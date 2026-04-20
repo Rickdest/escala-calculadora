@@ -585,32 +585,65 @@ export function TrendSearchCard({
                 </div>
               ) : (
                 <>
-                  {/* HERO: Potencial de mercado */}
+                  {/* HERO: Potencial de mercado — compacto horizontal */}
                   {scoreMeta && result.marketScore !== null && (
-                    <div className="rounded-xl border border-border bg-gradient-to-br from-surface-2/60 to-surface-2/20 p-4">
-                      <div className="flex items-start justify-between gap-3 mb-2">
-                        <div className="flex items-center gap-2">
-                          <Gauge className={cn("w-4 h-4", scoreMeta.cls)} />
-                          <span className="text-[10px] uppercase tracking-wide font-bold text-text-3">
-                            Potencial de mercado
-                          </span>
+                    <div className="rounded-xl border border-border bg-gradient-to-br from-surface-2/60 to-surface-2/20 p-3 sm:p-4">
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        {/* Gauge circular SVG */}
+                        <div className="relative w-16 h-16 flex-shrink-0">
+                          <svg viewBox="0 0 64 64" className="w-full h-full -rotate-90">
+                            <circle
+                              cx="32"
+                              cy="32"
+                              r="28"
+                              fill="none"
+                              stroke="hsl(var(--surface-2))"
+                              strokeWidth="6"
+                            />
+                            <circle
+                              cx="32"
+                              cy="32"
+                              r="28"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="6"
+                              strokeLinecap="round"
+                              strokeDasharray={`${(result.marketScore / 100) * 175.93} 175.93`}
+                              className={cn("transition-all duration-700", scoreMeta.cls)}
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className={cn("text-lg font-black font-mono font-mono-num", scoreMeta.cls)}>
+                              {result.marketScore}
+                            </span>
+                          </div>
                         </div>
-                        <span className={cn("text-[11px] font-bold", scoreMeta.cls)}>
-                          {scoreMeta.label}
-                        </span>
-                      </div>
-                      <div className="flex items-baseline gap-2 mb-2">
-                        <span className="text-3xl font-black text-foreground font-mono font-mono-num leading-none">
-                          {result.marketScore}
-                        </span>
-                        <span className="text-sm font-bold text-text-3">/ 100</span>
-                        <span className="text-[10px] text-text-3 ml-auto">estimativa composta</span>
-                      </div>
-                      <div className="h-2 bg-surface-2 rounded-full overflow-hidden">
-                        <div
-                          className={cn("h-full rounded-full transition-all duration-700", scoreMeta.barCls)}
-                          style={{ width: `${result.marketScore}%` }}
-                        />
+                        {/* Texto + barra */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <Gauge className={cn("w-3.5 h-3.5 flex-shrink-0", scoreMeta.cls)} />
+                              <span className="text-[10px] uppercase tracking-wide font-bold text-text-3 truncate">
+                                Potencial de mercado
+                              </span>
+                            </div>
+                            <span
+                              className="text-[9px] text-text-3/70 hidden sm:inline cursor-help"
+                              title="Score 0-100 calculado a partir de momento, volatilidade, sazonalidade e demanda relativa. Estimativa composta."
+                            >
+                              estimativa
+                            </span>
+                          </div>
+                          <p className={cn("text-sm font-bold mb-2", scoreMeta.cls)}>
+                            {scoreMeta.label}
+                          </p>
+                          <div className="h-1.5 bg-surface-2 rounded-full overflow-hidden">
+                            <div
+                              className={cn("h-full rounded-full transition-all duration-700", scoreMeta.barCls)}
+                              style={{ width: `${result.marketScore}%` }}
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
