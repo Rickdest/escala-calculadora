@@ -10,7 +10,7 @@ import ProductCard from '@/components/cards/ProductCard';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { MarginDistributionChart, TopProductsChart, ProfitSummaryChart } from '@/components/charts/AnalyticsCharts';
 import { ProductThumbnail } from '@/components/ProductThumbnail';
-import { ProductDetailDrawer } from '@/components/ProductDetailDrawer';
+
 import { useShopeeProducts } from '@/hooks/useShopeeProducts';
 import { ShopeeImportModal, type ShopeeProduct } from '@/components/produtos/ShopeeImportModal';
 
@@ -55,7 +55,7 @@ export default function Products() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('recent');
   const [analysisSortBy, setAnalysisSortBy] = useState<SortOption>('margin-high');
-  const [detailProduct, setDetailProduct] = useState<{ product: Product; calc: ProductCalculation } | null>(null);
+  
   const [importModalOpen, setImportModalOpen] = useState(false);
 
   const draftFilter = searchParams.get('filter');
@@ -280,13 +280,7 @@ export default function Products() {
                     product={product}
                     calculation={calc}
                     config={currentStore.config}
-                    onCardClick={(p) => {
-                      if (window.innerWidth >= 1024) {
-                        navigate(`/products/${p.id}`);
-                      } else {
-                        setDetailProduct({ product: p, calc });
-                      }
-                    }}
+                    onCardClick={(p) => navigate(`/products/${p.id}`)}
                     onEdit={handleEdit}
                     onDuplicate={async (id) => { await duplicateProduct(id); }}
                     onDelete={async (id) => { await deleteProduct(id); }}
@@ -440,33 +434,6 @@ export default function Products() {
 
       {showProductForm && (
         <ProductForm product={editingProduct} onClose={handleCloseForm} onSave={handleSaveProduct} />
-      )}
-
-      {detailProduct && currentStore && (
-        <ProductDetailDrawer
-          product={detailProduct.product}
-          calculation={detailProduct.calc}
-          config={currentStore.config}
-          open={!!detailProduct}
-          onClose={() => setDetailProduct(null)}
-          onEdit={(p) => {
-            setDetailProduct(null);
-            handleEdit(p);
-          }}
-          onDuplicate={async (id) => {
-            setDetailProduct(null);
-            await duplicateProduct(id);
-          }}
-          onDelete={async (id) => {
-            setDetailProduct(null);
-            await deleteProduct(id);
-          }}
-          onSave={async (data) => {
-            await updateProduct(detailProduct.product.id, data);
-            setDetailProduct(null);
-            toast.success('Produto atualizado!');
-          }}
-        />
       )}
 
       {importModalOpen && (
