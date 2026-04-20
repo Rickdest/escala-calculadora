@@ -662,12 +662,44 @@ Deno.serve(async (req) => {
         ? body.keywordOnly.trim().slice(0, 100)
         : null;
 
+    // Novos parâmetros opcionais (modo keywordOnly)
+    const compareKeywordsInput: string[] = Array.isArray(body?.compareKeywords)
+      ? body.compareKeywords
+          .map((k: unknown) => (typeof k === "string" ? k.trim().slice(0, 100) : ""))
+          .filter((k: string) => k.length > 0)
+          .slice(0, 4) // até 4 termos extras (5 total com o principal)
+      : [];
+
+    const VALID_TIMEFRAMES = new Set([
+      "now 7-d",
+      "today 1-m",
+      "today 3-m",
+      "today 12-m",
+      "today 5-y",
+    ]);
+    const timeframeInput =
+      typeof body?.timeframe === "string" && VALID_TIMEFRAMES.has(body.timeframe)
+        ? (body.timeframe as string)
+        : "today 5-y";
+
+    const VALID_GEO_RES = new Set(["REGION", "CITY", "COUNTRY"]);
+    const geoResolutionInput: "REGION" | "CITY" | "COUNTRY" =
+      typeof body?.geoResolution === "string" && VALID_GEO_RES.has(body.geoResolution)
+        ? (body.geoResolution as "REGION" | "CITY" | "COUNTRY")
+        : "REGION";
+
     // ============================================================
     // MODO KEYWORD-ONLY: busca avulsa (sem persistir, sem productId)
     // ============================================================
     if (keywordOnlyInput && keywordOnlyInput.length > 0) {
       const kw = keywordOnlyInput;
-      logger.info("keyword_only_start", { userId, keyword: kw });
+      logger.info("keyword_only_start", {
+        userId,
+        keyword: kw,
+        timeframe: timeframeInput,
+        geo: geoResolutionInput,
+        compare: compareKeywordsInput.length,
+      });
 
       let trendsResult: TrendsResult = {
         timeline: [],
@@ -681,7 +713,13 @@ Deno.serve(async (req) => {
       const delays = [2000, 5000, 12000];
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
-          trendsResult = await fetchGoogleTrends(kw);
+          trendsResult = await fetchGoogleTrends(
+            kw,
+            timeframeInput,
+            undefined,
+            compareKeywordsInput,
+            geoResolutionInput,
+          );
           googleError = null;
           break;
         } catch (e) {
@@ -699,7 +737,7 @@ Deno.serve(async (req) => {
       const zeros = tl.length === 0 ? 100 : (tl.filter((p) => p.interest_score === 0).length / tl.length) * 100;
       const lowQuality = tl.length < 8 || zeros > 80;
 
-      // Ciclo sazonal calculado inline
+      // Ciclo sazonal calculado inline (só vale para janelas longas)
       const monthBuckets: number[][] = Array.from({ length: 12 }, () => []);
       for (const p of tl) {
         const month = new Date(p.period_date).getUTCMonth();
@@ -707,12 +745,97 @@ Deno.serve(async (req) => {
       }
       const seasonal_cycle = monthBuckets
         .map((vals, i) => {
-          const avg = vals.length > 0
-            ? vals.reduce((a, b) => a + b, 0) / vals.length
-            : 0;
+          const avg = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
           return { month: i + 1, avg: Math.round(avg), samples: vals.length };
         })
         .filter((c) => c.samples > 0);
+
+      // ============== INSIGHTS DERIVADOS ==============
+      const values = tl.map((p) => p.interest_score);
+
+      // Momentum: média dos últimos 30 pontos vs 30 anteriores
+      let momentum30d: number | null = null;
+      if (values.length >= 60) {
+        const recent = values.slice(-30);
+        const prev = values.slice(-60, -30);
+        const avgR = recent.reduce((a, b) => a + b, 0) / recent.length;
+        const avgP = prev.reduce((a, b) => a + b, 0) / prev.length;
+        if (avgP > 0) momentum30d = Math.round(((avgR - avgP) / avgP) * 100);
+      } else if (values.length >= 8) {
+        const half = Math.floor(values.length / 2);
+        const recent = values.slice(half);
+        const prev = values.slice(0, half);
+        const avgR = recent.reduce((a, b) => a + b, 0) / recent.length;
+        const avgP = prev.reduce((a, b) => a + b, 0) / prev.length;
+        if (avgP > 0) momentum30d = Math.round(((avgR - avgP) / avgP) * 100);
+      }
+
+      // Slope: regressão linear sobre toda a série (índice x → valor y)
+      let slope = 0;
+      let slopeLabel: "subindo_forte" | "subindo" | "estavel" | "caindo" | "caindo_forte" = "estavel";
+      if (values.length >= 4) {
+        const n = values.length;
+        const xs = Array.from({ length: n }, (_, i) => i);
+        const meanX = (n - 1) / 2;
+        const meanY = values.reduce((a, b) => a + b, 0) / n;
+        let num = 0;
+        let den = 0;
+        for (let i = 0; i < n; i++) {
+          num += (xs[i] - meanX) * (values[i] - meanY);
+          den += (xs[i] - meanX) ** 2;
+        }
+        slope = den > 0 ? num / den : 0;
+        const normSlope = meanY > 0 ? (slope * n) / meanY : 0; // % crescimento total relativo
+        if (normSlope > 0.5) slopeLabel = "subindo_forte";
+        else if (normSlope > 0.1) slopeLabel = "subindo";
+        else if (normSlope < -0.5) slopeLabel = "caindo_forte";
+        else if (normSlope < -0.1) slopeLabel = "caindo";
+        else slopeLabel = "estavel";
+      }
+
+      // Pico do ano + recomendação de estoque
+      let peakMonth: number | null = null;
+      let stockRecommendation: string | null = null;
+      if (seasonal_cycle.length >= 6) {
+        const sorted = [...seasonal_cycle].sort((a, b) => b.avg - a.avg);
+        peakMonth = sorted[0]?.month ?? null;
+        if (peakMonth) {
+          const MONTHS_PT = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+          const buyMonthIdx = (peakMonth - 1 - 2 + 12) % 12; // 2 meses antes
+          stockRecommendation = `Pico em ${MONTHS_PT[peakMonth - 1]}. Estoque-se em ${MONTHS_PT[buyMonthIdx]}.`;
+        }
+      }
+
+      // Forecast 3 meses (baseado no ciclo sazonal médio)
+      const forecast_3m: Array<{ month: number; predicted: number; year: number }> = [];
+      if (seasonal_cycle.length >= 6) {
+        const cycleMap = new Map(seasonal_cycle.map((c) => [c.month, c.avg]));
+        const now = new Date();
+        for (let i = 1; i <= 3; i++) {
+          const d = new Date(now.getFullYear(), now.getMonth() + i, 15);
+          const m = d.getMonth() + 1;
+          const predicted = cycleMap.get(m) ?? 0;
+          forecast_3m.push({ month: m, predicted, year: d.getFullYear() });
+        }
+      }
+
+      // Categoria detectada (autocomplete leve, falha gracioso)
+      let categoryHint: string | null = null;
+      try {
+        const acRes = await fetch(
+          `https://trends.google.com/trends/api/autocomplete/${encodeURIComponent(kw)}?hl=pt-BR&tz=180`,
+          { headers: { "User-Agent": pickUA(), "Accept-Language": "pt-BR" } },
+        );
+        if (acRes.ok) {
+          const acTxt = await acRes.text();
+          const acData = JSON.parse(acTxt.replace(/^\)\]\}'\,?\n?/, ""));
+          const topics = acData?.default?.topics ?? [];
+          const cat = topics[0]?.type;
+          if (cat && typeof cat === "string") categoryHint = cat;
+        }
+      } catch {
+        // ignora
+      }
 
       // Sugestões a partir das related quando lowQuality
       const suggestions: string[] = lowQuality
@@ -730,16 +853,32 @@ Deno.serve(async (req) => {
         zerosPct: Math.round(zeros),
         lowQuality,
         rateLimited,
+        slopeLabel,
+        momentum30d,
+        peakMonth,
       });
 
       return new Response(
         JSON.stringify({
           keyword: kw,
+          timeframe: timeframeInput,
+          geo_resolution: geoResolutionInput,
+          compare_keywords: compareKeywordsInput,
           google_series: tl,
+          comparison_series: trendsResult.comparisonSeries ?? null,
           related_top: trendsResult.relatedTop,
           related_rising: trendsResult.relatedRising,
           regions: trendsResult.regions,
           seasonal_cycle,
+          // Insights derivados
+          momentum_30d: momentum30d,
+          slope,
+          slope_label: slopeLabel,
+          peak_month: peakMonth,
+          stock_recommendation: stockRecommendation,
+          forecast_3m,
+          category_hint: categoryHint,
+          // Qualidade / status
           low_quality: lowQuality,
           suggestions,
           rate_limited: rateLimited,
