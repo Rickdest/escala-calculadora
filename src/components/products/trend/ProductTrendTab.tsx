@@ -40,6 +40,7 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
     relatedRising,
     regions,
     seasonalCycle,
+    autoSimplified,
     refresh,
     setKeywordOverride,
   } = useProductTrend(productId);
@@ -62,8 +63,30 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
     await setKeywordOverride(trimmed);
   };
 
-  // Estado vazio + erro
-  if (!loading && !hasData && !refreshing && error) {
+  // Loading inicial (primeira carga)
+  if (loading && !hasData && !lowQuality) {
+    return (
+      <div className="surface-card p-8 text-center">
+        <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-3" />
+        <p className="text-small text-muted-foreground">Carregando...</p>
+      </div>
+    );
+  }
+
+  // Refresh em andamento sem dados ainda — mostra spinner
+  if (refreshing && !hasData && !lowQuality && suggestions.length === 0) {
+    return (
+      <div className="surface-card p-8 text-center">
+        <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-3" />
+        <p className="text-small text-muted-foreground">
+          Buscando dados de tendência (5-15s)...
+        </p>
+      </div>
+    );
+  }
+
+  // Estado: erro grave sem dados
+  if (!loading && !hasData && !refreshing && !lowQuality && suggestions.length === 0 && error) {
     return (
       <div className="surface-card p-8 text-center border-warning/30">
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-warning/10 mb-3">
@@ -87,8 +110,8 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
     );
   }
 
-  // Estado vazio — primeira vez
-  if (!loading && !hasData && !refreshing) {
+  // Estado vazio — primeira vez (só se REALMENTE não tiver nada de nada)
+  if (!loading && !hasData && !refreshing && !lowQuality && suggestions.length === 0) {
     return (
       <div className="surface-card p-8 text-center">
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 mb-3">
