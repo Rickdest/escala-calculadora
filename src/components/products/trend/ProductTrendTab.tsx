@@ -229,31 +229,45 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
         )}
       </div>
 
-      {/* Aviso de baixa qualidade + sugestões */}
+      {/* Aviso de baixa qualidade + sugestões (mostra mesmo sem hasData) */}
       {lowQuality && !editing && (
-        <div className="surface-card p-4 border-warning/30 bg-warning/5">
+        <div className="surface-card p-4 sm:p-5 border-warning/30 bg-warning/5">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-foreground mb-1">
-                Pouco volume de busca para "{keyword}"
-              </p>
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <p className="text-sm font-semibold text-foreground">
+                  Pouco volume de busca para "{keyword}"
+                </p>
+                {autoSimplified && (
+                  <span className="text-micro text-warning bg-warning/10 px-1.5 py-0.5 rounded border border-warning/20">
+                    auto-simplificado
+                  </span>
+                )}
+              </div>
               <p className="text-small text-muted-foreground mb-3">
-                Esse termo é específico demais ou pouco buscado no Google. Tente um termo mais genérico para ver tendências reais do mercado.
+                {googleSeries.length === 0
+                  ? "Esse termo não retornou histórico no Google. Tente um termo mais genérico ou edite manualmente."
+                  : "Esse termo é específico demais ou pouco buscado no Google. Tente um termo mais genérico para ver tendências reais do mercado."}
               </p>
               {suggestions.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-2">
-                  <span className="text-micro text-muted-foreground self-center">Sugestões:</span>
-                  {suggestions.map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => setKeywordOverride(s)}
-                      disabled={refreshing}
-                      className="text-small px-2.5 py-1 rounded-md border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
-                    >
-                      {s}
-                    </button>
-                  ))}
+                <div className="mb-3">
+                  <p className="text-micro text-muted-foreground mb-1.5">
+                    Tente um destes termos:
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {suggestions.map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => setKeywordOverride(s)}
+                        disabled={refreshing}
+                        className="text-small px-3 py-1.5 rounded-md border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50 inline-flex items-center gap-1.5 font-medium"
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        {s}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
               <button
