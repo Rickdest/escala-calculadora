@@ -229,60 +229,44 @@ export default function Products() {
           </div>
         )}
         <Tabs defaultValue="products" className="w-full">
-          {/* Toolbar unificada: tabs compactas + ações */}
-          <div className="flex flex-wrap items-center gap-2">
-            <TabsList className="h-9 inline-flex w-auto rounded-lg bg-surface-2 border border-border p-0.5">
-              <TabsTrigger
-                value="products"
-                className="h-8 px-3 rounded-md text-xs font-semibold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-foreground/70"
+          {/* Toolbar superior: ações + chip "sem custo" */}
+          <div className="flex flex-wrap items-center gap-2 mb-2.5">
+            {shopeeConnected && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setImportModalOpen(true)}
+                className="h-9 border-[#EE4D2D]/30 text-[#EE4D2D] hover:bg-[#EE4D2D]/5 text-xs"
               >
-                Produtos <span className="opacity-70 font-mono font-mono-num">({stats?.totalProducts || 0})</span>
-              </TabsTrigger>
-              <TabsTrigger
-                value="analysis"
-                className="h-8 px-3 rounded-md text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-foreground/70"
-              >
-                Análise
-              </TabsTrigger>
-            </TabsList>
+                <ShoppingBag className="w-3.5 h-3.5 mr-1.5" />
+                <span className="hidden sm:inline">Importar da</span> Shopee
+              </Button>
+            )}
 
-            {/* Spacer + chip "sem custo" clicável */}
-            <div className="flex items-center gap-2 ml-auto flex-wrap">
-              {(() => {
-                const noCost = currentStore?.products?.filter(p => !p.costPrice || p.costPrice === 0).length || 0;
-                if (noCost === 0) return null;
-                const isActive = draftFilter === 'sem-custo';
-                return (
-                  <button
-                    type="button"
-                    onClick={() => setSearchParams(isActive ? {} : { filter: 'sem-custo' })}
-                    className={cn(
-                      "h-9 inline-flex items-center gap-1.5 text-xs font-medium rounded-lg px-3 border transition-colors",
-                      isActive
-                        ? "bg-destructive/20 border-destructive/40 text-destructive"
-                        : "bg-destructive/10 border-destructive/20 text-destructive hover:bg-destructive/15 hover:border-destructive/30",
-                    )}
-                  >
-                    <AlertTriangle className="w-3.5 h-3.5" />
-                    <span className="font-mono font-mono-num">{noCost}</span>
-                    <span className="hidden sm:inline">sem custo</span>
-                    <ArrowRight className="w-3 h-3 opacity-70" />
-                  </button>
-                );
-              })()}
-
-              {shopeeConnected && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setImportModalOpen(true)}
-                  className="h-9 border-[#EE4D2D]/30 text-[#EE4D2D] hover:bg-[#EE4D2D]/5 text-xs"
+            {(() => {
+              const noCost = currentStore?.products?.filter(p => !p.costPrice || p.costPrice === 0).length || 0;
+              if (noCost === 0) return null;
+              const isActive = draftFilter === 'sem-custo';
+              return (
+                <button
+                  type="button"
+                  onClick={() => setSearchParams(isActive ? {} : { filter: 'sem-custo' })}
+                  className={cn(
+                    "h-9 inline-flex items-center gap-1.5 text-xs font-medium rounded-lg px-3 border transition-colors",
+                    isActive
+                      ? "bg-destructive/20 border-destructive/40 text-destructive"
+                      : "bg-destructive/10 border-destructive/20 text-destructive hover:bg-destructive/15 hover:border-destructive/30",
+                  )}
                 >
-                  <ShoppingBag className="w-3.5 h-3.5 mr-1.5" />
-                  <span className="hidden sm:inline">Importar da</span> Shopee
-                </Button>
-              )}
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <span className="font-mono font-mono-num">{noCost}</span>
+                  <span>sem custo</span>
+                  <ArrowRight className="w-3 h-3 opacity-70" />
+                </button>
+              );
+            })()}
 
+            <div className="ml-auto">
               {analysisProducts.length > 0 && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -303,6 +287,22 @@ export default function Products() {
               )}
             </div>
           </div>
+
+          {/* Tabs grandes full-width — controle de navegação principal */}
+          <TabsList className="w-full grid grid-cols-2 h-11 rounded-lg bg-surface-2 border border-border p-1">
+            <TabsTrigger
+              value="products"
+              className="h-9 rounded-md text-sm font-semibold gap-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-foreground/70"
+            >
+              Produtos <span className="opacity-70 font-mono font-mono-num">({stats?.totalProducts || 0})</span>
+            </TabsTrigger>
+            <TabsTrigger
+              value="analysis"
+              className="h-9 rounded-md text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=inactive]:text-foreground/70"
+            >
+              Análise
+            </TabsTrigger>
+          </TabsList>
 
           <TabsContent value="products" className="space-y-3 mt-3">
             {/* Margin bar */}
