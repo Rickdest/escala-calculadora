@@ -255,60 +255,60 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
 
       {/* Diagnóstico — cards de insight */}
       {diagnostic && !lowQuality && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
-          <div className="surface-card p-4">
-            <div className="flex items-center gap-2 mb-1">
-              {diagnostic.direction === "up" && <TrendingUp className="w-4 h-4 text-success" />}
-              {diagnostic.direction === "down" && <TrendingDown className="w-4 h-4 text-destructive" />}
-              {diagnostic.direction === "stable" && <Minus className="w-4 h-4 text-muted-foreground" />}
-              <span className="label-metric">Tendência 90d</span>
+        <div className="grid grid-cols-3 gap-2 sm:gap-3">
+          <div className="surface-card p-2.5 sm:p-4">
+            <div className="flex items-center gap-1 sm:gap-2 mb-1">
+              {diagnostic.direction === "up" && <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-success shrink-0" />}
+              {diagnostic.direction === "down" && <TrendingDown className="w-3 h-3 sm:w-4 sm:h-4 text-destructive shrink-0" />}
+              {diagnostic.direction === "stable" && <Minus className="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground shrink-0" />}
+              <span className="label-metric text-[10px] sm:text-xs truncate">Tend. 90d</span>
             </div>
             <p className={cn(
-              "font-mono text-xl font-bold",
+              "font-mono text-base sm:text-xl font-bold tabular-nums truncate",
               diagnostic.direction === "up" && "text-success",
               diagnostic.direction === "down" && "text-destructive",
               diagnostic.direction === "stable" && "text-foreground",
             )}>
               {diagnostic.slopePct > 0 ? "+" : ""}{diagnostic.slopePct.toFixed(1)}%
             </p>
-            <p className="text-small text-muted-foreground mt-0.5">
-              {diagnostic.direction === "up" && "Interesse acelerando"}
-              {diagnostic.direction === "down" && "Interesse caindo"}
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 line-clamp-1">
+              {diagnostic.direction === "up" && "Acelerando"}
+              {diagnostic.direction === "down" && "Caindo"}
               {diagnostic.direction === "stable" && "Estável"}
             </p>
           </div>
 
-          <div className="surface-card p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Flame className="w-4 h-4 text-primary" />
-              <span className="label-metric">Pico do ano</span>
+          <div className="surface-card p-2.5 sm:p-4">
+            <div className="flex items-center gap-1 sm:gap-2 mb-1">
+              <Flame className="w-3 h-3 sm:w-4 sm:h-4 text-primary shrink-0" />
+              <span className="label-metric text-[10px] sm:text-xs truncate">Pico</span>
             </div>
-            <p className="font-mono text-xl font-bold text-foreground capitalize">
+            <p className="font-mono text-base sm:text-xl font-bold text-foreground capitalize truncate">
               {diagnostic.peakMonth?.split(" ")[0]}
             </p>
-            <p className="text-small text-muted-foreground mt-0.5">
+            <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 truncate">
               Vale: <span className="capitalize">{diagnostic.valleyMonth?.split(" ")[0]}</span>
             </p>
           </div>
 
-          <div className="surface-card p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Calendar className="w-4 h-4 text-primary" />
-              <span className="label-metric">Próximo pico</span>
+          <div className="surface-card p-2.5 sm:p-4">
+            <div className="flex items-center gap-1 sm:gap-2 mb-1">
+              <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-primary shrink-0" />
+              <span className="label-metric text-[10px] sm:text-xs truncate">Próx. pico</span>
             </div>
             {diagnostic.nextPeakIn !== null ? (
               <>
-                <p className="font-mono text-xl font-bold text-foreground">
+                <p className="font-mono text-base sm:text-xl font-bold text-foreground tabular-nums">
                   {diagnostic.nextPeakIn}d
                 </p>
-                <p className="text-small text-muted-foreground mt-0.5">
-                  {diagnostic.hasSeasonality ? "Reforce estoque" : "Sem sazonalidade clara"}
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                  {diagnostic.hasSeasonality ? "Reforce estoque" : "Sem padrão"}
                 </p>
               </>
             ) : (
               <>
-                <p className="font-mono text-xl font-bold text-muted-foreground/50">—</p>
-                <p className="text-small text-muted-foreground mt-0.5">Sem padrão sazonal</p>
+                <p className="font-mono text-base sm:text-xl font-bold text-muted-foreground/50">—</p>
+                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">Sem padrão</p>
               </>
             )}
           </div>
@@ -380,7 +380,7 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
                 </div>
               </div>
             </div>
-            <div className="h-56 sm:h-64 mt-3 -ml-2 sm:ml-0">
+            <div className="h-44 sm:h-64 mt-3 -ml-2 sm:ml-0">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={googleSeries} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                   <defs>
