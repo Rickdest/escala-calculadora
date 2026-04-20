@@ -58,6 +58,7 @@ export function useProductTrend(productId: string | undefined) {
   const [relatedRising, setRelatedRising] = useState<RelatedKeyword[]>([]);
   const [regions, setRegions] = useState<RegionEntry[]>([]);
   const [seasonalCycle, setSeasonalCycle] = useState<SeasonalMonth[]>([]);
+  const [autoSimplified, setAutoSimplified] = useState(false);
 
   const loadFromDb = useCallback(async () => {
     if (!productId) return;
@@ -97,7 +98,19 @@ export function useProductTrend(productId: string | undefined) {
       if (google.length > 0) {
         const zeros = google.filter((p) => (p.interest_score ?? 0) === 0).length;
         setLowQuality(zeros / google.length > 0.8);
-      } else {
+      }
+
+      // Marker meta_no_data: extrai sugestões e flag de low quality persistidas
+      const metaRow = rows.find((r) => r.source === "meta_no_data");
+      if (metaRow) {
+        const meta = (metaRow.metadata as Record<string, unknown> | null) ?? {};
+        if (Array.isArray(meta.suggestions)) {
+          setSuggestions(meta.suggestions as string[]);
+        }
+        setLowQuality(true);
+        setAutoSimplified(Boolean(meta.auto_simplified));
+      } else if (google.length === 0) {
+        // Sem dados e sem marker → reseta lowQuality
         setLowQuality(false);
       }
 
@@ -159,7 +172,12 @@ export function useProductTrend(productId: string | undefined) {
           .sort()
           .reverse()[0];
         setLastCapture(captured ?? null);
-        setKeyword(rows.find((r) => r.source === "google_trends")?.keyword ?? rows[0].keyword);
+        // Prioriza keyword da timeline real; senão usa do meta_no_data; senão da primeira linha
+        const kwSource =
+          rows.find((r) => r.source === "google_trends")?.keyword ??
+          rows.find((r) => r.source === "meta_no_data")?.keyword ??
+          rows[0].keyword;
+        setKeyword(kwSource);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -202,14 +220,24 @@ export function useProductTrend(productId: string | undefined) {
           }
         }
 
-        if (Array.isArray(data?.suggestions)) {
+        // Recarrega banco PRIMEIRO (atualiza tudo a partir do que foi persistido,
+        // incluindo meta_no_data com sugestões).
+        await loadFromDb();
+
+        // Depois sobrescreve com dados frescos da resposta — garantimos que sugestões,
+        // keyword e flags chegam mesmo se o banco não persistiu nada (safety net).
+        if (Array.isArray(data?.suggestions) && data.suggestions.length > 0) {
           setSuggestions(data.suggestions);
         }
         if (typeof data?.low_quality === "boolean") {
           setLowQuality(data.low_quality);
         }
-
-        await loadFromDb();
+        if (typeof data?.keyword === "string" && data.keyword) {
+          setKeyword(data.keyword);
+        }
+        if (typeof data?.auto_simplified === "boolean") {
+          setAutoSimplified(data.auto_simplified);
+        }
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
       } finally {
