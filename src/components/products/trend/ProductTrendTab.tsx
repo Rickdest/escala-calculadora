@@ -510,7 +510,7 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
         </div>
       )}
 
-      {!googleSeries.length && !shopeeKeywords.length && hasData && (
+      {!googleSeries.length && !shopeeKeywords.length && !relatedTop.length && !relatedRising.length && hasData && (
         <div className="surface-card p-5 text-center">
           <AlertTriangle className="w-5 h-5 text-warning mx-auto mb-2" />
           <p className="text-small text-muted-foreground">
