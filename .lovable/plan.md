@@ -1,88 +1,101 @@
 
 
-## Diagnóstico (confirmado pelos logs)
+## Análise do problema
 
-Produto: "Vestido Longo Feminino Safira Gringo com Costas Abertas Suplex Empina Bumbum Elegância e Conforto"
+A aba **Análise** está visualmente datada vs o resto do app que já tem o "Claude Designer" aplicado (Detalhe do Produto, Tendência). Hoje:
 
-Pipeline atual:
-1. Extrator gera `"vestido longo suplex feminino"` (4 palavras, muito específico)
-2. Google Trends responde com **100% zeros** + **zero related queries** + **zero regiões**
-3. Backend marca `low_quality: true` e gera sugestões algorítmicas (fallback `suggestAlternatives`)
-4. Mas como **nada é persistido no banco** (googleSaved=0, relatedSaved=0, regionsSaved=0, cycleSaved=0), o frontend recarrega via `loadFromDb()` → `hasData = false`
-5. Usuário volta pro card "Descubra a tendência de mercado" sem entender por que **e sem ver as sugestões**
+- 2 KPIs gigantes em cima (Margem Média + Lucro Total) — pouco denso
+- Card "Resumo de Performance" repete 4 números num grid 2x2 sem cor/hierarquia
+- 3 charts em cards `glass-card` genéricos, sem coesão
+- **Sem busca** no ranking — impossível achar um produto específico entre 32+
+- Ranking sem barras visuais, sem custos/preço, sem indicador de problema
+- Sort como pills horizontais com scroll lateral (UX antiga)
 
-## Causa raiz
+## Solução: redesign + busca no ranking
 
-**Bug 1 (frontend) — sugestões perdidas:** o `useProductTrend.refresh()` recebe `suggestions` e `lowQuality` da resposta da function e seta no estado, mas em seguida chama `loadFromDb()` que **rebuscar do banco e como não tem linhas, hasData fica false** → o componente cai no estado vazio inicial e descarta `suggestions/lowQuality` porque o `if (!hasData)` vem antes.
+### S1 — Hero de KPIs 2x2 (estilo ProductDetail)
 
-**Bug 2 (backend) — extrator agressivo demais:** "suplex" é modificador de nicho. Combinado a "longo" cria query de cauda longa sem volume. Falta cascata de simplificação **server-side** antes de desistir.
+Trocar os 2 KPIs por **4 stat tiles densos** com ícone + border-l semântica:
 
-**Bug 3 (backend) — não persiste nada quando vazio:** se Google Trends devolve timeline vazia, deveríamos pelo menos persistir um marcador (`source: 'meta_no_data'`) pra `hasData=true` e a UI mostrar o aviso + sugestões.
+| Tile | Métrica | Ícone | Cor borda |
+|---|---|---|---|
+| Margem média | `8.5%` | `Percent` | semântica (success/warning/danger) |
+| Lucro total | `R$ 1.234` | `DollarSign` | success/danger |
+| Na meta | `1 de 32` | `Target` | primary |
+| Sem custo | `31` (alerta) | `AlertCircle` | warning/danger |
 
-## Solução
+Mobile: `grid-cols-2`, valores `text-xl` (não `text-2xl`).
 
-### 1. Backend: cascata de simplificação automática (`fetch-product-trends/index.ts`)
+### S2 — Remover card "Resumo de Performance" redundante
 
-Antes de declarar `low_quality`, tentar até 3 variações progressivamente mais genéricas:
+Os 4 números (melhor/pior margem, na/fora meta) já viram parte do hero ou ficam num **mini-card de "destaque" compacto** abaixo:
+- Melhor produto → nome + margem (verde) — clicável
+- Pior produto → nome + margem (vermelho) — clicável
+- Linha "Meta de margem: 15%" mantida só como sub-info
+
+### S3 — Charts mais coesos (estilo unificado)
+
+Substituir `glass-card p-5` por `surface-card p-4` (mesma classe usada no resto) com:
+- Header padrão com `section-label` + valor sumário pequeno à direita
+- Charts com altura `h-[160px]` (mais densos)
+- Mobile: `grid-cols-1`, desktop `grid-cols-3`
+- **Distribuição de Margem**: virar **stack bar horizontal** em vez de pizza (mais legível em mobile, padrão Claude). Mostra "Acima 1 (3%)" + "Abaixo 31 (97%)" com barra vermelha+verde
+- **Top 5 e Lucro por Produto**: manter mas com cores semânticas (positivo=success, negativo=destructive)
+
+### S4 — **Campo de busca + filtros no ranking** (principal pedido)
+
+Acima da lista "Ranking de Produtos", adicionar:
 
 ```
-Tentativa 1: "vestido longo suplex feminino"  → 100% zeros
-Tentativa 2: "vestido longo feminino"         → tenta
-Tentativa 3: "vestido feminino"               → tenta
-Tentativa 4: "vestido"                        → última cartada
+┌──────────────────────────────────────────┐
+│ 🔍 Buscar produto...        [⇅ ordenar] │
+├──────────────────────────────────────────┤
+│ [Todos] [Lucrativos] [Atenção] [Prejuízo]│
+└──────────────────────────────────────────┘
 ```
 
-Função nova `buildKeywordCascade(productName)` retorna array ordenado do mais específico ao mais genérico (categoria + audience + 1-2 modifiers → categoria + audience → categoria). Itera e usa o **primeiro que retornar dados úteis** (>30% não-zeros). Se nenhuma der, marca low_quality com a mais específica + sugere as outras.
+- Input de busca igual à aba Produtos (`Search` icon, `h-10`, `bg-surface-2`)
+- Dropdown de ordenação substitui as pills horizontais
+- **Chips de filtro rápido por status de margem** (Todos/Lucrativo ≥17%/Saudável 10-17%/Atenção 0-10%/Prejuízo <0%) com contagem
 
-Resultado esperado: 80% dos casos hoje "vazios" passam a ter dados (porque "vestido feminino" tem volume gigante).
+### S5 — Ranking aprimorado
 
-### 2. Backend: persistir marcador quando tudo vier vazio
-
-Adicionar inserção mínima quando `googleSaved=0 && relatedSaved=0 && regionsSaved=0`:
-
-```ts
-await admin.from("product_trends").insert({
-  user_id: userId, product_id: productId,
-  source: "meta_no_data",
-  keyword,
-  period_date: today,
-  metadata: { suggestions, attempted_cascade: [...] }
-});
+Cada linha vira:
+```
+#1  [thumb 36px] Calça Legging…      29.0%  ↗
+                R$ 39,90 · custo R$ 18  R$ 11,52
+                ━━━━━━━━━━━━━━━━━░░ (barra de margem)
 ```
 
-Garante `hasData = true` no front, permitindo mostrar aviso + sugestões. Requer adicionar `'meta_no_data'` ao constraint `product_trends_source_check` via migração.
+- Thumbnail pequeno do produto (já tem `ProductThumbnail`)
+- Nome truncado + preço/custo na sub-linha
+- Margem grande à direita com seta
+- **Barra horizontal proporcional** mostrando margem vs meta
+- Click → navega pra `/products/:id` (já existe pattern)
+- Top 3 ganham destaque visual (`bg-primary/5`)
 
-### 3. Frontend: melhorar fallback no `useProductTrend` (`useProductTrend.ts`)
+### S6 — Mobile-first refinado
 
-Mesmo que `hasData=false`, se o último `refresh()` retornou `lowQuality=true` ou `suggestions.length > 0`, **renderizar o aviso de low_quality em vez do card vazio**. Hoje o `if (!hasData)` precede o aviso de low_quality e ganha sempre.
-
-Solução: trocar a condição em `ProductTrendTab` linha 91:
-```tsx
-if (!loading && !hasData && !refreshing && !lowQuality && suggestions.length === 0) {
-  // estado vazio inicial
-}
-```
-E mover o bloco de "low_quality + suggestions" pra antes do bloco vazio (ou renderizar sempre que `lowQuality` for true, com layout simplificado quando não tem `keyword`).
-
-### 4. Frontend: sticky button "Tentar termo mais genérico"
-
-No aviso de `lowQuality`, adicionar botão extra destacado: **"Tentar 'vestido feminino'"** (a versão simplificada vinda do backend como `auto_simplified` na resposta). Um clique já reanalisa.
+- Hero: `grid-cols-2 gap-2`, padding reduzido
+- Charts: 1 coluna empilhada
+- Ranking: thumb 32px, fontes menores
+- Sticky header dos filtros (igual TabsList) `sticky top-0` opcional
 
 ## Arquivos a alterar
 
 | Arquivo | Mudança |
 |---|---|
-| `supabase/functions/fetch-product-trends/index.ts` | Função `buildKeywordCascade`, loop tentando cada variação, persistir marker `meta_no_data`, retornar `suggestions` mesmo quando dados parciais |
-| Nova migração | Adicionar `'meta_no_data'` ao `product_trends_source_check` |
-| `src/hooks/useProductTrend.ts` | Persistir `suggestions/lowQuality/keyword` mesmo quando `loadFromDb()` retorna vazio; expor `attemptedCascade` |
-| `src/components/products/trend/ProductTrendTab.tsx` | Reordenar guards: aviso `lowQuality` > estado vazio inicial; botão "tentar termo simplificado" |
+| `src/pages/Products.tsx` | Reescrever conteúdo da aba `analysis`: hero 4 tiles, busca+filtros+sort, ranking aprimorado, remover card resumo redundante |
+| `src/components/charts/AnalyticsCharts.tsx` | Trocar `glass-card` → `surface-card`, `MarginDistributionChart` virar stack bar, alturas reduzidas, cores semânticas |
+
+Sem novos arquivos. Sem mudança de lógica/cálculos.
 
 ## Trade-offs
 
-- ✅ Resolve **o bug central** (usuário some sem feedback)
-- ✅ Recupera ~70% dos produtos hoje "sem dados" automaticamente via cascata
-- ✅ Sem mudança de UX visual: só preenche o que faltava
-- ⚠️ Cascata adiciona até 2 chamadas extras ao Google Trends (latência: +6-15s no pior caso) — mitigado por: parar na primeira que funcionar + cookies cacheados
-- ⚠️ Risco de rate-limit aumenta levemente; já temos retry com backoff
-- ⚠️ Marker `meta_no_data` adiciona linha "lixo" ao banco — limpamos no próximo refresh bem-sucedido (delete antes do insert já existe no fluxo)
+- ✅ Visual unificado com ProductDetail (filosofia Claude Designer)
+- ✅ Busca + filtros por status resolvem o problema de "não acho meu produto" com 32+ itens
+- ✅ Stack bar substitui pizza (mais legível em mobile estreito)
+- ✅ Ranking com barra visual mostra margem vs meta de forma instantânea
+- ⚠️ Remover "Resumo de Performance" pode incomodar usuários acostumados — mitigado pelos 4 tiles + destaques de melhor/pior produto
+- ⚠️ Adicionar busca/filtros adiciona ~80px de altura — vale pela funcionalidade
 
