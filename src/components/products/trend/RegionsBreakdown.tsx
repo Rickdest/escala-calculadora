@@ -11,7 +11,7 @@ export function RegionsBreakdown({ regions }: RegionsBreakdownProps) {
   const max = Math.max(...top.map((r) => r.value), 1);
 
   return (
-    <div className="surface-card p-5">
+    <div className="surface-card p-4 sm:p-5">
       <div className="flex items-center gap-2 mb-1">
         <MapPin className="w-4 h-4 text-primary" />
         <p className="section-label">Onde mais procuram</p>

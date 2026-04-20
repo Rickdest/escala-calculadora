@@ -30,7 +30,7 @@ export function SeasonalCycleChart({ cycle }: SeasonalCycleChartProps) {
     .map((c) => c.month);
 
   return (
-    <div className="surface-card p-5">
+    <div className="surface-card p-4 sm:p-5">
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-primary" />

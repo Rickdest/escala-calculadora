@@ -692,6 +692,12 @@ Deno.serve(async (req) => {
       relatedRisingOut = trendsResult.relatedRising;
       regionsOut = trendsResult.regions;
 
+      // Se timeline veio vazia, marca como baixa qualidade pra disparar sugestões
+      if (trendsData.length === 0) {
+        lowQuality = true;
+        zerosPct = 100;
+      }
+
       if (trendsData.length > 0) {
         // Detecta baixa qualidade (>80% zeros)
         const zeros = trendsData.filter((p) => p.interest_score === 0).length;

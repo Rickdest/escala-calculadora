@@ -138,12 +138,12 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
       {/* Header com termo + editor + refresh */}
-      <div className="flex items-start justify-between gap-3 flex-wrap">
+      <div className="flex items-start justify-between gap-2 sm:gap-3 flex-wrap">
         <div className="min-w-0 flex-1">
           {editing ? (
-            <div className="flex items-center gap-2 max-w-md">
+            <div className="flex items-center gap-2 w-full sm:max-w-md">
               <Input
                 autoFocus
                 value={draftKeyword}
@@ -153,20 +153,20 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
                   if (e.key === "Escape") cancelEdit();
                 }}
                 placeholder="Ex: vestido longo feminino"
-                className="h-9 text-sm"
+                className="h-9 text-sm flex-1 min-w-0"
                 maxLength={100}
               />
               <button
                 onClick={saveEdit}
                 disabled={!draftKeyword.trim() || refreshing}
-                className="h-9 w-9 inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                className="h-9 w-9 inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 shrink-0"
                 title="Reanalisar"
               >
                 <Check className="w-4 h-4" />
               </button>
               <button
                 onClick={cancelEdit}
-                className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-secondary"
+                className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-secondary shrink-0"
                 title="Cancelar"
               >
                 <X className="w-4 h-4" />
@@ -178,7 +178,7 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <p className="text-small text-muted-foreground">
                     Termo analisado:{" "}
-                    <span className="font-semibold text-foreground">{keyword}</span>
+                    <span className="font-semibold text-foreground break-all">{keyword}</span>
                   </p>
                   {keywordOverride && (
                     <span className="text-micro text-primary bg-primary/10 px-1.5 py-0.5 rounded">
@@ -202,14 +202,16 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
             </>
           )}
         </div>
-        <button
-          onClick={() => refresh(true)}
-          disabled={refreshing || editing}
-          className="h-9 px-3 rounded-lg border border-border text-small text-muted-foreground hover:bg-secondary transition-colors inline-flex items-center gap-1.5 shrink-0"
-        >
-          {refreshing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-          Atualizar
-        </button>
+        {!editing && (
+          <button
+            onClick={() => refresh(true)}
+            disabled={refreshing}
+            className="h-9 px-3 rounded-lg border border-border text-small text-muted-foreground hover:bg-secondary transition-colors inline-flex items-center gap-1.5 shrink-0"
+          >
+            {refreshing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">Atualizar</span>
+          </button>
+        )}
       </div>
 
       {/* Aviso de baixa qualidade + sugestões */}
@@ -253,7 +255,7 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
 
       {/* Diagnóstico — cards de insight */}
       {diagnostic && !lowQuality && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
           <div className="surface-card p-4">
             <div className="flex items-center gap-2 mb-1">
               {diagnostic.direction === "up" && <TrendingUp className="w-4 h-4 text-success" />}
@@ -313,6 +315,30 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
         </div>
       )}
 
+      {/* Estado: termo sem dados no Google Trends mas com related/shopee */}
+      {googleSeries.length === 0 && !lowQuality && hasData && (
+        <div className="surface-card p-4 sm:p-5 border-warning/30 bg-warning/5">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground mb-1">
+                Sem timeline disponível para "{keyword}"
+              </p>
+              <p className="text-small text-muted-foreground mb-2">
+                O Google Trends não retornou histórico pra esse termo. Tente um termo mais genérico ou use uma das sugestões abaixo.
+              </p>
+              <button
+                onClick={startEdit}
+                className="text-small text-primary hover:underline inline-flex items-center gap-1"
+              >
+                <Pencil className="w-3 h-3" />
+                Editar termo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Gráfico Google Trends 5 anos — esconde se baixa qualidade */}
       {googleSeries.length > 0 && !lowQuality && (() => {
         const validValues = googleSeries
@@ -335,7 +361,7 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
         };
 
         return (
-          <div className="surface-card p-5">
+          <div className="surface-card p-4 sm:p-5">
             <div className="flex items-start justify-between mb-1 gap-3 flex-wrap">
               <div>
                 <p className="section-label">Interesse de busca — Google</p>
@@ -354,7 +380,7 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
                 </div>
               </div>
             </div>
-            <div className="h-64 mt-3">
+            <div className="h-56 sm:h-64 mt-3 -ml-2 sm:ml-0">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={googleSeries} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                   <defs>
@@ -449,7 +475,7 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
 
       {/* Ciclo sazonal + Regiões — lado a lado em md+ */}
       {!lowQuality && (seasonalCycle.length > 0 || regions.length > 0) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {seasonalCycle.length > 0 && <SeasonalCycleChart cycle={seasonalCycle} />}
           {regions.length > 0 && <RegionsBreakdown regions={regions} />}
         </div>
@@ -458,10 +484,10 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
 
       {/* Oportunidades de mercado — buscas relacionadas (top + rising) */}
       {(relatedRising.length > 0 || relatedTop.length > 0) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {/* Em alta agora (rising) */}
           {relatedRising.length > 0 && (
-            <div className="surface-card p-5">
+            <div className="surface-card p-4 sm:p-5">
               <div className="flex items-center gap-2 mb-3">
                 <div className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-destructive/10">
                   <Zap className="w-4 h-4 text-destructive" />
@@ -517,7 +543,7 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
 
           {/* Buscas populares (top) */}
           {relatedTop.length > 0 && (
-            <div className="surface-card p-5">
+            <div className="surface-card p-4 sm:p-5">
               <div className="flex items-center gap-2 mb-3">
                 <div className="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10">
                   <Search className="w-4 h-4 text-primary" />
@@ -566,7 +592,7 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
 
       {/* Top keywords Shopee */}
       {shopeeKeywords.length > 0 && (
-        <div className="surface-card p-5">
+        <div className="surface-card p-4 sm:p-5">
           <p className="section-label mb-3">Palavras-chave Shopee — volume real</p>
           <div className="space-y-1.5">
             {shopeeKeywords.slice(0, 10).map((kw, i) => {
@@ -574,19 +600,19 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
               return (
                 <div
                   key={`${kw.keyword}-${i}`}
-                  className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-0"
+                  className="flex items-center justify-between gap-2 sm:gap-3 py-2 border-b border-border last:border-0"
                 >
-                  <span className="text-sm text-foreground truncate flex-1">
+                  <span className="text-sm text-foreground truncate flex-1 min-w-0">
                     {kw.keyword}
                   </span>
-                  <span className={cn("text-micro font-semibold px-2 py-0.5 rounded-full border", cls.cls)}>
+                  <span className={cn("text-micro font-semibold px-2 py-0.5 rounded-full border shrink-0 hidden sm:inline-block", cls.cls)}>
                     {cls.label}
                   </span>
-                  <span className="font-mono text-small text-muted-foreground w-16 text-right">
+                  <span className="font-mono text-small text-muted-foreground w-12 sm:w-16 text-right shrink-0">
                     {fmtNumber(kw.search_volume)}
                   </span>
                   {kw.suggested_bid > 0 && (
-                    <span className="font-mono text-small text-primary w-14 text-right">
+                    <span className="font-mono text-small text-primary w-14 text-right shrink-0">
                       R${kw.suggested_bid.toFixed(2)}
                     </span>
                   )}
