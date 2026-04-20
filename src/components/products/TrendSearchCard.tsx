@@ -179,6 +179,15 @@ export function TrendSearchCard({
     clear();
   };
 
+  // Auto-search no mount quando initialKeyword é fornecido
+  useEffect(() => {
+    const kw = initialKeyword?.trim();
+    if (!kw) return;
+    setInput(kw);
+    search(kw, { timeframe: "today 5-y", compareKeywords: [] });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialKeyword]);
+
   const handleTimeframeChange = (tf: Timeframe) => {
     if (tf === timeframe) return;
     setTimeframe(tf);
