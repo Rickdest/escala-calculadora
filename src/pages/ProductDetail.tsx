@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Trash2, Share2, Package, Pencil, MoreVertical, Wallet, Target,
@@ -96,12 +96,12 @@ export default function ProductDetail() {
     margin: calculation.realMargin,
   };
 
-  const statusBadge = useMemo(() => {
+  const statusBadge = (() => {
     if (calculation.realMargin < 0) return { text: '✕ Prejuízo', cls: 'bg-destructive/10 text-destructive border-destructive/30' };
     if (calculation.realMargin < 10) return { text: '⚠ Atenção', cls: 'bg-warning/10 text-warning border-warning/30' };
     const diff = marginDiff >= 0 ? `+${marginDiff.toFixed(1)}` : marginDiff.toFixed(1);
     return { text: `✓ ${status.label} · ${diff}% vs meta`, cls: 'bg-success/10 text-success border-success/30' };
-  }, [calculation.realMargin, marginDiff, status.label]);
+  })();
 
   // Estoque: estimativa de dias (usa monthlySales como proxy)
   const dailySales = monthlySales / 30;
