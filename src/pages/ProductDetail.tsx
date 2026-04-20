@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Trash2, Share2, Package, Pencil, MoreVertical, Wallet, Target, BarChart3, Boxes } from 'lucide-react';
+import { ArrowLeft, Trash2, Share2, Package, Pencil, MoreVertical, Wallet, Target, BarChart3, Boxes, TrendingUp } from 'lucide-react';
 import { useStore } from '@/contexts/StoreContext';
 import { getShopeeFeeForPrice } from '@/types/store';
 import { calcFullRoas } from '@/lib/roasUtils';
@@ -9,6 +9,8 @@ import { Slider } from '@/components/ui/slider';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { calcOutrosCanais } from '@/lib/outrosCanaisUtils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ProductTrendTab } from '@/components/products/trend/ProductTrendTab';
 import {
   DropdownMenu,
   DropdownMenuContent,
