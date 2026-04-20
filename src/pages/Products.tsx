@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Search, SlidersHorizontal, Package, TrendingUp, TrendingDown, Percent, DollarSign, Download, FileSpreadsheet, FileText, ArrowUpDown, ChevronRight, ShoppingBag, Loader2, AlertCircle, Target, Trophy, AlertTriangle, Sparkles, ChevronDown, BarChart3 } from 'lucide-react';
+import { Plus, Search, SlidersHorizontal, Package, TrendingUp, TrendingDown, Percent, DollarSign, Download, FileSpreadsheet, FileText, ArrowUpDown, ChevronRight, ShoppingBag, Loader2, AlertCircle, Target, Trophy, AlertTriangle, Sparkles, ChevronDown, BarChart3, ArrowRight, LineChart } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useProductAdsMetrics } from '@/hooks/useProductAdsMetrics';
 import { useStore } from '@/contexts/StoreContext';
@@ -477,57 +477,91 @@ export default function Products() {
                   </div>
                 </div>
 
-                {/* Pesquisar tendência (colapsável com CTA destacado) */}
-                <Collapsible open={trendOpen} onOpenChange={setTrendOpen}>
-                  <div className={cn(
-                    "rounded-xl overflow-hidden transition-all",
-                    trendOpen
-                      ? "border border-primary/30 bg-gradient-to-r from-primary/[0.04] to-transparent"
-                      : "border border-primary/30 bg-gradient-to-br from-primary/[0.08] via-card to-card hover:border-primary/50 hover:from-primary/[0.12] shadow-sm",
-                  )}>
-                    <CollapsibleTrigger asChild>
-                      <button
-                        type="button"
-                        className="w-full flex items-center gap-3 p-4 text-left group"
-                      >
-                        <div className={cn(
-                          "w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform",
-                          trendOpen
-                            ? "bg-primary/15 border border-primary/30"
-                            : "bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/30 group-hover:scale-105",
-                        )}>
-                          <Sparkles className={cn("w-5 h-5", trendOpen ? "text-primary" : "text-primary")} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="text-sm font-bold text-foreground">
-                              Descobrir produtos vencedores
+                {/* Pesquisa de mercado — ferramenta SaaS profissional */}
+                <div className="space-y-4">
+                  <div className="flex items-end justify-between gap-2">
+                    <div>
+                      <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+                        <LineChart className="w-4 h-4 text-primary" />
+                        Pesquisa de mercado
+                      </h2>
+                      <p className="text-[11px] text-text-3 mt-1">Avalie o potencial de qualquer produto antes de cadastrar</p>
+                    </div>
+                    <span className="text-[10px] font-medium uppercase tracking-wider px-2 py-0.5 rounded-full bg-surface-2 text-text-3 border border-border/50">
+                      Ferramenta
+                    </span>
+                  </div>
+
+                  <Collapsible open={trendOpen} onOpenChange={setTrendOpen}>
+                    <div
+                      className={cn(
+                        "group rounded-2xl bg-card overflow-hidden transition-all duration-200",
+                        trendOpen
+                          ? "border border-border"
+                          : "border border-border hover:border-primary/40 hover:bg-card-hover",
+                      )}
+                    >
+                      <CollapsibleTrigger asChild>
+                        <button
+                          type="button"
+                          className={cn(
+                            "w-full flex items-center gap-3 sm:gap-4 px-4 text-left",
+                            trendOpen ? "py-3" : "py-3.5",
+                          )}
+                        >
+                          {/* Ícone sutil */}
+                          <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+                            <Search className="w-[18px] h-[18px] text-primary" strokeWidth={2.25} />
+                          </div>
+
+                          {/* Conteúdo central */}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground leading-tight">
+                              Pesquisar tendência de mercado
                             </p>
                             {!trendOpen && (
-                              <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-primary/15 text-primary border border-primary/20">
-                                Ferramenta
-                              </span>
+                              <>
+                                <p className="text-[11px] text-text-3 mt-0.5 leading-snug hidden sm:block">
+                                  Descubra se um produto vale a pena antes de cadastrar
+                                </p>
+                                {/* Chips de features */}
+                                <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-surface-2 text-text-2 border border-border/60">
+                                    Demanda 12m
+                                  </span>
+                                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-surface-2 text-text-2 border border-border/60">
+                                    Sazonalidade
+                                  </span>
+                                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-surface-2 text-text-2 border border-border/60 hidden sm:inline-block">
+                                    Regiões
+                                  </span>
+                                </div>
+                              </>
                             )}
                           </div>
-                          <p className="text-[11px] text-text-2 mt-0.5 leading-snug">
-                            Pesquise demanda, sazonalidade e concorrência antes de cadastrar
-                          </p>
-                        </div>
-                        <ChevronDown
-                          className={cn(
-                            "w-5 h-5 text-text-3 transition-transform flex-shrink-0",
-                            trendOpen && "rotate-180 text-primary",
+
+                          {/* CTA ou chevron */}
+                          {trendOpen ? (
+                            <ChevronDown className="w-5 h-5 text-text-3 transition-transform rotate-180 flex-shrink-0" />
+                          ) : (
+                            <>
+                              <span className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-primary group-hover:gap-1.5 transition-all flex-shrink-0">
+                                Pesquisar
+                                <ArrowRight className="w-3.5 h-3.5" />
+                              </span>
+                              <ChevronDown className="w-5 h-5 text-text-3 sm:hidden flex-shrink-0" />
+                            </>
                           )}
-                        />
-                      </button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="border-t border-border p-3.5">
-                        <TrendSearchCard hideOuterBorder hideHeader />
-                      </div>
-                    </CollapsibleContent>
-                  </div>
-                </Collapsible>
+                        </button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <div className="border-t border-border/60 p-3.5 sm:p-4">
+                          <TrendSearchCard hideOuterBorder hideHeader />
+                        </div>
+                      </CollapsibleContent>
+                    </div>
+                  </Collapsible>
+                </div>
 
                 {/* Ranking section */}
                 <div className="space-y-3">
