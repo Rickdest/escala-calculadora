@@ -190,201 +190,218 @@ export default function ProductDetail() {
           </span>
         </div>
 
-        {/* Hero Metrics — 4 KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5 md:mb-6">
-          <div className="surface-card p-4">
-            <p className={cn('font-mono text-2xl md:text-2xl font-bold', calculation.netProfit >= 0 ? 'text-success' : 'text-destructive')}>
-              {fmt(calculation.netProfit)}
-            </p>
-            <p className="label-metric mt-1">Lucro/un</p>
-          </div>
-          <div className={cn('surface-card p-4 border-l-2',
-            calculation.realMargin < 0 ? 'border-l-destructive' :
-            calculation.realMargin < 10 ? 'border-l-warning' : 'border-l-success'
-          )}>
-            <p className={cn('font-mono text-2xl md:text-2xl font-bold', status.color)}>
-              {calculation.realMargin.toFixed(1)}%
-            </p>
-            <p className="label-metric mt-1">Margem real</p>
-          </div>
-          <div className="surface-card p-4">
-            <p className={cn('font-mono text-2xl md:text-2xl font-bold', marginDiff >= 0 ? 'text-primary' : 'text-destructive')}>
-              {marginDiff >= 0 ? '+' : ''}{marginDiff.toFixed(1)}%
-            </p>
-            <p className="label-metric mt-1">vs Meta {config.desiredMargin}%</p>
-          </div>
-          <div className="surface-card p-4">
-            <p className={cn('font-mono text-2xl md:text-2xl font-bold', roas.roasEmpate ? 'text-foreground' : 'text-muted-foreground/50')}>
-              {roas.roasEmpate ? `${roas.roasEmpate.toFixed(2)}x` : '—'}
-            </p>
-            <p className="label-metric mt-1">ROAS empate</p>
-          </div>
-        </div>
+        <Tabs defaultValue="analise" className="w-full">
+          <TabsList className="bg-secondary/50 border border-border h-10 mb-5">
+            <TabsTrigger value="analise" className="text-sm data-[state=active]:bg-background">
+              <BarChart3 className="w-3.5 h-3.5 mr-1.5" /> Análise
+            </TabsTrigger>
+            <TabsTrigger value="tendencia" className="text-sm data-[state=active]:bg-background">
+              <TrendingUp className="w-3.5 h-3.5 mr-1.5" /> Tendência
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Grid 2 colunas */}
-        <div className="grid md:grid-cols-2 gap-5 mb-5">
-          {/* Coluna esquerda — Breakdown */}
-          <div className="surface-card p-5">
-            <p className="section-label mb-3 flex items-center gap-2">
-              <Wallet className="w-4 h-4 text-primary" />
-              Breakdown de Custos
-            </p>
-            <div className="space-y-1">
-              {costItems.map((item, i) => (
-                <div key={i} className="flex items-center justify-between py-1.5">
-                  <span className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <span className={cn('w-2 h-2 rounded-full', item.dot)} />
-                    {item.label}
-                  </span>
-                  <span className={cn('font-mono text-sm font-medium', item.value > 0 ? 'text-foreground' : 'text-muted-foreground/50')}>
-                    {item.value > 0 ? fmt(item.value) : '—'}
-                  </span>
-                </div>
-              ))}
+          <TabsContent value="analise" className="mt-0 space-y-5">
+            {/* Hero Metrics — 4 KPIs */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="surface-card p-4">
+                <p className={cn('font-mono text-2xl md:text-2xl font-bold', calculation.netProfit >= 0 ? 'text-success' : 'text-destructive')}>
+                  {fmt(calculation.netProfit)}
+                </p>
+                <p className="label-metric mt-1">Lucro/un</p>
+              </div>
+              <div className={cn('surface-card p-4 border-l-2',
+                calculation.realMargin < 0 ? 'border-l-destructive' :
+                calculation.realMargin < 10 ? 'border-l-warning' : 'border-l-success'
+              )}>
+                <p className={cn('font-mono text-2xl md:text-2xl font-bold', status.color)}>
+                  {calculation.realMargin.toFixed(1)}%
+                </p>
+                <p className="label-metric mt-1">Margem real</p>
+              </div>
+              <div className="surface-card p-4">
+                <p className={cn('font-mono text-2xl md:text-2xl font-bold', marginDiff >= 0 ? 'text-primary' : 'text-destructive')}>
+                  {marginDiff >= 0 ? '+' : ''}{marginDiff.toFixed(1)}%
+                </p>
+                <p className="label-metric mt-1">vs Meta {config.desiredMargin}%</p>
+              </div>
+              <div className="surface-card p-4">
+                <p className={cn('font-mono text-2xl md:text-2xl font-bold', roas.roasEmpate ? 'text-foreground' : 'text-muted-foreground/50')}>
+                  {roas.roasEmpate ? `${roas.roasEmpate.toFixed(2)}x` : '—'}
+                </p>
+                <p className="label-metric mt-1">ROAS empate</p>
+              </div>
             </div>
-            <div className="border-t border-border pt-3 mt-3 flex justify-between">
-              <span className="text-sm font-semibold text-foreground">Total de custos</span>
-              <span className="font-mono text-sm font-bold text-destructive">{fmt(calculation.totalCosts)}</span>
-            </div>
-          </div>
 
-          {/* Coluna direita — ROAS + Canais + Estoque */}
-          <div className="flex flex-col gap-5">
-            {/* ROAS */}
-            {!roas.margemInsuficiente && roas.roasEmpate && (
+            {/* Grid 2 colunas */}
+            <div className="grid md:grid-cols-2 gap-5">
+              {/* Coluna esquerda — Breakdown */}
               <div className="surface-card p-5">
                 <p className="section-label mb-3 flex items-center gap-2">
-                  <Target className="w-4 h-4 text-primary" />
-                  ROAS de Referência (Ads)
+                  <Wallet className="w-4 h-4 text-primary" />
+                  Breakdown de Custos
                 </p>
-                <div className="space-y-2.5">
-                  {[
-                    { label: 'Ponto de empate', value: roas.roasEmpate, color: 'text-destructive', bg: 'bg-destructive', w: 30 },
-                    { label: 'Saudável', value: roas.roasSaudavel, color: 'text-warning', bg: 'bg-warning', w: 50 },
-                    { label: 'Ideal', value: roas.roasIdeal, color: 'text-success', bg: 'bg-success', w: 77 },
-                  ].map((row) => row.value != null && (
-                    <div key={row.label} className="flex items-center gap-3">
-                      <span className="text-sm text-muted-foreground w-32 shrink-0">{row.label}</span>
-                      <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
-                        <div className={cn('h-full rounded-full', row.bg)} style={{ width: `${row.w}%` }} />
-                      </div>
-                      <span className={cn('font-mono text-sm font-bold w-12 text-right', row.color)}>
-                        {row.value.toFixed(2)}
+                <div className="space-y-1">
+                  {costItems.map((item, i) => (
+                    <div key={i} className="flex items-center justify-between py-1.5">
+                      <span className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span className={cn('w-2 h-2 rounded-full', item.dot)} />
+                        {item.label}
+                      </span>
+                      <span className={cn('font-mono text-sm font-medium', item.value > 0 ? 'text-foreground' : 'text-muted-foreground/50')}>
+                        {item.value > 0 ? fmt(item.value) : '—'}
                       </span>
                     </div>
                   ))}
                 </div>
+                <div className="border-t border-border pt-3 mt-3 flex justify-between">
+                  <span className="text-sm font-semibold text-foreground">Total de custos</span>
+                  <span className="font-mono text-sm font-bold text-destructive">{fmt(calculation.totalCosts)}</span>
+                </div>
               </div>
-            )}
 
-            {/* Canais */}
-            <div className="surface-card p-5 order-2 md:order-none">
-              <p className="section-label mb-3 flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-primary" />
-                Comparativo de Canais
-              </p>
-              {hasOutrosCanais ? (
-                <>
-                  <div className="grid grid-cols-2 gap-2">
-                    {allChannels.map(c => (
-                      <div key={c.key} className={cn(
-                        'bg-secondary/50 border rounded-lg px-3 py-2.5 flex items-center justify-between',
-                        c.key === bestChannel?.key ? 'border-primary/25' : 'border-border'
-                      )}>
-                        <span className="text-small text-muted-foreground flex items-center gap-1">
-                          {c.key === bestChannel?.key && <span className="text-primary text-micro">🏆</span>}
-                          {c.label}
-                        </span>
-                        <span className={cn('font-mono text-small font-bold',
-                          c.margin >= config.desiredMargin ? 'text-success' :
-                          c.margin >= 0 ? 'text-foreground' : 'text-destructive'
-                        )}>
-                          {c.margin.toFixed(1)}%
-                        </span>
-                      </div>
-                    ))}
+              {/* Coluna direita — ROAS + Canais + Estoque */}
+              <div className="flex flex-col gap-5">
+                {/* ROAS */}
+                {!roas.margemInsuficiente && roas.roasEmpate && (
+                  <div className="surface-card p-5">
+                    <p className="section-label mb-3 flex items-center gap-2">
+                      <Target className="w-4 h-4 text-primary" />
+                      ROAS de Referência (Ads)
+                    </p>
+                    <div className="space-y-2.5">
+                      {[
+                        { label: 'Ponto de empate', value: roas.roasEmpate, color: 'text-destructive', bg: 'bg-destructive', w: 30 },
+                        { label: 'Saudável', value: roas.roasSaudavel, color: 'text-warning', bg: 'bg-warning', w: 50 },
+                        { label: 'Ideal', value: roas.roasIdeal, color: 'text-success', bg: 'bg-success', w: 77 },
+                      ].map((row) => row.value != null && (
+                        <div key={row.label} className="flex items-center gap-3">
+                          <span className="text-sm text-muted-foreground w-32 shrink-0">{row.label}</span>
+                          <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
+                            <div className={cn('h-full rounded-full', row.bg)} style={{ width: `${row.w}%` }} />
+                          </div>
+                          <span className={cn('font-mono text-sm font-bold w-12 text-right', row.color)}>
+                            {row.value.toFixed(2)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  {bestChannel && bestChannel.key !== 'shopee' && (
-                    <div className="mt-3 bg-secondary/30 border border-border rounded-lg p-3">
-                      <p className="text-small font-semibold text-foreground">{bestChannel.label} — {bestChannel.margin.toFixed(1)}% de margem</p>
-                      <p className="text-small text-muted-foreground mt-0.5">
-                        {fmt(bestChannel.netProfit - calculation.netProfit)}/un a mais que na Shopee
+                )}
+
+                {/* Canais */}
+                <div className="surface-card p-5 order-2 md:order-none">
+                  <p className="section-label mb-3 flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4 text-primary" />
+                    Comparativo de Canais
+                  </p>
+                  {hasOutrosCanais ? (
+                    <>
+                      <div className="grid grid-cols-2 gap-2">
+                        {allChannels.map(c => (
+                          <div key={c.key} className={cn(
+                            'bg-secondary/50 border rounded-lg px-3 py-2.5 flex items-center justify-between',
+                            c.key === bestChannel?.key ? 'border-primary/25' : 'border-border'
+                          )}>
+                            <span className="text-small text-muted-foreground flex items-center gap-1">
+                              {c.key === bestChannel?.key && <span className="text-primary text-micro">🏆</span>}
+                              {c.label}
+                            </span>
+                            <span className={cn('font-mono text-small font-bold',
+                              c.margin >= config.desiredMargin ? 'text-success' :
+                              c.margin >= 0 ? 'text-foreground' : 'text-destructive'
+                            )}>
+                              {c.margin.toFixed(1)}%
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      {bestChannel && bestChannel.key !== 'shopee' && (
+                        <div className="mt-3 bg-secondary/30 border border-border rounded-lg p-3">
+                          <p className="text-small font-semibold text-foreground">{bestChannel.label} — {bestChannel.margin.toFixed(1)}% de margem</p>
+                          <p className="text-small text-muted-foreground mt-0.5">
+                            {fmt(bestChannel.netProfit - calculation.netProfit)}/un a mais que na Shopee
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="bg-secondary/30 border border-dashed border-border rounded-lg p-4 text-center">
+                      <p className="text-small text-muted-foreground mb-2">
+                        Nenhum outro canal cadastrado para este produto.
                       </p>
+                      <button
+                        onClick={() => setShowProductForm(true)}
+                        className="text-small font-semibold text-primary hover:text-primary/80 transition-colors"
+                      >
+                        Preencher "Outros Canais" →
+                      </button>
                     </div>
                   )}
-                </>
-              ) : (
-                <div className="bg-secondary/30 border border-dashed border-border rounded-lg p-4 text-center">
-                  <p className="text-small text-muted-foreground mb-2">
-                    Nenhum outro canal cadastrado para este produto.
-                  </p>
-                  <button
-                    onClick={() => setShowProductForm(true)}
-                    className="text-small font-semibold text-primary hover:text-primary/80 transition-colors"
-                  >
-                    Preencher "Outros Canais" →
-                  </button>
                 </div>
-              )}
+
+                {/* Estoque */}
+                <div className={cn(
+                  'surface-card p-5 border order-1 md:order-none',
+                  stockLow ? 'border-warning/40' : 'border-border'
+                )}>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="section-label flex items-center gap-2">
+                      <Boxes className="w-4 h-4 text-primary" />
+                      Estoque
+                    </p>
+                    {stockLow && (
+                      <span className="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/30">
+                        ⚠ Reposição
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-sm text-muted-foreground">Quantidade atual</span>
+                    <span className="font-mono text-2xl font-bold text-foreground">{product.stockQuantity} un.</span>
+                  </div>
+                  {stockLow && (
+                    <p className="text-small text-warning font-medium mt-2">
+                      Abaixo do mínimo ({product.minStockQuantity ?? 5} un.)
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
 
-            {/* Estoque */}
-            <div className={cn(
-              'surface-card p-5 border order-1 md:order-none',
-              stockLow ? 'border-warning/40' : 'border-border'
-            )}>
-              <div className="flex items-center justify-between mb-2">
-                <p className="section-label flex items-center gap-2">
-                  <Boxes className="w-4 h-4 text-primary" />
-                  Estoque
-                </p>
-                {stockLow && (
-                  <span className="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full bg-warning/10 text-warning border border-warning/30">
-                    ⚠ Reposição
-                  </span>
-                )}
+            {/* Projeção Mensal — full width */}
+            <div className="surface-card p-5">
+              <p className="section-label mb-3">Projeção Mensal</p>
+              <div className="flex items-center gap-3 mb-3">
+                <span className="text-sm text-muted-foreground flex-1">Vendas por mês</span>
+                <input value={monthlySales} onChange={e => setMonthlySales(Math.max(1, Math.min(1000, parseInt(e.target.value) || 1)))}
+                  type="number" className="w-16 h-9 bg-secondary border border-border rounded-lg text-center font-mono text-sm font-semibold text-primary outline-none" />
               </div>
-              <div className="flex items-baseline justify-between">
-                <span className="text-sm text-muted-foreground">Quantidade atual</span>
-                <span className="font-mono text-2xl font-bold text-foreground">{product.stockQuantity} un.</span>
+              <Slider value={[monthlySales]} onValueChange={([v]) => setMonthlySales(v)} min={1} max={1000} step={1} className="mb-4" />
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <div className="bg-secondary/50 border border-border rounded-lg p-3">
+                  <p className="font-mono text-base font-bold text-success">{fmt(projection.revenue)}</p>
+                  <p className="label-metric text-muted-foreground">Receita bruta</p>
+                </div>
+                <div className="bg-secondary/50 border border-border rounded-lg p-3">
+                  <p className="font-mono text-base font-bold text-destructive">{fmt(projection.costs)}</p>
+                  <p className="label-metric text-muted-foreground">Custos totais</p>
+                </div>
+                <div className="bg-secondary/50 border border-border rounded-lg p-3">
+                  <p className={cn('font-mono text-base font-bold', projection.profit >= 0 ? 'text-success' : 'text-destructive')}>{fmt(projection.profit)}</p>
+                  <p className="label-metric text-muted-foreground">Lucro mensal</p>
+                </div>
+                <div className="bg-secondary/50 border border-border rounded-lg p-3">
+                  <p className={cn('font-mono text-base font-bold', status.color)}>{projection.margin.toFixed(1)}%</p>
+                  <p className="label-metric text-muted-foreground">Margem</p>
+                </div>
               </div>
-              {stockLow && (
-                <p className="text-small text-warning font-medium mt-2">
-                  Abaixo do mínimo ({product.minStockQuantity ?? 5} un.)
-                </p>
-              )}
             </div>
-          </div>
-        </div>
+          </TabsContent>
 
-        {/* Projeção Mensal — full width */}
-        <div className="surface-card p-5">
-          <p className="section-label mb-3">Projeção Mensal</p>
-          <div className="flex items-center gap-3 mb-3">
-            <span className="text-sm text-muted-foreground flex-1">Vendas por mês</span>
-            <input value={monthlySales} onChange={e => setMonthlySales(Math.max(1, Math.min(1000, parseInt(e.target.value) || 1)))}
-              type="number" className="w-16 h-9 bg-secondary border border-border rounded-lg text-center font-mono text-sm font-semibold text-primary outline-none" />
-          </div>
-          <Slider value={[monthlySales]} onValueChange={([v]) => setMonthlySales(v)} min={1} max={1000} step={1} className="mb-4" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            <div className="bg-secondary/50 border border-border rounded-lg p-3">
-              <p className="font-mono text-base font-bold text-success">{fmt(projection.revenue)}</p>
-              <p className="label-metric text-muted-foreground">Receita bruta</p>
-            </div>
-            <div className="bg-secondary/50 border border-border rounded-lg p-3">
-              <p className="font-mono text-base font-bold text-destructive">{fmt(projection.costs)}</p>
-              <p className="label-metric text-muted-foreground">Custos totais</p>
-            </div>
-            <div className="bg-secondary/50 border border-border rounded-lg p-3">
-              <p className={cn('font-mono text-base font-bold', projection.profit >= 0 ? 'text-success' : 'text-destructive')}>{fmt(projection.profit)}</p>
-              <p className="label-metric text-muted-foreground">Lucro mensal</p>
-            </div>
-            <div className="bg-secondary/50 border border-border rounded-lg p-3">
-              <p className={cn('font-mono text-base font-bold', status.color)}>{projection.margin.toFixed(1)}%</p>
-              <p className="label-metric text-muted-foreground">Margem</p>
-            </div>
-          </div>
-        </div>
+          <TabsContent value="tendencia" className="mt-0">
+            <ProductTrendTab productId={product.id} productName={product.name} />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* CTA flutuante mobile-only — acima do BottomNavigation */}
