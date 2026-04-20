@@ -800,15 +800,18 @@ export function TrendSearchCard({
                       <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
                         <Lightbulb className="w-3.5 h-3.5 text-primary" />
                       </div>
-                      <p
-                        className="text-xs text-foreground leading-relaxed pt-0.5"
-                        dangerouslySetInnerHTML={{
-                          __html: actionInsight.replace(
-                            /\*\*(.+?)\*\*/g,
-                            '<strong class="font-bold text-foreground">$1</strong>',
-                          ),
-                        }}
-                      />
+                      <p className="text-xs text-foreground leading-relaxed pt-0.5">
+                        {actionInsight.split(/(\*\*[^*]+\*\*)/g).map((chunk, idx) => {
+                          if (chunk.startsWith('**') && chunk.endsWith('**')) {
+                            return (
+                              <strong key={idx} className="font-bold text-foreground">
+                                {chunk.slice(2, -2)}
+                              </strong>
+                            );
+                          }
+                          return <span key={idx}>{chunk}</span>;
+                        })}
+                      </p>
                     </div>
                   )}
 
