@@ -20,6 +20,17 @@ export type RelatedKeyword = {
   formattedValue: string;
 };
 
+export type RegionEntry = {
+  region: string;
+  value: number;
+};
+
+export type SeasonalMonth = {
+  month: number; // 1-12
+  avg: number; // 0-100
+  samples: number;
+};
+
 export type TrendDiagnostic = {
   direction: "up" | "down" | "stable";
   slopePct: number;
