@@ -390,6 +390,11 @@ async function fetchGoogleTrends(
     (w) => w.id === "RELATED_QUERIES" || (typeof w.id === "string" && w.id.startsWith("RELATED_QUERIES")),
   );
 
+  // GEO_MAP — interesse por região (estado)
+  const geoWidget = widgets.find(
+    (w) => w.id === "GEO_MAP" || (typeof w.id === "string" && w.id.startsWith("GEO_MAP")),
+  );
+
   // 1) Timeline
   const multiUrl = new URL(
     "https://trends.google.com/trends/api/widgetdata/multiline",
