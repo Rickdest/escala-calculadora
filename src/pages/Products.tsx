@@ -460,7 +460,7 @@ export default function Products() {
                       {stats.productsAboveTarget}
                       <span className="text-sm text-text-3 font-normal"> / {stats.totalProducts}</span>
                     </p>
-                    <div className="mt-2 h-2 bg-surface-3 rounded-full overflow-hidden border border-border/40">
+                    <div className="mt-2 h-2 bg-surface-2 rounded-full overflow-hidden border border-border/60">
                       <div
                         className="h-full rounded-full bg-gradient-to-r from-primary to-primary/70 transition-all"
                         style={{ width: `${stats.totalProducts > 0 ? Math.max(2, (stats.productsAboveTarget / stats.totalProducts) * 100) : 0}%` }}
@@ -495,7 +495,7 @@ export default function Products() {
                       {missingCost}
                       <span className="text-sm text-text-3 font-normal"> / {stats.totalProducts}</span>
                     </p>
-                    <div className="mt-2 h-2 bg-surface-3 rounded-full overflow-hidden border border-border/40">
+                    <div className="mt-2 h-2 bg-surface-2 rounded-full overflow-hidden border border-border/60">
                       <div
                         className={cn('h-full rounded-full transition-all', missingCost > 0 ? 'bg-gradient-to-r from-destructive to-destructive/70' : 'bg-success')}
                         style={{ width: missingCost > 0 ? `${Math.min(100, Math.max(2, (missingCost / Math.max(stats.totalProducts, 1)) * 100))}%` : '100%' }}
