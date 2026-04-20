@@ -592,7 +592,7 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
 
       {/* Top keywords Shopee */}
       {shopeeKeywords.length > 0 && (
-        <div className="surface-card p-5">
+        <div className="surface-card p-4 sm:p-5">
           <p className="section-label mb-3">Palavras-chave Shopee — volume real</p>
           <div className="space-y-1.5">
             {shopeeKeywords.slice(0, 10).map((kw, i) => {
@@ -600,19 +600,19 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
               return (
                 <div
                   key={`${kw.keyword}-${i}`}
-                  className="flex items-center justify-between gap-3 py-2 border-b border-border last:border-0"
+                  className="flex items-center justify-between gap-2 sm:gap-3 py-2 border-b border-border last:border-0"
                 >
-                  <span className="text-sm text-foreground truncate flex-1">
+                  <span className="text-sm text-foreground truncate flex-1 min-w-0">
                     {kw.keyword}
                   </span>
-                  <span className={cn("text-micro font-semibold px-2 py-0.5 rounded-full border", cls.cls)}>
+                  <span className={cn("text-micro font-semibold px-2 py-0.5 rounded-full border shrink-0 hidden sm:inline-block", cls.cls)}>
                     {cls.label}
                   </span>
-                  <span className="font-mono text-small text-muted-foreground w-16 text-right">
+                  <span className="font-mono text-small text-muted-foreground w-12 sm:w-16 text-right shrink-0">
                     {fmtNumber(kw.search_volume)}
                   </span>
                   {kw.suggested_bid > 0 && (
-                    <span className="font-mono text-small text-primary w-14 text-right">
+                    <span className="font-mono text-small text-primary w-14 text-right shrink-0">
                       R${kw.suggested_bid.toFixed(2)}
                     </span>
                   )}
