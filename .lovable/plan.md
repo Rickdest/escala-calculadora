@@ -1,109 +1,64 @@
 
 
-## Objetivo
+## Mudanças
 
-Aplicar na aba **Tendência do detalhe do produto** (`/products/:id`) o mesmo design e profundidade de insights que já está na **Análise de demanda** da aba Análise (`TrendSearchCard`).
+1. **Default 12m** em vez de 5y no `TrendSearchCard`
+2. **Polimento de layout** dos insights e header
 
-## Diagnóstico do que está diferente hoje
+### 1. Período padrão = 12m
 
-| Feature | Análise (TrendSearchCard) | Tendência do produto (ProductTrendTab) |
-|---|---|---|
-| Hero "Potencial de mercado 0-100" | ✅ | ❌ |
-| Grid 6 mini-cards (Tendência, Momento, Volatilidade, Mês atual, Vs ano passado, Próx 30d, Concorrência) | ✅ | ❌ (só 3 cards: Tend 90d, Pico, Próx pico) |
-| Banner de ação interpretado | ✅ | ❌ |
-| Chips de **período** (7d/30d/90d/12m/5y) | ✅ | ❌ (fixo em 5y) |
-| Comparativo multi-termo (até 5) | ✅ | ❌ |
-| Forecast 3m no gráfico | ✅ | ❌ |
-| Accordion **Cidades** lazy | ✅ | ❌ (só estados) |
-| Accordion **Países** lazy | ✅ | ❌ |
-| Categoria detectada (chip) | ✅ | ❌ |
-| Tooltip rico no chart | ✅ (formatter genérico) | ✅ (custom + vs média) |
-| Termos relacionados (rising/top) | ✅ | ✅ |
-| Ciclo sazonal + Regiões | ✅ | ✅ |
-| Editor de termo (override) | ❌ | ✅ |
-| Palavras-chave Shopee (volume real) | ❌ | ✅ |
-| Copys com "Google" | ❌ (limpo) | ⚠️ menciona "Google" 3x |
+`TrendSearchCard.tsx`:
+- `useState<Timeframe>("today 5-y")` → `useState<Timeframe>("today 12-m")`
+- Mesma mudança no auto-search inicial (quando `initialKeyword` dispara)
+- `useTrendSearch.ts`: default do `timeframe` em `search()` muda de `"today 5-y"` → `"today 12-m"`
 
-## Estratégia
+Trade-off: alguns insights só fazem sentido com 5y (ciclo sazonal completo, vsLastYear, vsAllTimePeak). Solução: o backend já calcula tudo a partir da série recebida — em 12m teremos ciclo parcial e `vsLastYear` pode ficar null. Ajustar UI pra **esconder cards que vierem null** (já tem essa lógica no grid, manter).
 
-A maneira mais segura e consistente é **reusar o `TrendSearchCard`** dentro da aba Tendência do produto, com 2 acoplamentos extras:
+### 2. Polimento de layout (baseado nos prints 259/260/261)
 
-1. **Pré-popula o input** com o termo do produto (`keyword` atual ou `productName`) e dispara busca automática no mount
-2. **Adiciona uma faixa de "termo do produto"** acima do card, com botão **"Personalizar termo"** (mantém o feature do override existente, persistindo em `products.trend_keyword_override`)
-3. **Mantém a seção "Palavras-chave Shopee — volume real"** abaixo (única funcionalidade que o card avulso não tem, vem de `shopee_ads_by_product`)
+**Header / faixa do termo (print 259)**
+- Hoje a faixa "Termo analisado: calça feminina [personalizado] [✏️]" + botão "Atualizar" estão soltos visualmente. Agrupar num **card sutil** (`surface-card-subtle p-3 rounded-lg`) com:
+  - Linha 1: ícone + "Termo analisado" label + valor + chip "personalizado" + lápis
+  - Linha 2: "Atualizado em..." em micro + botão Atualizar à direita alinhado
+- Remover o input "calça feminina [×] [Analisar]" duplicado quando `variant=embedded` — já temos a faixa do termo acima, o segundo input confunde. Deixar só um botão "Trocar termo de análise" discreto que abre input inline
 
-Isso entrega instantaneamente: hero score, 6 cards, período selector, comparativo, forecast, cidades, países, categoria, copys limpas. Sem duplicar código.
+**Hero "Potencial de mercado" (print 260)**
+- Hoje: número 49 grande + barra laranja + label "Mercado morno" no canto. Funciona mas pesado.
+- Melhorar:
+  - Layout horizontal mais compacto: `[gauge circular 64px] | número + label | barra fina | "estimativa composta" tooltip`
+  - Cor da barra/gauge dinâmica: vermelho <30, laranja 30-60, verde >60 (hoje é só laranja)
+  - Reduzir altura de ~120px → ~80px
 
-## Plano de implementação
+**Grid de 6 cards (print 260)**
+- Hoje: 3 colunas, cards meio largos, ícone+label+valor empilhados, alguns com border colorida outros não — inconsistente
+- Melhorar:
+  - Padronizar todos com `border` neutra + accent só no ícone (chip colorido 28px)
+  - 2 linhas: emoji/ícone com bg semântico à esquerda + label micro + valor h-bold à direita
+  - Adicionar 7º card "Próx pico sazonal" (mês com maior crescimento mês-a-mês — já temos `bestGrowthMonth` no backend)
 
-### 1. Generalizar `TrendSearchCard` aceitando props opcionais
+**Banner de ação (print 260)**
+- Hoje: faixa horizontal com ícone lâmpada + texto corrido. OK mas plain.
+- Melhorar: dividir em 2 partes — `[ícone gradient] | Diagnóstico (1ª frase em bold) + Ação recomendada (2ª frase muted)`. Adicionar borda sutil `border-l-2 border-primary/40`
 
-`src/components/products/TrendSearchCard.tsx`:
-- Aceitar props opcionais:
-  - `initialKeyword?: string` — pré-popula input e dispara busca no mount
-  - `variant?: "standalone" | "embedded"` — quando `embedded`, esconde o header "Análise de demanda / Descubra o potencial..." (já está no contexto do produto) e remove a borda lateral primária
-  - `extraFooter?: React.ReactNode` — slot pra renderizar a seção de palavras-chave Shopee abaixo dos accordions
-- `useEffect` no mount: se `initialKeyword`, set input + dispara `handleSubmit(initialKeyword)`
+**Gráfico (print 260)**
+- Hoje: bom, mas legenda do eixo X com `abr/25, mai/25...` repete demais (dezembro aparece 2x — bug de tick). Aumentar `minTickGap` em 12m de 25 → 35
+- Adicionar pequena legenda "média" perto da linha tracejada
 
-### 2. Refatorar `ProductTrendTab`
+**Ciclo sazonal + Onde mais procuram (print 261)**
+- Já bem desenhados, manter
+- Pequeno: o card "Ciclo sazonal" tem muito espaço vazio embaixo da legenda. Reduzir min-height ou alinhar melhor com o card vizinho via `grid-rows-[auto]`
 
-`src/components/products/trend/ProductTrendTab.tsx`:
-- Remover: header gigante, 3 cards de diagnóstico, gráfico custom, ciclo, regiões, cards de related (tudo migra pro `TrendSearchCard`)
-- **Manter**: estado de loading inicial / vazio / erro do hook `useProductTrend` (pra orquestrar o primeiro fetch persistido), aviso de baixa qualidade, editor de termo (override persistido)
-- Quando tiver `keyword`, renderizar:
-  ```
-  <FaixaTermoProduto 
-    keyword={keyword} 
-    keywordOverride={keywordOverride}
-    onEditTerm={...}
-    onRefresh={...}
-    lastCapture={...}
-  />
-  <TrendSearchCard 
-    initialKeyword={keyword}
-    variant="embedded"
-    extraFooter={shopeeKeywords.length > 0 ? <ShopeeKeywordsSection /> : null}
-  />
-  ```
-- O `ShopeeKeywordsSection` é um pequeno componente local que renderiza o bloco "Palavras-chave Shopee — volume real" já existente (reaproveita JSX das linhas 622–653)
-
-### 3. Limpar copys
-
-No `ProductTrendTab` (faixa do termo) e no aviso de baixa qualidade:
-- "O Google Trends não retornou histórico" → "Não encontramos histórico de demanda"
-- "Esse termo não retornou histórico no Google" → "Esse termo não tem histórico de demanda suficiente"
-- "Buscas crescendo no Google" (já no card antigo) → será substituído pelo `TrendSearchCard` que diz "Termos bombando"
-
-### 4. Pré-busca inteligente
-
-Quando o usuário entra na aba pela 1ª vez:
-- `useProductTrend` carrega do banco (cache 7d) — dá o `keyword` extraído + override
-- Assim que `keyword` está disponível, `TrendSearchCard` dispara busca automática usando esse termo
-- Resultado: usuário vê insights ricos imediatamente, sem precisar clicar "Analisar"
-
-Trade-off: 1 chamada extra ao Trends por visita (mitigado pelo cache em memória de 8 buscas do `useTrendSearch`)
-
-### 5. Sincronizar override
-
-Quando usuário edita o termo na faixa:
-- `setKeywordOverride(newTerm)` persiste em `products.trend_keyword_override` (já implementado)
-- Logo após, dispara `TrendSearchCard.search(newTerm)` pra atualizar os insights ricos
+**Cidades / Países accordions (print 261)**
+- Hoje: dois accordions empilhados ocupando linha cheia cada
+- Melhorar: colocar lado a lado em desktop (`md:grid-cols-2`), empilhados em mobile
 
 ## Arquivos
 
 | Arquivo | Mudança |
 |---|---|
-| `src/components/products/TrendSearchCard.tsx` | Adicionar props `initialKeyword`, `variant`, `extraFooter`; auto-search no mount; ocultar header quando `embedded` |
-| `src/components/products/trend/ProductTrendTab.tsx` | Refatorar: manter só faixa-termo + estados de loading/erro/lowQuality + override; delegar visualização ao `TrendSearchCard` embedded; mover bloco Shopee pra `extraFooter` |
+| `src/components/products/TrendSearchCard.tsx` | Default 12m, hero compacto, grid 7 cards padronizado, banner ação refinado, accordions cidades/países lado a lado, esconder input quando embedded |
+| `src/components/products/trend/ProductTrendTab.tsx` | Faixa do termo agrupada num card subtle |
+| `src/hooks/useTrendSearch.ts` | Default `timeframe` = `"today 12-m"` |
 
-Sem migrações. Sem alterações no backend. Sem alteração no `useProductTrend` ou `useTrendSearch`.
-
-## Trade-offs
-
-- ✅ Paridade visual e de insights 1:1 entre as duas telas
-- ✅ Zero duplicação de código (uma fonte da verdade pra UI de trends)
-- ✅ Mantém features exclusivas do produto: override persistido + palavras Shopee
-- ✅ Copys 100% no idioma do app (sem citar Google)
-- ⚠️ 1 chamada extra ao Trends ao abrir a aba (cache 8-itens mitiga em revisitas)
-- ⚠️ `TrendSearchCard` cresce em props (+3) mas continua coeso
+Sem migrações. Sem mudança no backend.
 
