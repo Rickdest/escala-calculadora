@@ -114,7 +114,7 @@ export function useTrendSearch() {
       if (data?.error) throw new Error(data.error);
 
       if (data?.rate_limited) {
-        setError("O Google Trends está limitando requisições. Tente novamente em alguns minutos.");
+        setError("Muitas consultas em sequência. Tente novamente em alguns minutos.");
         setSearching(false);
         return;
       }

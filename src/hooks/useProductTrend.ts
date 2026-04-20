@@ -211,7 +211,7 @@ export function useProductTrend(productId: string | undefined) {
         ) {
           if (data.rate_limited) {
             setError(
-              "O Google Trends está limitando requisições agora. Aguarde alguns minutos e tente novamente.",
+              "Muitas consultas em sequência. Aguarde alguns minutos e tente novamente.",
             );
           } else {
             setError(
