@@ -133,12 +133,15 @@ export interface TrendSearchCardProps {
   variant?: "standalone" | "embedded";
   /** Slot opcional renderizado abaixo dos accordions (ex: keywords Shopee) */
   extraFooter?: React.ReactNode;
+  /** Remove a borda externa e padding pra evitar duplicação visual quando aninhado em outro card/Collapsible */
+  hideOuterBorder?: boolean;
 }
 
 export function TrendSearchCard({
   initialKeyword,
   variant = "standalone",
   extraFooter,
+  hideOuterBorder = false,
 }: TrendSearchCardProps = {}) {
   const [input, setInput] = useState(initialKeyword ?? "");
   const [collapsed, setCollapsed] = useState(false);
@@ -333,8 +336,9 @@ export function TrendSearchCard({
 
   return (
     <div className={cn(
-      "animate-fade-up surface-card p-4 sm:p-5",
-      !isEmbedded && "border-l-4 border-l-primary/70",
+      "animate-fade-up",
+      hideOuterBorder ? "p-0" : "surface-card p-4 sm:p-5",
+      !isEmbedded && !hideOuterBorder && "border-l-4 border-l-primary/70",
     )}>
       {/* Header (oculto em embedded) */}
       {!isEmbedded && (
