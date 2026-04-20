@@ -83,7 +83,7 @@ export function useTrendSearch() {
       return;
     }
 
-    const timeframe = opts.timeframe ?? "today 5-y";
+    const timeframe = opts.timeframe ?? "today 12-m";
     const geoResolution = opts.geoResolution ?? "REGION";
     const compareKeywords = (opts.compareKeywords ?? [])
       .map((k) => k.trim())
