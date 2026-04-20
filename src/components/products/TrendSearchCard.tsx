@@ -825,7 +825,7 @@ export function TrendSearchCard({
                               tickLine={false}
                               axisLine={false}
                               interval="preserveStartEnd"
-                              minTickGap={25}
+                              minTickGap={result.timeframe === "today 12-m" ? 35 : 25}
                             />
                             <YAxis
                               domain={[0, stats?.yMax ?? 100]}
