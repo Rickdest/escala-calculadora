@@ -499,6 +499,18 @@ async function fetchGoogleTrends(
     interest_score: point.value?.[0] ?? 0,
   }));
 
+  // Multi-keyword: extrai série completa por termo
+  let comparisonSeries: ComparisonSeriesPoint[] | undefined;
+  if (allKeywords.length > 1) {
+    comparisonSeries = timelineData.map((point: any) => ({
+      period_date: new Date(parseInt(point.time) * 1000).toISOString().split("T")[0],
+      values: allKeywords.map((_, i) => {
+        const v = point.value?.[i];
+        return typeof v === "number" ? v : null;
+      }),
+    }));
+  }
+
   // 2) Related queries (top + rising) — falha gracioso, não derruba a função
   let relatedTop: RelatedKeyword[] = [];
   let relatedRising: RelatedKeyword[] = [];
@@ -561,16 +573,20 @@ async function fetchGoogleTrends(
     });
   }
 
-  // 3) Geo map (interesse por região / estado) — falha gracioso
+  // 3) Geo map (interesse por região / cidade / país) — falha gracioso
   let regions: RegionEntry[] = [];
   try {
     if (geoWidget?.token && geoWidget?.request) {
+      const geoReq = JSON.parse(JSON.stringify(geoWidget.request));
+      if (geoReq.resolution) geoReq.resolution = geoResolution;
+      if (geoResolution === "COUNTRY" && geoReq.geo) geoReq.geo = {};
+
       const url = new URL(
         "https://trends.google.com/trends/api/widgetdata/comparedgeo",
       );
       url.searchParams.set("hl", "pt-BR");
       url.searchParams.set("tz", "180");
-      url.searchParams.set("req", JSON.stringify(geoWidget.request));
+      url.searchParams.set("req", JSON.stringify(geoReq));
       url.searchParams.set("token", geoWidget.token);
 
       const r = await fetch(url.toString(), { headers });
@@ -587,7 +603,7 @@ async function fetchGoogleTrends(
           .sort((a, b) => b.value - a.value)
           .slice(0, 10);
       } else {
-        logger.warn("geo_failed", { status: r.status });
+        logger.warn("geo_failed", { status: r.status, resolution: geoResolution });
       }
     }
   } catch (e) {
@@ -596,7 +612,7 @@ async function fetchGoogleTrends(
     });
   }
 
-  return { timeline, relatedTop, relatedRising, regions };
+  return { timeline, relatedTop, relatedRising, regions, comparisonSeries };
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
