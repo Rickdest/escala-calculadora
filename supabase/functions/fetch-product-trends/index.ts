@@ -400,21 +400,29 @@ type RegionEntry = {
   value: number;
 };
 
+type ComparisonSeriesPoint = { period_date: string; values: (number | null)[] };
+
 type TrendsResult = {
   timeline: Array<{ period_date: string; interest_score: number }>;
   relatedTop: RelatedKeyword[];
   relatedRising: RelatedKeyword[];
   regions: RegionEntry[];
+  comparisonSeries?: ComparisonSeriesPoint[]; // multi-keyword
 };
 
 async function fetchGoogleTrends(
   keyword: string,
   timeRange: string = "today 5-y",
+  geoOverride?: string,
+  extraKeywords: string[] = [],
+  geoResolution: "REGION" | "CITY" | "COUNTRY" = "REGION",
 ): Promise<TrendsResult> {
-  const geo = "BR";
+  const geo = geoResolution === "COUNTRY" ? "" : (geoOverride ?? "BR");
   const ua = pickUA();
   const cookies = await getCookies(ua);
   const headers = buildHeaders(ua, cookies);
+
+  const allKeywords = [keyword, ...extraKeywords.filter((k) => k && k.trim())].slice(0, 5);
 
   const exploreUrl = new URL("https://trends.google.com/trends/api/explore");
   exploreUrl.searchParams.set("hl", "pt-BR");
@@ -422,7 +430,7 @@ async function fetchGoogleTrends(
   exploreUrl.searchParams.set(
     "req",
     JSON.stringify({
-      comparisonItem: [{ keyword, geo, time: timeRange }],
+      comparisonItem: allKeywords.map((kw) => ({ keyword: kw, geo, time: timeRange })),
       category: 0,
       property: "",
     }),
