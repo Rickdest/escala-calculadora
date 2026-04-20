@@ -472,39 +472,48 @@ export default function ProductDetail() {
 
             {/* Projeção Mensal — full width */}
             <div className="surface-card p-4 md:p-5">
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between gap-3 mb-4">
                 <p className="section-label flex items-center gap-2">
                   <Zap className="w-4 h-4 text-primary" />
                   Projeção Mensal
                 </p>
-                <input
-                  value={monthlySales}
-                  onChange={e => setMonthlySales(Math.max(1, Math.min(1000, parseInt(e.target.value) || 1)))}
-                  type="number"
-                  className="w-16 h-8 bg-secondary border border-border rounded-lg text-center font-mono text-sm font-semibold text-primary outline-none focus:border-primary tabular-nums"
-                />
+                <div className="flex items-baseline gap-1.5 bg-secondary/60 border border-border rounded-lg px-2.5 py-1">
+                  <input
+                    value={monthlySales}
+                    onChange={e => setMonthlySales(Math.max(1, Math.min(1000, parseInt(e.target.value) || 1)))}
+                    type="number"
+                    className="w-12 bg-transparent text-right font-mono text-sm font-bold text-primary outline-none tabular-nums"
+                  />
+                  <span className="text-[10px] uppercase tracking-wide text-muted-foreground font-semibold">vendas/mês</span>
+                </div>
               </div>
 
-              {/* Presets rápidos */}
-              <div className="flex items-center gap-1.5 mb-3 overflow-x-auto -mx-1 px-1">
+              {/* Presets rápidos — wrap, sem scroll */}
+              <div className="flex flex-wrap gap-1.5 mb-4">
                 {SALES_PRESETS.map(preset => (
                   <button
                     key={preset}
                     onClick={() => setMonthlySales(preset)}
                     className={cn(
-                      'shrink-0 px-3 h-7 rounded-md text-xs font-semibold border transition-colors tabular-nums',
+                      'flex-1 min-w-[52px] h-8 rounded-md text-xs font-semibold border transition-all tabular-nums',
                       monthlySales === preset
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-secondary/50 text-muted-foreground border-border hover:bg-secondary hover:text-foreground'
+                        ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                        : 'bg-secondary/40 text-muted-foreground border-border hover:bg-secondary hover:text-foreground'
                     )}
                   >
                     {preset}
                   </button>
                 ))}
-                <span className="text-[10px] text-muted-foreground/60 shrink-0 pl-1">vendas/mês</span>
               </div>
 
-              <Slider value={[monthlySales]} onValueChange={([v]) => setMonthlySales(v)} min={1} max={1000} step={1} className="mb-4" />
+              {/* Slider com labels min/max */}
+              <div className="mb-4">
+                <Slider value={[monthlySales]} onValueChange={([v]) => setMonthlySales(v)} min={1} max={1000} step={1} />
+                <div className="flex justify-between mt-1.5 text-[10px] text-muted-foreground/60 font-mono tabular-nums">
+                  <span>1</span>
+                  <span>1.000</span>
+                </div>
+              </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <div className="bg-secondary/50 border border-border rounded-lg p-3">
