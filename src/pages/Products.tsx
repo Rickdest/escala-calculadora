@@ -453,18 +453,64 @@ export default function Products() {
                   </div>
                 )}
 
-                {/* Trend search card — busca avulsa */}
-                <TrendSearchCard />
-
-                {/* Charts */}
-                <div className="space-y-3 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-3 md:space-y-0">
-                  <MarginDistributionChart />
-                  <TopProductsChart />
-                  <ProfitSummaryChart />
+                {/* Saúde da carteira (charts) */}
+                <div className="space-y-3">
+                  <div className="flex items-end justify-between gap-2">
+                    <div>
+                      <h2 className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                        <BarChart3 className="w-4 h-4 text-primary" />
+                        Saúde da carteira
+                      </h2>
+                      <p className="text-[11px] text-text-3 mt-0.5">Visão consolidada de margens e lucro por produto</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <MarginDistributionChart />
+                    <TopProductsChart />
+                    <ProfitSummaryChart />
+                  </div>
                 </div>
 
+                {/* Pesquisar tendência (colapsável) */}
+                <Collapsible open={trendOpen} onOpenChange={setTrendOpen}>
+                  <div className={cn(
+                    "surface-card overflow-hidden transition-colors",
+                    trendOpen ? "border-primary/40" : "hover:border-primary/30",
+                  )}>
+                    <CollapsibleTrigger asChild>
+                      <button
+                        type="button"
+                        className="w-full flex items-center gap-3 p-3.5 text-left group"
+                      >
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/25 to-primary/5 border border-primary/20 flex items-center justify-center flex-shrink-0">
+                          <Sparkles className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-foreground">
+                            Pesquisar tendência de mercado
+                          </p>
+                          <p className="text-[11px] text-text-3 mt-0.5 truncate">
+                            Avalie a demanda de um termo antes de cadastrar o produto
+                          </p>
+                        </div>
+                        <ChevronDown
+                          className={cn(
+                            "w-5 h-5 text-text-3 transition-transform flex-shrink-0",
+                            trendOpen && "rotate-180 text-primary",
+                          )}
+                        />
+                      </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="border-t border-border p-3.5">
+                        <TrendSearchCard hideOuterBorder />
+                      </div>
+                    </CollapsibleContent>
+                  </div>
+                </Collapsible>
+
                 {/* Ranking section */}
-                <div className="space-y-3 md:max-w-[900px]">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-semibold text-foreground">Ranking de Produtos</p>
                     <span className="text-[11px] text-text-3 font-mono font-mono-num">
