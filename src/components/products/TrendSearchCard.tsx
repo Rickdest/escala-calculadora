@@ -1050,6 +1050,9 @@ export function TrendSearchCard({
                       )}
                     </div>
                   )}
+
+                  {/* Extra footer slot (ex: keywords Shopee no contexto do produto) */}
+                  {extraFooter}
                 </>
               )}
             </div>
