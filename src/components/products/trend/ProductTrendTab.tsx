@@ -1,7 +1,9 @@
-import { TrendingUp, TrendingDown, Minus, Loader2, RefreshCw, Sparkles, Flame, AlertTriangle, Calendar } from "lucide-react";
+import { useState } from "react";
+import { TrendingUp, TrendingDown, Minus, Loader2, RefreshCw, Sparkles, Flame, AlertTriangle, Calendar, Pencil, Check, X } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceDot } from "recharts";
 import { cn } from "@/lib/utils";
 import { useProductTrend } from "@/hooks/useProductTrend";
+import { Input } from "@/components/ui/input";
 
 interface ProductTrendTabProps {
   productId: string;
@@ -27,12 +29,34 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
     googleSeries,
     shopeeKeywords,
     keyword,
+    keywordOverride,
     diagnostic,
     error,
+    lowQuality,
+    suggestions,
     refresh,
+    setKeywordOverride,
   } = useProductTrend(productId);
 
-  // Estado vazio + erro — falha na primeira busca (ex: 429 do Google)
+  const [editing, setEditing] = useState(false);
+  const [draftKeyword, setDraftKeyword] = useState("");
+
+  const startEdit = () => {
+    setDraftKeyword(keyword ?? "");
+    setEditing(true);
+  };
+  const cancelEdit = () => {
+    setEditing(false);
+    setDraftKeyword("");
+  };
+  const saveEdit = async () => {
+    const trimmed = draftKeyword.trim();
+    if (!trimmed) return;
+    setEditing(false);
+    await setKeywordOverride(trimmed);
+  };
+
+  // Estado vazio + erro
   if (!loading && !hasData && !refreshing && error) {
     return (
       <div className="surface-card p-8 text-center border-warning/30">
@@ -96,11 +120,9 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
     );
   }
 
-  // Dados carregados
   const peakValue = Math.max(...googleSeries.map((p) => p.interest_score ?? 0));
   const peakPoint = googleSeries.find((p) => p.interest_score === peakValue);
 
-  // Classifica volume Shopee
   const maxVolume = Math.max(...shopeeKeywords.map((k) => k.search_volume), 1);
   const classifyVolume = (v: number) => {
     const pct = v / maxVolume;
@@ -111,23 +133,72 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
 
   return (
     <div className="space-y-5">
-      {/* Header com refresh */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          {keyword && (
-            <p className="text-small text-muted-foreground">
-              Termo analisado: <span className="font-semibold text-foreground">{keyword}</span>
-            </p>
-          )}
-          {lastCapture && (
-            <p className="text-micro text-muted-foreground/70 mt-0.5">
-              Atualizado em {new Date(lastCapture).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
-            </p>
+      {/* Header com termo + editor + refresh */}
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div className="min-w-0 flex-1">
+          {editing ? (
+            <div className="flex items-center gap-2 max-w-md">
+              <Input
+                autoFocus
+                value={draftKeyword}
+                onChange={(e) => setDraftKeyword(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") saveEdit();
+                  if (e.key === "Escape") cancelEdit();
+                }}
+                placeholder="Ex: vestido longo feminino"
+                className="h-9 text-sm"
+                maxLength={100}
+              />
+              <button
+                onClick={saveEdit}
+                disabled={!draftKeyword.trim() || refreshing}
+                className="h-9 w-9 inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                title="Reanalisar"
+              >
+                <Check className="w-4 h-4" />
+              </button>
+              <button
+                onClick={cancelEdit}
+                className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-secondary"
+                title="Cancelar"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <>
+              {keyword && (
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <p className="text-small text-muted-foreground">
+                    Termo analisado:{" "}
+                    <span className="font-semibold text-foreground">{keyword}</span>
+                  </p>
+                  {keywordOverride && (
+                    <span className="text-micro text-primary bg-primary/10 px-1.5 py-0.5 rounded">
+                      personalizado
+                    </span>
+                  )}
+                  <button
+                    onClick={startEdit}
+                    className="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                    title="Editar termo"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+              {lastCapture && (
+                <p className="text-micro text-muted-foreground/70 mt-0.5">
+                  Atualizado em {new Date(lastCapture).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
+                </p>
+              )}
+            </>
           )}
         </div>
         <button
           onClick={() => refresh(true)}
-          disabled={refreshing}
+          disabled={refreshing || editing}
           className="h-9 px-3 rounded-lg border border-border text-small text-muted-foreground hover:bg-secondary transition-colors inline-flex items-center gap-1.5 shrink-0"
         >
           {refreshing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
@@ -135,8 +206,47 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
         </button>
       </div>
 
+      {/* Aviso de baixa qualidade + sugestões */}
+      {lowQuality && !editing && (
+        <div className="surface-card p-4 border-warning/30 bg-warning/5">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground mb-1">
+                Pouco volume de busca para "{keyword}"
+              </p>
+              <p className="text-small text-muted-foreground mb-3">
+                Esse termo é específico demais ou pouco buscado no Google. Tente um termo mais genérico para ver tendências reais do mercado.
+              </p>
+              {suggestions.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                  <span className="text-micro text-muted-foreground self-center">Sugestões:</span>
+                  {suggestions.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setKeywordOverride(s)}
+                      disabled={refreshing}
+                      className="text-small px-2.5 py-1 rounded-md border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <button
+                onClick={startEdit}
+                className="text-small text-primary hover:underline inline-flex items-center gap-1"
+              >
+                <Pencil className="w-3 h-3" />
+                Editar termo manualmente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Diagnóstico — cards de insight */}
-      {diagnostic && (
+      {diagnostic && !lowQuality && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="surface-card p-4">
             <div className="flex items-center gap-2 mb-1">
@@ -197,8 +307,8 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
         </div>
       )}
 
-      {/* Gráfico Google Trends */}
-      {googleSeries.length > 0 && (
+      {/* Gráfico Google Trends — esconde se baixa qualidade */}
+      {googleSeries.length > 0 && !lowQuality && (
         <div className="surface-card p-5">
           <div className="flex items-center justify-between mb-3">
             <p className="section-label">Interesse de busca — Google (12 meses)</p>
