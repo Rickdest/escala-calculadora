@@ -700,9 +700,14 @@ Deno.serve(async (req) => {
       }
     }
 
-    const keyword =
-      product.trend_keyword_override?.trim() || extractKeyword(product.name);
-    if (!keyword) {
+    // Se houver override manual, respeita 100% (sem cascata).
+    // Caso contrário, monta cascata do mais específico ao mais genérico.
+    const overrideKeyword = product.trend_keyword_override?.trim() || null;
+    const cascadeKeywords: string[] = overrideKeyword
+      ? [overrideKeyword]
+      : buildKeywordCascade(product.name);
+
+    if (cascadeKeywords.length === 0 || !cascadeKeywords[0]) {
       return new Response(
         JSON.stringify({ error: "Não foi possível extrair palavra-chave" }),
         {
@@ -712,10 +717,16 @@ Deno.serve(async (req) => {
       );
     }
 
+    // keyword "ativa" — começa com a primeira; muda se a cascata avançar
+    let keyword = cascadeKeywords[0];
+    const attemptedCascade: Array<{ keyword: string; zerosPct: number; pointsCount: number }> = [];
+    let autoSimplified = false;
+
     logger.info("fetch_start", {
       productId,
       keyword,
-      override: !!product.trend_keyword_override,
+      override: !!overrideKeyword,
+      cascade: cascadeKeywords,
     });
 
     let googleSaved = 0;
@@ -729,40 +740,71 @@ Deno.serve(async (req) => {
     let relatedTopOut: RelatedKeyword[] = [];
     let relatedRisingOut: RelatedKeyword[] = [];
     let regionsOut: RegionEntry[] = [];
+    let trendsData: Array<{ period_date: string; interest_score: number }> = [];
 
-    // Google Trends com retry e backoff (2s, 5s, 12s) — janela de 5 anos
+    // Google Trends: cascata + retry/backoff por variação
     try {
       const delays = [2000, 5000, 12000];
-      let trendsResult: TrendsResult = {
-        timeline: [],
-        relatedTop: [],
-        relatedRising: [],
-        regions: [],
-      };
       let lastErr: unknown = null;
 
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          trendsResult = await fetchGoogleTrends(keyword);
-          lastErr = null;
-          break;
-        } catch (e) {
-          lastErr = e;
-          const msg = e instanceof Error ? e.message : String(e);
-          logger.warn("attempt_failed", { attempt: attempt + 1, error: msg });
-          if (attempt < 2) await sleep(delays[attempt]);
+      for (let cIdx = 0; cIdx < cascadeKeywords.length; cIdx++) {
+        const variant = cascadeKeywords[cIdx];
+        let trendsResult: TrendsResult = {
+          timeline: [],
+          relatedTop: [],
+          relatedRising: [],
+          regions: [],
+        };
+        lastErr = null;
+
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            trendsResult = await fetchGoogleTrends(variant);
+            lastErr = null;
+            break;
+          } catch (e) {
+            lastErr = e;
+            const msg = e instanceof Error ? e.message : String(e);
+            logger.warn("attempt_failed", { variant, attempt: attempt + 1, error: msg });
+            // Em caso de RATE_LIMITED, abandona variantes restantes (sem queimar quota)
+            if (msg === "RATE_LIMITED") break;
+            if (attempt < 2) await sleep(delays[attempt]);
+          }
         }
+
+        // Se a tentativa atual rate-limitou, propaga
+        if (lastErr) {
+          const msg = lastErr instanceof Error ? lastErr.message : String(lastErr);
+          if (msg === "RATE_LIMITED") throw lastErr;
+          // Erro genérico nessa variante: tenta a próxima
+          attemptedCascade.push({ keyword: variant, zerosPct: 100, pointsCount: 0 });
+          continue;
+        }
+
+        const tl = trendsResult.timeline;
+        const zeros = tl.length === 0 ? 100 : (tl.filter((p) => p.interest_score === 0).length / tl.length) * 100;
+        attemptedCascade.push({ keyword: variant, zerosPct: Math.round(zeros), pointsCount: tl.length });
+
+        // Critério de "dados úteis": >30% não-zeros AND pelo menos 8 pontos
+        const isUseful = tl.length >= 8 && zeros < 70;
+
+        if (isUseful || cIdx === cascadeKeywords.length - 1) {
+          // Aceita esta variante (útil, ou última cartada)
+          keyword = variant;
+          if (cIdx > 0) autoSimplified = true;
+          trendsData = tl;
+          relatedTopOut = trendsResult.relatedTop;
+          relatedRisingOut = trendsResult.relatedRising;
+          regionsOut = trendsResult.regions;
+          zerosPct = zeros;
+          lowQuality = !isUseful;
+          break;
+        }
+        // Senão, tenta próxima variante
+        logger.info("cascade_advance", { from: variant, zerosPct: Math.round(zeros), points: tl.length });
       }
 
-      if (lastErr) throw lastErr;
-
-      const trendsData = trendsResult.timeline;
-      relatedTopOut = trendsResult.relatedTop;
-      relatedRisingOut = trendsResult.relatedRising;
-      regionsOut = trendsResult.regions;
-
-      // Se timeline veio vazia, marca como baixa qualidade pra disparar sugestões
-      if (trendsData.length === 0) {
+      if (trendsData.length === 0 && !lowQuality) {
         lowQuality = true;
         zerosPct = 100;
       }
