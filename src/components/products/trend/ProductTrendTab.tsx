@@ -34,6 +34,8 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
     error,
     lowQuality,
     suggestions,
+    relatedTop,
+    relatedRising,
     refresh,
     setKeywordOverride,
   } = useProductTrend(productId);
