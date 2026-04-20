@@ -875,13 +875,20 @@ export function TrendSearchCard({
                   ) : (
                     chartData && (
                       <div className="bg-surface-2/40 rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
                           <p className="section-label">Demanda nos {currentTfLong}</p>
-                          {chartForecastData && (
-                            <span className="text-[10px] text-text-3 inline-flex items-center gap-1">
-                              <span className="w-3 border-t border-dashed border-primary" /> previsão dos próximos 3 meses
-                            </span>
-                          )}
+                          <div className="flex items-center gap-3 flex-wrap">
+                            {stats && stats.avg > 0 && (
+                              <span className="text-[10px] text-text-3 inline-flex items-center gap-1">
+                                <span className="w-3 border-t border-dashed border-muted-foreground/60" /> média do período
+                              </span>
+                            )}
+                            {chartForecastData && (
+                              <span className="text-[10px] text-text-3 inline-flex items-center gap-1">
+                                <span className="w-3 border-t border-dashed border-primary" /> previsão 3 meses
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="h-32">
                           <ResponsiveContainer width="100%" height="100%">
