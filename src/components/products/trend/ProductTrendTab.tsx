@@ -32,6 +32,31 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
     refresh,
   } = useProductTrend(productId);
 
+  // Estado vazio + erro — falha na primeira busca (ex: 429 do Google)
+  if (!loading && !hasData && !refreshing && error) {
+    return (
+      <div className="surface-card p-8 text-center border-warning/30">
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-warning/10 mb-3">
+          <AlertTriangle className="w-6 h-6 text-warning" />
+        </div>
+        <h3 className="font-semibold text-foreground text-base mb-1">
+          Não conseguimos buscar agora
+        </h3>
+        <p className="text-small text-muted-foreground mb-5 max-w-md mx-auto">
+          {error}
+        </p>
+        <button
+          onClick={() => refresh(true)}
+          disabled={refreshing}
+          className="h-10 px-5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors inline-flex items-center gap-2"
+        >
+          {refreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+          Tentar de novo
+        </button>
+      </div>
+    );
+  }
+
   // Estado vazio — primeira vez
   if (!loading && !hasData && !refreshing) {
     return (

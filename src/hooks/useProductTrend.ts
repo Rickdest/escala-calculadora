@@ -95,6 +95,24 @@ export function useProductTrend(productId: string | undefined) {
         );
         if (fnErr) throw fnErr;
         if (data?.error) throw new Error(data.error);
+
+        // Se nada foi salvo e há erro de rate limit, mostra mensagem amigável
+        if (
+          data?.google_saved === 0 &&
+          data?.shopee_saved === 0 &&
+          data?.google_error
+        ) {
+          if (data.rate_limited) {
+            setError(
+              "O Google Trends está limitando requisições agora. Aguarde alguns minutos e tente novamente.",
+            );
+          } else {
+            setError(
+              "Não foi possível buscar dados de tendência agora. Tente novamente em instantes.",
+            );
+          }
+        }
+
         await loadFromDb();
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));

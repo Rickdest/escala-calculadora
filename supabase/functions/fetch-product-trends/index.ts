@@ -9,6 +9,23 @@ const corsHeaders = {
 
 const logger = createLogger("FETCH-TRENDS");
 
+// Pool de User-Agents reais (rotacionados a cada chamada)
+const USER_AGENTS = [
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15",
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+  "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+];
+
+function pickUA(): string {
+  return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+}
+
+// Cache de cookies em memória do isolate (vive enquanto a function estiver "quente")
+let cachedCookies: { value: string; expiresAt: number } | null = null;
+const COOKIE_TTL_MS = 30 * 60 * 1000; // 30 min
+
 // Limpa o nome do produto para extrair keyword principal
 function extractKeyword(productName: string): string {
   return productName
@@ -25,12 +42,73 @@ function extractKeyword(productName: string): string {
     .join(" ");
 }
 
-// Busca Google Trends (endpoint não-oficial) — interesse 12 meses
-async function fetchGoogleTrends(keyword: string): Promise<
-  Array<{ period_date: string; interest_score: number }>
-> {
+// Bate em trends.google.com home pra capturar Set-Cookie (NID, CONSENT, SOCS)
+async function getCookies(ua: string): Promise<string> {
+  if (cachedCookies && cachedCookies.expiresAt > Date.now()) {
+    return cachedCookies.value;
+  }
+
+  const res = await fetch("https://trends.google.com/?geo=BR", {
+    headers: {
+      "User-Agent": ua,
+      Accept:
+        "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+      "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
+      "Accept-Encoding": "gzip, deflate, br",
+      "Cache-Control": "no-cache",
+      Pragma: "no-cache",
+    },
+  });
+
+  // getSetCookie() retorna array com todos os Set-Cookie headers separados
+  const setCookies =
+    typeof (res.headers as any).getSetCookie === "function"
+      ? (res.headers as any).getSetCookie()
+      : (res.headers.get("set-cookie") ?? "").split(/,(?=\s*\w+=)/);
+
+  const cookieParts: string[] = [];
+  for (const sc of setCookies) {
+    const first = String(sc).split(";")[0].trim();
+    if (first && first.includes("=")) {
+      cookieParts.push(first);
+    }
+  }
+
+  // Adiciona CONSENT manual se não veio (necessário pra contornar tela de consentimento UE)
+  if (!cookieParts.some((c) => c.startsWith("CONSENT="))) {
+    cookieParts.push("CONSENT=YES+cb.20210720-07-p0.pt-BR+FX+410");
+  }
+  if (!cookieParts.some((c) => c.startsWith("SOCS="))) {
+    cookieParts.push("SOCS=CAESHAgBEhJnd3NfMjAyMzA5MTktMF9SQzIaAnB0IAEaBgiAhsymBg");
+  }
+
+  const cookieHeader = cookieParts.join("; ");
+  cachedCookies = { value: cookieHeader, expiresAt: Date.now() + COOKIE_TTL_MS };
+  logger.info("cookies_captured", { count: cookieParts.length });
+  return cookieHeader;
+}
+
+function buildHeaders(ua: string, cookies: string) {
+  return {
+    "User-Agent": ua,
+    Accept: "application/json, text/plain, */*",
+    "Accept-Language": "pt-BR,pt;q=0.9,en;q=0.8",
+    Referer: "https://trends.google.com/trends/explore",
+    Origin: "https://trends.google.com",
+    Cookie: cookies,
+    "X-Client-Data": "CIa2yQEIpbbJAQipncoBCJD3ygEIlqHLAQiFoM0BCKijzQEY54LOAQ==",
+  };
+}
+
+// Busca Google Trends — interesse 12 meses
+async function fetchGoogleTrends(
+  keyword: string,
+): Promise<Array<{ period_date: string; interest_score: number }>> {
   const geo = "BR";
   const time = "today 12-m";
+  const ua = pickUA();
+  const cookies = await getCookies(ua);
+  const headers = buildHeaders(ua, cookies);
 
   // Step 1: explore — pega o widget token
   const exploreUrl = new URL("https://trends.google.com/trends/api/explore");
@@ -45,14 +123,13 @@ async function fetchGoogleTrends(keyword: string): Promise<
     }),
   );
 
-  const exploreRes = await fetch(exploreUrl.toString(), {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-      Accept: "application/json",
-    },
-  });
+  const exploreRes = await fetch(exploreUrl.toString(), { headers });
 
+  if (exploreRes.status === 429) {
+    // Invalida cookies — provavelmente expiraram ou foram bloqueados
+    cachedCookies = null;
+    throw new Error("RATE_LIMITED");
+  }
   if (!exploreRes.ok) {
     logger.warn("trends_explore_failed", { status: exploreRes.status });
     throw new Error(`Google Trends explore HTTP ${exploreRes.status}`);
@@ -60,7 +137,12 @@ async function fetchGoogleTrends(keyword: string): Promise<
 
   const exploreText = await exploreRes.text();
   const cleanedExplore = exploreText.replace(/^\)\]\}'\,?\n?/, "");
-  const exploreData = JSON.parse(cleanedExplore);
+  let exploreData: any;
+  try {
+    exploreData = JSON.parse(cleanedExplore);
+  } catch {
+    throw new Error("Google Trends explore returned non-JSON");
+  }
   const widget = exploreData.widgets?.find(
     (w: any) => w.id === "TIMESERIES",
   );
@@ -77,14 +159,12 @@ async function fetchGoogleTrends(keyword: string): Promise<
   multiUrl.searchParams.set("req", JSON.stringify(widget.request));
   multiUrl.searchParams.set("token", widget.token);
 
-  const multiRes = await fetch(multiUrl.toString(), {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-      Accept: "application/json",
-    },
-  });
+  const multiRes = await fetch(multiUrl.toString(), { headers });
 
+  if (multiRes.status === 429) {
+    cachedCookies = null;
+    throw new Error("RATE_LIMITED");
+  }
   if (!multiRes.ok) {
     throw new Error(`Google Trends multiline HTTP ${multiRes.status}`);
   }
@@ -101,6 +181,8 @@ async function fetchGoogleTrends(keyword: string): Promise<
     interest_score: point.value?.[0] ?? 0,
   }));
 }
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -123,7 +205,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Cliente com JWT do usuário para validar identidade
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -152,7 +233,6 @@ Deno.serve(async (req) => {
 
     const admin = createClient(supabaseUrl, serviceKey);
 
-    // Busca produto
     const { data: product, error: productErr } = await admin
       .from("products")
       .select("id, name, user_id, shopee_item_id")
@@ -170,7 +250,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Cache de 7 dias
+    // Cache de 7 dias (não invalida em erro — só conta sucesso anterior)
     if (!force) {
       const { data: recent } = await admin
         .from("product_trends")
@@ -212,23 +292,31 @@ Deno.serve(async (req) => {
 
     let googleSaved = 0;
     let googleError: string | null = null;
+    let rateLimited = false;
 
-    // Google Trends com retry
+    // Google Trends com retry e backoff maior (2s, 5s, 12s)
     try {
+      const delays = [2000, 5000, 12000];
       let trendsData: Array<{ period_date: string; interest_score: number }> =
         [];
+      let lastErr: unknown = null;
+
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
           trendsData = await fetchGoogleTrends(keyword);
+          lastErr = null;
           break;
         } catch (e) {
-          if (attempt === 2) throw e;
-          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+          lastErr = e;
+          const msg = e instanceof Error ? e.message : String(e);
+          logger.warn("attempt_failed", { attempt: attempt + 1, error: msg });
+          if (attempt < 2) await sleep(delays[attempt]);
         }
       }
 
+      if (lastErr) throw lastErr;
+
       if (trendsData.length > 0) {
-        // Limpa registros antigos para esta combinação
         await admin
           .from("product_trends")
           .delete()
@@ -257,8 +345,15 @@ Deno.serve(async (req) => {
         }
       }
     } catch (e) {
-      googleError = e instanceof Error ? e.message : String(e);
-      logger.warn("google_trends_failed", { error: googleError });
+      const raw = e instanceof Error ? e.message : String(e);
+      if (raw === "RATE_LIMITED") {
+        rateLimited = true;
+        googleError =
+          "O Google Trends está limitando requisições agora. Tente de novo em alguns minutos.";
+      } else {
+        googleError = raw;
+      }
+      logger.warn("google_trends_failed", { error: raw });
     }
 
     // Reaproveita keywords Shopee (já em shopee_ads_by_product)
@@ -291,8 +386,7 @@ Deno.serve(async (req) => {
           period_date: today,
           search_volume: Number(k.search_volume ?? k.volume ?? 0),
           suggested_bid: Number(k.suggested_bid ?? k.bid ?? 0),
-          competition_level:
-            k.competition_level ?? k.competition ?? null,
+          competition_level: k.competition_level ?? k.competition ?? null,
           metadata: { quality_score: k.quality_score ?? null },
         }));
 
@@ -312,8 +406,10 @@ Deno.serve(async (req) => {
       googleSaved,
       shopeeSaved,
       googleError,
+      rateLimited,
     });
 
+    // Se ambas as fontes falharam totalmente, devolve erro 200 com flag (frontend mostra mensagem amigável)
     return new Response(
       JSON.stringify({
         cached: false,
@@ -321,6 +417,7 @@ Deno.serve(async (req) => {
         google_saved: googleSaved,
         shopee_saved: shopeeSaved,
         google_error: googleError,
+        rate_limited: rateLimited,
       }),
       {
         status: 200,
