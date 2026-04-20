@@ -1,64 +1,97 @@
 
 
-## Mudanças
+## Diagnóstico (prints 262-265)
 
-1. **Default 12m** em vez de 5y no `TrendSearchCard`
-2. **Polimento de layout** dos insights e header
+A aba **Análise** hoje empilha numa única coluna larga, sem hierarquia clara:
+1. 4 KPIs (Margem/Lucro/Na meta/Sem custo) — bom
+2. Best/Worst em 2 cards separados — duplicação visual com KPIs
+3. **Análise de demanda** (TrendSearchCard) ocupando ~30% da viewport quando expandido
+4. 3 gráficos comprimidos lado a lado
+5. Ranking longo
 
-### 1. Período padrão = 12m
+Resultado: usuário precisa rolar muito pra chegar no Ranking (informação operacional principal). A ferramenta de pesquisa de demanda compete com os dados da loja.
 
-`TrendSearchCard.tsx`:
-- `useState<Timeframe>("today 5-y")` → `useState<Timeframe>("today 12-m")`
-- Mesma mudança no auto-search inicial (quando `initialKeyword` dispara)
-- `useTrendSearch.ts`: default do `timeframe` em `search()` muda de `"today 5-y"` → `"today 12-m"`
+## Decisão sobre o card "Análise de demanda"
 
-Trade-off: alguns insights só fazem sentido com 5y (ciclo sazonal completo, vsLastYear, vsAllTimePeak). Solução: o backend já calcula tudo a partir da série recebida — em 12m teremos ciclo parcial e `vsLastYear` pode ficar null. Ajustar UI pra **esconder cards que vierem null** (já tem essa lógica no grid, manter).
+**Recomendação: tornar colapsável e mover pra baixo dos gráficos** (não no topo).
 
-### 2. Polimento de layout (baseado nos prints 259/260/261)
+Razões:
+- Topo deve ser **estado da loja** (KPIs + best/worst) — resposta imediata pra "como tá meu negócio?"
+- TrendSearchCard é uma **ferramenta exploratória** (pesquisar produto que não tenho ainda) — uso esporádico
+- Hoje sempre expandido = consome 600px de viewport sem o usuário pedir
+- Solução: **card colapsável fechado por padrão**, com CTA chamativo "Pesquisar tendência de mercado →" que expande inline
 
-**Header / faixa do termo (print 259)**
-- Hoje a faixa "Termo analisado: calça feminina [personalizado] [✏️]" + botão "Atualizar" estão soltos visualmente. Agrupar num **card sutil** (`surface-card-subtle p-3 rounded-lg`) com:
-  - Linha 1: ícone + "Termo analisado" label + valor + chip "personalizado" + lápis
-  - Linha 2: "Atualizado em..." em micro + botão Atualizar à direita alinhado
-- Remover o input "calça feminina [×] [Analisar]" duplicado quando `variant=embedded` — já temos a faixa do termo acima, o segundo input confunde. Deixar só um botão "Trocar termo de análise" discreto que abre input inline
+Alternativa que descartei: deixar no topo. Polui o que importa (KPIs da loja) e força scroll pra dados operacionais.
 
-**Hero "Potencial de mercado" (print 260)**
-- Hoje: número 49 grande + barra laranja + label "Mercado morno" no canto. Funciona mas pesado.
-- Melhorar:
-  - Layout horizontal mais compacto: `[gauge circular 64px] | número + label | barra fina | "estimativa composta" tooltip`
-  - Cor da barra/gauge dinâmica: vermelho <30, laranja 30-60, verde >60 (hoje é só laranja)
-  - Reduzir altura de ~120px → ~80px
+## Plano de redesign
 
-**Grid de 6 cards (print 260)**
-- Hoje: 3 colunas, cards meio largos, ícone+label+valor empilhados, alguns com border colorida outros não — inconsistente
-- Melhorar:
-  - Padronizar todos com `border` neutra + accent só no ícone (chip colorido 28px)
-  - 2 linhas: emoji/ícone com bg semântico à esquerda + label micro + valor h-bold à direita
-  - Adicionar 7º card "Próx pico sazonal" (mês com maior crescimento mês-a-mês — já temos `bestGrowthMonth` no backend)
+### 1. Nova ordem da aba Análise
 
-**Banner de ação (print 260)**
-- Hoje: faixa horizontal com ícone lâmpada + texto corrido. OK mas plain.
-- Melhorar: dividir em 2 partes — `[ícone gradient] | Diagnóstico (1ª frase em bold) + Ação recomendada (2ª frase muted)`. Adicionar borda sutil `border-l-2 border-primary/40`
+```
+┌─ Hero strip (1 linha) ──────────────────────────────┐
+│ Margem · Lucro · Na meta · Sem custo  (4 KPIs)      │
+└─────────────────────────────────────────────────────┘
 
-**Gráfico (print 260)**
-- Hoje: bom, mas legenda do eixo X com `abr/25, mai/25...` repete demais (dezembro aparece 2x — bug de tick). Aumentar `minTickGap` em 12m de 25 → 35
-- Adicionar pequena legenda "média" perto da linha tracejada
+┌─ Destaques (2 cards lado a lado) ───────────────────┐
+│ 🏆 Melhor margem        ⚠️  Pior margem             │
+└─────────────────────────────────────────────────────┘
 
-**Ciclo sazonal + Onde mais procuram (print 261)**
-- Já bem desenhados, manter
-- Pequeno: o card "Ciclo sazonal" tem muito espaço vazio embaixo da legenda. Reduzir min-height ou alinhar melhor com o card vizinho via `grid-rows-[auto]`
+┌─ Saúde da carteira (NOVA seção) ────────────────────┐
+│ [Distribuição de margem]  [Top 5]  [Lucro/produto]  │
+└─────────────────────────────────────────────────────┘
 
-**Cidades / Países accordions (print 261)**
-- Hoje: dois accordions empilhados ocupando linha cheia cada
-- Melhorar: colocar lado a lado em desktop (`md:grid-cols-2`), empilhados em mobile
+┌─ Análise de demanda (colapsável, fechado) ──────────┐
+│ ✨ Pesquisar tendência de mercado            [+]    │
+│    Descubra o potencial antes de cadastrar          │
+└─────────────────────────────────────────────────────┘
+
+┌─ Ranking de produtos ───────────────────────────────┐
+│ [busca] [filtros]                                   │
+│ #1 Produto ...                                      │
+└─────────────────────────────────────────────────────┘
+```
+
+### 2. Polimentos visuais
+
+**KPIs (linha 349-408)**
+- Reduzir altura: `p-3` → `p-2.5`, valor `text-xl` → `text-lg` em mobile
+- Remover `border-l-2` colorido (visual ruidoso quando 4 lado a lado) → manter só ícone colorido + barrinha de progresso fina embaixo (margem real / meta)
+- Agrupar Best/Worst **dentro** do KPI "Margem" como mini-rodapé clicável → economiza 1 seção inteira
+
+**Charts (linha 449-454)**
+- Adicionar título da seção "Saúde da carteira" + descrição micro
+- Cards com altura uniforme (`min-h-[240px]`) e padding consistente
+- Em desktop: 3 col; em tablet: 1 col + 2 col; em mobile: stack
+
+**TrendSearchCard (linha 447)**
+- Renderizar dentro de um wrapper `<Collapsible>` (shadcn já existe) com:
+  - Trigger: card 60px de altura com ícone Sparkles, título "Pesquisar tendência de mercado", subtítulo "Avalie demanda antes de cadastrar produto", chevron animado
+  - Content: o `TrendSearchCard` atual (sem mexer)
+- Default: fechado
+- Persistir estado em `localStorage` (`products-trend-open`) pra usuários recorrentes que sempre usam
+
+**Ranking (linha 457-624)**
+- Já está bom, manter — só ajustar `md:max-w-[900px]` removendo o limite (deixar usar largura cheia em desktop pra alinhar com charts acima)
+
+### 3. Ajuste no `TrendSearchCard` quando dentro do collapsible
+
+Adicionar prop `hideOuterBorder?: boolean` — quando true, remove a borda lateral primária + reduz padding top, pra não duplicar o "card dentro de card" quando aninhado no Collapsible trigger.
 
 ## Arquivos
 
 | Arquivo | Mudança |
 |---|---|
-| `src/components/products/TrendSearchCard.tsx` | Default 12m, hero compacto, grid 7 cards padronizado, banner ação refinado, accordions cidades/países lado a lado, esconder input quando embedded |
-| `src/components/products/trend/ProductTrendTab.tsx` | Faixa do termo agrupada num card subtle |
-| `src/hooks/useTrendSearch.ts` | Default `timeframe` = `"today 12-m"` |
+| `src/pages/Products.tsx` | Reordenar aba Análise: KPIs compactos + Best/Worst em row (ou fundido em Margem) → charts com header "Saúde da carteira" → TrendSearchCard em Collapsible fechado → Ranking. Persistir abertura no localStorage |
+| `src/components/products/TrendSearchCard.tsx` | Adicionar prop `hideOuterBorder?: boolean` pra evitar duplicação visual quando dentro de Collapsible |
 
-Sem migrações. Sem mudança no backend.
+Sem migrações. Sem mudança no backend. Sem mudança em outras telas (a aba "Tendência" do detalhe do produto continua usando `variant="embedded"` como já está).
+
+## Trade-offs
+
+- ✅ Topo limpo, foco em "estado da loja" (KPIs)
+- ✅ Charts ganham respiro entre KPIs e Ranking
+- ✅ TrendSearch acessível mas não invasivo (1 clique pra abrir)
+- ✅ Ranking mais rápido de alcançar
+- ⚠️ Usuário que SEMPRE usa pesquisa de tendência precisa de 1 clique extra → mitigado pelo localStorage
+- ⚠️ `hideOuterBorder` cresce surface API do TrendSearchCard em +1 prop opcional
 
