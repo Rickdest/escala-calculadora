@@ -367,51 +367,54 @@ export function TrendSearchCard({
       {!collapsed && (
         <>
           {/* Search input */}
-          <div className="flex gap-2">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-3" />
-              <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleSubmit();
-                  }
-                }}
-                placeholder="Ex: vestido feminino, tênis nike..."
-                disabled={searching}
-                className="pl-10 h-10 bg-surface-2 border-border rounded-lg focus:border-primary"
-              />
-            </div>
-            {result && !searching && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleClear}
-                className="h-10 px-3 border-border bg-surface-2"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            )}
-            <Button
-              onClick={() => handleSubmit()}
-              disabled={searching || input.trim().length < 2}
-              className="h-10 px-4 bg-primary hover:bg-primary/90 gap-1.5"
-            >
-              {searching ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="hidden sm:inline text-xs font-bold">Analisando</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  <span className="hidden sm:inline text-xs font-bold">Analisar</span>
-                </>
+          {/* Search input — oculto em modo embedded (termo gerenciado pela tela pai) */}
+          {!isEmbedded && (
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-3" />
+                <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleSubmit();
+                    }
+                  }}
+                  placeholder="Ex: vestido feminino, tênis nike..."
+                  disabled={searching}
+                  className="pl-10 h-10 bg-surface-2 border-border rounded-lg focus:border-primary"
+                />
+              </div>
+              {result && !searching && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClear}
+                  className="h-10 px-3 border-border bg-surface-2"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
               )}
-            </Button>
-          </div>
+              <Button
+                onClick={() => handleSubmit()}
+                disabled={searching || input.trim().length < 2}
+                className="h-10 px-4 bg-primary hover:bg-primary/90 gap-1.5"
+              >
+                {searching ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="hidden sm:inline text-xs font-bold">Analisando</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span className="hidden sm:inline text-xs font-bold">Analisar</span>
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
 
           {/* Compare row */}
           {(showCompare || compareTerms.length > 0) && (
