@@ -4,40 +4,14 @@ import {
   errorResponse,
   jsonResponse,
   shopeeGet,
-  getSellerCredentials,
-  generateSignWith,
-  SHOPEE_HOST,
 } from "../_shared/shopee.ts";
+import { refreshShopeeTokenIfNeeded } from "../_shared/shopee-token.ts";
 
 const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 async function refreshTokenIfNeeded(shopeeToken: any) {
-  const tokenAge = (Date.now() - new Date(shopeeToken.token_created_at).getTime()) / 1000;
-  if (tokenAge <= shopeeToken.expire_in - 300) return shopeeToken.access_token;
-
-  console.log("[SELLER DISCOVERY] Token near expiry, refreshing...");
-  const creds = getSellerCredentials();
-  const refreshPath = "/api/v2/auth/access_token/get";
-  const timestamp = Math.floor(Date.now() / 1000);
-  const sign = await generateSignWith(creds.partnerId, creds.partnerKey, refreshPath, timestamp);
-  const refreshUrl = `${SHOPEE_HOST}${refreshPath}?partner_id=${creds.partnerId}&timestamp=${timestamp}&sign=${sign}`;
-
-  const refreshRes = await fetch(refreshUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ refresh_token: shopeeToken.refresh_token, shop_id: Number(shopeeToken.shop_id), partner_id: creds.partnerId }),
-  });
-
-  const refreshData = await refreshRes.json();
-  if (refreshData.access_token) {
-    const supabaseAdmin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-    await supabaseAdmin.from("shopee_tokens").update({
-      access_token: refreshData.access_token, refresh_token: refreshData.refresh_token,
-      expire_in: refreshData.expire_in || 0, token_created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-    }).eq("id", shopeeToken.id);
-    return refreshData.access_token;
-  }
-  return shopeeToken.access_token;
+  const { token } = await refreshShopeeTokenIfNeeded(shopeeToken, "seller");
+  return token;
 }
 
 Deno.serve(async (req) => {

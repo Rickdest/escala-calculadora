@@ -8,6 +8,7 @@ import {
   errorResponse,
   jsonResponse,
 } from "../_shared/shopee.ts";
+import { refreshShopeeTokenIfNeeded } from "../_shared/shopee-token.ts";
 
 /** YYYY-MM-DD — for database storage only */
 const toISODateBR = (date: Date) => {
@@ -85,39 +86,8 @@ const adsGet = (path: string, accessToken: string, shopId: string | number, extr
   return shopeeGetWith(creds.partnerId, creds.partnerKey, path, accessToken, shopId, extra);
 };
 
-async function refreshTokenIfNeeded(shopeeToken: any, _supabase: any): Promise<{ token: string; needs_reauth: boolean }> {
-  const tokenAge = (Date.now() - new Date(shopeeToken.token_created_at).getTime()) / 1000;
-  if (tokenAge <= shopeeToken.expire_in - 300) return { token: shopeeToken.access_token, needs_reauth: false };
-
-  console.log("[SHOPEE ADS] Token near expiry, refreshing...");
-  const refreshPath = "/api/v2/auth/access_token/get";
-  const timestamp = Math.floor(Date.now() / 1000);
-  const creds = getAdsCreds();
-  const sign = await generateSignWith(creds.partnerId, creds.partnerKey, refreshPath, timestamp);
-  const refreshUrl = `${SHOPEE_HOST}${refreshPath}?partner_id=${creds.partnerId}&timestamp=${timestamp}&sign=${sign}`;
-
-  try {
-    const refreshRes = await fetch(refreshUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refresh_token: shopeeToken.refresh_token, shop_id: Number(shopeeToken.shop_id), partner_id: creds.partnerId }),
-    });
-
-    const refreshData = await refreshRes.json();
-    if (refreshData.access_token) {
-      const supabaseAdmin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-      await supabaseAdmin.from("shopee_tokens").update({
-        access_token: refreshData.access_token, refresh_token: refreshData.refresh_token,
-        expire_in: refreshData.expire_in || 0, token_created_at: new Date().toISOString(), updated_at: new Date().toISOString(),
-      }).eq("id", shopeeToken.id);
-      return { token: refreshData.access_token, needs_reauth: false };
-    }
-    console.error("[SHOPEE ADS] Refresh failed, no access_token in response:", JSON.stringify(refreshData).substring(0, 500));
-    return { token: shopeeToken.access_token, needs_reauth: true };
-  } catch (e) {
-    console.error("[SHOPEE ADS] Refresh request failed:", e);
-    return { token: shopeeToken.access_token, needs_reauth: true };
-  }
+async function refreshTokenIfNeeded(shopeeToken: any, _supabase: any) {
+  return refreshShopeeTokenIfNeeded(shopeeToken, "ads");
 }
 
 function extractEntries(res: any): any[] {

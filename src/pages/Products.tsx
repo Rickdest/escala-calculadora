@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Search, SlidersHorizontal, Package, TrendingUp, TrendingDown, Percent, DollarSign, Download, FileSpreadsheet, FileText, ArrowUpDown, ChevronRight, ShoppingBag, Loader2, AlertCircle, Target, Trophy, AlertTriangle, Sparkles, ChevronDown, BarChart3, ArrowRight, LineChart } from 'lucide-react';
+import { Plus, Search, SlidersHorizontal, Package, TrendingUp, TrendingDown, Percent, DollarSign, Download, FileSpreadsheet, FileText, ArrowUpDown, ChevronRight, ShoppingBag, AlertCircle, Target, Trophy, AlertTriangle, ChevronDown, BarChart3, ArrowRight, LineChart } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useProductAdsMetrics } from '@/hooks/useProductAdsMetrics';
 import { useStore } from '@/contexts/StoreContext';

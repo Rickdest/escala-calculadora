@@ -252,9 +252,9 @@ export default function Auth() {
                 />
                 <span className="text-[12px] leading-tight" style={{ color: '#888888' }}>
                   Li e aceito os{' '}
-                  <a href="#" style={{ color: '#e85d00' }} className="underline">Termos de Uso</a>{' '}
+                  <a href="/termos" target="_blank" rel="noopener noreferrer" style={{ color: '#e85d00' }} className="underline">Termos de Uso</a>{' '}
                   e a{' '}
-                  <a href="#" style={{ color: '#e85d00' }} className="underline">Política de Privacidade</a>
+                  <a href="/privacidade" target="_blank" rel="noopener noreferrer" style={{ color: '#e85d00' }} className="underline">Política de Privacidade</a>
                 </span>
               </label>
             )}

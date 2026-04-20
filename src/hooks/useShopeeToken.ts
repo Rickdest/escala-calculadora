@@ -80,9 +80,9 @@ export function useShopeeToken(appType?: AppType, storeId?: string) {
   const { data: token, isLoading, refetch } = useQuery({
     queryKey: ['shopee-token', user?.id, appType, storeId],
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)('get_shopee_token_metadata', {
-        p_app_type: appType || null,
-        p_store_id: storeId || null,
+      const { data, error } = await supabase.rpc('get_shopee_token_metadata', {
+        p_app_type: appType ?? undefined,
+        p_store_id: storeId ?? undefined,
       });
       if (error) throw error;
       const row = Array.isArray(data) ? data[0] ?? null : data;

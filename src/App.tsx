@@ -31,6 +31,8 @@ const ShopeeCallback = lazy(() => import("./pages/ShopeeCallback"));
 const Performance = lazy(() => import("./pages/Performance"));
 const PerformanceProductDetail = lazy(() => import("./pages/PerformanceProductDetail"));
 const Integracoes = lazy(() => import("./pages/Integracoes"));
+const Termos = lazy(() => import("./pages/Termos"));
+const Privacidade = lazy(() => import("./pages/Privacidade"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -173,6 +175,8 @@ const App = () => (
               <Suspense fallback={<PageLoader />}>
                 <Routes>
                   <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
+                  <Route path="/termos" element={<Termos />} />
+                  <Route path="/privacidade" element={<Privacidade />} />
                   <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
                   <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
                   <Route path="/products/:id" element={<ProtectedRoute><ProductDetail /></ProtectedRoute>} />
