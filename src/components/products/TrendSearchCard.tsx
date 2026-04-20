@@ -142,7 +142,7 @@ export function TrendSearchCard({
 }: TrendSearchCardProps = {}) {
   const [input, setInput] = useState(initialKeyword ?? "");
   const [collapsed, setCollapsed] = useState(false);
-  const [timeframe, setTimeframe] = useState<Timeframe>("today 5-y");
+  const [timeframe, setTimeframe] = useState<Timeframe>("today 12-m");
   const [compareTerms, setCompareTerms] = useState<string[]>([]);
   const [compareInput, setCompareInput] = useState("");
   const [showCompare, setShowCompare] = useState(false);
@@ -184,7 +184,7 @@ export function TrendSearchCard({
     const kw = initialKeyword?.trim();
     if (!kw) return;
     setInput(kw);
-    search(kw, { timeframe: "today 5-y", compareKeywords: [] });
+    search(kw, { timeframe: "today 12-m", compareKeywords: [] });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialKeyword]);
 
@@ -367,51 +367,54 @@ export function TrendSearchCard({
       {!collapsed && (
         <>
           {/* Search input */}
-          <div className="flex gap-2">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-3" />
-              <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleSubmit();
-                  }
-                }}
-                placeholder="Ex: vestido feminino, tênis nike..."
-                disabled={searching}
-                className="pl-10 h-10 bg-surface-2 border-border rounded-lg focus:border-primary"
-              />
-            </div>
-            {result && !searching && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleClear}
-                className="h-10 px-3 border-border bg-surface-2"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            )}
-            <Button
-              onClick={() => handleSubmit()}
-              disabled={searching || input.trim().length < 2}
-              className="h-10 px-4 bg-primary hover:bg-primary/90 gap-1.5"
-            >
-              {searching ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="hidden sm:inline text-xs font-bold">Analisando</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  <span className="hidden sm:inline text-xs font-bold">Analisar</span>
-                </>
+          {/* Search input — oculto em modo embedded (termo gerenciado pela tela pai) */}
+          {!isEmbedded && (
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-3" />
+                <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleSubmit();
+                    }
+                  }}
+                  placeholder="Ex: vestido feminino, tênis nike..."
+                  disabled={searching}
+                  className="pl-10 h-10 bg-surface-2 border-border rounded-lg focus:border-primary"
+                />
+              </div>
+              {result && !searching && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClear}
+                  className="h-10 px-3 border-border bg-surface-2"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
               )}
-            </Button>
-          </div>
+              <Button
+                onClick={() => handleSubmit()}
+                disabled={searching || input.trim().length < 2}
+                className="h-10 px-4 bg-primary hover:bg-primary/90 gap-1.5"
+              >
+                {searching ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span className="hidden sm:inline text-xs font-bold">Analisando</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span className="hidden sm:inline text-xs font-bold">Analisar</span>
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
 
           {/* Compare row */}
           {(showCompare || compareTerms.length > 0) && (
@@ -585,32 +588,65 @@ export function TrendSearchCard({
                 </div>
               ) : (
                 <>
-                  {/* HERO: Potencial de mercado */}
+                  {/* HERO: Potencial de mercado — compacto horizontal */}
                   {scoreMeta && result.marketScore !== null && (
-                    <div className="rounded-xl border border-border bg-gradient-to-br from-surface-2/60 to-surface-2/20 p-4">
-                      <div className="flex items-start justify-between gap-3 mb-2">
-                        <div className="flex items-center gap-2">
-                          <Gauge className={cn("w-4 h-4", scoreMeta.cls)} />
-                          <span className="text-[10px] uppercase tracking-wide font-bold text-text-3">
-                            Potencial de mercado
-                          </span>
+                    <div className="rounded-xl border border-border bg-gradient-to-br from-surface-2/60 to-surface-2/20 p-3 sm:p-4">
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        {/* Gauge circular SVG */}
+                        <div className="relative w-16 h-16 flex-shrink-0">
+                          <svg viewBox="0 0 64 64" className="w-full h-full -rotate-90">
+                            <circle
+                              cx="32"
+                              cy="32"
+                              r="28"
+                              fill="none"
+                              stroke="hsl(var(--surface-2))"
+                              strokeWidth="6"
+                            />
+                            <circle
+                              cx="32"
+                              cy="32"
+                              r="28"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="6"
+                              strokeLinecap="round"
+                              strokeDasharray={`${(result.marketScore / 100) * 175.93} 175.93`}
+                              className={cn("transition-all duration-700", scoreMeta.cls)}
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className={cn("text-lg font-black font-mono font-mono-num", scoreMeta.cls)}>
+                              {result.marketScore}
+                            </span>
+                          </div>
                         </div>
-                        <span className={cn("text-[11px] font-bold", scoreMeta.cls)}>
-                          {scoreMeta.label}
-                        </span>
-                      </div>
-                      <div className="flex items-baseline gap-2 mb-2">
-                        <span className="text-3xl font-black text-foreground font-mono font-mono-num leading-none">
-                          {result.marketScore}
-                        </span>
-                        <span className="text-sm font-bold text-text-3">/ 100</span>
-                        <span className="text-[10px] text-text-3 ml-auto">estimativa composta</span>
-                      </div>
-                      <div className="h-2 bg-surface-2 rounded-full overflow-hidden">
-                        <div
-                          className={cn("h-full rounded-full transition-all duration-700", scoreMeta.barCls)}
-                          style={{ width: `${result.marketScore}%` }}
-                        />
+                        {/* Texto + barra */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <Gauge className={cn("w-3.5 h-3.5 flex-shrink-0", scoreMeta.cls)} />
+                              <span className="text-[10px] uppercase tracking-wide font-bold text-text-3 truncate">
+                                Potencial de mercado
+                              </span>
+                            </div>
+                            <span
+                              className="text-[9px] text-text-3/70 hidden sm:inline cursor-help"
+                              title="Score 0-100 calculado a partir de momento, volatilidade, sazonalidade e demanda relativa. Estimativa composta."
+                            >
+                              estimativa
+                            </span>
+                          </div>
+                          <p className={cn("text-sm font-bold mb-2", scoreMeta.cls)}>
+                            {scoreMeta.label}
+                          </p>
+                          <div className="h-1.5 bg-surface-2 rounded-full overflow-hidden">
+                            <div
+                              className={cn("h-full rounded-full transition-all duration-700", scoreMeta.barCls)}
+                              style={{ width: `${result.marketScore}%` }}
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
@@ -740,14 +776,25 @@ export function TrendSearchCard({
                             : "border-border text-text-3",
                       )}
                     />
+                    {/* Próx pico sazonal */}
+                    {result.bestGrowthMonth && (
+                      <InsightCard
+                        icon={Calendar}
+                        label="Próx pico sazonal"
+                        value={MONTH_NAMES_LONG[result.bestGrowthMonth - 1]}
+                        cls="border border-primary/20 bg-surface-2/60 text-primary"
+                      />
+                    )}
                   </div>
 
                   {/* Banner de ação interpretado */}
                   {actionInsight && (
-                    <div className="flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
-                      <Lightbulb className="w-4 h-4 flex-shrink-0 text-primary mt-0.5" />
+                    <div className="flex items-start gap-2.5 rounded-lg border border-primary/20 border-l-2 border-l-primary/60 bg-gradient-to-r from-primary/10 to-primary/5 px-3 py-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+                        <Lightbulb className="w-3.5 h-3.5 text-primary" />
+                      </div>
                       <p
-                        className="text-xs text-foreground leading-relaxed"
+                        className="text-xs text-foreground leading-relaxed pt-0.5"
                         dangerouslySetInnerHTML={{
                           __html: actionInsight.replace(
                             /\*\*(.+?)\*\*/g,
@@ -778,7 +825,7 @@ export function TrendSearchCard({
                               tickLine={false}
                               axisLine={false}
                               interval="preserveStartEnd"
-                              minTickGap={25}
+                              minTickGap={result.timeframe === "today 12-m" ? 35 : 25}
                             />
                             <YAxis
                               domain={[0, stats?.yMax ?? 100]}
@@ -828,13 +875,20 @@ export function TrendSearchCard({
                   ) : (
                     chartData && (
                       <div className="bg-surface-2/40 rounded-lg p-3">
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
                           <p className="section-label">Demanda nos {currentTfLong}</p>
-                          {chartForecastData && (
-                            <span className="text-[10px] text-text-3 inline-flex items-center gap-1">
-                              <span className="w-3 border-t border-dashed border-primary" /> previsão dos próximos 3 meses
-                            </span>
-                          )}
+                          <div className="flex items-center gap-3 flex-wrap">
+                            {stats && stats.avg > 0 && (
+                              <span className="text-[10px] text-text-3 inline-flex items-center gap-1">
+                                <span className="w-3 border-t border-dashed border-muted-foreground/60" /> média do período
+                              </span>
+                            )}
+                            {chartForecastData && (
+                              <span className="text-[10px] text-text-3 inline-flex items-center gap-1">
+                                <span className="w-3 border-t border-dashed border-primary" /> previsão 3 meses
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="h-32">
                           <ResponsiveContainer width="100%" height="100%">
@@ -853,7 +907,7 @@ export function TrendSearchCard({
                                 tickLine={false}
                                 axisLine={false}
                                 interval="preserveStartEnd"
-                                minTickGap={25}
+                                minTickGap={result.timeframe === "today 12-m" ? 35 : 25}
                               />
                               <YAxis
                                 domain={[0, stats?.yMax ?? 100]}

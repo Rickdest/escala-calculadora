@@ -178,78 +178,82 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
 
   return (
     <div className="space-y-4 sm:space-y-5">
-      {/* Faixa: termo do produto + editor + refresh */}
-      <div className="flex items-start justify-between gap-2 sm:gap-3 flex-wrap">
-        <div className="min-w-0 flex-1">
-          {editing ? (
-            <div className="flex items-center gap-2 w-full sm:max-w-md">
-              <Input
-                autoFocus
-                value={draftKeyword}
-                onChange={(e) => setDraftKeyword(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") saveEdit();
-                  if (e.key === "Escape") cancelEdit();
-                }}
-                placeholder="Ex: vestido longo feminino"
-                className="h-9 text-sm flex-1 min-w-0"
-                maxLength={100}
-              />
-              <button
-                onClick={saveEdit}
-                disabled={!draftKeyword.trim() || refreshing}
-                className="h-9 w-9 inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 shrink-0"
-                title="Reanalisar"
-              >
-                <Check className="w-4 h-4" />
-              </button>
-              <button
-                onClick={cancelEdit}
-                className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-secondary shrink-0"
-                title="Cancelar"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          ) : (
-            <>
+      {/* Faixa do termo do produto — card sutil */}
+      <div className="rounded-lg border border-border bg-surface-2/40 p-3 sm:p-3.5">
+        {editing ? (
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-primary flex-shrink-0" />
+            <Input
+              autoFocus
+              value={draftKeyword}
+              onChange={(e) => setDraftKeyword(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") saveEdit();
+                if (e.key === "Escape") cancelEdit();
+              }}
+              placeholder="Ex: vestido longo feminino"
+              className="h-9 text-sm flex-1 min-w-0 bg-background"
+              maxLength={100}
+            />
+            <button
+              onClick={saveEdit}
+              disabled={!draftKeyword.trim() || refreshing}
+              className="h-9 w-9 inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 shrink-0"
+              title="Reanalisar"
+            >
+              <Check className="w-4 h-4" />
+            </button>
+            <button
+              onClick={cancelEdit}
+              className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-secondary shrink-0"
+              title="Cancelar"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="min-w-0 flex-1">
               {keyword && (
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <p className="text-small text-muted-foreground">
-                    Termo analisado:{" "}
-                    <span className="font-semibold text-foreground break-all">{keyword}</span>
-                  </p>
-                  {keywordOverride && (
-                    <span className="text-micro text-primary bg-primary/10 px-1.5 py-0.5 rounded">
-                      personalizado
-                    </span>
+                <>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <Sparkles className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                    <p className="text-[10px] uppercase tracking-wide font-bold text-muted-foreground">
+                      Termo analisado
+                    </p>
+                    {keywordOverride && (
+                      <span className="text-micro text-primary bg-primary/10 px-1.5 py-0.5 rounded font-semibold">
+                        personalizado
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <p className="text-sm font-bold text-foreground break-all">{keyword}</p>
+                    <button
+                      onClick={startEdit}
+                      className="inline-flex items-center justify-center w-6 h-6 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors flex-shrink-0"
+                      title="Editar termo"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  {lastCapture && (
+                    <p className="text-micro text-muted-foreground/70 mt-1">
+                      Atualizado em {new Date(lastCapture).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
+                    </p>
                   )}
-                  <button
-                    onClick={startEdit}
-                    className="ml-1 inline-flex items-center justify-center w-6 h-6 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                    title="Editar termo"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                </>
               )}
-              {lastCapture && (
-                <p className="text-micro text-muted-foreground/70 mt-0.5">
-                  Atualizado em {new Date(lastCapture).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
-                </p>
-              )}
-            </>
-          )}
-        </div>
-        {!editing && (
-          <button
-            onClick={() => refresh(true)}
-            disabled={refreshing}
-            className="h-9 px-3 rounded-lg border border-border text-small text-muted-foreground hover:bg-secondary transition-colors inline-flex items-center gap-1.5 shrink-0"
-          >
-            {refreshing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">Atualizar</span>
-          </button>
+            </div>
+            <button
+              onClick={() => refresh(true)}
+              disabled={refreshing}
+              className="h-9 px-3 rounded-lg border border-border text-small text-muted-foreground hover:bg-secondary transition-colors inline-flex items-center gap-1.5 shrink-0 self-start"
+            >
+              {refreshing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">Atualizar</span>
+            </button>
+          </div>
         )}
       </div>
 
