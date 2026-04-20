@@ -653,6 +653,54 @@ export type Database = {
           },
         ]
       }
+      product_trends: {
+        Row: {
+          captured_at: string
+          competition_level: string | null
+          created_at: string
+          id: string
+          interest_score: number | null
+          keyword: string
+          metadata: Json | null
+          period_date: string
+          product_id: string
+          search_volume: number | null
+          source: string
+          suggested_bid: number | null
+          user_id: string
+        }
+        Insert: {
+          captured_at?: string
+          competition_level?: string | null
+          created_at?: string
+          id?: string
+          interest_score?: number | null
+          keyword: string
+          metadata?: Json | null
+          period_date: string
+          product_id: string
+          search_volume?: number | null
+          source: string
+          suggested_bid?: number | null
+          user_id: string
+        }
+        Update: {
+          captured_at?: string
+          competition_level?: string | null
+          created_at?: string
+          id?: string
+          interest_score?: number | null
+          keyword?: string
+          metadata?: Json | null
+          period_date?: string
+          product_id?: string
+          search_volume?: number | null
+          source?: string
+          suggested_bid?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           ads_cost: number | null
