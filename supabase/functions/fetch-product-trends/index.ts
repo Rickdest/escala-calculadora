@@ -602,21 +602,27 @@ Deno.serve(async (req) => {
     });
 
     let googleSaved = 0;
+    let relatedSaved = 0;
     let googleError: string | null = null;
     let rateLimited = false;
     let lowQuality = false;
     let zerosPct = 0;
+    let relatedTopOut: RelatedKeyword[] = [];
+    let relatedRisingOut: RelatedKeyword[] = [];
 
     // Google Trends com retry e backoff (2s, 5s, 12s)
     try {
       const delays = [2000, 5000, 12000];
-      let trendsData: Array<{ period_date: string; interest_score: number }> =
-        [];
+      let trendsResult: TrendsResult = {
+        timeline: [],
+        relatedTop: [],
+        relatedRising: [],
+      };
       let lastErr: unknown = null;
 
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
-          trendsData = await fetchGoogleTrends(keyword);
+          trendsResult = await fetchGoogleTrends(keyword);
           lastErr = null;
           break;
         } catch (e) {
@@ -628,6 +634,10 @@ Deno.serve(async (req) => {
       }
 
       if (lastErr) throw lastErr;
+
+      const trendsData = trendsResult.timeline;
+      relatedTopOut = trendsResult.relatedTop;
+      relatedRisingOut = trendsResult.relatedRising;
 
       if (trendsData.length > 0) {
         // Detecta baixa qualidade (>80% zeros)
@@ -659,6 +669,55 @@ Deno.serve(async (req) => {
           googleError = insertErr.message;
         } else {
           googleSaved = rows.length;
+        }
+      }
+
+      // Persiste related (top + rising) — sempre que tivermos algo
+      if (relatedTopOut.length > 0 || relatedRisingOut.length > 0) {
+        const today = new Date().toISOString().split("T")[0];
+
+        await admin
+          .from("product_trends")
+          .delete()
+          .eq("product_id", productId)
+          .in("source", ["google_related_top", "google_related_rising"]);
+
+        const relatedRows = [
+          ...relatedTopOut.map((r) => ({
+            user_id: userId,
+            product_id: productId,
+            source: "google_related_top",
+            keyword: r.keyword,
+            period_date: today,
+            interest_score: r.value,
+            metadata: {
+              type: "top",
+              formatted_value: r.formattedValue,
+              parent_keyword: keyword,
+            },
+          })),
+          ...relatedRisingOut.map((r) => ({
+            user_id: userId,
+            product_id: productId,
+            source: "google_related_rising",
+            keyword: r.keyword,
+            period_date: today,
+            interest_score: r.value,
+            metadata: {
+              type: "rising",
+              is_breakout: r.isBreakout,
+              formatted_value: r.formattedValue,
+              parent_keyword: keyword,
+            },
+          })),
+        ];
+
+        if (relatedRows.length > 0) {
+          const { error: relErr } = await admin
+            .from("product_trends")
+            .insert(relatedRows);
+          if (!relErr) relatedSaved = relatedRows.length;
+          else logger.warn("related_insert_failed", { error: relErr.message });
         }
       }
     } catch (e) {
@@ -717,15 +776,24 @@ Deno.serve(async (req) => {
       }
     }
 
-    const suggestions = lowQuality
-      ? suggestAlternatives(product.name, keyword)
-      : [];
+    // Sugestões: prioriza related top REAIS do Google (3 primeiros) > algoritmo
+    let suggestions: string[] = [];
+    if (lowQuality) {
+      const fromRelated = [
+        ...relatedTopOut.slice(0, 3).map((r) => r.keyword),
+        ...relatedRisingOut.slice(0, 2).map((r) => r.keyword),
+      ].filter((k) => k && k.toLowerCase() !== keyword.toLowerCase());
+      suggestions = fromRelated.length > 0
+        ? Array.from(new Set(fromRelated)).slice(0, 3)
+        : suggestAlternatives(product.name, keyword);
+    }
 
     logger.info("fetch_done", {
       productId,
       keyword,
       googleSaved,
       shopeeSaved,
+      relatedSaved,
       googleError,
       rateLimited,
       lowQuality,
@@ -739,6 +807,7 @@ Deno.serve(async (req) => {
         keyword_override: product.trend_keyword_override ?? null,
         google_saved: googleSaved,
         shopee_saved: shopeeSaved,
+        related_saved: relatedSaved,
         google_error: googleError,
         rate_limited: rateLimited,
         low_quality: lowQuality,
