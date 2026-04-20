@@ -786,10 +786,12 @@ export function TrendSearchCard({
 
                   {/* Banner de ação interpretado */}
                   {actionInsight && (
-                    <div className="flex items-start gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2.5">
-                      <Lightbulb className="w-4 h-4 flex-shrink-0 text-primary mt-0.5" />
+                    <div className="flex items-start gap-2.5 rounded-lg border border-primary/20 border-l-2 border-l-primary/60 bg-gradient-to-r from-primary/10 to-primary/5 px-3 py-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+                        <Lightbulb className="w-3.5 h-3.5 text-primary" />
+                      </div>
                       <p
-                        className="text-xs text-foreground leading-relaxed"
+                        className="text-xs text-foreground leading-relaxed pt-0.5"
                         dangerouslySetInnerHTML={{
                           __html: actionInsight.replace(
                             /\*\*(.+?)\*\*/g,
