@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { TrendingUp, TrendingDown, Minus, Loader2, RefreshCw, Sparkles, Flame, AlertTriangle, Calendar, Pencil, Check, X, Search, Zap } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceDot } from "recharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceDot, Area, AreaChart, ReferenceLine } from "recharts";
 import { cn } from "@/lib/utils";
 import { useProductTrend } from "@/hooks/useProductTrend";
 import { Input } from "@/components/ui/input";
+import { SeasonalCycleChart } from "./SeasonalCycleChart";
+import { RegionsBreakdown } from "./RegionsBreakdown";
 
 interface ProductTrendTabProps {
   productId: string;
@@ -36,6 +38,8 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
     suggestions,
     relatedTop,
     relatedRising,
+    regions,
+    seasonalCycle,
     refresh,
     setKeywordOverride,
   } = useProductTrend(productId);
