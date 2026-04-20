@@ -15,6 +15,10 @@ export type ComparisonPoint = { period_date: string; values: (number | null)[] }
 export type ForecastPoint = { month: number; predicted: number; year: number };
 
 export type SlopeLabel = "subindo_forte" | "subindo" | "estavel" | "caindo" | "caindo_forte";
+export type VolatilityLabel = "estavel" | "volatil" | "muito_volatil";
+export type CurrentMonthStatus = "pico" | "alta" | "neutro" | "baixa";
+export type MarketSaturation = "morno" | "ativo" | "quente";
+export type Next30dDirection = "subir" | "cair" | "estavel";
 
 export type TrendSearchResult = {
   keyword: string;
@@ -35,6 +39,16 @@ export type TrendSearchResult = {
   stockRecommendation: string | null;
   forecast3m: ForecastPoint[];
   categoryHint: string | null;
+  // Insights extras
+  marketScore: number | null;
+  volatility: number | null;
+  volatilityLabel: VolatilityLabel | null;
+  currentMonthStatus: { status: CurrentMonthStatus; deltaPct: number } | null;
+  vsLastYear: { deltaPct: number; valueNow: number; valuePast: number } | null;
+  vsAllTimePeak: number | null;
+  next30dEstimate: { deltaPct: number; direction: Next30dDirection } | null;
+  bestGrowthMonth: number | null;
+  marketSaturation: MarketSaturation;
   // Status
   lowQuality: boolean;
   suggestions: string[];
