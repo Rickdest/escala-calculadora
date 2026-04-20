@@ -142,7 +142,7 @@ export function TrendSearchCard({
 }: TrendSearchCardProps = {}) {
   const [input, setInput] = useState(initialKeyword ?? "");
   const [collapsed, setCollapsed] = useState(false);
-  const [timeframe, setTimeframe] = useState<Timeframe>("today 5-y");
+  const [timeframe, setTimeframe] = useState<Timeframe>("today 12-m");
   const [compareTerms, setCompareTerms] = useState<string[]>([]);
   const [compareInput, setCompareInput] = useState("");
   const [showCompare, setShowCompare] = useState(false);
