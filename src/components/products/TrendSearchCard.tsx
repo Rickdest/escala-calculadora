@@ -184,7 +184,7 @@ export function TrendSearchCard({
     const kw = initialKeyword?.trim();
     if (!kw) return;
     setInput(kw);
-    search(kw, { timeframe: "today 5-y", compareKeywords: [] });
+    search(kw, { timeframe: "today 12-m", compareKeywords: [] });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialKeyword]);
 
