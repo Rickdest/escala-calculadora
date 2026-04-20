@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TrendingUp, TrendingDown, Minus, Loader2, RefreshCw, Sparkles, Flame, AlertTriangle, Calendar, Pencil, Check, X } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, Loader2, RefreshCw, Sparkles, Flame, AlertTriangle, Calendar, Pencil, Check, X, Search, Zap } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceDot } from "recharts";
 import { cn } from "@/lib/utils";
 import { useProductTrend } from "@/hooks/useProductTrend";
