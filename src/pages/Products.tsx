@@ -62,8 +62,10 @@ export default function Products() {
   
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [trendOpen, setTrendOpen] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem('products-trend-open') === '1';
+    if (typeof window === 'undefined') return true;
+    const saved = window.localStorage.getItem('products-trend-open');
+    // Default to OPEN — only stay closed if user explicitly closed it before
+    return saved === null ? true : saved === '1';
   });
 
   useEffect(() => {
