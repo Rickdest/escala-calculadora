@@ -75,5 +75,7 @@ Updated: now
 - [Ads Scoring](mem://logic/ads-scoring-diagnostics) — 0-100 efficiency score and auto-bidding strategies
 - [Validation Rules](mem://auth/validation-rules) — Password limits and 100-char max for display names
 - [IA Analysis Fallback](mem://logic/ads/ia-analysis-fallback) — Synthetic financial calculation for unlinked ads
+- [IA Analysis Fallback](mem://logic/ads/ia-analysis-fallback) — Synthetic financial calculation for unlinked ads
 - [Ads Status Terminology](mem://ux/ads-status-terminology) — Folga vs Empate ROAS calculation formula
 - [Onboarding Paywall](mem://auth/onboarding-paywall-policy) — Immediate paywall lock with no automatic free trial
+- [Product Market Trend](mem://features/product-market-trend) — Google Trends + Shopee keywords tab in product detail with 7-day cache
