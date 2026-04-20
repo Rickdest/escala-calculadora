@@ -7,21 +7,30 @@ import {
   Pencil,
   Check,
   X,
+  TrendingUp,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useProductTrend } from "@/hooks/useProductTrend";
 import { Input } from "@/components/ui/input";
 import { TrendSearchCard } from "@/components/products/TrendSearchCard";
+import { ShopeeKeywordsCard } from "@/components/products/trend/ShopeeKeywordsCard";
 
 interface ProductTrendTabProps {
   productId: string;
   productName: string;
 }
 
-const fmtNumber = (n: number) => {
+const fmtVolume = (n: number) => {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
   return String(n);
 };
+
+const normalize = (s: string) =>
+  s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
 
 export function ProductTrendTab({ productId, productName }: ProductTrendTabProps) {
   const {
