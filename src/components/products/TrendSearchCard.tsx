@@ -303,7 +303,7 @@ export function TrendSearchCard() {
                       {result.relatedRising.length > 0 && (
                         <div className="surface-card p-4">
                           <div className="flex items-center gap-2 mb-2">
-                            <Flame className="w-4 h-4 text-orange-500" />
+                            <Flame className="w-4 h-4 text-warning" />
                             <p className="section-label">Em alta agora</p>
                           </div>
                           <div className="space-y-1.5">
@@ -320,7 +320,7 @@ export function TrendSearchCard() {
                                   className={cn(
                                     "text-[10px] font-mono font-mono-num font-bold flex-shrink-0 px-1.5 py-0.5 rounded",
                                     r.isBreakout
-                                      ? "bg-orange-500/15 text-orange-500"
+                                      ? "bg-warning/15 text-warning"
                                       : "bg-success/15 text-success",
                                   )}
                                 >
