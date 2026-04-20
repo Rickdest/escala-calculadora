@@ -344,7 +344,7 @@ export function TrendSearchCard({
       !isEmbedded && !hideOuterBorder && "border-l-4 border-l-primary/70",
     )}>
       {/* Header (oculto em embedded) */}
-      {!isEmbedded && (
+      {!isEmbedded && !hideHeader && (
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-start gap-3 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/25 to-primary/5 border border-primary/20 flex items-center justify-center flex-shrink-0">
