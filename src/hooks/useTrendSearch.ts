@@ -236,7 +236,7 @@ export function useTrendSearch() {
     async (
       kw: string,
       geoResolution: GeoResolution,
-      timeframe: Timeframe = "today 5-y",
+      timeframe: Timeframe = "today 12-m",
     ): Promise<RegionEntry[]> => {
       const { data, error: fnErr } = await supabase.functions.invoke("fetch-product-trends", {
         body: { keywordOnly: kw, timeframe, geoResolution, compareKeywords: [] },
