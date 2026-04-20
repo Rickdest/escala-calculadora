@@ -138,16 +138,8 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
     );
   }
 
-  if (loading || (refreshing && !hasData)) {
-    return (
-      <div className="surface-card p-8 text-center">
-        <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-3" />
-        <p className="text-small text-muted-foreground">
-          {refreshing ? "Buscando dados de tendência (5-15s)..." : "Carregando..."}
-        </p>
-      </div>
-    );
-  }
+  // Refresh em andamento com dados antigos visíveis — segue exibindo (não bloqueia)
+
 
   const peakValue = Math.max(...googleSeries.map((p) => p.interest_score ?? 0));
   const peakPoint = googleSeries.find((p) => p.interest_score === peakValue);
