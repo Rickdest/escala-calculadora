@@ -13,6 +13,13 @@ export type ShopeeKeyword = {
   competition_level: string | null;
 };
 
+export type RelatedKeyword = {
+  keyword: string;
+  value: number;
+  isBreakout: boolean;
+  formattedValue: string;
+};
+
 export type TrendDiagnostic = {
   direction: "up" | "down" | "stable";
   slopePct: number;
