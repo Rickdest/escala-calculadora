@@ -285,6 +285,8 @@ export function useProductTrend(productId: string | undefined) {
     error,
     lowQuality,
     suggestions,
+    relatedTop,
+    relatedRising,
     refresh,
     setKeywordOverride,
   };
