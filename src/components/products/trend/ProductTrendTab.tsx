@@ -138,12 +138,12 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
       {/* Header com termo + editor + refresh */}
-      <div className="flex items-start justify-between gap-3 flex-wrap">
+      <div className="flex items-start justify-between gap-2 sm:gap-3 flex-wrap">
         <div className="min-w-0 flex-1">
           {editing ? (
-            <div className="flex items-center gap-2 max-w-md">
+            <div className="flex items-center gap-2 w-full sm:max-w-md">
               <Input
                 autoFocus
                 value={draftKeyword}
@@ -153,20 +153,20 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
                   if (e.key === "Escape") cancelEdit();
                 }}
                 placeholder="Ex: vestido longo feminino"
-                className="h-9 text-sm"
+                className="h-9 text-sm flex-1 min-w-0"
                 maxLength={100}
               />
               <button
                 onClick={saveEdit}
                 disabled={!draftKeyword.trim() || refreshing}
-                className="h-9 w-9 inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                className="h-9 w-9 inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 shrink-0"
                 title="Reanalisar"
               >
                 <Check className="w-4 h-4" />
               </button>
               <button
                 onClick={cancelEdit}
-                className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-secondary"
+                className="h-9 w-9 inline-flex items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-secondary shrink-0"
                 title="Cancelar"
               >
                 <X className="w-4 h-4" />
@@ -178,7 +178,7 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <p className="text-small text-muted-foreground">
                     Termo analisado:{" "}
-                    <span className="font-semibold text-foreground">{keyword}</span>
+                    <span className="font-semibold text-foreground break-all">{keyword}</span>
                   </p>
                   {keywordOverride && (
                     <span className="text-micro text-primary bg-primary/10 px-1.5 py-0.5 rounded">
@@ -202,14 +202,16 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
             </>
           )}
         </div>
-        <button
-          onClick={() => refresh(true)}
-          disabled={refreshing || editing}
-          className="h-9 px-3 rounded-lg border border-border text-small text-muted-foreground hover:bg-secondary transition-colors inline-flex items-center gap-1.5 shrink-0"
-        >
-          {refreshing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-          Atualizar
-        </button>
+        {!editing && (
+          <button
+            onClick={() => refresh(true)}
+            disabled={refreshing}
+            className="h-9 px-3 rounded-lg border border-border text-small text-muted-foreground hover:bg-secondary transition-colors inline-flex items-center gap-1.5 shrink-0"
+          >
+            {refreshing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">Atualizar</span>
+          </button>
+        )}
       </div>
 
       {/* Aviso de baixa qualidade + sugestões */}
