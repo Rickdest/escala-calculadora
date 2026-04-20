@@ -690,6 +690,7 @@ Deno.serve(async (req) => {
       const trendsData = trendsResult.timeline;
       relatedTopOut = trendsResult.relatedTop;
       relatedRisingOut = trendsResult.relatedRising;
+      regionsOut = trendsResult.regions;
 
       if (trendsData.length > 0) {
         // Detecta baixa qualidade (>80% zeros)
@@ -721,6 +722,51 @@ Deno.serve(async (req) => {
           googleError = insertErr.message;
         } else {
           googleSaved = rows.length;
+        }
+
+        // Calcula CICLO SAZONAL — média histórica por mês (1-12)
+        // Útil pra responder "esse produto vende mais em qual mês do ano?"
+        const monthBuckets: number[][] = Array.from({ length: 12 }, () => []);
+        for (const p of trendsData) {
+          const month = new Date(p.period_date).getUTCMonth(); // 0-11
+          if (p.interest_score > 0) monthBuckets[month].push(p.interest_score);
+        }
+        const cycle = monthBuckets.map((vals, i) => {
+          const avg = vals.length > 0
+            ? vals.reduce((a, b) => a + b, 0) / vals.length
+            : 0;
+          return { month: i + 1, avg: Math.round(avg), samples: vals.length };
+        });
+
+        await admin
+          .from("product_trends")
+          .delete()
+          .eq("product_id", productId)
+          .eq("source", "google_seasonal_cycle");
+
+        const cycleRows = cycle
+          .filter((c) => c.samples > 0)
+          .map((c) => {
+            // period_date sintético: dia 15 do mês no ano corrente (só pra satisfazer a coluna)
+            const year = new Date().getUTCFullYear();
+            const mm = String(c.month).padStart(2, "0");
+            return {
+              user_id: userId,
+              product_id: productId,
+              source: "google_seasonal_cycle",
+              keyword,
+              period_date: `${year}-${mm}-15`,
+              interest_score: c.avg,
+              metadata: { month: c.month, samples: c.samples },
+            };
+          });
+
+        if (cycleRows.length > 0) {
+          const { error: cycleErr } = await admin
+            .from("product_trends")
+            .insert(cycleRows);
+          if (!cycleErr) cycleSaved = cycleRows.length;
+          else logger.warn("cycle_insert_failed", { error: cycleErr.message });
         }
       }
 
@@ -771,6 +817,32 @@ Deno.serve(async (req) => {
           if (!relErr) relatedSaved = relatedRows.length;
           else logger.warn("related_insert_failed", { error: relErr.message });
         }
+      }
+
+      // Persiste regiões (top estados)
+      if (regionsOut.length > 0) {
+        const today = new Date().toISOString().split("T")[0];
+        await admin
+          .from("product_trends")
+          .delete()
+          .eq("product_id", productId)
+          .eq("source", "google_geo");
+
+        const regionRows = regionsOut.map((r) => ({
+          user_id: userId,
+          product_id: productId,
+          source: "google_geo",
+          keyword: r.region,
+          period_date: today,
+          interest_score: r.value,
+          metadata: { region: r.region, parent_keyword: keyword },
+        }));
+
+        const { error: geoErr } = await admin
+          .from("product_trends")
+          .insert(regionRows);
+        if (!geoErr) regionsSaved = regionRows.length;
+        else logger.warn("geo_insert_failed", { error: geoErr.message });
       }
     } catch (e) {
       const raw = e instanceof Error ? e.message : String(e);
