@@ -19,11 +19,7 @@ import {
   Activity,
   Calendar,
   Crosshair,
-  Crystal,
-  BarChart3,
-  Gauge,
-  Target,
-  Zap,
+  Crosshair,
 } from "lucide-react";
 import {
   AreaChart,
