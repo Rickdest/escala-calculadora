@@ -1,3 +1,2 @@
 
-
-O usuário quer um visual mais rico tipo a referência (gráfico multi-ano com tooltip detalhado, picos/quedas destacados, ciclo de tendência). Vou explorar o que já temos e o que dá pra puxar do Google Trends.
+Vou investigar o estado atual da aba Tendência pra entender o que quebrou no mobile/tablet e por que só esses dados aparecem.
