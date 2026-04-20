@@ -315,6 +315,30 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
         </div>
       )}
 
+      {/* Estado: termo sem dados no Google Trends mas com related/shopee */}
+      {googleSeries.length === 0 && !lowQuality && hasData && (
+        <div className="surface-card p-4 sm:p-5 border-warning/30 bg-warning/5">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground mb-1">
+                Sem timeline disponível para "{keyword}"
+              </p>
+              <p className="text-small text-muted-foreground mb-2">
+                O Google Trends não retornou histórico pra esse termo. Tente um termo mais genérico ou use uma das sugestões abaixo.
+              </p>
+              <button
+                onClick={startEdit}
+                className="text-small text-primary hover:underline inline-flex items-center gap-1"
+              >
+                <Pencil className="w-3 h-3" />
+                Editar termo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Gráfico Google Trends 5 anos — esconde se baixa qualidade */}
       {googleSeries.length > 0 && !lowQuality && (() => {
         const validValues = googleSeries
