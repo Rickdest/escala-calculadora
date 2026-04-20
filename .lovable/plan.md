@@ -1,65 +1,83 @@
 
 
-## Diagnóstico
+## Diagnóstico (image-268, image-269)
 
-Pelos prints anteriores e estado atual do código:
+O card "**Descobrir produtos vencedores**" no topo da pesquisa de tendências está com problemas claros:
 
-1. **Trend collapsible fechado por padrão** esconde o que é a ferramenta — usuário não percebe que existe pesquisa de demanda. Usuário pediu pra **abrir por padrão**.
-2. **Cards de "Saúde da carteira" ainda parecem amadores**: tamanhos inconsistentes, donut pequeno (96px) com tipografia pequena ao redor, lista do Top 5 com barras finas demais (h-1) e ranks pequenos, stat card de Saúde Financeira com 3 mini-tiles cinzas que ficam apertados no breakpoint atual (878px viewport = quebra em 2 colunas e o 3º card vai pra próxima linha sozinho).
+1. **Ícone com gradient laranja gigante (44px)** dentro de caixa arredondada — visual de "banner promocional" de e-commerce, não de ferramenta SaaS profissional
+2. **Badge "FERRAMENTA"** em pílula laranja contrastante — redundante e ruidoso (já está em destaque com border primary)
+3. **Borda laranja contínua + gradient laranja sutil de fundo** — compete visualmente com os botões "Importar Shopee" e "Análise" (também laranja), poluindo a hierarquia
+4. **Copy genérica**: "Descobrir produtos vencedores / Pesquise demanda, sazonalidade e concorrência" — abstrato, não comunica valor concreto
+5. **Card flutuando isolado** entre charts e Ranking — não tem conexão visual com o que vem antes/depois
 
-## Plano
+## Referências modernas (Linear, Vercel, Notion AI, Stripe Sigma)
 
-### A. Trend aberto por padrão
+Padrão SaaS premium pra "ferramenta destacada":
+- **Borda neutra** + **acento sutil só no ícone** (não no card inteiro)
+- **Ícone pequeno e geométrico** (16-20px), não emoji-grande
+- **Tipografia hierárquica forte** (título + métrica/preview de funcionalidade ao lado)
+- **CTA explícito à direita** ("Pesquisar →") em vez de chevron sozinho
+- **Preview do que faz** (chips com features: "demanda · sazonalidade · regiões")
+- **Sem badges de "FERRAMENTA"** — quem é dev/PM já entende pelo contexto
 
-`Products.tsx`:
-- Mudar `useState<boolean>` inicial: se `localStorage` não tiver valor salvo, default = **`true`** (aberto). Só respeitar localStorage quando explicitamente salvo como `'0'`.
-- Quando aberto, o header do trigger continua visível (funciona como header da seção) com chevron rotacionado — comunica claramente "esta é uma ferramenta de pesquisa" sem precisar clicar.
-- Refinar visual do trigger quando **aberto**: hoje fica neutro demais (`bg-card`). Manter um leve `bg-gradient-to-r from-primary/[0.04] to-transparent` e borda `border-primary/30` pra continuar destacado como ferramenta.
+## Plano de redesign
 
-### B. Redesign dos 3 cards de Saúde da carteira
+### Novo card (estado fechado)
 
-Problema central: viewport 878px cai em `md:grid-cols-2` → quebra layout 2+1 (ruim). 
+```
+┌────────────────────────────────────────────────────────────────┐
+│ [✨] Pesquisa de mercado          [demanda] [sazonal] [região] │
+│      Descubra se um produto vale a pena antes  ┃               │
+│      de cadastrar na sua loja                  ┃   Pesquisar → │
+└────────────────────────────────────────────────────────────────┘
+```
 
-**Solução grid**: forçar `grid-cols-1 md:grid-cols-3` direto (sem breakpoint intermediário 2-col). Em mobile stack, em desktop 3 lado a lado. Aumentar `min-h` de 260px → **300px** pra cards respirarem.
+**Mudanças visuais**:
+- **Borda neutra** `border-border` (não primary). Só hover ganha `border-primary/40`
+- **Background**: `bg-card` puro (sem gradient laranja). No hover, `bg-card-hover`
+- **Ícone**: Search ou Sparkles em **32px** dentro de caixa **40px** com `bg-primary/10 border-primary/20` (sutil, não gradient)
+- **Título**: "Pesquisa de mercado" (mais direto que "Descobrir produtos vencedores")
+- **Subtítulo**: "Descubra se um produto vale a pena antes de cadastrar na sua loja" (concreto, fala do **uso**)
+- **Chips de features** (ao invés de badge "FERRAMENTA"): 3 chips pequenos `text-[10px]` com bg-surface-2 — "Demanda 12m", "Sazonalidade", "Regiões". Mostram o que a ferramenta entrega
+- **CTA à direita**: botão `text-primary` "Pesquisar →" com hover. Mais convidativo que chevron solto. No mobile, vira só chevron.
+- **Remover badge "FERRAMENTA"** completamente
 
-**MarginDistributionChart** (`AnalyticsCharts.tsx`):
-- Aumentar donut de 96px → **128px** com stroke 12 (mais presente)
-- Tipografia central: % `text-2xl font-bold` em vez de `text-lg`
-- Stat tiles laterais: substituir as 3 linhas finas por 3 **mini-cards verticais** com bg semântico sutil (success/15, warning/15, destructive/15) — pílulas pequenas em vez de linhas
-- Footer com "meta: X%" alinhado embaixo
+### Estado aberto
 
-**TopProductsChart** (lista Top 5):
-- Aumentar barra de `h-1` → `h-1.5` com gradiente (ex: `from-success to-success/60`)
-- Rank: badge circular numerado 20px com cor (1º dourado, 2º prata, 3º bronze, 4-5 cinza) em vez de número solto
-- Nome em `text-xs` (era 11px) com mais respiro entre linhas (`space-y-3` em vez de `space-y-2`)
-- Linha separadora sutil entre itens
+- Mesmo card, mas com **divisória sutil** entre header e conteúdo
+- Header continua visível como contexto, **sem repetir** o subtítulo/chips quando aberto (compacta pra `py-3`)
+- Chevron rotaciona, CTA "Pesquisar →" some (já está pesquisando)
+- Conteúdo do `TrendSearchCard` herda o card pai (continua com `hideOuterBorder hideHeader`)
 
-**ProfitSummaryChart** (Saúde financeira):
-- Hoje: número grande no topo + 3 mini-tiles cinzas embaixo. Os tiles cinzas escuros desentoam dos outros 2 cards.
-- Refazer: lucro consolidado grande no topo (manter), abaixo **2 colunas** de stats (não 3): coluna esquerda "Médio · Mediana", coluna direita "% Lucrativos" com barra de progresso visual horizontal (não só número). Visual mais limpo, mais espaço pra cada métrica respirar.
-- Remover bg `surface-2/60` dos mini-tiles → usar `border-t border-border/50` como separador, sem caixinhas internas (mais clean, alinha com estilo dos outros 2)
+### Conexão visual com o resto
 
-### C. Header da seção "Saúde da carteira"
+- Adicionar **header de seção** acima do card, igual "Saúde da carteira":
+  ```
+  🔍 Pesquisa de mercado
+  Avalie o potencial de qualquer produto antes de cadastrar
+  ```
+- Isso ancora o card no fluxo da página em vez de ser uma "ilha" laranja flutuante
 
-- Aumentar `h2` de `text-sm` → `text-base font-semibold`
-- Adicionar contador discreto à direita: "3 visões" com chip sutil
-- Mais respiro vertical entre header e grid (`space-y-4` em vez de `space-y-3`)
+### Polimentos extras
+
+- **Padding**: card interno `p-3.5` → `px-4 py-3` (mais arejado horizontal, menos altura)
+- **Border-radius**: `rounded-xl` → `rounded-2xl` pra alinhar com o estilo dos outros surface-cards
+- **Animação**: `transition-all duration-200` no hover (border + bg)
 
 ## Arquivos
 
 | Arquivo | Mudança |
 |---|---|
-| `src/pages/Products.tsx` | (1) Default `trendOpen = true` quando não há valor no localStorage; (2) Trigger no estado aberto mantém gradient sutil + border-primary/30; (3) Grid de charts: `grid-cols-1 md:grid-cols-3` (remover breakpoint 2-col); (4) Header "Saúde da carteira" maior + chip contador |
-| `src/components/charts/AnalyticsCharts.tsx` | (1) Donut 128px com tipografia maior + stat tiles como pílulas semânticas; (2) Top 5 com badges de rank coloridos + barras h-1.5 gradient + espaçamento maior; (3) Saúde financeira em 2 col com barra de progresso pra "% lucrativos" + remover mini-tiles cinzas; (4) `min-h-[300px]` em todos |
+| `src/pages/Products.tsx` | Redesign completo do bloco Collapsible "Descobrir produtos vencedores": (1) Adicionar header de seção "Pesquisa de mercado" igual aos outros; (2) Card com border neutra + hover primary, sem gradient laranja; (3) Ícone menor em caixa sutil; (4) Substituir badge "FERRAMENTA" por 3 chips de features (Demanda/Sazonalidade/Regiões); (5) CTA "Pesquisar →" à direita; (6) Estado aberto compactado sem repetir subtítulo |
 
-Sem migrações. Sem mudanças no backend.
+Sem mudanças em `AnalyticsCharts.tsx`, `TrendSearchCard.tsx`, ou backend.
 
 ## Trade-offs
 
-- ✅ Ferramenta de pesquisa visível imediatamente (resolve "não dá pra saber que tem ferramenta ali")
-- ✅ Charts maiores e com tipografia respirável — sai do amador
-- ✅ Grid 3-col direto evita quebra feia 2+1 no viewport ~880px
-- ✅ Visual semântico (cores nos rank badges, barras gradient) eleva o nível
-- ⚠️ Trend aberto por padrão consome ~600px da viewport — mitigado: usuário pode fechar e a preferência fica salva
-- ⚠️ Cards de 300px min-height aumentam scroll inicial — aceitável, é a seção de análise
+- ✅ Card agora parece **ferramenta SaaS profissional**, não banner promo
+- ✅ Hierarquia clara: laranja fica reservado pros CTAs reais (Análise tab, Novo Produto), card neutro com acento sutil
+- ✅ Chips de features comunicam o que a ferramenta **entrega** sem precisar abrir
+- ✅ Header de seção dá contexto e simetria com "Saúde da carteira"
+- ⚠️ Card menos chamativo que antes — mitigado pelo CTA "Pesquisar →" + chips que sinalizam funcionalidade
+- ⚠️ Ainda fica aberto por padrão (mantém preferência anterior)
 
