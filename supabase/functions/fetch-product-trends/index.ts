@@ -260,6 +260,75 @@ function suggestAlternatives(productName: string, currentKeyword: string): strin
   return Array.from(out).slice(0, 3);
 }
 
+/**
+ * Constrói cascata de variações da keyword, do mais específico ao mais genérico.
+ * Ex: "vestido longo suplex feminino" → ["vestido longo suplex feminino", "vestido longo feminino", "vestido feminino", "vestido"]
+ *
+ * Estratégia:
+ * 1ª) keyword principal (categoria + 1-2 modifiers + audience)
+ * 2ª) categoria + 1 modifier + audience (drop o modifier mais "raro" — o último coletado)
+ * 3ª) categoria + audience
+ * 4ª) só categoria
+ */
+function buildKeywordCascade(productName: string): string[] {
+  const primary = extractKeyword(productName);
+  const cascade: string[] = [primary];
+
+  // Re-extrai partes pra montar variações
+  let cleaned = productName.toLowerCase();
+  for (const phrase of MARKETING_PHRASES) {
+    const norm = normalizeWord(phrase);
+    cleaned = cleaned
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(new RegExp(`\\b${norm}\\b`, "gi"), " ");
+    cleaned = cleaned.replace(new RegExp(`\\b${phrase}\\b`, "gi"), " ");
+  }
+  const tokens = tokenize(cleaned);
+  const normTokens = tokens.map(normalizeWord);
+
+  let category: string | null = null;
+  let categoryIdx = -1;
+  for (let i = 0; i < normTokens.length; i++) {
+    if (PRODUCT_CATEGORIES.has(normTokens[i])) {
+      category = tokens[i];
+      categoryIdx = i;
+      break;
+    }
+  }
+
+  const modifiers: string[] = [];
+  for (let i = 0; i < normTokens.length; i++) {
+    if (i === categoryIdx) continue;
+    if (GENERIC_MODIFIERS.has(normTokens[i])) modifiers.push(tokens[i]);
+  }
+
+  let audience: string | null = null;
+  for (let i = 0; i < normTokens.length; i++) {
+    if (AUDIENCES.has(normTokens[i])) {
+      audience = tokens[i];
+      break;
+    }
+  }
+
+  if (category) {
+    // Variação intermediária: categoria + primeiro modifier + audience
+    if (modifiers[0]) {
+      const v = [category, modifiers[0], audience].filter(Boolean).join(" ").trim();
+      if (v && !cascade.includes(v)) cascade.push(v);
+    }
+    // categoria + audience
+    if (audience) {
+      const v = `${category} ${audience}`.trim();
+      if (!cascade.includes(v)) cascade.push(v);
+    }
+    // só categoria (última cartada)
+    if (!cascade.includes(category)) cascade.push(category);
+  }
+
+  return cascade.slice(0, 4);
+}
+
 // ============================================================
 // GOOGLE TRENDS (cookies + UAs rotativos)
 // ============================================================
@@ -631,9 +700,14 @@ Deno.serve(async (req) => {
       }
     }
 
-    const keyword =
-      product.trend_keyword_override?.trim() || extractKeyword(product.name);
-    if (!keyword) {
+    // Se houver override manual, respeita 100% (sem cascata).
+    // Caso contrário, monta cascata do mais específico ao mais genérico.
+    const overrideKeyword = product.trend_keyword_override?.trim() || null;
+    const cascadeKeywords: string[] = overrideKeyword
+      ? [overrideKeyword]
+      : buildKeywordCascade(product.name);
+
+    if (cascadeKeywords.length === 0 || !cascadeKeywords[0]) {
       return new Response(
         JSON.stringify({ error: "Não foi possível extrair palavra-chave" }),
         {
@@ -643,10 +717,16 @@ Deno.serve(async (req) => {
       );
     }
 
+    // keyword "ativa" — começa com a primeira; muda se a cascata avançar
+    let keyword = cascadeKeywords[0];
+    const attemptedCascade: Array<{ keyword: string; zerosPct: number; pointsCount: number }> = [];
+    let autoSimplified = false;
+
     logger.info("fetch_start", {
       productId,
       keyword,
-      override: !!product.trend_keyword_override,
+      override: !!overrideKeyword,
+      cascade: cascadeKeywords,
     });
 
     let googleSaved = 0;
@@ -660,40 +740,71 @@ Deno.serve(async (req) => {
     let relatedTopOut: RelatedKeyword[] = [];
     let relatedRisingOut: RelatedKeyword[] = [];
     let regionsOut: RegionEntry[] = [];
+    let trendsData: Array<{ period_date: string; interest_score: number }> = [];
 
-    // Google Trends com retry e backoff (2s, 5s, 12s) — janela de 5 anos
+    // Google Trends: cascata + retry/backoff por variação
     try {
       const delays = [2000, 5000, 12000];
-      let trendsResult: TrendsResult = {
-        timeline: [],
-        relatedTop: [],
-        relatedRising: [],
-        regions: [],
-      };
       let lastErr: unknown = null;
 
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          trendsResult = await fetchGoogleTrends(keyword);
-          lastErr = null;
-          break;
-        } catch (e) {
-          lastErr = e;
-          const msg = e instanceof Error ? e.message : String(e);
-          logger.warn("attempt_failed", { attempt: attempt + 1, error: msg });
-          if (attempt < 2) await sleep(delays[attempt]);
+      for (let cIdx = 0; cIdx < cascadeKeywords.length; cIdx++) {
+        const variant = cascadeKeywords[cIdx];
+        let trendsResult: TrendsResult = {
+          timeline: [],
+          relatedTop: [],
+          relatedRising: [],
+          regions: [],
+        };
+        lastErr = null;
+
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            trendsResult = await fetchGoogleTrends(variant);
+            lastErr = null;
+            break;
+          } catch (e) {
+            lastErr = e;
+            const msg = e instanceof Error ? e.message : String(e);
+            logger.warn("attempt_failed", { variant, attempt: attempt + 1, error: msg });
+            // Em caso de RATE_LIMITED, abandona variantes restantes (sem queimar quota)
+            if (msg === "RATE_LIMITED") break;
+            if (attempt < 2) await sleep(delays[attempt]);
+          }
         }
+
+        // Se a tentativa atual rate-limitou, propaga
+        if (lastErr) {
+          const msg = lastErr instanceof Error ? lastErr.message : String(lastErr);
+          if (msg === "RATE_LIMITED") throw lastErr;
+          // Erro genérico nessa variante: tenta a próxima
+          attemptedCascade.push({ keyword: variant, zerosPct: 100, pointsCount: 0 });
+          continue;
+        }
+
+        const tl = trendsResult.timeline;
+        const zeros = tl.length === 0 ? 100 : (tl.filter((p) => p.interest_score === 0).length / tl.length) * 100;
+        attemptedCascade.push({ keyword: variant, zerosPct: Math.round(zeros), pointsCount: tl.length });
+
+        // Critério de "dados úteis": >30% não-zeros AND pelo menos 8 pontos
+        const isUseful = tl.length >= 8 && zeros < 70;
+
+        if (isUseful || cIdx === cascadeKeywords.length - 1) {
+          // Aceita esta variante (útil, ou última cartada)
+          keyword = variant;
+          if (cIdx > 0) autoSimplified = true;
+          trendsData = tl;
+          relatedTopOut = trendsResult.relatedTop;
+          relatedRisingOut = trendsResult.relatedRising;
+          regionsOut = trendsResult.regions;
+          zerosPct = zeros;
+          lowQuality = !isUseful;
+          break;
+        }
+        // Senão, tenta próxima variante
+        logger.info("cascade_advance", { from: variant, zerosPct: Math.round(zeros), points: tl.length });
       }
 
-      if (lastErr) throw lastErr;
-
-      const trendsData = trendsResult.timeline;
-      relatedTopOut = trendsResult.relatedTop;
-      relatedRisingOut = trendsResult.relatedRising;
-      regionsOut = trendsResult.regions;
-
-      // Se timeline veio vazia, marca como baixa qualidade pra disparar sugestões
-      if (trendsData.length === 0) {
+      if (trendsData.length === 0 && !lowQuality) {
         lowQuality = true;
         zerosPct = 100;
       }
@@ -907,15 +1018,52 @@ Deno.serve(async (req) => {
     }
 
     // Sugestões: prioriza related top REAIS do Google (3 primeiros) > algoritmo
+    // Mesmo se NÃO for low_quality podemos retornar sugestões do related (UI ignora se não for low)
     let suggestions: string[] = [];
     if (lowQuality) {
       const fromRelated = [
         ...relatedTopOut.slice(0, 3).map((r) => r.keyword),
         ...relatedRisingOut.slice(0, 2).map((r) => r.keyword),
       ].filter((k) => k && k.toLowerCase() !== keyword.toLowerCase());
-      suggestions = fromRelated.length > 0
-        ? Array.from(new Set(fromRelated)).slice(0, 3)
-        : suggestAlternatives(product.name, keyword);
+
+      // Adiciona variações restantes da cascata como fallback (mais genéricas que a atual)
+      const cascadeFallback = cascadeKeywords
+        .filter((k) => k.toLowerCase() !== keyword.toLowerCase())
+        .slice(0, 3);
+
+      const merged = fromRelated.length > 0
+        ? Array.from(new Set([...fromRelated, ...cascadeFallback])).slice(0, 4)
+        : Array.from(new Set([...cascadeFallback, ...suggestAlternatives(product.name, keyword)])).slice(0, 4);
+
+      suggestions = merged;
+    }
+
+    // Marker meta_no_data: garante hasData=true no front quando NADA foi salvo,
+    // permitindo a UI mostrar aviso + sugestões em vez do estado vazio inicial.
+    if (googleSaved === 0 && relatedSaved === 0 && regionsSaved === 0 && cycleSaved === 0) {
+      const today = new Date().toISOString().split("T")[0];
+      await admin
+        .from("product_trends")
+        .delete()
+        .eq("product_id", productId)
+        .eq("source", "meta_no_data");
+
+      const { error: metaErr } = await admin.from("product_trends").insert({
+        user_id: userId,
+        product_id: productId,
+        source: "meta_no_data",
+        keyword,
+        period_date: today,
+        metadata: {
+          suggestions,
+          attempted_cascade: attemptedCascade,
+          auto_simplified: autoSimplified,
+          zeros_pct: Math.round(zerosPct),
+          google_error: googleError,
+          rate_limited: rateLimited,
+        },
+      });
+      if (metaErr) logger.warn("meta_no_data_insert_failed", { error: metaErr.message });
     }
 
     logger.info("fetch_done", {
@@ -929,6 +1077,8 @@ Deno.serve(async (req) => {
       googleError,
       rateLimited,
       lowQuality,
+      autoSimplified,
+      cascade: cascadeKeywords,
       zerosPct: Math.round(zerosPct),
     });
 
@@ -937,6 +1087,8 @@ Deno.serve(async (req) => {
         cached: false,
         keyword,
         keyword_override: product.trend_keyword_override ?? null,
+        auto_simplified: autoSimplified,
+        attempted_cascade: attemptedCascade,
         google_saved: googleSaved,
         shopee_saved: shopeeSaved,
         related_saved: relatedSaved,
