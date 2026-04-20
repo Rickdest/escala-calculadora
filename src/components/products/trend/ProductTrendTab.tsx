@@ -76,7 +76,7 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
           className="h-10 px-5 rounded-lg bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors inline-flex items-center gap-2"
         >
           {refreshing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          Analisar tendência
+          Analisar mercado
         </button>
         {error && (
           <p className="text-small text-destructive mt-3">{error}</p>
