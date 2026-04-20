@@ -10,6 +10,7 @@ import ProductCard from '@/components/cards/ProductCard';
 import { ProductForm } from '@/components/forms/ProductForm';
 import { MarginDistributionChart, TopProductsChart, ProfitSummaryChart } from '@/components/charts/AnalyticsCharts';
 import { ProductThumbnail } from '@/components/ProductThumbnail';
+import { TrendSearchCard } from '@/components/products/TrendSearchCard';
 
 import { useShopeeProducts } from '@/hooks/useShopeeProducts';
 import { ShopeeImportModal, type ShopeeProduct } from '@/components/produtos/ShopeeImportModal';
@@ -441,6 +442,9 @@ export default function Products() {
                     </button>
                   </div>
                 )}
+
+                {/* Trend search card — busca avulsa */}
+                <TrendSearchCard />
 
                 {/* Charts */}
                 <div className="space-y-3 md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-3 md:space-y-0">

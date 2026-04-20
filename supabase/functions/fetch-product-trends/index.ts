@@ -633,6 +633,100 @@ Deno.serve(async (req) => {
       typeof body?.keywordOverride === "string"
         ? body.keywordOverride.trim().slice(0, 100)
         : null;
+    const keywordOnlyInput =
+      typeof body?.keywordOnly === "string"
+        ? body.keywordOnly.trim().slice(0, 100)
+        : null;
+
+    // ============================================================
+    // MODO KEYWORD-ONLY: busca avulsa (sem persistir, sem productId)
+    // ============================================================
+    if (keywordOnlyInput && keywordOnlyInput.length > 0) {
+      const kw = keywordOnlyInput;
+      logger.info("keyword_only_start", { userId, keyword: kw });
+
+      let trendsResult: TrendsResult = {
+        timeline: [],
+        relatedTop: [],
+        relatedRising: [],
+        regions: [],
+      };
+      let rateLimited = false;
+      let googleError: string | null = null;
+
+      const delays = [2000, 5000, 12000];
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          trendsResult = await fetchGoogleTrends(kw);
+          googleError = null;
+          break;
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          googleError = msg;
+          if (msg === "RATE_LIMITED") {
+            rateLimited = true;
+            break;
+          }
+          if (attempt < 2) await sleep(delays[attempt]);
+        }
+      }
+
+      const tl = trendsResult.timeline;
+      const zeros = tl.length === 0 ? 100 : (tl.filter((p) => p.interest_score === 0).length / tl.length) * 100;
+      const lowQuality = tl.length < 8 || zeros > 80;
+
+      // Ciclo sazonal calculado inline
+      const monthBuckets: number[][] = Array.from({ length: 12 }, () => []);
+      for (const p of tl) {
+        const month = new Date(p.period_date).getUTCMonth();
+        if (p.interest_score > 0) monthBuckets[month].push(p.interest_score);
+      }
+      const seasonal_cycle = monthBuckets
+        .map((vals, i) => {
+          const avg = vals.length > 0
+            ? vals.reduce((a, b) => a + b, 0) / vals.length
+            : 0;
+          return { month: i + 1, avg: Math.round(avg), samples: vals.length };
+        })
+        .filter((c) => c.samples > 0);
+
+      // Sugestões a partir das related quando lowQuality
+      const suggestions: string[] = lowQuality
+        ? [
+            ...trendsResult.relatedRising.slice(0, 2).map((r) => r.keyword),
+            ...trendsResult.relatedTop.slice(0, 3).map((r) => r.keyword),
+          ]
+            .filter((s, i, arr) => s && arr.indexOf(s) === i && s.toLowerCase() !== kw.toLowerCase())
+            .slice(0, 3)
+        : [];
+
+      logger.info("keyword_only_done", {
+        keyword: kw,
+        points: tl.length,
+        zerosPct: Math.round(zeros),
+        lowQuality,
+        rateLimited,
+      });
+
+      return new Response(
+        JSON.stringify({
+          keyword: kw,
+          google_series: tl,
+          related_top: trendsResult.relatedTop,
+          related_rising: trendsResult.relatedRising,
+          regions: trendsResult.regions,
+          seasonal_cycle,
+          low_quality: lowQuality,
+          suggestions,
+          rate_limited: rateLimited,
+          google_error: googleError,
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
 
     if (!productId || typeof productId !== "string") {
       return new Response(
