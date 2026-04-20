@@ -187,6 +187,31 @@ export function useTrendSearch() {
         stockRecommendation: typeof data?.stock_recommendation === "string" ? data.stock_recommendation : null,
         forecast3m,
         categoryHint: typeof data?.category_hint === "string" ? data.category_hint : null,
+        marketScore: data?.market_score !== null && data?.market_score !== undefined ? Number(data.market_score) : null,
+        volatility: data?.volatility !== null && data?.volatility !== undefined ? Number(data.volatility) : null,
+        volatilityLabel: (data?.volatility_label as VolatilityLabel) ?? null,
+        currentMonthStatus: data?.current_month_status
+          ? {
+              status: data.current_month_status.status as CurrentMonthStatus,
+              deltaPct: Number(data.current_month_status.delta_pct ?? 0),
+            }
+          : null,
+        vsLastYear: data?.vs_last_year
+          ? {
+              deltaPct: Number(data.vs_last_year.delta_pct ?? 0),
+              valueNow: Number(data.vs_last_year.value_now ?? 0),
+              valuePast: Number(data.vs_last_year.value_past ?? 0),
+            }
+          : null,
+        vsAllTimePeak: data?.vs_all_time_peak !== null && data?.vs_all_time_peak !== undefined ? Number(data.vs_all_time_peak) : null,
+        next30dEstimate: data?.next_30d_estimate
+          ? {
+              deltaPct: Number(data.next_30d_estimate.delta_pct ?? 0),
+              direction: data.next_30d_estimate.direction as Next30dDirection,
+            }
+          : null,
+        bestGrowthMonth: data?.best_growth_month !== null && data?.best_growth_month !== undefined ? Number(data.best_growth_month) : null,
+        marketSaturation: (data?.market_saturation as MarketSaturation) ?? "morno",
         lowQuality: Boolean(data?.low_quality),
         suggestions: Array.isArray(data?.suggestions) ? data.suggestions : [],
         rateLimited: false,
