@@ -20,6 +20,17 @@ export type RelatedKeyword = {
   formattedValue: string;
 };
 
+export type RegionEntry = {
+  region: string;
+  value: number;
+};
+
+export type SeasonalMonth = {
+  month: number; // 1-12
+  avg: number; // 0-100
+  samples: number;
+};
+
 export type TrendDiagnostic = {
   direction: "up" | "down" | "stable";
   slopePct: number;
@@ -45,6 +56,8 @@ export function useProductTrend(productId: string | undefined) {
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [relatedTop, setRelatedTop] = useState<RelatedKeyword[]>([]);
   const [relatedRising, setRelatedRising] = useState<RelatedKeyword[]>([]);
+  const [regions, setRegions] = useState<RegionEntry[]>([]);
+  const [seasonalCycle, setSeasonalCycle] = useState<SeasonalMonth[]>([]);
 
   const loadFromDb = useCallback(async () => {
     if (!productId) return;
@@ -115,6 +128,30 @@ export function useProductTrend(productId: string | undefined) {
 
       setRelatedTop(parseRelated("google_related_top"));
       setRelatedRising(parseRelated("google_related_rising"));
+
+      // Regiões (top estados)
+      const regionsParsed: RegionEntry[] = rows
+        .filter((r) => r.source === "google_geo")
+        .map((r) => ({
+          region: r.keyword,
+          value: Number(r.interest_score ?? 0),
+        }))
+        .sort((a, b) => b.value - a.value);
+      setRegions(regionsParsed);
+
+      // Ciclo sazonal (média mês a mês)
+      const cycleParsed: SeasonalMonth[] = rows
+        .filter((r) => r.source === "google_seasonal_cycle")
+        .map((r) => {
+          const meta = (r.metadata as Record<string, unknown> | null) ?? {};
+          return {
+            month: Number(meta.month ?? new Date(r.period_date).getUTCMonth() + 1),
+            avg: Number(r.interest_score ?? 0),
+            samples: Number(meta.samples ?? 0),
+          };
+        })
+        .sort((a, b) => a.month - b.month);
+      setSeasonalCycle(cycleParsed);
 
       if (rows.length > 0) {
         const captured = rows
@@ -287,6 +324,8 @@ export function useProductTrend(productId: string | undefined) {
     suggestions,
     relatedTop,
     relatedRising,
+    regions,
+    seasonalCycle,
     refresh,
     setKeywordOverride,
   };

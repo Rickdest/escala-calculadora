@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { TrendingUp, TrendingDown, Minus, Loader2, RefreshCw, Sparkles, Flame, AlertTriangle, Calendar, Pencil, Check, X, Search, Zap } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceDot } from "recharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceDot, Area, AreaChart, ReferenceLine } from "recharts";
 import { cn } from "@/lib/utils";
 import { useProductTrend } from "@/hooks/useProductTrend";
 import { Input } from "@/components/ui/input";
+import { SeasonalCycleChart } from "./SeasonalCycleChart";
+import { RegionsBreakdown } from "./RegionsBreakdown";
 
 interface ProductTrendTabProps {
   productId: string;
@@ -36,6 +38,8 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
     suggestions,
     relatedTop,
     relatedRising,
+    regions,
+    seasonalCycle,
     refresh,
     setKeywordOverride,
   } = useProductTrend(productId);
@@ -309,65 +313,148 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
         </div>
       )}
 
-      {/* Gráfico Google Trends — esconde se baixa qualidade */}
-      {googleSeries.length > 0 && !lowQuality && (
-        <div className="surface-card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <p className="section-label">Interesse de busca — Google (12 meses)</p>
-            <span className="text-micro text-muted-foreground">0-100 relativo</span>
-          </div>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={googleSeries} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-                <XAxis
-                  dataKey="period_date"
-                  tickFormatter={fmtMonthShort}
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                  interval="preserveStartEnd"
-                />
-                <YAxis
-                  domain={[0, 100]}
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={11}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                    fontSize: "12px",
-                  }}
-                  labelFormatter={(d) => new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
-                  formatter={(v: number) => [v, "Interesse"]}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="interest_score"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={false}
-                  activeDot={{ r: 4 }}
-                />
-                {peakPoint && (
-                  <ReferenceDot
-                    x={peakPoint.period_date}
-                    y={peakPoint.interest_score ?? 0}
-                    r={5}
-                    fill="hsl(var(--primary))"
-                    stroke="hsl(var(--background))"
-                    strokeWidth={2}
+      {/* Gráfico Google Trends 5 anos — esconde se baixa qualidade */}
+      {googleSeries.length > 0 && !lowQuality && (() => {
+        const validValues = googleSeries
+          .map((p) => p.interest_score)
+          .filter((v): v is number => v !== null && v > 0);
+        const avgValue = validValues.length > 0
+          ? Math.round(validValues.reduce((a, b) => a + b, 0) / validValues.length)
+          : 0;
+        const firstYear = new Date(googleSeries[0].period_date).getUTCFullYear();
+        const lastYear = new Date(googleSeries[googleSeries.length - 1].period_date).getUTCFullYear();
+        const yearsSpan = lastYear - firstYear + 1;
+
+        // Tick formatter: pra muitos pontos, mostra só ano; pra poucos, mês/ano
+        const tickFormatter = (d: string) => {
+          const date = new Date(d);
+          if (yearsSpan >= 3) {
+            return date.toLocaleDateString("pt-BR", { year: "numeric" });
+          }
+          return date.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
+        };
+
+        return (
+          <div className="surface-card p-5">
+            <div className="flex items-start justify-between mb-1 gap-3 flex-wrap">
+              <div>
+                <p className="section-label">Interesse de busca — Google</p>
+                <p className="text-micro text-muted-foreground mt-0.5">
+                  {yearsSpan >= 2 ? `Últimos ${yearsSpan} anos` : "Últimos 12 meses"} · escala 0-100 (relativo ao pico)
+                </p>
+              </div>
+              <div className="flex items-center gap-3 text-micro">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-primary" />
+                  <span className="text-muted-foreground">Pico {peakValue}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-0.5 bg-muted-foreground/60" style={{ borderTop: "1px dashed" }} />
+                  <span className="text-muted-foreground">Média {avgValue}</span>
+                </div>
+              </div>
+            </div>
+            <div className="h-64 mt-3">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={googleSeries} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="trendGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
+                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis
+                    dataKey="period_date"
+                    tickFormatter={tickFormatter}
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    interval="preserveStartEnd"
+                    minTickGap={40}
                   />
-                )}
-              </LineChart>
-            </ResponsiveContainer>
+                  <YAxis
+                    domain={[0, 100]}
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <Tooltip
+                    cursor={{ stroke: "hsl(var(--primary))", strokeWidth: 1, strokeDasharray: "3 3" }}
+                    content={({ active, payload }) => {
+                      if (!active || !payload?.length) return null;
+                      const p = payload[0].payload as { period_date: string; interest_score: number | null };
+                      const v = p.interest_score ?? 0;
+                      const date = new Date(p.period_date);
+                      const dateLabel = date.toLocaleDateString("pt-BR", {
+                        day: "2-digit", month: "long", year: "numeric",
+                      });
+                      const vsAvg = avgValue > 0 ? Math.round(((v - avgValue) / avgValue) * 100) : 0;
+                      const isPeak = v === peakValue && v > 0;
+                      return (
+                        <div className="bg-card border border-border rounded-lg shadow-lg px-3 py-2 min-w-[180px]">
+                          <p className="text-micro text-muted-foreground capitalize">{dateLabel}</p>
+                          <div className="flex items-baseline gap-2 mt-1">
+                            <span className="font-mono text-xl font-bold text-foreground">{v}</span>
+                            <span className="text-micro text-muted-foreground">/100</span>
+                            {isPeak && (
+                              <span className="text-micro font-bold text-primary ml-auto">PICO</span>
+                            )}
+                          </div>
+                          {avgValue > 0 && v > 0 && (
+                            <p className={cn(
+                              "text-micro mt-1",
+                              vsAvg > 5 ? "text-success" : vsAvg < -5 ? "text-destructive" : "text-muted-foreground",
+                            )}>
+                              {vsAvg > 0 ? "+" : ""}{vsAvg}% vs média do período
+                            </p>
+                          )}
+                        </div>
+                      );
+                    }}
+                  />
+                  {avgValue > 0 && (
+                    <ReferenceLine
+                      y={avgValue}
+                      stroke="hsl(var(--muted-foreground))"
+                      strokeDasharray="3 3"
+                      strokeOpacity={0.5}
+                    />
+                  )}
+                  <Area
+                    type="monotone"
+                    dataKey="interest_score"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={2}
+                    fill="url(#trendGradient)"
+                    activeDot={{ r: 4, fill: "hsl(var(--primary))", stroke: "hsl(var(--background))", strokeWidth: 2 }}
+                  />
+                  {peakPoint && (
+                    <ReferenceDot
+                      x={peakPoint.period_date}
+                      y={peakPoint.interest_score ?? 0}
+                      r={5}
+                      fill="hsl(var(--primary))"
+                      stroke="hsl(var(--background))"
+                      strokeWidth={2}
+                    />
+                  )}
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </div>
+        );
+      })()}
+
+      {/* Ciclo sazonal + Regiões — lado a lado em md+ */}
+      {!lowQuality && (seasonalCycle.length > 0 || regions.length > 0) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {seasonalCycle.length > 0 && <SeasonalCycleChart cycle={seasonalCycle} />}
+          {regions.length > 0 && <RegionsBreakdown regions={regions} />}
         </div>
       )}
+
 
       {/* Oportunidades de mercado — buscas relacionadas (top + rising) */}
       {(relatedRising.length > 0 || relatedTop.length > 0) && (

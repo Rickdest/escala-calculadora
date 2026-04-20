@@ -326,15 +326,23 @@ type RelatedKeyword = {
   formattedValue: string; // ex: "+250%", "Em alta", "100"
 };
 
+type RegionEntry = {
+  region: string;
+  value: number;
+};
+
 type TrendsResult = {
   timeline: Array<{ period_date: string; interest_score: number }>;
   relatedTop: RelatedKeyword[];
   relatedRising: RelatedKeyword[];
+  regions: RegionEntry[];
 };
 
-async function fetchGoogleTrends(keyword: string): Promise<TrendsResult> {
+async function fetchGoogleTrends(
+  keyword: string,
+  timeRange: string = "today 5-y",
+): Promise<TrendsResult> {
   const geo = "BR";
-  const time = "today 12-m";
   const ua = pickUA();
   const cookies = await getCookies(ua);
   const headers = buildHeaders(ua, cookies);
@@ -345,7 +353,7 @@ async function fetchGoogleTrends(keyword: string): Promise<TrendsResult> {
   exploreUrl.searchParams.set(
     "req",
     JSON.stringify({
-      comparisonItem: [{ keyword, geo, time }],
+      comparisonItem: [{ keyword, geo, time: timeRange }],
       category: 0,
       property: "",
     }),
@@ -380,6 +388,11 @@ async function fetchGoogleTrends(keyword: string): Promise<TrendsResult> {
   // RELATED_QUERIES vem como array com 2 widgets (top, rising) — id "RELATED_QUERIES"
   const relatedWidgets = widgets.filter(
     (w) => w.id === "RELATED_QUERIES" || (typeof w.id === "string" && w.id.startsWith("RELATED_QUERIES")),
+  );
+
+  // GEO_MAP — interesse por região (estado)
+  const geoWidget = widgets.find(
+    (w) => w.id === "GEO_MAP" || (typeof w.id === "string" && w.id.startsWith("GEO_MAP")),
   );
 
   // 1) Timeline
@@ -471,7 +484,42 @@ async function fetchGoogleTrends(keyword: string): Promise<TrendsResult> {
     });
   }
 
-  return { timeline, relatedTop, relatedRising };
+  // 3) Geo map (interesse por região / estado) — falha gracioso
+  let regions: RegionEntry[] = [];
+  try {
+    if (geoWidget?.token && geoWidget?.request) {
+      const url = new URL(
+        "https://trends.google.com/trends/api/widgetdata/comparedgeo",
+      );
+      url.searchParams.set("hl", "pt-BR");
+      url.searchParams.set("tz", "180");
+      url.searchParams.set("req", JSON.stringify(geoWidget.request));
+      url.searchParams.set("token", geoWidget.token);
+
+      const r = await fetch(url.toString(), { headers });
+      if (r.ok) {
+        const txt = await r.text();
+        const data = JSON.parse(txt.replace(/^\)\]\}'\,?\n?/, ""));
+        const geoData: any[] = data.default?.geoMapData ?? [];
+        regions = geoData
+          .map((g: any) => ({
+            region: String(g.geoName ?? "").slice(0, 100),
+            value: Number(g.value?.[0] ?? 0),
+          }))
+          .filter((g) => g.region.length > 0 && g.value > 0)
+          .sort((a, b) => b.value - a.value)
+          .slice(0, 10);
+      } else {
+        logger.warn("geo_failed", { status: r.status });
+      }
+    }
+  } catch (e) {
+    logger.warn("geo_parse_error", {
+      error: e instanceof Error ? e.message : String(e),
+    });
+  }
+
+  return { timeline, relatedTop, relatedRising, regions };
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -603,20 +651,24 @@ Deno.serve(async (req) => {
 
     let googleSaved = 0;
     let relatedSaved = 0;
+    let regionsSaved = 0;
+    let cycleSaved = 0;
     let googleError: string | null = null;
     let rateLimited = false;
     let lowQuality = false;
     let zerosPct = 0;
     let relatedTopOut: RelatedKeyword[] = [];
     let relatedRisingOut: RelatedKeyword[] = [];
+    let regionsOut: RegionEntry[] = [];
 
-    // Google Trends com retry e backoff (2s, 5s, 12s)
+    // Google Trends com retry e backoff (2s, 5s, 12s) — janela de 5 anos
     try {
       const delays = [2000, 5000, 12000];
       let trendsResult: TrendsResult = {
         timeline: [],
         relatedTop: [],
         relatedRising: [],
+        regions: [],
       };
       let lastErr: unknown = null;
 
@@ -638,6 +690,7 @@ Deno.serve(async (req) => {
       const trendsData = trendsResult.timeline;
       relatedTopOut = trendsResult.relatedTop;
       relatedRisingOut = trendsResult.relatedRising;
+      regionsOut = trendsResult.regions;
 
       if (trendsData.length > 0) {
         // Detecta baixa qualidade (>80% zeros)
@@ -669,6 +722,51 @@ Deno.serve(async (req) => {
           googleError = insertErr.message;
         } else {
           googleSaved = rows.length;
+        }
+
+        // Calcula CICLO SAZONAL — média histórica por mês (1-12)
+        // Útil pra responder "esse produto vende mais em qual mês do ano?"
+        const monthBuckets: number[][] = Array.from({ length: 12 }, () => []);
+        for (const p of trendsData) {
+          const month = new Date(p.period_date).getUTCMonth(); // 0-11
+          if (p.interest_score > 0) monthBuckets[month].push(p.interest_score);
+        }
+        const cycle = monthBuckets.map((vals, i) => {
+          const avg = vals.length > 0
+            ? vals.reduce((a, b) => a + b, 0) / vals.length
+            : 0;
+          return { month: i + 1, avg: Math.round(avg), samples: vals.length };
+        });
+
+        await admin
+          .from("product_trends")
+          .delete()
+          .eq("product_id", productId)
+          .eq("source", "google_seasonal_cycle");
+
+        const cycleRows = cycle
+          .filter((c) => c.samples > 0)
+          .map((c) => {
+            // period_date sintético: dia 15 do mês no ano corrente (só pra satisfazer a coluna)
+            const year = new Date().getUTCFullYear();
+            const mm = String(c.month).padStart(2, "0");
+            return {
+              user_id: userId,
+              product_id: productId,
+              source: "google_seasonal_cycle",
+              keyword,
+              period_date: `${year}-${mm}-15`,
+              interest_score: c.avg,
+              metadata: { month: c.month, samples: c.samples },
+            };
+          });
+
+        if (cycleRows.length > 0) {
+          const { error: cycleErr } = await admin
+            .from("product_trends")
+            .insert(cycleRows);
+          if (!cycleErr) cycleSaved = cycleRows.length;
+          else logger.warn("cycle_insert_failed", { error: cycleErr.message });
         }
       }
 
@@ -719,6 +817,32 @@ Deno.serve(async (req) => {
           if (!relErr) relatedSaved = relatedRows.length;
           else logger.warn("related_insert_failed", { error: relErr.message });
         }
+      }
+
+      // Persiste regiões (top estados)
+      if (regionsOut.length > 0) {
+        const today = new Date().toISOString().split("T")[0];
+        await admin
+          .from("product_trends")
+          .delete()
+          .eq("product_id", productId)
+          .eq("source", "google_geo");
+
+        const regionRows = regionsOut.map((r) => ({
+          user_id: userId,
+          product_id: productId,
+          source: "google_geo",
+          keyword: r.region,
+          period_date: today,
+          interest_score: r.value,
+          metadata: { region: r.region, parent_keyword: keyword },
+        }));
+
+        const { error: geoErr } = await admin
+          .from("product_trends")
+          .insert(regionRows);
+        if (!geoErr) regionsSaved = regionRows.length;
+        else logger.warn("geo_insert_failed", { error: geoErr.message });
       }
     } catch (e) {
       const raw = e instanceof Error ? e.message : String(e);
@@ -794,6 +918,8 @@ Deno.serve(async (req) => {
       googleSaved,
       shopeeSaved,
       relatedSaved,
+      regionsSaved,
+      cycleSaved,
       googleError,
       rateLimited,
       lowQuality,
@@ -808,6 +934,8 @@ Deno.serve(async (req) => {
         google_saved: googleSaved,
         shopee_saved: shopeeSaved,
         related_saved: relatedSaved,
+        regions_saved: regionsSaved,
+        cycle_saved: cycleSaved,
         google_error: googleError,
         rate_limited: rateLimited,
         low_quality: lowQuality,
