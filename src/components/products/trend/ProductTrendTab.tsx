@@ -65,10 +65,10 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
           <Sparkles className="w-6 h-6 text-primary" />
         </div>
         <h3 className="font-semibold text-foreground text-base mb-1">
-          Analise a tendência deste produto
+          Descubra a tendência de mercado
         </h3>
         <p className="text-small text-muted-foreground mb-5 max-w-md mx-auto">
-          Vamos buscar interesse de busca dos últimos 12 meses no Google e palavras-chave da Shopee para identificar picos, sazonalidade e oportunidades.
+          Analise os últimos 12 meses de interesse de busca pelo seu produto, identifique picos sazonais e descubra o melhor momento para investir em estoque e ads.
         </p>
         <button
           onClick={() => refresh(false)}
