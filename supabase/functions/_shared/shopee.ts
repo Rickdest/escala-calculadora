@@ -41,11 +41,9 @@ function getPartnerKey(): string {
   throw new Error("SHOPEE_KEY secret não configurado ou inválido.");
 }
 
-export const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+// Re-export shared CORS helpers so existing imports keep working.
+// Prefer `buildCorsHeaders(req)` for new code (validates Origin against whitelist).
+export { buildCorsHeaders, corsHeadersStatic as corsHeaders } from "./cors.ts";
 
 // ─── Parameterized helpers (for dual-app support) ────────────────────
 

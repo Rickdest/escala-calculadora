@@ -1,11 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { createLogger } from "../_shared/logger.ts";
+import { buildCorsHeaders, corsHeadersStatic } from "../_shared/cors.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+// Static fallback for non-request scopes; handlers should call buildCorsHeaders(req) instead.
+const corsHeaders = corsHeadersStatic;
+// Re-export so the handler at the bottom of the file can swap to per-request headers if needed.
+export { buildCorsHeaders };
 
 const logger = createLogger("FETCH-TRENDS");
 

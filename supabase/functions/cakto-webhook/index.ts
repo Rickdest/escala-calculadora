@@ -33,13 +33,10 @@ function maskEmail(email: string): string {
   return `${user.substring(0, 3)}***@${domain}`;
 }
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-webhook-secret, x-signature",
-};
+import { buildCorsHeaders } from "../_shared/cors.ts";
 
 Deno.serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req);
   console.log(">>> cakto-webhook hit:", req.method, new Date().toISOString());
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -207,8 +204,11 @@ Deno.serve(async (req) => {
         .eq("id", existingRow.id);
       if (updateError) console.error("Update error:", updateError.message);
     } else {
+      // user_id stays NULL when no user account exists yet — reconciliation happens
+      // automatically via the on_auth_user_created_reconcile_subscriptions trigger
+      // when the user signs up with the matching email.
       if (!userId) {
-        subscriptionData.user_id = "00000000-0000-0000-0000-000000000000";
+        delete subscriptionData.user_id;
       }
       const { error: insertError } = await supabase
         .from("subscriptions")
