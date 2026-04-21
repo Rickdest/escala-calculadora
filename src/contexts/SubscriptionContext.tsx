@@ -167,6 +167,25 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         setPlan(cached.plan);
         setLoading(false);
         hasResolved.current = true;
+
+        // SECURITY: revalidate cache against DB immediately (non-blocking).
+        // If localStorage was tampered with, DB truth overrides within <1s.
+        fetchSubscriptionFromDb(currentUserId).then((dbResult) => {
+          // Bail if user changed in the meantime
+          if (userIdRef.current !== currentUserId) return;
+          if (!dbResult) return; // network/RLS error → keep cache, edge will resolve
+          const verified = STATUS_MAP[dbResult.status] || 'expired';
+          if (verified !== 'active') {
+            console.warn('[subscription] cache invalidated by DB', {
+              cached: cached.status,
+              db: verified,
+            });
+            lastKnownStatus.current = { userId: currentUserId, status: verified, plan: dbResult.plan };
+            setStatus(verified);
+            setPlan(dbResult.plan);
+            clearCache();
+          }
+        }).catch(() => { /* ignore — edge fetch will reconcile */ });
       } else {
         setLoading(true);
       }
