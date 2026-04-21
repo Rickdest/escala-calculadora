@@ -286,7 +286,28 @@ export function useProductTrend(productId: string | undefined) {
     [productId, refresh],
   );
 
-  useEffect(() => {
+  const resyncShopeeAds = useCallback(async () => {
+    if (!productStoreId || !shopeeItemId) {
+      throw new Error("Produto sem item Shopee vinculado");
+    }
+    setRefreshing(true);
+    setError(null);
+    try {
+      const { data, error: fnErr } = await supabase.functions.invoke("shopee-ads", {
+        body: { storeId: productStoreId, filterItemId: shopeeItemId },
+      });
+      if (fnErr) throw fnErr;
+      if (data?.error) throw new Error(data.error);
+      // Recarrega dados (incluindo keywords novas)
+      await loadFromDb();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      throw e;
+    } finally {
+      setRefreshing(false);
+    }
+  }, [productStoreId, shopeeItemId, loadFromDb]);
+
     loadFromDb();
   }, [loadFromDb]);
 
