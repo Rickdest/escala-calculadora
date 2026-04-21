@@ -406,7 +406,10 @@ export function useProductTrend(productId: string | undefined) {
     regions,
     seasonalCycle,
     autoSimplified,
+    hasShopeeItemId,
+    lastAdsSync,
     refresh,
     setKeywordOverride,
+    resyncShopeeAds,
   };
 }
