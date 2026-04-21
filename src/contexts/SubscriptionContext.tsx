@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { checkSubscription } from '@/services/billing.service';
+import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 
 type SubscriptionStatus = 'free' | 'active' | 'canceled' | 'past_due' | 'expired' | 'loading' | 'error';
@@ -24,8 +25,8 @@ const STATUS_MAP: Record<string, SubscriptionStatus> = {
   trialing: 'expired',
 };
 
-const CACHE_KEY = 'skalify:sub-cache:v1';
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1h
+const CACHE_KEY = 'skalify:sub-cache:v2';
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 const FETCH_TIMEOUT_MS = 20_000;
 
 interface CachedEntry {
@@ -60,8 +61,42 @@ function writeCache(entry: CachedEntry) {
 function clearCache() {
   try {
     localStorage.removeItem(CACHE_KEY);
+    // Also clean up old cache key from previous version
+    localStorage.removeItem('skalify:sub-cache:v1');
   } catch {
     /* ignore */
+  }
+}
+
+/**
+ * Fallback DB direct query — final safety net when edge function fails.
+ * RLS guarantees the user can only read their own subscription row.
+ */
+async function fetchSubscriptionFromDb(
+  userId: string,
+): Promise<{ status: string; plan: string } | null> {
+  try {
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .select('status, plan')
+      .eq('user_id', userId)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.warn('[subscription] DB fallback error', error.message);
+      return null;
+    }
+    if (!data) {
+      console.log('[subscription] DB fallback: no row for user');
+      return null;
+    }
+    return { status: data.status || 'expired', plan: data.plan || 'free' };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn('[subscription] DB fallback threw', msg);
+    return null;
   }
 }
 
@@ -126,7 +161,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     if (!hasResolved.current) {
       const cached = readCache(currentUserId);
       if (cached) {
-        console.log('[subscription] using cached active state', { ts: cached.ts, plan: cached.plan });
+        console.log('[subscription] source=cache', { ts: cached.ts, plan: cached.plan });
         lastKnownStatus.current = { userId: currentUserId, status: cached.status, plan: cached.plan };
         setStatus(cached.status);
         setPlan(cached.plan);
@@ -150,7 +185,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }, FETCH_TIMEOUT_MS);
 
     try {
-      console.log('[subscription] fetching', { userId: currentUserId, noCache, retryCount });
+      console.log('[subscription] fetching edge', { userId: currentUserId, noCache, retryCount });
       const data = await checkSubscription(currentAccessToken, noCache, controller.signal);
       clearTimeout(timeoutId);
 
@@ -161,7 +196,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       }
 
       const newStatus = STATUS_MAP[data.status] || 'expired';
-      console.log('[subscription] resolved', { status: newStatus, plan: data.plan });
+      console.log('[subscription] source=edge', { status: newStatus, plan: data.plan });
       lastKnownStatus.current = { userId: currentUserId, status: newStatus, plan: data.plan };
       setStatus(newStatus);
       setPlan(data.plan);
@@ -184,31 +219,55 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       }
 
       const message = err instanceof Error ? err.message : String(err);
-      console.warn('[subscription] fetch failed', { message, retryCount });
+      console.warn('[subscription] edge fetch failed', { message, retryCount });
 
-      // Use cached/last-known status if any
-      if (lastKnownStatus.current?.userId === currentUserId) {
-        console.log('[subscription] keeping last-known state');
-        setStatus(lastKnownStatus.current.status);
-        setPlan(lastKnownStatus.current.plan);
-        hasResolved.current = true;
-        setLoading(false);
-      } else if (retryCount < 2) {
-        // Retry up to 2 times with increasing delay.
-        // Clear current controller so the retry doesn't think it's superseded.
+      // Retry edge function up to 2 times before falling back to DB
+      if (retryCount < 2) {
         if (inflightController.current === controller) {
           inflightController.current = null;
         }
         await new Promise<void>((resolve) => setTimeout(resolve, 2000 * (retryCount + 1)));
         return await fetchSubscription(true, retryCount + 1);
-      } else {
-        // After all retries failed → fail-safe to expired (paywall), NOT error
-        console.warn('[subscription] all retries exhausted → expired');
-        setStatus('expired');
-        setPlan('free');
+      }
+
+      // ===== FALLBACK 1: Direct DB query via Supabase client =====
+      console.log('[subscription] edge exhausted → trying DB fallback');
+      const dbResult = await fetchSubscriptionFromDb(currentUserId);
+
+      if (dbResult) {
+        const newStatus = STATUS_MAP[dbResult.status] || 'expired';
+        console.log('[subscription] source=db', { status: newStatus, plan: dbResult.plan });
+        lastKnownStatus.current = { userId: currentUserId, status: newStatus, plan: dbResult.plan };
+        setStatus(newStatus);
+        setPlan(dbResult.plan);
+
+        if (newStatus === 'active') {
+          writeCache({ userId: currentUserId, status: newStatus, plan: dbResult.plan, ts: Date.now() });
+        } else {
+          clearCache();
+        }
+
         hasResolved.current = true;
         setLoading(false);
+        return;
       }
+
+      // ===== FALLBACK 2: Last-known in-memory state =====
+      if (lastKnownStatus.current?.userId === currentUserId) {
+        console.log('[subscription] source=memory (keeping last-known)');
+        setStatus(lastKnownStatus.current.status);
+        setPlan(lastKnownStatus.current.plan);
+        hasResolved.current = true;
+        setLoading(false);
+        return;
+      }
+
+      // ===== Final: paywall =====
+      console.warn('[subscription] source=paywall (all fallbacks exhausted)');
+      setStatus('expired');
+      setPlan('free');
+      hasResolved.current = true;
+      setLoading(false);
     } finally {
       // Only release the slot if this is still the current controller.
       // Do NOT touch loading/hasResolved here — handled in success/error paths
