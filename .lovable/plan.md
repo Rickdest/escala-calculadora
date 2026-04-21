@@ -1,71 +1,53 @@
 
 
-## Diagnóstico definitivo
+## Diagnóstico definitivo (com evidência)
 
-Comparando logs do servidor com o comportamento do cliente:
+Verifiquei o banco e os logs do servidor:
 
-- **Banco está perfeito**: `pedro.altoson@gmail.com` → `status=active, plan=yearly, válido até 21/abr/2027`
-- **Edge function responde corretamente** quando recebe POST: log mostra `Found by user_id: active yearly`
-- **MAS**: nas últimas dezenas de invocações, o servidor recebeu **só requests OPTIONS** (preflight CORS) — nenhum POST. O cliente faz o preflight, ele responde 200, mas o POST seguinte **nunca chega** ao servidor.
+**Banco:** Todos os 3 usuários (Richard, Pedro, Junior) têm `status=active` corretamente.
 
-**Causa raiz**: o `SubscriptionContext` tem 3 problemas combinados que se manifestam principalmente em **PWA/mobile/cold start**:
+**Logs do servidor:** Os últimos 50 requests à edge `check-subscription` são **todos OPTIONS** (preflight CORS) com URLs como `?_t=1776788856429`. **Zero POSTs chegaram nas últimas 4 horas.** O último POST bem-sucedido foi do `junior_rsmf@icloud.com`, que provavelmente está rodando uma versão sem o cache-buster ou tem cache local persistente.
 
-1. **Header `Cache-Control: no-cache` no body do request** (não no preflight). Em iOS Safari/PWA, isso força o navegador a refazer o preflight a cada chamada — e quando o `Promise.race` com timeout 15s rejeita antes do POST sair, o request é descartado pelo navegador mas o servidor já recebeu o OPTIONS.
+**Causa raiz**: na correção anterior, mudei `supabase.functions.invoke('check-subscription?_t=12345')`. O SDK do Supabase **não aceita query strings dentro do nome da função** — ele faz o preflight OPTIONS na URL com `?_t=...` (servidor responde 200), mas o POST seguinte fica malformado e nunca chega ao servidor. O cliente recebe `error` → vai pro retry → todos retries falham → status vira `expired` → paywall.
 
-2. **`Promise.race` com timeout** que rejeita o `fetch` mas não o aborta de verdade. Quando a função é re-chamada (por mudança de `accessToken` ou re-render), o request anterior fica órfão e o novo entra em race condition.
-
-3. **Recriação do `fetchSubscription` callback** a cada mudança de dependência — em sessões PWA com refresh de token, isso dispara múltiplas chamadas concorrentes que cancelam umas às outras.
-
-O resultado: usuário **com assinatura ativa válida no banco** cai no paywall porque o cliente nunca consegue receber a resposta `active`.
+**Resultado**: 100% dos usuários (incluindo admin) caem no paywall por bug do client.
 
 ## Plano de correção
 
-### 1. Reescrever `fetchSubscription` com `AbortController` real
-
-**`src/contexts/SubscriptionContext.tsx`**:
-- Substituir `Promise.race + setTimeout` por `AbortController` com `signal` passado pro fetch (aborta o request de verdade, não fica órfão).
-- Manter ref do controller anterior — antes de iniciar nova chamada, abortar a anterior. Elimina race conditions.
-- Aumentar timeout pra **20s** (cold start de PWA mobile pode passar de 15s).
-
-### 2. Remover header problemático `Cache-Control: no-cache`
+### 1. Reverter o cache-buster por query string
 
 **`src/services/billing.service.ts`**:
-- Remover o header `Cache-Control: no-cache` quando `noCache=true`.
-- Substituir por **query param** `?_t=${Date.now()}` que invalida cache HTTP do browser sem afetar CORS preflight.
-- O servidor já responde com `Cache-Control: private, max-age=15` — basta o cache-buster pra forçar revalidação.
+- Remover `?_t=${Date.now()}` do path do `invoke`. O SDK não suporta isso — ele já faz o request POST direto sem precisar de cache-buster, porque é um POST com `Authorization` único por sessão.
+- Para forçar bypass de cache quando `noCache=true`, usar a API nativa `fetch` direto pra URL da edge function (não pelo `invoke`), com `cache: 'no-store'` na opção do fetch — isso é seguro pra CORS porque é opção do client, não header.
 
-### 3. Adicionar logs de diagnóstico no client
-
-**`src/contexts/SubscriptionContext.tsx`**:
-- Logar (via `console.log`) cada decisão crítica: início da chamada, sucesso (com status retornado), erro (com mensagem), retry, fallback final.
-- Esses logs ficam visíveis pro usuário no DevTools — e eu consigo lê-los na próxima rodada se o problema persistir.
-
-### 4. Cache local persistente como rede de segurança
-
-**`src/contexts/SubscriptionContext.tsx`**:
-- Quando receber `status=active`, salvar `{ userId, status, plan, ts }` em `localStorage` (TTL de 1 hora).
-- No início do `fetchSubscription`, ler o cache local. Se for válido **e do mesmo `userId`**, definir `status=active` **imediatamente** enquanto a chamada acontece em background.
-- Isso elimina o "fica no paywall enquanto espera o servidor" pra usuário recorrente.
-
-### 5. Tratar `error` retornado pelo `supabase.functions.invoke`
+### 2. Substituir `supabase.functions.invoke` por `fetch` direto
 
 **`src/services/billing.service.ts`**:
-- O `supabase.functions.invoke` retorna `{ data, error }` — atualmente jogamos uma exception genérica em qualquer `error`.
-- Diferenciar: se `error.context?.status === 401/403` → token inválido, retorna `expired`; se `error` por timeout/network → re-throw para retry; se `data` chegou mas é vazio → tratar como `expired`.
+- Construir a URL: `${VITE_SUPABASE_URL}/functions/v1/check-subscription`
+- Fazer `fetch(url, { method: 'POST', headers: { Authorization: 'Bearer <token>', apikey: <publishable_key>, 'Content-Type': 'application/json' }, body: '{}', signal, cache: noCache ? 'no-store' : 'default' })`.
+- Isso elimina a camada do SDK que estava quebrando, e dá controle total sobre o request. O preflight CORS continua funcionando (já está configurado no servidor).
+- Tratar `response.status` diretamente: 401/403 → retorna `expired`; 5xx/network → throw para retry.
+
+### 3. Manter o restante do `SubscriptionContext` como está
+
+- `AbortController`, cache local, retries, fail-safe pra `expired` — tudo isso já está correto e foi validado.
+- A única mudança é o `billing.service.ts`.
 
 ### Arquivos editados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/contexts/SubscriptionContext.tsx` | Substituir Promise.race por AbortController; cache em localStorage; logs de diagnóstico; aumentar timeout pra 20s |
-| `src/services/billing.service.ts` | Remover header Cache-Control; usar cache-buster em query param; tratar error.context para 401 vs network |
+| `src/services/billing.service.ts` | Trocar `supabase.functions.invoke(path, ...)` por `fetch` nativo direto na URL da edge function. Remover o cache-buster de query string. Usar `cache: 'no-store'` quando `noCache=true`. |
+
+### Por que isso resolve
+
+- ✅ Elimina o bug do query string no `invoke`
+- ✅ POST chega ao servidor com payload correto
+- ✅ Servidor responde `active` → cliente recebe → user vai pro app
+- ✅ Pedro, Richard e qualquer usuário ativo deixam de cair no paywall
 
 ### Trade-offs
 
-- ✅ Elimina race condition que está causando o request POST nunca chegar
-- ✅ Cache local resolve o problema "instantaneamente" pra usuários recorrentes (PWA mobile)
-- ✅ Logs vão revelar exatamente o que está acontecendo se ainda persistir
-- ✅ Não muda nada no servidor — fix puro no cliente
-- ⚠️ Cache local de 1h significa que se o admin cancelar uma assinatura, o usuário pode ter até 1h de acesso "fantasma" — aceitável (o backend ainda valida em todas as escritas via RLS `has_active_subscription()`)
-- ⚠️ Não resolve o caso do servidor estar genuinamente fora — mas aí o paywall já é a UX correta
+- ⚠️ Não usa mais o helper `invoke` nessa função, mas isso é OK — outras funções continuam usando normalmente
+- ⚠️ Precisa importar a `VITE_SUPABASE_PUBLISHABLE_KEY` (já disponível em `import.meta.env`)
 
