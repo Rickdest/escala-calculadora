@@ -78,7 +78,7 @@ export function useProductTrend(productId: string | undefined) {
           .order("period_date", { ascending: true }),
         supabase
           .from("products")
-          .select("trend_keyword_override")
+          .select("trend_keyword_override, shopee_item_id, store_id")
           .eq("id", productId)
           .maybeSingle(),
       ]);
@@ -86,6 +86,24 @@ export function useProductTrend(productId: string | undefined) {
       if (dbErr) throw dbErr;
 
       setKeywordOverrideState(prod?.trend_keyword_override ?? null);
+      const itemId = prod?.shopee_item_id ?? null;
+      setShopeeItemId(itemId ? Number(itemId) : null);
+      setHasShopeeItemId(!!itemId);
+      setProductStoreId(prod?.store_id ?? null);
+
+      // Busca último sync de ads pra esse item
+      if (itemId) {
+        const { data: adsRow } = await supabase
+          .from("shopee_ads_by_product")
+          .select("updated_at")
+          .eq("item_id", Number(itemId))
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        setLastAdsSync(adsRow?.updated_at ?? null);
+      } else {
+        setLastAdsSync(null);
+      }
 
       const rows = data ?? [];
       setHasData(rows.length > 0);
