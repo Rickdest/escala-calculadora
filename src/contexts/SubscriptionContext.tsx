@@ -64,7 +64,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
     try {
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('timeout')), 10000)
+        setTimeout(() => reject(new Error('timeout')), 15000)
       );
       const data = await Promise.race([
         checkSubscription(accessToken, noCache),
@@ -75,9 +75,11 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       setStatus(newStatus);
       setPlan(data.plan);
     } catch {
-      // Technical error — do NOT treat as expired
+      // Technical error — do NOT block the user with an error screen.
+      // Use cached status if any, otherwise fail-safe to 'expired' so they
+      // see the paywall (which has a "Já assinei → Verificar acesso"
+      // recovery action) instead of an intimidating error screen.
       if (lastKnownStatus.current?.userId === userId) {
-        // Use cached status from this same user
         setStatus(lastKnownStatus.current.status);
         setPlan(lastKnownStatus.current.plan);
       } else if (retryCount < 2) {
@@ -85,8 +87,8 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         await new Promise<void>((resolve) => setTimeout(resolve, 2000 * (retryCount + 1)));
         return await fetchSubscription(true, retryCount + 1);
       } else {
-        // After all retries failed, set error state — NOT expired
-        setStatus('error');
+        // After all retries failed → fail-safe to expired (paywall), NOT error
+        setStatus('expired');
         setPlan('free');
       }
     } finally {
