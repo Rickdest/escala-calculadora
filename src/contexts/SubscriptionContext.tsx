@@ -73,17 +73,37 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const userId = user?.id;
   const accessToken = session?.access_token;
+
+  // Refs hold latest values so fetchSubscription stays stable (zero deps).
+  const userIdRef = useRef<string | undefined>(userId);
+  const accessTokenRef = useRef<string | undefined>(accessToken);
+  const authReadyRef = useRef(authReady);
+  const authLoadingRef = useRef(authLoading);
+
+  useEffect(() => {
+    userIdRef.current = userId;
+    accessTokenRef.current = accessToken;
+    authReadyRef.current = authReady;
+    authLoadingRef.current = authLoading;
+  }, [userId, accessToken, authReady, authLoading]);
+
   const lastKnownStatus = useRef<{ userId: string; status: SubscriptionStatus; plan: string } | null>(null);
   const resolvedUserId = useRef<string | null>(null);
   const hasResolved = useRef(false);
   const inflightController = useRef<AbortController | null>(null);
 
-  const fetchSubscription = useCallback(async (noCache = false, retryCount = 0) => {
+  // Stable function — reads everything from refs. Never recreated.
+  const fetchSubscription = useCallback(async (noCache = false, retryCount = 0): Promise<void> => {
+    const currentAuthReady = authReadyRef.current;
+    const currentAuthLoading = authLoadingRef.current;
+    const currentUserId = userIdRef.current;
+    const currentAccessToken = accessTokenRef.current;
+
     // Don't do anything until auth is fully ready
-    if (!authReady || authLoading) return;
+    if (!currentAuthReady || currentAuthLoading) return;
 
     // No user or no valid token — set free immediately
-    if (!userId || !accessToken) {
+    if (!currentUserId || !currentAccessToken) {
       resolvedUserId.current = null;
       lastKnownStatus.current = null;
       hasResolved.current = true;
@@ -94,9 +114,9 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const userChanged = resolvedUserId.current !== userId;
+    const userChanged = resolvedUserId.current !== currentUserId;
     if (userChanged) {
-      resolvedUserId.current = userId;
+      resolvedUserId.current = currentUserId;
       lastKnownStatus.current = null;
       hasResolved.current = false;
     }
@@ -104,10 +124,10 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     // Optimistic restore from local cache (only if active and same user) so the
     // user never sees the paywall flash while we revalidate in background.
     if (!hasResolved.current) {
-      const cached = readCache(userId);
+      const cached = readCache(currentUserId);
       if (cached) {
         console.log('[subscription] using cached active state', { ts: cached.ts, plan: cached.plan });
-        lastKnownStatus.current = { userId, status: cached.status, plan: cached.plan };
+        lastKnownStatus.current = { userId: currentUserId, status: cached.status, plan: cached.plan };
         setStatus(cached.status);
         setPlan(cached.plan);
         setLoading(false);
@@ -130,26 +150,35 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     }, FETCH_TIMEOUT_MS);
 
     try {
-      console.log('[subscription] fetching', { userId, noCache, retryCount });
-      const data = await checkSubscription(accessToken, noCache, controller.signal);
+      console.log('[subscription] fetching', { userId: currentUserId, noCache, retryCount });
+      const data = await checkSubscription(currentAccessToken, noCache, controller.signal);
       clearTimeout(timeoutId);
+
+      // If this call was superseded, silently bail without touching state.
+      if (inflightController.current !== controller) {
+        console.log('[subscription] resolved but superseded — discarding result');
+        return;
+      }
 
       const newStatus = STATUS_MAP[data.status] || 'expired';
       console.log('[subscription] resolved', { status: newStatus, plan: data.plan });
-      lastKnownStatus.current = { userId, status: newStatus, plan: data.plan };
+      lastKnownStatus.current = { userId: currentUserId, status: newStatus, plan: data.plan };
       setStatus(newStatus);
       setPlan(data.plan);
 
       if (newStatus === 'active') {
-        writeCache({ userId, status: newStatus, plan: data.plan, ts: Date.now() });
+        writeCache({ userId: currentUserId, status: newStatus, plan: data.plan, ts: Date.now() });
       } else {
         clearCache();
       }
+
+      hasResolved.current = true;
+      setLoading(false);
     } catch (err) {
       clearTimeout(timeoutId);
 
       // Aborted because a new fetch superseded this one — do not change state.
-      if (controller.signal.aborted && inflightController.current !== controller) {
+      if (inflightController.current !== controller) {
         console.log('[subscription] aborted (superseded)');
         return;
       }
@@ -158,12 +187,18 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       console.warn('[subscription] fetch failed', { message, retryCount });
 
       // Use cached/last-known status if any
-      if (lastKnownStatus.current?.userId === userId) {
+      if (lastKnownStatus.current?.userId === currentUserId) {
         console.log('[subscription] keeping last-known state');
         setStatus(lastKnownStatus.current.status);
         setPlan(lastKnownStatus.current.plan);
+        hasResolved.current = true;
+        setLoading(false);
       } else if (retryCount < 2) {
-        // Retry up to 2 times with increasing delay
+        // Retry up to 2 times with increasing delay.
+        // Clear current controller so the retry doesn't think it's superseded.
+        if (inflightController.current === controller) {
+          inflightController.current = null;
+        }
         await new Promise<void>((resolve) => setTimeout(resolve, 2000 * (retryCount + 1)));
         return await fetchSubscription(true, retryCount + 1);
       } else {
@@ -171,19 +206,23 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         console.warn('[subscription] all retries exhausted → expired');
         setStatus('expired');
         setPlan('free');
+        hasResolved.current = true;
+        setLoading(false);
       }
     } finally {
-      hasResolved.current = true;
-      setLoading(false);
+      // Only release the slot if this is still the current controller.
+      // Do NOT touch loading/hasResolved here — handled in success/error paths
+      // so that superseded calls leave state untouched.
       if (inflightController.current === controller) {
         inflightController.current = null;
       }
     }
-  }, [accessToken, authLoading, authReady, userId]);
+  }, []); // stable — refs handle latest values
 
+  // Trigger only when actual values change, not on every render.
   useEffect(() => {
     fetchSubscription();
-  }, [fetchSubscription]);
+  }, [userId, accessToken, authReady, authLoading, fetchSubscription]);
 
   const isActive = status === 'active';
   const effectiveLoading = loading || (!authReady) || (!!userId && (!hasResolved.current || resolvedUserId.current !== userId));
