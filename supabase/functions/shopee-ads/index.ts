@@ -1,13 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   SHOPEE_HOST,
-  corsHeaders,
   getAdsCredentials,
   generateSignWith,
   shopeeGetWith,
-  errorResponse,
-  jsonResponse,
 } from "../_shared/shopee.ts";
+import { buildCorsHeaders } from "../_shared/cors.ts";
 import { refreshShopeeTokenIfNeeded } from "../_shared/shopee-token.ts";
 
 /** YYYY-MM-DD — for database storage only */
@@ -640,6 +638,18 @@ async function processJob(jobId: string, userId: string) {
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = buildCorsHeaders(req);
+  const errorResponse = (message: string, status = 400) =>
+    new Response(JSON.stringify({ error: message }), {
+      status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  const jsonResponse = (data: unknown, status = 200) =>
+    new Response(JSON.stringify(data), {
+      status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -715,7 +725,8 @@ Deno.serve(async (req) => {
     const { token: currentAccessToken, needs_reauth: refreshFailed } = await refreshTokenIfNeeded(shopeeToken, supabase);
 
     let filterItemId: number | undefined;
-    if (body?.item_id) filterItemId = Number(body.item_id);
+    const rawItemId = body?.item_id ?? body?.filterItemId;
+    if (rawItemId) filterItemId = Number(rawItemId);
 
     const adsPerformance = await fetchAdsPerformance(currentAccessToken, shopeeToken.shop_id, filterItemId);
 
