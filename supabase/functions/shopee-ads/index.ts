@@ -374,16 +374,32 @@ async function fetchAdsPerformance(accessToken: string, shopId: string | number,
         const promises = batch.map(async (c: any, batchIdx: number) => {
           try {
             const res = await adsGet("/api/v2/ads/get_recommended_keyword_list", accessToken, shopId, { item_id: String(c.item_id) });
-            if (i === 0 && batchIdx === 0) console.log(`[SHOPEE ADS] keywords sample: ${JSON.stringify(res).substring(0, 600)}`);
-            const kwList = res?.response?.keyword_list || res?.response?.data || [];
+            // Always log a compact sample per item for diagnostics
+            const rawSample = JSON.stringify(res).substring(0, 800);
+            // Aceita múltiplas variantes de campo que a API pode retornar
+            const resp = res?.response ?? {};
+            const kwList =
+              resp.keyword_list ??
+              resp.suggested_keywords ??
+              resp.keyword_info ??
+              resp.keywords ??
+              resp.data?.keyword_list ??
+              resp.data?.keywords ??
+              resp.data ??
+              [];
+            const errCode = res?.error || res?.error_code || resp?.error_code;
+            const errMsg = res?.message || res?.error_message || resp?.error_message;
             if (Array.isArray(kwList) && kwList.length > 0) {
               c.keywords = kwList.slice(0, 10).map((kw: any) => ({
-                keyword: kw.keyword || kw.search_term || kw.word || '',
-                search_volume: Number(kw.search_volume || kw.volume || kw.qrt_search_volume || 0),
-                suggested_bid: Number(kw.suggested_bid || kw.bid || kw.recommended_bid || 0),
-                quality_score: kw.quality_score != null ? Number(kw.quality_score) : undefined,
-                competition_level: kw.competition_level ?? kw.competition ?? null,
-              }));
+                keyword: kw.keyword || kw.search_term || kw.word || kw.keyword_name || '',
+                search_volume: Number(kw.search_volume || kw.volume || kw.qrt_search_volume || kw.search_count || 0),
+                suggested_bid: Number(kw.suggested_bid || kw.bid || kw.recommended_bid || kw.suggest_bid || 0),
+                quality_score: kw.quality_score != null ? Number(kw.quality_score) : (kw.score != null ? Number(kw.score) : undefined),
+                competition_level: kw.competition_level ?? kw.competition ?? kw.compete_level ?? null,
+              })).filter((kw: any) => kw.keyword);
+              console.log(`[SHOPEE ADS] keywords item ${c.item_id}: ${c.keywords.length} saved`);
+            } else {
+              console.log(`[SHOPEE ADS] keywords item ${c.item_id}: 0 returned (err=${errCode || 'none'} msg=${errMsg || 'none'}) raw=${rawSample}`);
             }
           } catch (e) { console.error(`[SHOPEE ADS] keywords error for item ${c.item_id}:`, e); }
         });

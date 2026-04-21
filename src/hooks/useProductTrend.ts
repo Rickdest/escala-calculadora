@@ -48,6 +48,10 @@ export function useProductTrend(productId: string | undefined) {
   const [lastCapture, setLastCapture] = useState<string | null>(null);
   const [googleSeries, setGoogleSeries] = useState<TrendPoint[]>([]);
   const [shopeeKeywords, setShopeeKeywords] = useState<ShopeeKeyword[]>([]);
+  const [hasShopeeItemId, setHasShopeeItemId] = useState(false);
+  const [shopeeItemId, setShopeeItemId] = useState<number | null>(null);
+  const [productStoreId, setProductStoreId] = useState<string | null>(null);
+  const [lastAdsSync, setLastAdsSync] = useState<string | null>(null);
   const [keyword, setKeyword] = useState<string | null>(null);
   const [keywordOverride, setKeywordOverrideState] = useState<string | null>(
     null,
@@ -74,7 +78,7 @@ export function useProductTrend(productId: string | undefined) {
           .order("period_date", { ascending: true }),
         supabase
           .from("products")
-          .select("trend_keyword_override")
+          .select("trend_keyword_override, shopee_item_id, store_id")
           .eq("id", productId)
           .maybeSingle(),
       ]);
@@ -82,6 +86,24 @@ export function useProductTrend(productId: string | undefined) {
       if (dbErr) throw dbErr;
 
       setKeywordOverrideState(prod?.trend_keyword_override ?? null);
+      const itemId = prod?.shopee_item_id ?? null;
+      setShopeeItemId(itemId ? Number(itemId) : null);
+      setHasShopeeItemId(!!itemId);
+      setProductStoreId(prod?.store_id ?? null);
+
+      // Busca último sync de ads pra esse item
+      if (itemId) {
+        const { data: adsRow } = await supabase
+          .from("shopee_ads_by_product")
+          .select("updated_at")
+          .eq("item_id", Number(itemId))
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        setLastAdsSync(adsRow?.updated_at ?? null);
+      } else {
+        setLastAdsSync(null);
+      }
 
       const rows = data ?? [];
       setHasData(rows.length > 0);
@@ -264,6 +286,28 @@ export function useProductTrend(productId: string | undefined) {
     [productId, refresh],
   );
 
+  const resyncShopeeAds = useCallback(async () => {
+    if (!productStoreId || !shopeeItemId) {
+      throw new Error("Produto sem item Shopee vinculado");
+    }
+    setRefreshing(true);
+    setError(null);
+    try {
+      const { data, error: fnErr } = await supabase.functions.invoke("shopee-ads", {
+        body: { storeId: productStoreId, filterItemId: shopeeItemId },
+      });
+      if (fnErr) throw fnErr;
+      if (data?.error) throw new Error(data.error);
+      // Recarrega dados (incluindo keywords novas)
+      await loadFromDb();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      throw e;
+    } finally {
+      setRefreshing(false);
+    }
+  }, [productStoreId, shopeeItemId, loadFromDb]);
+
   useEffect(() => {
     loadFromDb();
   }, [loadFromDb]);
@@ -362,7 +406,10 @@ export function useProductTrend(productId: string | undefined) {
     regions,
     seasonalCycle,
     autoSimplified,
+    hasShopeeItemId,
+    lastAdsSync,
     refresh,
     setKeywordOverride,
+    resyncShopeeAds,
   };
 }
