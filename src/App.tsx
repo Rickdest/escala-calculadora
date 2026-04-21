@@ -53,36 +53,9 @@ function PageLoader() {
   );
 }
 
-function ErrorRetry({ onRetry }: { onRetry: () => void }) {
-  const { signOut } = useAuth();
-
-  const handleLogout = async () => {
-    await signOut();
-    window.location.href = '/auth';
-  };
-
-  return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-      <p className="text-muted-foreground text-sm">Erro ao verificar sua assinatura.</p>
-      <button
-        onClick={onRetry}
-        className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm"
-      >
-        Tentar novamente
-      </button>
-      <button
-        onClick={handleLogout}
-        className="px-4 py-2 text-destructive text-sm underline"
-      >
-        Sair da conta
-      </button>
-    </div>
-  );
-}
-
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, session, loading, authReady } = useAuth();
-  const { status, loading: subLoading, refreshSubscription } = useSubscription();
+  const { status, loading: subLoading } = useSubscription();
 
   // Wait for auth to fully resolve
   if (!authReady || loading) {
@@ -99,12 +72,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <PageLoader />;
   }
 
-  // Technical error — show retry, NOT paywall
-  if (status === 'error') {
-    return <ErrorRetry onRetry={refreshSubscription} />;
-  }
-
-  // Only redirect to paywall when backend explicitly says not active
+  // Anything that's not active (including transient errors) → paywall.
+  // Paywall already exposes a "Já assinei → Verificar acesso" action.
   if (status !== 'active') {
     return <Navigate to="/paywall" replace />;
   }
