@@ -1,54 +1,67 @@
 
 
-## Diagnóstico
+## Problema
 
-A loja **está conectada** ao Shopee Ads e tem 11 campanhas ativas sincronizadas. Mas o card "Volume real Shopee" aparece vazio porque:
+Quando um usuário **sem assinatura** entra no app, em vez de ir direto pro `/paywall` ele vê **"Erro ao verificar sua assinatura"** com botões "Tentar novamente" / "Sair da conta".
 
-1. **Causa raiz**: Em todos os 11 produtos o campo `keywords` em `shopee_ads_by_product` está `[]` vazio. A chamada `get_recommended_keyword_list` (Step 6 do `shopee-ads`) está rodando mas não persiste nada — provavelmente porque essa API requer aprovação adicional na Shopee, retorna 404, ou o último sync rodou em 09/abr antes da feature estar 100% pronta.
+### Causa raiz
 
-2. **Causa secundária na UI** (`ShopeeKeywordsCard.tsx`): mostra mensagem **"Conecte o Shopee Ads"** quando `keywords.length === 0` — texto errado, porque quem está aqui já tem a integração ativa. Confunde o usuário.
+No `SubscriptionContext.tsx`, se a chamada à edge `check-subscription` falha por motivo técnico transitório (cold start >10s, hiccup de rede, timeout), o status vai pra `'error'`. O `ProtectedRoute` no `App.tsx` (linhas 109-111) intercepta `status === 'error'` e mostra o componente `ErrorRetry` antes de chegar no paywall.
 
-3. **Falta um botão pra forçar re-sync** das keywords sem precisar ir até a aba Ads.
+Cenário típico que dispara o erro:
+1. Usuário recém-criado (trigger `handle_new_user_trial` cria sub `free/free`)
+2. Faz signup/login → `Auth.tsx` chama `navigate('/')`
+3. `ProtectedRoute` chama `checkSubscription` → primeira chamada cai em cold start de 10s → timeout → retry → segundo timeout → `status='error'`
+4. Usuário vê tela de erro técnico em vez do paywall comercial
+
+Sintomas adicionais no fluxo atual:
+- Mensagem de erro não diferencia "sem plano" de "falha real" — assusta usuário pagante
+- Botão "Sair da conta" como ação primária empurra usuário pra fora em vez de oferecer assinar
+- Logs do edge mostram só usuários `active`, indicando que a chamada nem chegou no servidor (provavelmente CORS/timeout no client)
 
 ## Plano
 
-### 1. Forçar re-sync e logar o retorno da API (`supabase/functions/shopee-ads/index.ts`)
-- Logar **sempre** (não só primeira amostra) quantas keywords vieram por item: `[SHOPEE ADS] item X: N keywords saved` ou `0 keywords (response: <status>)`.
-- Logar o `error_code`/`error_message` do payload Shopee quando `kwList` vier vazio — assim vamos ver se é `error_auth`, `error_param` ou simplesmente API sem dados pra esse item.
-- Aceitar **mais variantes de campo** no parser (a API às vezes retorna `suggested_keywords`, `keyword_info`, `data.keywords[]`).
+### 1. Eliminar a tela "ErrorRetry" como bloqueio
 
-### 2. Corrigir mensagem do empty state (`src/components/products/trend/ShopeeKeywordsCard.tsx`)
-Substituir o atual "Conecte o Shopee Ads" por um estado mais honesto que **diferencia 3 cenários**:
+**`src/App.tsx`** — `ProtectedRoute`:
+- Remover o branch `if (status === 'error') return <ErrorRetry />`.
+- Tratar `'error'` como **não-ativo** → mandar pra `/paywall` igual `expired`/`canceled`/`free`.
+- Manter o componente `ErrorRetry` apenas como fallback opcional dentro do paywall (banner discreto), não como tela cheia bloqueante.
 
-| Cenário | Mensagem |
-|---|---|
-| Produto sem `shopee_item_id` | "Vincule esse produto a um item da Shopee pra ver volume real de busca" + link `/produtos` |
-| Tem `shopee_item_id` mas ads nunca sincronizou | "Sincronize seus anúncios pra liberar volume de busca" + botão "Sincronizar Shopee Ads agora" |
-| Sincronizou mas API não devolveu keywords | "A Shopee não retornou palavras pra esse item agora. Pode ser que a campanha precise de mais histórico (7+ dias) ou volume mínimo de impressões. Tente novamente em alguns dias." + botão "Tentar novamente" |
+**Justificativa:** Na dúvida, o comportamento correto é mostrar oferta comercial (paywall), não tela técnica. O paywall já tem botão "Sair" e CTA pra assinar — cobre os dois casos (sem plano e erro transitório).
 
-Pra distinguir os cenários, o card vai receber duas props novas: `hasShopeeItemId: boolean` e `lastAdsSync: string | null`.
+### 2. Tornar o `SubscriptionContext` mais resiliente
 
-### 3. Expor info no hook (`src/hooks/useProductTrend.ts`)
-- Buscar `shopee_item_id` do produto e `updated_at` mais recente de `shopee_ads_by_product` pelo `item_id`.
-- Expor `hasShopeeItemId` e `lastAdsSync`.
+**`src/contexts/SubscriptionContext.tsx`**:
+- Quando todos os retries falharem e não houver `lastKnownStatus`, definir `status='expired'` (não `'error'`). Isso é fail-safe: usuário cai no paywall em vez de tela de erro.
+- Aumentar o timeout inicial de 10s pra 15s (cold start de Deno edge functions costuma levar 8-12s).
+- Manter o status `'error'` apenas como sinal interno pra logging — não exposto ao roteamento.
 
-### 4. Botão "Re-sincronizar agora" no ProductTrendTab
-- Quando o usuário clica, chama `supabase.functions.invoke("shopee-ads", { body: { storeId, filterItemId: shopee_item_id } })` — que já existe e aceita filtro por item.
-- Depois chama `refresh(true)` pra recarregar.
+### 3. Banner informativo no Paywall (opcional, sutil)
+
+**`src/pages/Paywall.tsx`**:
+- Adicionar prop/leitura do `useBilling().status`. Se `status === 'error'`, mostrar um banner pequeno acima do hero: *"Não conseguimos confirmar sua assinatura agora. Se você já é assinante, [clique aqui pra tentar novamente]."* com `onClick={refreshSubscription}`.
+- Para `status === 'expired'/'free'/'canceled'/'past_due'`, paywall normal sem banner.
+
+### 4. Garantir que signup/login funcione mesmo sem plano
+
+**`src/pages/Auth.tsx`** (linha 98):
+- `navigate('/')` continua certo — o `ProtectedRoute` agora redireciona graciosamente pro paywall.
+- Sem mudança necessária aqui.
 
 ### Arquivos editados
 
 | Arquivo | Mudança |
 |---|---|
-| `supabase/functions/shopee-ads/index.ts` | Logs detalhados no Step 6 + parser tolerante a mais variantes |
-| `src/hooks/useProductTrend.ts` | Expõe `hasShopeeItemId`, `lastAdsSync` |
-| `src/components/products/trend/ShopeeKeywordsCard.tsx` | 3 empty states honestos + botão re-sync |
-| `src/components/products/trend/ProductTrendTab.tsx` | Passa novas props + handler de re-sync |
+| `src/App.tsx` | Remover bloco `ErrorRetry` do `ProtectedRoute`; tratar `'error'` como não-ativo (vai pro paywall). Remover componente `ErrorRetry` ou mantê-lo só como import morto |
+| `src/contexts/SubscriptionContext.tsx` | Após retries falharem, definir `status='expired'` em vez de `'error'`; timeout 10s → 15s |
+| `src/pages/Paywall.tsx` | Banner sutil "Já é assinante? Tentar novamente" quando o status interno indicar problema técnico (opcional, low-priority) |
 
 ### Trade-offs
-- ✅ Usuário entende exatamente por que o card está vazio
-- ✅ Tem ação direta (re-sincronizar) sem sair da tela
-- ✅ Logs vão revelar se a Shopee está retornando keywords ou negando — base pra decidir próximos passos
-- ⚠️ Se a API da Shopee realmente não está devolvendo keywords pra essa conta (limitação de plano/volume), a feature continua sem dados — mas pelo menos a mensagem fica honesta
-- ⚠️ Não cria nova tabela nem migration
+
+- ✅ Usuário sem assinatura vê paywall (UX comercial), não erro técnico (UX confusa)
+- ✅ Usuário pagante com hiccup transitório vê paywall com banner "tentar novamente" — pior cenário ele recarrega
+- ✅ Elimina o caminho onde o usuário é praticamente forçado a "Sair da conta" por uma falha de 10s
+- ⚠️ Se o backend ficar genuinamente quebrado, o usuário pagante vai ver paywall até refrescar — aceitável, edge functions raramente ficam down por muito tempo
+- ⚠️ Perde-se a tela de erro dedicada — mas ela estava causando mais confusão do que ajudando
 
