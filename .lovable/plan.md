@@ -1,78 +1,57 @@
 
 
-## Diagnóstico final (com evidência)
+## Resposta direta: NÃO, o fallback não libera acesso indevido. Mas tem um detalhe que vale reforçar.
 
-Verifiquei TUDO de novo:
+### Por que está seguro hoje
 
-**Banco de dados (perfeito):**
-- Pedro: `active yearly` (vence abr/2027) ✅
-- Richard: `active pro` ✅  
-- Junior: `active pro` ✅
-- Henrique: `active monthly` ✅
+O fallback DB faz exatamente isto:
 
-**Servidor (responde correto):**
-Network log às 16:39:17 mostra `POST /check-subscription` → `{"status":"active","plan":"pro"}` retornado para o Richard. E há requests subsequentes carregando produtos/lojas/estoque — ou seja, **na sessão atual do navegador o app está funcionando**, ele NÃO está caindo no paywall.
+```sql
+SELECT status, plan FROM subscriptions WHERE user_id = auth.uid()
+```
 
-**Mapeamento de planos (correto):**
-- `pricing.ts`: `{ free: 0, pro: 2, monthly: 2, yearly: 7 }` ✅
-- Cakto webhook: `"yearly"` → `yearly`, `"monthly"|"mensal"` → `monthly`, `"pro"` → `monthly` ✅
-- Trigger DB `enforce_store_limit`: aceita `pro`, `monthly`, `yearly` ✅
+Protegido por **3 camadas**:
 
-**Causa raiz real:** as duas correções anteriores (`billing.service.ts` com fetch nativo e `SubscriptionContext.tsx` com refs) **estão no código mas não foram publicadas em `app.skalify.com.br`**. Por isso usuários em produção (PWA mobile, navegadores normais) ainda rodam a versão velha que falha.
+1. **RLS na tabela `subscriptions`** (`auth.uid() = user_id`): o usuário só consegue ler a **própria** linha. Não tem como inventar ou ver assinatura de outro.
+2. **RLS bloqueia INSERT/UPDATE/DELETE pra todos os usuários autenticados**: ninguém consegue criar/editar uma assinatura `active` no client. Só o webhook do Cakto (via `service_role` no servidor) escreve nessa tabela.
+3. **Trigger `handle_new_user_trial`** já cria o registro de novo usuário como `status='free', plan='free'` por default — então mesmo que o fallback responda, ele responde `free` e o app manda pro paywall.
 
-## Plano de correção
+**Resultado**: usuário sem pagamento → linha no DB diz `free` → fallback retorna `free` → `STATUS_MAP['free']='free'` → `status !== 'active'` → `ProtectedRoute` redireciona pro `/paywall`. Funciona corretamente.
 
-Vou adicionar uma rede de segurança no client que garante: **mesmo se o edge function `check-subscription` falhar 100%, qualquer usuário com `status='active'` no banco consegue entrar.**
+### Onde existe um risco TEÓRICO (e como blindar)
 
-### 1. Fallback direto no banco (rede de segurança definitiva)
+Hoje o cache local (`localStorage`) só armazena status **`active`** (linha 41: `if (parsed.status !== 'active') return null`). Isso é seguro — mas um atacante poderia, em teoria, abrir o DevTools e injetar manualmente `localStorage.setItem('skalify:sub-cache:v2', '{"status":"active",...}')` pra burlar o paywall **no client**.
 
-**`src/contexts/SubscriptionContext.tsx`**:
-- Quando o `checkSubscription` (edge function) falhar todos os retries, em vez de jogar pra `expired` direto, fazer **uma consulta direta na tabela `subscriptions`** via Supabase client (RLS já filtra pelo `auth.uid()`).
-- Se retornar `status='active'`, considerar ativo. Se nada, aí sim `expired`.
-- Isso elimina dependência do edge function como single point of failure. Se o RLS deixar o user ler a própria assinatura (já deixa via `auth.uid() = user_id`), o paywall NUNCA mais bloqueia indevidamente.
+**Importante**: isso **não dá acesso real** aos dados — todas as RLS de escrita (`products`, `stores`, `ads_data`, etc.) exigem `has_active_subscription()` checada no **servidor**. O atacante só veria a UI vazia. Mas a UX de paywall seria pulada.
 
-### 2. Verificar que RLS de `subscriptions` permite SELECT pelo dono
-
-Vou confirmar que a policy `SELECT` existe para `auth.uid() = user_id`. Se não existir, criar via migration.
-
-### 3. Reforçar o cache local
+### Proposta de blindagem (1 mudança cirúrgica)
 
 **`src/contexts/SubscriptionContext.tsx`**:
-- Aumentar TTL do cache local de `active` de 1h para **24h**.
-- Adicionar segundo cache só com `userId + ts` para detectar quando o user mudou (sem nunca cachear estados negativos).
 
-### 4. Trocar o "fail-safe expired" por "manter último estado conhecido"
+- Quando carregar do cache local, **revalidar imediatamente em background** via DB (chamada barata, RLS-protegida). Se o DB retornar `free`/`expired`, sobrescrever o status na hora e mandar pro paywall.
+- Hoje já fazemos isso via edge function — adicionar a mesma revalidação via DB direto como reforço.
 
-Se nunca tivemos sucesso E o cache local diz que era ativo recentemente E o fallback DB confirma → ativo. Só vai pro paywall se TUDO falhar (edge function + DB + cache).
+Isso fecha o vetor teórico do `localStorage` editado: mesmo se alguém forjar o cache, em <1s a verificação real do DB derruba e manda pro paywall.
 
-### 5. Logs de diagnóstico robustos
+### Resumo de garantias
 
-Os logs `[subscription]` já existem. Vou adicionar mais um nível: logar exatamente qual fallback foi usado (`edge`, `db`, `cache`, `paywall`).
+| Cenário | Comportamento |
+|---|---|
+| Usuário pagante (`active` no DB) | Cache → entra. Edge falha → DB confirma `active` → entra. ✅ |
+| Usuário trial/free | DB retorna `free` → paywall. ✅ |
+| Usuário expirado (`canceled`/`past_due`) | DB retorna o status real → paywall. ✅ |
+| Atacante forja `localStorage` | Vê UI por <1s, revalidação DB derruba → paywall. ✅ |
+| Atacante tenta criar produto/loja sem pagar | RLS `has_active_subscription()` bloqueia no servidor. ✅ |
 
-### Arquivos editados
+### Arquivo editado
 
 | Arquivo | Mudança |
 |---|---|
-| `src/contexts/SubscriptionContext.tsx` | Adicionar fallback DB direto via Supabase client; aumentar TTL cache para 24h; logs detalhados de qual fonte resolveu |
-| `supabase/migrations/...sql` | (Se necessário) Garantir que RLS `subscriptions SELECT` existe para `auth.uid() = user_id` |
-
-### O que isso resolve
-
-- ✅ **Edge function quebra** → DB resolve → user entra
-- ✅ **DB lento** → cache de 24h resolve → user entra
-- ✅ **Tudo quebra** → paywall (correto)
-- ✅ Pedro, Richard, Junior, Henrique e todos os 8+ usuários `active` no banco entram independente do estado do edge function
-
-### O que o usuário precisa fazer DEPOIS
-
-1. Eu aplico o fix.
-2. **Clicar PUBLISH** — sem isso, nada chega em produção.
-3. No celular: fechar e reabrir o PWA.
+| `src/contexts/SubscriptionContext.tsx` | Após restaurar do cache, disparar uma revalidação DB em paralelo à chamada do edge function (não bloqueante). Se DB disser `!== active`, sobrescrever estado e ir pro paywall. |
 
 ### Trade-offs
 
-- ✅ Defense-in-depth real: 3 fontes (edge → db → cache) antes de bloquear
-- ✅ Edge function continua sendo a fonte primária (mais info, reconciliação por email)
-- ⚠️ +1 round-trip ao DB no caso de erro (raro). Aceitável.
-- ⚠️ Se o admin cancelar uma assinatura, user com cache de 24h pode ter acesso "fantasma" por até 24h. Aceitável: cancelamentos são raros e o backend segue protegido por RLS.
+- ✅ Fecha o único vetor teórico de bypass do paywall no client
+- ✅ Não introduz nenhuma latência extra perceptível (DB query <100ms, paralelo ao edge)
+- ⚠️ +1 query DB por carga de página (insignificante — RLS-indexed por `user_id`)
 
