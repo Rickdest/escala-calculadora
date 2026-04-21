@@ -24,6 +24,47 @@ const STATUS_MAP: Record<string, SubscriptionStatus> = {
   trialing: 'expired',
 };
 
+const CACHE_KEY = 'skalify:sub-cache:v1';
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1h
+const FETCH_TIMEOUT_MS = 20_000;
+
+interface CachedEntry {
+  userId: string;
+  status: SubscriptionStatus;
+  plan: string;
+  ts: number;
+}
+
+function readCache(userId: string): CachedEntry | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CachedEntry;
+    if (parsed.userId !== userId) return null;
+    if (Date.now() - parsed.ts > CACHE_TTL_MS) return null;
+    if (parsed.status !== 'active') return null; // only trust positive cached state
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(entry: CachedEntry) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(entry));
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+
+function clearCache() {
+  try {
+    localStorage.removeItem(CACHE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const { user, session, loading: authLoading, authReady } = useAuth();
   const queryClient = useQueryClient();
@@ -35,6 +76,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const lastKnownStatus = useRef<{ userId: string; status: SubscriptionStatus; plan: string } | null>(null);
   const resolvedUserId = useRef<string | null>(null);
   const hasResolved = useRef(false);
+  const inflightController = useRef<AbortController | null>(null);
 
   const fetchSubscription = useCallback(async (noCache = false, retryCount = 0) => {
     // Don't do anything until auth is fully ready
@@ -45,6 +87,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       resolvedUserId.current = null;
       lastKnownStatus.current = null;
       hasResolved.current = true;
+      clearCache();
       setStatus('free');
       setPlan('free');
       setLoading(false);
@@ -58,28 +101,65 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       hasResolved.current = false;
     }
 
+    // Optimistic restore from local cache (only if active and same user) so the
+    // user never sees the paywall flash while we revalidate in background.
     if (!hasResolved.current) {
-      setLoading(true);
+      const cached = readCache(userId);
+      if (cached) {
+        console.log('[subscription] using cached active state', { ts: cached.ts, plan: cached.plan });
+        lastKnownStatus.current = { userId, status: cached.status, plan: cached.plan };
+        setStatus(cached.status);
+        setPlan(cached.plan);
+        setLoading(false);
+        hasResolved.current = true;
+      } else {
+        setLoading(true);
+      }
     }
 
+    // Abort any previous in-flight request to avoid race conditions
+    if (inflightController.current) {
+      inflightController.current.abort();
+    }
+    const controller = new AbortController();
+    inflightController.current = controller;
+
+    const timeoutId = setTimeout(() => {
+      console.warn('[subscription] request timed out after', FETCH_TIMEOUT_MS, 'ms');
+      controller.abort();
+    }, FETCH_TIMEOUT_MS);
+
     try {
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('timeout')), 15000)
-      );
-      const data = await Promise.race([
-        checkSubscription(accessToken, noCache),
-        timeoutPromise,
-      ]);
+      console.log('[subscription] fetching', { userId, noCache, retryCount });
+      const data = await checkSubscription(accessToken, noCache, controller.signal);
+      clearTimeout(timeoutId);
+
       const newStatus = STATUS_MAP[data.status] || 'expired';
+      console.log('[subscription] resolved', { status: newStatus, plan: data.plan });
       lastKnownStatus.current = { userId, status: newStatus, plan: data.plan };
       setStatus(newStatus);
       setPlan(data.plan);
-    } catch {
-      // Technical error — do NOT block the user with an error screen.
-      // Use cached status if any, otherwise fail-safe to 'expired' so they
-      // see the paywall (which has a "Já assinei → Verificar acesso"
-      // recovery action) instead of an intimidating error screen.
+
+      if (newStatus === 'active') {
+        writeCache({ userId, status: newStatus, plan: data.plan, ts: Date.now() });
+      } else {
+        clearCache();
+      }
+    } catch (err) {
+      clearTimeout(timeoutId);
+
+      // Aborted because a new fetch superseded this one — do not change state.
+      if (controller.signal.aborted && inflightController.current !== controller) {
+        console.log('[subscription] aborted (superseded)');
+        return;
+      }
+
+      const message = err instanceof Error ? err.message : String(err);
+      console.warn('[subscription] fetch failed', { message, retryCount });
+
+      // Use cached/last-known status if any
       if (lastKnownStatus.current?.userId === userId) {
+        console.log('[subscription] keeping last-known state');
         setStatus(lastKnownStatus.current.status);
         setPlan(lastKnownStatus.current.plan);
       } else if (retryCount < 2) {
@@ -88,12 +168,16 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
         return await fetchSubscription(true, retryCount + 1);
       } else {
         // After all retries failed → fail-safe to expired (paywall), NOT error
+        console.warn('[subscription] all retries exhausted → expired');
         setStatus('expired');
         setPlan('free');
       }
     } finally {
       hasResolved.current = true;
       setLoading(false);
+      if (inflightController.current === controller) {
+        inflightController.current = null;
+      }
     }
   }, [accessToken, authLoading, authReady, userId]);
 
