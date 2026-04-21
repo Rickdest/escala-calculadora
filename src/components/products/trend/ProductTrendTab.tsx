@@ -319,6 +319,9 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
             keywords={shopeeKeywords}
             onAnalyzeKeyword={setKeywordOverride}
             refreshing={refreshing}
+            hasShopeeItemId={hasShopeeItemId}
+            lastAdsSync={lastAdsSync}
+            onResync={resyncShopeeAds}
           />
           <TrendSearchCard
             key={keyword}
