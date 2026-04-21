@@ -1,67 +1,71 @@
 
 
-## Problema
+## Diagnóstico definitivo
 
-Quando um usuário **sem assinatura** entra no app, em vez de ir direto pro `/paywall` ele vê **"Erro ao verificar sua assinatura"** com botões "Tentar novamente" / "Sair da conta".
+Comparando logs do servidor com o comportamento do cliente:
 
-### Causa raiz
+- **Banco está perfeito**: `pedro.altoson@gmail.com` → `status=active, plan=yearly, válido até 21/abr/2027`
+- **Edge function responde corretamente** quando recebe POST: log mostra `Found by user_id: active yearly`
+- **MAS**: nas últimas dezenas de invocações, o servidor recebeu **só requests OPTIONS** (preflight CORS) — nenhum POST. O cliente faz o preflight, ele responde 200, mas o POST seguinte **nunca chega** ao servidor.
 
-No `SubscriptionContext.tsx`, se a chamada à edge `check-subscription` falha por motivo técnico transitório (cold start >10s, hiccup de rede, timeout), o status vai pra `'error'`. O `ProtectedRoute` no `App.tsx` (linhas 109-111) intercepta `status === 'error'` e mostra o componente `ErrorRetry` antes de chegar no paywall.
+**Causa raiz**: o `SubscriptionContext` tem 3 problemas combinados que se manifestam principalmente em **PWA/mobile/cold start**:
 
-Cenário típico que dispara o erro:
-1. Usuário recém-criado (trigger `handle_new_user_trial` cria sub `free/free`)
-2. Faz signup/login → `Auth.tsx` chama `navigate('/')`
-3. `ProtectedRoute` chama `checkSubscription` → primeira chamada cai em cold start de 10s → timeout → retry → segundo timeout → `status='error'`
-4. Usuário vê tela de erro técnico em vez do paywall comercial
+1. **Header `Cache-Control: no-cache` no body do request** (não no preflight). Em iOS Safari/PWA, isso força o navegador a refazer o preflight a cada chamada — e quando o `Promise.race` com timeout 15s rejeita antes do POST sair, o request é descartado pelo navegador mas o servidor já recebeu o OPTIONS.
 
-Sintomas adicionais no fluxo atual:
-- Mensagem de erro não diferencia "sem plano" de "falha real" — assusta usuário pagante
-- Botão "Sair da conta" como ação primária empurra usuário pra fora em vez de oferecer assinar
-- Logs do edge mostram só usuários `active`, indicando que a chamada nem chegou no servidor (provavelmente CORS/timeout no client)
+2. **`Promise.race` com timeout** que rejeita o `fetch` mas não o aborta de verdade. Quando a função é re-chamada (por mudança de `accessToken` ou re-render), o request anterior fica órfão e o novo entra em race condition.
 
-## Plano
+3. **Recriação do `fetchSubscription` callback** a cada mudança de dependência — em sessões PWA com refresh de token, isso dispara múltiplas chamadas concorrentes que cancelam umas às outras.
 
-### 1. Eliminar a tela "ErrorRetry" como bloqueio
+O resultado: usuário **com assinatura ativa válida no banco** cai no paywall porque o cliente nunca consegue receber a resposta `active`.
 
-**`src/App.tsx`** — `ProtectedRoute`:
-- Remover o branch `if (status === 'error') return <ErrorRetry />`.
-- Tratar `'error'` como **não-ativo** → mandar pra `/paywall` igual `expired`/`canceled`/`free`.
-- Manter o componente `ErrorRetry` apenas como fallback opcional dentro do paywall (banner discreto), não como tela cheia bloqueante.
+## Plano de correção
 
-**Justificativa:** Na dúvida, o comportamento correto é mostrar oferta comercial (paywall), não tela técnica. O paywall já tem botão "Sair" e CTA pra assinar — cobre os dois casos (sem plano e erro transitório).
-
-### 2. Tornar o `SubscriptionContext` mais resiliente
+### 1. Reescrever `fetchSubscription` com `AbortController` real
 
 **`src/contexts/SubscriptionContext.tsx`**:
-- Quando todos os retries falharem e não houver `lastKnownStatus`, definir `status='expired'` (não `'error'`). Isso é fail-safe: usuário cai no paywall em vez de tela de erro.
-- Aumentar o timeout inicial de 10s pra 15s (cold start de Deno edge functions costuma levar 8-12s).
-- Manter o status `'error'` apenas como sinal interno pra logging — não exposto ao roteamento.
+- Substituir `Promise.race + setTimeout` por `AbortController` com `signal` passado pro fetch (aborta o request de verdade, não fica órfão).
+- Manter ref do controller anterior — antes de iniciar nova chamada, abortar a anterior. Elimina race conditions.
+- Aumentar timeout pra **20s** (cold start de PWA mobile pode passar de 15s).
 
-### 3. Banner informativo no Paywall (opcional, sutil)
+### 2. Remover header problemático `Cache-Control: no-cache`
 
-**`src/pages/Paywall.tsx`**:
-- Adicionar prop/leitura do `useBilling().status`. Se `status === 'error'`, mostrar um banner pequeno acima do hero: *"Não conseguimos confirmar sua assinatura agora. Se você já é assinante, [clique aqui pra tentar novamente]."* com `onClick={refreshSubscription}`.
-- Para `status === 'expired'/'free'/'canceled'/'past_due'`, paywall normal sem banner.
+**`src/services/billing.service.ts`**:
+- Remover o header `Cache-Control: no-cache` quando `noCache=true`.
+- Substituir por **query param** `?_t=${Date.now()}` que invalida cache HTTP do browser sem afetar CORS preflight.
+- O servidor já responde com `Cache-Control: private, max-age=15` — basta o cache-buster pra forçar revalidação.
 
-### 4. Garantir que signup/login funcione mesmo sem plano
+### 3. Adicionar logs de diagnóstico no client
 
-**`src/pages/Auth.tsx`** (linha 98):
-- `navigate('/')` continua certo — o `ProtectedRoute` agora redireciona graciosamente pro paywall.
-- Sem mudança necessária aqui.
+**`src/contexts/SubscriptionContext.tsx`**:
+- Logar (via `console.log`) cada decisão crítica: início da chamada, sucesso (com status retornado), erro (com mensagem), retry, fallback final.
+- Esses logs ficam visíveis pro usuário no DevTools — e eu consigo lê-los na próxima rodada se o problema persistir.
+
+### 4. Cache local persistente como rede de segurança
+
+**`src/contexts/SubscriptionContext.tsx`**:
+- Quando receber `status=active`, salvar `{ userId, status, plan, ts }` em `localStorage` (TTL de 1 hora).
+- No início do `fetchSubscription`, ler o cache local. Se for válido **e do mesmo `userId`**, definir `status=active` **imediatamente** enquanto a chamada acontece em background.
+- Isso elimina o "fica no paywall enquanto espera o servidor" pra usuário recorrente.
+
+### 5. Tratar `error` retornado pelo `supabase.functions.invoke`
+
+**`src/services/billing.service.ts`**:
+- O `supabase.functions.invoke` retorna `{ data, error }` — atualmente jogamos uma exception genérica em qualquer `error`.
+- Diferenciar: se `error.context?.status === 401/403` → token inválido, retorna `expired`; se `error` por timeout/network → re-throw para retry; se `data` chegou mas é vazio → tratar como `expired`.
 
 ### Arquivos editados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/App.tsx` | Remover bloco `ErrorRetry` do `ProtectedRoute`; tratar `'error'` como não-ativo (vai pro paywall). Remover componente `ErrorRetry` ou mantê-lo só como import morto |
-| `src/contexts/SubscriptionContext.tsx` | Após retries falharem, definir `status='expired'` em vez de `'error'`; timeout 10s → 15s |
-| `src/pages/Paywall.tsx` | Banner sutil "Já é assinante? Tentar novamente" quando o status interno indicar problema técnico (opcional, low-priority) |
+| `src/contexts/SubscriptionContext.tsx` | Substituir Promise.race por AbortController; cache em localStorage; logs de diagnóstico; aumentar timeout pra 20s |
+| `src/services/billing.service.ts` | Remover header Cache-Control; usar cache-buster em query param; tratar error.context para 401 vs network |
 
 ### Trade-offs
 
-- ✅ Usuário sem assinatura vê paywall (UX comercial), não erro técnico (UX confusa)
-- ✅ Usuário pagante com hiccup transitório vê paywall com banner "tentar novamente" — pior cenário ele recarrega
-- ✅ Elimina o caminho onde o usuário é praticamente forçado a "Sair da conta" por uma falha de 10s
-- ⚠️ Se o backend ficar genuinamente quebrado, o usuário pagante vai ver paywall até refrescar — aceitável, edge functions raramente ficam down por muito tempo
-- ⚠️ Perde-se a tela de erro dedicada — mas ela estava causando mais confusão do que ajudando
+- ✅ Elimina race condition que está causando o request POST nunca chegar
+- ✅ Cache local resolve o problema "instantaneamente" pra usuários recorrentes (PWA mobile)
+- ✅ Logs vão revelar exatamente o que está acontecendo se ainda persistir
+- ✅ Não muda nada no servidor — fix puro no cliente
+- ⚠️ Cache local de 1h significa que se o admin cancelar uma assinatura, o usuário pode ter até 1h de acesso "fantasma" — aceitável (o backend ainda valida em todas as escritas via RLS `has_active_subscription()`)
+- ⚠️ Não resolve o caso do servidor estar genuinamente fora — mas aí o paywall já é a UX correta
 
