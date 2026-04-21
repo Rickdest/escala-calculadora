@@ -1,65 +1,78 @@
 
 
-## Diagnóstico definitivo (com evidência atualizada)
+## Diagnóstico final (com evidência)
 
-Cruzei logs do servidor com o código atual:
+Verifiquei TUDO de novo:
 
-1. **Banco está perfeito** para os 3 testers: Richard (`active pro`), Pedro (`active yearly`, válido até abr/2027), Junior (`active pro`).
-2. **O servidor responde corretamente quando recebe POST**: log único confirmado às 16:32 — `POST | 200 | execution_time_ms: 1231` retornando `active pro`.
-3. **Os logs mostram que requisições do cliente em produção AINDA estão indo com `?_t=...` na URL**, o que prova que a versão publicada ainda é a antiga (com `supabase.functions.invoke('check-subscription?_t=...')` que quebra o POST). A correção em `billing.service.ts` foi feita no código mas **nunca chegou em `app.skalify.com.br`**.
-4. **Mesmo após publicar**, o `SubscriptionContext` tem 2 bugs latentes que podem prender o usuário em loading/paywall:
-   - **Re-render por `accessToken`** dispara nova chamada que aborta a anterior antes do POST sair, e o `useEffect` reage a cada nova referência do `fetchSubscription` (recriado pelo `useCallback` quando `accessToken` muda — o que acontece em refresh silencioso de token do Supabase, comum em PWA/mobile).
-   - **`finally` roda mesmo em chamadas abortadas/superseded**, setando `setLoading(false)` e `hasResolved = true` enquanto o `status` continua `'loading'`. O `ProtectedRoute` vê `subLoading=false, status='loading'` e fica num PageLoader silencioso ou cai pro paywall na próxima reação.
+**Banco de dados (perfeito):**
+- Pedro: `active yearly` (vence abr/2027) ✅
+- Richard: `active pro` ✅  
+- Junior: `active pro` ✅
+- Henrique: `active monthly` ✅
+
+**Servidor (responde correto):**
+Network log às 16:39:17 mostra `POST /check-subscription` → `{"status":"active","plan":"pro"}` retornado para o Richard. E há requests subsequentes carregando produtos/lojas/estoque — ou seja, **na sessão atual do navegador o app está funcionando**, ele NÃO está caindo no paywall.
+
+**Mapeamento de planos (correto):**
+- `pricing.ts`: `{ free: 0, pro: 2, monthly: 2, yearly: 7 }` ✅
+- Cakto webhook: `"yearly"` → `yearly`, `"monthly"|"mensal"` → `monthly`, `"pro"` → `monthly` ✅
+- Trigger DB `enforce_store_limit`: aceita `pro`, `monthly`, `yearly` ✅
+
+**Causa raiz real:** as duas correções anteriores (`billing.service.ts` com fetch nativo e `SubscriptionContext.tsx` com refs) **estão no código mas não foram publicadas em `app.skalify.com.br`**. Por isso usuários em produção (PWA mobile, navegadores normais) ainda rodam a versão velha que falha.
 
 ## Plano de correção
 
-### 1. Publicar o build atual (pré-requisito)
+Vou adicionar uma rede de segurança no client que garante: **mesmo se o edge function `check-subscription` falhar 100%, qualquer usuário com `status='active'` no banco consegue entrar.**
 
-A correção crítica do `billing.service.ts` (fetch nativo sem `?_t=`) já está em código. Ela só vai resolver os usuários quando for publicada em `app.skalify.com.br` e os celulares forem recarregados (PWA cache).
+### 1. Fallback direto no banco (rede de segurança definitiva)
 
-### 2. Corrigir race condition no `SubscriptionContext`
+**`src/contexts/SubscriptionContext.tsx`**:
+- Quando o `checkSubscription` (edge function) falhar todos os retries, em vez de jogar pra `expired` direto, fazer **uma consulta direta na tabela `subscriptions`** via Supabase client (RLS já filtra pelo `auth.uid()`).
+- Se retornar `status='active'`, considerar ativo. Se nada, aí sim `expired`.
+- Isso elimina dependência do edge function como single point of failure. Se o RLS deixar o user ler a própria assinatura (já deixa via `auth.uid() = user_id`), o paywall NUNCA mais bloqueia indevidamente.
 
-**`src/contexts/SubscriptionContext.tsx`** — duas mudanças cirúrgicas:
+### 2. Verificar que RLS de `subscriptions` permite SELECT pelo dono
 
-**a) Estabilizar `fetchSubscription` por refs.**
-- Trocar `useCallback` que depende de `accessToken/userId` por uma função que **lê os valores via `useRef`**. A função em si fica estável (zero dependências) e nunca é recriada.
-- O `useEffect` passa a depender de `[userId, accessToken, authReady, authLoading]` diretamente, **não da referência da função**. Assim a chamada só dispara quando uma dessas coisas realmente mudar de valor — não a cada render.
-- Resultado: refresh silencioso de token NÃO dispara nova chamada que aborta a anterior. A subscription é resolvida uma vez por sessão e fica estável.
+Vou confirmar que a policy `SELECT` existe para `auth.uid() = user_id`. Se não existir, criar via migration.
 
-**b) Não tocar em `loading`/`hasResolved` em chamadas abortadas-superseded.**
-- No `finally`, **só** rodar `setLoading(false); hasResolved=true` se `inflightController.current === controller` (ou seja, esta chamada ainda é a vigente).
-- Se a chamada foi superseded, sair do `finally` sem mexer em nenhum estado React. A nova chamada cuida de finalizar.
+### 3. Reforçar o cache local
 
-### 3. Logs visíveis no console
+**`src/contexts/SubscriptionContext.tsx`**:
+- Aumentar TTL do cache local de `active` de 1h para **24h**.
+- Adicionar segundo cache só com `userId + ts` para detectar quando o user mudou (sem nunca cachear estados negativos).
 
-Os logs com prefixo `[subscription]` já estão no código. Manter — vão revelar exatamente o caminho percorrido caso ainda haja problema após o publish.
+### 4. Trocar o "fail-safe expired" por "manter último estado conhecido"
 
-### 4. Botão "Verificar acesso" no paywall
+Se nunca tivemos sucesso E o cache local diz que era ativo recentemente E o fallback DB confirma → ativo. Só vai pro paywall se TUDO falhar (edge function + DB + cache).
 
-Já existe (`refreshSubscription` no `Paywall.tsx`). Como rede de segurança, garantir que ele force `noCache=true` (já está). Sem mudança necessária.
+### 5. Logs de diagnóstico robustos
+
+Os logs `[subscription]` já existem. Vou adicionar mais um nível: logar exatamente qual fallback foi usado (`edge`, `db`, `cache`, `paywall`).
 
 ### Arquivos editados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/contexts/SubscriptionContext.tsx` | Estabilizar `fetchSubscription` via refs; corrigir `finally` para não tocar em estado quando a chamada foi abortada/superseded |
+| `src/contexts/SubscriptionContext.tsx` | Adicionar fallback DB direto via Supabase client; aumentar TTL cache para 24h; logs detalhados de qual fonte resolveu |
+| `supabase/migrations/...sql` | (Se necessário) Garantir que RLS `subscriptions SELECT` existe para `auth.uid() = user_id` |
 
-### Por que isso resolve
+### O que isso resolve
 
-- ✅ Após **publicar**, o POST chega ao servidor e retorna `active` em ~1.2s (já validado nos logs).
-- ✅ Sem race condition, o cliente recebe e seta `status='active'` de forma estável.
-- ✅ Cache local de 1h (já implementado) garante que mesmo se houver hiccup de rede futuro, o usuário não vê paywall.
-- ✅ Logs de console permitem diagnóstico imediato se surgir caso edge.
+- ✅ **Edge function quebra** → DB resolve → user entra
+- ✅ **DB lento** → cache de 24h resolve → user entra
+- ✅ **Tudo quebra** → paywall (correto)
+- ✅ Pedro, Richard, Junior, Henrique e todos os 8+ usuários `active` no banco entram independente do estado do edge function
 
-### O que o usuário precisa fazer após a correção
+### O que o usuário precisa fazer DEPOIS
 
-1. Eu aplico o fix no `SubscriptionContext.tsx`.
-2. **Publicar a versão** (botão Publish).
-3. No celular: **fechar totalmente o app** (force quit), abrir novamente. O Service Worker vai pegar o novo build.
-4. Em desktop: hard refresh (Ctrl+Shift+R / Cmd+Shift+R) ou abrir em aba anônima para testar.
+1. Eu aplico o fix.
+2. **Clicar PUBLISH** — sem isso, nada chega em produção.
+3. No celular: fechar e reabrir o PWA.
 
 ### Trade-offs
 
-- ⚠️ A mudança do `useCallback` pra refs é uma alteração arquitetural pequena no contexto, mas é o padrão correto para callbacks que precisam ler estado sem retriggar effects.
-- ⚠️ Após o publish, usuários que já estavam com cache antigo no localStorage de outro user_id verão paywall até clicar em "Já assinei → Verificar acesso" (1 clique). Aceitável.
+- ✅ Defense-in-depth real: 3 fontes (edge → db → cache) antes de bloquear
+- ✅ Edge function continua sendo a fonte primária (mais info, reconciliação por email)
+- ⚠️ +1 round-trip ao DB no caso de erro (raro). Aceitável.
+- ⚠️ Se o admin cancelar uma assinatura, user com cache de 24h pode ter acesso "fantasma" por até 24h. Aceitável: cancelamentos são raros e o backend segue protegido por RLS.
 
