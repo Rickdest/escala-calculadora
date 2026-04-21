@@ -1,13 +1,17 @@
-import { ShoppingBag, Info, Search, Loader2 } from "lucide-react";
+import { ShoppingBag, Info, Search, Loader2, Link2, RefreshCw, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Link } from "react-router-dom";
+import { useState } from "react";
 import type { ShopeeKeyword } from "@/hooks/useProductTrend";
 
 interface ShopeeKeywordsCardProps {
   keywords: ShopeeKeyword[];
   onAnalyzeKeyword: (keyword: string) => void;
   refreshing?: boolean;
+  hasShopeeItemId?: boolean;
+  lastAdsSync?: string | null;
+  onResync?: () => Promise<void>;
 }
 
 const fmtVolume = (n: number) => {
@@ -23,53 +27,150 @@ function classifyQuality(score: number | null) {
   return { label: "Baixa", cls: "text-muted-foreground bg-secondary border-border" };
 }
 
-export function ShopeeKeywordsCard({ keywords, onAnalyzeKeyword, refreshing }: ShopeeKeywordsCardProps) {
-  // Estado vazio: produto sem campanha Ads
+function CardShell({ children }: { children: React.ReactNode }) {
+  return <div className="surface-card p-4 sm:p-5 h-full flex flex-col">{children}</div>;
+}
+
+function CardHeader() {
+  return (
+    <div className="flex items-center justify-between gap-2 mb-3">
+      <div className="flex items-center gap-2 min-w-0">
+        <ShoppingBag className="w-4 h-4 text-primary shrink-0" />
+        <p className="section-label truncate">Top palavras Shopee</p>
+      </div>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button className="text-muted-foreground hover:text-foreground transition-colors shrink-0" aria-label="Sobre estes dados">
+            <Info className="w-3.5 h-3.5" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="left" className="max-w-xs">
+          <p className="text-xs">
+            Volume de busca <strong>real dos últimos 7 dias</strong> na Shopee, vindo do app de Ads. Quanto maior, mais gente está procurando.
+          </p>
+        </TooltipContent>
+      </Tooltip>
+    </div>
+  );
+}
+
+export function ShopeeKeywordsCard({
+  keywords,
+  onAnalyzeKeyword,
+  refreshing,
+  hasShopeeItemId = true,
+  lastAdsSync = null,
+  onResync,
+}: ShopeeKeywordsCardProps) {
+  const [resyncing, setResyncing] = useState(false);
+
+  const handleResync = async () => {
+    if (!onResync) return;
+    try {
+      setResyncing(true);
+      await onResync();
+    } finally {
+      setResyncing(false);
+    }
+  };
+
+  // ============ EMPTY STATES ============
   if (keywords.length === 0) {
+    // Cenário 1: produto sem shopee_item_id
+    if (!hasShopeeItemId) {
+      return (
+        <CardShell>
+          <CardHeader />
+          <div className="flex-1 flex flex-col items-center justify-center text-center py-6">
+            <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-secondary mb-3">
+              <Link2 className="w-5 h-5 text-muted-foreground" />
+            </div>
+            <p className="text-small text-muted-foreground mb-3 max-w-xs">
+              Vincule esse produto a um item da Shopee pra ver volume real de busca.
+            </p>
+            <Link
+              to="/produtos"
+              className="text-small text-primary hover:underline font-medium"
+            >
+              Vincular produto →
+            </Link>
+          </div>
+        </CardShell>
+      );
+    }
+
+    // Cenário 2: tem item_id mas ads nunca sincronizou
+    if (!lastAdsSync) {
+      return (
+        <CardShell>
+          <CardHeader />
+          <div className="flex-1 flex flex-col items-center justify-center text-center py-6">
+            <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-secondary mb-3">
+              <Search className="w-5 h-5 text-muted-foreground" />
+            </div>
+            <p className="text-small text-muted-foreground mb-3 max-w-xs">
+              Sincronize seus anúncios pra liberar o volume de busca real desse produto.
+            </p>
+            {onResync ? (
+              <button
+                onClick={handleResync}
+                disabled={resyncing || refreshing}
+                className="h-9 px-4 rounded-lg bg-primary text-primary-foreground text-small font-semibold hover:bg-primary/90 transition-colors inline-flex items-center gap-2 disabled:opacity-50"
+              >
+                {resyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                Sincronizar Shopee Ads
+              </button>
+            ) : (
+              <Link
+                to="/configuracoes/integracoes"
+                className="text-small text-primary hover:underline font-medium"
+              >
+                Conectar Shopee Ads →
+              </Link>
+            )}
+          </div>
+        </CardShell>
+      );
+    }
+
+    // Cenário 3: sincronizou mas API não devolveu keywords
     return (
-      <div className="surface-card p-4 sm:p-5 h-full flex flex-col">
-        <div className="flex items-center gap-2 mb-3">
-          <ShoppingBag className="w-4 h-4 text-primary" />
-          <p className="section-label">Volume real Shopee</p>
-        </div>
+      <CardShell>
+        <CardHeader />
         <div className="flex-1 flex flex-col items-center justify-center text-center py-6">
           <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-secondary mb-3">
-            <Search className="w-5 h-5 text-muted-foreground" />
+            <Clock className="w-5 h-5 text-muted-foreground" />
           </div>
-          <p className="text-small text-muted-foreground mb-3 max-w-xs">
-            Conecte o Shopee Ads e crie uma campanha pra ver volume de busca real dos clientes.
+          <p className="text-small text-muted-foreground mb-1 max-w-xs">
+            A Shopee não retornou palavras pra esse item agora.
           </p>
-          <Link
-            to="/configuracoes/integracoes"
-            className="text-small text-primary hover:underline font-medium"
-          >
-            Conectar Shopee Ads →
-          </Link>
+          <p className="text-micro text-muted-foreground/80 mb-3 max-w-xs">
+            A campanha pode precisar de mais histórico (7+ dias) ou volume mínimo de impressões.
+          </p>
+          {onResync && (
+            <button
+              onClick={handleResync}
+              disabled={resyncing || refreshing}
+              className="h-9 px-4 rounded-lg border border-border text-small text-foreground hover:bg-secondary transition-colors inline-flex items-center gap-2 disabled:opacity-50"
+            >
+              {resyncing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+              Tentar novamente
+            </button>
+          )}
+          {lastAdsSync && (
+            <p className="text-micro text-muted-foreground/60 mt-3">
+              Último sync: {new Date(lastAdsSync).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+            </p>
+          )}
         </div>
-      </div>
+      </CardShell>
     );
   }
 
+  // ============ STATE COM DADOS ============
   return (
-    <div className="surface-card p-4 sm:p-5 h-full flex flex-col">
-      <div className="flex items-center justify-between gap-2 mb-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <ShoppingBag className="w-4 h-4 text-primary shrink-0" />
-          <p className="section-label truncate">Top palavras Shopee</p>
-        </div>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button className="text-muted-foreground hover:text-foreground transition-colors shrink-0" aria-label="Sobre estes dados">
-              <Info className="w-3.5 h-3.5" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="left" className="max-w-xs">
-            <p className="text-xs">
-              Volume de busca <strong>real dos últimos 7 dias</strong> na Shopee, vindo do app de Ads. Quanto maior, mais gente está procurando.
-            </p>
-          </TooltipContent>
-        </Tooltip>
-      </div>
+    <CardShell>
+      <CardHeader />
 
       <div className="space-y-1 flex-1">
         {keywords.slice(0, 8).map((kw, i) => {
@@ -114,6 +215,6 @@ export function ShopeeKeywordsCard({ keywords, onAnalyzeKeyword, refreshing }: S
           <span className="text-micro text-muted-foreground">Reanalisando...</span>
         </div>
       )}
-    </div>
+    </CardShell>
   );
 }
