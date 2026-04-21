@@ -308,6 +308,7 @@ export function useProductTrend(productId: string | undefined) {
     }
   }, [productStoreId, shopeeItemId, loadFromDb]);
 
+  useEffect(() => {
     loadFromDb();
   }, [loadFromDb]);
 
