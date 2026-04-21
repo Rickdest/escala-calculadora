@@ -45,8 +45,11 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
     lowQuality,
     suggestions,
     autoSimplified,
+    hasShopeeItemId,
+    lastAdsSync,
     refresh,
     setKeywordOverride,
+    resyncShopeeAds,
   } = useProductTrend(productId);
 
   const [editing, setEditing] = useState(false);
