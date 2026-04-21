@@ -1,53 +1,65 @@
 
 
-## Diagnóstico definitivo (com evidência)
+## Diagnóstico definitivo (com evidência atualizada)
 
-Verifiquei o banco e os logs do servidor:
+Cruzei logs do servidor com o código atual:
 
-**Banco:** Todos os 3 usuários (Richard, Pedro, Junior) têm `status=active` corretamente.
-
-**Logs do servidor:** Os últimos 50 requests à edge `check-subscription` são **todos OPTIONS** (preflight CORS) com URLs como `?_t=1776788856429`. **Zero POSTs chegaram nas últimas 4 horas.** O último POST bem-sucedido foi do `junior_rsmf@icloud.com`, que provavelmente está rodando uma versão sem o cache-buster ou tem cache local persistente.
-
-**Causa raiz**: na correção anterior, mudei `supabase.functions.invoke('check-subscription?_t=12345')`. O SDK do Supabase **não aceita query strings dentro do nome da função** — ele faz o preflight OPTIONS na URL com `?_t=...` (servidor responde 200), mas o POST seguinte fica malformado e nunca chega ao servidor. O cliente recebe `error` → vai pro retry → todos retries falham → status vira `expired` → paywall.
-
-**Resultado**: 100% dos usuários (incluindo admin) caem no paywall por bug do client.
+1. **Banco está perfeito** para os 3 testers: Richard (`active pro`), Pedro (`active yearly`, válido até abr/2027), Junior (`active pro`).
+2. **O servidor responde corretamente quando recebe POST**: log único confirmado às 16:32 — `POST | 200 | execution_time_ms: 1231` retornando `active pro`.
+3. **Os logs mostram que requisições do cliente em produção AINDA estão indo com `?_t=...` na URL**, o que prova que a versão publicada ainda é a antiga (com `supabase.functions.invoke('check-subscription?_t=...')` que quebra o POST). A correção em `billing.service.ts` foi feita no código mas **nunca chegou em `app.skalify.com.br`**.
+4. **Mesmo após publicar**, o `SubscriptionContext` tem 2 bugs latentes que podem prender o usuário em loading/paywall:
+   - **Re-render por `accessToken`** dispara nova chamada que aborta a anterior antes do POST sair, e o `useEffect` reage a cada nova referência do `fetchSubscription` (recriado pelo `useCallback` quando `accessToken` muda — o que acontece em refresh silencioso de token do Supabase, comum em PWA/mobile).
+   - **`finally` roda mesmo em chamadas abortadas/superseded**, setando `setLoading(false)` e `hasResolved = true` enquanto o `status` continua `'loading'`. O `ProtectedRoute` vê `subLoading=false, status='loading'` e fica num PageLoader silencioso ou cai pro paywall na próxima reação.
 
 ## Plano de correção
 
-### 1. Reverter o cache-buster por query string
+### 1. Publicar o build atual (pré-requisito)
 
-**`src/services/billing.service.ts`**:
-- Remover `?_t=${Date.now()}` do path do `invoke`. O SDK não suporta isso — ele já faz o request POST direto sem precisar de cache-buster, porque é um POST com `Authorization` único por sessão.
-- Para forçar bypass de cache quando `noCache=true`, usar a API nativa `fetch` direto pra URL da edge function (não pelo `invoke`), com `cache: 'no-store'` na opção do fetch — isso é seguro pra CORS porque é opção do client, não header.
+A correção crítica do `billing.service.ts` (fetch nativo sem `?_t=`) já está em código. Ela só vai resolver os usuários quando for publicada em `app.skalify.com.br` e os celulares forem recarregados (PWA cache).
 
-### 2. Substituir `supabase.functions.invoke` por `fetch` direto
+### 2. Corrigir race condition no `SubscriptionContext`
 
-**`src/services/billing.service.ts`**:
-- Construir a URL: `${VITE_SUPABASE_URL}/functions/v1/check-subscription`
-- Fazer `fetch(url, { method: 'POST', headers: { Authorization: 'Bearer <token>', apikey: <publishable_key>, 'Content-Type': 'application/json' }, body: '{}', signal, cache: noCache ? 'no-store' : 'default' })`.
-- Isso elimina a camada do SDK que estava quebrando, e dá controle total sobre o request. O preflight CORS continua funcionando (já está configurado no servidor).
-- Tratar `response.status` diretamente: 401/403 → retorna `expired`; 5xx/network → throw para retry.
+**`src/contexts/SubscriptionContext.tsx`** — duas mudanças cirúrgicas:
 
-### 3. Manter o restante do `SubscriptionContext` como está
+**a) Estabilizar `fetchSubscription` por refs.**
+- Trocar `useCallback` que depende de `accessToken/userId` por uma função que **lê os valores via `useRef`**. A função em si fica estável (zero dependências) e nunca é recriada.
+- O `useEffect` passa a depender de `[userId, accessToken, authReady, authLoading]` diretamente, **não da referência da função**. Assim a chamada só dispara quando uma dessas coisas realmente mudar de valor — não a cada render.
+- Resultado: refresh silencioso de token NÃO dispara nova chamada que aborta a anterior. A subscription é resolvida uma vez por sessão e fica estável.
 
-- `AbortController`, cache local, retries, fail-safe pra `expired` — tudo isso já está correto e foi validado.
-- A única mudança é o `billing.service.ts`.
+**b) Não tocar em `loading`/`hasResolved` em chamadas abortadas-superseded.**
+- No `finally`, **só** rodar `setLoading(false); hasResolved=true` se `inflightController.current === controller` (ou seja, esta chamada ainda é a vigente).
+- Se a chamada foi superseded, sair do `finally` sem mexer em nenhum estado React. A nova chamada cuida de finalizar.
+
+### 3. Logs visíveis no console
+
+Os logs com prefixo `[subscription]` já estão no código. Manter — vão revelar exatamente o caminho percorrido caso ainda haja problema após o publish.
+
+### 4. Botão "Verificar acesso" no paywall
+
+Já existe (`refreshSubscription` no `Paywall.tsx`). Como rede de segurança, garantir que ele force `noCache=true` (já está). Sem mudança necessária.
 
 ### Arquivos editados
 
 | Arquivo | Mudança |
 |---|---|
-| `src/services/billing.service.ts` | Trocar `supabase.functions.invoke(path, ...)` por `fetch` nativo direto na URL da edge function. Remover o cache-buster de query string. Usar `cache: 'no-store'` quando `noCache=true`. |
+| `src/contexts/SubscriptionContext.tsx` | Estabilizar `fetchSubscription` via refs; corrigir `finally` para não tocar em estado quando a chamada foi abortada/superseded |
 
 ### Por que isso resolve
 
-- ✅ Elimina o bug do query string no `invoke`
-- ✅ POST chega ao servidor com payload correto
-- ✅ Servidor responde `active` → cliente recebe → user vai pro app
-- ✅ Pedro, Richard e qualquer usuário ativo deixam de cair no paywall
+- ✅ Após **publicar**, o POST chega ao servidor e retorna `active` em ~1.2s (já validado nos logs).
+- ✅ Sem race condition, o cliente recebe e seta `status='active'` de forma estável.
+- ✅ Cache local de 1h (já implementado) garante que mesmo se houver hiccup de rede futuro, o usuário não vê paywall.
+- ✅ Logs de console permitem diagnóstico imediato se surgir caso edge.
+
+### O que o usuário precisa fazer após a correção
+
+1. Eu aplico o fix no `SubscriptionContext.tsx`.
+2. **Publicar a versão** (botão Publish).
+3. No celular: **fechar totalmente o app** (force quit), abrir novamente. O Service Worker vai pegar o novo build.
+4. Em desktop: hard refresh (Ctrl+Shift+R / Cmd+Shift+R) ou abrir em aba anônima para testar.
 
 ### Trade-offs
 
-- ⚠️ Não usa mais o helper `invoke` nessa função, mas isso é OK — outras funções continuam usando normalmente
-- ⚠️ Precisa importar a `VITE_SUPABASE_PUBLISHABLE_KEY` (já disponível em `import.meta.env`)
+- ⚠️ A mudança do `useCallback` pra refs é uma alteração arquitetural pequena no contexto, mas é o padrão correto para callbacks que precisam ler estado sem retriggar effects.
+- ⚠️ Após o publish, usuários que já estavam com cache antigo no localStorage de outro user_id verão paywall até clicar em "Já assinei → Verificar acesso" (1 clique). Aceitável.
 
