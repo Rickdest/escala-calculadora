@@ -48,6 +48,10 @@ export function useProductTrend(productId: string | undefined) {
   const [lastCapture, setLastCapture] = useState<string | null>(null);
   const [googleSeries, setGoogleSeries] = useState<TrendPoint[]>([]);
   const [shopeeKeywords, setShopeeKeywords] = useState<ShopeeKeyword[]>([]);
+  const [hasShopeeItemId, setHasShopeeItemId] = useState(false);
+  const [shopeeItemId, setShopeeItemId] = useState<number | null>(null);
+  const [productStoreId, setProductStoreId] = useState<string | null>(null);
+  const [lastAdsSync, setLastAdsSync] = useState<string | null>(null);
   const [keyword, setKeyword] = useState<string | null>(null);
   const [keywordOverride, setKeywordOverrideState] = useState<string | null>(
     null,
