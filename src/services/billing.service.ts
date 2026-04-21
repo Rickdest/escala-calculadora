@@ -29,11 +29,12 @@ export async function checkSubscription(
 ): Promise<SubscriptionData> {
   const path = noCache ? `check-subscription?_t=${Date.now()}` : 'check-subscription';
 
-  const { data, error } = await supabase.functions.invoke(path, {
+  const invokeOpts: Record<string, unknown> = {
     headers: { Authorization: `Bearer ${accessToken}` },
-    // @ts-expect-error supabase-js v2 forwards `signal` to the underlying fetch
-    signal,
-  });
+  };
+  if (signal) invokeOpts.signal = signal;
+
+  const { data, error } = await supabase.functions.invoke(path, invokeOpts);
 
   if (error) {
     const e = error as InvokeError;
