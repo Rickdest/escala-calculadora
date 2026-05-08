@@ -292,7 +292,6 @@ export default function Products() {
                     <DropdownMenuItem onClick={() => handleExportPDF('resumido')}><FileText className="w-4 h-4 mr-2" />PDF resumido (cliente)</DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleExportPDF('completo')}><FileText className="w-4 h-4 mr-2" />PDF completo (sócio)</DropdownMenuItem>
                   </DropdownMenuContent>
-                  </DropdownMenuContent>
                 </DropdownMenu>
               )}
             </div>
