@@ -289,7 +289,9 @@ export default function Products() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={handleExportCSV}><FileSpreadsheet className="w-4 h-4 mr-2" />Exportar CSV</DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleExportPDF}><FileText className="w-4 h-4 mr-2" />Exportar PDF</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExportPDF('resumido')}><FileText className="w-4 h-4 mr-2" />PDF resumido (cliente)</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExportPDF('completo')}><FileText className="w-4 h-4 mr-2" />PDF completo (sócio)</DropdownMenuItem>
+                  </DropdownMenuContent>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
