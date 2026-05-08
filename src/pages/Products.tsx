@@ -166,9 +166,16 @@ export default function Products() {
     exportToCSV(analysisProducts, currentStore.name);
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async (mode: 'resumido' | 'completo') => {
     if (!currentStore || analysisProducts.length === 0) return;
-    exportToPDF(analysisProducts, currentStore);
+    try {
+      const { generateProductsPDF } = await import('@/lib/pdfReport');
+      await generateProductsPDF(analysisProducts, currentStore, mode);
+      toast.success(`PDF ${mode} gerado com sucesso`);
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao gerar PDF');
+    }
   };
 
   if (isLoading) {
