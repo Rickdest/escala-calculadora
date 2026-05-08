@@ -1,57 +1,44 @@
+## Implementação: Exportar PDF (Resumido + Completo)
 
+### Arquivos
 
-## Resposta direta: NÃO, o fallback não libera acesso indevido. Mas tem um detalhe que vale reforçar.
+**1. `package.json`** — adicionar `jspdf` e `jspdf-autotable`.
 
-### Por que está seguro hoje
+**2. `src/lib/pdfReport.ts`** (novo) — gerador de PDF real com jsPDF:
+- `generateProductsPDF(data, store, mode: 'resumido' | 'completo')`
+- **Cabeçalho**: nome da loja, data de geração, "Skalify" no topo
+- **Resumo executivo** (cards): nº produtos, receita potencial, lucro total, margem média ponderada, meta da loja, distribuição (acima/abaixo da meta)
+- **Modo resumido** (1-2 páginas, para cliente):
+  - Resumo executivo
+  - Top 5 mais lucrativos (tabela compacta: produto, venda, lucro, margem)
+  - Top 5 problemas (margem abaixo da meta)
+- **Modo completo** (para sócio/análise):
+  - Resumo executivo
+  - Top 5 mais lucrativos + Top 5 problemas
+  - Tabela completa de TODOS os produtos via `jspdf-autotable` (Produto, Custo, Venda, Taxa Shopee, Impostos, Lucro, Margem, Estoque) com cores: verde (≥ meta), amarelo (próximo), vermelho (abaixo)
+- **Rodapé** em todas as páginas: "Skalify • página X de Y • gerado em DD/MM/AAAA"
+- A4 retrato, margens 14mm, page break automático
+- Download direto: `doc.save('${storeName}_relatorio_${data}.pdf')`
 
-O fallback DB faz exatamente isto:
+**3. `src/lib/exportUtils.ts`** — `exportToPDF` agora delega para `pdfReport.ts` (modo completo por padrão); manter CSV intacto. Remover/deprecar `generatePDFContent` (HTML print).
 
-```sql
-SELECT status, plan FROM subscriptions WHERE user_id = auth.uid()
-```
+**4. `src/pages/Products.tsx`** — substituir o item único de PDF no DropdownMenu por dois itens:
+  - "Exportar PDF (resumido)" → cliente
+  - "Exportar PDF (completo)" → sócio/análise
+  Usar `import()` dinâmico para o gerador PDF (evita +80kb no first load).
 
-Protegido por **3 camadas**:
+### Detalhes técnicos
 
-1. **RLS na tabela `subscriptions`** (`auth.uid() = user_id`): o usuário só consegue ler a **própria** linha. Não tem como inventar ou ver assinatura de outro.
-2. **RLS bloqueia INSERT/UPDATE/DELETE pra todos os usuários autenticados**: ninguém consegue criar/editar uma assinatura `active` no client. Só o webhook do Cakto (via `service_role` no servidor) escreve nessa tabela.
-3. **Trigger `handle_new_user_trial`** já cria o registro de novo usuário como `status='free', plan='free'` por default — então mesmo que o fallback responda, ele responde `free` e o app manda pro paywall.
-
-**Resultado**: usuário sem pagamento → linha no DB diz `free` → fallback retorna `free` → `STATUS_MAP['free']='free'` → `status !== 'active'` → `ProtectedRoute` redireciona pro `/paywall`. Funciona corretamente.
-
-### Onde existe um risco TEÓRICO (e como blindar)
-
-Hoje o cache local (`localStorage`) só armazena status **`active`** (linha 41: `if (parsed.status !== 'active') return null`). Isso é seguro — mas um atacante poderia, em teoria, abrir o DevTools e injetar manualmente `localStorage.setItem('skalify:sub-cache:v2', '{"status":"active",...}')` pra burlar o paywall **no client**.
-
-**Importante**: isso **não dá acesso real** aos dados — todas as RLS de escrita (`products`, `stores`, `ads_data`, etc.) exigem `has_active_subscription()` checada no **servidor**. O atacante só veria a UI vazia. Mas a UX de paywall seria pulada.
-
-### Proposta de blindagem (1 mudança cirúrgica)
-
-**`src/contexts/SubscriptionContext.tsx`**:
-
-- Quando carregar do cache local, **revalidar imediatamente em background** via DB (chamada barata, RLS-protegida). Se o DB retornar `free`/`expired`, sobrescrever o status na hora e mandar pro paywall.
-- Hoje já fazemos isso via edge function — adicionar a mesma revalidação via DB direto como reforço.
-
-Isso fecha o vetor teórico do `localStorage` editado: mesmo se alguém forjar o cache, em <1s a verificação real do DB derruba e manda pro paywall.
-
-### Resumo de garantias
-
-| Cenário | Comportamento |
-|---|---|
-| Usuário pagante (`active` no DB) | Cache → entra. Edge falha → DB confirma `active` → entra. ✅ |
-| Usuário trial/free | DB retorna `free` → paywall. ✅ |
-| Usuário expirado (`canceled`/`past_due`) | DB retorna o status real → paywall. ✅ |
-| Atacante forja `localStorage` | Vê UI por <1s, revalidação DB derruba → paywall. ✅ |
-| Atacante tenta criar produto/loja sem pagar | RLS `has_active_subscription()` bloqueia no servidor. ✅ |
-
-### Arquivo editado
-
-| Arquivo | Mudança |
-|---|---|
-| `src/contexts/SubscriptionContext.tsx` | Após restaurar do cache, disparar uma revalidação DB em paralelo à chamada do edge function (não bloqueante). Se DB disser `!== active`, sobrescrever estado e ir pro paywall. |
+- Cores: verde `#22c55e`, amarelo `#eab308`, vermelho `#ef4444`, accent Skalify `#e85d00`
+- Cálculos: usar `calculateProduct` existente para garantir consistência com a UI
+- Margem média ponderada: `Σ(lucro)/Σ(receita) × 100` (não média aritmética)
+- Filtrar produtos `draft === true` da exportação
+- Toast `sonner` ao concluir: "PDF gerado com sucesso"
+- Tratamento de erro com toast caso jsPDF falhe ao carregar
 
 ### Trade-offs
 
-- ✅ Fecha o único vetor teórico de bypass do paywall no client
-- ✅ Não introduz nenhuma latência extra perceptível (DB query <100ms, paralelo ao edge)
-- ⚠️ +1 query DB por carga de página (insignificante — RLS-indexed por `user_id`)
-
+- ✅ PDF real, baixa direto no celular/desktop/PWA
+- ✅ Visual profissional pronto para enviar
+- ✅ Dynamic import → sem peso no bundle inicial
+- ⚠️ Sem logo PNG embarcada na v1 (só texto "Skalify" estilizado). Pode adicionar depois se você fornecer SVG/PNG em `/public`.

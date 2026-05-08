@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn, getMarginStatus } from '@/lib/utils';
 import { exportToCSV, exportToPDF } from '@/lib/exportUtils';
+import { toast } from 'sonner';
 
 
 const productSortOptions: { value: SortOption; label: string }[] = [
@@ -166,9 +167,16 @@ export default function Products() {
     exportToCSV(analysisProducts, currentStore.name);
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async (mode: 'resumido' | 'completo') => {
     if (!currentStore || analysisProducts.length === 0) return;
-    exportToPDF(analysisProducts, currentStore);
+    try {
+      const { generateProductsPDF } = await import('@/lib/pdfReport');
+      await generateProductsPDF(analysisProducts, currentStore, mode);
+      toast.success(`PDF ${mode} gerado com sucesso`);
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao gerar PDF');
+    }
   };
 
   if (isLoading) {
@@ -281,7 +289,8 @@ export default function Products() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={handleExportCSV}><FileSpreadsheet className="w-4 h-4 mr-2" />Exportar CSV</DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleExportPDF}><FileText className="w-4 h-4 mr-2" />Exportar PDF</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExportPDF('resumido')}><FileText className="w-4 h-4 mr-2" />PDF resumido (cliente)</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExportPDF('completo')}><FileText className="w-4 h-4 mr-2" />PDF completo (sócio)</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
