@@ -415,6 +415,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                           <Input type="number" inputMode="decimal" step="0.1" min="0" value={outrosCanais.tiktok.affiliatePercent || ''} onChange={(e) => setOutrosCanais(prev => ({ ...prev, tiktok: { ...prev.tiktok!, affiliatePercent: parseFloat(e.target.value) || 0 } }))} className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num" />
                         </div>
                       </div>
+                      {renderChannelMiniPreview('tiktok')}
                     </div>
                   )}
                 </div>
