@@ -134,6 +134,37 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
     return { results, best: getBestChannel(results) };
   }, [outrosCanais, config?.taxes]);
 
+  const channelResultByKey = useMemo(() => {
+    const map: Record<string, { margin: number; netProfit: number } | undefined> = {};
+    channelComparison?.results.forEach(r => { map[r.key] = { margin: r.margin, netProfit: r.netProfit }; });
+    return map;
+  }, [channelComparison]);
+
+  const renderChannelMiniPreview = (key: 'tiktok' | 'shein' | 'amazon' | 'ml') => {
+    const r = channelResultByKey[key];
+    if (!r) {
+      return (
+        <div className="rounded-lg border border-dashed border-border bg-surface-2/40 px-3 py-2 text-[11px] text-text-3">
+          Preencha custo e venda para ver a margem em tempo real
+        </div>
+      );
+    }
+    const color = r.margin >= 15 ? 'text-success' : r.margin >= 0 ? 'text-warning' : 'text-danger';
+    const bg = r.margin >= 15 ? 'bg-success/5 border-success/30' : r.margin >= 0 ? 'bg-warning/5 border-warning/30' : 'bg-danger/5 border-danger/30';
+    return (
+      <div className={cn('rounded-lg border px-3 py-2 flex items-center justify-between gap-3', bg)}>
+        <div className="flex items-center gap-1.5">
+          {r.margin >= 0 ? <TrendingUp className={cn('w-3.5 h-3.5', color)} /> : <TrendingDown className={cn('w-3.5 h-3.5', color)} />}
+          <span className="text-[10px] font-bold uppercase tracking-wide text-text-2">Margem real</span>
+        </div>
+        <div className="flex items-center gap-3 font-mono font-mono-num">
+          <span className={cn('text-xs font-semibold', color)}>{formatCurrency(r.netProfit)}</span>
+          <span className={cn('text-sm font-bold', color)}>{r.margin.toFixed(1)}%</span>
+        </div>
+      </div>
+    );
+  };
+
   const monthlyRevenue = localCalc ? localCalc.grossRevenue * monthlySales : 0;
   const monthlyCosts = localCalc ? localCalc.totalCosts * monthlySales : 0;
   const monthlyProfit = localCalc ? localCalc.netProfit * monthlySales : 0;
@@ -384,6 +415,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                           <Input type="number" inputMode="decimal" step="0.1" min="0" value={outrosCanais.tiktok.affiliatePercent || ''} onChange={(e) => setOutrosCanais(prev => ({ ...prev, tiktok: { ...prev.tiktok!, affiliatePercent: parseFloat(e.target.value) || 0 } }))} className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num" />
                         </div>
                       </div>
+                      {renderChannelMiniPreview('tiktok')}
                     </div>
                   )}
                 </div>
@@ -440,6 +472,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                           <Input type="number" inputMode="decimal" step="0.01" min="0" value={outrosCanais.shein.packagingCost || ''} onChange={(e) => setOutrosCanais(prev => ({ ...prev, shein: { ...prev.shein!, packagingCost: parseFloat(e.target.value) || 0 } }))} className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num" />
                         </div>
                       </div>
+                      {renderChannelMiniPreview('shein')}
                     </div>
                   )}
                 </div>
@@ -494,6 +527,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                           <Input type="number" inputMode="decimal" step="0.01" min="0" value={outrosCanais.amazon.packagingCost || ''} onChange={(e) => setOutrosCanais(prev => ({ ...prev, amazon: { ...prev.amazon!, packagingCost: parseFloat(e.target.value) || 0 } }))} className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num" />
                         </div>
                       </div>
+                      {renderChannelMiniPreview('amazon')}
                     </div>
                   )}
                 </div>
@@ -552,6 +586,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                           <Input type="number" inputMode="decimal" step="0.01" min="0" value={outrosCanais.ml.packagingCost || ''} onChange={(e) => setOutrosCanais(prev => ({ ...prev, ml: { ...prev.ml!, packagingCost: parseFloat(e.target.value) || 0 } }))} className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num" />
                         </div>
                       </div>
+                      {renderChannelMiniPreview('ml')}
                     </div>
                   )}
                 </div>
