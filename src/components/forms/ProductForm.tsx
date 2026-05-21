@@ -585,6 +585,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                           <Input type="number" inputMode="decimal" step="0.01" min="0" value={outrosCanais.ml.packagingCost || ''} onChange={(e) => setOutrosCanais(prev => ({ ...prev, ml: { ...prev.ml!, packagingCost: parseFloat(e.target.value) || 0 } }))} className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num" />
                         </div>
                       </div>
+                      {renderChannelMiniPreview('ml')}
                     </div>
                   )}
                 </div>
