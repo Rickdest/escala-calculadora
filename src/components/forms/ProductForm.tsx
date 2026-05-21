@@ -527,6 +527,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                           <Input type="number" inputMode="decimal" step="0.01" min="0" value={outrosCanais.amazon.packagingCost || ''} onChange={(e) => setOutrosCanais(prev => ({ ...prev, amazon: { ...prev.amazon!, packagingCost: parseFloat(e.target.value) || 0 } }))} className="h-10 bg-surface-2 border-border rounded-lg font-mono font-mono-num" />
                         </div>
                       </div>
+                      {renderChannelMiniPreview('amazon')}
                     </div>
                   )}
                 </div>
