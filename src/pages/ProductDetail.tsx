@@ -544,6 +544,14 @@ export default function ProductDetail() {
             </div>
           </TabsContent>
 
+          <TabsContent value="marketplaces" className="mt-0">
+            <MarketplacesTab
+              channels={outrosCanaisResults}
+              desiredMargin={config.desiredMargin}
+              onEditProduct={() => setShowProductForm(true)}
+            />
+          </TabsContent>
+
           <TabsContent value="tendencia" className="mt-0">
             <ProductTrendTab productId={product.id} productName={product.name} />
           </TabsContent>
