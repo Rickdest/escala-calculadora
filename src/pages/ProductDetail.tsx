@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Trash2, Share2, Package, Pencil, MoreVertical, Wallet, Target,
-  BarChart3, Boxes, TrendingUp, DollarSign, Percent, Gauge, Zap, ChevronDown,
+  BarChart3, Boxes, TrendingUp, DollarSign, Percent, Gauge, Zap, ChevronDown, Store,
 } from 'lucide-react';
+import { MarketplacesTab } from '@/components/products/MarketplacesTab';
 import { useStore } from '@/contexts/StoreContext';
 import { getShopeeFeeForPrice } from '@/types/store';
 import { calcFullRoas } from '@/lib/roasUtils';
@@ -206,10 +207,14 @@ export default function ProductDetail() {
         </div>
 
         <Tabs defaultValue="analise" className="w-full">
-          <TabsList className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border border-border h-10 mb-4 md:mb-5 w-full grid grid-cols-2 md:inline-flex md:w-auto md:bg-secondary/50">
+          <TabsList className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border border-border h-10 mb-4 md:mb-5 w-full grid grid-cols-3 md:inline-flex md:w-auto md:bg-secondary/50">
             <TabsTrigger value="analise" className="text-xs md:text-sm data-[state=active]:bg-background min-w-0">
               <BarChart3 className="w-3.5 h-3.5 mr-1 md:mr-1.5 shrink-0" />
               <span className="truncate">Análise</span>
+            </TabsTrigger>
+            <TabsTrigger value="marketplaces" className="text-xs md:text-sm data-[state=active]:bg-background min-w-0">
+              <Store className="w-3.5 h-3.5 mr-1 md:mr-1.5 shrink-0" />
+              <span className="truncate">Marketplaces</span>
             </TabsTrigger>
             <TabsTrigger value="tendencia" className="text-xs md:text-sm data-[state=active]:bg-background min-w-0">
               <TrendingUp className="w-3.5 h-3.5 mr-1 md:mr-1.5 shrink-0" />
@@ -430,46 +435,8 @@ export default function ProductDetail() {
                   )}
                 </div>
 
-                {/* Taxas dos outros marketplaces — breakdown por canal */}
-                {hasOutrosCanais && (
-                  <div className="surface-card p-4 md:p-5">
-                    <p className="section-label mb-3 flex items-center gap-2">
-                      <Wallet className="w-4 h-4 text-primary" />
-                      Taxas dos Outros Marketplaces
-                    </p>
-                    <div className="space-y-4">
-                      {outrosCanaisResults.map((c) => {
-                        const visibleFees = c.fees.filter(f => f.value > 0);
-                        if (visibleFees.length === 0) return null;
-                        return (
-                          <div key={c.key} className="bg-secondary/40 border border-border rounded-lg p-3">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-semibold text-foreground">{c.label}</span>
-                              <span className="text-[11px] text-muted-foreground">
-                                Venda: <span className="font-mono tabular-nums text-foreground">{fmt(c.salePrice)}</span>
-                              </span>
-                            </div>
-                            <div className="space-y-1">
-                              {visibleFees.map((f, i) => (
-                                <div key={i} className="flex items-center justify-between gap-3 text-xs">
-                                  <span className="text-muted-foreground truncate">{f.label}</span>
-                                  <span className="font-mono tabular-nums text-foreground shrink-0">{fmt(f.value)}</span>
-                                </div>
-                              ))}
-                            </div>
-                            <div className="border-t border-border/60 mt-2 pt-2 flex items-center justify-between text-xs">
-                              <span className="font-semibold text-foreground">Total de taxas</span>
-                              <span className="font-mono font-bold tabular-nums text-destructive">{fmt(c.totalFees)}</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <p className="text-[10px] text-muted-foreground mt-3">
-                      Custo do produto não está incluído nas taxas — ele compõe o custo total junto com estas tarifas do canal.
-                    </p>
-                  </div>
-                )}
+
+
 
                 {/* Estoque com mini-progresso */}
                 <div className={cn(
@@ -575,6 +542,14 @@ export default function ProductDetail() {
                 </div>
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="marketplaces" className="mt-0">
+            <MarketplacesTab
+              channels={outrosCanaisResults}
+              desiredMargin={config.desiredMargin}
+              onEditProduct={() => setShowProductForm(true)}
+            />
           </TabsContent>
 
           <TabsContent value="tendencia" className="mt-0">
