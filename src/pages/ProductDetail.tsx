@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Trash2, Share2, Package, Pencil, MoreVertical, Wallet, Target,
-  BarChart3, Boxes, TrendingUp, DollarSign, Percent, Gauge, Zap, ChevronDown,
+  BarChart3, Boxes, TrendingUp, DollarSign, Percent, Gauge, Zap, ChevronDown, Store,
 } from 'lucide-react';
+import { MarketplacesTab } from '@/components/products/MarketplacesTab';
 import { useStore } from '@/contexts/StoreContext';
 import { getShopeeFeeForPrice } from '@/types/store';
 import { calcFullRoas } from '@/lib/roasUtils';
