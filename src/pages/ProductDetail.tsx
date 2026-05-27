@@ -207,10 +207,14 @@ export default function ProductDetail() {
         </div>
 
         <Tabs defaultValue="analise" className="w-full">
-          <TabsList className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border border-border h-10 mb-4 md:mb-5 w-full grid grid-cols-2 md:inline-flex md:w-auto md:bg-secondary/50">
+          <TabsList className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border border-border h-10 mb-4 md:mb-5 w-full grid grid-cols-3 md:inline-flex md:w-auto md:bg-secondary/50">
             <TabsTrigger value="analise" className="text-xs md:text-sm data-[state=active]:bg-background min-w-0">
               <BarChart3 className="w-3.5 h-3.5 mr-1 md:mr-1.5 shrink-0" />
               <span className="truncate">Análise</span>
+            </TabsTrigger>
+            <TabsTrigger value="marketplaces" className="text-xs md:text-sm data-[state=active]:bg-background min-w-0">
+              <Store className="w-3.5 h-3.5 mr-1 md:mr-1.5 shrink-0" />
+              <span className="truncate">Marketplaces</span>
             </TabsTrigger>
             <TabsTrigger value="tendencia" className="text-xs md:text-sm data-[state=active]:bg-background min-w-0">
               <TrendingUp className="w-3.5 h-3.5 mr-1 md:mr-1.5 shrink-0" />
