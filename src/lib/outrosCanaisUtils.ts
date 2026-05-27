@@ -78,7 +78,7 @@ export function calcOutrosCanais(
     const r = calcML(salePrice, costPrice, categoryIndex, anuncio, freightCost, packagingCost, taxesPercent);
     const cat = ML_CATEGORIES[categoryIndex];
     const fees: ChannelFee[] = [
-      { label: `Comissão ML ${anuncio} ${cat?.name ? '· ' + cat.name : ''} (${(r.commissionRate * 100).toFixed(0)}%)`, value: r.commissionCost },
+      { label: `Comissão ML ${anuncio} (${(r.commissionRate * 100).toFixed(0)}%)`, value: r.commissionCost },
       { label: 'Taxa fixa ML', value: r.fixedFee },
       { label: 'Frete', value: r.freightCost },
       { label: 'Embalagem', value: r.packagingCost },
