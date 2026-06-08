@@ -1,8 +1,12 @@
-import { useState } from 'react';
-import { Wallet, DollarSign, Percent, Target, Store, ChevronDown, BarChart3, Zap } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { Wallet, DollarSign, Percent, Target, Store, ChevronDown, BarChart3, Zap, Pencil, Save, Loader2 } from 'lucide-react';
 import { cn, getMarginStatus } from '@/lib/utils';
 import { Slider } from '@/components/ui/slider';
+import { Input } from '@/components/ui/input';
 import { ChannelResult } from '@/lib/outrosCanaisUtils';
+import { calcML, ML_CATEGORIES, type MLAnuncio } from '@/lib/mlUtils';
+import { MLChannelData, OutrosCanais } from '@/types/store';
+import { toast } from 'sonner';
 
 const fmt = (v: number) =>
   new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
@@ -23,13 +27,215 @@ interface Props {
   channels: ChannelResult[];
   desiredMargin: number;
   onEditProduct: () => void;
+  mlData?: MLChannelData;
+  outrosCanais?: OutrosCanais;
+  taxesPercent?: number;
+  onSaveOutrosCanais?: (next: OutrosCanais) => void | Promise<void>;
 }
 
-function ChannelDetail({ channel, desiredMargin }: { channel: ChannelResult; desiredMargin: number }) {
+function MLInlineEditor({
+  initial,
+  taxesPercent,
+  desiredMargin,
+  onSave,
+}: {
+  initial: MLChannelData;
+  taxesPercent: number;
+  desiredMargin: number;
+  onSave: (next: MLChannelData) => void | Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState<MLChannelData>(initial);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setDraft(initial);
+  }, [initial]);
+
+  const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
+
+  const classico = useMemo(
+    () => calcML(draft.salePrice || 0, draft.costPrice || 0, draft.categoryIndex ?? 0, 'classico', draft.freightCost || 0, draft.packagingCost || 0, taxesPercent),
+    [draft, taxesPercent]
+  );
+  const premium = useMemo(
+    () => calcML(draft.salePrice || 0, draft.costPrice || 0, draft.categoryIndex ?? 0, 'premium', draft.freightCost || 0, draft.packagingCost || 0, taxesPercent),
+    [draft, taxesPercent]
+  );
+
+  const current = draft.anuncio || 'classico';
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await onSave(draft);
+      toast.success('Mercado Livre atualizado!');
+      setOpen(false);
+    } catch {
+      toast.error('Não foi possível salvar');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const diffProfit = premium.netProfit - classico.netProfit;
+  const diffMargin = premium.margin - classico.margin;
+
+  const PlanCard = ({ label, data, kind }: { label: string; data: ReturnType<typeof calcML>; kind: MLAnuncio }) => {
+    const isCurrent = current === kind;
+    const status = getMarginStatus(data.margin);
+    return (
+      <button
+        type="button"
+        onClick={() => setDraft(d => ({ ...d, anuncio: kind }))}
+        className={cn(
+          'text-left rounded-lg border p-3 transition-all',
+          isCurrent ? 'border-yellow-400/70 bg-yellow-400/5 ring-1 ring-yellow-400/40' : 'border-border bg-secondary/30 hover:border-yellow-400/30'
+        )}
+      >
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-bold text-foreground">{label}</span>
+          {isCurrent && (
+            <span className="text-[9px] font-bold uppercase tracking-wider bg-yellow-400 text-black px-1.5 py-0.5 rounded">Atual</span>
+          )}
+        </div>
+        <p className="text-[10px] text-muted-foreground mb-1">Comissão {(data.commissionRate * 100).toFixed(1)}%</p>
+        <div className="flex items-baseline justify-between gap-2">
+          <div>
+            <p className={cn('font-mono text-base font-bold tabular-nums', data.netProfit >= 0 ? 'text-success' : 'text-destructive')}>
+              {fmt(data.netProfit)}
+            </p>
+            <p className="text-[10px] text-muted-foreground">Lucro/un</p>
+          </div>
+          <div className="text-right">
+            <p className={cn('font-mono text-base font-bold tabular-nums', status.color)}>{data.margin.toFixed(1)}%</p>
+            <p className="text-[10px] text-muted-foreground">Margem</p>
+          </div>
+        </div>
+      </button>
+    );
+  };
+
+  return (
+    <div className="border-t border-yellow-400/20 pt-4 mt-2 space-y-4">
+      {/* Comparativo Clássico vs Premium */}
+      <div>
+        <p className="section-label mb-2 flex items-center gap-2">
+          <BarChart3 className="w-4 h-4 text-yellow-400" />
+          Comparativo Clássico vs Premium
+          <span className="text-[10px] text-muted-foreground font-normal normal-case tracking-normal">— clique para escolher</span>
+        </p>
+        <div className="grid grid-cols-2 gap-2.5">
+          <PlanCard label="Clássico" data={classico} kind="classico" />
+          <PlanCard label="Premium" data={premium} kind="premium" />
+        </div>
+        <div className="mt-2 flex items-center justify-between text-[11px] bg-secondary/40 border border-border rounded-md px-2.5 py-1.5">
+          <span className="text-muted-foreground">Premium vs Clássico</span>
+          <span className="font-mono font-semibold tabular-nums">
+            <span className={diffProfit >= 0 ? 'text-success' : 'text-destructive'}>
+              {diffProfit >= 0 ? '+' : ''}{fmt(diffProfit)}
+            </span>
+            <span className="text-muted-foreground mx-1">·</span>
+            <span className={diffMargin >= 0 ? 'text-success' : 'text-destructive'}>
+              {diffMargin >= 0 ? '+' : ''}{diffMargin.toFixed(1)}%
+            </span>
+          </span>
+        </div>
+      </div>
+
+      {/* Toggle editor */}
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between gap-2 text-xs font-semibold text-foreground bg-secondary/40 hover:bg-secondary border border-border rounded-md px-3 py-2 transition-colors"
+      >
+        <span className="flex items-center gap-2">
+          <Pencil className="w-3.5 h-3.5 text-yellow-400" />
+          Editar dados do Mercado Livre
+        </span>
+        <ChevronDown className={cn('w-4 h-4 text-muted-foreground transition-transform', open && 'rotate-180')} />
+      </button>
+
+      {open && (
+        <div className="space-y-3 bg-secondary/20 border border-border rounded-lg p-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <label className="section-label">Custo (R$)</label>
+              <Input type="number" inputMode="decimal" step="0.01" min="0"
+                value={draft.costPrice || ''}
+                onChange={e => setDraft(d => ({ ...d, costPrice: parseFloat(e.target.value) || 0 }))}
+                className="h-10 font-mono" />
+            </div>
+            <div className="space-y-1">
+              <label className="section-label">Venda (R$)</label>
+              <Input type="number" inputMode="decimal" step="0.01" min="0"
+                value={draft.salePrice || ''}
+                onChange={e => setDraft(d => ({ ...d, salePrice: parseFloat(e.target.value) || 0 }))}
+                className="h-10 font-mono" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <label className="section-label">Categoria</label>
+            <select
+              value={draft.categoryIndex ?? 0}
+              onChange={e => setDraft(d => ({ ...d, categoryIndex: parseInt(e.target.value) }))}
+              className="h-10 w-full bg-background border border-border rounded-lg text-xs px-2 text-foreground"
+            >
+              {ML_CATEGORIES.map((cat, i) => (
+                <option key={cat.label} value={i}>{cat.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <label className="section-label">Frete (R$)</label>
+              <Input type="number" inputMode="decimal" step="0.01" min="0"
+                value={draft.freightCost || ''}
+                onChange={e => setDraft(d => ({ ...d, freightCost: parseFloat(e.target.value) || 0 }))}
+                className="h-10 font-mono" />
+            </div>
+            <div className="space-y-1">
+              <label className="section-label">Embalagem (R$)</label>
+              <Input type="number" inputMode="decimal" step="0.01" min="0"
+                value={draft.packagingCost || ''}
+                onChange={e => setDraft(d => ({ ...d, packagingCost: parseFloat(e.target.value) || 0 }))}
+                className="h-10 font-mono" />
+            </div>
+          </div>
+          <button
+            type="button"
+            disabled={!dirty || saving}
+            onClick={handleSave}
+            className={cn(
+              'w-full h-10 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-colors',
+              dirty && !saving
+                ? 'bg-yellow-400 text-black hover:bg-yellow-300'
+                : 'bg-secondary text-muted-foreground cursor-not-allowed'
+            )}
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {saving ? 'Salvando...' : dirty ? 'Salvar alterações' : 'Sem alterações'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ChannelDetail({
+  channel,
+  desiredMargin,
+  mlEditor,
+}: {
+  channel: ChannelResult;
+  desiredMargin: number;
+  mlEditor?: React.ReactNode;
+}) {
   const [monthlySales, setMonthlySales] = useState(50);
   const [showAll, setShowAll] = useState(false);
   const status = getMarginStatus(channel.margin);
   const marginDiff = channel.margin - desiredMargin;
+  const isML = channel.key === 'ml';
 
   const allCosts = [
     { label: 'Custo do produto', value: channel.costPrice, color: COLORS[0] },
@@ -53,12 +259,20 @@ function ChannelDetail({ channel, desiredMargin }: { channel: ChannelResult; des
   })();
 
   return (
-    <div className="surface-card p-4 md:p-5 space-y-4 md:space-y-5">
+    <div className={cn(
+      'surface-card p-4 md:p-5 space-y-4 md:space-y-5',
+      isML && 'border-l-4 border-l-yellow-400'
+    )}>
       {/* Header */}
       <div className="flex items-center justify-between gap-3 pb-3 border-b border-border">
         <div className="flex items-center gap-2 min-w-0">
-          <Store className="w-4 h-4 text-primary shrink-0" />
-          <h3 className="font-bold text-foreground text-base md:text-lg truncate">{channel.label}</h3>
+          <Store className={cn('w-4 h-4 shrink-0', isML ? 'text-yellow-400' : 'text-primary')} />
+          <h3 className={cn('font-bold text-base md:text-lg truncate', isML ? 'text-yellow-300' : 'text-foreground')}>
+            {channel.label}
+          </h3>
+          {isML && (
+            <span className="text-[9px] font-bold uppercase tracking-wider bg-yellow-400 text-black px-1.5 py-0.5 rounded shrink-0">ML</span>
+          )}
         </div>
         <span className={cn('inline-flex items-center text-[11px] md:text-xs font-semibold px-2 py-0.5 rounded-full border shrink-0', statusBadge.cls)}>
           {statusBadge.text}
@@ -97,6 +311,9 @@ function ChannelDetail({ channel, desiredMargin }: { channel: ChannelResult; des
           <p className="label-metric mt-0.5">Preço venda</p>
         </div>
       </div>
+
+      {/* ML inline editor + classico/premium comparison */}
+      {isML && mlEditor}
 
       {/* Breakdown */}
       <div>
@@ -206,7 +423,15 @@ function ChannelDetail({ channel, desiredMargin }: { channel: ChannelResult; des
   );
 }
 
-export function MarketplacesTab({ channels, desiredMargin, onEditProduct }: Props) {
+export function MarketplacesTab({
+  channels,
+  desiredMargin,
+  onEditProduct,
+  mlData,
+  outrosCanais,
+  taxesPercent = 0,
+  onSaveOutrosCanais,
+}: Props) {
   if (channels.length === 0) {
     return (
       <div className="surface-card p-8 text-center">
@@ -225,10 +450,29 @@ export function MarketplacesTab({ channels, desiredMargin, onEditProduct }: Prop
     );
   }
 
+  const handleSaveMl = async (next: MLChannelData) => {
+    if (!onSaveOutrosCanais) return;
+    await onSaveOutrosCanais({ ...(outrosCanais ?? {}), ml: next });
+  };
+
   return (
     <div className="space-y-4 md:space-y-5">
       {channels.map(c => (
-        <ChannelDetail key={c.key} channel={c} desiredMargin={desiredMargin} />
+        <ChannelDetail
+          key={c.key}
+          channel={c}
+          desiredMargin={desiredMargin}
+          mlEditor={
+            c.key === 'ml' && mlData && onSaveOutrosCanais ? (
+              <MLInlineEditor
+                initial={mlData}
+                taxesPercent={taxesPercent}
+                desiredMargin={desiredMargin}
+                onSave={handleSaveMl}
+              />
+            ) : undefined
+          }
+        />
       ))}
     </div>
   );

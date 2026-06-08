@@ -549,6 +549,12 @@ export default function ProductDetail() {
               channels={outrosCanaisResults}
               desiredMargin={config.desiredMargin}
               onEditProduct={() => setShowProductForm(true)}
+              mlData={product.outrosCanais?.ml}
+              outrosCanais={product.outrosCanais ?? {}}
+              taxesPercent={config.taxes ?? 0}
+              onSaveOutrosCanais={async (next) => {
+                await updateProduct(product.id, { outrosCanais: next });
+              }}
             />
           </TabsContent>
 
