@@ -140,22 +140,35 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
     return map;
   }, [channelComparison]);
 
+  const CHANNEL_META: Record<'tiktok' | 'shein' | 'amazon' | 'ml', { label: string; accent: string; bg: string; border: string; dot: string }> = {
+    tiktok: { label: 'TikTok Shop', accent: 'text-foreground', bg: 'bg-foreground/5', border: 'border-foreground/30', dot: 'bg-foreground' },
+    shein: { label: 'Shein', accent: 'text-pink-400', bg: 'bg-pink-500/5', border: 'border-pink-500/30', dot: 'bg-pink-500' },
+    amazon: { label: 'Amazon', accent: 'text-orange-400', bg: 'bg-orange-500/5', border: 'border-orange-500/30', dot: 'bg-orange-500' },
+    ml: { label: 'Mercado Livre', accent: 'text-yellow-300', bg: 'bg-yellow-400/10', border: 'border-yellow-400/50', dot: 'bg-yellow-400' },
+  };
+
   const renderChannelMiniPreview = (key: 'tiktok' | 'shein' | 'amazon' | 'ml') => {
+    const meta = CHANNEL_META[key];
     const r = channelResultByKey[key];
     if (!r) {
       return (
-        <div className="rounded-lg border border-dashed border-border bg-surface-2/40 px-3 py-2 text-[11px] text-text-3">
-          Preencha custo e venda para ver a margem em tempo real
+        <div className={cn('rounded-lg border border-dashed border-l-4 px-3 py-2 text-[11px] text-text-3 flex items-center gap-2', meta.border)}>
+          <span className={cn('w-1.5 h-1.5 rounded-full', meta.dot)} />
+          <span className={cn('font-bold text-[10px] uppercase tracking-wide', meta.accent)}>{meta.label}</span>
+          <span className="text-text-3">— preencha custo e venda para ver a margem</span>
         </div>
       );
     }
     const color = r.margin >= 15 ? 'text-success' : r.margin >= 0 ? 'text-warning' : 'text-danger';
-    const bg = r.margin >= 15 ? 'bg-success/5 border-success/30' : r.margin >= 0 ? 'bg-warning/5 border-warning/30' : 'bg-danger/5 border-danger/30';
     return (
-      <div className={cn('rounded-lg border px-3 py-2 flex items-center justify-between gap-3', bg)}>
-        <div className="flex items-center gap-1.5">
-          {r.margin >= 0 ? <TrendingUp className={cn('w-3.5 h-3.5', color)} /> : <TrendingDown className={cn('w-3.5 h-3.5', color)} />}
-          <span className="text-[10px] font-bold uppercase tracking-wide text-text-2">Margem real</span>
+      <div className={cn('rounded-lg border border-l-4 px-3 py-2 flex items-center justify-between gap-3', meta.bg, meta.border)}>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', meta.dot)} />
+          <span className={cn('text-[10px] font-bold uppercase tracking-wide shrink-0', meta.accent)}>{meta.label}</span>
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-text-2 hidden sm:inline">· Margem real</span>
+          {r.margin >= 0
+            ? <TrendingUp className={cn('w-3.5 h-3.5 shrink-0', color)} />
+            : <TrendingDown className={cn('w-3.5 h-3.5 shrink-0', color)} />}
         </div>
         <div className="flex items-center gap-3 font-mono font-mono-num">
           <span className={cn('text-xs font-semibold', color)}>{formatCurrency(r.netProfit)}</span>
