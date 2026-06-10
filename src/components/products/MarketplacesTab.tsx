@@ -167,7 +167,6 @@ function MLInlineEditor({
 
       {open && (
         <div className="space-y-3 bg-secondary/20 border border-border rounded-lg p-3">
-          <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
             <label className="section-label">Custo (R$)</label>
             <Input type="number" inputMode="decimal" step="0.01" min="0"
