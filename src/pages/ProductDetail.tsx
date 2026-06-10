@@ -223,8 +223,19 @@ export default function ProductDetail() {
           </TabsList>
 
           <TabsContent value="analise" className="mt-0 space-y-4 md:space-y-5">
-            {/* Hero KPI tiles 2x2 mobile / 4 cols desktop */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-3">
+            {/* Tag: Análise da Shopee (diferencia de outros marketplaces) */}
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30">
+                <Store className="w-3.5 h-3.5 text-primary" />
+                <span className="text-xs font-bold text-primary uppercase tracking-wider">Análise · Shopee</span>
+              </div>
+              <span className="text-[11px] text-muted-foreground">
+                Outros marketplaces na aba <span className="text-foreground font-semibold">Marketplaces</span>
+              </span>
+            </div>
+
+            {/* Hero KPI tiles 2x2 mobile / 5 cols desktop (com Custo editável) */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5 md:gap-3">
               {/* Lucro/un */}
               <div className={cn(
                 'surface-card p-3 md:p-4 border-l-2 relative overflow-hidden',
