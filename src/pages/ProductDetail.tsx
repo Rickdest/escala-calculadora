@@ -284,6 +284,15 @@ export default function ProductDetail() {
                 </p>
                 <p className="label-metric mt-0.5 md:mt-1">ROAS empate</p>
               </div>
+
+              {/* Custo do produto — editável inline */}
+              <CostInlineCard
+                value={product.costPrice}
+                onSave={async (v) => {
+                  await updateProduct(product.id, { costPrice: v });
+                  toast.success('Custo atualizado!');
+                }}
+              />
             </div>
 
             {/* Grid 2 colunas */}
