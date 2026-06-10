@@ -140,6 +140,10 @@ export interface AmazonChannelData {
 export interface MLChannelData {
   costPrice: number;
   salePrice: number;
+  /** Preço de venda específico para anúncio Clássico (opcional, fallback para salePrice) */
+  salePriceClassico?: number;
+  /** Preço de venda específico para anúncio Premium (opcional, fallback para salePrice) */
+  salePricePremium?: number;
   categoryIndex?: number;
   anuncio?: 'classico' | 'premium';
   freightCost?: number;
