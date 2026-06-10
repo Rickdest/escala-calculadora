@@ -103,6 +103,7 @@ function MLInlineEditor({
           <span className="text-xs font-bold text-foreground">{label}</span>
           {isCurrent && (
             <span className="text-[9px] font-bold uppercase tracking-wider bg-yellow-400 text-black px-1.5 py-0.5 rounded">Atual</span>
+          )}
         </div>
         <div className="flex items-center justify-between mb-1.5">
           <p className="text-[10px] text-muted-foreground">Comissão {(data.commissionRate * 100).toFixed(1)}%</p>
