@@ -168,21 +168,38 @@ function MLInlineEditor({
       {open && (
         <div className="space-y-3 bg-secondary/20 border border-border rounded-lg p-3">
           <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1">
+            <label className="section-label">Custo (R$)</label>
+            <Input type="number" inputMode="decimal" step="0.01" min="0"
+              value={draft.costPrice || ''}
+              onChange={e => setDraft(d => ({ ...d, costPrice: parseFloat(e.target.value) || 0 }))}
+              className="h-10 font-mono" />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
-              <label className="section-label">Custo (R$)</label>
+              <label className="section-label flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-yellow-400/70" />
+                Venda Clássico (R$)
+              </label>
               <Input type="number" inputMode="decimal" step="0.01" min="0"
-                value={draft.costPrice || ''}
-                onChange={e => setDraft(d => ({ ...d, costPrice: parseFloat(e.target.value) || 0 }))}
+                value={draft.salePriceClassico ?? draft.salePrice ?? ''}
+                onChange={e => setDraft(d => ({ ...d, salePriceClassico: parseFloat(e.target.value) || 0 }))}
                 className="h-10 font-mono" />
             </div>
             <div className="space-y-1">
-              <label className="section-label">Venda (R$)</label>
+              <label className="section-label flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
+                Venda Premium (R$)
+              </label>
               <Input type="number" inputMode="decimal" step="0.01" min="0"
-                value={draft.salePrice || ''}
-                onChange={e => setDraft(d => ({ ...d, salePrice: parseFloat(e.target.value) || 0 }))}
+                value={draft.salePricePremium ?? draft.salePrice ?? ''}
+                onChange={e => setDraft(d => ({ ...d, salePricePremium: parseFloat(e.target.value) || 0 }))}
                 className="h-10 font-mono" />
             </div>
           </div>
+          <p className="text-[10px] text-muted-foreground -mt-1">
+            Defina preços diferentes por tipo de anúncio. O selecionado vira o preço ativo do canal.
+          </p>
           <div className="space-y-1">
             <label className="section-label">Categoria</label>
             <select
