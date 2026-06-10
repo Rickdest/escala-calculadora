@@ -54,13 +54,16 @@ function MLInlineEditor({
 
   const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
 
+  const priceClassico = draft.salePriceClassico ?? draft.salePrice ?? 0;
+  const pricePremium = draft.salePricePremium ?? draft.salePrice ?? 0;
+
   const classico = useMemo(
-    () => calcML(draft.salePrice || 0, draft.costPrice || 0, draft.categoryIndex ?? 0, 'classico', draft.freightCost || 0, draft.packagingCost || 0, taxesPercent),
-    [draft, taxesPercent]
+    () => calcML(priceClassico, draft.costPrice || 0, draft.categoryIndex ?? 0, 'classico', draft.freightCost || 0, draft.packagingCost || 0, taxesPercent),
+    [priceClassico, draft, taxesPercent]
   );
   const premium = useMemo(
-    () => calcML(draft.salePrice || 0, draft.costPrice || 0, draft.categoryIndex ?? 0, 'premium', draft.freightCost || 0, draft.packagingCost || 0, taxesPercent),
-    [draft, taxesPercent]
+    () => calcML(pricePremium, draft.costPrice || 0, draft.categoryIndex ?? 0, 'premium', draft.freightCost || 0, draft.packagingCost || 0, taxesPercent),
+    [pricePremium, draft, taxesPercent]
   );
 
   const current = draft.anuncio || 'classico';
@@ -68,7 +71,10 @@ function MLInlineEditor({
   const handleSave = async () => {
     setSaving(true);
     try {
-      await onSave(draft);
+      // Sincroniza salePrice com o preço do anúncio selecionado, para manter compatibilidade
+      // com calcOutrosCanais (que usa salePrice).
+      const activePrice = (draft.anuncio === 'premium' ? pricePremium : priceClassico) || draft.salePrice;
+      await onSave({ ...draft, salePrice: activePrice });
       toast.success('Mercado Livre atualizado!');
       setOpen(false);
     } catch {
