@@ -54,13 +54,16 @@ function MLInlineEditor({
 
   const dirty = JSON.stringify(draft) !== JSON.stringify(initial);
 
+  const priceClassico = draft.salePriceClassico ?? draft.salePrice ?? 0;
+  const pricePremium = draft.salePricePremium ?? draft.salePrice ?? 0;
+
   const classico = useMemo(
-    () => calcML(draft.salePrice || 0, draft.costPrice || 0, draft.categoryIndex ?? 0, 'classico', draft.freightCost || 0, draft.packagingCost || 0, taxesPercent),
-    [draft, taxesPercent]
+    () => calcML(priceClassico, draft.costPrice || 0, draft.categoryIndex ?? 0, 'classico', draft.freightCost || 0, draft.packagingCost || 0, taxesPercent),
+    [priceClassico, draft, taxesPercent]
   );
   const premium = useMemo(
-    () => calcML(draft.salePrice || 0, draft.costPrice || 0, draft.categoryIndex ?? 0, 'premium', draft.freightCost || 0, draft.packagingCost || 0, taxesPercent),
-    [draft, taxesPercent]
+    () => calcML(pricePremium, draft.costPrice || 0, draft.categoryIndex ?? 0, 'premium', draft.freightCost || 0, draft.packagingCost || 0, taxesPercent),
+    [pricePremium, draft, taxesPercent]
   );
 
   const current = draft.anuncio || 'classico';
@@ -68,7 +71,10 @@ function MLInlineEditor({
   const handleSave = async () => {
     setSaving(true);
     try {
-      await onSave(draft);
+      // Sincroniza salePrice com o preço do anúncio selecionado, para manter compatibilidade
+      // com calcOutrosCanais (que usa salePrice).
+      const activePrice = (draft.anuncio === 'premium' ? pricePremium : priceClassico) || draft.salePrice;
+      await onSave({ ...draft, salePrice: activePrice });
       toast.success('Mercado Livre atualizado!');
       setOpen(false);
     } catch {
@@ -99,7 +105,10 @@ function MLInlineEditor({
             <span className="text-[9px] font-bold uppercase tracking-wider bg-yellow-400 text-black px-1.5 py-0.5 rounded">Atual</span>
           )}
         </div>
-        <p className="text-[10px] text-muted-foreground mb-1">Comissão {(data.commissionRate * 100).toFixed(1)}%</p>
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-[10px] text-muted-foreground">Comissão {(data.commissionRate * 100).toFixed(1)}%</p>
+          <p className="text-[10px] font-mono text-foreground/80 tabular-nums">{fmt(data.salePrice)}</p>
+        </div>
         <div className="flex items-baseline justify-between gap-2">
           <div>
             <p className={cn('font-mono text-base font-bold tabular-nums', data.netProfit >= 0 ? 'text-success' : 'text-destructive')}>
@@ -158,22 +167,38 @@ function MLInlineEditor({
 
       {open && (
         <div className="space-y-3 bg-secondary/20 border border-border rounded-lg p-3">
+          <div className="space-y-1">
+            <label className="section-label">Custo (R$)</label>
+            <Input type="number" inputMode="decimal" step="0.01" min="0"
+              value={draft.costPrice || ''}
+              onChange={e => setDraft(d => ({ ...d, costPrice: parseFloat(e.target.value) || 0 }))}
+              className="h-10 font-mono" />
+          </div>
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
-              <label className="section-label">Custo (R$)</label>
+              <label className="section-label flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-yellow-400/70" />
+                Venda Clássico (R$)
+              </label>
               <Input type="number" inputMode="decimal" step="0.01" min="0"
-                value={draft.costPrice || ''}
-                onChange={e => setDraft(d => ({ ...d, costPrice: parseFloat(e.target.value) || 0 }))}
+                value={draft.salePriceClassico ?? draft.salePrice ?? ''}
+                onChange={e => setDraft(d => ({ ...d, salePriceClassico: parseFloat(e.target.value) || 0 }))}
                 className="h-10 font-mono" />
             </div>
             <div className="space-y-1">
-              <label className="section-label">Venda (R$)</label>
+              <label className="section-label flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
+                Venda Premium (R$)
+              </label>
               <Input type="number" inputMode="decimal" step="0.01" min="0"
-                value={draft.salePrice || ''}
-                onChange={e => setDraft(d => ({ ...d, salePrice: parseFloat(e.target.value) || 0 }))}
+                value={draft.salePricePremium ?? draft.salePrice ?? ''}
+                onChange={e => setDraft(d => ({ ...d, salePricePremium: parseFloat(e.target.value) || 0 }))}
                 className="h-10 font-mono" />
             </div>
           </div>
+          <p className="text-[10px] text-muted-foreground -mt-1">
+            Defina preços diferentes por tipo de anúncio. O selecionado vira o preço ativo do canal.
+          </p>
           <div className="space-y-1">
             <label className="section-label">Categoria</label>
             <select

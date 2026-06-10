@@ -29,6 +29,63 @@ const fmt = (v: number) =>
 
 const SALES_PRESETS = [30, 50, 100, 200, 500];
 
+function CostInlineCard({ value, onSave }: { value: number; onSave: (v: number) => Promise<void> }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { setDraft(value); }, [value]);
+
+  const handleSave = async () => {
+    if (draft <= 0 || draft === value) { setEditing(false); return; }
+    setSaving(true);
+    try { await onSave(draft); setEditing(false); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div className="surface-card p-3 md:p-4 border-l-2 border-l-foreground/40 relative overflow-hidden">
+      <button
+        onClick={() => setEditing(e => !e)}
+        className="absolute top-2 right-2 text-muted-foreground/60 hover:text-foreground transition-colors"
+        aria-label="Editar custo"
+      >
+        <Pencil className="w-3 h-3" />
+      </button>
+      {editing ? (
+        <div className="flex items-center gap-1.5 pr-5">
+          <input
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            min="0"
+            autoFocus
+            value={draft || ''}
+            onChange={e => setDraft(parseFloat(e.target.value) || 0)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') handleSave();
+              if (e.key === 'Escape') { setDraft(value); setEditing(false); }
+            }}
+            className="w-full bg-secondary border border-border rounded px-1.5 py-1 font-mono text-base font-bold tabular-nums text-foreground outline-none focus:border-primary"
+          />
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="text-xs font-bold text-primary hover:text-primary/80 px-1"
+          >
+            OK
+          </button>
+        </div>
+      ) : (
+        <p className="font-mono text-lg md:text-2xl font-bold tabular-nums truncate text-foreground">
+          {fmt(value)}
+        </p>
+      )}
+      <p className="label-metric mt-0.5 md:mt-1">Custo/un</p>
+    </div>
+  );
+}
+
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -210,7 +267,7 @@ export default function ProductDetail() {
           <TabsList className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border border-border h-10 mb-4 md:mb-5 w-full grid grid-cols-3 md:inline-flex md:w-auto md:bg-secondary/50">
             <TabsTrigger value="analise" className="text-xs md:text-sm data-[state=active]:bg-background min-w-0">
               <BarChart3 className="w-3.5 h-3.5 mr-1 md:mr-1.5 shrink-0" />
-              <span className="truncate">Análise</span>
+              <span className="truncate">Análise Shopee</span>
             </TabsTrigger>
             <TabsTrigger value="marketplaces" className="text-xs md:text-sm data-[state=active]:bg-background min-w-0">
               <Store className="w-3.5 h-3.5 mr-1 md:mr-1.5 shrink-0" />
@@ -223,8 +280,19 @@ export default function ProductDetail() {
           </TabsList>
 
           <TabsContent value="analise" className="mt-0 space-y-4 md:space-y-5">
-            {/* Hero KPI tiles 2x2 mobile / 4 cols desktop */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-3">
+            {/* Tag: Análise da Shopee (diferencia de outros marketplaces) */}
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30">
+                <Store className="w-3.5 h-3.5 text-primary" />
+                <span className="text-xs font-bold text-primary uppercase tracking-wider">Análise · Shopee</span>
+              </div>
+              <span className="text-[11px] text-muted-foreground">
+                Outros marketplaces na aba <span className="text-foreground font-semibold">Marketplaces</span>
+              </span>
+            </div>
+
+            {/* Hero KPI tiles 2x2 mobile / 5 cols desktop (com Custo editável) */}
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5 md:gap-3">
               {/* Lucro/un */}
               <div className={cn(
                 'surface-card p-3 md:p-4 border-l-2 relative overflow-hidden',
@@ -273,6 +341,15 @@ export default function ProductDetail() {
                 </p>
                 <p className="label-metric mt-0.5 md:mt-1">ROAS empate</p>
               </div>
+
+              {/* Custo do produto — editável inline */}
+              <CostInlineCard
+                value={product.costPrice}
+                onSave={async (v) => {
+                  await updateProduct(product.id, { costPrice: v });
+                  toast.success('Custo atualizado!');
+                }}
+              />
             </div>
 
             {/* Grid 2 colunas */}
