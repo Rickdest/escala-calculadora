@@ -90,25 +90,45 @@ function MLInlineEditor({
   const PlanCard = ({ label, data, kind }: { label: string; data: ReturnType<typeof calcML>; kind: MLAnuncio }) => {
     const isCurrent = current === kind;
     const status = getMarginStatus(data.margin);
+    const priceField = kind === 'classico' ? 'salePriceClassico' : 'salePricePremium';
+    const priceValue = (draft[priceField] ?? draft.salePrice ?? 0) as number;
     return (
-      <button
-        type="button"
-        onClick={() => setDraft(d => ({ ...d, anuncio: kind }))}
+      <div
         className={cn(
-          'text-left rounded-lg border p-3 transition-all',
-          isCurrent ? 'border-yellow-400/70 bg-yellow-400/5 ring-1 ring-yellow-400/40' : 'border-border bg-secondary/30 hover:border-yellow-400/30'
+          'rounded-lg border p-3 transition-all',
+          isCurrent ? 'border-yellow-400/70 bg-yellow-400/5 ring-1 ring-yellow-400/40' : 'border-border bg-secondary/30'
         )}
       >
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-bold text-foreground">{label}</span>
-          {isCurrent && (
+          {isCurrent ? (
             <span className="text-[9px] font-bold uppercase tracking-wider bg-yellow-400 text-black px-1.5 py-0.5 rounded">Atual</span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setDraft(d => ({ ...d, anuncio: kind }))}
+              className="text-[9px] font-bold uppercase tracking-wider border border-yellow-400/40 text-yellow-300 hover:bg-yellow-400/10 px-1.5 py-0.5 rounded transition-colors"
+            >
+              Usar
+            </button>
           )}
         </div>
-        <div className="flex items-center justify-between mb-1.5">
-          <p className="text-[10px] text-muted-foreground">Comissão {(data.commissionRate * 100).toFixed(1)}%</p>
-          <p className="text-[10px] font-mono text-foreground/80 tabular-nums">{fmt(data.salePrice)}</p>
+
+        {/* Inline price editor */}
+        <div className="mb-2">
+          <label className="text-[10px] text-muted-foreground block mb-1">Preço de venda (R$)</label>
+          <Input
+            type="number"
+            inputMode="decimal"
+            step="0.01"
+            min="0"
+            value={priceValue || ''}
+            onChange={e => setDraft(d => ({ ...d, [priceField]: parseFloat(e.target.value) || 0 }))}
+            className="h-9 font-mono text-sm bg-background border-yellow-400/30 focus-visible:ring-yellow-400/40"
+          />
         </div>
+
+        <p className="text-[10px] text-muted-foreground mb-1.5">Comissão {(data.commissionRate * 100).toFixed(1)}%</p>
         <div className="flex items-baseline justify-between gap-2">
           <div>
             <p className={cn('font-mono text-base font-bold tabular-nums', data.netProfit >= 0 ? 'text-success' : 'text-destructive')}>
@@ -121,7 +141,7 @@ function MLInlineEditor({
             <p className="text-[10px] text-muted-foreground">Margem</p>
           </div>
         </div>
-      </button>
+      </div>
     );
   };
 
@@ -132,7 +152,7 @@ function MLInlineEditor({
         <p className="section-label mb-2 flex items-center gap-2">
           <BarChart3 className="w-4 h-4 text-yellow-400" />
           Comparativo Clássico vs Premium
-          <span className="text-[10px] text-muted-foreground font-normal normal-case tracking-normal">— clique para escolher</span>
+          <span className="text-[10px] text-muted-foreground font-normal normal-case tracking-normal">— edite o preço de cada um</span>
         </p>
         <div className="grid grid-cols-2 gap-2.5">
           <PlanCard label="Clássico" data={classico} kind="classico" />
@@ -150,7 +170,24 @@ function MLInlineEditor({
             </span>
           </span>
         </div>
+
+        {/* Quick save both prices */}
+        <button
+          type="button"
+          disabled={!dirty || saving}
+          onClick={handleSave}
+          className={cn(
+            'mt-2.5 w-full h-10 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-colors',
+            dirty && !saving
+              ? 'bg-yellow-400 text-black hover:bg-yellow-300'
+              : 'bg-secondary text-muted-foreground cursor-not-allowed'
+          )}
+        >
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {saving ? 'Salvando...' : dirty ? 'Salvar preços Clássico e Premium' : 'Preços salvos'}
+        </button>
       </div>
+
 
       {/* Toggle editor */}
       <button
