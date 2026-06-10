@@ -104,8 +104,10 @@ function MLInlineEditor({
           {isCurrent && (
             <span className="text-[9px] font-bold uppercase tracking-wider bg-yellow-400 text-black px-1.5 py-0.5 rounded">Atual</span>
           )}
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-[10px] text-muted-foreground">Comissão {(data.commissionRate * 100).toFixed(1)}%</p>
+          <p className="text-[10px] font-mono text-foreground/80 tabular-nums">{fmt(data.salePrice)}</p>
         </div>
-        <p className="text-[10px] text-muted-foreground mb-1">Comissão {(data.commissionRate * 100).toFixed(1)}%</p>
         <div className="flex items-baseline justify-between gap-2">
           <div>
             <p className={cn('font-mono text-base font-bold tabular-nums', data.netProfit >= 0 ? 'text-success' : 'text-destructive')}>
