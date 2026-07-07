@@ -157,6 +157,19 @@ export interface OutrosCanais {
   ml?: MLChannelData;
 }
 
+// ══════════ PRICE VARIANTS (KITS / VERSÕES DE VENDA) ══════════
+
+/**
+ * Versão comercial do mesmo produto (kit, combo, com/sem acessório).
+ * Independente de variações de SKU físico (Tamanho, Cor).
+ */
+export interface PriceVariant {
+  id: string;
+  name: string;
+  costPrice: number;
+  salePrice: number;
+}
+
 // ══════════ PRODUCT ══════════
 
 export interface Product {
