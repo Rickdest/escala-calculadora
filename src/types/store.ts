@@ -191,6 +191,7 @@ export interface Product {
   variations: ProductVariation[];
   shopeeAcelera: ShopeeAceleraOption;
   outrosCanais?: OutrosCanais;
+  priceVariants?: PriceVariant[];
   shopeeItemId?: number;
   shopeeProductId?: string;
   /** Snapshot do preço da Shopee na última sincronização, usado para detectar edição manual */
