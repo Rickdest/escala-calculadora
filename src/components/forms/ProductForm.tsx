@@ -49,6 +49,12 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
   const [outrosCanais, setOutrosCanais] = useState<OutrosCanais>(
     (product as any)?.outrosCanais ?? {}
   );
+  const [priceVariantsOpen, setPriceVariantsOpen] = useState(
+    (product?.priceVariants?.length ?? 0) > 0
+  );
+  const [priceVariants, setPriceVariants] = useState<PriceVariant[]>(
+    product?.priceVariants ?? []
+  );
   const [monthlySales, setMonthlySales] = useState(50);
 
   const formatCurrency = (value: number) =>
