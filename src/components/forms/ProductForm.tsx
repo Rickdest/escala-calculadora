@@ -229,6 +229,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
         variations: product?.variations || [],
         shopeeAcelera: (product?.shopeeAcelera ?? 'none') as ShopeeAceleraOption,
         outrosCanais: Object.keys(outrosCanais).length > 0 ? outrosCanais : null,
+        priceVariants: priceVariants.filter(v => v.name.trim() && v.salePrice > 0 && v.costPrice > 0),
       };
       await Promise.resolve(onSave(productData));
     } catch {
