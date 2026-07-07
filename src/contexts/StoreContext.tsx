@@ -293,6 +293,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       description: original.description || null,
       min_stock_quantity: original.minStockQuantity ?? 5,
       outros_canais: (original.outrosCanais ?? null) as TablesInsert<'products'>['outros_canais'],
+      price_variants: (original.priceVariants ?? []) as unknown as TablesInsert<'products'>['price_variants'],
     };
     const { data, error } = await supabase.from('products').insert(insertData).select().single();
 
