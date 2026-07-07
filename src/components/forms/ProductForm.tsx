@@ -379,6 +379,163 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
           </div>
 
 
+          {/* Kits / Versões de venda */}
+          <Collapsible open={priceVariantsOpen} onOpenChange={setPriceVariantsOpen}>
+            <CollapsibleTrigger asChild>
+              <button type="button" className="w-full surface-card p-3.5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Package className="w-4 h-4 text-accent" />
+                  <span className="text-sm font-medium text-foreground">Kits / Versões de venda</span>
+                  {priceVariants.length > 0 && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent/15 text-accent font-semibold">
+                      {priceVariants.length}
+                    </span>
+                  )}
+                  <span className="text-[10px] text-text-3">Opcional</span>
+                </div>
+                <ChevronDown className={cn("w-4 h-4 text-text-3 transition-transform duration-150", priceVariantsOpen && "rotate-180")} />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="surface-card p-3.5 space-y-3 rounded-t-none border-t-0">
+                <p className="text-[11px] text-text-3">
+                  Use quando o mesmo produto é vendido em formatos diferentes (kit, combo, com/sem acessório). Cada versão tem custo, preço e margem próprios.
+                </p>
+
+                {priceVariants.length === 0 && (
+                  <div className="text-center py-4 text-[11px] text-text-3">
+                    Nenhuma versão cadastrada. Clique em <b>+ Adicionar versão</b> abaixo.
+                  </div>
+                )}
+
+                {priceVariants.map((v, idx) => {
+                  const cp = Number(v.costPrice) || 0;
+                  const sp = Number(v.salePrice) || 0;
+                  let marginPct: number | null = null;
+                  let profit = 0;
+                  if (cp > 0 && sp > 0 && config) {
+                    const draft: Product = {
+                      id: '',
+                      storeId: currentStore?.id || '',
+                      name: v.name || '',
+                      costPrice: cp,
+                      salePrice: sp,
+                      packagingCost: 0,
+                      adsCost: 0,
+                      adsRevenue: 0,
+                      stockQuantity: 0,
+                      minStockQuantity: 0,
+                      hasVariations: false,
+                      attributes: [],
+                      variations: [],
+                      shopeeAcelera: (product?.shopeeAcelera ?? 'none') as ShopeeAceleraOption,
+                      createdAt: new Date(),
+                      updatedAt: new Date(),
+                    };
+                    const calc = calculateProductFn(draft, config);
+                    marginPct = calc.realMargin;
+                    profit = calc.netProfit;
+                  }
+                  const status = marginPct !== null ? getMarginStatus(marginPct) : null;
+
+                  return (
+                    <div key={v.id} className="rounded-lg border border-white/5 bg-surface-1/60 p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={v.name}
+                          onChange={(e) => {
+                            const next = [...priceVariants];
+                            next[idx] = { ...v, name: e.target.value };
+                            setPriceVariants(next);
+                          }}
+                          placeholder={`Versão ${idx + 1} (ex: Só pingente, Kit 3un)`}
+                          className="h-9 text-sm flex-1"
+                        />
+                        <button
+                          type="button"
+                          aria-label="Remover versão"
+                          onClick={() => setPriceVariants(priceVariants.filter((_, i) => i !== idx))}
+                          className="p-2 rounded-md text-text-3 hover:text-danger hover:bg-danger/10 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-[10px] text-text-3">Custo (R$)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            inputMode="decimal"
+                            value={v.costPrice || ''}
+                            onChange={(e) => {
+                              const next = [...priceVariants];
+                              next[idx] = { ...v, costPrice: parseFloat(e.target.value) || 0 };
+                              setPriceVariants(next);
+                            }}
+                            className="h-9 text-sm"
+                            placeholder="0,00"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-[10px] text-text-3">Venda (R$)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            inputMode="decimal"
+                            value={v.salePrice || ''}
+                            onChange={(e) => {
+                              const next = [...priceVariants];
+                              next[idx] = { ...v, salePrice: parseFloat(e.target.value) || 0 };
+                              setPriceVariants(next);
+                            }}
+                            className="h-9 text-sm"
+                            placeholder="0,00"
+                          />
+                        </div>
+                      </div>
+
+                      {status && (
+                        <div className={cn("flex items-center justify-between px-2.5 py-1.5 rounded-md text-[11px] font-medium", status.bg, status.border, "border")}>
+                          <span className={status.color}>
+                            {status.emoji} Margem {marginPct!.toFixed(1)}%
+                          </span>
+                          <span className="text-text-2">
+                            Lucro {formatCurrency(profit)}/un
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="w-full h-9 text-xs"
+                  onClick={() =>
+                    setPriceVariants([
+                      ...priceVariants,
+                      {
+                        id: (globalThis.crypto?.randomUUID?.() ?? `pv-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`),
+                        name: '',
+                        costPrice: 0,
+                        salePrice: 0,
+                      },
+                    ])
+                  }
+                >
+                  <Plus className="w-3.5 h-3.5 mr-1" />
+                  Adicionar versão
+                </Button>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+
           {/* Outros Canais */}
           <Collapsible open={outrosCanaisOpen} onOpenChange={setOutrosCanaisOpen}>
             <CollapsibleTrigger asChild>
