@@ -1,42 +1,65 @@
-
 ## Objetivo
 
-1. Na aba **Marketplaces** do detalhe do produto, permitir editar o card do Mercado Livre direto ali (sem abrir o ProductForm) e mostrar comparativo lado a lado **Clássico vs Premium**.
-2. No card "Editar produto" (ProductForm), melhorar a visibilidade da margem real do Mercado Livre — destacar com a cor/identidade amarela do ML, deixando explícito que aquele preview é do Mercado Livre.
+Adicionar uma seção nova **"Kits / Versões de venda"** no cadastro do produto, separada das variações de Tamanho/Cor. Cada versão tem nome, custo e preço próprios, e mostra a margem real calculada com as regras da loja (Shopee).
+
+Exemplo de uso:
+- Produto: "Pingente coração"
+  - Versão "Só pingente" — custo R$ 8,00 / venda R$ 24,90 → margem X%
+  - Versão "Pingente + corrente" — custo R$ 15,00 / venda R$ 39,90 → margem Y%
+  - Versão "Kit 3 unidades" — custo R$ 22,00 / venda R$ 69,90 → margem Z%
 
 ---
 
-## 1. Edição inline do ML em `MarketplacesTab.tsx`
+## 1. Modelo de dados
 
-- Adicionar prop `onUpdateProduct(patch)` que persiste mudanças em `outrosCanais.ml` (recebida do `ProductDetail.tsx` → reaproveita o handler já usado pelo `onEditProduct`, fazendo um save parcial).
-- No `ChannelDetail`, quando `channel.key === 'ml'`, renderizar um bloco extra **"Editar Mercado Livre"** (colapsável, fechado por padrão) contendo:
-  - Inputs: Custo, Preço de venda, Categoria (select `ML_CATEGORIES`), Frete, Embalagem.
-  - Toggle Clássico/Premium (apenas visual — o comparativo abaixo já mostra os dois).
-  - Botão "Salvar" que dispara `onUpdateProduct({ outrosCanais: { ...current, ml: {...} } })` e mostra toast.
-- Após o bloco de KPIs do ML, adicionar **comparativo Clássico vs Premium**:
-  - Chamar `calcML(...)` 2x localmente (com `anuncio: 'classico'` e `'premium'`) usando os valores atuais do `outrosCanais.ml`.
-  - Renderizar 2 mini-cards lado a lado (grid-cols-2) com: comissão %, lucro/un, margem %, badge de status.
-  - Destacar o anúncio atualmente selecionado (`outrosCanais.ml.anuncio`) com borda mais forte e label "Atual".
-  - Mostrar diferença (`Premium - Clássico`) em lucro e margem ao final, para deixar claro o trade-off.
+Novo tipo em `src/types/store.ts`:
 
-## 2. Destaque amarelo do ML no `ProductForm.tsx`
+```ts
+export interface PriceVariant {
+  id: string;
+  name: string;         // "Só pingente", "Kit 3un"
+  costPrice: number;
+  salePrice: number;
+}
+```
 
-- `renderChannelMiniPreview` hoje é genérico (verde/amarelo/vermelho por margem) e não identifica o canal.
-- Alterar a assinatura para receber também `label` e `accentColor` por canal, OU criar variante específica quando `key === 'ml'`:
-  - Header do preview: ícone + texto **"Mercado Livre"** em **amarelo ML** (`#FFE600` / `text-yellow-400`).
-  - Borda esquerda amarela (`border-l-4 border-l-yellow-400`) e badge "ML" amarelo no canto.
-  - Manter a cor da margem (success/warning/danger) só no número, mas o rótulo "Margem real — Mercado Livre" fica explícito.
-- Aplicar o mesmo padrão de identificação textual nos outros 3 canais (TikTok, Shein, Amazon) com seus respectivos rótulos, para consistência — sem mudar cores deles (só ML ganha o amarelo agora, conforme pedido).
+Adicionar em `Product`:
+```ts
+priceVariants?: PriceVariant[];
+```
+
+Persistência: nova coluna `price_variants jsonb` na tabela `products` (default `'[]'`). Mapear em `storeMappers.ts` (leitura + gravação).
+
+## 2. UI no ProductForm
+
+Nova seção colapsável **"Kits / Versões de venda"** logo abaixo de custo/preço principais, antes de "Variações (Tamanho/Cor)":
+
+- Texto explicativo curto: "Use quando o mesmo produto é vendido em formatos diferentes (kit, combo, com/sem acessório)."
+- Lista de linhas, cada uma com: `Nome` | `Custo R$` | `Venda R$` | badge de margem real (verde/amarelo/vermelho seguindo `desiredMargin` da loja) | botão remover.
+- Botão "+ Adicionar versão".
+- Fica opcional — vazio por padrão, não bloqueia salvar.
+
+Cálculo da margem por linha: reutilizar `calculateProduct` passando um `Product` temporário com o custo/venda da versão, usando o mesmo `StoreConfig`.
+
+## 3. Exibição no detalhe do produto
+
+Em `ProductDetail.tsx`, se `priceVariants.length > 0`, adicionar bloco **"Versões de venda"** na aba principal com mini-cards mostrando: nome, preço, custo, lucro/un e margem % com a mesma paleta de status já usada.
+
+## 4. Fora de escopo (podemos fazer em passos futuros)
+
+- Embalagem/ads próprios por versão
+- Estoque por versão
+- Comparativo por marketplace (ML/Shein/TikTok/Amazon) por versão
+- Escolher versão ao vincular anúncio da Shopee
+
+Assim que essa base estiver validada, dá pra evoluir sem retrabalho.
 
 ---
 
 ## Arquivos afetados
 
-- `src/components/products/MarketplacesTab.tsx` — bloco editar ML + comparativo Clássico/Premium.
-- `src/pages/ProductDetail.tsx` — passar `onUpdateProduct` para `MarketplacesTab` (reaproveita o save existente).
-- `src/components/forms/ProductForm.tsx` — `renderChannelMiniPreview` com rótulo do canal e identidade amarela do ML.
-
-## Fora de escopo
-
-- Não mudar `outrosCanaisUtils.ts` nem `mlUtils.ts`.
-- Não alterar lógica de cálculo, só apresentação e edição inline.
+- Migração: adicionar coluna `price_variants jsonb default '[]'::jsonb` em `products`
+- `src/types/store.ts` — tipo `PriceVariant` + campo em `Product`
+- `src/lib/storeMappers.ts` — mapear leitura/escrita
+- `src/components/forms/ProductForm.tsx` — nova seção de UI + save
+- `src/pages/ProductDetail.tsx` — bloco de exibição das versões
