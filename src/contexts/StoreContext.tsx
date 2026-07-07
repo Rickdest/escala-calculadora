@@ -226,6 +226,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (updates.description !== undefined) dbUpdates.description = updates.description;
     if (updates.minStockQuantity !== undefined) dbUpdates.min_stock_quantity = updates.minStockQuantity;
     if (updates.outrosCanais !== undefined) dbUpdates.outros_canais = (updates.outrosCanais ?? null) as TablesUpdate<'products'>['outros_canais'];
+    if (updates.priceVariants !== undefined) dbUpdates.price_variants = (updates.priceVariants ?? []) as unknown as TablesUpdate<'products'>['price_variants'];
     if (updates.variations !== undefined && updates.hasVariations !== false) {
       const vars = updates.variations || [];
       if (vars.length > 0) {
