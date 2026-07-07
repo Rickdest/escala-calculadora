@@ -190,6 +190,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       description: productData.description || null,
       min_stock_quantity: productData.minStockQuantity ?? 5,
       outros_canais: (productData.outrosCanais ?? null) as TablesInsert<'products'>['outros_canais'],
+      price_variants: (productData.priceVariants ?? []) as unknown as TablesInsert<'products'>['price_variants'],
     };
     const { data, error } = await supabase.from('products').insert(insertData).select().single();
 
@@ -225,6 +226,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (updates.description !== undefined) dbUpdates.description = updates.description;
     if (updates.minStockQuantity !== undefined) dbUpdates.min_stock_quantity = updates.minStockQuantity;
     if (updates.outrosCanais !== undefined) dbUpdates.outros_canais = (updates.outrosCanais ?? null) as TablesUpdate<'products'>['outros_canais'];
+    if (updates.priceVariants !== undefined) dbUpdates.price_variants = (updates.priceVariants ?? []) as unknown as TablesUpdate<'products'>['price_variants'];
     if (updates.variations !== undefined && updates.hasVariations !== false) {
       const vars = updates.variations || [];
       if (vars.length > 0) {
@@ -291,6 +293,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       description: original.description || null,
       min_stock_quantity: original.minStockQuantity ?? 5,
       outros_canais: (original.outrosCanais ?? null) as TablesInsert<'products'>['outros_canais'],
+      price_variants: (original.priceVariants ?? []) as unknown as TablesInsert<'products'>['price_variants'],
     };
     const { data, error } = await supabase.from('products').insert(insertData).select().single();
 

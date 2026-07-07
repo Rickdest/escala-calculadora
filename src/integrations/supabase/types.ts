@@ -718,6 +718,7 @@ export type Database = {
           name: string
           outros_canais: Json | null
           packaging_cost: number | null
+          price_variants: Json
           sale_price: number
           shopee_acelera: string | null
           shopee_item_id: number | null
@@ -748,6 +749,7 @@ export type Database = {
           name: string
           outros_canais?: Json | null
           packaging_cost?: number | null
+          price_variants?: Json
           sale_price: number
           shopee_acelera?: string | null
           shopee_item_id?: number | null
@@ -778,6 +780,7 @@ export type Database = {
           name?: string
           outros_canais?: Json | null
           packaging_cost?: number | null
+          price_variants?: Json
           sale_price?: number
           shopee_acelera?: string | null
           shopee_item_id?: number | null

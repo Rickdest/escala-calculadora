@@ -157,6 +157,19 @@ export interface OutrosCanais {
   ml?: MLChannelData;
 }
 
+// ══════════ PRICE VARIANTS (KITS / VERSÕES DE VENDA) ══════════
+
+/**
+ * Versão comercial do mesmo produto (kit, combo, com/sem acessório).
+ * Independente de variações de SKU físico (Tamanho, Cor).
+ */
+export interface PriceVariant {
+  id: string;
+  name: string;
+  costPrice: number;
+  salePrice: number;
+}
+
 // ══════════ PRODUCT ══════════
 
 export interface Product {
@@ -178,6 +191,7 @@ export interface Product {
   variations: ProductVariation[];
   shopeeAcelera: ShopeeAceleraOption;
   outrosCanais?: OutrosCanais;
+  priceVariants?: PriceVariant[];
   shopeeItemId?: number;
   shopeeProductId?: string;
   /** Snapshot do preço da Shopee na última sincronização, usado para detectar edição manual */

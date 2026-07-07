@@ -619,6 +619,51 @@ export default function ProductDetail() {
                 </div>
               </div>
             </div>
+
+            {(product.priceVariants?.length ?? 0) > 0 && (
+              <div className="bg-card border border-border rounded-xl p-4 md:p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-sm font-semibold text-foreground">Versões de venda</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent/15 text-accent font-semibold">
+                    {product.priceVariants!.length}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                  {product.priceVariants!.map((v) => {
+                    const draft = {
+                      ...product,
+                      costPrice: v.costPrice,
+                      salePrice: v.salePrice,
+                      packagingCost: 0,
+                      adsCost: 0,
+                    };
+                    const calc = calculateProduct(draft, config);
+                    const st = getMarginStatus(calc.realMargin);
+                    return (
+                      <div key={v.id} className="rounded-lg border border-border bg-secondary/40 p-3 space-y-1.5">
+                        <p className="text-sm font-medium text-foreground truncate">{v.name || 'Sem nome'}</p>
+                        <div className="flex justify-between text-[11px] text-muted-foreground">
+                          <span>Custo</span><span className="font-mono">{fmt(v.costPrice)}</span>
+                        </div>
+                        <div className="flex justify-between text-[11px] text-muted-foreground">
+                          <span>Venda</span><span className="font-mono">{fmt(v.salePrice)}</span>
+                        </div>
+                        <div className="flex justify-between text-[11px] text-muted-foreground">
+                          <span>Lucro/un</span>
+                          <span className={cn('font-mono font-semibold', calc.netProfit >= 0 ? 'text-success' : 'text-destructive')}>
+                            {fmt(calc.netProfit)}
+                          </span>
+                        </div>
+                        <div className={cn('flex items-center justify-between px-2 py-1 rounded-md text-[11px] font-semibold border', st.bg, st.border)}>
+                          <span className={st.color}>{st.emoji} {calc.realMargin.toFixed(1)}%</span>
+                          <span className="text-muted-foreground">{st.label}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="marketplaces" className="mt-0">
