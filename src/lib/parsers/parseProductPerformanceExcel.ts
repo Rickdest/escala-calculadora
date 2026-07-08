@@ -1,6 +1,8 @@
 export interface ProductPerformanceRow {
   item_id: string;
   nome: string;
+  parent_sku: string;
+  variation_sku: string;
   vendas_pago: number;
   pedidos_pagos: number;
   unidades_pagas: number;
@@ -20,6 +22,7 @@ export interface ProductPerformanceRow {
 export interface ProductVariacao {
   variacao_id: string;
   nome_variacao: string;
+  variation_sku: string;
   vendas_pago: number;
   unidades_pagas: number;
   compradores_pagos: number;
