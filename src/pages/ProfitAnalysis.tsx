@@ -322,6 +322,60 @@ export default function ProfitAnalysis() {
     }
   };
 
+  // Per-row link handlers (persist to shopee_product_links)
+  const handleLinkProduct = (itemId: string, productId: string) => {
+    const row = productRows.find((r) => r.item_id === itemId);
+    if (!row || !currentStore) return;
+    const linked = currentStore.products.find((p) => p.id === productId);
+    setRowState((prev) => ({
+      ...prev,
+      [itemId]: {
+        productId,
+        matchType: 'saved',
+        linkMode: 'manual-product',
+        manualCost: linked?.costPrice ?? 0,
+      },
+    }));
+    upsertLink({
+      shopee_item_id: itemId,
+      parent_sku: row.parent_sku || null,
+      variation_sku: row.variation_sku || null,
+      product_id: productId,
+      manual_unit_cost: null,
+      link_type: 'product',
+    });
+  };
+
+  const handleSetManualCost = (itemId: string, unitCost: number) => {
+    const row = productRows.find((r) => r.item_id === itemId);
+    if (!row) return;
+    setRowState((prev) => ({
+      ...prev,
+      [itemId]: {
+        productId: null,
+        matchType: null,
+        linkMode: 'manual-cost',
+        manualCost: unitCost,
+      },
+    }));
+    upsertLink({
+      shopee_item_id: itemId,
+      parent_sku: row.parent_sku || null,
+      variation_sku: row.variation_sku || null,
+      product_id: null,
+      manual_unit_cost: unitCost,
+      link_type: 'manual_cost',
+    });
+  };
+
+  const handleClearLink = (itemId: string) => {
+    setRowState((prev) => ({
+      ...prev,
+      [itemId]: { productId: null, matchType: null, linkMode: 'none', manualCost: 0 },
+    }));
+    removeLink(itemId);
+  };
+
   return (
     <AppLayout>
       <PageHeader title="Análise de Lucro" subtitle="Envie o relatório da Shopee, veja quanto sobrou depois das taxas." />
