@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calculator, ShoppingBag, BarChart2, TrendingUp, Settings2 } from 'lucide-react';
+import { Calculator, ShoppingBag, BarChart2, TrendingUp, DollarSign } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -8,7 +8,7 @@ const navItems = [
   { icon: ShoppingBag, label: 'Produtos', path: '/products' },
   { icon: BarChart2, label: 'Ads', path: '/roas' },
   { icon: TrendingUp, label: 'Performance', path: '/performance' },
-  { icon: Settings2, label: 'Config', path: '/settings' },
+  { icon: DollarSign, label: 'Lucro', path: '/lucro' },
 ];
 
 export const BottomNavigation = React.forwardRef<HTMLElement, Record<string, never>>(function BottomNavigation(_props, ref) {

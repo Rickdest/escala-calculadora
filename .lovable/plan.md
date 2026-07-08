@@ -1,65 +1,91 @@
 ## Objetivo
 
-Adicionar uma seção nova **"Kits / Versões de venda"** no cadastro do produto, separada das variações de Tamanho/Cor. Cada versão tem nome, custo e preço próprios, e mostra a margem real calculada com as regras da loja (Shopee).
-
-Exemplo de uso:
-- Produto: "Pingente coração"
-  - Versão "Só pingente" — custo R$ 8,00 / venda R$ 24,90 → margem X%
-  - Versão "Pingente + corrente" — custo R$ 15,00 / venda R$ 39,90 → margem Y%
-  - Versão "Kit 3 unidades" — custo R$ 22,00 / venda R$ 69,90 → margem Z%
+Nova página **"Análise de Lucro"** (rota `/lucro`) onde você sobe relatórios da Shopee e vê quanto sobrou depois das taxas, por dia/semana/mês **e** por produto (quando o export permitir).
 
 ---
 
-## 1. Modelo de dados
+## Descoberta com os arquivos enviados
 
-Novo tipo em `src/types/store.ts`:
+- `productoverview...xlsx` → totais **por dia** da loja (visitantes, pedidos pagos, vendas em BRL). **Sem quebra por SKU.**
+- `shop-stats...xlsx` → totais do **período inteiro** (pedidos, cancelados, reembolsados). **Sem quebra por SKU.**
+- `Parent SKU Detail` (usado na Performance) → totais **por produto** no período. **Tem SKU e vendas por item.**
 
-```ts
-export interface PriceVariant {
-  id: string;
-  name: string;         // "Só pingente", "Kit 3un"
-  costPrice: number;
-  salePrice: number;
-}
-```
+A página precisa aceitar os três e adaptar a UI ao que vier.
 
-Adicionar em `Product`:
-```ts
-priceVariants?: PriceVariant[];
-```
+---
 
-Persistência: nova coluna `price_variants jsonb` na tabela `products` (default `'[]'`). Mapear em `storeMappers.ts` (leitura + gravação).
+## 1. Página `/lucro` — "Análise de Lucro"
 
-## 2. UI no ProductForm
+- Item novo no menu lateral (`DollarSign`).
+- Seletor de loja + badge do período detectado no nome do arquivo.
+- Botão único **"Enviar relatório da Shopee"** — detecta automaticamente qual dos três é (product overview / shop stats / parent SKU) pelo cabeçalho.
+- Sidebar interna com análises salvas anteriormente (reabrir dia/semana/mês passado).
 
-Nova seção colapsável **"Kits / Versões de venda"** logo abaixo de custo/preço principais, antes de "Variações (Tamanho/Cor)":
+## 2. Dois modos de exibição
 
-- Texto explicativo curto: "Use quando o mesmo produto é vendido em formatos diferentes (kit, combo, com/sem acessório)."
-- Lista de linhas, cada uma com: `Nome` | `Custo R$` | `Venda R$` | badge de margem real (verde/amarelo/vermelho seguindo `desiredMargin` da loja) | botão remover.
-- Botão "+ Adicionar versão".
-- Fica opcional — vazio por padrão, não bloqueia salvar.
+**Modo A — Loja no tempo** (quando o arquivo é `productoverview` ou `shop-stats`):
 
-Cálculo da margem por linha: reutilizar `calculateProduct` passando um `Product` temporário com o custo/venda da versão, usando o mesmo `StoreConfig`.
+- Toggle **Diário | Semanal | Mensal** (agrupa as linhas do productoverview).
+- Um único campo global **"Custo médio dos produtos vendidos (% do preço)"** ou **"Custo médio por unidade"** — porque o arquivo não tem SKU.
+  - Ex.: se informar 40%, aplicamos 40% de COGS em cima da receita.
+  - Alternativa: puxar o custo médio ponderado do cadastro de produtos da loja (média dos `costPrice / salePrice`).
+- Cards: **Vendas · Taxas Shopee estimadas · Custo estimado · Impostos · Lucro · Margem %**
+- Gráfico de barras: lucro por dia/semana/mês.
+- Tabela com uma linha por período (data, vendas, taxa, custo, lucro, margem).
 
-## 3. Exibição no detalhe do produto
+**Modo B — Por produto** (quando o arquivo é `Parent SKU Detail`):
 
-Em `ProductDetail.tsx`, se `priceVariants.length > 0`, adicionar bloco **"Versões de venda"** na aba principal com mini-cards mostrando: nome, preço, custo, lucro/un e margem % com a mesma paleta de status já usada.
+- Cards de totais iguais ao modo A, mas com valores exatos.
+- Tabela produto a produto com **input de custo unitário** editável (pré-preenchido do cadastro quando o `shopeeItemId` bate).
+- Botão por linha: **Salvar custo no cadastro**.
+- Botão: **Vincular produto** (reaproveita fluxo já existente na Performance).
 
-## 4. Fora de escopo (podemos fazer em passos futuros)
+Ambos modos usam a mesma paleta de status já do app (verde ≥ alvo, amarelo perto, vermelho abaixo).
 
-- Embalagem/ads próprios por versão
-- Estoque por versão
-- Comparativo por marketplace (ML/Shein/TikTok/Amazon) por versão
-- Escolher versão ao vincular anúncio da Shopee
+## 3. Cálculo
 
-Assim que essa base estiver validada, dá pra evoluir sem retrabalho.
+- Taxa Shopee: `getShopeeFeeForPrice(precoMedio)` → percentual + fixa por faixa, aplicada em cima da receita da linha/produto.
+- Impostos: `storeConfig.taxes` × vendas.
+- **Modo A** (loja): `custo = vendas × %COGS` OU `custo = unidades × custoMédioUn`.
+- **Modo B** (por produto): `custo = unidades × custoUnitário` (por linha).
+- Lucro = `vendas − taxa − impostos − custo`.
+- Margem = `lucro / vendas`.
+
+Helper novo `src/lib/profitAnalysis.ts` reutilizando `getShopeeFeeForPrice`.
+
+## 4. Persistência
+
+Nova tabela `profit_analyses`:
+- `id`, `user_id`, `store_id`, `period_start`, `period_end`
+- `report_type` (`product_overview` | `shop_stats` | `parent_sku`)
+- `granularity` (`day` | `week` | `month` | `custom`)
+- `avg_cost_pct` (nullable, usado no Modo A)
+- `total_revenue`, `total_fees`, `total_cost`, `total_profit`, `margin_pct`
+- `raw_rows jsonb` (linhas + custos preenchidos)
+
+RLS por `auth.uid()`, GRANTs pra `authenticated` e `service_role`.
+
+## 5. Parsers
+
+- Reaproveitar `parseProductPerformanceExcel.ts` (Parent SKU).
+- Novo `parseShopeeProductOverview.ts` — lê as linhas diárias, colunas "Data", "Vendas (Pedido pago) (BRL)", "Unidades (Pedido pago)", "Compradores (Pedidos pago)".
+- Novo `parseShopeeShopStats.ts` — lê a linha única de período das abas "Pedido Feito" e "Produto Pago".
+- Detecção automática pelo cabeçalho da primeira aba.
+
+## 6. Fora de escopo
+
+- Frete real por pedido (precisa relatório de Rendimento).
+- Custo de ads no lucro (Performance já cobre).
+- Export PDF.
+- Comparativo automático entre períodos salvos.
 
 ---
 
 ## Arquivos afetados
 
-- Migração: adicionar coluna `price_variants jsonb default '[]'::jsonb` em `products`
-- `src/types/store.ts` — tipo `PriceVariant` + campo em `Product`
-- `src/lib/storeMappers.ts` — mapear leitura/escrita
-- `src/components/forms/ProductForm.tsx` — nova seção de UI + save
-- `src/pages/ProductDetail.tsx` — bloco de exibição das versões
+- Migração: `profit_analyses` (tabela + RLS + GRANTs)
+- `src/pages/ProfitAnalysis.tsx`
+- `src/components/profit/ProfitUploader.tsx`, `ProfitSummaryCards.tsx`, `ProfitTimeChart.tsx`, `ProfitTable.tsx`, `CostInput.tsx`, `AvgCostControl.tsx`
+- `src/lib/profitAnalysis.ts`, `src/lib/parsers/parseShopeeProductOverview.ts`, `src/lib/parsers/parseShopeeShopStats.ts`
+- `src/hooks/useProfitAnalysis.ts`
+- `src/App.tsx` + `src/components/layout/Sidebar.tsx` + `BottomNavigation.tsx` (rota + item de menu)

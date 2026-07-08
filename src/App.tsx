@@ -33,6 +33,7 @@ const PerformanceProductDetail = lazy(() => import("./pages/PerformanceProductDe
 const Integracoes = lazy(() => import("./pages/Integracoes"));
 const Termos = lazy(() => import("./pages/Termos"));
 const Privacidade = lazy(() => import("./pages/Privacidade"));
+const ProfitAnalysis = lazy(() => import("./pages/ProfitAnalysis"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -157,6 +158,7 @@ const App = () => (
                   <Route path="/stock" element={<ProtectedRoute><Stock /></ProtectedRoute>} />
                   <Route path="/roas" element={<ProtectedRoute><Roas /></ProtectedRoute>} />
                   <Route path="/performance" element={<ProtectedRoute><Performance /></ProtectedRoute>} />
+                  <Route path="/lucro" element={<ProtectedRoute><ProfitAnalysis /></ProtectedRoute>} />
                   <Route path="/performance/:itemId" element={<ProtectedRoute><PerformanceProductDetail /></ProtectedRoute>} />
                   <Route path="/paywall" element={<PaywallRoute><Paywall /></PaywallRoute>} />
                   <Route path="/shopee-callback" element={<ProtectedRoute><ShopeeCallback /></ProtectedRoute>} />
