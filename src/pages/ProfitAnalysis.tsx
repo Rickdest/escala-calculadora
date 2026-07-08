@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
 import { useStore } from '@/contexts/StoreContext';
 
@@ -13,11 +14,20 @@ function Card({ className = '', children }: { className?: string; children: Reac
 }
 import { useProfitAnalyses } from '@/hooks/useProfitAnalysis';
 import { parseShopeeProductOverview, isProductOverviewSheet, DailyOverviewRow } from '@/lib/parsers/parseShopeeProductOverview';
+import { parseShopeeShopStats, isShopStatsWorkbook } from '@/lib/parsers/parseShopeeShopStats';
 import { parseProductPerformanceExcel, ProductPerformanceRow } from '@/lib/parsers/parseProductPerformanceExcel';
 import { calcLine, sumLines, groupDaily, getStoreTaxRate, ProfitLine } from '@/lib/profitAnalysis';
-import { Upload, FileSpreadsheet, DollarSign, Loader2, Save, Trash2, ExternalLink } from 'lucide-react';
+import { Upload, FileSpreadsheet, DollarSign, Loader2, Save, Trash2, ExternalLink, Plus, Package, X } from 'lucide-react';
 
 type Mode = 'timeline' | 'per-sku' | null;
+
+interface CostLine {
+  id: string;
+  productId?: string;
+  name: string;
+  units: number;
+  unitCost: number;
+}
 
 function fmtBRL(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -38,18 +48,19 @@ export default function ProfitAnalysis() {
 
   const [mode, setMode] = useState<Mode>(null);
   const [granularity, setGranularity] = useState<'day' | 'week' | 'month'>('day');
-  const [avgCostPct, setAvgCostPct] = useState<number>(40);
   const [dailyRows, setDailyRows] = useState<DailyOverviewRow[]>([]);
   const [productRows, setProductRows] = useState<ProductPerformanceRow[]>([]);
   const [productCosts, setProductCosts] = useState<Record<string, number>>({});
+  const [costLines, setCostLines] = useState<CostLine[]>([]);
   const [period, setPeriod] = useState<{ start: string; end: string }>({ start: '', end: '' });
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerSearch, setPickerSearch] = useState('');
 
   const taxRate = getStoreTaxRate(currentStore?.config);
   const targetMargin = currentStore?.config?.desiredMargin ?? 15;
 
-  // Pre-fill product costs from store products (match by shopeeItemId)
   const applyCostsFromStore = (rows: ProductPerformanceRow[]): Record<string, number> => {
     const map: Record<string, number> = {};
     if (!currentStore) return map;
@@ -63,7 +74,6 @@ export default function ProfitAnalysis() {
   const handleFile = async (file: File) => {
     setLoading(true);
     try {
-      // Try Product Overview first
       const { read, utils } = await import('xlsx');
       const buf = await file.arrayBuffer();
       const wb = read(buf);
@@ -77,16 +87,22 @@ export default function ProfitAnalysis() {
         setProductRows([]);
         setPeriod({ start: parsed.period_start, end: parsed.period_end });
         setMode('timeline');
-        toast.success('Relatório carregado', { description: `${parsed.rows.length} dias detectados.` });
+        toast.success('Product Overview carregado', { description: `${parsed.rows.length} dias detectados.` });
+      } else if (isShopStatsWorkbook(wb.SheetNames)) {
+        const parsed = await parseShopeeShopStats(file);
+        setDailyRows(parsed.rows);
+        setProductRows([]);
+        setPeriod({ start: parsed.period_start, end: parsed.period_end });
+        setMode('timeline');
+        toast.success('Informações Gerenciais carregado', { description: `${parsed.rows.length} dias detectados.` });
       } else {
-        // Parent SKU
         const parsed = await parseProductPerformanceExcel(file);
         setProductRows(parsed.products);
         setDailyRows([]);
         setProductCosts(applyCostsFromStore(parsed.products));
         setPeriod({ start: parsed.period_start, end: parsed.period_end });
         setMode('per-sku');
-        toast.success('Relatório carregado', { description: `${parsed.products.length} produtos detectados.` });
+        toast.success('Parent SKU carregado', { description: `${parsed.products.length} produtos detectados.` });
       }
     } catch (e: any) {
       toast.error('Falha ao ler', { description: e?.message || 'Verifique o arquivo' });
@@ -96,19 +112,25 @@ export default function ProfitAnalysis() {
     }
   };
 
-  // Timeline calculations
+  // Timeline calculations (revenue per day, cost from cost lines proportional to revenue)
+  const totalCostLines = useMemo(
+    () => costLines.reduce((a, c) => a + c.units * c.unitCost, 0),
+    [costLines],
+  );
+
   const timelineLines: ProfitLine[] = useMemo(() => {
     if (mode !== 'timeline') return [];
     const groups = groupDaily(dailyRows, granularity);
+    const totalRevenue = dailyRows.reduce((a, r) => a + r.revenue, 0);
     return groups.map((g) => {
       const revenue = g.items.reduce((a, r) => a + r.revenue, 0);
       const units = g.items.reduce((a, r) => a + r.units, 0);
-      const cost = revenue * (avgCostPct / 100);
+      // cost distributed proportionally by revenue
+      const cost = totalRevenue > 0 ? (revenue / totalRevenue) * totalCostLines : 0;
       return calcLine({ key: g.key, label: g.label, revenue, units, cost, taxRate });
     });
-  }, [mode, dailyRows, granularity, avgCostPct, taxRate]);
+  }, [mode, dailyRows, granularity, totalCostLines, taxRate]);
 
-  // Per-SKU calculations
   const skuLines: ProfitLine[] = useMemo(() => {
     if (mode !== 'per-sku') return [];
     return productRows.map((p) => {
@@ -131,6 +153,39 @@ export default function ProfitAnalysis() {
 
   const activeLines = mode === 'timeline' ? timelineLines : skuLines;
   const totals = useMemo(() => sumLines(activeLines), [activeLines]);
+  const effectiveCostPct = totals.revenue > 0 ? (totals.cost / totals.revenue) * 100 : 0;
+
+  const addCostLineFromProduct = (productId: string) => {
+    if (!currentStore) return;
+    const p = currentStore.products.find((x) => x.id === productId);
+    if (!p) return;
+    if (costLines.some((c) => c.productId === productId)) {
+      toast.info('Produto já adicionado');
+      return;
+    }
+    setCostLines((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), productId: p.id, name: p.name, units: 1, unitCost: p.costPrice || 0 },
+    ]);
+  };
+
+  const addCostLineManual = () => {
+    setCostLines((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), name: 'Novo produto', units: 1, unitCost: 0 },
+    ]);
+  };
+
+  const updateCostLine = (id: string, patch: Partial<CostLine>) => {
+    setCostLines((prev) => prev.map((c) => (c.id === id ? { ...c, ...patch } : c)));
+  };
+  const removeCostLine = (id: string) => setCostLines((prev) => prev.filter((c) => c.id !== id));
+
+  const filteredProducts = useMemo(() => {
+    if (!currentStore) return [];
+    const q = pickerSearch.toLowerCase();
+    return currentStore.products.filter((p) => !q || p.name.toLowerCase().includes(q)).slice(0, 30);
+  }, [currentStore, pickerSearch]);
 
   const handleSave = async () => {
     if (!currentStore || !mode) return;
@@ -143,7 +198,7 @@ export default function ProfitAnalysis() {
         period_end: period.end || null,
         report_type: mode === 'timeline' ? 'product_overview' : 'parent_sku',
         granularity: mode === 'timeline' ? granularity : 'custom',
-        avg_cost_pct: mode === 'timeline' ? avgCostPct : null,
+        avg_cost_pct: mode === 'timeline' ? effectiveCostPct : null,
         total_revenue: totals.revenue,
         total_fees: totals.fees,
         total_taxes: totals.taxes,
@@ -151,7 +206,7 @@ export default function ProfitAnalysis() {
         total_profit: totals.profit,
         margin_pct: totals.margin,
         raw_rows: mode === 'timeline'
-          ? { rows: dailyRows, granularity, avgCostPct }
+          ? { rows: dailyRows, granularity, costLines }
           : { rows: productRows, costs: productCosts },
       });
       toast.success('Análise salva');
@@ -167,7 +222,7 @@ export default function ProfitAnalysis() {
     if (a.report_type === 'product_overview') {
       setDailyRows(a.raw_rows.rows || []);
       setGranularity(a.raw_rows.granularity || 'day');
-      setAvgCostPct(a.raw_rows.avgCostPct ?? 40);
+      setCostLines(a.raw_rows.costLines || []);
       setMode('timeline');
     } else {
       setProductRows(a.raw_rows.rows || []);
@@ -186,13 +241,12 @@ export default function ProfitAnalysis() {
 
       {currentStore && (
         <>
-          {/* Upload */}
           <Card className="p-4 mb-4">
             <div className="flex flex-col md:flex-row md:items-center gap-3">
               <div className="flex-1">
                 <p className="text-body font-medium">Envie o relatório da Shopee</p>
                 <p className="text-caption text-text-3">
-                  Aceita <span className="font-medium">Product Overview</span> (diário da loja) ou <span className="font-medium">Parent SKU Detail</span> (por produto). Detectamos automaticamente.
+                  Aceita <span className="font-medium">Product Overview</span>, <span className="font-medium">Informações Gerenciais</span> (Shop Stats) ou <span className="font-medium">Parent SKU Detail</span>. Detectamos automaticamente.
                 </p>
               </div>
               <input
@@ -217,41 +271,143 @@ export default function ProfitAnalysis() {
           {mode && (
             <>
               {/* Controls */}
-              <Card className="p-4 mb-4">
-                {mode === 'timeline' ? (
-                  <div className="flex flex-col md:flex-row md:items-end gap-4">
-                    <div>
-                      <Label className="text-caption">Agrupar por</Label>
-                      <Tabs value={granularity} onValueChange={(v) => setGranularity(v as any)}>
-                        <TabsList>
-                          <TabsTrigger value="day">Dia</TabsTrigger>
-                          <TabsTrigger value="week">Semana</TabsTrigger>
-                          <TabsTrigger value="month">Mês</TabsTrigger>
-                        </TabsList>
-                      </Tabs>
-                    </div>
-                    <div className="flex-1 max-w-xs">
-                      <Label className="text-caption">Custo médio dos produtos (% da venda)</Label>
-                      <div className="flex gap-2 items-center">
-                        <Input
-                          type="number"
-                          step="0.1"
-                          value={avgCostPct}
-                          onChange={(e) => setAvgCostPct(parseFloat(e.target.value) || 0)}
-                        />
-                        <span className="text-text-3">%</span>
+              {mode === 'timeline' ? (
+                <>
+                  <Card className="p-4 mb-4">
+                    <div className="flex flex-col md:flex-row md:items-center gap-4">
+                      <div>
+                        <Label className="text-caption">Agrupar por</Label>
+                        <Tabs value={granularity} onValueChange={(v) => setGranularity(v as any)}>
+                          <TabsList>
+                            <TabsTrigger value="day">Dia</TabsTrigger>
+                            <TabsTrigger value="week">Semana</TabsTrigger>
+                            <TabsTrigger value="month">Mês</TabsTrigger>
+                          </TabsList>
+                        </Tabs>
                       </div>
-                      <p className="text-caption text-text-3 mt-1">
-                        Ex.: se seus produtos custam 40% do preço de venda, informe 40.
-                      </p>
+                      <div className="ml-auto">
+                        <Button variant="outline" onClick={handleSave} disabled={saving}>
+                          <Save className="mr-2 h-4 w-4" /> Salvar análise
+                        </Button>
+                      </div>
                     </div>
-                    <div className="ml-auto">
-                      <Button variant="outline" onClick={handleSave} disabled={saving}>
-                        <Save className="mr-2 h-4 w-4" /> Salvar análise
-                      </Button>
+                  </Card>
+
+                  {/* Cost lines */}
+                  <Card className="p-4 mb-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <p className="text-body font-medium">Custos por produto</p>
+                        <p className="text-caption text-text-3">
+                          Adicione cada produto vendido no período com sua quantidade e custo unitário. Total: <span className="font-semibold text-foreground">{fmtBRL(totalCostLines)}</span>
+                          {totals.revenue > 0 && <span> · {fmtPct(effectiveCostPct)} das vendas</span>}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Package className="mr-2 h-4 w-4" /> Do cadastro
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-80 p-2" align="end">
+                            <Input
+                              placeholder="Buscar produto..."
+                              value={pickerSearch}
+                              onChange={(e) => setPickerSearch(e.target.value)}
+                              className="mb-2"
+                            />
+                            <div className="max-h-64 overflow-y-auto">
+                              {filteredProducts.length === 0 && (
+                                <p className="text-caption text-text-3 p-2">Nenhum produto</p>
+                              )}
+                              {filteredProducts.map((p) => (
+                                <button
+                                  key={p.id}
+                                  onClick={() => {
+                                    addCostLineFromProduct(p.id);
+                                    setPickerOpen(false);
+                                    setPickerSearch('');
+                                  }}
+                                  className="w-full text-left p-2 rounded hover:bg-muted/50 flex justify-between items-center"
+                                >
+                                  <span className="truncate flex-1 text-caption">{p.name}</span>
+                                  <span className="text-caption text-text-3 ml-2">{fmtBRL(p.costPrice || 0)}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                        <Button variant="outline" size="sm" onClick={addCostLineManual}>
+                          <Plus className="mr-2 h-4 w-4" /> Manual
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                ) : (
+
+                    {costLines.length === 0 ? (
+                      <div className="text-center py-6 text-text-3 text-caption">
+                        Nenhum produto adicionado. Sem custos, o lucro mostrado será apenas receita − taxas − impostos.
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-caption">
+                          <thead className="text-text-3">
+                            <tr className="text-left">
+                              <th className="py-2">Produto</th>
+                              <th className="py-2 text-right w-24">Unidades</th>
+                              <th className="py-2 text-right w-32">Custo unit.</th>
+                              <th className="py-2 text-right w-32">Custo total</th>
+                              <th className="w-8" />
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {costLines.map((c) => (
+                              <tr key={c.id} className="border-t border-border/50">
+                                <td className="py-2 pr-2">
+                                  <Input
+                                    value={c.name}
+                                    onChange={(e) => updateCostLine(c.id, { name: e.target.value })}
+                                    className="h-8"
+                                  />
+                                  {c.productId && <div className="text-text-3 mt-0.5">vinculado</div>}
+                                </td>
+                                <td className="py-2 pr-2">
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={c.units}
+                                    onChange={(e) => updateCostLine(c.id, { units: parseFloat(e.target.value) || 0 })}
+                                    className="h-8 text-right"
+                                  />
+                                </td>
+                                <td className="py-2 pr-2">
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={c.unitCost}
+                                    onChange={(e) => updateCostLine(c.id, { unitCost: parseFloat(e.target.value) || 0 })}
+                                    className="h-8 text-right"
+                                  />
+                                </td>
+                                <td className="py-2 pr-2 text-right font-medium">
+                                  {fmtBRL(c.units * c.unitCost)}
+                                </td>
+                                <td className="py-2 text-right">
+                                  <Button variant="ghost" size="sm" onClick={() => removeCostLine(c.id)}>
+                                    <X className="h-4 w-4 text-text-3" />
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </Card>
+                </>
+              ) : (
+                <Card className="p-4 mb-4">
                   <div className="flex items-center justify-between">
                     <p className="text-caption text-text-3">
                       Custos preenchidos a partir do cadastro quando o SKU bate. Edite qualquer célula abaixo.
@@ -260,15 +416,15 @@ export default function ProfitAnalysis() {
                       <Save className="mr-2 h-4 w-4" /> Salvar análise
                     </Button>
                   </div>
-                )}
-              </Card>
+                </Card>
+              )}
 
               {/* Summary */}
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
                 <SummaryCard label="Vendas" value={fmtBRL(totals.revenue)} />
                 <SummaryCard label="Taxas Shopee" value={fmtBRL(totals.fees)} sub={fmtPct(totals.revenue > 0 ? (totals.fees / totals.revenue) * 100 : 0)} />
                 <SummaryCard label="Impostos" value={fmtBRL(totals.taxes)} sub={fmtPct(taxRate)} />
-                <SummaryCard label="Custo produtos" value={fmtBRL(totals.cost)} />
+                <SummaryCard label="Custo produtos" value={fmtBRL(totals.cost)} sub={totals.revenue > 0 ? fmtPct(effectiveCostPct) : undefined} />
                 <SummaryCard
                   label="Lucro líquido"
                   value={fmtBRL(totals.profit)}
@@ -345,7 +501,6 @@ export default function ProfitAnalysis() {
             </>
           )}
 
-          {/* Saved */}
           {analyses.length > 0 && (
             <Card className="p-4 mt-6">
               <div className="flex items-center gap-2 mb-3">
