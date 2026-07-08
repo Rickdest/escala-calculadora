@@ -168,8 +168,7 @@ export function ParentSkuProfitTable({ lines, products, onLinkProduct, onSetManu
                     step="0.01"
                     min="0"
                     value={l.unitCost || ''}
-                    disabled={l.linkMode !== 'manual-cost' && l.linkMode === 'auto'}
-                    readOnly={l.linkMode === 'auto' || l.linkMode === 'manual-product'}
+                    readOnly={l.linkMode !== 'manual-cost'}
                     onChange={(e) => onSetManualCost(l.row.item_id, parseFloat(e.target.value) || 0)}
                     className="h-8 text-right w-24 ml-auto"
                     placeholder="0,00"
