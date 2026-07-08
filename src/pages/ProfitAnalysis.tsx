@@ -77,7 +77,7 @@ export default function ProfitAnalysis() {
         setProductRows([]);
         setPeriod({ start: parsed.period_start, end: parsed.period_end });
         setMode('timeline');
-        toast({ title: 'Relatório carregado', description: `${parsed.rows.length} dias detectados.` });
+        toast.success('Relatório carregado', { description: `${parsed.rows.length} dias detectados.` });
       } else {
         // Parent SKU
         const parsed = await parseProductPerformanceExcel(file);
@@ -86,10 +86,10 @@ export default function ProfitAnalysis() {
         setProductCosts(applyCostsFromStore(parsed.products));
         setPeriod({ start: parsed.period_start, end: parsed.period_end });
         setMode('per-sku');
-        toast({ title: 'Relatório carregado', description: `${parsed.products.length} produtos detectados.` });
+        toast.success('Relatório carregado', { description: `${parsed.products.length} produtos detectados.` });
       }
     } catch (e: any) {
-      toast({ title: 'Falha ao ler', description: e?.message || 'Verifique o arquivo', variant: 'destructive' });
+      toast.error('Falha ao ler', { description: e?.message || 'Verifique o arquivo' });
     } finally {
       setLoading(false);
       if (fileRef.current) fileRef.current.value = '';
@@ -154,9 +154,9 @@ export default function ProfitAnalysis() {
           ? { rows: dailyRows, granularity, avgCostPct }
           : { rows: productRows, costs: productCosts },
       });
-      toast({ title: 'Análise salva' });
+      toast.success('Análise salva');
     } catch (e: any) {
-      toast({ title: 'Erro ao salvar', description: e?.message, variant: 'destructive' });
+      toast.error('Erro ao salvar', { description: e?.message });
     } finally {
       setSaving(false);
     }
