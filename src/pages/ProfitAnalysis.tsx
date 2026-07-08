@@ -50,6 +50,8 @@ export default function ProfitAnalysis() {
 
   const [mode, setMode] = useState<Mode>(null);
   const [granularity, setGranularity] = useState<'day' | 'week' | 'month'>('day');
+  const [rangePreset, setRangePreset] = useState<RangePreset>('all');
+  const [customRange, setCustomRange] = useState<DateRange | null>(null);
   const [dailyRows, setDailyRows] = useState<DailyOverviewRow[]>([]);
   const [productRows, setProductRows] = useState<ProductPerformanceRow[]>([]);
   const [productCosts, setProductCosts] = useState<Record<string, number>>({});
