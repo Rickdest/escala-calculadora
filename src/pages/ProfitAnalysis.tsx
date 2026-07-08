@@ -316,7 +316,8 @@ export default function ProfitAnalysis() {
       setMode('timeline');
     } else {
       setProductRows(a.raw_rows.rows || []);
-      setProductCosts(a.raw_rows.costs || {});
+      setRowState(a.raw_rows.rowState || {});
+      setExtraCosts(a.extra_costs || { fees: 0, ads: 0, other: 0 });
       setMode('per-sku');
     }
   };
