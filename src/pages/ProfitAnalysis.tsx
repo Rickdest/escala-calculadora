@@ -550,31 +550,96 @@ export default function ProfitAnalysis() {
                   </Card>
                 </>
               ) : (
-                <Card className="p-4 mb-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-caption text-text-3">
-                      Custos preenchidos a partir do cadastro quando o SKU bate. Edite qualquer célula abaixo.
-                    </p>
-                    <Button variant="outline" onClick={handleSave} disabled={saving}>
-                      <Save className="mr-2 h-4 w-4" /> Salvar análise
-                    </Button>
-                  </div>
-                </Card>
+                <>
+                  <Card className="p-4 mb-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <p className="text-body font-medium">Custos adicionais (informe manualmente)</p>
+                        <p className="text-caption text-text-3">
+                          Adicione taxas Shopee, gasto com anúncios e outros custos para calcular o lucro final.
+                        </p>
+                      </div>
+                      <Button variant="outline" onClick={handleSave} disabled={saving}>
+                        <Save className="mr-2 h-4 w-4" /> Salvar análise
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-caption text-text-3">Taxas Shopee (R$)</label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={extraCosts.fees || ''}
+                          onChange={(e) => setExtraCosts((p) => ({ ...p, fees: parseFloat(e.target.value) || 0 }))}
+                          placeholder="0,00"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-caption text-text-3">Anúncios (R$)</label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={extraCosts.ads || ''}
+                          onChange={(e) => setExtraCosts((p) => ({ ...p, ads: parseFloat(e.target.value) || 0 }))}
+                          placeholder="0,00"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-caption text-text-3">Outros custos (R$)</label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={extraCosts.other || ''}
+                          onChange={(e) => setExtraCosts((p) => ({ ...p, other: parseFloat(e.target.value) || 0 }))}
+                          placeholder="0,00"
+                        />
+                      </div>
+                    </div>
+                  </Card>
+
+                  {noCostCount > 0 && (
+                    <Card className="p-3 mb-4 border-red-500/40 bg-red-500/5">
+                      <div className="flex items-center gap-2 text-red-400">
+                        <AlertTriangle className="h-4 w-4" />
+                        <p className="text-caption">
+                          {noCostCount} produto(s) sem custo — o lucro pode estar superestimado. Vincule ou informe o custo manual.
+                        </p>
+                      </div>
+                    </Card>
+                  )}
+                </>
               )}
 
               {/* Summary */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-                <SummaryCard label="Vendas" value={fmtBRL(totals.revenue)} />
-                <SummaryCard label="Taxas Shopee" value={fmtBRL(totals.fees)} sub={fmtPct(totals.revenue > 0 ? (totals.fees / totals.revenue) * 100 : 0)} />
-                <SummaryCard label="Impostos" value={fmtBRL(totals.taxes)} sub={fmtPct(taxRate)} />
-                <SummaryCard label="Custo produtos" value={fmtBRL(totals.cost)} sub={totals.revenue > 0 ? fmtPct(effectiveCostPct) : undefined} />
-                <SummaryCard
-                  label="Lucro líquido"
-                  value={fmtBRL(totals.profit)}
-                  sub={fmtPct(totals.margin)}
-                  valueClass={marginColor(totals.margin, targetMargin)}
-                />
-              </div>
+              {mode === 'per-sku' ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
+                  <SummaryCard label="Vendas pagas" value={fmtBRL(totals.revenue)} />
+                  <SummaryCard label="Unidades pagas" value={String(totals.units)} />
+                  <SummaryCard label="Custo produtos" value={fmtBRL(totals.cost)} sub={totals.revenue > 0 ? fmtPct(effectiveCostPct) : undefined} />
+                  <SummaryCard label="Taxas Shopee" value={fmtBRL(extraCosts.fees)} />
+                  <SummaryCard label="Anúncios" value={fmtBRL(extraCosts.ads)} />
+                  <SummaryCard label="Outros" value={fmtBRL(extraCosts.other)} />
+                  <SummaryCard
+                    label="Lucro final"
+                    value={fmtBRL(finalProfit)}
+                    sub={fmtPct(finalMargin)}
+                    valueClass={marginColor(finalMargin, targetMargin)}
+                  />
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+                  <SummaryCard label="Vendas" value={fmtBRL(totals.revenue)} />
+                  <SummaryCard label="Taxas Shopee" value={fmtBRL(totals.fees)} sub={fmtPct(totals.revenue > 0 ? (totals.fees / totals.revenue) * 100 : 0)} />
+                  <SummaryCard label="Impostos" value={fmtBRL(totals.taxes)} sub={fmtPct(taxRate)} />
+                  <SummaryCard label="Custo produtos" value={fmtBRL(totals.cost)} sub={totals.revenue > 0 ? fmtPct(effectiveCostPct) : undefined} />
+                  <SummaryCard
+                    label="Lucro líquido"
+                    value={fmtBRL(totals.profit)}
+                    sub={fmtPct(totals.margin)}
+                    valueClass={marginColor(totals.margin, targetMargin)}
+                  />
+                </div>
+              )}
 
               {/* Chart */}
               {activeLines.length > 0 && (
@@ -590,70 +655,57 @@ export default function ProfitAnalysis() {
               )}
 
               {/* Table */}
-              <Card className="p-0 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-caption">
-                    <thead className="bg-muted/40">
-                      <tr className="text-left">
-                        <th className="p-3">{mode === 'timeline' ? 'Período' : 'Produto'}</th>
-                        <th className="p-3 text-right">Unidades</th>
-                        <th className="p-3 text-right">Vendas</th>
-                        {mode === 'per-sku' && <th className="p-3 text-right">Custo unit.</th>}
-                        <th className="p-3 text-right">Custo total</th>
-                        <th className="p-3 text-right">Taxa Shopee</th>
-                        <th className="p-3 text-right">Impostos</th>
-                        <th className="p-3 text-right">Lucro</th>
-                        <th className="p-3 text-right">Margem</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {activeLines.map((l) => (
-                        <tr key={l.key} className="border-t border-border/50">
-                          <td className="p-3">
-                            <div className="font-medium">{l.label}</div>
-                            {mode === 'per-sku' && (
-                              <div className="text-text-3">
-                                {l.itemId} {l.linked ? '· vinculado' : '· não vinculado'}
-                              </div>
-                            )}
-                          </td>
-                          <td className="p-3 text-right">{l.units}</td>
-                          <td className="p-3 text-right">{fmtBRL(l.revenue)}</td>
-                          {mode === 'per-sku' && (
-                            <td className="p-3 text-right">
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={productCosts[l.itemId!] ?? 0}
-                                onChange={(e) =>
-                                  setProductCosts({ ...productCosts, [l.itemId!]: parseFloat(e.target.value) || 0 })
-                                }
-                                className="w-24 h-8 text-right ml-auto"
-                              />
+              {mode === 'per-sku' ? (
+                <ParentSkuProfitTable
+                  lines={parentSkuLines}
+                  products={currentStore.products}
+                  onLinkProduct={handleLinkProduct}
+                  onSetManualCost={handleSetManualCost}
+                  onClearLink={handleClearLink}
+                />
+              ) : (
+                <Card className="p-0 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-caption">
+                      <thead className="bg-muted/40">
+                        <tr className="text-left">
+                          <th className="p-3">Período</th>
+                          <th className="p-3 text-right">Unidades</th>
+                          <th className="p-3 text-right">Vendas</th>
+                          <th className="p-3 text-right">Custo total</th>
+                          <th className="p-3 text-right">Taxa Shopee</th>
+                          <th className="p-3 text-right">Impostos</th>
+                          <th className="p-3 text-right">Lucro</th>
+                          <th className="p-3 text-right">Margem</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activeLines.map((l) => (
+                          <tr key={l.key} className="border-t border-border/50">
+                            <td className="p-3"><div className="font-medium">{l.label}</div></td>
+                            <td className="p-3 text-right">{l.units}</td>
+                            <td className="p-3 text-right">{fmtBRL(l.revenue)}</td>
+                            <td className="p-3 text-right">{fmtBRL(l.cost)}</td>
+                            <td className="p-3 text-right">{fmtBRL(l.fees)}</td>
+                            <td className="p-3 text-right">{fmtBRL(l.taxes)}</td>
+                            <td className={`p-3 text-right font-semibold ${l.profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                              {fmtBRL(l.profit)}
                             </td>
-                          )}
-                          <td className="p-3 text-right">{fmtBRL(l.cost)}</td>
-                          <td className="p-3 text-right">{fmtBRL(l.fees)}</td>
-                          <td className="p-3 text-right">{fmtBRL(l.taxes)}</td>
-                          <td className={`p-3 text-right font-semibold ${l.profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                            {fmtBRL(l.profit)}
-                          </td>
-                          <td className={`p-3 text-right font-semibold ${marginColor(l.margin, targetMargin)}`}>
-                            {fmtPct(l.margin)}
-                          </td>
-                        </tr>
-                      ))}
-                      {activeLines.length === 0 && (
-                        <tr>
-                          <td colSpan={mode === 'per-sku' ? 9 : 8} className="p-6 text-center text-text-3">
-                            Sem dados.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </Card>
+                            <td className={`p-3 text-right font-semibold ${marginColor(l.margin, targetMargin)}`}>
+                              {fmtPct(l.margin)}
+                            </td>
+                          </tr>
+                        ))}
+                        {activeLines.length === 0 && (
+                          <tr>
+                            <td colSpan={8} className="p-6 text-center text-text-3">Sem dados.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              )}
             </>
           )}
 
