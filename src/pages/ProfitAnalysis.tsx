@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -11,13 +11,16 @@ function Card({ className = '', children }: { className?: string; children: Reac
   return <div className={`rounded-xl border border-border bg-card ${className}`}>{children}</div>;
 }
 import { useProfitAnalyses } from '@/hooks/useProfitAnalysis';
+import { useShopeeProductLinks } from '@/hooks/useShopeeProductLinks';
 import { parseShopeeProductOverview, isProductOverviewSheet, DailyOverviewRow } from '@/lib/parsers/parseShopeeProductOverview';
 import { parseShopeeShopStats, isShopStatsWorkbook } from '@/lib/parsers/parseShopeeShopStats';
 import { parseProductPerformanceExcel, ProductPerformanceRow } from '@/lib/parsers/parseProductPerformanceExcel';
 import { calcLine, sumLines, groupDaily, getStoreTaxRate, ProfitLine } from '@/lib/profitAnalysis';
+import { matchShopeeProduct, type MatchType } from '@/lib/profit/matchProduct';
 import { ProfitLineChart } from '@/components/profit/ProfitLineChart';
 import { ProfitFilters, RangePreset, DateRange } from '@/components/profit/ProfitFilters';
-import { Upload, FileSpreadsheet, DollarSign, Loader2, Save, Trash2, ExternalLink, Plus, Package, X, TrendingUp } from 'lucide-react';
+import { ParentSkuProfitTable, type ParentSkuLine, type RowLinkMode } from '@/components/profit/ParentSkuProfitTable';
+import { Upload, FileSpreadsheet, DollarSign, Loader2, Save, Trash2, ExternalLink, Plus, Package, X, TrendingUp, AlertTriangle } from 'lucide-react';
 
 type Mode = 'timeline' | 'per-sku' | null;
 
@@ -27,6 +30,13 @@ interface CostLine {
   name: string;
   units: number;
   unitCost: number;
+}
+
+interface RowState {
+  productId: string | null;
+  matchType: MatchType;
+  linkMode: RowLinkMode;
+  manualCost: number;
 }
 
 function fmtBRL(v: number) {
@@ -44,6 +54,7 @@ function marginColor(m: number, target: number) {
 export default function ProfitAnalysis() {
   const { currentStore } = useStore();
   const { analyses, save, remove } = useProfitAnalyses(currentStore?.id);
+  const { links: savedLinks, upsertLink, removeLink } = useShopeeProductLinks(currentStore?.id);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [mode, setMode] = useState<Mode>(null);
@@ -52,7 +63,8 @@ export default function ProfitAnalysis() {
   const [customRange, setCustomRange] = useState<DateRange | null>(null);
   const [dailyRows, setDailyRows] = useState<DailyOverviewRow[]>([]);
   const [productRows, setProductRows] = useState<ProductPerformanceRow[]>([]);
-  const [productCosts, setProductCosts] = useState<Record<string, number>>({});
+  const [rowState, setRowState] = useState<Record<string, RowState>>({});
+  const [extraCosts, setExtraCosts] = useState({ fees: 0, ads: 0, other: 0 });
   const [costLines, setCostLines] = useState<CostLine[]>([]);
   const [period, setPeriod] = useState<{ start: string; end: string }>({ start: '', end: '' });
   const [saving, setSaving] = useState(false);
@@ -63,15 +75,39 @@ export default function ProfitAnalysis() {
   const taxRate = getStoreTaxRate(currentStore?.config);
   const targetMargin = currentStore?.config?.desiredMargin ?? 15;
 
-  const applyCostsFromStore = (rows: ProductPerformanceRow[]): Record<string, number> => {
-    const map: Record<string, number> = {};
-    if (!currentStore) return map;
-    for (const r of rows) {
-      const match = currentStore.products.find((p) => String(p.shopeeItemId ?? '') === r.item_id);
-      if (match && match.costPrice) map[r.item_id] = match.costPrice;
-    }
-    return map;
-  };
+  // Re-run matching when rows / savedLinks / products change (auto-mode rows only)
+  useEffect(() => {
+    if (mode !== 'per-sku' || !currentStore) return;
+    setRowState((prev) => {
+      const next = { ...prev };
+      for (const row of productRows) {
+        const existing = next[row.item_id];
+        if (existing && (existing.linkMode === 'manual-product' || existing.linkMode === 'manual-cost' || existing.linkMode === 'none')) {
+          continue;
+        }
+        const match = matchShopeeProduct(row, currentStore.products, savedLinks);
+        const linked = currentStore.products.find((p) => p.id === match.productId);
+        // if saved link is manual-cost, honor it
+        const savedLink = savedLinks.find((l) => l.shopee_item_id === row.item_id);
+        if (savedLink && savedLink.link_type === 'manual_cost') {
+          next[row.item_id] = {
+            productId: null,
+            matchType: null,
+            linkMode: 'manual-cost',
+            manualCost: Number(savedLink.manual_unit_cost) || 0,
+          };
+          continue;
+        }
+        next[row.item_id] = {
+          productId: match.productId,
+          matchType: match.matchType,
+          linkMode: match.matchType === 'saved' ? 'manual-product' : match.matchType ? 'auto' : 'none',
+          manualCost: linked?.costPrice ?? 0,
+        };
+      }
+      return next;
+    });
+  }, [mode, productRows, currentStore, savedLinks]);
 
   const handleFile = async (file: File) => {
     setLoading(true);
@@ -101,7 +137,7 @@ export default function ProfitAnalysis() {
         const parsed = await parseProductPerformanceExcel(file);
         setProductRows(parsed.products);
         setDailyRows([]);
-        setProductCosts(applyCostsFromStore(parsed.products));
+        setRowState({});
         setPeriod({ start: parsed.period_start, end: parsed.period_end });
         setMode('per-sku');
         toast.success('Parent SKU carregado', { description: `${parsed.products.length} produtos detectados.` });
@@ -113,6 +149,7 @@ export default function ProfitAnalysis() {
       if (fileRef.current) fileRef.current.value = '';
     }
   };
+
 
   // Filter daily rows by preset/custom range
   const filteredDailyRows = useMemo(() => {
