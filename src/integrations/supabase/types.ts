@@ -857,6 +857,7 @@ export type Database = {
         Row: {
           avg_cost_pct: number | null
           created_at: string
+          extra_costs: Json
           granularity: string
           id: string
           margin_pct: number
@@ -877,6 +878,7 @@ export type Database = {
         Insert: {
           avg_cost_pct?: number | null
           created_at?: string
+          extra_costs?: Json
           granularity?: string
           id?: string
           margin_pct?: number
@@ -897,6 +899,7 @@ export type Database = {
         Update: {
           avg_cost_pct?: number | null
           created_at?: string
+          extra_costs?: Json
           granularity?: string
           id?: string
           margin_pct?: number
@@ -1112,6 +1115,63 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      shopee_product_links: {
+        Row: {
+          created_at: string
+          id: string
+          link_type: string
+          manual_unit_cost: number | null
+          parent_sku: string | null
+          product_id: string | null
+          shopee_item_id: string
+          store_id: string
+          updated_at: string
+          user_id: string
+          variation_sku: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          link_type?: string
+          manual_unit_cost?: number | null
+          parent_sku?: string | null
+          product_id?: string | null
+          shopee_item_id: string
+          store_id: string
+          updated_at?: string
+          user_id: string
+          variation_sku?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          link_type?: string
+          manual_unit_cost?: number | null
+          parent_sku?: string | null
+          product_id?: string | null
+          shopee_item_id?: string
+          store_id?: string
+          updated_at?: string
+          user_id?: string
+          variation_sku?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shopee_product_links_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopee_product_links_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shopee_tokens: {
         Row: {
