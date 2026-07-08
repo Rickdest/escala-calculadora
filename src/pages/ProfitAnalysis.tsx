@@ -4,10 +4,13 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { useStore } from '@/contexts/StoreContext';
+
+function Card({ className = '', children }: { className?: string; children: React.ReactNode }) {
+  return <div className={`rounded-xl border border-border bg-card ${className}`}>{children}</div>;
+}
 import { useProfitAnalyses } from '@/hooks/useProfitAnalysis';
 import { parseShopeeProductOverview, isProductOverviewSheet, DailyOverviewRow } from '@/lib/parsers/parseShopeeProductOverview';
 import { parseProductPerformanceExcel, ProductPerformanceRow } from '@/lib/parsers/parseProductPerformanceExcel';
