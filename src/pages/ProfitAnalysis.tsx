@@ -194,29 +194,55 @@ export default function ProfitAnalysis() {
     });
   }, [mode, filteredDailyRows, granularity, totalCostLines, taxRate]);
 
+  // Per-product lines derived from rowState
+  const parentSkuLines: ParentSkuLine[] = useMemo(() => {
+    if (mode !== 'per-sku' || !currentStore) return [];
+    return productRows.map((r) => {
+      const st = rowState[r.item_id];
+      const linked = st?.productId ? currentStore.products.find((p) => p.id === st.productId) : null;
+      let unitCost = 0;
+      let hasCost = false;
+      if (st?.linkMode === 'manual-cost') {
+        unitCost = st.manualCost || 0;
+        hasCost = unitCost > 0;
+      } else if (linked) {
+        unitCost = linked.costPrice || 0;
+        hasCost = unitCost > 0;
+      }
+      return {
+        row: r,
+        productId: st?.productId ?? null,
+        matchType: st?.matchType ?? null,
+        linkMode: st?.linkMode ?? 'none',
+        unitCost,
+        hasCost,
+      };
+    });
+  }, [mode, productRows, rowState, currentStore]);
+
   const skuLines: ProfitLine[] = useMemo(() => {
     if (mode !== 'per-sku') return [];
-    return productRows.map((p) => {
-      const unitCost = productCosts[p.item_id] ?? 0;
-      const cost = unitCost * p.unidades_pagas;
-      const linked = !!currentStore?.products.find((x) => String(x.shopeeItemId ?? '') === p.item_id);
-      return calcLine({
-        key: p.item_id,
-        label: p.nome,
-        revenue: p.vendas_pago,
-        units: p.unidades_pagas,
-        cost,
+    return parentSkuLines.map((l) =>
+      calcLine({
+        key: l.row.item_id,
+        label: l.row.nome,
+        revenue: l.row.vendas_pago,
+        units: l.row.unidades_pagas,
+        cost: l.unitCost * l.row.unidades_pagas,
         taxRate,
-        itemId: p.item_id,
-        unitCost,
-        linked,
-      });
-    });
-  }, [mode, productRows, productCosts, taxRate, currentStore]);
+        itemId: l.row.item_id,
+        unitCost: l.unitCost,
+        linked: !!l.productId,
+      }),
+    );
+  }, [mode, parentSkuLines, taxRate]);
 
   const activeLines = mode === 'timeline' ? timelineLines : skuLines;
   const totals = useMemo(() => sumLines(activeLines), [activeLines]);
   const effectiveCostPct = totals.revenue > 0 ? (totals.cost / totals.revenue) * 100 : 0;
+  const noCostCount = parentSkuLines.filter((l) => !l.hasCost).length;
+  const finalProfit = totals.revenue - totals.cost - extraCosts.fees - extraCosts.ads - extraCosts.other;
+  const finalMargin = totals.revenue > 0 ? (finalProfit / totals.revenue) * 100 : 0;
 
   const addCostLineFromProduct = (productId: string) => {
     if (!currentStore) return;
