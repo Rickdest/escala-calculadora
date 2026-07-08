@@ -33,6 +33,7 @@ const PerformanceProductDetail = lazy(() => import("./pages/PerformanceProductDe
 const Integracoes = lazy(() => import("./pages/Integracoes"));
 const Termos = lazy(() => import("./pages/Termos"));
 const Privacidade = lazy(() => import("./pages/Privacidade"));
+const ProfitAnalysis = lazy(() => import("./pages/ProfitAnalysis"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
