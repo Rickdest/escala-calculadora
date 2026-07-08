@@ -3,8 +3,6 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
 import { useStore } from '@/contexts/StoreContext';
@@ -17,7 +15,9 @@ import { parseShopeeProductOverview, isProductOverviewSheet, DailyOverviewRow } 
 import { parseShopeeShopStats, isShopStatsWorkbook } from '@/lib/parsers/parseShopeeShopStats';
 import { parseProductPerformanceExcel, ProductPerformanceRow } from '@/lib/parsers/parseProductPerformanceExcel';
 import { calcLine, sumLines, groupDaily, getStoreTaxRate, ProfitLine } from '@/lib/profitAnalysis';
-import { Upload, FileSpreadsheet, DollarSign, Loader2, Save, Trash2, ExternalLink, Plus, Package, X } from 'lucide-react';
+import { ProfitLineChart } from '@/components/profit/ProfitLineChart';
+import { ProfitFilters, RangePreset, DateRange } from '@/components/profit/ProfitFilters';
+import { Upload, FileSpreadsheet, DollarSign, Loader2, Save, Trash2, ExternalLink, Plus, Package, X, TrendingUp } from 'lucide-react';
 
 type Mode = 'timeline' | 'per-sku' | null;
 
@@ -48,6 +48,8 @@ export default function ProfitAnalysis() {
 
   const [mode, setMode] = useState<Mode>(null);
   const [granularity, setGranularity] = useState<'day' | 'week' | 'month'>('day');
+  const [rangePreset, setRangePreset] = useState<RangePreset>('all');
+  const [customRange, setCustomRange] = useState<DateRange | null>(null);
   const [dailyRows, setDailyRows] = useState<DailyOverviewRow[]>([]);
   const [productRows, setProductRows] = useState<ProductPerformanceRow[]>([]);
   const [productCosts, setProductCosts] = useState<Record<string, number>>({});
@@ -112,6 +114,30 @@ export default function ProfitAnalysis() {
     }
   };
 
+  // Filter daily rows by preset/custom range
+  const filteredDailyRows = useMemo(() => {
+    if (!dailyRows.length) return dailyRows;
+    if (rangePreset === 'all') return dailyRows;
+    const today = new Date();
+    let start: string | null = null;
+    let end: string | null = null;
+    if (rangePreset === '7d' || rangePreset === '30d') {
+      const days = rangePreset === '7d' ? 6 : 29;
+      const s = new Date(today);
+      s.setDate(today.getDate() - days);
+      start = s.toISOString().slice(0, 10);
+      end = today.toISOString().slice(0, 10);
+    } else if (rangePreset === 'month') {
+      start = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().slice(0, 10);
+      end = today.toISOString().slice(0, 10);
+    } else if (rangePreset === 'custom' && customRange) {
+      start = customRange.start;
+      end = customRange.end;
+    }
+    if (!start || !end) return dailyRows;
+    return dailyRows.filter((r) => r.date >= start! && r.date <= end!);
+  }, [dailyRows, rangePreset, customRange]);
+
   // Timeline calculations (revenue per day, cost from cost lines proportional to revenue)
   const totalCostLines = useMemo(
     () => costLines.reduce((a, c) => a + c.units * c.unitCost, 0),
@@ -120,8 +146,8 @@ export default function ProfitAnalysis() {
 
   const timelineLines: ProfitLine[] = useMemo(() => {
     if (mode !== 'timeline') return [];
-    const groups = groupDaily(dailyRows, granularity);
-    const totalRevenue = dailyRows.reduce((a, r) => a + r.revenue, 0);
+    const groups = groupDaily(filteredDailyRows, granularity);
+    const totalRevenue = filteredDailyRows.reduce((a, r) => a + r.revenue, 0);
     return groups.map((g) => {
       const revenue = g.items.reduce((a, r) => a + r.revenue, 0);
       const units = g.items.reduce((a, r) => a + r.units, 0);
@@ -129,7 +155,7 @@ export default function ProfitAnalysis() {
       const cost = totalRevenue > 0 ? (revenue / totalRevenue) * totalCostLines : 0;
       return calcLine({ key: g.key, label: g.label, revenue, units, cost, taxRate });
     });
-  }, [mode, dailyRows, granularity, totalCostLines, taxRate]);
+  }, [mode, filteredDailyRows, granularity, totalCostLines, taxRate]);
 
   const skuLines: ProfitLine[] = useMemo(() => {
     if (mode !== 'per-sku') return [];
@@ -274,18 +300,16 @@ export default function ProfitAnalysis() {
               {mode === 'timeline' ? (
                 <>
                   <Card className="p-4 mb-4">
-                    <div className="flex flex-col md:flex-row md:items-center gap-4">
-                      <div>
-                        <Label className="text-caption">Agrupar por</Label>
-                        <Tabs value={granularity} onValueChange={(v) => setGranularity(v as any)}>
-                          <TabsList>
-                            <TabsTrigger value="day">Dia</TabsTrigger>
-                            <TabsTrigger value="week">Semana</TabsTrigger>
-                            <TabsTrigger value="month">Mês</TabsTrigger>
-                          </TabsList>
-                        </Tabs>
-                      </div>
-                      <div className="ml-auto">
+                    <div className="flex flex-col md:flex-row md:items-end gap-4">
+                      <ProfitFilters
+                        granularity={granularity}
+                        onGranularityChange={setGranularity}
+                        preset={rangePreset}
+                        onPresetChange={setRangePreset}
+                        customRange={customRange}
+                        onCustomRangeChange={setCustomRange}
+                      />
+                      <div className="md:ml-auto">
                         <Button variant="outline" onClick={handleSave} disabled={saving}>
                           <Save className="mr-2 h-4 w-4" /> Salvar análise
                         </Button>
@@ -432,6 +456,19 @@ export default function ProfitAnalysis() {
                   valueClass={marginColor(totals.margin, targetMargin)}
                 />
               </div>
+
+              {/* Chart */}
+              {activeLines.length > 0 && (
+                <Card className="p-4 mb-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                    <p className="text-body font-medium">
+                      Vendas × Lucro {mode === 'per-sku' ? '(top 15 produtos)' : ''}
+                    </p>
+                  </div>
+                  <ProfitLineChart lines={activeLines} mode={mode!} />
+                </Card>
+              )}
 
               {/* Table */}
               <Card className="p-0 overflow-hidden">
