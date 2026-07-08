@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -11,13 +11,16 @@ function Card({ className = '', children }: { className?: string; children: Reac
   return <div className={`rounded-xl border border-border bg-card ${className}`}>{children}</div>;
 }
 import { useProfitAnalyses } from '@/hooks/useProfitAnalysis';
+import { useShopeeProductLinks } from '@/hooks/useShopeeProductLinks';
 import { parseShopeeProductOverview, isProductOverviewSheet, DailyOverviewRow } from '@/lib/parsers/parseShopeeProductOverview';
 import { parseShopeeShopStats, isShopStatsWorkbook } from '@/lib/parsers/parseShopeeShopStats';
 import { parseProductPerformanceExcel, ProductPerformanceRow } from '@/lib/parsers/parseProductPerformanceExcel';
 import { calcLine, sumLines, groupDaily, getStoreTaxRate, ProfitLine } from '@/lib/profitAnalysis';
+import { matchShopeeProduct, type MatchType } from '@/lib/profit/matchProduct';
 import { ProfitLineChart } from '@/components/profit/ProfitLineChart';
 import { ProfitFilters, RangePreset, DateRange } from '@/components/profit/ProfitFilters';
-import { Upload, FileSpreadsheet, DollarSign, Loader2, Save, Trash2, ExternalLink, Plus, Package, X, TrendingUp } from 'lucide-react';
+import { ParentSkuProfitTable, type ParentSkuLine, type RowLinkMode } from '@/components/profit/ParentSkuProfitTable';
+import { Upload, FileSpreadsheet, DollarSign, Loader2, Save, Trash2, ExternalLink, Plus, Package, X, TrendingUp, AlertTriangle } from 'lucide-react';
 
 type Mode = 'timeline' | 'per-sku' | null;
 
@@ -27,6 +30,13 @@ interface CostLine {
   name: string;
   units: number;
   unitCost: number;
+}
+
+interface RowState {
+  productId: string | null;
+  matchType: MatchType;
+  linkMode: RowLinkMode;
+  manualCost: number;
 }
 
 function fmtBRL(v: number) {
@@ -44,6 +54,7 @@ function marginColor(m: number, target: number) {
 export default function ProfitAnalysis() {
   const { currentStore } = useStore();
   const { analyses, save, remove } = useProfitAnalyses(currentStore?.id);
+  const { links: savedLinks, upsertLink, removeLink } = useShopeeProductLinks(currentStore?.id);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [mode, setMode] = useState<Mode>(null);
@@ -52,7 +63,8 @@ export default function ProfitAnalysis() {
   const [customRange, setCustomRange] = useState<DateRange | null>(null);
   const [dailyRows, setDailyRows] = useState<DailyOverviewRow[]>([]);
   const [productRows, setProductRows] = useState<ProductPerformanceRow[]>([]);
-  const [productCosts, setProductCosts] = useState<Record<string, number>>({});
+  const [rowState, setRowState] = useState<Record<string, RowState>>({});
+  const [extraCosts, setExtraCosts] = useState({ fees: 0, ads: 0, other: 0 });
   const [costLines, setCostLines] = useState<CostLine[]>([]);
   const [period, setPeriod] = useState<{ start: string; end: string }>({ start: '', end: '' });
   const [saving, setSaving] = useState(false);
@@ -63,15 +75,39 @@ export default function ProfitAnalysis() {
   const taxRate = getStoreTaxRate(currentStore?.config);
   const targetMargin = currentStore?.config?.desiredMargin ?? 15;
 
-  const applyCostsFromStore = (rows: ProductPerformanceRow[]): Record<string, number> => {
-    const map: Record<string, number> = {};
-    if (!currentStore) return map;
-    for (const r of rows) {
-      const match = currentStore.products.find((p) => String(p.shopeeItemId ?? '') === r.item_id);
-      if (match && match.costPrice) map[r.item_id] = match.costPrice;
-    }
-    return map;
-  };
+  // Re-run matching when rows / savedLinks / products change (auto-mode rows only)
+  useEffect(() => {
+    if (mode !== 'per-sku' || !currentStore) return;
+    setRowState((prev) => {
+      const next = { ...prev };
+      for (const row of productRows) {
+        const existing = next[row.item_id];
+        if (existing && (existing.linkMode === 'manual-product' || existing.linkMode === 'manual-cost' || existing.linkMode === 'none')) {
+          continue;
+        }
+        const match = matchShopeeProduct(row, currentStore.products, savedLinks);
+        const linked = currentStore.products.find((p) => p.id === match.productId);
+        // if saved link is manual-cost, honor it
+        const savedLink = savedLinks.find((l) => l.shopee_item_id === row.item_id);
+        if (savedLink && savedLink.link_type === 'manual_cost') {
+          next[row.item_id] = {
+            productId: null,
+            matchType: null,
+            linkMode: 'manual-cost',
+            manualCost: Number(savedLink.manual_unit_cost) || 0,
+          };
+          continue;
+        }
+        next[row.item_id] = {
+          productId: match.productId,
+          matchType: match.matchType,
+          linkMode: match.matchType === 'saved' ? 'manual-product' : match.matchType ? 'auto' : 'none',
+          manualCost: linked?.costPrice ?? 0,
+        };
+      }
+      return next;
+    });
+  }, [mode, productRows, currentStore, savedLinks]);
 
   const handleFile = async (file: File) => {
     setLoading(true);
@@ -101,7 +137,7 @@ export default function ProfitAnalysis() {
         const parsed = await parseProductPerformanceExcel(file);
         setProductRows(parsed.products);
         setDailyRows([]);
-        setProductCosts(applyCostsFromStore(parsed.products));
+        setRowState({});
         setPeriod({ start: parsed.period_start, end: parsed.period_end });
         setMode('per-sku');
         toast.success('Parent SKU carregado', { description: `${parsed.products.length} produtos detectados.` });
@@ -113,6 +149,7 @@ export default function ProfitAnalysis() {
       if (fileRef.current) fileRef.current.value = '';
     }
   };
+
 
   // Filter daily rows by preset/custom range
   const filteredDailyRows = useMemo(() => {
@@ -157,29 +194,55 @@ export default function ProfitAnalysis() {
     });
   }, [mode, filteredDailyRows, granularity, totalCostLines, taxRate]);
 
+  // Per-product lines derived from rowState
+  const parentSkuLines: ParentSkuLine[] = useMemo(() => {
+    if (mode !== 'per-sku' || !currentStore) return [];
+    return productRows.map((r) => {
+      const st = rowState[r.item_id];
+      const linked = st?.productId ? currentStore.products.find((p) => p.id === st.productId) : null;
+      let unitCost = 0;
+      let hasCost = false;
+      if (st?.linkMode === 'manual-cost') {
+        unitCost = st.manualCost || 0;
+        hasCost = unitCost > 0;
+      } else if (linked) {
+        unitCost = linked.costPrice || 0;
+        hasCost = unitCost > 0;
+      }
+      return {
+        row: r,
+        productId: st?.productId ?? null,
+        matchType: st?.matchType ?? null,
+        linkMode: st?.linkMode ?? 'none',
+        unitCost,
+        hasCost,
+      };
+    });
+  }, [mode, productRows, rowState, currentStore]);
+
   const skuLines: ProfitLine[] = useMemo(() => {
     if (mode !== 'per-sku') return [];
-    return productRows.map((p) => {
-      const unitCost = productCosts[p.item_id] ?? 0;
-      const cost = unitCost * p.unidades_pagas;
-      const linked = !!currentStore?.products.find((x) => String(x.shopeeItemId ?? '') === p.item_id);
-      return calcLine({
-        key: p.item_id,
-        label: p.nome,
-        revenue: p.vendas_pago,
-        units: p.unidades_pagas,
-        cost,
+    return parentSkuLines.map((l) =>
+      calcLine({
+        key: l.row.item_id,
+        label: l.row.nome,
+        revenue: l.row.vendas_pago,
+        units: l.row.unidades_pagas,
+        cost: l.unitCost * l.row.unidades_pagas,
         taxRate,
-        itemId: p.item_id,
-        unitCost,
-        linked,
-      });
-    });
-  }, [mode, productRows, productCosts, taxRate, currentStore]);
+        itemId: l.row.item_id,
+        unitCost: l.unitCost,
+        linked: !!l.productId,
+      }),
+    );
+  }, [mode, parentSkuLines, taxRate]);
 
   const activeLines = mode === 'timeline' ? timelineLines : skuLines;
   const totals = useMemo(() => sumLines(activeLines), [activeLines]);
   const effectiveCostPct = totals.revenue > 0 ? (totals.cost / totals.revenue) * 100 : 0;
+  const noCostCount = parentSkuLines.filter((l) => !l.hasCost).length;
+  const finalProfit = totals.revenue - totals.cost - extraCosts.fees - extraCosts.ads - extraCosts.other;
+  const finalMargin = totals.revenue > 0 ? (finalProfit / totals.revenue) * 100 : 0;
 
   const addCostLineFromProduct = (productId: string) => {
     if (!currentStore) return;
@@ -233,7 +296,8 @@ export default function ProfitAnalysis() {
         margin_pct: totals.margin,
         raw_rows: mode === 'timeline'
           ? { rows: dailyRows, granularity, costLines }
-          : { rows: productRows, costs: productCosts },
+          : { rows: productRows, rowState },
+        extra_costs: mode === 'per-sku' ? extraCosts : {},
       });
       toast.success('Análise salva');
     } catch (e: any) {
@@ -252,9 +316,64 @@ export default function ProfitAnalysis() {
       setMode('timeline');
     } else {
       setProductRows(a.raw_rows.rows || []);
-      setProductCosts(a.raw_rows.costs || {});
+      setRowState(a.raw_rows.rowState || {});
+      setExtraCosts(a.extra_costs || { fees: 0, ads: 0, other: 0 });
       setMode('per-sku');
     }
+  };
+
+  // Per-row link handlers (persist to shopee_product_links)
+  const handleLinkProduct = (itemId: string, productId: string) => {
+    const row = productRows.find((r) => r.item_id === itemId);
+    if (!row || !currentStore) return;
+    const linked = currentStore.products.find((p) => p.id === productId);
+    setRowState((prev) => ({
+      ...prev,
+      [itemId]: {
+        productId,
+        matchType: 'saved',
+        linkMode: 'manual-product',
+        manualCost: linked?.costPrice ?? 0,
+      },
+    }));
+    upsertLink({
+      shopee_item_id: itemId,
+      parent_sku: row.parent_sku || null,
+      variation_sku: row.variation_sku || null,
+      product_id: productId,
+      manual_unit_cost: null,
+      link_type: 'product',
+    });
+  };
+
+  const handleSetManualCost = (itemId: string, unitCost: number) => {
+    const row = productRows.find((r) => r.item_id === itemId);
+    if (!row) return;
+    setRowState((prev) => ({
+      ...prev,
+      [itemId]: {
+        productId: null,
+        matchType: null,
+        linkMode: 'manual-cost',
+        manualCost: unitCost,
+      },
+    }));
+    upsertLink({
+      shopee_item_id: itemId,
+      parent_sku: row.parent_sku || null,
+      variation_sku: row.variation_sku || null,
+      product_id: null,
+      manual_unit_cost: unitCost,
+      link_type: 'manual_cost',
+    });
+  };
+
+  const handleClearLink = (itemId: string) => {
+    setRowState((prev) => ({
+      ...prev,
+      [itemId]: { productId: null, matchType: null, linkMode: 'none', manualCost: 0 },
+    }));
+    removeLink(itemId);
   };
 
   return (
@@ -431,31 +550,96 @@ export default function ProfitAnalysis() {
                   </Card>
                 </>
               ) : (
-                <Card className="p-4 mb-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-caption text-text-3">
-                      Custos preenchidos a partir do cadastro quando o SKU bate. Edite qualquer célula abaixo.
-                    </p>
-                    <Button variant="outline" onClick={handleSave} disabled={saving}>
-                      <Save className="mr-2 h-4 w-4" /> Salvar análise
-                    </Button>
-                  </div>
-                </Card>
+                <>
+                  <Card className="p-4 mb-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <p className="text-body font-medium">Custos adicionais (informe manualmente)</p>
+                        <p className="text-caption text-text-3">
+                          Adicione taxas Shopee, gasto com anúncios e outros custos para calcular o lucro final.
+                        </p>
+                      </div>
+                      <Button variant="outline" onClick={handleSave} disabled={saving}>
+                        <Save className="mr-2 h-4 w-4" /> Salvar análise
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-caption text-text-3">Taxas Shopee (R$)</label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={extraCosts.fees || ''}
+                          onChange={(e) => setExtraCosts((p) => ({ ...p, fees: parseFloat(e.target.value) || 0 }))}
+                          placeholder="0,00"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-caption text-text-3">Anúncios (R$)</label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={extraCosts.ads || ''}
+                          onChange={(e) => setExtraCosts((p) => ({ ...p, ads: parseFloat(e.target.value) || 0 }))}
+                          placeholder="0,00"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-caption text-text-3">Outros custos (R$)</label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={extraCosts.other || ''}
+                          onChange={(e) => setExtraCosts((p) => ({ ...p, other: parseFloat(e.target.value) || 0 }))}
+                          placeholder="0,00"
+                        />
+                      </div>
+                    </div>
+                  </Card>
+
+                  {noCostCount > 0 && (
+                    <Card className="p-3 mb-4 border-red-500/40 bg-red-500/5">
+                      <div className="flex items-center gap-2 text-red-400">
+                        <AlertTriangle className="h-4 w-4" />
+                        <p className="text-caption">
+                          {noCostCount} produto(s) sem custo — o lucro pode estar superestimado. Vincule ou informe o custo manual.
+                        </p>
+                      </div>
+                    </Card>
+                  )}
+                </>
               )}
 
               {/* Summary */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-                <SummaryCard label="Vendas" value={fmtBRL(totals.revenue)} />
-                <SummaryCard label="Taxas Shopee" value={fmtBRL(totals.fees)} sub={fmtPct(totals.revenue > 0 ? (totals.fees / totals.revenue) * 100 : 0)} />
-                <SummaryCard label="Impostos" value={fmtBRL(totals.taxes)} sub={fmtPct(taxRate)} />
-                <SummaryCard label="Custo produtos" value={fmtBRL(totals.cost)} sub={totals.revenue > 0 ? fmtPct(effectiveCostPct) : undefined} />
-                <SummaryCard
-                  label="Lucro líquido"
-                  value={fmtBRL(totals.profit)}
-                  sub={fmtPct(totals.margin)}
-                  valueClass={marginColor(totals.margin, targetMargin)}
-                />
-              </div>
+              {mode === 'per-sku' ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
+                  <SummaryCard label="Vendas pagas" value={fmtBRL(totals.revenue)} />
+                  <SummaryCard label="Unidades pagas" value={String(totals.units)} />
+                  <SummaryCard label="Custo produtos" value={fmtBRL(totals.cost)} sub={totals.revenue > 0 ? fmtPct(effectiveCostPct) : undefined} />
+                  <SummaryCard label="Taxas Shopee" value={fmtBRL(extraCosts.fees)} />
+                  <SummaryCard label="Anúncios" value={fmtBRL(extraCosts.ads)} />
+                  <SummaryCard label="Outros" value={fmtBRL(extraCosts.other)} />
+                  <SummaryCard
+                    label="Lucro final"
+                    value={fmtBRL(finalProfit)}
+                    sub={fmtPct(finalMargin)}
+                    valueClass={marginColor(finalMargin, targetMargin)}
+                  />
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+                  <SummaryCard label="Vendas" value={fmtBRL(totals.revenue)} />
+                  <SummaryCard label="Taxas Shopee" value={fmtBRL(totals.fees)} sub={fmtPct(totals.revenue > 0 ? (totals.fees / totals.revenue) * 100 : 0)} />
+                  <SummaryCard label="Impostos" value={fmtBRL(totals.taxes)} sub={fmtPct(taxRate)} />
+                  <SummaryCard label="Custo produtos" value={fmtBRL(totals.cost)} sub={totals.revenue > 0 ? fmtPct(effectiveCostPct) : undefined} />
+                  <SummaryCard
+                    label="Lucro líquido"
+                    value={fmtBRL(totals.profit)}
+                    sub={fmtPct(totals.margin)}
+                    valueClass={marginColor(totals.margin, targetMargin)}
+                  />
+                </div>
+              )}
 
               {/* Chart */}
               {activeLines.length > 0 && (
@@ -471,70 +655,57 @@ export default function ProfitAnalysis() {
               )}
 
               {/* Table */}
-              <Card className="p-0 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-caption">
-                    <thead className="bg-muted/40">
-                      <tr className="text-left">
-                        <th className="p-3">{mode === 'timeline' ? 'Período' : 'Produto'}</th>
-                        <th className="p-3 text-right">Unidades</th>
-                        <th className="p-3 text-right">Vendas</th>
-                        {mode === 'per-sku' && <th className="p-3 text-right">Custo unit.</th>}
-                        <th className="p-3 text-right">Custo total</th>
-                        <th className="p-3 text-right">Taxa Shopee</th>
-                        <th className="p-3 text-right">Impostos</th>
-                        <th className="p-3 text-right">Lucro</th>
-                        <th className="p-3 text-right">Margem</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {activeLines.map((l) => (
-                        <tr key={l.key} className="border-t border-border/50">
-                          <td className="p-3">
-                            <div className="font-medium">{l.label}</div>
-                            {mode === 'per-sku' && (
-                              <div className="text-text-3">
-                                {l.itemId} {l.linked ? '· vinculado' : '· não vinculado'}
-                              </div>
-                            )}
-                          </td>
-                          <td className="p-3 text-right">{l.units}</td>
-                          <td className="p-3 text-right">{fmtBRL(l.revenue)}</td>
-                          {mode === 'per-sku' && (
-                            <td className="p-3 text-right">
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={productCosts[l.itemId!] ?? 0}
-                                onChange={(e) =>
-                                  setProductCosts({ ...productCosts, [l.itemId!]: parseFloat(e.target.value) || 0 })
-                                }
-                                className="w-24 h-8 text-right ml-auto"
-                              />
+              {mode === 'per-sku' ? (
+                <ParentSkuProfitTable
+                  lines={parentSkuLines}
+                  products={currentStore.products}
+                  onLinkProduct={handleLinkProduct}
+                  onSetManualCost={handleSetManualCost}
+                  onClearLink={handleClearLink}
+                />
+              ) : (
+                <Card className="p-0 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-caption">
+                      <thead className="bg-muted/40">
+                        <tr className="text-left">
+                          <th className="p-3">Período</th>
+                          <th className="p-3 text-right">Unidades</th>
+                          <th className="p-3 text-right">Vendas</th>
+                          <th className="p-3 text-right">Custo total</th>
+                          <th className="p-3 text-right">Taxa Shopee</th>
+                          <th className="p-3 text-right">Impostos</th>
+                          <th className="p-3 text-right">Lucro</th>
+                          <th className="p-3 text-right">Margem</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activeLines.map((l) => (
+                          <tr key={l.key} className="border-t border-border/50">
+                            <td className="p-3"><div className="font-medium">{l.label}</div></td>
+                            <td className="p-3 text-right">{l.units}</td>
+                            <td className="p-3 text-right">{fmtBRL(l.revenue)}</td>
+                            <td className="p-3 text-right">{fmtBRL(l.cost)}</td>
+                            <td className="p-3 text-right">{fmtBRL(l.fees)}</td>
+                            <td className="p-3 text-right">{fmtBRL(l.taxes)}</td>
+                            <td className={`p-3 text-right font-semibold ${l.profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                              {fmtBRL(l.profit)}
                             </td>
-                          )}
-                          <td className="p-3 text-right">{fmtBRL(l.cost)}</td>
-                          <td className="p-3 text-right">{fmtBRL(l.fees)}</td>
-                          <td className="p-3 text-right">{fmtBRL(l.taxes)}</td>
-                          <td className={`p-3 text-right font-semibold ${l.profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                            {fmtBRL(l.profit)}
-                          </td>
-                          <td className={`p-3 text-right font-semibold ${marginColor(l.margin, targetMargin)}`}>
-                            {fmtPct(l.margin)}
-                          </td>
-                        </tr>
-                      ))}
-                      {activeLines.length === 0 && (
-                        <tr>
-                          <td colSpan={mode === 'per-sku' ? 9 : 8} className="p-6 text-center text-text-3">
-                            Sem dados.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </Card>
+                            <td className={`p-3 text-right font-semibold ${marginColor(l.margin, targetMargin)}`}>
+                              {fmtPct(l.margin)}
+                            </td>
+                          </tr>
+                        ))}
+                        {activeLines.length === 0 && (
+                          <tr>
+                            <td colSpan={8} className="p-6 text-center text-text-3">Sem dados.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              )}
             </>
           )}
 

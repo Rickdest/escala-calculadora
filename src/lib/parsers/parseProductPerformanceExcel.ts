@@ -1,6 +1,8 @@
 export interface ProductPerformanceRow {
   item_id: string;
   nome: string;
+  parent_sku: string;
+  variation_sku: string;
   vendas_pago: number;
   pedidos_pagos: number;
   unidades_pagas: number;
@@ -20,6 +22,7 @@ export interface ProductPerformanceRow {
 export interface ProductVariacao {
   variacao_id: string;
   nome_variacao: string;
+  variation_sku: string;
   vendas_pago: number;
   unidades_pagas: number;
   compradores_pagos: number;
@@ -78,6 +81,8 @@ export async function parseProductPerformanceExcel(
       currentProduct = {
         item_id: String(row[0]),
         nome: String(row[1]),
+        parent_sku: row[7] && row[7] !== '-' ? String(row[7]).trim() : '',
+        variation_sku: row[6] && row[6] !== '-' ? String(row[6]).trim() : '',
         vendas_pago: parseBRL(row[9]),
         pedidos_pagos: parseInt2(row[16]),
         unidades_pagas: parseInt2(row[18]),
@@ -97,6 +102,7 @@ export async function parseProductPerformanceExcel(
       currentProduct.variacoes.push({
         variacao_id: String(row[3]),
         nome_variacao: String(row[4]),
+        variation_sku: row[6] && row[6] !== '-' ? String(row[6]).trim() : '',
         vendas_pago: parseBRL(row[9]),
         unidades_pagas: parseInt2(row[18]),
         compradores_pagos: parseInt2(row[20]),
