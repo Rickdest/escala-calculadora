@@ -53,20 +53,21 @@ export function matchShopeeProduct(
   );
   if (byItemId) return { productId: byItemId.id, matchType: 'itemId' };
 
-  // 3. Parent SKU
+  // 3. Parent SKU — check any variation SKU on registered product
   if (row.parent_sku) {
     const target = row.parent_sku.toLowerCase().trim();
-    const bySku = products.find((p) => (p.sku || '').toLowerCase().trim() === target);
+    const bySku = products.find((p) =>
+      (p.variations || []).some((v) => (v.sku || '').toLowerCase().trim() === target),
+    );
     if (bySku) return { productId: bySku.id, matchType: 'sku' };
   }
 
-  // 4. Variation SKU (either main product sku or any variation sku)
+  // 4. Variation SKU
   if (row.variation_sku) {
     const target = row.variation_sku.toLowerCase().trim();
-    const byVar = products.find((p) => {
-      if ((p.sku || '').toLowerCase().trim() === target) return true;
-      return (p.variations || []).some((v) => (v.sku || '').toLowerCase().trim() === target);
-    });
+    const byVar = products.find((p) =>
+      (p.variations || []).some((v) => (v.sku || '').toLowerCase().trim() === target),
+    );
     if (byVar) return { productId: byVar.id, matchType: 'variationSku' };
   }
 
