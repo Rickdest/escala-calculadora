@@ -296,7 +296,8 @@ export default function ProfitAnalysis() {
         margin_pct: totals.margin,
         raw_rows: mode === 'timeline'
           ? { rows: dailyRows, granularity, costLines }
-          : { rows: productRows, costs: productCosts },
+          : { rows: productRows, rowState },
+        extra_costs: mode === 'per-sku' ? extraCosts : {},
       });
       toast.success('Análise salva');
     } catch (e: any) {
