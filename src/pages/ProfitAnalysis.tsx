@@ -17,7 +17,9 @@ import { parseShopeeProductOverview, isProductOverviewSheet, DailyOverviewRow } 
 import { parseShopeeShopStats, isShopStatsWorkbook } from '@/lib/parsers/parseShopeeShopStats';
 import { parseProductPerformanceExcel, ProductPerformanceRow } from '@/lib/parsers/parseProductPerformanceExcel';
 import { calcLine, sumLines, groupDaily, getStoreTaxRate, ProfitLine } from '@/lib/profitAnalysis';
-import { Upload, FileSpreadsheet, DollarSign, Loader2, Save, Trash2, ExternalLink, Plus, Package, X } from 'lucide-react';
+import { ProfitLineChart } from '@/components/profit/ProfitLineChart';
+import { ProfitFilters, RangePreset, DateRange } from '@/components/profit/ProfitFilters';
+import { Upload, FileSpreadsheet, DollarSign, Loader2, Save, Trash2, ExternalLink, Plus, Package, X, TrendingUp } from 'lucide-react';
 
 type Mode = 'timeline' | 'per-sku' | null;
 
