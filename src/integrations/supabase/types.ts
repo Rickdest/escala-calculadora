@@ -853,6 +853,77 @@ export type Database = {
         }
         Relationships: []
       }
+      profit_analyses: {
+        Row: {
+          avg_cost_pct: number | null
+          created_at: string
+          granularity: string
+          id: string
+          margin_pct: number
+          name: string | null
+          period_end: string | null
+          period_start: string | null
+          raw_rows: Json
+          report_type: string
+          store_id: string | null
+          total_cost: number
+          total_fees: number
+          total_profit: number
+          total_revenue: number
+          total_taxes: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avg_cost_pct?: number | null
+          created_at?: string
+          granularity?: string
+          id?: string
+          margin_pct?: number
+          name?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          raw_rows?: Json
+          report_type: string
+          store_id?: string | null
+          total_cost?: number
+          total_fees?: number
+          total_profit?: number
+          total_revenue?: number
+          total_taxes?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avg_cost_pct?: number | null
+          created_at?: string
+          granularity?: string
+          id?: string
+          margin_pct?: number
+          name?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          raw_rows?: Json
+          report_type?: string
+          store_id?: string | null
+          total_cost?: number
+          total_fees?: number
+          total_profit?: number
+          total_revenue?: number
+          total_taxes?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profit_analyses_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shopee_ads_by_product: {
         Row: {
           acos: number | null
