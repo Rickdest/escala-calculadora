@@ -23,6 +23,7 @@ const navItems = [
   { icon: Calculator, label: 'Calculadoras', path: '/calculadoras' },
   { icon: BarChart2, label: 'Ads', path: '/roas' },
   { icon: TrendingUp, label: 'Performance', path: '/performance' },
+  { icon: DollarSign, label: 'Lucro', path: '/lucro' },
   { icon: Store, label: 'Lojas', path: '/stores' },
   { icon: Plug, label: 'Integrações', path: '/configuracoes/integracoes' },
   { icon: UserCircle, label: 'Perfil', path: '/profile' },
