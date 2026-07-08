@@ -459,6 +459,19 @@ export default function ProfitAnalysis() {
                 />
               </div>
 
+              {/* Chart */}
+              {activeLines.length > 0 && (
+                <Card className="p-4 mb-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                    <p className="text-body font-medium">
+                      Vendas × Lucro {mode === 'per-sku' ? '(top 15 produtos)' : ''}
+                    </p>
+                  </div>
+                  <ProfitLineChart lines={activeLines} mode={mode!} />
+                </Card>
+              )}
+
               {/* Table */}
               <Card className="p-0 overflow-hidden">
                 <div className="overflow-x-auto">
