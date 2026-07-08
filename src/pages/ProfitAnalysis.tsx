@@ -302,18 +302,16 @@ export default function ProfitAnalysis() {
               {mode === 'timeline' ? (
                 <>
                   <Card className="p-4 mb-4">
-                    <div className="flex flex-col md:flex-row md:items-center gap-4">
-                      <div>
-                        <Label className="text-caption">Agrupar por</Label>
-                        <Tabs value={granularity} onValueChange={(v) => setGranularity(v as any)}>
-                          <TabsList>
-                            <TabsTrigger value="day">Dia</TabsTrigger>
-                            <TabsTrigger value="week">Semana</TabsTrigger>
-                            <TabsTrigger value="month">Mês</TabsTrigger>
-                          </TabsList>
-                        </Tabs>
-                      </div>
-                      <div className="ml-auto">
+                    <div className="flex flex-col md:flex-row md:items-end gap-4">
+                      <ProfitFilters
+                        granularity={granularity}
+                        onGranularityChange={setGranularity}
+                        preset={rangePreset}
+                        onPresetChange={setRangePreset}
+                        customRange={customRange}
+                        onCustomRangeChange={setCustomRange}
+                      />
+                      <div className="md:ml-auto">
                         <Button variant="outline" onClick={handleSave} disabled={saving}>
                           <Save className="mr-2 h-4 w-4" /> Salvar análise
                         </Button>
