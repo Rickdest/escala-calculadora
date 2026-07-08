@@ -17,6 +17,7 @@ export interface SavedProfitAnalysis {
   total_profit: number;
   margin_pct: number;
   raw_rows: any;
+  extra_costs?: any;
   created_at: string;
 }
 
