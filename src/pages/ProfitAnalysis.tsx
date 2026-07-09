@@ -77,6 +77,44 @@ export default function ProfitAnalysis() {
 
   const taxRate = getStoreTaxRate(currentStore?.config);
   const targetMargin = currentStore?.config?.desiredMargin ?? 15;
+  const hydratedRef = useRef(false);
+
+  // Rehydrate last import from localStorage on store change
+  useEffect(() => {
+    if (!currentStore) return;
+    hydratedRef.current = false;
+    try {
+      const raw = localStorage.getItem(LS_KEY(currentStore.id));
+      if (!raw) return;
+      const s = JSON.parse(raw);
+      if (s.mode === 'timeline') {
+        setDailyRows(s.dailyRows || []);
+        setCostLines(s.costLines || []);
+        setGranularity(s.granularity || 'day');
+      } else if (s.mode === 'per-sku') {
+        setProductRows(s.productRows || []);
+        setRowState(s.rowState || {});
+        setExtraCosts(s.extraCosts || { ads: 0, other: 0 });
+      }
+      setPeriod(s.period || { start: '', end: '' });
+      setMode(s.mode || null);
+    } catch { /* ignore */ }
+    finally { hydratedRef.current = true; }
+  }, [currentStore?.id]);
+
+  // Persist current state
+  useEffect(() => {
+    if (!currentStore || !hydratedRef.current || !mode) return;
+    const snapshot = {
+      mode, period, granularity,
+      dailyRows: mode === 'timeline' ? dailyRows : [],
+      costLines: mode === 'timeline' ? costLines : [],
+      productRows: mode === 'per-sku' ? productRows : [],
+      rowState: mode === 'per-sku' ? rowState : {},
+      extraCosts,
+    };
+    try { localStorage.setItem(LS_KEY(currentStore.id), JSON.stringify(snapshot)); } catch { /* quota */ }
+  }, [currentStore?.id, mode, period, granularity, dailyRows, costLines, productRows, rowState, extraCosts]);
 
   // Re-run matching when rows / savedLinks / products change (auto-mode rows only)
   useEffect(() => {
