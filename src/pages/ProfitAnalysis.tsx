@@ -320,7 +320,7 @@ export default function ProfitAnalysis() {
     } else {
       setProductRows(a.raw_rows.rows || []);
       setRowState(a.raw_rows.rowState || {});
-      setExtraCosts(a.extra_costs || { fees: 0, ads: 0, other: 0 });
+      setExtraCosts({ ads: a.extra_costs?.ads || 0, other: a.extra_costs?.other || 0 });
       setMode('per-sku');
     }
   };
