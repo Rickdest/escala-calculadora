@@ -67,7 +67,7 @@ export default function ProfitAnalysis() {
   const [dailyRows, setDailyRows] = useState<DailyOverviewRow[]>([]);
   const [productRows, setProductRows] = useState<ProductPerformanceRow[]>([]);
   const [rowState, setRowState] = useState<Record<string, RowState>>({});
-  const [extraCosts, setExtraCosts] = useState({ fees: 0, ads: 0, other: 0 });
+  const [extraCosts, setExtraCosts] = useState({ ads: 0, other: 0 });
   const [costLines, setCostLines] = useState<CostLine[]>([]);
   const [period, setPeriod] = useState<{ start: string; end: string }>({ start: '', end: '' });
   const [saving, setSaving] = useState(false);
