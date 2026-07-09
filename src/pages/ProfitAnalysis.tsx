@@ -244,7 +244,7 @@ export default function ProfitAnalysis() {
   const totals = useMemo(() => sumLines(activeLines), [activeLines]);
   const effectiveCostPct = totals.revenue > 0 ? (totals.cost / totals.revenue) * 100 : 0;
   const noCostCount = parentSkuLines.filter((l) => !l.hasCost).length;
-  const finalProfit = totals.revenue - totals.cost - extraCosts.fees - extraCosts.ads - extraCosts.other;
+  const finalProfit = totals.revenue - totals.cost - totals.fees - totals.taxes - extraCosts.ads - extraCosts.other;
   const finalMargin = totals.revenue > 0 ? (finalProfit / totals.revenue) * 100 : 0;
 
   const addCostLineFromProduct = (productId: string) => {
