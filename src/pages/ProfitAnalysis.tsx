@@ -469,7 +469,20 @@ export default function ProfitAnalysis() {
                         customRange={customRange}
                         onCustomRangeChange={setCustomRange}
                       />
-                      <div className="md:ml-auto">
+                      <div className="md:ml-auto flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => exportProfitReportCSV({
+                            storeName: currentStore.name,
+                            mode: 'timeline',
+                            period,
+                            lines: activeLines,
+                            totals,
+                          })}
+                          disabled={activeLines.length === 0}
+                        >
+                          <Download className="mr-2 h-4 w-4" /> Exportar
+                        </Button>
                         <Button variant="outline" onClick={handleSave} disabled={saving}>
                           <Save className="mr-2 h-4 w-4" /> Salvar análise
                         </Button>
