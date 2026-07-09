@@ -20,7 +20,10 @@ import { matchShopeeProduct, type MatchType } from '@/lib/profit/matchProduct';
 import { ProfitLineChart } from '@/components/profit/ProfitLineChart';
 import { ProfitFilters, RangePreset, DateRange } from '@/components/profit/ProfitFilters';
 import { ParentSkuProfitTable, type ParentSkuLine, type RowLinkMode } from '@/components/profit/ParentSkuProfitTable';
-import { Upload, FileSpreadsheet, DollarSign, Loader2, Save, Trash2, ExternalLink, Plus, Package, X, TrendingUp, AlertTriangle } from 'lucide-react';
+import { exportProfitReportCSV } from '@/lib/profit/exportProfitReport';
+import { Upload, FileSpreadsheet, DollarSign, Loader2, Save, Trash2, ExternalLink, Plus, Package, X, TrendingUp, AlertTriangle, Download, Info } from 'lucide-react';
+
+const LS_KEY = (storeId: string) => `profit-analysis:last:${storeId}`;
 
 type Mode = 'timeline' | 'per-sku' | null;
 
