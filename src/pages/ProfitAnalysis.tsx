@@ -555,28 +555,37 @@ export default function ProfitAnalysis() {
               ) : (
                 <>
                   <Card className="p-4 mb-4">
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
                       <div>
-                        <p className="text-body font-medium">Custos adicionais (informe manualmente)</p>
-                        <p className="text-caption text-text-3">
-                          Adicione taxas Shopee, gasto com anúncios e outros custos para calcular o lucro final.
+                        <p className="text-body font-medium">Custos adicionais</p>
+                        <p className="text-caption text-text-3 flex items-center gap-1">
+                          <Info className="h-3 w-3" /> As taxas Shopee são calculadas automaticamente pela regra da calculadora (por faixa de preço). Adicione apenas anúncios e outros custos.
                         </p>
                       </div>
-                      <Button variant="outline" onClick={handleSave} disabled={saving}>
-                        <Save className="mr-2 h-4 w-4" /> Salvar análise
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <label className="text-caption text-text-3">Taxas Shopee (R$)</label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={extraCosts.fees || ''}
-                          onChange={(e) => setExtraCosts((p) => ({ ...p, fees: parseFloat(e.target.value) || 0 }))}
-                          placeholder="0,00"
-                        />
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => exportProfitReportCSV({
+                            storeName: currentStore.name,
+                            mode: 'per-sku',
+                            period,
+                            lines: activeLines,
+                            totals,
+                            extras: { fees: 0, ads: extraCosts.ads, other: extraCosts.other },
+                            finalProfit,
+                            finalMargin,
+                          })}
+                          disabled={activeLines.length === 0}
+                        >
+                          <Download className="mr-2 h-4 w-4" /> Exportar
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={handleSave} disabled={saving}>
+                          <Save className="mr-2 h-4 w-4" /> Salvar análise
+                        </Button>
                       </div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="text-caption text-text-3">Anúncios (R$)</label>
                         <Input
@@ -617,11 +626,11 @@ export default function ProfitAnalysis() {
               {mode === 'per-sku' ? (
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
                   <SummaryCard label="Vendas pagas" value={fmtBRL(totals.revenue)} />
-                  <SummaryCard label="Unidades pagas" value={String(totals.units)} />
+                  <SummaryCard label="Unidades" value={String(totals.units)} />
                   <SummaryCard label="Custo produtos" value={fmtBRL(totals.cost)} sub={totals.revenue > 0 ? fmtPct(effectiveCostPct) : undefined} />
-                  <SummaryCard label="Taxas Shopee" value={fmtBRL(extraCosts.fees)} />
-                  <SummaryCard label="Anúncios" value={fmtBRL(extraCosts.ads)} />
-                  <SummaryCard label="Outros" value={fmtBRL(extraCosts.other)} />
+                  <SummaryCard label="Taxas Shopee" value={fmtBRL(totals.fees)} sub={totals.revenue > 0 ? `${fmtPct((totals.fees / totals.revenue) * 100)} · auto` : 'auto'} />
+                  <SummaryCard label="Impostos" value={fmtBRL(totals.taxes)} sub={fmtPct(taxRate)} />
+                  <SummaryCard label="Anúncios + Outros" value={fmtBRL(extraCosts.ads + extraCosts.other)} />
                   <SummaryCard
                     label="Lucro final"
                     value={fmtBRL(finalProfit)}
