@@ -1,107 +1,167 @@
-# Melhorias na Análise de Lucro — Parent SKU Detail
+# Área Lucro — separar por marketplace (Shopee e Mercado Livre)
 
 ## Objetivo
-Reescrever o fluxo do arquivo `parentskudetail` para (1) considerar só linhas do produto principal, (2) vincular automaticamente aos produtos cadastrados no app, (3) permitir vinculação manual / custo manual por linha, e (4) salvar as vinculações para reuso em importações futuras.
+Transformar a página `/lucro` em duas abas independentes — **Shopee** e **Mercado Livre** — com dados, cadastros e configurações totalmente separados. A aba Shopee continua exatamente como está hoje. A nova aba Mercado Livre replica o mesmo padrão visual e de fluxo, mas com regras, taxas e importador próprios do ML.
 
-Nada existente é removido — o parser atual do Shop Stats e a tela de análise continuam funcionando; apenas o modo "Parent SKU" ganha esse novo comportamento.
-
-## 1. Parser do parentskudetail
-Atualizar `src/lib/parsers/parseShopeeProductOverview.ts` (ou criar `parseShopeeParentSkuDetail.ts`) para ler a aba **"Produtos com Melhor Desempenho"**:
-
-- Filtrar apenas linhas em que `ID da Variação = "-"` (linha consolidada do produto principal).
-- Extrair por linha:
-  - `itemId` → `ID do Item`
-  - `productName` → `Produto`
-  - `parentSku` → `SKU Principle`
-  - `variationSku` → `SKU da Variação` (normalmente "-" no principal, guardado para o fallback de match)
-  - `revenue` → `Vendas (Pedido pago) (BRL)` (parser BR: `1.234,56`)
-  - `units` → `Unidades (Pedido pago)`
-- Ignorar linhas com `revenue = 0` e `units = 0`.
-
-## 2. Vinculação automática com produtos cadastrados
-Nova função `matchShopeeProduct(row, products)` em `src/lib/profit/matchProduct.ts`:
-
-Ordem de tentativa (retorna no primeiro match):
-1. Vinculação salva em `shopee_product_links` (ver seção 4).
-2. `itemId` = valor do campo `shopeeItemId` do produto.
-3. `parentSku` = SKU cadastrado (case-insensitive, trim).
-4. `variationSku` bate com o SKU do produto ou de uma variação.
-5. Nome do produto (normalização: minúsculas, sem acentos, similaridade ≥ 0.85 via Dice/Jaccard sobre tokens).
-
-Resultado: `{ productId, matchType: 'saved' | 'itemId' | 'sku' | 'variationSku' | 'name' | null }`.
-
-## 3. Nova tela "Lucro por Produto (Parent SKU)"
-Componente novo `src/components/profit/ParentSkuProfitTable.tsx` renderizado no `ProfitAnalysis.tsx` quando o arquivo detectado é Parent SKU Detail.
-
-Colunas por linha:
-- Produto Shopee (nome + ID do Item + SKU Principle)
-- Unidades pagas
-- Vendas pagas (R$)
-- **Vínculo**: badge de status + `Select` com produtos do cadastro + opção "Custo manual" + opção "Sem vínculo"
-- Custo unitário (input; readonly quando vier do cadastro, editável em modo manual)
-- Custo total = unidades × custo unitário
-- Lucro bruto = vendas − custo total
-- Margem % = lucro / vendas × 100
-
-Estados de linha (badges):
-- `Vinculado automaticamente` (verde) — match via itemId/SKU/variação/nome
-- `Vinculado manualmente` (azul) — usuário escolheu ou vínculo salvo anteriormente
-- `Custo manual` (roxo) — usuário optou por digitar
-- `Sem custo` (vermelho/amarelo) — sem vínculo e sem custo manual; bloqueia "finalizar cálculo"
-
-Ações por linha:
-- Trocar produto vinculado (Select com busca no catálogo da loja atual)
-- Alternar para "Custo manual" e digitar custo
-- Limpar vínculo
-
-## 4. Persistência das vinculações
-Nova tabela `shopee_product_links`:
+## Estrutura da página
 
 ```text
-id uuid pk
-user_id uuid
-store_id uuid
-shopee_item_id text        -- chave principal para match
-parent_sku text nullable
-variation_sku text nullable
-product_id uuid references products
-manual_unit_cost numeric nullable   -- quando o usuário optou por custo manual sem produto
-link_type text  -- 'product' | 'manual_cost'
-created_at, updated_at
-unique(user_id, store_id, shopee_item_id)
+/lucro
+├── Aba "Shopee"           (código atual intacto)
+└── Aba "Mercado Livre"    (novo)
+     ├── Resumo (cards)
+     ├── Importar relatório (XLSX)
+     ├── Produtos (tabela + edição rápida)
+     ├── Configuração de taxas
+     └── Histórico de importações
 ```
 
-Fluxo:
-- Ao vincular manualmente / trocar vínculo / definir custo manual → `upsert` em `shopee_product_links`.
-- Ao importar de novo, a etapa 1 do matcher busca por (`store_id`, `shopee_item_id`) e reaplica o vínculo (com custo atual do cadastro, não o antigo).
-- RLS: `auth.uid() = user_id`. GRANT para `authenticated` + `service_role`.
+`ProfitAnalysis.tsx` passa a renderizar apenas um `<Tabs>` no topo; todo o conteúdo Shopee atual é movido para `<ShopeeProfitTab />` sem mudar sua lógica. A nova aba ML renderiza `<MercadoLivreProfitTab />`.
 
-## 5. Resumo geral (topo da análise, modo Parent SKU)
-Card único com:
-- Vendas pagas totais (Σ vendas)
-- Unidades pagas totais (Σ unidades)
-- Custo total dos produtos (Σ custo total das linhas, ignora linhas sem custo)
-- **Inputs manuais**: Taxas Shopee, Anúncios, Outros custos (persistidos em `profit_analyses.extra_costs` — coluna JSON nova)
-- Lucro final = vendas totais − custo produtos − taxas − anúncios − outros
-- Margem final = lucro final / vendas totais × 100
-- Aviso quando houver linhas "Sem custo": "N produtos sem custo — o lucro pode estar superestimado."
+## 1. Importador do relatório ML
+Novo parser `src/lib/parsers/parseMercadoLivreReport.ts`:
+- Lê a aba **"Relatório"** do XLSX (usando `xlsx`).
+- Detecta a linha de cabeçalho procurando "ID do anúncio" + "Anúncio" + "SKU".
+- Normaliza colunas (ignora moeda entre parênteses): `Vendas brutas`, `Vendas brutas (BRL)`, `Vendas brutas (R$)`, etc. viram `vendasBrutas`.
+- Ignora linhas de título, vazias e totais.
+- Extrai por linha: `adId`, `title`, `status`, `variation`, `sku`, `uniqueVisits`, `salesCount`, `uniqueBuyers`, `unitsSold`, `grossSales`, `participationPct`, `conversionVisits`, `conversionBuyers`.
+- Chave de deduplicação: `sku` (prioritário) → `adId` (fallback).
+- Retorna `{ periodStart, periodEnd, rows[], fileHash }`.
 
-## 6. Integração no ProfitAnalysis.tsx
-- Detectar modo Parent SKU pelo parser e renderizar `ParentSkuProfitTable` no lugar da tabela genérica.
-- Manter cards de resumo, filtros de período/agrupamento e gráfico de linha (agora alimentados por `vendas × lucro por produto` agregado).
-- Salvar análise: gravar `raw_rows` (linhas do parser) + `product_links_snapshot` + `extra_costs` em `profit_analyses`.
+## 2. Cadastro de produtos ML (persistência)
+Novas tabelas:
+
+```text
+ml_products
+  id, user_id, store_id
+  ad_id (text), sku (text)
+  name, variation, status
+  ad_type ('classico' | 'premium' | null)
+  sale_price, cost_price, packaging_cost, additional_cost
+  freight_cost, freight_mode ('per_unit'|'per_sale'|'total_manual'|'none')
+  tax_value, tax_mode ('percent'|'fixed'|'default')
+  notes, linked_manually bool
+  created_at, updated_at
+  unique(user_id, store_id, coalesce(sku,''), coalesce(ad_id,''))
+
+ml_fee_config
+  id, user_id, store_id
+  classic_pct, premium_pct
+  fixed_fee_min_price
+  fixed_fee_tiers jsonb   -- [{min,max,fee}]
+  other_fees jsonb
+  effective_date, updated_at
+
+ml_import_history
+  id, user_id, store_id
+  file_name, file_hash
+  period_start, period_end
+  ads_count, linked_count, unlinked_count
+  raw_rows jsonb
+  created_at
+```
+
+Todas com GRANT para `authenticated` e `service_role`, RLS via `auth.uid() = user_id`, trigger `updated_at`.
+
+Regras:
+- Ao importar, faz **upsert por `(sku|ad_id)`** — mantém custos, tipo de anúncio, imposto e frete já salvos.
+- Vinculação: automática por SKU → por ad_id → manual.
+- Botão "Desvincular produto" apaga apenas o vínculo (custos ficam), histórico permanece.
+- Deduplicação de importação: (`file_hash` OU (`period_start`,`period_end`,`ads_count`,`grossSalesTotal`)) já existente → alerta "Relatório já importado".
+
+## 3. Taxas configuráveis (`Configuração de taxas do Mercado Livre`)
+Tela dentro da aba com:
+- Percentual Clássico / Premium.
+- Tarifa fixa mínima aplicável (valor mínimo do preço).
+- Faixas de tarifa fixa (`[{min, max, fee}]`, editáveis, adicionar/remover linhas).
+- Outras tarifas (livre).
+- Data de vigência.
+
+Defaults iniciais (baseados em `ML_CATEGORIES` já existente em `src/lib/mlUtils.ts`) apenas como sugestão — usuário edita e salva em `ml_fee_config`. Nada hardcoded no cálculo.
+
+## 4. Cálculo do lucro (novo `src/lib/profit/mercadoLivreCalc.ts`)
+Para cada produto:
+
+```text
+receita          = grossSales
+custoProdutos    = costPrice        * unitsSold
+custoEmbalagem   = packagingCost    * unitsSold
+custosAdicionais = additionalCost   * unitsSold
+comissao         = receita * (adType==='premium' ? premium_pct : classic_pct)
+tarifaFixaUnit   = faixa(fixed_fee_tiers, salePriceMedio)   // 1× por unidade do anúncio
+tarifaFixaTotal  = tarifaFixaUnit * unitsSold               // kits = 1× por unidade do anúncio, não por item interno
+imposto          = tax_mode==='percent' ? receita * tax/100
+                 : tax_mode==='fixed'   ? tax * unitsSold
+                 : default (config global)
+frete            = per_unit → freightCost * unitsSold
+                 | per_sale → freightCost * salesCount
+                 | total_manual → freightCost
+                 | none → 0
+lucro            = receita - custoProdutos - custoEmbalagem - custosAdicionais - comissao - tarifaFixaTotal - imposto - frete
+margem           = receita>0 ? lucro/receita*100 : 0
+lucroPorUnidade  = unitsSold>0 ? lucro/unitsSold : 0
+precoMedio       = unitsSold>0 ? receita/unitsSold : 0
+```
+
+Guards contra divisão por zero e valores negativos.
+
+## 5. UI da aba Mercado Livre
+Componentes novos em `src/components/profit/ml/`:
+- `MercadoLivreProfitTab.tsx` — orquestra sub-abas Resumo / Importar / Produtos / Taxas / Histórico.
+- `MLImportCard.tsx` — upload XLSX, mostra período detectado, resultado e histórico.
+- `MLProductTable.tsx` — tabela com todas as colunas descritas (Produto, SKU, ID, Status, Variação, Tipo, Vendas, Unidades, Vendas brutas, Preço médio, Custo unit., Custo total, Embalagem, Frete, Taxa %, Comissão, Tarifa fixa, Imposto, Outros, Lucro, Lucro/un., Margem, Situação). Edição inline dos campos indicados; campos importados são somente leitura.
+- `MLProductEditDrawer.tsx` — edição completa do cadastro (nome, SKU, ad_id, variação, status, tipo, preços, custos, frete, imposto, observações, vincular/desvincular, data de atualização). Botão "Salvar configurações do produto".
+- `MLFeeConfigCard.tsx` — CRUD de `ml_fee_config` incluindo faixas de tarifa fixa.
+- `MLSummaryCards.tsx` — cards do resumo com todos os totais listados no item 13.
+- `MLFilters.tsx` — período, produto, SKU, ID, status, tipo, lucro/prejuízo, configurado/não configurado, busca por nome.
+- `MLHistoryList.tsx` — lista de `ml_import_history` com "Re-visualizar".
+
+Indicadores visuais:
+- Lucro verde, prejuízo vermelho, cadastro incompleto amarelo, inativo cinza — sempre acompanhados de badge/ícone (não só cor).
+- "Situação do cadastro": Configurado / Custo não informado / Tipo não informado / Frete não configurado / Imposto não configurado / Produto não vinculado.
+
+## 6. Hooks e services
+Novos em `src/hooks/`:
+- `useMLProducts(storeId)` — CRUD upsert/list.
+- `useMLFeeConfig(storeId)` — get/save.
+- `useMLImportHistory(storeId)` — list/insert/get.
+
+Todos filtrados por `store_id` (memória Core de isolamento).
+
+## 7. Preservação da Shopee
+- Nada removido de `ProfitAnalysis.tsx`, `ParentSkuProfitTable`, `useProfitAnalysis`, `useShopeeProductLinks`, parsers Shopee, `profitAnalysis.ts`, export report, extra_costs.
+- Todo o conteúdo atual da página vira `<ShopeeProfitTab />` (mesmo arquivo movido, mesma lógica).
+- Regra de kits Shopee (taxa fixa 1× por unidade do anúncio) mantida.
+
+## 8. Validações
+Aviso por linha quando faltar: custo, tipo de anúncio, taxa configurada, imposto obrigatório, vínculo, unidades inválidas, receita negativa. Linha aparece na tabela com badge amarelo/vermelho — nunca assume campo vazio como zero silenciosamente.
+
+## Migração (executada em uma chamada)
+`create` de `ml_products`, `ml_fee_config`, `ml_import_history` + GRANTs + RLS + policies + triggers `updated_at`.
 
 ## Arquivos afetados
-- **Novo:** `src/lib/parsers/parseShopeeParentSkuDetail.ts`
-- **Novo:** `src/lib/profit/matchProduct.ts`
-- **Novo:** `src/components/profit/ParentSkuProfitTable.tsx`
-- **Novo:** `src/components/profit/ProductLinkSelect.tsx`
-- **Novo:** `src/hooks/useShopeeProductLinks.ts`
-- **Edit:** `src/pages/ProfitAnalysis.tsx` (roteia modo Parent SKU, adiciona campos de custos manuais)
-- **Edit:** `src/lib/profitAnalysis.ts` (helpers de totais/margem por linha)
-- **Migração:** cria `shopee_product_links` + coluna `extra_costs jsonb` em `profit_analyses`
+
+**Novos:**
+- `supabase/migrations/<ts>_ml_profit.sql`
+- `src/lib/parsers/parseMercadoLivreReport.ts`
+- `src/lib/profit/mercadoLivreCalc.ts`
+- `src/hooks/useMLProducts.ts`, `useMLFeeConfig.ts`, `useMLImportHistory.ts`
+- `src/components/profit/ml/MercadoLivreProfitTab.tsx`
+- `src/components/profit/ml/MLImportCard.tsx`
+- `src/components/profit/ml/MLProductTable.tsx`
+- `src/components/profit/ml/MLProductEditDrawer.tsx`
+- `src/components/profit/ml/MLFeeConfigCard.tsx`
+- `src/components/profit/ml/MLSummaryCards.tsx`
+- `src/components/profit/ml/MLFilters.tsx`
+- `src/components/profit/ml/MLHistoryList.tsx`
+- `src/components/profit/shopee/ShopeeProfitTab.tsx` (extrai conteúdo atual)
+
+**Editados:**
+- `src/pages/ProfitAnalysis.tsx` — reduz para `<Tabs>` Shopee/ML.
+- `.lovable/plan.md` — atualizado.
+- `src/integrations/supabase/types.ts` — auto após migração.
 
 ## Fora de escopo
-- Alterar o parser do Shop Stats (modo timeline continua igual).
-- Vincular por foto/EAN.
-- Editar cadastro de produtos a partir desta tela.
+- Integração via API do Mercado Livre (só importação de XLSX).
+- Compartilhar custo-base do produto entre Shopee e ML numa mesma entidade (cada marketplace mantém seu próprio cadastro nesta versão).
+- Alterações no cálculo, parser ou UI da Shopee.
