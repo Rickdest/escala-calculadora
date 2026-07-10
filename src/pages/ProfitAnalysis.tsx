@@ -22,6 +22,8 @@ import { ProfitFilters, RangePreset, DateRange } from '@/components/profit/Profi
 import { ParentSkuProfitTable, type ParentSkuLine, type RowLinkMode } from '@/components/profit/ParentSkuProfitTable';
 import { exportProfitReportCSV } from '@/lib/profit/exportProfitReport';
 import { Upload, FileSpreadsheet, DollarSign, Loader2, Save, Trash2, ExternalLink, Plus, Package, X, TrendingUp, AlertTriangle, Download, Info } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { MercadoLivreProfitTab } from '@/components/profit/ml/MercadoLivreProfitTab';
 
 const LS_KEY = (storeId: string) => `profit-analysis:last:${storeId}`;
 
@@ -419,13 +421,22 @@ export default function ProfitAnalysis() {
 
   return (
     <AppLayout>
-      <PageHeader title="Análise de Lucro" subtitle="Envie o relatório da Shopee, veja quanto sobrou depois das taxas." />
+      <PageHeader title="Análise de Lucro" subtitle="Separe seus resultados por marketplace." />
 
       {!currentStore && (
         <Card className="p-6 text-center text-text-3">Selecione uma loja para começar.</Card>
       )}
 
       {currentStore && (
+        <Tabs defaultValue="shopee" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="shopee">Shopee</TabsTrigger>
+            <TabsTrigger value="ml">Mercado Livre</TabsTrigger>
+          </TabsList>
+          <TabsContent value="ml">
+            <MercadoLivreProfitTab storeId={currentStore.id} defaultTaxPct={taxRate} />
+          </TabsContent>
+          <TabsContent value="shopee">
         <>
           <Card className="p-4 mb-4">
             <div className="flex flex-col md:flex-row md:items-center gap-3">
@@ -807,6 +818,8 @@ export default function ProfitAnalysis() {
             </Card>
           )}
         </>
+          </TabsContent>
+        </Tabs>
       )}
     </AppLayout>
   );

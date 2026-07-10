@@ -416,6 +416,168 @@ export type Database = {
         }
         Relationships: []
       }
+      ml_fee_config: {
+        Row: {
+          classic_pct: number
+          created_at: string
+          effective_date: string
+          fixed_fee_min_price: number
+          fixed_fee_tiers: Json
+          id: string
+          other_fees: Json
+          premium_pct: number
+          store_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          classic_pct?: number
+          created_at?: string
+          effective_date?: string
+          fixed_fee_min_price?: number
+          fixed_fee_tiers?: Json
+          id?: string
+          other_fees?: Json
+          premium_pct?: number
+          store_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          classic_pct?: number
+          created_at?: string
+          effective_date?: string
+          fixed_fee_min_price?: number
+          fixed_fee_tiers?: Json
+          id?: string
+          other_fees?: Json
+          premium_pct?: number
+          store_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ml_import_history: {
+        Row: {
+          ads_count: number
+          created_at: string
+          file_hash: string | null
+          file_name: string | null
+          gross_sales_total: number
+          id: string
+          linked_count: number
+          period_end: string | null
+          period_start: string | null
+          raw_rows: Json | null
+          store_id: string
+          unlinked_count: number
+          user_id: string
+        }
+        Insert: {
+          ads_count?: number
+          created_at?: string
+          file_hash?: string | null
+          file_name?: string | null
+          gross_sales_total?: number
+          id?: string
+          linked_count?: number
+          period_end?: string | null
+          period_start?: string | null
+          raw_rows?: Json | null
+          store_id: string
+          unlinked_count?: number
+          user_id: string
+        }
+        Update: {
+          ads_count?: number
+          created_at?: string
+          file_hash?: string | null
+          file_name?: string | null
+          gross_sales_total?: number
+          id?: string
+          linked_count?: number
+          period_end?: string | null
+          period_start?: string | null
+          raw_rows?: Json | null
+          store_id?: string
+          unlinked_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ml_products: {
+        Row: {
+          ad_id: string | null
+          ad_type: string | null
+          additional_cost: number | null
+          cost_price: number | null
+          created_at: string
+          freight_cost: number | null
+          freight_mode: string
+          id: string
+          linked_manually: boolean
+          name: string | null
+          notes: string | null
+          packaging_cost: number | null
+          sale_price: number | null
+          sku: string | null
+          status: string | null
+          store_id: string
+          tax_mode: string
+          tax_value: number | null
+          updated_at: string
+          user_id: string
+          variation: string | null
+        }
+        Insert: {
+          ad_id?: string | null
+          ad_type?: string | null
+          additional_cost?: number | null
+          cost_price?: number | null
+          created_at?: string
+          freight_cost?: number | null
+          freight_mode?: string
+          id?: string
+          linked_manually?: boolean
+          name?: string | null
+          notes?: string | null
+          packaging_cost?: number | null
+          sale_price?: number | null
+          sku?: string | null
+          status?: string | null
+          store_id: string
+          tax_mode?: string
+          tax_value?: number | null
+          updated_at?: string
+          user_id: string
+          variation?: string | null
+        }
+        Update: {
+          ad_id?: string | null
+          ad_type?: string | null
+          additional_cost?: number | null
+          cost_price?: number | null
+          created_at?: string
+          freight_cost?: number | null
+          freight_mode?: string
+          id?: string
+          linked_manually?: boolean
+          name?: string | null
+          notes?: string | null
+          packaging_cost?: number | null
+          sale_price?: number | null
+          sku?: string | null
+          status?: string | null
+          store_id?: string
+          tax_mode?: string
+          tax_value?: number | null
+          updated_at?: string
+          user_id?: string
+          variation?: string | null
+        }
+        Relationships: []
+      }
       price_history: {
         Row: {
           cost_price: number
