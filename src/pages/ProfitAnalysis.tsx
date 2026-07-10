@@ -22,6 +22,8 @@ import { ProfitFilters, RangePreset, DateRange } from '@/components/profit/Profi
 import { ParentSkuProfitTable, type ParentSkuLine, type RowLinkMode } from '@/components/profit/ParentSkuProfitTable';
 import { exportProfitReportCSV } from '@/lib/profit/exportProfitReport';
 import { Upload, FileSpreadsheet, DollarSign, Loader2, Save, Trash2, ExternalLink, Plus, Package, X, TrendingUp, AlertTriangle, Download, Info } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { MercadoLivreProfitTab } from '@/components/profit/ml/MercadoLivreProfitTab';
 
 const LS_KEY = (storeId: string) => `profit-analysis:last:${storeId}`;
 
