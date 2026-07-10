@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { MLCard as Card } from './MLCard';
 import { Upload, Loader2, FileSpreadsheet } from 'lucide-react';
 import { toast } from 'sonner';
 import { parseMercadoLivreReport, MLReportParsed } from '@/lib/parsers/parseMercadoLivreReport';
