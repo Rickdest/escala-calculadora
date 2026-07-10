@@ -818,6 +818,8 @@ export default function ProfitAnalysis() {
             </Card>
           )}
         </>
+          </TabsContent>
+        </Tabs>
       )}
     </AppLayout>
   );
