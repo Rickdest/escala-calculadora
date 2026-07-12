@@ -7,6 +7,8 @@ import { AlertTriangle, Link2, PenLine, Search, X } from 'lucide-react';
 import type { ProductPerformanceRow } from '@/lib/parsers/parseProductPerformanceExcel';
 import type { Product } from '@/types/store';
 import type { MatchType } from '@/lib/profit/matchProduct';
+import { SortableTh } from './SortableTh';
+import { useTableSort } from './useTableSort';
 
 export type RowLinkMode = 'auto' | 'manual-product' | 'manual-cost' | 'none';
 
@@ -46,19 +48,23 @@ function StatusBadge({ line }: { line: ParentSkuLine }) {
     return <Badge className="bg-purple-500/15 text-purple-300 hover:bg-purple-500/15 border-purple-500/30">Custo manual</Badge>;
   }
   if (line.linkMode === 'manual-product' || line.matchType === 'saved') {
-    return <Badge className="bg-blue-500/15 text-blue-300 hover:bg-blue-500/15 border-blue-500/30">Vinculado manualmente</Badge>;
+    return <Badge className="bg-blue-500/15 text-blue-300 hover:bg-blue-500/15 border-blue-500/30">Manual</Badge>;
   }
-  return <Badge className="bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/15 border-emerald-500/30">Vinculado auto</Badge>;
+  return <Badge className="bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/15 border-emerald-500/30">Auto</Badge>;
+}
+
+function stripeFor(line: ParentSkuLine, profit: number, margin: number): string {
+  if (!line.hasCost) return 'bg-red-500';
+  if (profit < 0) return 'bg-red-500';
+  if (margin >= 15) return 'bg-emerald-500';
+  if (margin >= 5) return 'bg-amber-500';
+  return 'bg-red-500';
 }
 
 function ProductPicker({
-  products,
-  onSelect,
-  currentId,
+  products, onSelect, currentId,
 }: {
-  products: Product[];
-  onSelect: (id: string) => void;
-  currentId: string | null;
+  products: Product[]; onSelect: (id: string) => void; currentId: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
@@ -72,9 +78,7 @@ function ProductPicker({
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="h-8 max-w-full">
           <Link2 className="h-3.5 w-3.5 mr-1" />
-          <span className="truncate max-w-[180px] text-left">
-            {current ? current.name : 'Vincular…'}
-          </span>
+          <span className="truncate max-w-[160px] text-left">{current ? current.name : 'Vincular…'}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-2" align="start">
@@ -87,11 +91,7 @@ function ProductPicker({
           {filtered.map((p) => (
             <button
               key={p.id}
-              onClick={() => {
-                onSelect(p.id);
-                setOpen(false);
-                setQ('');
-              }}
+              onClick={() => { onSelect(p.id); setOpen(false); setQ(''); }}
               className="w-full text-left p-2 rounded hover:bg-muted/50 flex justify-between items-center"
             >
               <span className="truncate flex-1 text-caption">{p.name}</span>
@@ -104,25 +104,47 @@ function ProductPicker({
   );
 }
 
+type Key = 'name' | 'units' | 'revenue' | 'unitCost' | 'totalCost' | 'profit' | 'margin';
+
 export function ParentSkuProfitTable({ lines, products, onLinkProduct, onSetManualCost, onClearLink }: Props) {
+  const { sort, toggle, sorted } = useTableSort<ParentSkuLine, Key>(lines, {
+    name: (l) => l.row.nome.toLowerCase(),
+    units: (l) => l.row.unidades_pagas,
+    revenue: (l) => l.row.vendas_pago,
+    unitCost: (l) => l.unitCost,
+    totalCost: (l) => l.row.unidades_pagas * l.unitCost,
+    profit: (l) => l.row.vendas_pago - l.row.unidades_pagas * l.unitCost,
+    margin: (l) => {
+      const p = l.row.vendas_pago - l.row.unidades_pagas * l.unitCost;
+      return l.row.vendas_pago > 0 ? (p / l.row.vendas_pago) * 100 : 0;
+    },
+  }, { key: 'revenue', dir: 'desc' });
+
+  const th = (key: Key, label: string, align: 'left' | 'right' = 'right', className = '') => (
+    <SortableTh active={sort.key === key} dir={sort.dir} onClick={() => toggle(key)} align={align} className={className}>
+      {label}
+    </SortableTh>
+  );
+
   return (
     <div className="overflow-x-auto rounded-xl border border-border bg-card">
       <table className="w-full text-caption">
         <thead className="bg-muted/40">
-          <tr className="text-left">
-            <th className="p-3">Produto (Shopee)</th>
-            <th className="p-3">Vínculo</th>
-            <th className="p-3 text-right w-24">Unidades</th>
-            <th className="p-3 text-right w-28">Vendas</th>
-            <th className="p-3 text-right w-32">Custo unit.</th>
-            <th className="p-3 text-right w-28">Custo total</th>
-            <th className="p-3 text-right w-28">Lucro</th>
-            <th className="p-3 text-right w-20">Margem</th>
+          <tr>
+            <th className="w-1 p-0" aria-hidden />
+            {th('name', 'Produto (Shopee)', 'left')}
+            <th className="p-3 text-left text-text-3">Vínculo</th>
+            {th('units', 'Unidades', 'right', 'w-24')}
+            {th('revenue', 'Vendas', 'right', 'w-28')}
+            {th('unitCost', 'Custo unit.', 'right', 'w-32')}
+            {th('totalCost', 'Custo total', 'right', 'w-28')}
+            {th('profit', 'Lucro', 'right', 'w-28')}
+            {th('margin', 'Margem', 'right', 'w-20')}
             <th className="p-3 w-8" />
           </tr>
         </thead>
         <tbody>
-          {lines.map((l) => {
+          {sorted.map((l) => {
             const totalCost = l.row.unidades_pagas * l.unitCost;
             const profit = l.row.vendas_pago - totalCost;
             const margin = l.row.vendas_pago > 0 ? (profit / l.row.vendas_pago) * 100 : 0;
@@ -130,13 +152,13 @@ export function ParentSkuProfitTable({ lines, products, onLinkProduct, onSetManu
             return (
               <tr
                 key={l.row.item_id}
-                className={`border-t border-border/50 ${noCost ? 'bg-red-500/5' : ''}`}
+                className={`border-t border-border/50 hover:bg-muted/20 transition-colors ${noCost ? 'bg-red-500/5' : ''}`}
               >
+                <td className={`w-1 p-0 ${stripeFor(l, profit, margin)}`} aria-hidden />
                 <td className="p-3 max-w-[320px]">
                   <div className="font-medium truncate">{l.row.nome}</div>
-                  <div className="text-text-3 text-[11px]">
-                    ID {l.row.item_id}
-                    {l.row.parent_sku && ` · SKU ${l.row.parent_sku}`}
+                  <div className="text-text-3 text-[11px] truncate">
+                    ID {l.row.item_id}{l.row.parent_sku && ` · SKU ${l.row.parent_sku}`}
                   </div>
                 </td>
                 <td className="p-3">
@@ -149,9 +171,7 @@ export function ParentSkuProfitTable({ lines, products, onLinkProduct, onSetManu
                         onSelect={(id) => onLinkProduct(l.row.item_id, id)}
                       />
                       <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-8"
+                        variant="outline" size="sm" className="h-8"
                         onClick={() => onSetManualCost(l.row.item_id, l.unitCost || 0)}
                         title="Usar custo manual"
                       >
@@ -161,16 +181,14 @@ export function ParentSkuProfitTable({ lines, products, onLinkProduct, onSetManu
                   </div>
                 </td>
                 <td className="p-3 text-right">{l.row.unidades_pagas}</td>
-                <td className="p-3 text-right">{fmtBRL(l.row.vendas_pago)}</td>
+                <td className="p-3 text-right font-medium">{fmtBRL(l.row.vendas_pago)}</td>
                 <td className="p-3 text-right">
                   <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
+                    type="number" step="0.01" min="0"
                     value={l.unitCost || ''}
                     readOnly={l.linkMode !== 'manual-cost'}
                     onChange={(e) => onSetManualCost(l.row.item_id, parseFloat(e.target.value) || 0)}
-                    className="h-8 text-right w-24 ml-auto"
+                    className={`h-8 text-right w-24 ml-auto ${noCost ? 'border-red-500/40' : ''}`}
                     placeholder="0,00"
                   />
                 </td>
@@ -191,9 +209,9 @@ export function ParentSkuProfitTable({ lines, products, onLinkProduct, onSetManu
               </tr>
             );
           })}
-          {lines.length === 0 && (
+          {sorted.length === 0 && (
             <tr>
-              <td colSpan={9} className="p-6 text-center text-text-3">Sem dados.</td>
+              <td colSpan={10} className="p-6 text-center text-text-3">Sem dados.</td>
             </tr>
           )}
         </tbody>

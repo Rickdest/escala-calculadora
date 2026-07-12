@@ -24,6 +24,9 @@ import { exportProfitReportCSV } from '@/lib/profit/exportProfitReport';
 import { Upload, FileSpreadsheet, DollarSign, Loader2, Save, Trash2, ExternalLink, Plus, Package, X, TrendingUp, AlertTriangle, Download, Info } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { MercadoLivreProfitTab } from '@/components/profit/ml/MercadoLivreProfitTab';
+import { SortableTh } from '@/components/profit/SortableTh';
+import { useTableSort } from '@/components/profit/useTableSort';
+
 
 const LS_KEY = (storeId: string) => `profit-analysis:last:${storeId}`;
 
@@ -686,13 +689,11 @@ export default function ProfitAnalysis() {
 
               {/* Summary */}
               {mode === 'per-sku' ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
-                  <SummaryCard label="Vendas pagas" value={fmtBRL(totals.revenue)} />
-                  <SummaryCard label="Unidades" value={String(totals.units)} />
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+                  <SummaryCard label="Vendas pagas" value={fmtBRL(totals.revenue)} sub={`${totals.units} un.`} />
                   <SummaryCard label="Custo produtos" value={fmtBRL(totals.cost)} sub={totals.revenue > 0 ? fmtPct(effectiveCostPct) : undefined} />
                   <SummaryCard label="Taxas Shopee" value={fmtBRL(totals.fees)} sub={totals.revenue > 0 ? `${fmtPct((totals.fees / totals.revenue) * 100)} · auto` : 'auto'} />
-                  <SummaryCard label="Impostos" value={fmtBRL(totals.taxes)} sub={fmtPct(taxRate)} />
-                  <SummaryCard label="Anúncios + Outros" value={fmtBRL(extraCosts.ads + extraCosts.other)} />
+                  <SummaryCard label="Imposto + Extras" value={fmtBRL(totals.taxes + extraCosts.ads + extraCosts.other)} sub={`Imp. ${fmtPct(taxRate)}`} />
                   <SummaryCard
                     label="Lucro final"
                     value={fmtBRL(finalProfit)}
@@ -738,47 +739,7 @@ export default function ProfitAnalysis() {
                   onClearLink={handleClearLink}
                 />
               ) : (
-                <Card className="p-0 overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-caption">
-                      <thead className="bg-muted/40">
-                        <tr className="text-left">
-                          <th className="p-3">Período</th>
-                          <th className="p-3 text-right">Unidades</th>
-                          <th className="p-3 text-right">Vendas</th>
-                          <th className="p-3 text-right">Custo total</th>
-                          <th className="p-3 text-right">Taxa Shopee</th>
-                          <th className="p-3 text-right">Impostos</th>
-                          <th className="p-3 text-right">Lucro</th>
-                          <th className="p-3 text-right">Margem</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {activeLines.map((l) => (
-                          <tr key={l.key} className="border-t border-border/50">
-                            <td className="p-3"><div className="font-medium">{l.label}</div></td>
-                            <td className="p-3 text-right">{l.units}</td>
-                            <td className="p-3 text-right">{fmtBRL(l.revenue)}</td>
-                            <td className="p-3 text-right">{fmtBRL(l.cost)}</td>
-                            <td className="p-3 text-right">{fmtBRL(l.fees)}</td>
-                            <td className="p-3 text-right">{fmtBRL(l.taxes)}</td>
-                            <td className={`p-3 text-right font-semibold ${l.profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                              {fmtBRL(l.profit)}
-                            </td>
-                            <td className={`p-3 text-right font-semibold ${marginColor(l.margin, targetMargin)}`}>
-                              {fmtPct(l.margin)}
-                            </td>
-                          </tr>
-                        ))}
-                        {activeLines.length === 0 && (
-                          <tr>
-                            <td colSpan={8} className="p-6 text-center text-text-3">Sem dados.</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </Card>
+                <TimelineTable lines={activeLines} targetMargin={targetMargin} />
               )}
             </>
           )}
@@ -833,6 +794,67 @@ function SummaryCard({ label, value, sub, valueClass }: { label: string; value: 
       </div>
       <div className={`text-h3 font-semibold mt-1 ${valueClass ?? ''}`}>{value}</div>
       {sub && <div className="text-caption text-text-3">{sub}</div>}
+    </Card>
+  );
+}
+
+type TLKey = 'label' | 'units' | 'revenue' | 'cost' | 'fees' | 'taxes' | 'profit' | 'margin';
+
+function TimelineTable({ lines, targetMargin }: { lines: ProfitLine[]; targetMargin: number }) {
+  const { sort, toggle, sorted } = useTableSort<ProfitLine, TLKey>(lines, {
+    label: (l) => l.label,
+    units: (l) => l.units,
+    revenue: (l) => l.revenue,
+    cost: (l) => l.cost,
+    fees: (l) => l.fees,
+    taxes: (l) => l.taxes,
+    profit: (l) => l.profit,
+    margin: (l) => l.margin,
+  });
+  const th = (key: TLKey, label: string, align: 'left' | 'right' = 'right') => (
+    <SortableTh active={sort.key === key} dir={sort.dir} onClick={() => toggle(key)} align={align}>
+      {label}
+    </SortableTh>
+  );
+  return (
+    <Card className="p-0 overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-caption">
+          <thead className="bg-muted/40">
+            <tr>
+              {th('label', 'Período', 'left')}
+              {th('units', 'Unidades')}
+              {th('revenue', 'Vendas')}
+              {th('cost', 'Custo total')}
+              {th('fees', 'Taxa Shopee')}
+              {th('taxes', 'Impostos')}
+              {th('profit', 'Lucro')}
+              {th('margin', 'Margem')}
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((l) => (
+              <tr key={l.key} className="border-t border-border/50 hover:bg-muted/20 transition-colors">
+                <td className="p-3"><div className="font-medium">{l.label}</div></td>
+                <td className="p-3 text-right">{l.units}</td>
+                <td className="p-3 text-right font-medium">{fmtBRL(l.revenue)}</td>
+                <td className="p-3 text-right">{fmtBRL(l.cost)}</td>
+                <td className="p-3 text-right">{fmtBRL(l.fees)}</td>
+                <td className="p-3 text-right">{fmtBRL(l.taxes)}</td>
+                <td className={`p-3 text-right font-semibold ${l.profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                  {fmtBRL(l.profit)}
+                </td>
+                <td className={`p-3 text-right font-semibold ${marginColor(l.margin, targetMargin)}`}>
+                  {fmtPct(l.margin)}
+                </td>
+              </tr>
+            ))}
+            {sorted.length === 0 && (
+              <tr><td colSpan={8} className="p-6 text-center text-text-3">Sem dados.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </Card>
   );
 }

@@ -1,11 +1,12 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
+import { Upload, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useMLProducts, MLProductRecord } from '@/hooks/useMLProducts';
 import { useMLFeeConfig } from '@/hooks/useMLFeeConfig';
 import { useMLImportHistory } from '@/hooks/useMLImportHistory';
 import { calcMercadoLivre, MLProductRow } from '@/lib/profit/mercadoLivreCalc';
-import { MLImportCard } from './MLImportCard';
 import { MLProductTable, MLRowView } from './MLProductTable';
 import { MLProductEditDrawer } from './MLProductEditDrawer';
 import { MLFeeConfigCard } from './MLFeeConfigCard';
@@ -13,7 +14,7 @@ import { MLSummaryCards } from './MLSummaryCards';
 import { MLFilters, DEFAULT_ML_FILTERS, MLTableFilters } from './MLFilters';
 import { MLHistoryList } from './MLHistoryList';
 import { MLCard } from './MLCard';
-import { MLReportRow } from '@/lib/parsers/parseMercadoLivreReport';
+import { MLReportRow, parseMercadoLivreReport, MLReportParsed } from '@/lib/parsers/parseMercadoLivreReport';
 
 const LS_KEY = (storeId: string) => `ml-profit:last:${storeId}`;
 
@@ -69,8 +70,9 @@ export function MercadoLivreProfitTab({ storeId, defaultTaxPct = 0 }: Props) {
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<MLProductRecord | null>(null);
   const [subTab, setSubTab] = useState('resumo');
+  const [importing, setImporting] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  // Restore last import per store
   useEffect(() => {
     if (!storeId) return;
     try {
@@ -119,7 +121,7 @@ export function MercadoLivreProfitTab({ storeId, defaultTaxPct = 0 }: Props) {
   }, [imported, products, feeConfig, defaultTaxPct]);
 
   const filteredRows = useMemo(() => {
-    return rows.filter((r) => {
+    const filtered = rows.filter((r) => {
       const q = filters.search.trim().toLowerCase();
       if (q) {
         const hay = `${r.imported.title} ${r.imported.sku} ${r.imported.adId}`.toLowerCase();
@@ -139,6 +141,18 @@ export function MercadoLivreProfitTab({ storeId, defaultTaxPct = 0 }: Props) {
       if (filters.configured === 'no' && configured) return false;
       return true;
     });
+    if (filters.sortBy === 'default') return filtered;
+    const acc: Record<string, (r: MLRowView) => number> = {
+      revenue: (r) => r.imported.grossSales,
+      profit: (r) => r.calc.profit,
+      margin: (r) => r.calc.margin,
+      units: (r) => r.imported.unitsSold,
+      cost: (r) => r.calc.productsCost,
+    };
+    const fn = acc[filters.sortBy];
+    if (!fn) return filtered;
+    const factor = filters.sortDir === 'asc' ? 1 : -1;
+    return [...filtered].sort((a, b) => (fn(a) - fn(b)) * factor);
   }, [rows, filters]);
 
   const totals = useMemo(() => {
@@ -166,8 +180,7 @@ export function MercadoLivreProfitTab({ storeId, defaultTaxPct = 0 }: Props) {
     return t;
   }, [filteredRows]);
 
-  const handleParsed = async (parsed: { rows: MLReportRow[]; periodStart: string | null; periodEnd: string | null; fileHash: string; grossSalesTotal: number }, file: File) => {
-    // Deduplication
+  const handleParsed = async (parsed: MLReportParsed, file: File) => {
     const dup = findDuplicate({
       file_hash: parsed.fileHash,
       period_start: parsed.periodStart,
@@ -176,12 +189,11 @@ export function MercadoLivreProfitTab({ storeId, defaultTaxPct = 0 }: Props) {
       gross_sales_total: parsed.grossSalesTotal,
     });
     if (dup) {
-      toast.warning('Relatório já importado anteriormente — não será contabilizado em dobro. Reexibindo dados.');
+      toast.warning('Relatório já importado anteriormente — reexibindo dados.');
     }
     setImported(parsed.rows);
     setPeriod({ start: parsed.periodStart, end: parsed.periodEnd });
 
-    // Upsert products (preserving saved config)
     let linked = 0, unlinked = 0;
     for (const imp of parsed.rows) {
       try {
@@ -211,6 +223,20 @@ export function MercadoLivreProfitTab({ storeId, defaultTaxPct = 0 }: Props) {
       });
     }
     setSubTab('produtos');
+  };
+
+  const handleFile = async (file: File) => {
+    setImporting(true);
+    try {
+      const parsed = await parseMercadoLivreReport(file);
+      await handleParsed(parsed, file);
+      toast.success('Relatório carregado', { description: `${parsed.rows.length} anúncios` });
+    } catch (e: any) {
+      toast.error('Falha ao importar', { description: e?.message || 'Arquivo inválido' });
+    } finally {
+      setImporting(false);
+      if (fileRef.current) fileRef.current.value = '';
+    }
   };
 
   const handleQuickPatch = async (row: MLRowView, patch: Partial<MLProductRecord>) => {
@@ -250,34 +276,60 @@ export function MercadoLivreProfitTab({ storeId, defaultTaxPct = 0 }: Props) {
     }
   };
 
+  const handleChip = (kind: 'loss' | 'unconfigured' | 'profit') => {
+    if (kind === 'loss') setFilters({ ...filters, outcome: 'loss' });
+    if (kind === 'profit') setFilters({ ...filters, outcome: 'profit' });
+    if (kind === 'unconfigured') setFilters({ ...filters, configured: 'no' });
+    setSubTab('produtos');
+  };
+
   return (
     <div className="space-y-4">
+      {/* Sticky action header */}
+      <div className="sticky top-0 z-20 -mx-1 px-1 pt-1 pb-3 bg-background/95 backdrop-blur border-b border-border/50">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-body font-medium">Mercado Livre</p>
+            <p className="text-caption text-text-3 truncate">
+              {imported.length > 0
+                ? `${imported.length} anúncios${period.start ? ` · ${period.start} → ${period.end}` : ''}`
+                : 'Importe um relatório para começar'}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+            />
+            <Button onClick={() => fileRef.current?.click()} disabled={importing} size="sm">
+              {importing ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Upload className="mr-2 h-4 w-4" />}
+              Importar relatório
+            </Button>
+          </div>
+        </div>
+      </div>
+
       <Tabs value={subTab} onValueChange={setSubTab}>
         <TabsList>
           <TabsTrigger value="resumo">Resumo</TabsTrigger>
-          <TabsTrigger value="importar">Importar</TabsTrigger>
           <TabsTrigger value="produtos">Produtos</TabsTrigger>
           <TabsTrigger value="taxas">Taxas</TabsTrigger>
           <TabsTrigger value="historico">Histórico</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="resumo" className="space-y-3">
-          {period.start && (
-            <p className="text-caption text-text-3">Período: {period.start} → {period.end}</p>
-          )}
-          <MLSummaryCards t={totals} />
+        <TabsContent value="resumo" className="space-y-3 mt-4">
+          <MLSummaryCards t={totals} onChipClick={handleChip} />
           {imported.length === 0 && (
-            <MLCard className="p-6 text-center text-text-3">
-              Nenhum relatório carregado. Vá em <strong>Importar</strong> para começar.
+            <MLCard className="p-8 text-center text-text-3">
+              Nenhum relatório carregado. Use <strong>Importar relatório</strong> no topo da página.
             </MLCard>
           )}
         </TabsContent>
 
-        <TabsContent value="importar">
-          <MLImportCard onParsed={handleParsed} />
-        </TabsContent>
-
-        <TabsContent value="produtos" className="space-y-3">
+        <TabsContent value="produtos" className="space-y-3 mt-4">
           <MLFilters value={filters} onChange={setFilters} />
           <MLProductTable
             rows={filteredRows}
@@ -287,11 +339,11 @@ export function MercadoLivreProfitTab({ storeId, defaultTaxPct = 0 }: Props) {
           />
         </TabsContent>
 
-        <TabsContent value="taxas">
+        <TabsContent value="taxas" className="mt-4">
           <MLFeeConfigCard storeId={storeId} />
         </TabsContent>
 
-        <TabsContent value="historico">
+        <TabsContent value="historico" className="mt-4">
           <MLHistoryList items={history} onView={handleViewHistory} onRemove={removeHistory} />
         </TabsContent>
       </Tabs>
