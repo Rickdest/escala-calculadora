@@ -26,7 +26,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { MercadoLivreProfitTab } from '@/components/profit/ml/MercadoLivreProfitTab';
 import { SortableTh } from '@/components/profit/SortableTh';
 import { useTableSort } from '@/components/profit/useTableSort';
-import type { ProfitLine } from '@/lib/profitAnalysis';
+
 
 const LS_KEY = (storeId: string) => `profit-analysis:last:${storeId}`;
 
