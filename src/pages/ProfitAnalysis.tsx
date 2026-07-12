@@ -739,47 +739,7 @@ export default function ProfitAnalysis() {
                   onClearLink={handleClearLink}
                 />
               ) : (
-                <Card className="p-0 overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-caption">
-                      <thead className="bg-muted/40">
-                        <tr className="text-left">
-                          <th className="p-3">Período</th>
-                          <th className="p-3 text-right">Unidades</th>
-                          <th className="p-3 text-right">Vendas</th>
-                          <th className="p-3 text-right">Custo total</th>
-                          <th className="p-3 text-right">Taxa Shopee</th>
-                          <th className="p-3 text-right">Impostos</th>
-                          <th className="p-3 text-right">Lucro</th>
-                          <th className="p-3 text-right">Margem</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {activeLines.map((l) => (
-                          <tr key={l.key} className="border-t border-border/50">
-                            <td className="p-3"><div className="font-medium">{l.label}</div></td>
-                            <td className="p-3 text-right">{l.units}</td>
-                            <td className="p-3 text-right">{fmtBRL(l.revenue)}</td>
-                            <td className="p-3 text-right">{fmtBRL(l.cost)}</td>
-                            <td className="p-3 text-right">{fmtBRL(l.fees)}</td>
-                            <td className="p-3 text-right">{fmtBRL(l.taxes)}</td>
-                            <td className={`p-3 text-right font-semibold ${l.profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                              {fmtBRL(l.profit)}
-                            </td>
-                            <td className={`p-3 text-right font-semibold ${marginColor(l.margin, targetMargin)}`}>
-                              {fmtPct(l.margin)}
-                            </td>
-                          </tr>
-                        ))}
-                        {activeLines.length === 0 && (
-                          <tr>
-                            <td colSpan={8} className="p-6 text-center text-text-3">Sem dados.</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </Card>
+                <TimelineTable lines={activeLines} targetMargin={targetMargin} />
               )}
             </>
           )}
