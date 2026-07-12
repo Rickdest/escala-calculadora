@@ -797,3 +797,64 @@ function SummaryCard({ label, value, sub, valueClass }: { label: string; value: 
     </Card>
   );
 }
+
+type TLKey = 'label' | 'units' | 'revenue' | 'cost' | 'fees' | 'taxes' | 'profit' | 'margin';
+
+function TimelineTable({ lines, targetMargin }: { lines: ProfitLine[]; targetMargin: number }) {
+  const { sort, toggle, sorted } = useTableSort<ProfitLine, TLKey>(lines, {
+    label: (l) => l.label,
+    units: (l) => l.units,
+    revenue: (l) => l.revenue,
+    cost: (l) => l.cost,
+    fees: (l) => l.fees,
+    taxes: (l) => l.taxes,
+    profit: (l) => l.profit,
+    margin: (l) => l.margin,
+  });
+  const th = (key: TLKey, label: string, align: 'left' | 'right' = 'right') => (
+    <SortableTh active={sort.key === key} dir={sort.dir} onClick={() => toggle(key)} align={align}>
+      {label}
+    </SortableTh>
+  );
+  return (
+    <Card className="p-0 overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-caption">
+          <thead className="bg-muted/40">
+            <tr>
+              {th('label', 'Período', 'left')}
+              {th('units', 'Unidades')}
+              {th('revenue', 'Vendas')}
+              {th('cost', 'Custo total')}
+              {th('fees', 'Taxa Shopee')}
+              {th('taxes', 'Impostos')}
+              {th('profit', 'Lucro')}
+              {th('margin', 'Margem')}
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((l) => (
+              <tr key={l.key} className="border-t border-border/50 hover:bg-muted/20 transition-colors">
+                <td className="p-3"><div className="font-medium">{l.label}</div></td>
+                <td className="p-3 text-right">{l.units}</td>
+                <td className="p-3 text-right font-medium">{fmtBRL(l.revenue)}</td>
+                <td className="p-3 text-right">{fmtBRL(l.cost)}</td>
+                <td className="p-3 text-right">{fmtBRL(l.fees)}</td>
+                <td className="p-3 text-right">{fmtBRL(l.taxes)}</td>
+                <td className={`p-3 text-right font-semibold ${l.profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                  {fmtBRL(l.profit)}
+                </td>
+                <td className={`p-3 text-right font-semibold ${marginColor(l.margin, targetMargin)}`}>
+                  {fmtPct(l.margin)}
+                </td>
+              </tr>
+            ))}
+            {sorted.length === 0 && (
+              <tr><td colSpan={8} className="p-6 text-center text-text-3">Sem dados.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </Card>
+  );
+}
