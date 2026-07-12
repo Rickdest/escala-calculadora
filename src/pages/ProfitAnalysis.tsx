@@ -689,13 +689,11 @@ export default function ProfitAnalysis() {
 
               {/* Summary */}
               {mode === 'per-sku' ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 mb-4">
-                  <SummaryCard label="Vendas pagas" value={fmtBRL(totals.revenue)} />
-                  <SummaryCard label="Unidades" value={String(totals.units)} />
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
+                  <SummaryCard label="Vendas pagas" value={fmtBRL(totals.revenue)} sub={`${totals.units} un.`} />
                   <SummaryCard label="Custo produtos" value={fmtBRL(totals.cost)} sub={totals.revenue > 0 ? fmtPct(effectiveCostPct) : undefined} />
                   <SummaryCard label="Taxas Shopee" value={fmtBRL(totals.fees)} sub={totals.revenue > 0 ? `${fmtPct((totals.fees / totals.revenue) * 100)} · auto` : 'auto'} />
-                  <SummaryCard label="Impostos" value={fmtBRL(totals.taxes)} sub={fmtPct(taxRate)} />
-                  <SummaryCard label="Anúncios + Outros" value={fmtBRL(extraCosts.ads + extraCosts.other)} />
+                  <SummaryCard label="Imposto + Extras" value={fmtBRL(totals.taxes + extraCosts.ads + extraCosts.other)} sub={`Imp. ${fmtPct(taxRate)}`} />
                   <SummaryCard
                     label="Lucro final"
                     value={fmtBRL(finalProfit)}
