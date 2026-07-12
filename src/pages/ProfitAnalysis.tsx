@@ -24,6 +24,9 @@ import { exportProfitReportCSV } from '@/lib/profit/exportProfitReport';
 import { Upload, FileSpreadsheet, DollarSign, Loader2, Save, Trash2, ExternalLink, Plus, Package, X, TrendingUp, AlertTriangle, Download, Info } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { MercadoLivreProfitTab } from '@/components/profit/ml/MercadoLivreProfitTab';
+import { SortableTh } from '@/components/profit/SortableTh';
+import { useTableSort } from '@/components/profit/useTableSort';
+import type { ProfitLine } from '@/lib/profitAnalysis';
 
 const LS_KEY = (storeId: string) => `profit-analysis:last:${storeId}`;
 
