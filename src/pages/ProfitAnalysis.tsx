@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { useStore } from '@/contexts/StoreContext';
 
 function Card({ className = '', children }: { className?: string; children: React.ReactNode }) {
-  return <div className={`rounded-xl border border-border bg-card ${className}`}>{children}</div>;
+  return <div className={`rounded-2xl border border-border bg-card shadow-sm ${className}`}>{children}</div>;
 }
 import { useProfitAnalyses } from '@/hooks/useProfitAnalysis';
 import { useShopeeProductLinks } from '@/hooks/useShopeeProductLinks';
@@ -21,11 +21,12 @@ import { ProfitLineChart } from '@/components/profit/ProfitLineChart';
 import { ProfitFilters, RangePreset, DateRange } from '@/components/profit/ProfitFilters';
 import { ParentSkuProfitTable, type ParentSkuLine, type RowLinkMode } from '@/components/profit/ParentSkuProfitTable';
 import { exportProfitReportCSV } from '@/lib/profit/exportProfitReport';
-import { Upload, FileSpreadsheet, DollarSign, Loader2, Save, Trash2, ExternalLink, Plus, Package, X, TrendingUp, AlertTriangle, Download, Info } from 'lucide-react';
+import { Upload, FileSpreadsheet, DollarSign, Loader2, Save, Trash2, ExternalLink, Plus, Package, X, TrendingUp, TrendingDown, AlertTriangle, Download, Info, ShoppingCart, Percent, Wallet } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { MercadoLivreProfitTab } from '@/components/profit/ml/MercadoLivreProfitTab';
 import { SortableTh } from '@/components/profit/SortableTh';
 import { useTableSort } from '@/components/profit/useTableSort';
+import { ProfitKpiCard } from '@/components/profit/ProfitKpiCard';
 
 
 const LS_KEY = (storeId: string) => `profit-analysis:last:${storeId}`;
