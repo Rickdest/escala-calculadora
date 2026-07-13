@@ -13,6 +13,7 @@ import { MLFeeConfigCard } from './MLFeeConfigCard';
 import { MLSummaryCards } from './MLSummaryCards';
 import { MLFilters, DEFAULT_ML_FILTERS, MLTableFilters } from './MLFilters';
 import { MLHistoryList } from './MLHistoryList';
+import { MLImportCard } from './MLImportCard';
 import { MLCard } from './MLCard';
 import { MLReportRow, parseMercadoLivreReport, MLReportParsed } from '@/lib/parsers/parseMercadoLivreReport';
 
@@ -283,17 +284,31 @@ export function MercadoLivreProfitTab({ storeId, defaultTaxPct = 0 }: Props) {
     setSubTab('produtos');
   };
 
+  const periodChip = period.start && period.end ? `${period.start} → ${period.end}` : null;
+
   return (
     <div className="space-y-4">
       {/* Sticky action header */}
-      <div className="sticky top-0 z-20 -mx-1 px-1 pt-1 pb-3 bg-background/95 backdrop-blur border-b border-border/50">
+      <div className="sticky top-0 z-20 -mx-1 px-1 pt-1 pb-3 bg-background/95 backdrop-blur-md border-b border-border/60">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-body font-medium">Mercado Livre</p>
-            <p className="text-caption text-text-3 truncate">
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-body font-semibold tracking-tight">Mercado Livre</p>
+              {periodChip && (
+                <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] font-medium text-text-2 tabular-nums">
+                  {periodChip}
+                </span>
+              )}
+              {imported.length > 0 && (
+                <span className="inline-flex items-center rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[10px] font-medium text-text-2 tabular-nums">
+                  {imported.length} anúncios
+                </span>
+              )}
+            </div>
+            <p className="text-caption text-text-3 truncate mt-0.5">
               {imported.length > 0
-                ? `${imported.length} anúncios${period.start ? ` · ${period.start} → ${period.end}` : ''}`
-                : 'Importe um relatório para começar'}
+                ? 'Custos, taxas e imposto aplicados automaticamente sobre o relatório.'
+                : 'Importe um relatório para começar.'}
             </p>
           </div>
           <div className="flex gap-2">
@@ -316,15 +331,18 @@ export function MercadoLivreProfitTab({ storeId, defaultTaxPct = 0 }: Props) {
         <TabsList>
           <TabsTrigger value="resumo">Resumo</TabsTrigger>
           <TabsTrigger value="produtos">Produtos</TabsTrigger>
+          <TabsTrigger value="importar">Importar</TabsTrigger>
           <TabsTrigger value="taxas">Taxas</TabsTrigger>
           <TabsTrigger value="historico">Histórico</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="resumo" className="space-y-3 mt-4">
+        <TabsContent value="resumo" className="space-y-4 mt-4">
           <MLSummaryCards t={totals} onChipClick={handleChip} />
           {imported.length === 0 && (
-            <MLCard className="p-8 text-center text-text-3">
-              Nenhum relatório carregado. Use <strong>Importar relatório</strong> no topo da página.
+            <MLCard className="p-10 text-center">
+              <Upload className="mx-auto w-10 h-10 text-text-3/30 mb-3" />
+              <p className="text-body font-medium">Nenhum relatório carregado</p>
+              <p className="text-caption text-text-3 mt-1">Vá para a aba <strong className="text-text-2">Importar</strong> ou use o botão no topo.</p>
             </MLCard>
           )}
         </TabsContent>
@@ -337,6 +355,10 @@ export function MercadoLivreProfitTab({ storeId, defaultTaxPct = 0 }: Props) {
             onQuickPatch={handleQuickPatch}
             onUnlink={async (r) => { if (r.product?.id) { await unlink(r.product.id); toast.success('Produto desvinculado'); } }}
           />
+        </TabsContent>
+
+        <TabsContent value="importar" className="mt-4">
+          <MLImportCard onParsed={handleParsed} />
         </TabsContent>
 
         <TabsContent value="taxas" className="mt-4">
