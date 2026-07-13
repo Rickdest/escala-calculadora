@@ -13,6 +13,7 @@ import { MLFeeConfigCard } from './MLFeeConfigCard';
 import { MLSummaryCards } from './MLSummaryCards';
 import { MLFilters, DEFAULT_ML_FILTERS, MLTableFilters } from './MLFilters';
 import { MLHistoryList } from './MLHistoryList';
+import { MLImportCard } from './MLImportCard';
 import { MLCard } from './MLCard';
 import { MLReportRow, parseMercadoLivreReport, MLReportParsed } from '@/lib/parsers/parseMercadoLivreReport';
 
