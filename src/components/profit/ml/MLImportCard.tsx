@@ -30,13 +30,15 @@ export function MLImportCard({ onParsed }: Props) {
   }
 
   return (
-    <Card className="p-4">
-      <div className="flex flex-col md:flex-row md:items-center gap-3">
-        <FileSpreadsheet className="h-5 w-5 text-primary hidden md:block" />
+    <Card className="p-6 md:p-8 relative overflow-hidden">
+      <FileSpreadsheet className="absolute -right-4 -bottom-4 w-32 h-32 text-primary/10" />
+      <div className="relative flex flex-col md:flex-row md:items-center gap-4">
         <div className="flex-1">
-          <p className="text-body font-medium">Enviar relatório do Mercado Livre (.xlsx)</p>
-          <p className="text-caption text-text-3">
-            Aba <span className="font-medium">Relatório</span>. Reconhece <span className="font-medium">Vendas brutas</span> em qualquer moeda (BRL, R$, ARS…).
+          <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground">Passo 1</p>
+          <p className="text-h3 font-semibold mt-1">Enviar relatório do Mercado Livre</p>
+          <p className="text-caption text-text-3 mt-1 max-w-xl">
+            Aba <span className="font-medium text-text-2">Relatório</span> (.xlsx). Reconhece
+            {' '}<span className="font-medium text-text-2">Vendas brutas</span> em BRL/R$/ARS.
             SKU é usado como identificador; ID do anúncio como fallback.
           </p>
         </div>
@@ -47,7 +49,7 @@ export function MLImportCard({ onParsed }: Props) {
           className="hidden"
           onChange={(e) => e.target.files?.[0] && handle(e.target.files[0])}
         />
-        <Button onClick={() => inputRef.current?.click()} disabled={loading}>
+        <Button onClick={() => inputRef.current?.click()} disabled={loading} size="lg">
           {loading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Upload className="mr-2 h-4 w-4" />}
           Enviar planilha
         </Button>
