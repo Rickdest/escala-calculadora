@@ -690,29 +690,46 @@ export default function ProfitAnalysis() {
 
               {/* Summary */}
               {mode === 'per-sku' ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
-                  <SummaryCard label="Vendas pagas" value={fmtBRL(totals.revenue)} sub={`${totals.units} un.`} />
-                  <SummaryCard label="Custo produtos" value={fmtBRL(totals.cost)} sub={totals.revenue > 0 ? fmtPct(effectiveCostPct) : undefined} />
-                  <SummaryCard label="Taxas Shopee" value={fmtBRL(totals.fees)} sub={totals.revenue > 0 ? `${fmtPct((totals.fees / totals.revenue) * 100)} · auto` : 'auto'} />
-                  <SummaryCard label="Imposto + Extras" value={fmtBRL(totals.taxes + extraCosts.ads + extraCosts.other)} sub={`Imp. ${fmtPct(taxRate)}`} />
-                  <SummaryCard
+                <>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-3 mb-3">
+                  <ProfitKpiCard icon={ShoppingCart} label="Vendas pagas" value={fmtBRL(totals.revenue)} sub={`${totals.units} un.`} />
+                  <ProfitKpiCard icon={Package} label="Custo produtos" value={fmtBRL(totals.cost)} sub={totals.revenue > 0 ? `${fmtPct(effectiveCostPct)} das vendas` : undefined} />
+                  <ProfitKpiCard icon={Percent} label="Taxas Shopee" value={fmtBRL(totals.fees)} sub={totals.revenue > 0 ? `${fmtPct((totals.fees / totals.revenue) * 100)} · auto` : 'auto'} />
+                  <ProfitKpiCard icon={Wallet} label="Imposto + Extras" value={fmtBRL(totals.taxes + extraCosts.ads + extraCosts.other)} sub={`Imp. ${fmtPct(taxRate)}`} />
+                  <ProfitKpiCard
+                    icon={finalProfit >= 0 ? TrendingUp : TrendingDown}
                     label="Lucro final"
                     value={fmtBRL(finalProfit)}
-                    sub={fmtPct(finalMargin)}
-                    valueClass={marginColor(finalMargin, targetMargin)}
+                    sub={`Margem ${fmtPct(finalMargin)}`}
+                    tone={finalProfit < 0 ? 'destructive' : finalMargin >= targetMargin ? 'success' : finalMargin >= targetMargin - 5 ? 'warning' : 'destructive'}
+                    bar={finalMargin <= 0 ? 0 : Math.min((finalMargin / 30) * 100, 100)}
                   />
                 </div>
+                <div className="flex flex-wrap gap-2 mb-4 text-caption">
+                  <StatusChip color="emerald" active={activeLines.filter((l) => l.profit > 0).length > 0}>
+                    {activeLines.filter((l) => l.profit > 0).length} com lucro
+                  </StatusChip>
+                  <StatusChip color="red" active={activeLines.filter((l) => l.profit < 0).length > 0}>
+                    {activeLines.filter((l) => l.profit < 0).length} com prejuízo
+                  </StatusChip>
+                  <StatusChip color="amber" active={noCostCount > 0}>
+                    {noCostCount} sem custo
+                  </StatusChip>
+                </div>
+                </>
               ) : (
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-                  <SummaryCard label="Vendas" value={fmtBRL(totals.revenue)} />
-                  <SummaryCard label="Taxas Shopee" value={fmtBRL(totals.fees)} sub={fmtPct(totals.revenue > 0 ? (totals.fees / totals.revenue) * 100 : 0)} />
-                  <SummaryCard label="Impostos" value={fmtBRL(totals.taxes)} sub={fmtPct(taxRate)} />
-                  <SummaryCard label="Custo produtos" value={fmtBRL(totals.cost)} sub={totals.revenue > 0 ? fmtPct(effectiveCostPct) : undefined} />
-                  <SummaryCard
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-3 mb-4">
+                  <ProfitKpiCard icon={ShoppingCart} label="Vendas" value={fmtBRL(totals.revenue)} sub={`${totals.units} un.`} />
+                  <ProfitKpiCard icon={Percent} label="Taxas Shopee" value={fmtBRL(totals.fees)} sub={fmtPct(totals.revenue > 0 ? (totals.fees / totals.revenue) * 100 : 0)} />
+                  <ProfitKpiCard icon={Wallet} label="Impostos" value={fmtBRL(totals.taxes)} sub={fmtPct(taxRate)} />
+                  <ProfitKpiCard icon={Package} label="Custo produtos" value={fmtBRL(totals.cost)} sub={totals.revenue > 0 ? fmtPct(effectiveCostPct) : undefined} />
+                  <ProfitKpiCard
+                    icon={totals.profit >= 0 ? TrendingUp : TrendingDown}
                     label="Lucro líquido"
                     value={fmtBRL(totals.profit)}
-                    sub={fmtPct(totals.margin)}
-                    valueClass={marginColor(totals.margin, targetMargin)}
+                    sub={`Margem ${fmtPct(totals.margin)}`}
+                    tone={totals.profit < 0 ? 'destructive' : totals.margin >= targetMargin ? 'success' : totals.margin >= targetMargin - 5 ? 'warning' : 'destructive'}
+                    bar={totals.margin <= 0 ? 0 : Math.min((totals.margin / 30) * 100, 100)}
                   />
                 </div>
               )}
