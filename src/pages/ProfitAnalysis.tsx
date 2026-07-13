@@ -804,15 +804,18 @@ export default function ProfitAnalysis() {
   );
 }
 
-function SummaryCard({ label, value, sub, valueClass }: { label: string; value: string; sub?: string; valueClass?: string }) {
+function StatusChip({
+  children, color, active,
+}: { children: React.ReactNode; color: 'emerald' | 'red' | 'amber'; active: boolean }) {
+  const activeCls =
+    color === 'emerald' ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+    : color === 'red' ? 'bg-red-500/15 text-red-400 border-red-500/30'
+    : 'bg-amber-500/15 text-amber-400 border-amber-500/30';
+  const idleCls = 'bg-muted/30 text-text-3 border-border/60';
   return (
-    <Card className="p-3">
-      <div className="flex items-center gap-2 text-caption text-text-3">
-        <DollarSign className="h-3 w-3" /> {label}
-      </div>
-      <div className={`text-h3 font-semibold mt-1 ${valueClass ?? ''}`}>{value}</div>
-      {sub && <div className="text-caption text-text-3">{sub}</div>}
-    </Card>
+    <span className={`px-3 py-1 rounded-full border font-medium ${active ? activeCls : idleCls}`}>
+      {children}
+    </span>
   );
 }
 
