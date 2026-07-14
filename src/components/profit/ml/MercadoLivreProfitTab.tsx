@@ -326,48 +326,35 @@ export function MercadoLivreProfitTab({ storeId, defaultTaxPct = 0 }: Props) {
         </div>
       </div>
 
-      <Tabs value={subTab} onValueChange={setSubTab}>
-        <TabsList>
-          <TabsTrigger value="resumo">Resumo</TabsTrigger>
-          <TabsTrigger value="produtos">Produtos</TabsTrigger>
-          <TabsTrigger value="importar">Importar</TabsTrigger>
-          <TabsTrigger value="taxas">Taxas</TabsTrigger>
-          <TabsTrigger value="historico">Histórico</TabsTrigger>
-        </TabsList>
+      {/* Resumo */}
+      <MLSummaryCards t={totals} onChipClick={handleChip} />
 
-        <TabsContent value="resumo" className="space-y-4 mt-4">
-          <MLSummaryCards t={totals} onChipClick={handleChip} />
-          {imported.length === 0 && (
-            <MLCard className="p-10 text-center">
-              <Upload className="mx-auto w-10 h-10 text-text-3/30 mb-3" />
-              <p className="text-body font-medium">Nenhum relatório carregado</p>
-              <p className="text-caption text-text-3 mt-1">Vá para a aba <strong className="text-text-2">Importar</strong> ou use o botão no topo.</p>
-            </MLCard>
-          )}
-        </TabsContent>
+      {imported.length === 0 ? (
+        <MLImportCard onParsed={handleParsed} />
+      ) : (
+        <>
+          {/* Produtos */}
+          <div className="space-y-3">
+            <MLFilters value={filters} onChange={setFilters} />
+            <MLProductTable
+              rows={filteredRows}
+              onEdit={(r) => { setEditing(r.product); setEditOpen(true); }}
+              onQuickPatch={handleQuickPatch}
+              onUnlink={async (r) => { if (r.product?.id) { await unlink(r.product.id); toast.success('Produto desvinculado'); } }}
+            />
+          </div>
 
-        <TabsContent value="produtos" className="space-y-3 mt-4">
-          <MLFilters value={filters} onChange={setFilters} />
-          <MLProductTable
-            rows={filteredRows}
-            onEdit={(r) => { setEditing(r.product); setEditOpen(true); }}
-            onQuickPatch={handleQuickPatch}
-            onUnlink={async (r) => { if (r.product?.id) { await unlink(r.product.id); toast.success('Produto desvinculado'); } }}
-          />
-        </TabsContent>
-
-        <TabsContent value="importar" className="mt-4">
+          {/* Importar novo relatório */}
           <MLImportCard onParsed={handleParsed} />
-        </TabsContent>
+        </>
+      )}
 
-        <TabsContent value="taxas" className="mt-4">
-          <MLFeeConfigCard storeId={storeId} />
-        </TabsContent>
+      {/* Configuração de taxas */}
+      <MLFeeConfigCard storeId={storeId} />
 
-        <TabsContent value="historico" className="mt-4">
-          <MLHistoryList items={history} onView={handleViewHistory} onRemove={removeHistory} />
-        </TabsContent>
-      </Tabs>
+      {/* Histórico */}
+      <MLHistoryList items={history} onView={handleViewHistory} onRemove={removeHistory} />
+
 
       <MLProductEditDrawer
         open={editOpen}
