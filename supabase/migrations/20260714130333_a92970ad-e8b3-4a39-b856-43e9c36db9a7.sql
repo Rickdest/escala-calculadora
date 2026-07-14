@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Public read banners bucket" ON storage.objects;
