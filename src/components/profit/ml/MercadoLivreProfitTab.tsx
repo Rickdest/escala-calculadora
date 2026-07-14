@@ -69,7 +69,6 @@ export function MercadoLivreProfitTab({ storeId, defaultTaxPct = 0 }: Props) {
   const [filters, setFilters] = useState<MLTableFilters>(DEFAULT_ML_FILTERS);
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<MLProductRecord | null>(null);
-  const [subTab, setSubTab] = useState('resumo');
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -222,7 +221,6 @@ export function MercadoLivreProfitTab({ storeId, defaultTaxPct = 0 }: Props) {
         raw_rows: parsed.rows,
       });
     }
-    setSubTab('produtos');
   };
 
   const handleFile = async (file: File) => {
@@ -272,7 +270,6 @@ export function MercadoLivreProfitTab({ storeId, defaultTaxPct = 0 }: Props) {
     if (Array.isArray(h.raw_rows)) {
       setImported(h.raw_rows);
       setPeriod({ start: h.period_start, end: h.period_end });
-      setSubTab('produtos');
     }
   };
 
@@ -280,7 +277,6 @@ export function MercadoLivreProfitTab({ storeId, defaultTaxPct = 0 }: Props) {
     if (kind === 'loss') setFilters({ ...filters, outcome: 'loss' });
     if (kind === 'profit') setFilters({ ...filters, outcome: 'profit' });
     if (kind === 'unconfigured') setFilters({ ...filters, configured: 'no' });
-    setSubTab('produtos');
   };
 
   const periodChip = period.start && period.end ? `${period.start} → ${period.end}` : null;
