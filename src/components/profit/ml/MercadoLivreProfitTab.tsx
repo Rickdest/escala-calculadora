@@ -1,5 +1,4 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Upload, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
