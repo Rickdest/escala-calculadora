@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Upload, Loader2 } from 'lucide-react';
+import { Upload, Loader2, Download } from 'lucide-react';
+import { exportMLProfitPDF } from '@/lib/profit/exportProfitPDF';
 import { toast } from 'sonner';
 import { useMLProducts, MLProductRecord } from '@/hooks/useMLProducts';
 import { useMLFeeConfig } from '@/hooks/useMLFeeConfig';
