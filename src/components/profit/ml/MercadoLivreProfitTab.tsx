@@ -351,6 +351,9 @@ export function MercadoLivreProfitTab({ storeId, storeName, defaultTaxPct = 0 }:
               className="hidden"
               onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
             />
+            <Button variant="outline" size="sm" onClick={handleExportPDF} disabled={filteredRows.length === 0}>
+              <Download className="mr-2 h-4 w-4" /> PDF
+            </Button>
             <Button onClick={() => fileRef.current?.click()} disabled={importing} size="sm">
               {importing ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Upload className="mr-2 h-4 w-4" />}
               Importar relatório
