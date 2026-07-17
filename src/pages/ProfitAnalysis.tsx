@@ -497,7 +497,20 @@ export default function ProfitAnalysis() {
                           })}
                           disabled={activeLines.length === 0}
                         >
-                          <Download className="mr-2 h-4 w-4" /> Exportar
+                          <Download className="mr-2 h-4 w-4" /> CSV
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => exportShopeeProfitPDF({
+                            storeName: currentStore.name,
+                            mode: 'timeline',
+                            period,
+                            lines: activeLines,
+                            totals,
+                          })}
+                          disabled={activeLines.length === 0}
+                        >
+                          <Download className="mr-2 h-4 w-4" /> PDF
                         </Button>
                         <Button variant="outline" onClick={handleSave} disabled={saving}>
                           <Save className="mr-2 h-4 w-4" /> Salvar análise
