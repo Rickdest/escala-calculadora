@@ -21,6 +21,7 @@ const LS_KEY = (storeId: string) => `ml-profit:last:${storeId}`;
 
 interface Props {
   storeId?: string;
+  storeName?: string;
   defaultTaxPct?: number;
 }
 
