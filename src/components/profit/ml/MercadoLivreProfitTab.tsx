@@ -283,6 +283,41 @@ export function MercadoLivreProfitTab({ storeId, storeName, defaultTaxPct = 0 }:
 
   const periodChip = period.start && period.end ? `${period.start} → ${period.end}` : null;
 
+  const handleExportPDF = async () => {
+    await exportMLProfitPDF({
+      storeName: storeName || 'Loja',
+      period,
+      rows: filteredRows.map((r) => ({
+        title: r.imported.title,
+        sku: r.imported.sku,
+        adId: r.imported.adId,
+        adType: r.product?.ad_type ?? null,
+        unitsSold: r.imported.unitsSold,
+        grossSales: r.imported.grossSales,
+        productsCost: r.calc.productsCost,
+        commission: r.calc.commission,
+        fixedFees: r.calc.fixedFeeTotal,
+        freight: r.calc.freight,
+        taxes: r.calc.taxes,
+        otherCosts: r.calc.otherCosts + r.calc.packagingTotal + r.calc.additionalTotal,
+        profit: r.calc.profit,
+        margin: r.calc.margin,
+      })),
+      totals: {
+        revenue: totals.revenue,
+        unitsSold: totals.unitsSold,
+        productsCost: totals.productsCost,
+        commission: totals.commission,
+        fixedFees: totals.fixedFees,
+        freight: totals.freight,
+        taxes: totals.taxes,
+        otherCosts: totals.otherCosts,
+        profit: totals.profit,
+        margin: totals.margin,
+      },
+    });
+  };
+
   return (
     <div className="space-y-4">
       {/* Sticky action header */}
