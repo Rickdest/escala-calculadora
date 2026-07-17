@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Upload, Loader2 } from 'lucide-react';
+import { Upload, Loader2, Download } from 'lucide-react';
+import { exportMLProfitPDF } from '@/lib/profit/exportProfitPDF';
 import { toast } from 'sonner';
 import { useMLProducts, MLProductRecord } from '@/hooks/useMLProducts';
 import { useMLFeeConfig } from '@/hooks/useMLFeeConfig';
@@ -20,6 +21,7 @@ const LS_KEY = (storeId: string) => `ml-profit:last:${storeId}`;
 
 interface Props {
   storeId?: string;
+  storeName?: string;
   defaultTaxPct?: number;
 }
 
@@ -59,7 +61,7 @@ function matchRecord(imp: MLReportRow, records: MLProductRecord[]): MLProductRec
   return null;
 }
 
-export function MercadoLivreProfitTab({ storeId, defaultTaxPct = 0 }: Props) {
+export function MercadoLivreProfitTab({ storeId, storeName, defaultTaxPct = 0 }: Props) {
   const { products, upsert, update, unlink } = useMLProducts(storeId);
   const { effective: feeConfig } = useMLFeeConfig(storeId);
   const { items: history, insert: insertHistory, findDuplicate, remove: removeHistory } = useMLImportHistory(storeId);
@@ -281,6 +283,41 @@ export function MercadoLivreProfitTab({ storeId, defaultTaxPct = 0 }: Props) {
 
   const periodChip = period.start && period.end ? `${period.start} → ${period.end}` : null;
 
+  const handleExportPDF = async () => {
+    await exportMLProfitPDF({
+      storeName: storeName || 'Loja',
+      period,
+      rows: filteredRows.map((r) => ({
+        title: r.imported.title,
+        sku: r.imported.sku,
+        adId: r.imported.adId,
+        adType: r.product?.ad_type ?? null,
+        unitsSold: r.imported.unitsSold,
+        grossSales: r.imported.grossSales,
+        productsCost: r.calc.productsCost,
+        commission: r.calc.commission,
+        fixedFees: r.calc.fixedFeeTotal,
+        freight: r.calc.freight,
+        taxes: r.calc.taxes,
+        otherCosts: r.calc.otherCosts + r.calc.packagingTotal + r.calc.additionalTotal,
+        profit: r.calc.profit,
+        margin: r.calc.margin,
+      })),
+      totals: {
+        revenue: totals.revenue,
+        unitsSold: totals.unitsSold,
+        productsCost: totals.productsCost,
+        commission: totals.commission,
+        fixedFees: totals.fixedFees,
+        freight: totals.freight,
+        taxes: totals.taxes,
+        otherCosts: totals.otherCosts,
+        profit: totals.profit,
+        margin: totals.margin,
+      },
+    });
+  };
+
   return (
     <div className="space-y-4">
       {/* Sticky action header */}
@@ -314,6 +351,9 @@ export function MercadoLivreProfitTab({ storeId, defaultTaxPct = 0 }: Props) {
               className="hidden"
               onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
             />
+            <Button variant="outline" size="sm" onClick={handleExportPDF} disabled={filteredRows.length === 0}>
+              <Download className="mr-2 h-4 w-4" /> PDF
+            </Button>
             <Button onClick={() => fileRef.current?.click()} disabled={importing} size="sm">
               {importing ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Upload className="mr-2 h-4 w-4" />}
               Importar relatório

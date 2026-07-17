@@ -21,6 +21,7 @@ import { ProfitLineChart } from '@/components/profit/ProfitLineChart';
 import { ProfitFilters, RangePreset, DateRange } from '@/components/profit/ProfitFilters';
 import { ParentSkuProfitTable, type ParentSkuLine, type RowLinkMode } from '@/components/profit/ParentSkuProfitTable';
 import { exportProfitReportCSV } from '@/lib/profit/exportProfitReport';
+import { exportShopeeProfitPDF } from '@/lib/profit/exportProfitPDF';
 import { Upload, FileSpreadsheet, DollarSign, Loader2, Save, Trash2, ExternalLink, Plus, Package, X, TrendingUp, TrendingDown, AlertTriangle, Download, Info, ShoppingCart, Percent, Wallet } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { MercadoLivreProfitTab } from '@/components/profit/ml/MercadoLivreProfitTab';
@@ -438,7 +439,7 @@ export default function ProfitAnalysis() {
             <TabsTrigger value="ml">Mercado Livre</TabsTrigger>
           </TabsList>
           <TabsContent value="ml">
-            <MercadoLivreProfitTab storeId={currentStore.id} defaultTaxPct={taxRate} />
+            <MercadoLivreProfitTab storeId={currentStore.id} storeName={currentStore.name} defaultTaxPct={taxRate} />
           </TabsContent>
           <TabsContent value="shopee">
         <>
@@ -496,7 +497,20 @@ export default function ProfitAnalysis() {
                           })}
                           disabled={activeLines.length === 0}
                         >
-                          <Download className="mr-2 h-4 w-4" /> Exportar
+                          <Download className="mr-2 h-4 w-4" /> CSV
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => exportShopeeProfitPDF({
+                            storeName: currentStore.name,
+                            mode: 'timeline',
+                            period,
+                            lines: activeLines,
+                            totals,
+                          })}
+                          disabled={activeLines.length === 0}
+                        >
+                          <Download className="mr-2 h-4 w-4" /> PDF
                         </Button>
                         <Button variant="outline" onClick={handleSave} disabled={saving}>
                           <Save className="mr-2 h-4 w-4" /> Salvar análise
@@ -644,7 +658,24 @@ export default function ProfitAnalysis() {
                           })}
                           disabled={activeLines.length === 0}
                         >
-                          <Download className="mr-2 h-4 w-4" /> Exportar
+                          <Download className="mr-2 h-4 w-4" /> CSV
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => exportShopeeProfitPDF({
+                            storeName: currentStore.name,
+                            mode: 'per-sku',
+                            period,
+                            lines: activeLines,
+                            totals,
+                            extras: { ads: extraCosts.ads, other: extraCosts.other },
+                            finalProfit,
+                            finalMargin,
+                          })}
+                          disabled={activeLines.length === 0}
+                        >
+                          <Download className="mr-2 h-4 w-4" /> PDF
                         </Button>
                         <Button variant="outline" size="sm" onClick={handleSave} disabled={saving}>
                           <Save className="mr-2 h-4 w-4" /> Salvar análise
