@@ -183,14 +183,17 @@ export function ParentSkuProfitTable({ lines, products, onLinkProduct, onSetManu
                 <td className="p-3 text-right">{l.row.unidades_pagas}</td>
                 <td className="p-3 text-right font-medium">{fmtBRL(l.row.vendas_pago)}</td>
                 <td className="p-3 text-right">
-                  <Input
-                    type="number" step="0.01" min="0"
-                    value={l.unitCost || ''}
-                    readOnly={l.linkMode !== 'manual-cost'}
-                    onChange={(e) => onSetManualCost(l.row.item_id, parseFloat(e.target.value) || 0)}
-                    className={`h-8 text-right w-24 ml-auto ${noCost ? 'border-red-500/40' : ''}`}
-                    placeholder="0,00"
-                  />
+                  <div className="flex items-center gap-1 justify-end">
+                    <Input
+                      type="number" step="0.01" min="0"
+                      value={l.unitCost || ''}
+                      onChange={(e) => onSetManualCost(l.row.item_id, parseFloat(e.target.value) || 0)}
+                      className={`h-8 text-right w-24 ${noCost ? 'border-red-500/40' : ''}`}
+                      placeholder="0,00"
+                      title="Editar custo unitário (salva como custo manual)"
+                    />
+                    <PenLine className="h-3.5 w-3.5 text-text-3" />
+                  </div>
                 </td>
                 <td className="p-3 text-right">{fmtBRL(totalCost)}</td>
                 <td className={`p-3 text-right font-semibold ${profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
