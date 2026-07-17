@@ -439,7 +439,7 @@ export default function ProfitAnalysis() {
             <TabsTrigger value="ml">Mercado Livre</TabsTrigger>
           </TabsList>
           <TabsContent value="ml">
-            <MercadoLivreProfitTab storeId={currentStore.id} defaultTaxPct={taxRate} />
+            <MercadoLivreProfitTab storeId={currentStore.id} storeName={currentStore.name} defaultTaxPct={taxRate} />
           </TabsContent>
           <TabsContent value="shopee">
         <>
