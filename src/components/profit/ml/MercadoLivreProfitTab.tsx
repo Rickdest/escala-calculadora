@@ -61,7 +61,7 @@ function matchRecord(imp: MLReportRow, records: MLProductRecord[]): MLProductRec
   return null;
 }
 
-export function MercadoLivreProfitTab({ storeId, defaultTaxPct = 0 }: Props) {
+export function MercadoLivreProfitTab({ storeId, storeName, defaultTaxPct = 0 }: Props) {
   const { products, upsert, update, unlink } = useMLProducts(storeId);
   const { effective: feeConfig } = useMLFeeConfig(storeId);
   const { items: history, insert: insertHistory, findDuplicate, remove: removeHistory } = useMLImportHistory(storeId);
