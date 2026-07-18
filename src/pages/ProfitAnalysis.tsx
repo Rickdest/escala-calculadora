@@ -799,11 +799,12 @@ export default function ProfitAnalysis() {
                 </>
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-3 mb-4">
-                  <ProfitKpiCard icon={ShoppingCart} label="Vendas" value={fmtBRL(totals.revenue)} sub={`${totals.units} un.`} />
-                  <ProfitKpiCard icon={Percent} label="Taxas Shopee" value={fmtBRL(totals.fees)} sub={fmtPct(totals.revenue > 0 ? (totals.fees / totals.revenue) * 100 : 0)} />
-                  <ProfitKpiCard icon={Wallet} label="Impostos" value={fmtBRL(totals.taxes)} sub={fmtPct(taxRate)} />
-                  <ProfitKpiCard icon={Package} label="Custo produtos" value={fmtBRL(totals.cost)} sub={totals.revenue > 0 ? fmtPct(effectiveCostPct) : undefined} />
+                  <ProfitKpiCard className="border-t-2 border-t-border" icon={ShoppingCart} label="Vendas" value={fmtBRL(totals.revenue)} sub={`${totals.units} un.`} />
+                  <ProfitKpiCard className="border-t-2 border-t-border" icon={Percent} label="Taxas Shopee" value={fmtBRL(totals.fees)} sub={fmtPct(totals.revenue > 0 ? (totals.fees / totals.revenue) * 100 : 0)} />
+                  <ProfitKpiCard className="border-t-2 border-t-border" icon={Wallet} label="Impostos" value={fmtBRL(totals.taxes)} sub={fmtPct(taxRate)} />
+                  <ProfitKpiCard className="border-t-2 border-t-border" icon={Package} label="Custo produtos" value={fmtBRL(totals.cost)} sub={totals.revenue > 0 ? fmtPct(effectiveCostPct) : undefined} />
                   <ProfitKpiCard
+                    className="border-t-2 border-t-primary ring-1 ring-primary/20"
                     icon={totals.profit >= 0 ? TrendingUp : TrendingDown}
                     label="Lucro líquido"
                     value={fmtBRL(totals.profit)}
