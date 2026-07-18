@@ -662,18 +662,65 @@ export default function ProfitAnalysis() {
                 </>
               ) : (
                 <>
-                  <Card className="p-4 mb-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
-                      <div>
-                        <p className="text-body font-medium">Custos adicionais</p>
-                        <p className="text-caption text-text-3 flex items-center gap-1">
-                          <Info className="h-3 w-3" /> As taxas Shopee são calculadas automaticamente pela regra da calculadora (por faixa de preço). Adicione apenas anúncios e outros custos.
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 mb-4">
+                    {/* Custos + Salvar */}
+                    <Card className="lg:col-span-8 p-5">
+                      <div className="mb-4">
+                        <p className="text-sm font-semibold">Custos adicionais</p>
+                        <p className="text-xs text-text-3 flex items-center gap-1 mt-1">
+                          <Info className="h-3 w-3 shrink-0" /> Taxas Shopee são calculadas automaticamente por faixa de preço. Informe apenas anúncios e outros custos.
                         </p>
+                      </div>
+                      <div className="flex flex-col sm:flex-row sm:items-end gap-3">
+                        <div className="flex-1 space-y-1.5">
+                          <label className="block text-[10px] uppercase tracking-wider text-text-3 font-bold">Anúncios (R$)</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm pointer-events-none">R$</span>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={extraCosts.ads || ''}
+                              onChange={(e) => setExtraCosts((p) => ({ ...p, ads: parseFloat(e.target.value) || 0 }))}
+                              placeholder="0,00"
+                              className="pl-10 h-11"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex-1 space-y-1.5">
+                          <label className="block text-[10px] uppercase tracking-wider text-text-3 font-bold">Outros custos (R$)</label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-3 text-sm pointer-events-none">R$</span>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={extraCosts.other || ''}
+                              onChange={(e) => setExtraCosts((p) => ({ ...p, other: parseFloat(e.target.value) || 0 }))}
+                              placeholder="0,00"
+                              className="pl-10 h-11"
+                            />
+                          </div>
+                        </div>
+                        <Button
+                          onClick={handleSave}
+                          disabled={saving}
+                          className="h-11 px-6 shadow-lg shadow-primary/10 font-bold"
+                        >
+                          {saving ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4" />}
+                          Salvar análise
+                        </Button>
+                      </div>
+                    </Card>
+
+                    {/* Export */}
+                    <Card className="lg:col-span-4 p-5 flex flex-col justify-between gap-3">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-wider text-text-3 font-bold">Exportar relatório</p>
+                        <p className="text-xs text-text-3 mt-1">Apresente ao cliente ou arquive.</p>
                       </div>
                       <div className="flex gap-2">
                         <Button
                           variant="outline"
-                          size="sm"
+                          className="flex-1 h-11"
                           onClick={() => exportProfitReportCSV({
                             storeName: currentStore.name,
                             mode: 'per-sku',
@@ -686,11 +733,11 @@ export default function ProfitAnalysis() {
                           })}
                           disabled={activeLines.length === 0}
                         >
-                          <Download className="mr-2 h-4 w-4" /> CSV
+                          <Download className="mr-2 h-4 w-4 text-emerald-500" /> CSV
                         </Button>
                         <Button
                           variant="outline"
-                          size="sm"
+                          className="flex-1 h-11"
                           onClick={() => exportShopeeProfitPDF({
                             storeName: currentStore.name,
                             mode: 'per-sku',
@@ -703,46 +750,19 @@ export default function ProfitAnalysis() {
                           })}
                           disabled={activeLines.length === 0}
                         >
-                          <Download className="mr-2 h-4 w-4" /> PDF
+                          <Download className="mr-2 h-4 w-4 text-red-500" /> PDF
                         </Button>
-                        <Button variant="outline" size="sm" onClick={handleSave} disabled={saving}>
-                          <Save className="mr-2 h-4 w-4" /> Salvar análise
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-caption text-text-3">Anúncios (R$)</label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={extraCosts.ads || ''}
-                          onChange={(e) => setExtraCosts((p) => ({ ...p, ads: parseFloat(e.target.value) || 0 }))}
-                          placeholder="0,00"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-caption text-text-3">Outros custos (R$)</label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={extraCosts.other || ''}
-                          onChange={(e) => setExtraCosts((p) => ({ ...p, other: parseFloat(e.target.value) || 0 }))}
-                          placeholder="0,00"
-                        />
-                      </div>
-                    </div>
-                  </Card>
-
-                  {noCostCount > 0 && (
-                    <Card className="p-3 mb-4 border-red-500/40 bg-red-500/5">
-                      <div className="flex items-center gap-2 text-red-400">
-                        <AlertTriangle className="h-4 w-4" />
-                        <p className="text-caption">
-                          {noCostCount} produto(s) sem custo — o lucro pode estar superestimado. Vincule ou informe o custo manual.
-                        </p>
                       </div>
                     </Card>
+                  </div>
+
+                  {noCostCount > 0 && (
+                    <div className="flex items-center gap-3 px-4 py-3 mb-4 rounded-lg border-l-4 border-red-500 bg-red-500/10 text-red-300 text-sm">
+                      <AlertTriangle className="h-5 w-5 shrink-0 text-red-500" />
+                      <p>
+                        Atenção: <span className="font-bold">{noCostCount} produto(s) sem custo</span> vinculados. Seu lucro final pode estar superestimado.
+                      </p>
+                    </div>
                   )}
                 </>
               )}
