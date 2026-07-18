@@ -443,31 +443,59 @@ export default function ProfitAnalysis() {
           </TabsContent>
           <TabsContent value="shopee">
         <>
-          <Card className="p-4 mb-4">
-            <div className="flex flex-col md:flex-row md:items-center gap-3">
-              <div className="flex-1">
-                <p className="text-body font-medium">Envie o relatório da Shopee</p>
-                <p className="text-caption text-text-3">
-                  Aceita <span className="font-medium">Product Overview</span>, <span className="font-medium">Informações Gerenciais</span> (Shop Stats) ou <span className="font-medium">Parent SKU Detail</span>. Detectamos automaticamente.
-                </p>
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".xlsx,.xls"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+          />
+          <Card className="p-5 mb-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                  <FileSpreadsheet className="w-6 h-6 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  {mode ? (
+                    <>
+                      <h2 className="text-sm font-medium text-text-3">
+                        Relatório detectado: <span className="text-foreground font-semibold">{mode === 'timeline' ? 'Shop Stats / Overview' : 'Parent SKU Detail'}</span>
+                      </h2>
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs text-text-3">
+                        {period.start && (
+                          <span className="inline-flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            {period.start} → {period.end}
+                          </span>
+                        )}
+                        <span className="inline-flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                          Modo: {mode === 'timeline' ? 'Loja no tempo' : 'Por produto'}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm font-semibold">Envie o relatório da Shopee</p>
+                      <p className="text-xs text-text-3 mt-1">
+                        Product Overview, Informações Gerenciais (Shop Stats) ou Parent SKU Detail — detectamos automaticamente.
+                      </p>
+                    </>
+                  )}
+                </div>
               </div>
-              <input
-                ref={fileRef}
-                type="file"
-                accept=".xlsx,.xls"
-                className="hidden"
-                onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
-              />
-              <Button onClick={() => fileRef.current?.click()} disabled={loading}>
+              <Button
+                onClick={() => fileRef.current?.click()}
+                disabled={loading}
+                variant={mode ? 'outline' : 'default'}
+                size="sm"
+                className="shrink-0"
+              >
                 {loading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Upload className="mr-2 h-4 w-4" />}
-                Enviar planilha
+                {mode ? 'Alterar planilha' : 'Enviar planilha'}
               </Button>
             </div>
-            {period.start && (
-              <p className="mt-2 text-caption text-text-3">
-                Período: {period.start} → {period.end} · Modo: {mode === 'timeline' ? 'Loja no tempo' : 'Por produto'}
-              </p>
-            )}
           </Card>
 
           {mode && (
