@@ -31,7 +31,7 @@ const fallbackSlides = [
     cta: 'Ver Análise →',
     emoji: '📊',
     link_destino: '/roas',
-    bgClass: 'bg-gradient-to-br from-blue-600 to-blue-500',
+    bgClass: 'bg-primary',
     textClass: 'text-white',
   },
   {

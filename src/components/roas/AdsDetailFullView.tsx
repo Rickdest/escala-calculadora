@@ -1599,7 +1599,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
               {ad.posicao_media !== null && posInfo ? (
                 <div className="rounded-2xl border border-border bg-card p-5 md:p-6 shadow-lg relative overflow-hidden">
                   {/* Gradient top border accent */}
-                  <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary via-purple-500 to-pink-500" />
+                  <div className="absolute top-0 left-0 right-0 h-[2px] bg-primary" />
                   
                   {/* Header row */}
                   <div className="flex items-center justify-between mb-5">
