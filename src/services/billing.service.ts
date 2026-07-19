@@ -11,7 +11,7 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY a
  * This is the ONLY source of truth for subscription status.
  *
  * We use native `fetch` instead of `supabase.functions.invoke` because the SDK
- * does NOT support query strings in the function name — appending `?_t=...`
+ * does NOT support query strings in the function name - appending `?_t=...`
  * caused the OPTIONS preflight to succeed but the POST to never reach the
  * server, leaving every active user stuck on the paywall.
  *
@@ -40,7 +40,7 @@ export async function checkSubscription(
       cache: noCache ? 'no-store' : 'default',
     });
   } catch (err) {
-    // Network error / abort — re-throw so the context can retry / fall back.
+    // Network error / abort - re-throw so the context can retry / fall back.
     throw err instanceof Error ? err : new Error(String(err));
   }
 

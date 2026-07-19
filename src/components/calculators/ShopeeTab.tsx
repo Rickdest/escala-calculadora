@@ -110,7 +110,7 @@ export function ShopeeTab() {
           <div className="rounded-[10px] bg-primary/5 border border-primary/20 p-3 flex items-start gap-2">
             <Info className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
             <p className="text-xs text-text-2">
-              Faixa aplicada: <span className="font-semibold text-foreground">{feeRange.label}</span> — {feeRange.percent}% + {fmt(feeRange.fixed)} fixo
+              Faixa aplicada: <span className="font-semibold text-foreground">{feeRange.label}</span> - {feeRange.percent}% + {fmt(feeRange.fixed)} fixo
             </p>
           </div>
         )}

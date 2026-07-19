@@ -55,7 +55,7 @@ export function useShopeeProducts() {
               shopee_synced_at: new Date().toISOString(),
               shopee_product_id: String(p.item_id),
               shopee_item_id: p.item_id,
-              // Snapshot do preço Shopee atual — usado para badge "preço customizado"
+              // Snapshot do preço Shopee atual - usado para badge "preço customizado"
               shopee_sale_price: p.price,
             };
             // Só sincroniza preço se o usuário ainda não customizou

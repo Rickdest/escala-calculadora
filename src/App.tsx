@@ -63,7 +63,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <PageLoader />;
   }
 
-  // No valid session — go to auth
+  // No valid session - go to auth
   if (!user || !session?.access_token) {
     return <Navigate to="/auth" replace />;
   }

@@ -161,7 +161,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
         <div className={cn('rounded-lg border border-dashed border-l-4 px-3 py-2 text-[11px] text-text-3 flex items-center gap-2', meta.border)}>
           <span className={cn('w-1.5 h-1.5 rounded-full', meta.dot)} />
           <span className={cn('font-bold text-[10px] uppercase tracking-wide', meta.accent)}>{meta.label}</span>
-          <span className="text-text-3">— preencha custo e venda para ver a margem</span>
+          <span className="text-text-3">- preencha custo e venda para ver a margem</span>
         </div>
       );
     }
@@ -266,7 +266,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
   return (
     <div className="fixed inset-0 z-[70] bg-black/60 backdrop-blur-sm animate-fade-up flex items-end md:items-center justify-center md:p-6">
       <div className="bg-surface w-full md:max-w-3xl h-[100dvh] md:h-auto md:max-h-[90vh] flex flex-col overflow-hidden border-t md:border md:border-border md:rounded-2xl md:shadow-2xl animate-slide-up">
-        {/* Header — sticky, com hierarquia */}
+        {/* Header - sticky, com hierarquia */}
         <div className="flex items-center gap-3 px-5 md:px-8 py-4 border-b border-border bg-surface/95 backdrop-blur-sm flex-shrink-0">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -296,7 +296,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             </div>
           )}
 
-          {/* Hero — Imagem + Nome (horizontal em desktop, vertical em mobile) */}
+          {/* Hero - Imagem + Nome (horizontal em desktop, vertical em mobile) */}
           <div className="surface-card p-4 md:p-5">
             <div className="flex flex-row md:items-start items-center gap-3 md:gap-5">
               <label className="cursor-pointer group flex-shrink-0">
@@ -327,7 +327,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             </div>
           </div>
 
-          {/* Card de Precificação — Custo + Venda + Embalagem agrupados */}
+          {/* Card de Precificação - Custo + Venda + Embalagem agrupados */}
           <div className="surface-card p-4 md:p-5 space-y-4">
             <div className="flex items-center gap-2">
               <span className="text-base">💰</span>
@@ -637,11 +637,11 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                         <div className="space-y-1">
                           <label className="section-label">Peso</label>
                           <select value={outrosCanais.shein.weightKg ?? 0.3} onChange={(e) => setOutrosCanais(prev => ({ ...prev, shein: { ...prev.shein!, weightKg: parseFloat(e.target.value) } }))} className="h-10 w-full bg-surface-2 border border-border rounded-lg text-xs px-2 text-foreground">
-                            <option value={0.3}>Até 300g — R$4</option>
-                            <option value={1}>300g–1kg — R$5</option>
-                            <option value={2}>1kg–2kg — R$5</option>
-                            <option value={5}>2kg–5kg — R$6</option>
-                            <option value={9}>5kg–9kg — R$7</option>
+                            <option value={0.3}>Até 300g - R$4</option>
+                            <option value={1}>300g-1kg - R$5</option>
+                            <option value={2}>1kg-2kg - R$5</option>
+                            <option value={5}>2kg-5kg - R$6</option>
+                            <option value={9}>5kg-9kg - R$7</option>
                           </select>
                         </div>
                         <div className="space-y-1">
@@ -860,7 +860,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
             </div>
           </div>
 
-          {/* Comparativo de canais — tempo real */}
+          {/* Comparativo de canais - tempo real */}
           {channelComparison && localCalc && (
             <div className="surface-card p-3.5 space-y-2.5">
               <div className="flex items-center gap-2">
@@ -869,7 +869,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                 <span className="text-[10px] text-text-3 ml-auto">Tempo real</span>
               </div>
               <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${channelComparison.results.length + 1}, minmax(0, 1fr))` }}>
-                {/* Shopee — sempre primeiro */}
+                {/* Shopee - sempre primeiro */}
                 <div className="px-2 py-3 text-center border border-border rounded-lg bg-background/50">
                   <p className="text-[8px] font-bold uppercase tracking-wide text-text-3 leading-tight mb-1">Shopee</p>
                   <p className={cn(

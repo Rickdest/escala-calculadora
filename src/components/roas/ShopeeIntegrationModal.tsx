@@ -60,7 +60,7 @@ function StatRow({ label, value }: { label: string; value: string | number | und
   return (
     <div className="flex justify-between items-center py-1 border-b border-border/50 last:border-0">
       <span className="text-muted-foreground text-xs">{label}</span>
-      <span className="font-medium text-foreground text-xs">{value ?? '—'}</span>
+      <span className="font-medium text-foreground text-xs">{value ?? '-'}</span>
     </div>
   );
 }
@@ -91,7 +91,7 @@ function getProductPriceAndStock(p: any, modelsMap?: Record<string, any[]>) {
     const stocks = models.reduce((sum: number, m: any) => {
       return sum + (m.stock_info_v2?.summary_info?.total_available_stock ?? m.stock_info?.total_available_stock ?? 0);
     }, 0);
-    let priceStr = '—';
+    let priceStr = '-';
     if (prices.length > 0) {
       const min = Math.min(...prices);
       const max = Math.max(...prices);
@@ -104,8 +104,8 @@ function getProductPriceAndStock(p: any, modelsMap?: Record<string, any[]>) {
   const price = rawPrice > 1000 ? rawPrice / 100000 : rawPrice;
   const stock = p.stock_info_v2?.summary_info?.total_available_stock;
   return {
-    price: price > 0 ? `R$ ${price.toFixed(2)}` : '—',
-    stock: stock ?? '—',
+    price: price > 0 ? `R$ ${price.toFixed(2)}` : '-',
+    stock: stock ?? '-',
     variants: 0,
   };
 }
@@ -133,7 +133,7 @@ function ProductListReport({ listData, detailsData, modelsMap }: { listData: any
                   <div className="flex gap-2 text-[10px] text-muted-foreground flex-wrap">
                     <span>Preço: {info.price}</span>
                     <span>Estoque: {info.stock}</span>
-                    <span>Vendas: {p.sale_info?.historical_sold ?? '—'}</span>
+                    <span>Vendas: {p.sale_info?.historical_sold ?? '-'}</span>
                     {info.variants > 0 && <span className="text-primary">({info.variants} variações)</span>}
                   </div>
                 </div>
@@ -204,13 +204,13 @@ function PerformanceReport({ data }: { data: SyncReport['order_performance'] }) 
         <div className="rounded-lg bg-surface-2 p-2.5 text-center">
           <p className="text-[10px] text-muted-foreground">Faturamento</p>
           <p className="text-lg font-bold text-foreground">
-            {summary.total_revenue > 0 ? `R$ ${summary.total_revenue.toFixed(0)}` : '—'}
+            {summary.total_revenue > 0 ? `R$ ${summary.total_revenue.toFixed(0)}` : '-'}
           </p>
         </div>
         <div className="rounded-lg bg-surface-2 p-2.5 text-center">
           <p className="text-[10px] text-muted-foreground">Ticket Médio</p>
           <p className="text-lg font-bold text-foreground">
-            {summary.avg_ticket > 0 ? `R$ ${summary.avg_ticket.toFixed(2)}` : '—'}
+            {summary.avg_ticket > 0 ? `R$ ${summary.avg_ticket.toFixed(2)}` : '-'}
           </p>
         </div>
       </div>
@@ -436,7 +436,7 @@ export function ShopeeIntegrationModal({ open, onClose }: { open: boolean; onClo
           />
           {sellerConnected && adsConnected && (
             <p className="text-[10px] text-emerald-600 text-center">
-              ✨ Ambos conectados — ROAS líquido real disponível em breve
+              ✨ Ambos conectados - ROAS líquido real disponível em breve
             </p>
           )}
           {(sellerConnected || adsConnected) && !(sellerConnected && adsConnected) && (

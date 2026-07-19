@@ -292,7 +292,7 @@ export function StockWizard({ onClose, editProduct }: Props) {
             }
           }
         } else {
-          // Simple product — update single variation
+          // Simple product - update single variation
           const singleVar = editProduct.variacoes[0];
           if (singleVar) {
             await updateVariacao(singleVar.id, {
@@ -636,7 +636,7 @@ export function StockWizard({ onClose, editProduct }: Props) {
                   </Button>
                 </div>
 
-                {/* Variation list — compact rows */}
+                {/* Variation list - compact rows */}
                 <div className="surface-card divide-y divide-border overflow-x-auto">
                   {/* Header */}
                   <div className="grid items-center gap-2 px-3 py-2 bg-surface-2 text-text-2" style={{ gridTemplateColumns: hasVar2 ? '1fr 1fr 80px 60px 60px' : '1fr 80px 60px 60px' }}>

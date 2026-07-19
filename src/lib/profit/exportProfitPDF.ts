@@ -95,8 +95,8 @@ export interface ShopeeProfitPDFParams {
 
 export async function exportShopeeProfitPDF(p: ShopeeProfitPDFParams) {
   const { doc, autoTable } = await newDoc();
-  const subtitle = `Loja ${p.storeName}  ·  Shopee  ·  ${p.period.start || '—'} → ${p.period.end || '—'}`;
-  drawHeader(doc, 'Relatório de Lucro — Shopee', subtitle);
+  const subtitle = `Loja ${p.storeName}  ·  Shopee  ·  ${p.period.start || '-'} → ${p.period.end || '-'}`;
+  drawHeader(doc, 'Relatório de Lucro - Shopee', subtitle);
 
   const finalP = p.finalProfit ?? p.totals.profit;
   const finalM = p.finalMargin ?? p.totals.margin;
@@ -191,8 +191,8 @@ export interface MLProfitPDFParams {
 
 export async function exportMLProfitPDF(p: MLProfitPDFParams) {
   const { doc, autoTable } = await newDoc();
-  const period = `${p.period.start || '—'} → ${p.period.end || '—'}`;
-  drawHeader(doc, 'Relatório de Lucro — Mercado Livre', `Loja ${p.storeName}  ·  ${period}`);
+  const period = `${p.period.start || '-'} → ${p.period.end || '-'}`;
+  drawHeader(doc, 'Relatório de Lucro - Mercado Livre', `Loja ${p.storeName}  ·  ${period}`);
 
   let y = 80;
   y = drawKpis(doc, y, [
@@ -213,7 +213,7 @@ export async function exportMLProfitPDF(p: MLProfitPDFParams) {
     head: [['Produto', 'Tipo', 'Un.', 'Vendas', 'Custo', 'Comissão', 'Frete', 'Impostos', 'Lucro', 'Margem']],
     body: p.rows.map((r) => [
       r.title,
-      r.adType === 'classico' ? 'Clássico' : r.adType === 'premium' ? 'Premium' : '—',
+      r.adType === 'classico' ? 'Clássico' : r.adType === 'premium' ? 'Premium' : '-',
       String(r.unitsSold),
       fmtBRL(r.grossSales),
       fmtBRL(r.productsCost),

@@ -69,7 +69,7 @@ export default function Paywall() {
             </strong>
           </h1>
           <p style={{ fontSize: '13px', lineHeight: '1.5' }} className="text-muted-foreground px-4">
-            Vendedores Shopee que usam o Skalify tomam decisões com dados — e crescem até 3x mais rápido.
+            Vendedores Shopee que usam o Skalify tomam decisões com dados - e crescem até 3x mais rápido.
           </p>
         </div>
 

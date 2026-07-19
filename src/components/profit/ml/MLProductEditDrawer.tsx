@@ -75,7 +75,7 @@ export function MLProductEditDrawer({ open, onClose, product, onSave, onUnlink }
           <Field label="Custo do produto (R$)"><Input type="number" step="0.01" value={form.cost_price ?? ''} onChange={(e) => set('cost_price', num(e.target.value))} /></Field>
           <Field label="Embalagem (R$)"><Input type="number" step="0.01" value={form.packaging_cost ?? ''} onChange={(e) => set('packaging_cost', num(e.target.value))} /></Field>
           <Field label="Custo adicional (R$)"><Input type="number" step="0.01" value={form.additional_cost ?? ''} onChange={(e) => set('additional_cost', num(e.target.value))} /></Field>
-          <Field label="Frete — modo">
+          <Field label="Frete - modo">
             <Select value={form.freight_mode ?? 'none'} onValueChange={(v) => set('freight_mode', v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -86,8 +86,8 @@ export function MLProductEditDrawer({ open, onClose, product, onSave, onUnlink }
               </SelectContent>
             </Select>
           </Field>
-          <Field label="Frete — valor (R$)"><Input type="number" step="0.01" value={form.freight_cost ?? ''} onChange={(e) => set('freight_cost', num(e.target.value))} /></Field>
-          <Field label="Imposto — modo">
+          <Field label="Frete - valor (R$)"><Input type="number" step="0.01" value={form.freight_cost ?? ''} onChange={(e) => set('freight_cost', num(e.target.value))} /></Field>
+          <Field label="Imposto - modo">
             <Select value={form.tax_mode ?? 'default'} onValueChange={(v) => set('tax_mode', v)}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -97,7 +97,7 @@ export function MLProductEditDrawer({ open, onClose, product, onSave, onUnlink }
               </SelectContent>
             </Select>
           </Field>
-          <Field label="Imposto — valor"><Input type="number" step="0.01" value={form.tax_value ?? ''} onChange={(e) => set('tax_value', num(e.target.value))} disabled={form.tax_mode === 'default'} /></Field>
+          <Field label="Imposto - valor"><Input type="number" step="0.01" value={form.tax_value ?? ''} onChange={(e) => set('tax_value', num(e.target.value))} disabled={form.tax_mode === 'default'} /></Field>
           <Field label="Observações" className="md:col-span-2">
             <Textarea value={form.notes ?? ''} onChange={(e) => set('notes', e.target.value)} rows={3} />
           </Field>

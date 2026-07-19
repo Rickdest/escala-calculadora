@@ -251,7 +251,7 @@ export default function Integracoes() {
           </div>
         )}
 
-        {/* ═══ ONBOARDING BANNER — only when nothing connected ═══ */}
+        {/* ═══ ONBOARDING BANNER - only when nothing connected ═══ */}
         {neitherConnected && (
           <div className="flex items-center gap-3 rounded-xl p-4 border"
             style={{
@@ -275,10 +275,10 @@ export default function Integracoes() {
           </div>
         )}
 
-        {/* ═══ CONNECT CARDS — when neither connected ═══ */}
+        {/* ═══ CONNECT CARDS - when neither connected ═══ */}
         {neitherConnected && (
           <div className="space-y-3">
-            {/* Seller Card — hidden when feature flag is off */}
+            {/* Seller Card - hidden when feature flag is off */}
             {FEATURES.SHOPEE_SELLER_API_READY && (
               <div className="bg-card border border-border rounded-xl p-5">
                 <div className="flex items-center gap-3 mb-3">
@@ -332,7 +332,7 @@ export default function Integracoes() {
           </div>
         )}
 
-        {/* ═══ SHOPEE SELLER CARD — when connected or when ads is connected but seller isn't ═══ */}
+        {/* ═══ SHOPEE SELLER CARD - when connected or when ads is connected but seller isn't ═══ */}
         {(sellerConnected || adsConnected) && (
           <div>
             <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2.5">
@@ -722,7 +722,7 @@ export default function Integracoes() {
             <div className="text-2xl mb-2 opacity-40">🏪</div>
             <p className="text-sm mb-1">Mercado Livre · Amazon · TikTok Shop</p>
             <p className="text-xs text-muted-foreground/60">
-              Em breve — acompanhe as novidades
+              Em breve - acompanhe as novidades
             </p>
           </div>
         </div>

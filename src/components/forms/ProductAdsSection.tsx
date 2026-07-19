@@ -99,7 +99,7 @@ export function ProductAdsSection({ productId, shopeeProductId }: ProductAdsSect
         return;
       }
 
-      // Performance CSV — original flow
+      // Performance CSV - original flow
       const parsed = detected.performanceData;
       if (!parsed || parsed.metrics.length === 0) { toast.error('CSV inválido'); return; }
       const m = parsed.metrics[0];
@@ -142,7 +142,7 @@ export function ProductAdsSection({ productId, shopeeProductId }: ProductAdsSect
 
   const periodLabel = metric ? (() => {
     const fmt = (d: string) => { const [y, m, dd] = d.split('-'); return `${dd}/${m}`; };
-    return `${fmt(metric.periodStart)}–${fmt(metric.periodEnd)}`;
+    return `${fmt(metric.periodStart)}-${fmt(metric.periodEnd)}`;
   })() : '';
 
   // Bid recommendation
@@ -150,10 +150,10 @@ export function ProductAdsSection({ productId, shopeeProductId }: ProductAdsSect
     const roas = metric.roas;
     const pos = metric.avgPosition;
     if (pos === null) return null;
-    if (roas >= 5 && pos > 10) return { icon: TrendingUp, color: 'text-success', text: 'Aumente o lance — ROAS comporta subir na busca' };
-    if (roas >= 5 && pos <= 10) return { icon: CheckCircle, color: 'text-success', text: 'Eficiente — mantenha ou escale' };
-    if (roas < 5 && roas >= 2 && pos <= 10) return { icon: AlertTriangle, color: 'text-warning', text: 'Reduza o lance — posição boa mas ROAS não compensa' };
-    if (roas < 2 && pos > 10) return { icon: XCircle, color: 'text-destructive', text: 'Revise o produto — ROAS e posição estão ruins' };
+    if (roas >= 5 && pos > 10) return { icon: TrendingUp, color: 'text-success', text: 'Aumente o lance - ROAS comporta subir na busca' };
+    if (roas >= 5 && pos <= 10) return { icon: CheckCircle, color: 'text-success', text: 'Eficiente - mantenha ou escale' };
+    if (roas < 5 && roas >= 2 && pos <= 10) return { icon: AlertTriangle, color: 'text-warning', text: 'Reduza o lance - posição boa mas ROAS não compensa' };
+    if (roas < 2 && pos > 10) return { icon: XCircle, color: 'text-destructive', text: 'Revise o produto - ROAS e posição estão ruins' };
     return null;
   })() : null;
 
@@ -182,7 +182,7 @@ export function ProductAdsSection({ productId, shopeeProductId }: ProductAdsSect
             {[
               { label: 'ROAS', value: metric.roas.toFixed(2), color: metric.roas >= 5 ? 'text-success' : metric.roas >= 2 ? 'text-warning' : 'text-destructive' },
               { label: 'ACOS', value: `${metric.acos.toFixed(1)}%`, color: metric.acos <= 20 ? 'text-success' : metric.acos <= 40 ? 'text-warning' : 'text-destructive' },
-              { label: 'POSIÇÃO', value: metric.avgPosition !== null ? `#${metric.avgPosition}` : '—', color: 'text-foreground' },
+              { label: 'POSIÇÃO', value: metric.avgPosition !== null ? `#${metric.avgPosition}` : '-', color: 'text-foreground' },
               { label: 'CTR', value: `${metric.ctr.toFixed(2)}%`, color: 'text-foreground' },
             ].map(({ label, value, color }) => (
               <div key={label}>
@@ -196,7 +196,7 @@ export function ProductAdsSection({ productId, shopeeProductId }: ProductAdsSect
             {[
               { label: 'ROI', value: `${metric.roi.toFixed(0)}%`, color: metric.roi > 100 ? 'text-success' : 'text-warning' },
               { label: 'RETORNO LÍQ.', value: formatCurrency(metric.liquidReturn), color: metric.liquidReturn >= 0 ? 'text-success' : 'text-destructive' },
-              { label: 'CUSTO/VENDA', value: metric.costPerSale > 0 ? formatCurrency(metric.costPerSale) : '—', color: 'text-foreground' },
+              { label: 'CUSTO/VENDA', value: metric.costPerSale > 0 ? formatCurrency(metric.costPerSale) : '-', color: 'text-foreground' },
             ].map(({ label, value, color }) => (
               <div key={label}>
                 <p className="section-label">{label}</p>

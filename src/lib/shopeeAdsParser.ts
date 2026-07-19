@@ -19,7 +19,7 @@ export function validateCSVSecurity(file: File, csvText: string): CSVValidationR
   if (logicalLines.length > 502) {
     return { valid: false, error: 'CSV com muitas linhas. Máximo 500 produtos.' };
   }
-  // 4. XSS check on raw content (no per-field length — operation logs have large quoted fields)
+  // 4. XSS check on raw content (no per-field length - operation logs have large quoted fields)
   if (/<script/i.test(csvText) || /javascript:/i.test(csvText)) {
     return { valid: false, error: 'Conteúdo suspeito detectado.' };
   }
@@ -138,7 +138,7 @@ function parseCSVLine(line: string): string[] {
 }
 
 function parsePeriod(periodStr: string): { start: string; end: string } {
-  const match = periodStr.match(/(\d{2}\/\d{2}\/\d{4})\s*[-–]\s*(\d{2}\/\d{2}\/\d{4})/);
+  const match = periodStr.match(/(\d{2}\/\d{2}\/\d{4})\s*[--]\s*(\d{2}\/\d{2}\/\d{4})/);
   if (match) {
     const [, s, e] = match;
     const toISO = (d: string) => {
@@ -598,7 +598,7 @@ function mergeMultiLineQuotedFields(rawLines: string[]): string[] {
     const cleanLine = line.replace(/\r$/, '');
     if (inQuote) {
       buffer += ' ' + cleanLine;
-      // Count quotes — if odd total, we closed the quote
+      // Count quotes - if odd total, we closed the quote
       const quoteCount = (cleanLine.match(/"/g) || []).length;
       if (quoteCount % 2 === 1) {
         inQuote = false;

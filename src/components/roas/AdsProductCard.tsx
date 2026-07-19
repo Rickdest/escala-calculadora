@@ -26,7 +26,7 @@ export function AdsProductCard({
 }) {
   const periodLabel = (() => {
     const f = (d: string) => { const parts = d.split('-'); return `${parts[2]}/${parts[1]}`; };
-    return `${f(ad.periodo_inicio)} – ${f(ad.periodo_fim)}`;
+    return `${f(ad.periodo_inicio)} - ${f(ad.periodo_fim)}`;
   })();
 
   const roasDireto = ad.roas_direto && ad.roas_direto > 0 ? ad.roas_direto : ad.roas;
@@ -137,7 +137,7 @@ export function AdsProductCard({
         <div className="grid grid-cols-3 gap-3 border-t border-border/40 pt-2.5">
           <div className="text-center">
             <p className={cn('font-mono text-lg font-extrabold leading-tight', hasPosition ? getPositionColor(ad.posicao_media!) : 'text-muted-foreground')}>
-              {hasPosition ? `#${ad.posicao_media}` : '—'}
+              {hasPosition ? `#${ad.posicao_media}` : '-'}
             </p>
             <p className="label-metric">POSIÇÃO</p>
           </div>
@@ -149,13 +149,13 @@ export function AdsProductCard({
           </div>
           <div className="text-center">
             <p className="font-mono text-lg font-extrabold leading-tight text-foreground">
-              {custoUn > 0 ? fmtShort(custoUn) : '—'}
+              {custoUn > 0 ? fmtShort(custoUn) : '-'}
             </p>
             <p className="label-metric">CUSTO/UN</p>
           </div>
         </div>
 
-        {/* ── ACTION: linked — "Ver Detalhes" or "Trocar" ── */}
+        {/* ── ACTION: linked - "Ver Detalhes" or "Trocar" ── */}
         {isLinked && (
           <div className="pt-1" onClick={e => e.stopPropagation()}>
             <Button
@@ -169,7 +169,7 @@ export function AdsProductCard({
           </div>
         )}
 
-        {/* ── ACTION: unlinked — ghost buttons ── */}
+        {/* ── ACTION: unlinked - ghost buttons ── */}
         {!isLinked && (
           <div className="pt-1" onClick={e => e.stopPropagation()}>
             <div className="grid grid-cols-2 gap-2">

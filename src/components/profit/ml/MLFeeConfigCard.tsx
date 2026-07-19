@@ -50,7 +50,7 @@ export function MLFeeConfigCard({ storeId }: { storeId?: string }) {
       <MLCard className="p-4 md:p-5 flex items-center justify-between">
         <div>
           <p className="text-h3 font-semibold">Taxas do Mercado Livre</p>
-          <p className="text-caption text-text-3 mt-0.5">Valores salvos por loja — atualize sempre que o ML mudar as regras.</p>
+          <p className="text-caption text-text-3 mt-0.5">Valores salvos por loja - atualize sempre que o ML mudar as regras.</p>
         </div>
         <Button size="sm" onClick={handleSave} disabled={saving}>
           <Save className="mr-2 h-4 w-4" /> Salvar

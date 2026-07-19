@@ -56,7 +56,7 @@ export default function Performance() {
   const hasAdsOnlyData = perfHook.data.length > 0 && perfHook.data.every(p => p.source === 'ads_api');
   const hasExcelEnriched = perfHook.data.some(p => p.source === 'excel');
 
-  // Build ads lookup by item_id — extended with direct_gmv, direct_orders, impressions, clicks
+  // Build ads lookup by item_id - extended with direct_gmv, direct_orders, impressions, clicks
   const adsLookup = useMemo(() => {
     if (!adsRows) return {};
     const map: Record<string, { expense: number; gmv: number; direct_gmv: number; roas: number; direct_roas: number; impressions: number; clicks: number; orders: number; direct_orders: number }> = {};
@@ -200,7 +200,7 @@ export default function Performance() {
 
             {/* EXCEL / ADS TAB */}
             <TabsContent value="excel" className="space-y-4 mt-4">
-              {/* KPI Cards — adaptive */}
+              {/* KPI Cards - adaptive */}
               {hasAdsOnlyData && !hasExcelEnriched ? (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <KpiCard icon={<TrendingUp className="w-5 h-5" />} iconColor="text-emerald-500" borderColor="border-t-emerald-500" label="GMV Ads" value={`R$ ${excelTotalAdsGmv.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`} sub={`${excelPeriodDays} dias`} />
@@ -211,7 +211,7 @@ export default function Performance() {
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <KpiCard icon={<TrendingUp className="w-5 h-5" />} iconColor="text-emerald-500" borderColor="border-t-emerald-500" label="Receita Total" value={`R$ ${excelTotalRevenue.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`} sub={`${excelPeriodDays} dias`} />
-                  <KpiCard icon={<Megaphone className="w-5 h-5" />} iconColor="text-primary" borderColor="border-t-primary" label="Receita Ads" value={`R$ ${excelTotalAdsGmv.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`} sub={excelTotalRevenue > 0 ? `${((excelTotalAdsGmv / excelTotalRevenue) * 100).toFixed(0)}% do total` : '—'} />
+                  <KpiCard icon={<Megaphone className="w-5 h-5" />} iconColor="text-primary" borderColor="border-t-primary" label="Receita Ads" value={`R$ ${excelTotalAdsGmv.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`} sub={excelTotalRevenue > 0 ? `${((excelTotalAdsGmv / excelTotalRevenue) * 100).toFixed(0)}% do total` : '-'} />
                   <KpiCard icon={<DollarSign className="w-5 h-5" />} iconColor="text-orange-500" borderColor="border-t-orange-500" label="Gasto Ads" value={`R$ ${excelTotalAdsGasto.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}`} sub={overallRoas > 0 ? `ROAS ${overallRoas.toFixed(1)}x` : 'investido'} />
                   <KpiCard icon={<BarChart3 className="w-5 h-5" />} iconColor="text-blue-500" borderColor="border-t-blue-500" label="Produtos" value={String(perfHook.data.length)} sub={`${perfHook.data.filter(p => p.ads_gasto && p.ads_gasto > 0).length} com Ads`} />
                 </div>
@@ -244,7 +244,7 @@ export default function Performance() {
                       </div>
                     </div>
                     <p className="text-[10px] text-muted-foreground max-w-[160px] leading-relaxed shrink-0 hidden lg:block">
-                      💡 {pctDireto >= 80 ? `${pctDireto.toFixed(0)}% das vendas via Ads foram diretas — excelente atribuição` : pctDireto >= 50 ? 'Atribuição moderada — parte das vendas vem de efeito halo' : 'Muita atribuição indireta — verifique campanhas'}
+                      💡 {pctDireto >= 80 ? `${pctDireto.toFixed(0)}% das vendas via Ads foram diretas - excelente atribuição` : pctDireto >= 50 ? 'Atribuição moderada - parte das vendas vem de efeito halo' : 'Muita atribuição indireta - verifique campanhas'}
                     </p>
                   </div>
                 </div>
@@ -302,7 +302,7 @@ export default function Performance() {
                                   <p className="text-[9px] text-muted-foreground">broad</p>
                                 </>
                               ) : (
-                                <span className="text-muted-foreground text-xs">—</span>
+                                <span className="text-muted-foreground text-xs">-</span>
                               )}
                             </td>
                             <td className="px-4 py-3 text-right">
@@ -313,7 +313,7 @@ export default function Performance() {
                               {(p.ads_roas || 0) > 0 ? (
                                 <span className="font-mono font-semibold text-emerald-500">{(p.ads_roas || 0).toFixed(1)}x</span>
                               ) : (
-                                <span className="text-muted-foreground text-xs">—</span>
+                                <span className="text-muted-foreground text-xs">-</span>
                               )}
                             </td>
                             <td className="px-4 py-3 text-center">
@@ -413,9 +413,9 @@ export default function Performance() {
       <>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <KpiCard icon={<ShoppingCart className="w-5 h-5" />} iconColor="text-primary" borderColor="border-t-primary" label="Pedidos" value={String(data.summary.total_orders)} sub="90 dias" />
-          <KpiCard icon={<TrendingUp className="w-5 h-5" />} iconColor="text-emerald-500" borderColor="border-t-emerald-500" label="Faturamento" value={totalRevenueAll > 0 ? `R$ ${totalRevenueAll.toFixed(0)}` : '—'} sub={totalRevenueAll > 0 ? `R$ ${(totalRevenueAll / 90).toFixed(0)}/dia` : ''} />
-          <KpiCard icon={<Package className="w-5 h-5" />} iconColor="text-blue-500" borderColor="border-t-blue-500" label="Ticket Médio" value={data.summary.avg_ticket > 0 ? `R$ ${data.summary.avg_ticket.toFixed(2)}` : '—'} sub="por pedido" />
-          <KpiCard icon={<BarChart3 className="w-5 h-5" />} iconColor="text-orange-500" borderColor="border-t-orange-500" label="Pedidos/dia" value={unDia > 0 ? unDia.toFixed(1) : '—'} sub="média" />
+          <KpiCard icon={<TrendingUp className="w-5 h-5" />} iconColor="text-emerald-500" borderColor="border-t-emerald-500" label="Faturamento" value={totalRevenueAll > 0 ? `R$ ${totalRevenueAll.toFixed(0)}` : '-'} sub={totalRevenueAll > 0 ? `R$ ${(totalRevenueAll / 90).toFixed(0)}/dia` : ''} />
+          <KpiCard icon={<Package className="w-5 h-5" />} iconColor="text-blue-500" borderColor="border-t-blue-500" label="Ticket Médio" value={data.summary.avg_ticket > 0 ? `R$ ${data.summary.avg_ticket.toFixed(2)}` : '-'} sub="por pedido" />
+          <KpiCard icon={<BarChart3 className="w-5 h-5" />} iconColor="text-orange-500" borderColor="border-t-orange-500" label="Pedidos/dia" value={unDia > 0 ? unDia.toFixed(1) : '-'} sub="média" />
         </div>
 
         {Object.keys(data.summary.status_counts).length > 0 && (

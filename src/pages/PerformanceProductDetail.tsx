@@ -199,11 +199,11 @@ export default function PerformanceProductDetail() {
           </div>
         )}
 
-        {/* GMV Broad vs Direto — HIGHLIGHT */}
+        {/* GMV Broad vs Direto - HIGHLIGHT */}
         {gmvBroad > 0 && gmvDireto > 0 && adsForProduct && (
           <div className="rounded-xl border border-border bg-card p-4 space-y-4">
             <div className="flex items-center gap-2">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">📊 GMV Ads — Amplo vs Direto</p>
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">📊 GMV Ads - Amplo vs Direto</p>
               <span className="text-[9px] text-muted-foreground">O que é atribuído aos seus anúncios</span>
             </div>
 
@@ -212,7 +212,7 @@ export default function PerformanceProductDetail() {
                 <p className="text-[9px] font-bold text-primary uppercase tracking-wide mb-1">🟠 GMV Amplo (Broad)</p>
                 <p className="text-2xl font-bold font-mono text-primary">{`R$ ${gmvBroad.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`}</p>
                 <p className="text-[10px] text-muted-foreground mt-1">ROAS Amplo: <strong className="text-emerald-500">{adsForProduct.roas.toFixed(1)}x</strong></p>
-                <p className="text-[9px] text-muted-foreground mt-2">Inclui conversões indiretas — clicou no ad mas comprou outro produto</p>
+                <p className="text-[9px] text-muted-foreground mt-2">Inclui conversões indiretas - clicou no ad mas comprou outro produto</p>
               </div>
               <div className="rounded-xl border border-border bg-muted/30 p-4">
                 <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-wide mb-1">🟢 GMV Direto</p>
@@ -243,7 +243,7 @@ export default function PerformanceProductDetail() {
             {/* Insight box */}
             <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-3 text-[10px] text-amber-600 dark:text-amber-400">
               {pctDireto >= 90
-                ? `✅ Ótima atribuição direta: ${pctDireto.toFixed(1)}% do GMV Amplo é direto — seus anúncios convertem quem clicou, sem depender de vendas indiretas.`
+                ? `✅ Ótima atribuição direta: ${pctDireto.toFixed(1)}% do GMV Amplo é direto - seus anúncios convertem quem clicou, sem depender de vendas indiretas.`
                 : pctDireto >= 60
                 ? `⚡ Atribuição moderada: ${pctDireto.toFixed(1)}% é direto. Parte do faturamento vem do efeito halo dos anúncios.`
                 : `⚠️ Muita atribuição indireta: apenas ${pctDireto.toFixed(1)}% é direto. Considere revisar segmentação de campanhas.`}
@@ -259,7 +259,7 @@ export default function PerformanceProductDetail() {
             {adsForProduct && (
               <>
                 <MetricBox label="CTR Ads" value={`${adsForProduct.ctr.toFixed(2)}%`} />
-                <MetricBox label="Custo/Pedido" value={adsForProduct.orders > 0 ? `R$ ${adsForProduct.cost_per_order.toFixed(2)}` : '—'} />
+                <MetricBox label="Custo/Pedido" value={adsForProduct.orders > 0 ? `R$ ${adsForProduct.cost_per_order.toFixed(2)}` : '-'} />
               </>
             )}
           </div>
@@ -329,14 +329,14 @@ export default function PerformanceProductDetail() {
                   <AdsMetric label="ROAS Amplo" value={`${adsForProduct.roas.toFixed(1)}x`} highlight={adsForProduct.roas >= 3} />
                   <AdsMetric label="ROAS Direto" value={`${adsForProduct.direct_roas.toFixed(1)}x`} highlight={adsForProduct.direct_roas >= 3} />
                   <AdsMetric label="CTR" value={`${adsForProduct.ctr.toFixed(2)}%`} />
-                  <AdsMetric label="Custo/Pedido" value={adsForProduct.orders > 0 ? `R$ ${adsForProduct.cost_per_order.toFixed(2)}` : '—'} />
+                  <AdsMetric label="Custo/Pedido" value={adsForProduct.orders > 0 ? `R$ ${adsForProduct.cost_per_order.toFixed(2)}` : '-'} />
                   <AdsMetric label="Impressões" value={adsForProduct.impressions.toLocaleString('pt-BR')} />
                   <AdsMetric label="Cliques" value={adsForProduct.clicks.toLocaleString('pt-BR')} />
                 </div>
                 {/* Orders Broad vs Direct */}
                 {adsForProduct.direct_orders > 0 && (
                   <div className="p-4 border-t border-border">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-3">Pedidos — Amplo vs Direto</p>
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-3">Pedidos - Amplo vs Direto</p>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className="text-xs text-muted-foreground">Pedidos Amplos</p>
@@ -415,7 +415,7 @@ export default function PerformanceProductDetail() {
                                 <Badge variant={kw.quality_score >= 8 ? 'default' : kw.quality_score >= 5 ? 'secondary' : 'destructive'} className="text-[10px]">
                                   {kw.quality_score}
                                 </Badge>
-                              ) : '—'}
+                              ) : '-'}
                             </td>
                           </tr>
                         ))}

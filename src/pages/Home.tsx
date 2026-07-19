@@ -180,7 +180,7 @@ export default function Home() {
       <PageHeader title="Skalify" />
 
       {/* ══════════════════════════════════════════════
-          MOBILE LAYOUT — identical to before
+          MOBILE LAYOUT - identical to before
           ══════════════════════════════════════════════ */}
       <div className="md:hidden page-container pt-3 pb-6 space-y-3">
         {/* Shopee connection status */}
@@ -312,10 +312,10 @@ export default function Home() {
       </div>
 
       {/* ══════════════════════════════════════════════
-          DESKTOP LAYOUT — redesigned
+          DESKTOP LAYOUT - redesigned
           ══════════════════════════════════════════════ */}
       <div className="hidden md:block page-container py-4">
-        {/* Shopee connection status — desktop */}
+        {/* Shopee connection status - desktop */}
         {shopeeConnected && (
           <button
             onClick={() => navigate('/configuracoes/integracoes')}
@@ -351,7 +351,7 @@ export default function Home() {
         {/* CTA banners */}
         {expiredCta && <div className="mb-2.5">{expiredCta}</div>}
 
-        {/* Single 2-column grid — hero+calc left, novidades+atalhos right */}
+        {/* Single 2-column grid - hero+calc left, novidades+atalhos right */}
         <div className="grid grid-cols-[1fr_320px] gap-2.5 items-start">
           {/* Left column */}
           <div className="space-y-2.5">
@@ -417,7 +417,7 @@ export default function Home() {
             {emptyState}
           </div>
 
-          {/* Right column — sticky sidebar */}
+          {/* Right column - sticky sidebar */}
           <div className="space-y-2.5 sticky top-4 self-start">
             {/* Card de Avisos */}
             <div className="rounded-2xl border border-border bg-card p-5 flex flex-col animate-fade-up">

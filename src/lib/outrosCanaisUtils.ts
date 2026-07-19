@@ -23,8 +23,8 @@ export interface ChannelResult {
 
 /**
  * Calcula margem e lucro para cada canal ativo em outrosCanais.
- * taxesPercent vem do StoreConfig.taxes da loja — mesmo imposto da Shopee.
- * Embalagem não entra — varia por canal e produto.
+ * taxesPercent vem do StoreConfig.taxes da loja - mesmo imposto da Shopee.
+ * Embalagem não entra - varia por canal e produto.
  */
 export function calcOutrosCanais(
   outrosCanais: OutrosCanais,

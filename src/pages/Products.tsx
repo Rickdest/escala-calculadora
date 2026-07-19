@@ -65,7 +65,7 @@ export default function Products() {
   const [trendOpen, setTrendOpen] = useState<boolean>(() => {
     if (typeof window === 'undefined') return true;
     const saved = window.localStorage.getItem('products-trend-open');
-    // Default to OPEN — only stay closed if user explicitly closed it before
+    // Default to OPEN - only stay closed if user explicitly closed it before
     return saved === null ? true : saved === '1';
   });
 
@@ -297,7 +297,7 @@ export default function Products() {
             </div>
           </div>
 
-          {/* Tabs grandes full-width — controle de navegação principal */}
+          {/* Tabs grandes full-width - controle de navegação principal */}
           <TabsList className="w-full grid grid-cols-2 h-11 rounded-lg bg-surface-2 border border-border p-1">
             <TabsTrigger
               value="products"
@@ -395,7 +395,7 @@ export default function Products() {
               <>
                 {/* Hero KPI tiles */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-                  {/* MARGEM — com mini-rodapé Best/Worst clicável */}
+                  {/* MARGEM - com mini-rodapé Best/Worst clicável */}
                   <div className="surface-card p-3 animate-fade-up flex flex-col min-h-[160px]">
                     <div className="flex items-center gap-1.5 mb-1">
                       <Percent className="w-4 h-4 text-primary" />
@@ -435,7 +435,7 @@ export default function Products() {
                     )}
                   </div>
 
-                  {/* LUCRO — sem barra fake; rodapé com contexto real */}
+                  {/* LUCRO - sem barra fake; rodapé com contexto real */}
                   <div className="surface-card p-3.5 animate-fade-up stagger-1 flex flex-col min-h-[160px]">
                     <div className="flex items-center gap-1.5 mb-1">
                       <DollarSign className={cn('w-4 h-4', stats.totalProfit >= 0 ? 'text-success' : 'text-destructive')} />
@@ -459,7 +459,7 @@ export default function Products() {
                     </div>
                   </div>
 
-                  {/* NA META — barra mais visível com gradient + contraste no rodapé */}
+                  {/* NA META - barra mais visível com gradient + contraste no rodapé */}
                   <div className="surface-card p-3.5 animate-fade-up stagger-2 flex flex-col min-h-[160px]">
                     <div className="flex items-center gap-1.5 mb-1">
                       <Target className="w-4 h-4 text-primary" />
@@ -485,7 +485,7 @@ export default function Products() {
                     </div>
                   </div>
 
-                  {/* SEM CUSTO — barra com proporção real (não full-width enganoso) */}
+                  {/* SEM CUSTO - barra com proporção real (não full-width enganoso) */}
                   <button
                     type="button"
                     onClick={() => missingCost > 0 && setSearchParams({ filter: 'sem-custo' })}
@@ -549,7 +549,7 @@ export default function Products() {
                   </div>
                 </div>
 
-                {/* Pesquisa de mercado — ferramenta SaaS profissional */}
+                {/* Pesquisa de mercado - ferramenta SaaS profissional */}
                 <div className="space-y-4">
                   <div className="flex items-end justify-between gap-2">
                     <div>

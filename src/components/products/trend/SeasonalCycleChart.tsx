@@ -34,7 +34,7 @@ export function SeasonalCycleChart({ cycle }: SeasonalCycleChartProps) {
       <div className="flex items-center justify-between mb-1">
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4 text-primary" />
-          <p className="section-label">Ciclo sazonal — média por mês</p>
+          <p className="section-label">Ciclo sazonal - média por mês</p>
         </div>
         <span className="text-micro text-muted-foreground">Histórico 5 anos</span>
       </div>

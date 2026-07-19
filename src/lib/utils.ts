@@ -45,6 +45,6 @@ export function getMarginStatus(margin: number): MarginStatus {
     color: 'text-success',
     bg: 'bg-success/15',
     border: 'border-success/40',
-    message: 'Meta atingida — hora de escalar',
+    message: 'Meta atingida - hora de escalar',
   };
 }

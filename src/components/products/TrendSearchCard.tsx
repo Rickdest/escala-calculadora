@@ -135,7 +135,7 @@ export interface TrendSearchCardProps {
   extraFooter?: React.ReactNode;
   /** Remove a borda externa e padding pra evitar duplicação visual quando aninhado em outro card/Collapsible */
   hideOuterBorder?: boolean;
-  /** Esconde o header interno (Sparkles + "Análise de demanda") — útil quando o trigger pai já tem título */
+  /** Esconde o header interno (Sparkles + "Análise de demanda") - útil quando o trigger pai já tem título */
   hideHeader?: boolean;
 }
 
@@ -284,7 +284,7 @@ export function TrendSearchCard({
     });
   }, [result]);
 
-  // Dados pra gráfico série única — sempre tem chave `real`; só anexa forecast quando 5y
+  // Dados pra gráfico série única - sempre tem chave `real`; só anexa forecast quando 5y
   const chartData = useMemo(() => {
     if (!result || result.googleSeries.length === 0) return null;
     const real = result.googleSeries.map((p) => ({
@@ -374,7 +374,7 @@ export function TrendSearchCard({
       {!collapsed && (
         <>
           {/* Search input */}
-          {/* Search input — oculto em modo embedded (termo gerenciado pela tela pai) */}
+          {/* Search input - oculto em modo embedded (termo gerenciado pela tela pai) */}
           {!isEmbedded && (
             <div className="flex gap-2">
               <div className="flex-1 relative">
@@ -525,7 +525,7 @@ export function TrendSearchCard({
             </div>
           )}
 
-          {/* Loading skeleton — espelha layout final */}
+          {/* Loading skeleton - espelha layout final */}
           {searching && (
             <div className="mt-4 space-y-3 animate-pulse">
               {/* Hero score skeleton */}
@@ -595,7 +595,7 @@ export function TrendSearchCard({
                 </div>
               ) : (
                 <>
-                  {/* HERO: Potencial de mercado — compacto horizontal */}
+                  {/* HERO: Potencial de mercado - compacto horizontal */}
                   {scoreMeta && result.marketScore !== null && (
                     <div className="rounded-xl border border-border bg-gradient-to-br from-surface-2/60 to-surface-2/20 p-3 sm:p-4">
                       <div className="flex items-center gap-3 sm:gap-4">
@@ -1150,7 +1150,7 @@ function InsightCard({
   );
 }
 
-// Variante inline da listagem regional (sem o card wrapper) — para uso dentro dos accordions
+// Variante inline da listagem regional (sem o card wrapper) - para uso dentro dos accordions
 function RegionsBreakdownInline({ regions }: { regions: RegionEntry[] }) {
   if (regions.length === 0) return null;
   const top = regions.slice(0, 10);

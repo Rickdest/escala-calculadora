@@ -93,7 +93,7 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
     );
   }
 
-  // Refresh em andamento sem dados ainda — mostra spinner
+  // Refresh em andamento sem dados ainda - mostra spinner
   if (refreshing && !hasData && !lowQuality && suggestions.length === 0 && !keyword) {
     return (
       <div className="surface-card p-8 text-center">
@@ -160,7 +160,7 @@ export function ProductTrendTab({ productId, productName }: ProductTrendTabProps
 
   return (
     <div className="space-y-4 sm:space-y-5">
-      {/* Faixa do termo do produto — card sutil */}
+      {/* Faixa do termo do produto - card sutil */}
       <div className="rounded-lg border border-border bg-surface-2/40 p-3 sm:p-3.5">
         {editing ? (
           <div className="flex items-center gap-2">

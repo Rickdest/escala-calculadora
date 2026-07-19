@@ -41,8 +41,8 @@ export default function Privacidade() {
           <ul className="list-disc list-inside space-y-1">
             <li>Acessar e exportar seus dados.</li>
             <li>Corrigir informações cadastrais.</li>
-            <li>Excluir sua conta — todos os dados pessoais e de negócio são removidos.</li>
-            <li>Desconectar integrações — os dados sincronizados da integração são removidos imediatamente.</li>
+            <li>Excluir sua conta - todos os dados pessoais e de negócio são removidos.</li>
+            <li>Desconectar integrações - os dados sincronizados da integração são removidos imediatamente.</li>
           </ul>
           <p>Para exercer qualquer direito: <span className="text-foreground">privacidade@skalify.com.br</span>.</p>
         </section>

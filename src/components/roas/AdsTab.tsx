@@ -77,7 +77,7 @@ function getStatusLabel(status: string | null | undefined) {
 function formatPeriodLabel(inicio: string, fim: string) {
   const fShort = (d: string) => { const p = d.split('-'); return `${p[2]}/${p[1]}`; };
   const fFull = (d: string) => { const p = d.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
-  return `${fShort(inicio)} – ${fFull(fim)}`;
+  return `${fShort(inicio)} - ${fFull(fim)}`;
 }
 
 // Date range presets
@@ -95,7 +95,7 @@ function AdsDateRangePicker({ dateFrom, dateTo, onRangeChange }: {
   const [open, setOpen] = useState(false);
 
   const label = dateFrom && dateTo
-    ? `${format(dateFrom, 'dd/MM/yyyy')} – ${format(dateTo, 'dd/MM/yyyy')}`
+    ? `${format(dateFrom, 'dd/MM/yyyy')} - ${format(dateTo, 'dd/MM/yyyy')}`
     : 'Selecionar período';
 
   return (
@@ -230,7 +230,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
   const [syncing, setSyncing] = useState(false);
   const autoSyncTriggered = useRef(false);
 
-  // Date range filter – default: no filter (show all data)
+  // Date range filter - default: no filter (show all data)
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
   const handleRangeChange = (from: Date | undefined, to: Date | undefined) => { setDateFrom(from); setDateTo(to); };
@@ -352,7 +352,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
         invalidatePersistedAds();
         toast.success(`Produto atualizado! ${adsPerfData.ads_by_campaign.length} campanha(s)`);
       } else {
-        // No new data from API — invalidate cache to reload persisted data
+        // No new data from API - invalidate cache to reload persisted data
         invalidatePersistedAds();
         toast.info('Nenhuma métrica individual retornada pela API para este item. Os dados gerais da loja permanecem salvos.');
       }
@@ -674,7 +674,7 @@ export function AdsTab({ onDetailOpen }: { onDetailOpen?: (open: boolean) => voi
           {hasPersistedApiData && (
             <>
               <AdsHeader
-                periodLabel={effectiveApiData ? `${effectiveApiData.period_start} – ${effectiveApiData.period_end}` : 'Sem dados no período'}
+                periodLabel={effectiveApiData ? `${effectiveApiData.period_start} - ${effectiveApiData.period_end}` : 'Sem dados no período'}
                 onImportCSV={() => fileRef.current?.click()}
                 onImportAds={handleImportAds}
                 syncing={syncing}

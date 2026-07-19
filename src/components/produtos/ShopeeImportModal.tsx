@@ -143,7 +143,7 @@ export function ShopeeImportModal({ isOpen, onClose, onImport, progress }: Shope
       try {
         await adsToken.syncAdsOnly();
       } catch {
-        // Non-blocking — we still list existing products
+        // Non-blocking - we still list existing products
       }
 
       // Fetch products created by ads API (draft stubs or with shopee_item_id)
@@ -231,7 +231,7 @@ export function ShopeeImportModal({ isOpen, onClose, onImport, progress }: Shope
     }
   };
 
-  const formatPrice = (v: number) => v > 0 ? `R$ ${v.toFixed(2).replace('.', ',')}` : '—';
+  const formatPrice = (v: number) => v > 0 ? `R$ ${v.toFixed(2).replace('.', ',')}` : '-';
 
   const descriptionText = loading
     ? 'Buscando produtos...'

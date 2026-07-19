@@ -105,7 +105,7 @@ export function QuickRegisterModal({ adData, onClose, onRegistered }: QuickRegis
         <div>
           <label className="section-label">Preço de venda (calculado do CSV)</label>
           <p className="text-lg font-bold font-mono tabular-nums text-foreground mt-1">
-            {suggestedPrice > 0 ? fmt(suggestedPrice) : '—'}
+            {suggestedPrice > 0 ? fmt(suggestedPrice) : '-'}
           </p>
         </div>
 
@@ -156,8 +156,8 @@ export function QuickRegisterModal({ adData, onClose, onRegistered }: QuickRegis
             </div>
             <p className={cn('text-xs font-bold text-center', adRoas >= preview.roasEmpate ? 'text-success' : 'text-destructive')}>
               {adRoas >= preview.roasEmpate
-                ? `✅ ROAS atual (${adRoas.toFixed(2)}) está ACIMA do empate — lucrativo!`
-                : `🔴 ROAS atual (${adRoas.toFixed(2)}) está ABAIXO do empate — prejuízo!`}
+                ? `✅ ROAS atual (${adRoas.toFixed(2)}) está ACIMA do empate - lucrativo!`
+                : `🔴 ROAS atual (${adRoas.toFixed(2)}) está ABAIXO do empate - prejuízo!`}
             </p>
           </div>
         )}

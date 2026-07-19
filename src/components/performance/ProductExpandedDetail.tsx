@@ -147,7 +147,7 @@ export function ProductExpandedDetail({ product, totalRevenue, totalQty, periodD
             💡 <strong>Tendência de alta.</strong> Crescimento consistente nas últimas 8 semanas.
             A variação <strong>{sortedVariants[0][0]}</strong> representa{' '}
             <strong>{((sortedVariants[0][1].qty / product.total_qty) * 100).toFixed(0)}%</strong> das vendas
-            — considere aumentar estoque dessa cor.
+            - considere aumentar estoque dessa cor.
           </p>
         </div>
       )}

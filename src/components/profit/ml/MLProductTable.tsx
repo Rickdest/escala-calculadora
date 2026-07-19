@@ -104,7 +104,7 @@ export function MLProductTable({ rows, onEdit, onQuickPatch, onUnlink }: Props) 
                 >
                   <td className={`w-1 p-0 ${statusStripe(r)}`} aria-hidden />
                   <td className="p-3 max-w-[280px]">
-                    <div className="font-medium truncate">{r.imported.title || '—'}</div>
+                    <div className="font-medium truncate">{r.imported.title || '-'}</div>
                     <div className="text-text-3 text-[11px] truncate">
                       {r.imported.sku ? `SKU ${r.imported.sku} · ` : ''}{r.imported.adId}
                     </div>
@@ -121,7 +121,7 @@ export function MLProductTable({ rows, onEdit, onQuickPatch, onUnlink }: Props) 
                     >
                       <SelectTrigger className="h-8 w-28"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">—</SelectItem>
+                        <SelectItem value="none">-</SelectItem>
                         <SelectItem value="classico">Clássico</SelectItem>
                         <SelectItem value="premium">Premium</SelectItem>
                       </SelectContent>

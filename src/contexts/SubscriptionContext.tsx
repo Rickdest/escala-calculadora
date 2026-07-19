@@ -69,7 +69,7 @@ function clearCache() {
 }
 
 /**
- * Fallback DB direct query — final safety net when edge function fails.
+ * Fallback DB direct query - final safety net when edge function fails.
  * RLS guarantees the user can only read their own subscription row.
  */
 async function fetchSubscriptionFromDb(
@@ -127,7 +127,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
   const hasResolved = useRef(false);
   const inflightController = useRef<AbortController | null>(null);
 
-  // Stable function — reads everything from refs. Never recreated.
+  // Stable function - reads everything from refs. Never recreated.
   const fetchSubscription = useCallback(async (noCache = false, retryCount = 0): Promise<void> => {
     const currentAuthReady = authReadyRef.current;
     const currentAuthLoading = authLoadingRef.current;
@@ -137,7 +137,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     // Don't do anything until auth is fully ready
     if (!currentAuthReady || currentAuthLoading) return;
 
-    // No user or no valid token — set free immediately
+    // No user or no valid token - set free immediately
     if (!currentUserId || !currentAccessToken) {
       resolvedUserId.current = null;
       lastKnownStatus.current = null;
@@ -185,7 +185,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
             setPlan(dbResult.plan);
             clearCache();
           }
-        }).catch(() => { /* ignore — edge fetch will reconcile */ });
+        }).catch(() => { /* ignore - edge fetch will reconcile */ });
       } else {
         setLoading(true);
       }
@@ -210,7 +210,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
 
       // If this call was superseded, silently bail without touching state.
       if (inflightController.current !== controller) {
-        console.log('[subscription] resolved but superseded — discarding result');
+        console.log('[subscription] resolved but superseded - discarding result');
         return;
       }
 
@@ -231,7 +231,7 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
     } catch (err) {
       clearTimeout(timeoutId);
 
-      // Aborted because a new fetch superseded this one — do not change state.
+      // Aborted because a new fetch superseded this one - do not change state.
       if (inflightController.current !== controller) {
         console.log('[subscription] aborted (superseded)');
         return;
@@ -289,13 +289,13 @@ export function SubscriptionProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     } finally {
       // Only release the slot if this is still the current controller.
-      // Do NOT touch loading/hasResolved here — handled in success/error paths
+      // Do NOT touch loading/hasResolved here - handled in success/error paths
       // so that superseded calls leave state untouched.
       if (inflightController.current === controller) {
         inflightController.current = null;
       }
     }
-  }, []); // stable — refs handle latest values
+  }, []); // stable - refs handle latest values
 
   // Trigger only when actual values change, not on every render.
   useEffect(() => {
