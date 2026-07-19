@@ -58,11 +58,11 @@ export const SubscriptionModal = React.forwardRef<HTMLDivElement, SubscriptionMo
           onClick={handleCheckout}
           className="w-full h-12 rounded-[10px] bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-[15px] transition-colors active:scale-[0.98]"
         >
-          ⚡ Quero acesso completo
+          Quero acesso completo
         </button>
 
         <p className="text-center text-xs text-text-3">
-          🔒 Pagamento seguro · Cancele quando quiser
+          Pagamento seguro · Cancele quando quiser
         </p>
       </div>
     </div>

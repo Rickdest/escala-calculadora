@@ -173,13 +173,13 @@ export default function Performance() {
         {/* Data source badges */}
         <div className="flex items-center gap-2 text-xs flex-wrap px-4 md:px-0">
           {hasExcelEnriched && (
-            <span className="flex items-center gap-1 bg-muted/30 rounded-lg px-2 py-1 border border-border">
-              📊 Excel + API Ads
+            <span className="flex items-center gap-1.5 bg-muted/30 rounded-lg px-2 py-1 border border-border">
+              <BarChart3 className="w-3.5 h-3.5" /> Excel + API Ads
             </span>
           )}
           {hasAdsOnlyData && !hasExcelEnriched && (
-            <span className="flex items-center gap-1 bg-primary/10 text-primary rounded-lg px-2 py-1 border border-primary/20">
-              📈 API Ads
+            <span className="flex items-center gap-1.5 bg-primary/10 text-primary rounded-lg px-2 py-1 border border-primary/20">
+              <TrendingUp className="w-3.5 h-3.5" /> API Ads
             </span>
           )}
         </div>
