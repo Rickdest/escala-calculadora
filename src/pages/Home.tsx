@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Calculator, ShoppingBag, BarChart2, GraduationCap, Store, Archive, UserCircle, Percent, ChevronRight, AlertTriangle, ArrowRight, Image as ImageIcon, Bell, Plus, TrendingUp, Settings2, Boxes } from 'lucide-react';
+import { Calculator, ShoppingBag, BarChart2, BarChart3, GraduationCap, Store, Archive, UserCircle, Percent, ChevronRight, AlertTriangle, ArrowRight, Image as ImageIcon, Bell, Plus, TrendingUp, Settings2, Boxes, Zap, Rocket, Package, Lightbulb } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { AppLayout } from '@/components/layout/AppLayout';
