@@ -51,7 +51,7 @@ interface Props {
 
 const FIELD_ICONS: Record<string, { icon: React.ElementType; color: string }> = {
   roas_target: { icon: Target, color: 'text-success' },
-  budget: { icon: DollarSign, color: 'text-primary dark:text-blue-400' },
+  budget: { icon: DollarSign, color: 'text-primary' },
   quick_boost: { icon: Zap, color: 'text-warning' },
   campaign_created: { icon: Plus, color: 'text-success' },
   other: { icon: Settings, color: 'text-text-3' },
@@ -245,7 +245,7 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
       <div className="rounded-2xl border border-border bg-card p-5 space-y-3 shadow-lg">
         <input ref={fileInputRef} type="file" accept=".csv" onChange={handleImportCSV} className="hidden" />
         <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
-          <LineChart className="w-4 h-4 text-primary dark:text-blue-400" /> Histórico de Performance
+          <LineChart className="w-4 h-4 text-primary" /> Histórico de Performance
         </p>
         <p className="text-sm text-text-2 text-center py-6">gráfico disponível após importar o CSV de Ads</p>
       </div>
@@ -440,7 +440,7 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
           const typeStyle = typeStyles[entry.field] || typeStyles.other;
           const typeLabelMap: Record<string, { label: string; color: string }> = {
             roas_target: { label: 'META', color: 'bg-emerald-500/20 text-emerald-400' },
-            budget: { label: 'BUDGET', color: 'bg-blue-500/20 text-blue-400' },
+            budget: { label: 'BUDGET', color: 'bg-primary/15 text-primary' },
             quick_boost: { label: 'BOOST', color: 'bg-amber-500/20 text-amber-400' },
             campaign_created: { label: 'NOVO', color: 'bg-emerald-500/20 text-emerald-400' },
             other: { label: 'OUTRO', color: 'bg-muted/50 text-text-3' },
@@ -1209,7 +1209,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                 ) : (
                   <>
                     <p className="text-lg font-bold text-foreground">Score: {efficiency.score}/100</p>
-                    <p className={cn('text-sm font-bold', efficiency.color === 'text-success' ? 'text-success' : efficiency.color === 'text-primary' ? 'text-primary dark:text-blue-400' : efficiency.color === 'text-warning' ? 'text-warning' : 'text-destructive')}>
+                    <p className={cn('text-sm font-bold', efficiency.color === 'text-success' ? 'text-success' : efficiency.color === 'text-primary' ? 'text-primary' : efficiency.color === 'text-warning' ? 'text-warning' : 'text-destructive')}>
                       {efficiency.label}
                     </p>
                     <div className="w-full h-2.5 rounded-full bg-surface-2 overflow-hidden mt-2">
@@ -1604,7 +1604,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                   {/* Header row */}
                   <div className="flex items-center justify-between mb-5">
                     <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-primary dark:text-blue-400" /> Posicionamento
+                      <MapPin className="w-3.5 h-3.5 text-primary" /> Posicionamento
                     </p>
                     <span className="text-xl md:text-3xl font-black font-mono tabular-nums text-foreground">#{ad.posicao_media}</span>
                   </div>
@@ -1617,7 +1617,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                         <span className="text-5xl md:text-7xl font-black font-mono tabular-nums leading-none text-foreground">
                           #{ad.posicao_media}
                         </span>
-                        <p className={cn('text-lg md:text-2xl font-bold mt-1', ad.posicao_media <= 3 ? 'text-success' : ad.posicao_media <= 8 ? 'text-primary dark:text-blue-400' : ad.posicao_media <= 16 ? 'text-warning' : 'text-destructive')}>
+                        <p className={cn('text-lg md:text-2xl font-bold mt-1', ad.posicao_media <= 3 ? 'text-success' : ad.posicao_media <= 8 ? 'text-primary' : ad.posicao_media <= 16 ? 'text-warning' : 'text-destructive')}>
                           {ad.posicao_media <= 3 ? 'Top 3' : ad.posicao_media <= 8 ? 'Primeira Página' : ad.posicao_media <= 16 ? 'Segunda Página' : 'Terceira Página+'}
                         </p>
                       </div>
@@ -1636,7 +1636,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                                 {tier.label}
                               </p>
                               {isActive && (
-                                <span className="inline-block text-[9px] font-bold text-primary dark:text-blue-400 bg-primary/15 px-2 py-0.5 rounded-md whitespace-nowrap">← VOCÊ</span>
+                                <span className="inline-block text-[9px] font-bold text-primary bg-primary/15 px-2 py-0.5 rounded-md whitespace-nowrap">← VOCÊ</span>
                               )}
                             </div>
                           );
@@ -1662,7 +1662,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                             </>
                           ) : (
                             <>
-                              💡 <strong className="text-primary dark:text-blue-400">Boa posição.</strong>{' '}
+                              💡 <strong className="text-primary">Boa posição.</strong>{' '}
                               Monitore se o ROAS justifica o lance atual.
                             </>
                           )}
@@ -1733,7 +1733,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                   </div>
                   {crossSell && (
                     <div className="flex items-start gap-2.5 pt-2 border-t border-border rounded-xl bg-primary/10 dark:bg-blue-900/10 p-3 mt-2">
-                      <Info className="w-3.5 h-3.5 text-primary dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                      <Info className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" />
                       <p className="text-sm text-text-2">{crossSell.mensagem}</p>
                     </div>
                   )}
