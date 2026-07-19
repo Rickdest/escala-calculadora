@@ -124,7 +124,7 @@ export default function Home() {
       onClick={() => setShowPaywall(true)}
       className="w-full h-9 flex items-center gap-2 px-3 rounded-[8px] border-l-[3px] border-l-primary bg-surface-2 transition-colors hover:bg-surface-2/80 active:scale-[0.98] animate-fade-up"
     >
-      <span className="text-xs">⚡</span>
+      <Zap className="w-3.5 h-3.5 text-primary" />
       <span className="text-body text-text-2 flex-1 text-left">
         Acesso expirou · <span className="text-primary font-semibold">Assinar R$39,90/mês →</span>
       </span>
@@ -429,14 +429,14 @@ export default function Home() {
               </div>
               <div className="space-y-3 flex-1">
                 {[
-                  { emoji: '🚀', text: 'Calculadoras TikTok, Shein, Amazon e ML atualizadas' },
-                  { emoji: '📊', text: 'Importe CSV de Ads e veja ROAS real por produto' },
-                  { emoji: '📦', text: 'Controle de estoque com alertas de reposição' },
-                  { emoji: '💡', text: 'Dica: configure taxas da loja para margens precisas' },
-                ].map((item, i) => (
+                  { Icon: Rocket, text: 'Calculadoras TikTok, Shein, Amazon e ML atualizadas' },
+                  { Icon: BarChart3, text: 'Importe CSV de Ads e veja ROAS real por produto' },
+                  { Icon: Package, text: 'Controle de estoque com alertas de reposição' },
+                  { Icon: Lightbulb, text: 'Dica: configure taxas da loja para margens precisas' },
+                ].map(({ Icon, text }, i) => (
                   <div key={i} className="flex items-start gap-2.5">
-                    <span className="text-sm mt-0.5 flex-shrink-0">{item.emoji}</span>
-                    <p className="text-body text-muted-foreground leading-snug">{item.text}</p>
+                    <Icon className="w-4 h-4 mt-0.5 flex-shrink-0 text-primary" />
+                    <p className="text-body text-muted-foreground leading-snug">{text}</p>
                   </div>
                 ))}
               </div>

@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel';
 import Autoplay from 'embla-carousel-autoplay';
 import { cn } from '@/lib/utils';
+import { Target, BarChart3, Package, type LucideIcon } from 'lucide-react';
 
 interface Banner {
   id: string;
@@ -13,36 +14,39 @@ interface Banner {
   ativo: boolean;
 }
 
-const fallbackSlides = [
+const fallbackSlides: Array<{
+  id: string; title: string; subtitle: string; cta: string;
+  icon: LucideIcon; link_destino: string; bgClass: string; textClass: string;
+}> = [
   {
     id: 'f1',
     title: 'Precifique com precisão',
     subtitle: 'Calcule custos, taxas e margem real dos seus produtos Shopee',
     cta: 'Precificar produto',
-    emoji: '🎯',
+    icon: Target,
     link_destino: '/?new=1',
-    bgClass: 'bg-gradient-to-r from-[#b84300] via-[#e85d00] to-[#ff8830]',
-    textClass: 'text-white',
+    bgClass: 'bg-primary',
+    textClass: 'text-primary-foreground',
   },
   {
     id: 'f2',
     title: 'Analise seus Ads',
     subtitle: 'Importe o CSV da Shopee e descubra o ROAS real de cada produto',
-    cta: 'Ver Análise →',
-    emoji: '📊',
+    cta: 'Ver Análise',
+    icon: BarChart3,
     link_destino: '/roas',
-    bgClass: 'bg-primary',
-    textClass: 'text-white',
+    bgClass: 'bg-foreground',
+    textClass: 'text-background',
   },
   {
     id: 'f3',
     title: 'Controle seu Estoque',
     subtitle: 'Cadastre variações e receba alertas automáticos de reposição',
-    cta: 'Ver Estoque →',
-    emoji: '📦',
+    cta: 'Ver Estoque',
+    icon: Package,
     link_destino: '/stock',
-    bgClass: 'bg-gradient-to-br from-emerald-600 to-emerald-500',
-    textClass: 'text-white',
+    bgClass: 'bg-success',
+    textClass: 'text-success-foreground',
   },
 ];
 
@@ -154,7 +158,7 @@ export function BannerCarousel() {
                   slide.bgClass
                 )}
               >
-                <span className="absolute top-3 right-3 text-5xl opacity-20 select-none">{slide.emoji}</span>
+                <slide.icon className="absolute top-3 right-3 w-12 h-12 opacity-20" />
                 <div className="relative z-10">
                   <h2 className={cn('text-sm font-bold mb-0.5 leading-tight', slide.textClass)}>
                     {slide.title}
