@@ -253,7 +253,7 @@ export function useProductTrend(productId: string | undefined) {
         // incluindo meta_no_data com sugestões).
         await loadFromDb();
 
-        // Depois sobrescreve com dados frescos da resposta — garantimos que sugestões,
+        // Depois sobrescreve com dados frescos da resposta - garantimos que sugestões,
         // keyword e flags chegam mesmo se o banco não persistiu nada (safety net).
         if (Array.isArray(data?.suggestions) && data.suggestions.length > 0) {
           setSuggestions(data.suggestions);

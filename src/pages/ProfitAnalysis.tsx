@@ -479,7 +479,7 @@ export default function ProfitAnalysis() {
                     <>
                       <p className="text-sm font-semibold">Envie o relatório da Shopee</p>
                       <p className="text-xs text-text-3 mt-1">
-                        Product Overview, Informações Gerenciais (Shop Stats) ou Parent SKU Detail — detectamos automaticamente.
+                        Product Overview, Informações Gerenciais (Shop Stats) ou Parent SKU Detail - detectamos automaticamente.
                       </p>
                     </>
                   )}

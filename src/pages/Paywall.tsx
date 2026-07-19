@@ -53,7 +53,7 @@ export default function Paywall() {
             className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 border border-primary/25"
             style={{ padding: '5px 14px', fontSize: '12px', fontWeight: 600, color: 'hsl(var(--primary))' }}
           >
-            ⚡ Acesso completo desbloqueado
+            Acesso completo desbloqueado
           </span>
         </div>
 
@@ -69,7 +69,7 @@ export default function Paywall() {
             </strong>
           </h1>
           <p style={{ fontSize: '13px', lineHeight: '1.5' }} className="text-muted-foreground px-4">
-            Vendedores Shopee que usam o Skalify tomam decisões com dados — e crescem até 3x mais rápido.
+            Vendedores Shopee que usam o Skalify tomam decisões com dados - e crescem até 3x mais rápido.
           </p>
         </div>
 

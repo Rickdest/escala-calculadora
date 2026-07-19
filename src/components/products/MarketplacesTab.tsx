@@ -152,7 +152,7 @@ function MLInlineEditor({
         <p className="section-label mb-2 flex items-center gap-2">
           <BarChart3 className="w-4 h-4 text-yellow-400" />
           Comparativo Clássico vs Premium
-          <span className="text-[10px] text-muted-foreground font-normal normal-case tracking-normal">— edite o preço de cada um</span>
+          <span className="text-[10px] text-muted-foreground font-normal normal-case tracking-normal">- edite o preço de cada um</span>
         </p>
         <div className="grid grid-cols-2 gap-2.5">
           <PlanCard label="Clássico" data={classico} kind="classico" />
@@ -405,7 +405,7 @@ function ChannelDetail({
               </span>
               <span className={cn('font-mono text-sm font-medium tabular-nums w-24 text-right shrink-0',
                 item.value > 0 ? 'text-foreground' : 'text-muted-foreground/50')}>
-                {item.value > 0 ? fmt(item.value) : '—'}
+                {item.value > 0 ? fmt(item.value) : '-'}
               </span>
             </div>
           ))}

@@ -15,7 +15,7 @@ export function useAdmin() {
     queryKey: ['admin-role', user?.id],
     queryFn: checkAdminRole,
     enabled: !!user,
-    staleTime: 10 * 60 * 1000, // 10 min — papel admin não muda com frequência
+    staleTime: 10 * 60 * 1000, // 10 min - papel admin não muda com frequência
     retry: 1,
   });
 

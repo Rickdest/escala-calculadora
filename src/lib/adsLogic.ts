@@ -89,7 +89,7 @@ export function sugerirMetaRoas(roasEmpate: number): MetaRoasResult {
 }
 
 export function classificarPosicao(posicao: number): { classe: PosClasse; label: string } {
-  if (posicao <= 3) return { classe: 'TOPO', label: 'Top 3 — Posição Premium' };
+  if (posicao <= 3) return { classe: 'TOPO', label: 'Top 3 - Posição Premium' };
   if (posicao <= 8) return { classe: 'PRIMEIRA_PAGINA', label: 'Primeira Página' };
   if (posicao <= 16) return { classe: 'SEGUNDA_PAGINA', label: 'Segunda Página' };
   return { classe: 'FORA_RADAR', label: 'Baixa Visibilidade' };
@@ -110,9 +110,9 @@ const MATRIZ: Record<string, DiagnosticoResult> = {
   'TOPO_ABAIXO_EMPATE': { emoji: '🚨', titulo: 'Posição cara sem retorno', mensagem: 'Pagando caro para estar no topo mas não converte. Revisar produto/preço.', acaoRoas: 'pausar' },
   'TOPO_PREJUIZO': { emoji: '💀', titulo: 'Queimando dinheiro no topo', mensagem: 'Máxima visibilidade gerando máximo prejuízo. Pausar AGORA.', acaoRoas: 'pausar' },
   'PRIMEIRA_PAGINA_LUCRATIVO': { emoji: '🚀', titulo: 'Oportunidade de escalar', mensagem: 'ROAS forte na primeira página. Tem espaço para subir. Aumente budget.', acaoRoas: 'agressivo' },
-  'PRIMEIRA_PAGINA_APERTADO': { emoji: '⚖️', titulo: 'Equilibrado — manter', mensagem: 'Performance ok. Subir posição pode apertar margem.', acaoRoas: 'equilibrado' },
+  'PRIMEIRA_PAGINA_APERTADO': { emoji: '⚖️', titulo: 'Equilibrado - manter', mensagem: 'Performance ok. Subir posição pode apertar margem.', acaoRoas: 'equilibrado' },
   'PRIMEIRA_PAGINA_ABAIXO_EMPATE': { emoji: '🟠', titulo: 'Visível mas não lucrativo', mensagem: 'Primeira página mas abaixo do empate. Aumente a meta de ROAS.', acaoRoas: 'conservador' },
-  'PRIMEIRA_PAGINA_PREJUIZO': { emoji: '🔴', titulo: 'Prejuízo — pausar', mensagem: 'Pausar. Revisar produto antes de reativar.', acaoRoas: 'pausar' },
+  'PRIMEIRA_PAGINA_PREJUIZO': { emoji: '🔴', titulo: 'Prejuízo - pausar', mensagem: 'Pausar. Revisar produto antes de reativar.', acaoRoas: 'pausar' },
   'SEGUNDA_PAGINA_LUCRATIVO': { emoji: '💎', titulo: 'Diamante escondido', mensagem: 'ROAS excelente na segunda página! Reduza a meta de ROAS para competir por posições melhores.', acaoRoas: 'agressivo' },
   'SEGUNDA_PAGINA_APERTADO': { emoji: '🔍', titulo: 'Testar com cuidado', mensagem: 'Margem apertada. Aumente budget em 20% por semana e monitore.', acaoRoas: 'equilibrado' },
   'SEGUNDA_PAGINA_ABAIXO_EMPATE': { emoji: '🟠', titulo: 'Sem tração', mensagem: 'Posição ruim + ROAS ruim. Revisar preço e diferenciais.', acaoRoas: 'pausar' },
@@ -158,7 +158,7 @@ export function generateAlerts(adsData: Array<{
     const name = ad.nome_produto_csv;
     if (ad.despesas <= 0) continue;
 
-    // Check learning phase — suppress "pausar" alerts for <7 days
+    // Check learning phase - suppress "pausar" alerts for <7 days
     let emAprendizado = false;
     if (ad.periodo_inicio && ad.periodo_fim) {
       const dias = Math.ceil((new Date(ad.periodo_fim).getTime() - new Date(ad.periodo_inicio).getTime()) / (1000 * 60 * 60 * 24));

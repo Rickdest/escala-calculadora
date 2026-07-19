@@ -116,7 +116,7 @@ export function ProductCard({
     </div>
   );
 
-  // ── Comparativo de Canais — apenas canais com dados reais cadastrados ──
+  // ── Comparativo de Canais - apenas canais com dados reais cadastrados ──
   const channelResults = product.outrosCanais
     ? calcOutrosCanais(product.outrosCanais, taxes)
     : [];
@@ -140,7 +140,7 @@ export function ProductCard({
 
       {missingCost && (
         <div className="mt-2 flex items-center gap-1.5 text-[11px] text-warning bg-warning/10 border border-warning/20 rounded px-2 py-1">
-          ⚠ Custo não informado — preencha para calcular margem real
+          ⚠ Custo não informado - preencha para calcular margem real
         </div>
       )}
 
@@ -166,7 +166,7 @@ export function ProductCard({
 
         <div className="text-center">
           <p className="font-mono text-lg font-extrabold leading-tight text-warning">
-            {roasEmpate && roasEmpate > 0 ? `${roasEmpate.toFixed(2)}x` : '—'}
+            {roasEmpate && roasEmpate > 0 ? `${roasEmpate.toFixed(2)}x` : '-'}
           </p>
           <p className="label-metric">ROAS empate</p>
         </div>

@@ -95,7 +95,7 @@ export function parseShopeeExcel(buffer: ArrayBuffer): ExcelPerformanceData {
   // Row index 2 has the daily headers (with "Etiqueta" column added).
   // Daily data starts at row index 3.
 
-  // Find the daily headers row — look for a row that starts with "Data" and has "Etiqueta"
+  // Find the daily headers row - look for a row that starts with "Data" and has "Etiqueta"
   let dailyHeaderIdx = -1;
   for (let i = 0; i < Math.min(rows.length, 10); i++) {
     const firstCell = String(rows[i]?.[0] ?? '').trim().toLowerCase();

@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 const CARD_MIN_H = 'min-h-[300px]';
 
 // ────────────────────────────────────────────────────────────────────────────
-// 1. Distribuição de margem — donut SVG grande + 3 pílulas semânticas
+// 1. Distribuição de margem - donut SVG grande + 3 pílulas semânticas
 // ────────────────────────────────────────────────────────────────────────────
 export function MarginDistributionChart() {
   const { currentStore, getStoreStats, calculateProduct } = useStore();
@@ -33,7 +33,7 @@ export function MarginDistributionChart() {
   const warningPct = (warning / total) * 100;
   const dangerPct = (danger / total) * 100;
 
-  // Donut math — bigger
+  // Donut math - bigger
   const R = 52;
   const C = 2 * Math.PI * R;
   const healthyLen = (healthyPct / 100) * C;
@@ -120,7 +120,7 @@ function PillStat({ tone, value, label }: { tone: 'success' | 'warning' | 'destr
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// 2. Top 5 margens — lista vertical com rank badges
+// 2. Top 5 margens - lista vertical com rank badges
 // ────────────────────────────────────────────────────────────────────────────
 export function TopProductsChart() {
   const { currentStore, calculateProduct } = useStore();
@@ -220,7 +220,7 @@ function RankBadge({ position }: { position: number }) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// 3. Saúde financeira — lucro consolidado + 2 colunas de stats
+// 3. Saúde financeira - lucro consolidado + 2 colunas de stats
 // ────────────────────────────────────────────────────────────────────────────
 export function ProfitSummaryChart() {
   const { currentStore, calculateProduct } = useStore();
@@ -252,7 +252,7 @@ export function ProfitSummaryChart() {
         <Activity className="w-3.5 h-3.5 text-text-3" />
       </div>
 
-      {/* Lucro consolidado — destaque */}
+      {/* Lucro consolidado - destaque */}
       <div className="mb-5">
         <p className="text-[10px] text-text-3 uppercase tracking-wider mb-1.5">Lucro consolidado</p>
         <div className="flex items-baseline gap-2">

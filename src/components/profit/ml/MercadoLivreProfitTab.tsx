@@ -190,7 +190,7 @@ export function MercadoLivreProfitTab({ storeId, storeName, defaultTaxPct = 0 }:
       gross_sales_total: parsed.grossSalesTotal,
     });
     if (dup) {
-      toast.warning('Relatório já importado anteriormente — reexibindo dados.');
+      toast.warning('Relatório já importado anteriormente - reexibindo dados.');
     }
     setImported(parsed.rows);
     setPeriod({ start: parsed.periodStart, end: parsed.periodEnd });

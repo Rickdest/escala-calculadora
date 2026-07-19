@@ -144,7 +144,7 @@ function CostBreakdownCard({ product, roasData }: { product: Product; roasData: 
   );
 }
 
-// ─── Seletor de produto — dropdown compacto ───
+// ─── Seletor de produto - dropdown compacto ───
 function ProductDropdown({
   products,
   selectedId,
@@ -397,7 +397,7 @@ function ProductAnalysis() {
                         )}
                       </>
                     ) : (
-                      <span className="text-2xl font-bold text-text-3">—</span>
+                      <span className="text-2xl font-bold text-text-3">-</span>
                     )}
                   </div>
                 </div>
@@ -433,7 +433,7 @@ function ProductAnalysis() {
                       )}
                     </div>
 
-                    {/* Labels abaixo — grid fixo para não sobrepor */}
+                    {/* Labels abaixo - grid fixo para não sobrepor */}
                     <div className="grid grid-cols-4 mt-1.5 text-[8px] md:text-[9px] font-mono font-bold leading-tight">
                       <span className="text-destructive text-left">PREJUÍZO</span>
                       <span className="text-warning text-center">EMPATE<br/><span className="font-normal text-text-3">{roasData.roasEmpate.toFixed(1)}</span></span>
@@ -482,7 +482,7 @@ function ProductAnalysis() {
           )}
         </div>
 
-        {/* ── Coluna direita — Composição do Preço ── */}
+        {/* ── Coluna direita - Composição do Preço ── */}
         {selectedProduct && roasData && !roasData.margemInsuficiente && (
           <CostBreakdownCard product={selectedProduct} roasData={roasData} />
         )}

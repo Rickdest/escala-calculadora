@@ -228,7 +228,7 @@ function ResultadoCard({ c, compute3DayDelta }: { c: Correlation; compute3DayDel
   const typeLabel = mudLower.includes('roas') || mudLower.includes('meta')
     ? { label: 'META', color: 'bg-emerald-500/20 text-emerald-400' }
     : mudLower.includes('orçamento') || mudLower.includes('budget')
-    ? { label: 'BUDGET', color: 'bg-blue-500/20 text-blue-400' }
+    ? { label: 'BUDGET', color: 'bg-primary/15 text-primary' }
     : mudLower.includes('boost') || mudLower.includes('impulsão')
     ? { label: 'BOOST', color: 'bg-amber-500/20 text-amber-400' }
     : isCampaignCreated
@@ -317,7 +317,7 @@ function ResultadoAposMudancaSection({ correlations, dadosDiarios }: { correlati
   return (
     <div className="rounded-2xl border border-border bg-card p-3 md:p-5 shadow-lg space-y-3 md:space-y-4">
       <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
-        <GitCompareArrows className="w-3.5 h-3.5 text-primary dark:text-blue-400" /> Resultado Após Cada Mudança ({correlations.length})
+        <GitCompareArrows className="w-3.5 h-3.5 text-primary" /> Resultado Após Cada Mudança ({correlations.length})
       </p>
       <div className="space-y-1.5 md:space-y-2.5 max-h-[300px] md:max-h-[420px] overflow-y-auto pr-1">
         {correlations.map((c, i) => (

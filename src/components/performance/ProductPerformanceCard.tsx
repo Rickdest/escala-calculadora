@@ -106,7 +106,7 @@ export function ProductPerformanceCard({ produto, rank, periodDays, adsData }: P
             {hasGmvCompare && (
               <div className="rounded-xl border border-border bg-muted/30 p-3">
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                  📊 GMV Ads — Amplo vs Direto
+                  📊 GMV Ads - Amplo vs Direto
                 </p>
                 <div className="grid grid-cols-2 gap-3 mb-3">
                   <div className="rounded-lg border border-primary/20 bg-card p-3">
@@ -143,9 +143,9 @@ export function ProductPerformanceCard({ produto, rank, periodDays, adsData }: P
                 </div>
                 {/* Insight */}
                 <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-2 text-[10px] text-amber-600 dark:text-amber-400">
-                  {pctDireto >= 90 ? '✅ Ótima atribuição direta — seus anúncios convertem quem clicou' :
-                   pctDireto >= 60 ? '⚡ Boa atribuição — parte das vendas vem de efeito halo' :
-                   '⚠️ Muita atribuição indireta — considere revisar campanhas'}
+                  {pctDireto >= 90 ? '✅ Ótima atribuição direta - seus anúncios convertem quem clicou' :
+                   pctDireto >= 60 ? '⚡ Boa atribuição - parte das vendas vem de efeito halo' :
+                   '⚠️ Muita atribuição indireta - considere revisar campanhas'}
                 </div>
               </div>
             )}
@@ -158,7 +158,7 @@ export function ProductPerformanceCard({ produto, rank, periodDays, adsData }: P
               </div>
             )}
 
-            {/* Funnel — only when organic data exists */}
+            {/* Funnel - only when organic data exists */}
             {hasOrganic && produto.impressoes > 0 && (
               <div className="rounded-xl border border-border bg-card p-4">
                 <div className="flex items-center gap-2 mb-3">
@@ -172,7 +172,7 @@ export function ProductPerformanceCard({ produto, rank, periodDays, adsData }: P
               </div>
             )}
 
-            {/* Orgânico vs Ads Split — only when both exist */}
+            {/* Orgânico vs Ads Split - only when both exist */}
             {!isAdsOnly && produto.ads_gmv != null && produto.ads_gmv > 0 && (
               <div className="rounded-xl border border-border bg-card p-4">
                 <p className="text-xs font-semibold text-foreground uppercase tracking-wider mb-3">Orgânico vs Ads</p>
@@ -247,7 +247,7 @@ export function ProductPerformanceCard({ produto, rank, periodDays, adsData }: P
               )}
             </div>
 
-            {/* Insights — only when organic data */}
+            {/* Insights - only when organic data */}
             {!isAdsOnly && <InsightsPanel produto={produto} />}
 
             {/* Ver detalhes button */}

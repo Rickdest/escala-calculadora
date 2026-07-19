@@ -51,7 +51,7 @@ interface Props {
 
 const FIELD_ICONS: Record<string, { icon: React.ElementType; color: string }> = {
   roas_target: { icon: Target, color: 'text-success' },
-  budget: { icon: DollarSign, color: 'text-primary dark:text-blue-400' },
+  budget: { icon: DollarSign, color: 'text-primary' },
   quick_boost: { icon: Zap, color: 'text-warning' },
   campaign_created: { icon: Plus, color: 'text-success' },
   other: { icon: Settings, color: 'text-text-3' },
@@ -245,7 +245,7 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
       <div className="rounded-2xl border border-border bg-card p-5 space-y-3 shadow-lg">
         <input ref={fileInputRef} type="file" accept=".csv" onChange={handleImportCSV} className="hidden" />
         <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
-          <LineChart className="w-4 h-4 text-primary dark:text-blue-400" /> Histórico de Performance
+          <LineChart className="w-4 h-4 text-primary" /> Histórico de Performance
         </p>
         <p className="text-sm text-text-2 text-center py-6">gráfico disponível após importar o CSV de Ads</p>
       </div>
@@ -340,7 +340,7 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
                     const d = new Date(ts);
                     return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
                   }}
-                  formatter={(v: number | null) => [v !== null ? `${v}` : '–', 'ROAS meta']}
+                  formatter={(v: number | null) => [v !== null ? `${v}` : '-', 'ROAS meta']}
                 />
                 {roasEmpate && roasEmpate > 0 && roasEmpate !== Infinity && (
                   <ReferenceLine y={roasEmpate} stroke="#f59e0b" strokeDasharray="4 4" label={{ value: 'Empate', fontSize: 9, fill: '#f59e0b' }} />
@@ -440,7 +440,7 @@ function OperationLogTimeline({ adProductId, adShopeeProductId, roasEmpate, onLo
           const typeStyle = typeStyles[entry.field] || typeStyles.other;
           const typeLabelMap: Record<string, { label: string; color: string }> = {
             roas_target: { label: 'META', color: 'bg-emerald-500/20 text-emerald-400' },
-            budget: { label: 'BUDGET', color: 'bg-blue-500/20 text-blue-400' },
+            budget: { label: 'BUDGET', color: 'bg-primary/15 text-primary' },
             quick_boost: { label: 'BOOST', color: 'bg-amber-500/20 text-amber-400' },
             campaign_created: { label: 'NOVO', color: 'bg-emerald-500/20 text-emerald-400' },
             other: { label: 'OUTRO', color: 'bg-muted/50 text-text-3' },
@@ -671,9 +671,9 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
     if (ad.classificacao) {
       const fallbackMap: Record<string, { cor: string; mensagem: string; acao: string }> = {
         'LUCRATIVO': { cor: 'emerald-500', mensagem: 'Anúncio lucrativo com base na classificação importada.', acao: 'Manter' },
-        'MARGEM_APERTADA': { cor: 'amber-500', mensagem: 'Margem apertada — monitore de perto.', acao: 'Otimizar' },
-        'ABAIXO_EMPATE': { cor: 'orange-500', mensagem: 'ROAS abaixo do empate — considere ajustes.', acao: 'Ajustar' },
-        'PREJUIZO': { cor: 'red-500', mensagem: 'Anúncio em prejuízo — avalie pausar.', acao: 'Pausar' },
+        'MARGEM_APERTADA': { cor: 'amber-500', mensagem: 'Margem apertada - monitore de perto.', acao: 'Otimizar' },
+        'ABAIXO_EMPATE': { cor: 'orange-500', mensagem: 'ROAS abaixo do empate - considere ajustes.', acao: 'Ajustar' },
+        'PREJUIZO': { cor: 'red-500', mensagem: 'Anúncio em prejuízo - avalie pausar.', acao: 'Pausar' },
       };
       const info = fallbackMap[ad.classificacao];
       if (info) return { classificacao: ad.classificacao as Classificacao, ...info };
@@ -739,7 +739,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
 
     if (re === Infinity || rs === Infinity || re <= 0) return Math.min(pisoBudget, orcamentoAtualDia);
 
-    if (roasAtual >= rs) return orcamentoAtualDia; // lucrativo — manter
+    if (roasAtual >= rs) return orcamentoAtualDia; // lucrativo - manter
     if (roasAtual >= re) {
       const proporcional = custoConversao * convPorDia * (roasAtual / rs);
       return Math.max(proporcional, pisoBudget);
@@ -755,7 +755,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
     if (re === Infinity || rs === Infinity) return '';
     if (roasAtual >= rs) return 'Campanha lucrativa';
     if (roasAtual >= re) return 'Margem apertada';
-    return 'Prejuízo — reduza';
+    return 'Prejuízo - reduza';
   })();
   const qualificaProtecao = convPorDia >= 5;
 
@@ -764,7 +764,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
 
   const periodLabel = (() => {
     const f = (d: string) => { const [y, m, dd] = d.split('-'); return `${dd}/${m}`; };
-    return `${f(ad.periodo_inicio)} – ${f(ad.periodo_fim)} (${dias} dias)`;
+    return `${f(ad.periodo_inicio)} - ${f(ad.periodo_fim)} (${dias} dias)`;
   })();
 
   const { user } = useAuth();
@@ -833,7 +833,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
 
       setExcelData(parsed);
       if (isSkuFormat) {
-        toast.success('Produtos importados (formato SKU — sem breakdown diário)');
+        toast.success('Produtos importados (formato SKU - sem breakdown diário)');
       } else {
         toast.success(`${parsed.totalDias} dias importados`);
       }
@@ -1056,7 +1056,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
         </div>
       )}
 
-      {/* KPIs grid — Row 1: Posição, ROAS, Custo/Un */}
+      {/* KPIs grid - Row 1: Posição, ROAS, Custo/Un */}
       <div className="grid grid-cols-3 gap-1.5 md:gap-2 mb-1.5 overflow-hidden">
         {(() => {
           const pos = ad.posicao_media;
@@ -1071,20 +1071,20 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
             };
             return <KpiCard icon={MapPin} label="Posição" value={`#${pos}`} sub={pageLabel} colorClass={posColorClass} />;
           }
-          return <KpiCard icon={MapPin} label="Posição" value="—" />;
+          return <KpiCard icon={MapPin} label="Posição" value="-" />;
         })()}
         <KpiCard icon={Target} label="ROAS" value={roasDireto.toFixed(2)} sub={roasEmpate ? `Emp: ${roasEmpate.toFixed(2)}` : undefined} subColor={roasEmpate ? (roasDireto >= roasEmpate ? 'text-success' : 'text-destructive') : undefined} highlight />
-        <KpiCard icon={Wallet} label="Custo/Un" value={custoPorUnidade > 0 ? fmtShort(custoPorUnidade) : '—'} sub={sobraPorVenda !== null ? `Sobra: ${fmtShort(sobraPorVenda)}` : undefined} subColor={sobraPorVenda !== null ? (sobraPorVenda > 0 ? 'text-success' : 'text-destructive') : undefined} />
+        <KpiCard icon={Wallet} label="Custo/Un" value={custoPorUnidade > 0 ? fmtShort(custoPorUnidade) : '-'} sub={sobraPorVenda !== null ? `Sobra: ${fmtShort(sobraPorVenda)}` : undefined} subColor={sobraPorVenda !== null ? (sobraPorVenda > 0 ? 'text-success' : 'text-destructive') : undefined} />
       </div>
 
-      {/* KPIs grid — Row 2: CTR, Vendas, GMV */}
+      {/* KPIs grid - Row 2: CTR, Vendas, GMV */}
       <div className="grid grid-cols-3 gap-1.5 md:gap-2 mb-3 overflow-hidden">
         <KpiCard icon={Percent} label="CTR" value={`${ad.ctr.toFixed(2)}%`} sub={ad.ctr >= 2.5 ? 'Bom' : ad.ctr >= 1.5 ? 'Ok' : 'Baixo'} subColor={ad.ctr >= 2.5 ? 'text-success' : ad.ctr >= 1.5 ? 'text-warning' : 'text-destructive'} />
         <KpiCard icon={ShoppingCart} label="Vendas" value={ad.itens_vendidos >= 1000 ? `${(ad.itens_vendidos / 1000).toFixed(1)}k` : String(ad.itens_vendidos)} />
         <KpiCard icon={DollarSign} label="GMV" value={fmtShort(ad.gmv)} />
       </div>
 
-      {/* Unlinked product warning — hide for API campaigns */}
+      {/* Unlinked product warning - hide for API campaigns */}
       {!product && !ad.id.startsWith('api-campaign-') && (
         <div className="rounded-2xl border-2 border-dashed border-warning/30 bg-warning/10 p-6 space-y-4 mb-5">
           <div className="flex items-center gap-2">
@@ -1209,7 +1209,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                 ) : (
                   <>
                     <p className="text-lg font-bold text-foreground">Score: {efficiency.score}/100</p>
-                    <p className={cn('text-sm font-bold', efficiency.color === 'text-success' ? 'text-success' : efficiency.color === 'text-primary' ? 'text-primary dark:text-blue-400' : efficiency.color === 'text-warning' ? 'text-warning' : 'text-destructive')}>
+                    <p className={cn('text-sm font-bold', efficiency.color === 'text-success' ? 'text-success' : efficiency.color === 'text-primary' ? 'text-primary' : efficiency.color === 'text-warning' ? 'text-warning' : 'text-destructive')}>
                       {efficiency.label}
                     </p>
                     <div className="w-full h-2.5 rounded-full bg-surface-2 overflow-hidden mt-2">
@@ -1276,7 +1276,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                     <div className="text-center space-y-2">
                       <p className="text-2xl font-black font-mono tabular-nums text-success">{fmt(orcamentoAtualDia)}</p>
                       <p className="text-[10px] text-text-3">/dia</p>
-                      <p className="text-xs font-bold text-success">✅ Orçamento adequado — {budgetMotivo}</p>
+                      <p className="text-xs font-bold text-success">✅ Orçamento adequado - {budgetMotivo}</p>
                     </div>
                   ) : (
                     <div className="flex items-center justify-center gap-4">
@@ -1342,7 +1342,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-text-2">Lucro Líquido Final</span>
                         <span className={cn('font-extrabold font-mono tabular-nums text-lg', folgaAcosMargem !== null && folgaAcosMargem >= 0 ? 'text-success' : 'text-destructive')}>
-                          {folgaAcosMargem !== null ? `${folgaAcosMargem >= 0 ? '+' : ''}${folgaAcosMargem.toFixed(1)}%` : '—'}
+                          {folgaAcosMargem !== null ? `${folgaAcosMargem >= 0 ? '+' : ''}${folgaAcosMargem.toFixed(1)}%` : '-'}
                         </span>
                       </div>
                     </div>
@@ -1355,7 +1355,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                 </div>
               )}
 
-              {/* Economia por Venda — Two states */}
+              {/* Economia por Venda - Two states */}
               {(() => {
                 const hasCosts = product && product.costPrice > 0;
                 const acosPerUnit = custoPorUnidade;
@@ -1495,7 +1495,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
             {/* Halo Effect */}
             {halo && halo.isSignificant && (
               <div className="rounded-2xl border border-success/30 bg-success/10 p-5 space-y-2 shadow-lg">
-                <p className="text-[10px] uppercase tracking-wider font-bold text-success">💎 Efeito Halo — Vendas Indiretas</p>
+                <p className="text-[10px] uppercase tracking-wider font-bold text-success">💎 Efeito Halo - Vendas Indiretas</p>
                 <p className="text-sm text-text-2">{halo.message}</p>
               </div>
             )}
@@ -1593,18 +1593,18 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                 Todos os arquivos são exportados diretamente da <strong className="mx-0.5">Central do Vendedor Shopee</strong>. Em breve: tutorial em vídeo mostrando o passo a passo.
               </p>
             </div>
-            {/* Posicionamento + Geral vs Direto — TOPO */}
+            {/* Posicionamento + Geral vs Direto - TOPO */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
               {/* Posicionamento */}
               {ad.posicao_media !== null && posInfo ? (
                 <div className="rounded-2xl border border-border bg-card p-5 md:p-6 shadow-lg relative overflow-hidden">
                   {/* Gradient top border accent */}
-                  <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary via-purple-500 to-pink-500" />
+                  <div className="absolute top-0 left-0 right-0 h-[2px] bg-primary" />
                   
                   {/* Header row */}
                   <div className="flex items-center justify-between mb-5">
                     <p className="text-[10px] uppercase tracking-wider font-bold text-text-3 flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-primary dark:text-blue-400" /> Posicionamento
+                      <MapPin className="w-3.5 h-3.5 text-primary" /> Posicionamento
                     </p>
                     <span className="text-xl md:text-3xl font-black font-mono tabular-nums text-foreground">#{ad.posicao_media}</span>
                   </div>
@@ -1617,7 +1617,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                         <span className="text-5xl md:text-7xl font-black font-mono tabular-nums leading-none text-foreground">
                           #{ad.posicao_media}
                         </span>
-                        <p className={cn('text-lg md:text-2xl font-bold mt-1', ad.posicao_media <= 3 ? 'text-success' : ad.posicao_media <= 8 ? 'text-primary dark:text-blue-400' : ad.posicao_media <= 16 ? 'text-warning' : 'text-destructive')}>
+                        <p className={cn('text-lg md:text-2xl font-bold mt-1', ad.posicao_media <= 3 ? 'text-success' : ad.posicao_media <= 8 ? 'text-primary' : ad.posicao_media <= 16 ? 'text-warning' : 'text-destructive')}>
                           {ad.posicao_media <= 3 ? 'Top 3' : ad.posicao_media <= 8 ? 'Primeira Página' : ad.posicao_media <= 16 ? 'Segunda Página' : 'Terceira Página+'}
                         </p>
                       </div>
@@ -1636,7 +1636,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                                 {tier.label}
                               </p>
                               {isActive && (
-                                <span className="inline-block text-[9px] font-bold text-primary dark:text-blue-400 bg-primary/15 px-2 py-0.5 rounded-md whitespace-nowrap">← VOCÊ</span>
+                                <span className="inline-block text-[9px] font-bold text-primary bg-primary/15 px-2 py-0.5 rounded-md whitespace-nowrap">← VOCÊ</span>
                               )}
                             </div>
                           );
@@ -1658,11 +1658,11 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                           ) : ad.posicao_media <= 3 ? (
                             <>
                               🏆 <strong className="text-success">Excelente posição!</strong>{' '}
-                              Monitore o custo — avalie se pode reduzir o lance sem perder a posição.
+                              Monitore o custo - avalie se pode reduzir o lance sem perder a posição.
                             </>
                           ) : (
                             <>
-                              💡 <strong className="text-primary dark:text-blue-400">Boa posição.</strong>{' '}
+                              💡 <strong className="text-primary">Boa posição.</strong>{' '}
                               Monitore se o ROAS justifica o lance atual.
                             </>
                           )}
@@ -1733,7 +1733,7 @@ export function AdsDetailFullView({ ad, allAds, onClose, onNavigate, onImportPos
                   </div>
                   {crossSell && (
                     <div className="flex items-start gap-2.5 pt-2 border-t border-border rounded-xl bg-primary/10 dark:bg-blue-900/10 p-3 mt-2">
-                      <Info className="w-3.5 h-3.5 text-primary dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                      <Info className="w-3.5 h-3.5 text-primary flex-shrink-0 mt-0.5" />
                       <p className="text-sm text-text-2">{crossSell.mensagem}</p>
                     </div>
                   )}

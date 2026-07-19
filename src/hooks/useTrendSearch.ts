@@ -231,7 +231,7 @@ export function useTrendSearch() {
     }
   }, []);
 
-  // Carrega geo separada (cidades ou países) — lazy ao expandir accordion
+  // Carrega geo separada (cidades ou países) - lazy ao expandir accordion
   const fetchGeoVariant = useCallback(
     async (
       kw: string,

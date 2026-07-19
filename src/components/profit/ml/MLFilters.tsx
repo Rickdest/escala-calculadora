@@ -133,14 +133,14 @@ export function MLFilters({ value, onChange }: Props) {
             <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="default:desc">Ordem original</SelectItem>
-              <SelectItem value="revenue:desc">Vendas — maior</SelectItem>
-              <SelectItem value="revenue:asc">Vendas — menor</SelectItem>
-              <SelectItem value="profit:desc">Lucro — maior</SelectItem>
-              <SelectItem value="profit:asc">Lucro — menor</SelectItem>
-              <SelectItem value="margin:desc">Margem — maior</SelectItem>
-              <SelectItem value="margin:asc">Margem — menor</SelectItem>
-              <SelectItem value="units:desc">Unidades — maior</SelectItem>
-              <SelectItem value="cost:desc">Custo — maior</SelectItem>
+              <SelectItem value="revenue:desc">Vendas - maior</SelectItem>
+              <SelectItem value="revenue:asc">Vendas - menor</SelectItem>
+              <SelectItem value="profit:desc">Lucro - maior</SelectItem>
+              <SelectItem value="profit:asc">Lucro - menor</SelectItem>
+              <SelectItem value="margin:desc">Margem - maior</SelectItem>
+              <SelectItem value="margin:asc">Margem - menor</SelectItem>
+              <SelectItem value="units:desc">Unidades - maior</SelectItem>
+              <SelectItem value="cost:desc">Custo - maior</SelectItem>
             </SelectContent>
           </Select>
         </div>

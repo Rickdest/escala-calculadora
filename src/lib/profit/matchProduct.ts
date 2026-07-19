@@ -53,7 +53,7 @@ export function matchShopeeProduct(
   );
   if (byItemId) return { productId: byItemId.id, matchType: 'itemId' };
 
-  // 3. Parent SKU — check any variation SKU on registered product
+  // 3. Parent SKU - check any variation SKU on registered product
   if (row.parent_sku) {
     const target = row.parent_sku.toLowerCase().trim();
     const bySku = products.find((p) =>

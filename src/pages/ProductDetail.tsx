@@ -179,12 +179,12 @@ export default function ProductDetail() {
 
   const handleShare = async () => {
     const text = [
-      `📊 Análise — ${product.name}`,
+      `📊 Análise - ${product.name}`,
       `💰 Preço de venda: ${fmt(product.salePrice)}`,
       `📈 Lucro por venda: ${fmt(calculation.netProfit)}`,
       `📉 Margem real: ${calculation.realMargin.toFixed(1)}%`,
       roas.roasEmpate ? `⚡ ROAS de empate: ${roas.roasEmpate.toFixed(2)}x` : '',
-      `— Calculado com Skalify`,
+      `- Calculado com Skalify`,
     ].filter(Boolean).join('\n');
     try {
       await navigator.clipboard.writeText(text);
@@ -229,7 +229,7 @@ export default function ProductDetail() {
               <span className="text-muted-foreground/50">·</span>
               <span>custo {fmt(product.costPrice)}</span>
             </div>
-            {/* Status badge — único, dentro do header */}
+            {/* Status badge - único, dentro do header */}
             <span className={cn('inline-flex items-center text-[11px] md:text-xs font-semibold px-2 md:px-2.5 py-0.5 md:py-1 rounded-full border', statusBadge.cls)}>
               {statusBadge.text}
             </span>
@@ -337,12 +337,12 @@ export default function ProductDetail() {
               )}>
                 <Gauge className="absolute top-2 right-2 w-3 h-3 text-muted-foreground/40" />
                 <p className={cn('font-mono text-lg md:text-2xl font-bold tabular-nums truncate', roas.roasEmpate ? 'text-foreground' : 'text-muted-foreground/50')}>
-                  {roas.roasEmpate ? `${roas.roasEmpate.toFixed(2)}x` : '—'}
+                  {roas.roasEmpate ? `${roas.roasEmpate.toFixed(2)}x` : '-'}
                 </p>
                 <p className="label-metric mt-0.5 md:mt-1">ROAS empate</p>
               </div>
 
-              {/* Custo do produto — editável inline */}
+              {/* Custo do produto - editável inline */}
               <CostInlineCard
                 value={product.costPrice}
                 onSave={async (v) => {
@@ -354,7 +354,7 @@ export default function ProductDetail() {
 
             {/* Grid 2 colunas */}
             <div className="grid md:grid-cols-2 gap-4 md:gap-5">
-              {/* Coluna esquerda — Breakdown */}
+              {/* Coluna esquerda - Breakdown */}
               <div className="surface-card p-4 md:p-5">
                 <p className="section-label mb-3 flex items-center gap-2">
                   <Wallet className="w-4 h-4 text-primary" />
@@ -396,7 +396,7 @@ export default function ProductDetail() {
                         'font-mono text-sm font-medium tabular-nums w-24 text-right shrink-0',
                         item.value > 0 ? 'text-foreground' : 'text-muted-foreground/50'
                       )}>
-                        {item.value > 0 ? fmt(item.value) : '—'}
+                        {item.value > 0 ? fmt(item.value) : '-'}
                       </span>
                     </div>
                   ))}
@@ -420,7 +420,7 @@ export default function ProductDetail() {
 
               {/* Coluna direita */}
               <div className="flex flex-col gap-4 md:gap-5">
-                {/* ROAS — chips empilhados */}
+                {/* ROAS - chips empilhados */}
                 {!roas.margemInsuficiente && roas.roasEmpate && (
                   <div className="surface-card p-4 md:p-5">
                     <p className="section-label mb-3 flex items-center gap-2">
@@ -449,7 +449,7 @@ export default function ProductDetail() {
                   </div>
                 )}
 
-                {/* Canais — lista vertical no mobile, 2 col desktop */}
+                {/* Canais - lista vertical no mobile, 2 col desktop */}
                 <div className="surface-card p-4 md:p-5">
                   <p className="section-label mb-3 flex items-center gap-2">
                     <BarChart3 className="w-4 h-4 text-primary" />
@@ -490,7 +490,7 @@ export default function ProductDetail() {
                       </div>
                       {bestChannel && bestChannel.key !== 'shopee' && (
                         <div className="mt-3 bg-secondary/30 border border-border rounded-lg p-3">
-                          <p className="text-xs md:text-sm font-semibold text-foreground">{bestChannel.label} — {bestChannel.margin.toFixed(1)}% de margem</p>
+                          <p className="text-xs md:text-sm font-semibold text-foreground">{bestChannel.label} - {bestChannel.margin.toFixed(1)}% de margem</p>
                           <p className="text-xs text-muted-foreground mt-0.5">
                             {fmt(bestChannel.netProfit - calculation.netProfit)}/un a mais que na Shopee
                           </p>
@@ -555,7 +555,7 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            {/* Projeção Mensal — full width */}
+            {/* Projeção Mensal - full width */}
             <div className="surface-card p-4 md:p-5">
               <div className="flex items-center justify-between gap-3 mb-4">
                 <p className="section-label flex items-center gap-2">
@@ -573,7 +573,7 @@ export default function ProductDetail() {
                 </div>
               </div>
 
-              {/* Presets rápidos — wrap, sem scroll */}
+              {/* Presets rápidos - wrap, sem scroll */}
               <div className="flex flex-wrap gap-1.5 mb-4">
                 {SALES_PRESETS.map(preset => (
                   <button
@@ -686,7 +686,7 @@ export default function ProductDetail() {
         </Tabs>
       </div>
 
-      {/* FAB pill mobile-only — flutua acima do BottomNavigation */}
+      {/* FAB pill mobile-only - flutua acima do BottomNavigation */}
       <div className="md:hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-40">
         <button
           onClick={() => setShowProductForm(true)}

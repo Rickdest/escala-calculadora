@@ -217,7 +217,7 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* ═══════ SEÇÃO 1 — MINHA LOJA ═══════ */}
+        {/* ═══════ SEÇÃO 1 - MINHA LOJA ═══════ */}
         <div className="space-y-1 pt-2">
           <h3 className="section-label">Minha Loja</h3>
         </div>
@@ -288,7 +288,7 @@ export default function Settings() {
           )}
         </div>
 
-        {/* ═══════ SEÇÃO 2 — CUSTOS OPCIONAIS GLOBAIS ═══════ */}
+        {/* ═══════ SEÇÃO 2 - CUSTOS OPCIONAIS GLOBAIS ═══════ */}
         <div className="space-y-1 pt-4">
           <h3 className="section-label">Custos Opcionais Globais</h3>
           <p className="text-micro normal-case tracking-normal text-muted-foreground">Aplicados automaticamente em todos os produtos</p>
@@ -434,10 +434,10 @@ export default function Settings() {
         </Button>
 
 
-        {/* ═══════ SEÇÃO 3 — TABELA DE TAXAS DA SHOPEE ═══════ */}
+        {/* ═══════ SEÇÃO 3 - TABELA DE TAXAS DA SHOPEE ═══════ */}
         <div className="space-y-1 pt-4">
           <h3 className="section-label">Taxas da Shopee</h3>
-          <p className="text-micro normal-case tracking-normal text-muted-foreground">Somente referência — aplicadas automaticamente</p>
+          <p className="text-micro normal-case tracking-normal text-muted-foreground">Somente referência - aplicadas automaticamente</p>
         </div>
 
         <div className="glass-card p-4 space-y-4">

@@ -235,7 +235,7 @@ export default function Auth() {
               </div>
               {!isLogin && (
                 <p className="text-[11px] mt-1.5 leading-snug" style={{ color: '#666666' }}>
-                  Evite senhas comuns como "12345678" ou "senha123" — elas serão rejeitadas por segurança.
+                  Evite senhas comuns como "12345678" ou "senha123" - elas serão rejeitadas por segurança.
                 </p>
               )}
             </div>

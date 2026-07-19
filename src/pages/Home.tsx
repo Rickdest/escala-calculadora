@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Calculator, ShoppingBag, BarChart2, GraduationCap, Store, Archive, UserCircle, Percent, ChevronRight, AlertTriangle, ArrowRight, Image as ImageIcon, Bell, Plus, TrendingUp, Settings2, Boxes } from 'lucide-react';
+import { Calculator, ShoppingBag, BarChart2, BarChart3, GraduationCap, Store, Archive, UserCircle, Percent, ChevronRight, AlertTriangle, ArrowRight, Image as ImageIcon, Bell, Plus, TrendingUp, Settings2, Boxes, Zap, Rocket, Package, Lightbulb } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useStore } from '@/contexts/StoreContext';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -124,7 +124,7 @@ export default function Home() {
       onClick={() => setShowPaywall(true)}
       className="w-full h-9 flex items-center gap-2 px-3 rounded-[8px] border-l-[3px] border-l-primary bg-surface-2 transition-colors hover:bg-surface-2/80 active:scale-[0.98] animate-fade-up"
     >
-      <span className="text-xs">⚡</span>
+      <Zap className="w-3.5 h-3.5 text-primary" />
       <span className="text-body text-text-2 flex-1 text-left">
         Acesso expirou · <span className="text-primary font-semibold">Assinar R$39,90/mês →</span>
       </span>
@@ -180,7 +180,7 @@ export default function Home() {
       <PageHeader title="Skalify" />
 
       {/* ══════════════════════════════════════════════
-          MOBILE LAYOUT — identical to before
+          MOBILE LAYOUT - identical to before
           ══════════════════════════════════════════════ */}
       <div className="md:hidden page-container pt-3 pb-6 space-y-3">
         {/* Shopee connection status */}
@@ -312,10 +312,10 @@ export default function Home() {
       </div>
 
       {/* ══════════════════════════════════════════════
-          DESKTOP LAYOUT — redesigned
+          DESKTOP LAYOUT - redesigned
           ══════════════════════════════════════════════ */}
       <div className="hidden md:block page-container py-4">
-        {/* Shopee connection status — desktop */}
+        {/* Shopee connection status - desktop */}
         {shopeeConnected && (
           <button
             onClick={() => navigate('/configuracoes/integracoes')}
@@ -351,7 +351,7 @@ export default function Home() {
         {/* CTA banners */}
         {expiredCta && <div className="mb-2.5">{expiredCta}</div>}
 
-        {/* Single 2-column grid — hero+calc left, novidades+atalhos right */}
+        {/* Single 2-column grid - hero+calc left, novidades+atalhos right */}
         <div className="grid grid-cols-[1fr_320px] gap-2.5 items-start">
           {/* Left column */}
           <div className="space-y-2.5">
@@ -417,7 +417,7 @@ export default function Home() {
             {emptyState}
           </div>
 
-          {/* Right column — sticky sidebar */}
+          {/* Right column - sticky sidebar */}
           <div className="space-y-2.5 sticky top-4 self-start">
             {/* Card de Avisos */}
             <div className="rounded-2xl border border-border bg-card p-5 flex flex-col animate-fade-up">
@@ -429,14 +429,14 @@ export default function Home() {
               </div>
               <div className="space-y-3 flex-1">
                 {[
-                  { emoji: '🚀', text: 'Calculadoras TikTok, Shein, Amazon e ML atualizadas' },
-                  { emoji: '📊', text: 'Importe CSV de Ads e veja ROAS real por produto' },
-                  { emoji: '📦', text: 'Controle de estoque com alertas de reposição' },
-                  { emoji: '💡', text: 'Dica: configure taxas da loja para margens precisas' },
-                ].map((item, i) => (
+                  { Icon: Rocket, text: 'Calculadoras TikTok, Shein, Amazon e ML atualizadas' },
+                  { Icon: BarChart3, text: 'Importe CSV de Ads e veja ROAS real por produto' },
+                  { Icon: Package, text: 'Controle de estoque com alertas de reposição' },
+                  { Icon: Lightbulb, text: 'Dica: configure taxas da loja para margens precisas' },
+                ].map(({ Icon, text }, i) => (
                   <div key={i} className="flex items-start gap-2.5">
-                    <span className="text-sm mt-0.5 flex-shrink-0">{item.emoji}</span>
-                    <p className="text-body text-muted-foreground leading-snug">{item.text}</p>
+                    <Icon className="w-4 h-4 mt-0.5 flex-shrink-0 text-primary" />
+                    <p className="text-body text-muted-foreground leading-snug">{text}</p>
                   </div>
                 ))}
               </div>

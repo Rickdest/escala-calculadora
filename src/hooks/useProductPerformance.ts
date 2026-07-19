@@ -288,7 +288,7 @@ export function useProductPerformance() {
 
         const existingId = existingMap[p.item_id];
         if (existingId) {
-          // Update existing record (preserve nothing — Excel is the richer source)
+          // Update existing record (preserve nothing - Excel is the richer source)
           const { error } = await supabase
             .from('product_performance')
             .update({ ...organicFields, variacoes: organicFields.variacoes as any })

@@ -140,7 +140,7 @@ export function useShopeeToken(appType?: AppType, storeId?: string) {
     if (res.error) {
       throw res.error;
     }
-    // If needs_reauth, set flag but DON'T throw — return data so caller can check
+    // If needs_reauth, set flag but DON'T throw - return data so caller can check
     if (res.data?.needs_reauth) {
       setNeedsReauth(true);
       return res.data;
