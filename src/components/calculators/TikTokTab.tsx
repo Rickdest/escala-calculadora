@@ -23,9 +23,8 @@ export function TikTokTab() {
 
   const costs: CostLine[] = result ? [
     { label: 'Custo do produto', value: result.costPrice },
-    { label: 'Comissão (6%)', value: result.commission },
-    { label: 'Frete (6%)', value: result.shippingFee },
-    ...(result.fixedFee > 0 ? [{ label: 'Taxa fixa', value: result.fixedFee }] : []),
+    { label: `Comissão (${sp < 50 ? '10%' : '6%'})`, value: result.commission },
+    { label: `Taxa por item vendido (R$ ${sp < 50 ? '4,00' : '6,00'})`, value: result.fixedFee },
     ...(result.affiliateCost > 0 ? [{ label: 'Afiliado', value: result.affiliateCost }] : []),
     ...(result.packagingCost > 0 ? [{ label: 'Embalagem', value: result.packagingCost }] : []),
     ...(result.taxesCost > 0 ? [{ label: 'Impostos', value: result.taxesCost }] : []),
