@@ -882,6 +882,7 @@ export default function ProfitAnalysis() {
           </TabsContent>
         </Tabs>
       )}
+      </div>
     </AppLayout>
   );
 }
