@@ -36,9 +36,8 @@ export function calcOutrosCanais(
     const { costPrice, salePrice, packagingCost = 0, affiliatePercent = 0 } = outrosCanais.tiktok;
     const r = calcTikTok(salePrice, costPrice, packagingCost, taxesPercent, affiliatePercent);
     const fees: ChannelFee[] = [
-      { label: 'Comissão TikTok (6%)', value: r.commission },
-      { label: 'Frete plataforma (6%)', value: r.shippingFee },
-      { label: 'Taxa fixa (< R$79)', value: r.fixedFee },
+      { label: `Comissão TikTok (${salePrice < 50 ? '10%' : '6%'})`, value: r.commission },
+      { label: `Taxa por item vendido (R$ ${salePrice < 50 ? '4,00' : '6,00'})`, value: r.fixedFee },
       { label: `Afiliados (${affiliatePercent}%)`, value: r.affiliateCost },
       { label: 'Embalagem', value: r.packagingCost },
       { label: `Impostos (${taxesPercent}%)`, value: r.taxesCost },
