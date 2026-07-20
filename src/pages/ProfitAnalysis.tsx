@@ -503,8 +503,8 @@ export default function ProfitAnalysis() {
               {/* Controls */}
               {mode === 'timeline' ? (
                 <>
-                  <Card className="p-4 mb-4">
-                    <div className="flex flex-col md:flex-row md:items-end gap-4">
+                  <Card className="p-3 md:p-4 mb-4">
+                    <div className="flex flex-col md:flex-row md:items-end gap-3 md:gap-4">
                       <ProfitFilters
                         granularity={granularity}
                         onGranularityChange={setGranularity}
@@ -513,9 +513,11 @@ export default function ProfitAnalysis() {
                         customRange={customRange}
                         onCustomRangeChange={setCustomRange}
                       />
-                      <div className="md:ml-auto flex gap-2">
+                      <div className="md:ml-auto grid grid-cols-3 md:flex gap-2">
                         <Button
                           variant="outline"
+                          size="sm"
+                          className="w-full md:w-auto"
                           onClick={() => exportProfitReportCSV({
                             storeName: currentStore.name,
                             mode: 'timeline',
@@ -525,10 +527,12 @@ export default function ProfitAnalysis() {
                           })}
                           disabled={activeLines.length === 0}
                         >
-                          <Download className="mr-2 h-4 w-4" /> CSV
+                          <Download className="md:mr-2 h-4 w-4" /> <span className="hidden md:inline">CSV</span><span className="md:hidden">CSV</span>
                         </Button>
                         <Button
                           variant="outline"
+                          size="sm"
+                          className="w-full md:w-auto"
                           onClick={() => exportShopeeProfitPDF({
                             storeName: currentStore.name,
                             mode: 'timeline',
@@ -538,10 +542,10 @@ export default function ProfitAnalysis() {
                           })}
                           disabled={activeLines.length === 0}
                         >
-                          <Download className="mr-2 h-4 w-4" /> PDF
+                          <Download className="md:mr-2 h-4 w-4" /> PDF
                         </Button>
-                        <Button variant="outline" onClick={handleSave} disabled={saving}>
-                          <Save className="mr-2 h-4 w-4" /> Salvar análise
+                        <Button variant="outline" size="sm" className="w-full md:w-auto" onClick={handleSave} disabled={saving}>
+                          <Save className="md:mr-2 h-4 w-4" /> <span className="hidden md:inline">Salvar análise</span><span className="md:hidden">Salvar</span>
                         </Button>
                       </div>
                     </div>
