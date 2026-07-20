@@ -552,23 +552,23 @@ export default function ProfitAnalysis() {
                   </Card>
 
                   {/* Cost lines */}
-                  <Card className="p-4 mb-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
+                  <Card className="p-3 md:p-4 mb-4">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
+                      <div className="min-w-0">
                         <p className="text-body font-medium">Custos por produto</p>
                         <p className="text-caption text-text-3">
-                          Adicione cada produto vendido no período com sua quantidade e custo unitário. Total: <span className="font-semibold text-foreground">{fmtBRL(totalCostLines)}</span>
+                          Total: <span className="font-semibold text-foreground">{fmtBRL(totalCostLines)}</span>
                           {totals.revenue > 0 && <span> · {fmtPct(effectiveCostPct)} das vendas</span>}
                         </p>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="grid grid-cols-2 md:flex gap-2">
                         <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
                           <PopoverTrigger asChild>
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" className="w-full md:w-auto">
                               <Package className="mr-2 h-4 w-4" /> Do cadastro
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-80 p-2" align="end">
+                          <PopoverContent className="w-[90vw] max-w-sm md:w-80 p-2" align="end">
                             <Input
                               placeholder="Buscar produto..."
                               value={pickerSearch}
@@ -596,7 +596,7 @@ export default function ProfitAnalysis() {
                             </div>
                           </PopoverContent>
                         </Popover>
-                        <Button variant="outline" size="sm" onClick={addCostLineManual}>
+                        <Button variant="outline" size="sm" className="w-full md:w-auto" onClick={addCostLineManual}>
                           <Plus className="mr-2 h-4 w-4" /> Manual
                         </Button>
                       </div>
