@@ -428,13 +428,14 @@ export default function ProfitAnalysis() {
     <AppLayout>
       <PageHeader title="Análise de Lucro" subtitle="Separe seus resultados por marketplace." />
 
+      <div className="page-container py-3 md:py-4 space-y-4">
       {!currentStore && (
         <Card className="p-6 text-center text-text-3">Selecione uma loja para começar.</Card>
       )}
 
       {currentStore && (
         <Tabs defaultValue="shopee" className="w-full">
-          <TabsList className="mb-4">
+          <TabsList className="mb-4 grid grid-cols-2 w-full md:inline-flex md:w-auto">
             <TabsTrigger value="shopee">Shopee</TabsTrigger>
             <TabsTrigger value="ml">Mercado Livre</TabsTrigger>
           </TabsList>
@@ -450,19 +451,19 @@ export default function ProfitAnalysis() {
             className="hidden"
             onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
           />
-          <Card className="p-5 mb-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4 min-w-0">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-                  <FileSpreadsheet className="w-6 h-6 text-primary" />
+          <Card className="p-4 md:p-5 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+              <div className="flex items-start sm:items-center gap-3 sm:gap-4 min-w-0">
+                <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+                  <FileSpreadsheet className="w-5 h-5 md:w-6 md:h-6 text-primary" />
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   {mode ? (
                     <>
                       <h2 className="text-sm font-medium text-text-3">
-                        Relatório detectado: <span className="text-foreground font-semibold">{mode === 'timeline' ? 'Shop Stats / Overview' : 'Parent SKU Detail'}</span>
+                        Relatório: <span className="text-foreground font-semibold">{mode === 'timeline' ? 'Shop Stats / Overview' : 'Parent SKU'}</span>
                       </h2>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-xs text-text-3">
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-[11px] md:text-xs text-text-3">
                         {period.start && (
                           <span className="inline-flex items-center gap-1">
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
@@ -470,7 +471,6 @@ export default function ProfitAnalysis() {
                           </span>
                         )}
                         <span className="inline-flex items-center gap-1">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                           Modo: {mode === 'timeline' ? 'Loja no tempo' : 'Por produto'}
                         </span>
                       </div>
@@ -479,7 +479,7 @@ export default function ProfitAnalysis() {
                     <>
                       <p className="text-sm font-semibold">Envie o relatório da Shopee</p>
                       <p className="text-xs text-text-3 mt-1">
-                        Product Overview, Informações Gerenciais (Shop Stats) ou Parent SKU Detail - detectamos automaticamente.
+                        Product Overview, Informações Gerenciais ou Parent SKU - detectamos automaticamente.
                       </p>
                     </>
                   )}
@@ -490,7 +490,7 @@ export default function ProfitAnalysis() {
                 disabled={loading}
                 variant={mode ? 'outline' : 'default'}
                 size="sm"
-                className="shrink-0"
+                className="w-full sm:w-auto shrink-0"
               >
                 {loading ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Upload className="mr-2 h-4 w-4" />}
                 {mode ? 'Alterar planilha' : 'Enviar planilha'}
@@ -503,8 +503,8 @@ export default function ProfitAnalysis() {
               {/* Controls */}
               {mode === 'timeline' ? (
                 <>
-                  <Card className="p-4 mb-4">
-                    <div className="flex flex-col md:flex-row md:items-end gap-4">
+                  <Card className="p-3 md:p-4 mb-4">
+                    <div className="flex flex-col md:flex-row md:items-end gap-3 md:gap-4">
                       <ProfitFilters
                         granularity={granularity}
                         onGranularityChange={setGranularity}
@@ -513,9 +513,11 @@ export default function ProfitAnalysis() {
                         customRange={customRange}
                         onCustomRangeChange={setCustomRange}
                       />
-                      <div className="md:ml-auto flex gap-2">
+                      <div className="md:ml-auto grid grid-cols-3 md:flex gap-2">
                         <Button
                           variant="outline"
+                          size="sm"
+                          className="w-full md:w-auto"
                           onClick={() => exportProfitReportCSV({
                             storeName: currentStore.name,
                             mode: 'timeline',
@@ -525,10 +527,12 @@ export default function ProfitAnalysis() {
                           })}
                           disabled={activeLines.length === 0}
                         >
-                          <Download className="mr-2 h-4 w-4" /> CSV
+                          <Download className="md:mr-2 h-4 w-4" /> <span className="hidden md:inline">CSV</span><span className="md:hidden">CSV</span>
                         </Button>
                         <Button
                           variant="outline"
+                          size="sm"
+                          className="w-full md:w-auto"
                           onClick={() => exportShopeeProfitPDF({
                             storeName: currentStore.name,
                             mode: 'timeline',
@@ -538,33 +542,33 @@ export default function ProfitAnalysis() {
                           })}
                           disabled={activeLines.length === 0}
                         >
-                          <Download className="mr-2 h-4 w-4" /> PDF
+                          <Download className="md:mr-2 h-4 w-4" /> PDF
                         </Button>
-                        <Button variant="outline" onClick={handleSave} disabled={saving}>
-                          <Save className="mr-2 h-4 w-4" /> Salvar análise
+                        <Button variant="outline" size="sm" className="w-full md:w-auto" onClick={handleSave} disabled={saving}>
+                          <Save className="md:mr-2 h-4 w-4" /> <span className="hidden md:inline">Salvar análise</span><span className="md:hidden">Salvar</span>
                         </Button>
                       </div>
                     </div>
                   </Card>
 
                   {/* Cost lines */}
-                  <Card className="p-4 mb-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
+                  <Card className="p-3 md:p-4 mb-4">
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
+                      <div className="min-w-0">
                         <p className="text-body font-medium">Custos por produto</p>
                         <p className="text-caption text-text-3">
-                          Adicione cada produto vendido no período com sua quantidade e custo unitário. Total: <span className="font-semibold text-foreground">{fmtBRL(totalCostLines)}</span>
+                          Total: <span className="font-semibold text-foreground">{fmtBRL(totalCostLines)}</span>
                           {totals.revenue > 0 && <span> · {fmtPct(effectiveCostPct)} das vendas</span>}
                         </p>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="grid grid-cols-2 md:flex gap-2">
                         <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
                           <PopoverTrigger asChild>
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" className="w-full md:w-auto">
                               <Package className="mr-2 h-4 w-4" /> Do cadastro
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-80 p-2" align="end">
+                          <PopoverContent className="w-[90vw] max-w-sm md:w-80 p-2" align="end">
                             <Input
                               placeholder="Buscar produto..."
                               value={pickerSearch}
@@ -592,7 +596,7 @@ export default function ProfitAnalysis() {
                             </div>
                           </PopoverContent>
                         </Popover>
-                        <Button variant="outline" size="sm" onClick={addCostLineManual}>
+                        <Button variant="outline" size="sm" className="w-full md:w-auto" onClick={addCostLineManual}>
                           <Plus className="mr-2 h-4 w-4" /> Manual
                         </Button>
                       </div>
@@ -881,6 +885,7 @@ export default function ProfitAnalysis() {
           </TabsContent>
         </Tabs>
       )}
+      </div>
     </AppLayout>
   );
 }
