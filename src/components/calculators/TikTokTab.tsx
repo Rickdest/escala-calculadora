@@ -48,7 +48,7 @@ export function TikTokTab() {
 
         <div className="rounded-[10px] bg-surface-2 border border-border p-3">
           <p className="section-label mb-1">Taxas aplicadas automaticamente</p>
-          <p className="text-xs text-text-2">Comissão 6% · Frete 6% · Taxa fixa R$4,00 (se {'<'} R$79)</p>
+          <p className="text-xs text-text-2">{'<'} R$50: comissão 10% + R$4,00 · {'≥'} R$50: comissão 6% + R$6,00 (vigente 15/07/2026)</p>
         </div>
       </div>
 
