@@ -428,13 +428,14 @@ export default function ProfitAnalysis() {
     <AppLayout>
       <PageHeader title="Análise de Lucro" subtitle="Separe seus resultados por marketplace." />
 
+      <div className="page-container py-3 md:py-4 space-y-4">
       {!currentStore && (
         <Card className="p-6 text-center text-text-3">Selecione uma loja para começar.</Card>
       )}
 
       {currentStore && (
         <Tabs defaultValue="shopee" className="w-full">
-          <TabsList className="mb-4">
+          <TabsList className="mb-4 grid grid-cols-2 w-full md:inline-flex md:w-auto">
             <TabsTrigger value="shopee">Shopee</TabsTrigger>
             <TabsTrigger value="ml">Mercado Livre</TabsTrigger>
           </TabsList>
