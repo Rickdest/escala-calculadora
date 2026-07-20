@@ -23,9 +23,8 @@ export function TikTokTab() {
 
   const costs: CostLine[] = result ? [
     { label: 'Custo do produto', value: result.costPrice },
-    { label: 'Comissão (6%)', value: result.commission },
-    { label: 'Frete (6%)', value: result.shippingFee },
-    ...(result.fixedFee > 0 ? [{ label: 'Taxa fixa', value: result.fixedFee }] : []),
+    { label: `Comissão (${sp < 50 ? '10%' : '6%'})`, value: result.commission },
+    { label: `Taxa por item vendido (R$ ${sp < 50 ? '4,00' : '6,00'})`, value: result.fixedFee },
     ...(result.affiliateCost > 0 ? [{ label: 'Afiliado', value: result.affiliateCost }] : []),
     ...(result.packagingCost > 0 ? [{ label: 'Embalagem', value: result.packagingCost }] : []),
     ...(result.taxesCost > 0 ? [{ label: 'Impostos', value: result.taxesCost }] : []),
@@ -49,7 +48,7 @@ export function TikTokTab() {
 
         <div className="rounded-[10px] bg-surface-2 border border-border p-3">
           <p className="section-label mb-1">Taxas aplicadas automaticamente</p>
-          <p className="text-xs text-text-2">Comissão 6% · Frete 6% · Taxa fixa R$4,00 (se {'<'} R$79)</p>
+          <p className="text-xs text-text-2">{'<'} R$50: comissão 10% + R$4,00 · {'≥'} R$50: comissão 6% + R$6,00 (vigente 15/07/2026)</p>
         </div>
       </div>
 

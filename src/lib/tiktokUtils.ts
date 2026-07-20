@@ -20,9 +20,12 @@ export function calcTikTok(
   taxesPercent = 0,
   affiliatePercent = 0,
 ): TikTokResult {
-  const commission = salePrice * 0.06;
-  const shippingFee = salePrice * 0.06;
-  const fixedFee = salePrice < 79 ? 4 : 0;
+  // A partir de 15/07/2026: comissão 10% se < R$50, 6% se >= R$50
+  // Taxa por item vendido: R$4 se < R$50, R$6 se >= R$50
+  const commissionRate = salePrice < 50 ? 0.10 : 0.06;
+  const commission = salePrice * commissionRate;
+  const shippingFee = 0; // frete pago pelo comprador/plataforma
+  const fixedFee = salePrice < 50 ? 4 : 6;
   const affiliateCost = salePrice * (affiliatePercent / 100);
   const taxesCost = salePrice * (taxesPercent / 100);
   const totalCosts = costPrice + packagingCost + commission + shippingFee + fixedFee + affiliateCost + taxesCost;
