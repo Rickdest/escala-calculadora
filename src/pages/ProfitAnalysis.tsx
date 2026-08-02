@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -245,7 +246,7 @@ export default function ProfitAnalysis() {
   // Per-product lines derived from rowState
   const parentSkuLines: ParentSkuLine[] = useMemo(() => {
     if (mode !== 'per-sku' || !currentStore) return [];
-    return productRows.map((r) => {
+    return productRows.filter((r) => (r.vendas_pago || 0) > 0 || (r.unidades_pagas || 0) > 0).map((r) => {
       const st = rowState[r.item_id];
       const linked = st?.productId ? currentStore.products.find((p) => p.id === st.productId) : null;
       let unitCost = 0;
@@ -289,8 +290,11 @@ export default function ProfitAnalysis() {
   const totals = useMemo(() => sumLines(activeLines), [activeLines]);
   const effectiveCostPct = totals.revenue > 0 ? (totals.cost / totals.revenue) * 100 : 0;
   const noCostCount = parentSkuLines.filter((l) => !l.hasCost).length;
-  const finalProfit = totals.revenue - totals.cost - totals.fees - totals.taxes - extraCosts.ads - extraCosts.other;
+  const profitBeforeAds = totals.revenue - totals.cost - totals.fees - totals.taxes - extraCosts.other;
+  const marginBeforeAds = totals.revenue > 0 ? (profitBeforeAds / totals.revenue) * 100 : 0;
+  const finalProfit = profitBeforeAds - extraCosts.ads;
   const finalMargin = totals.revenue > 0 ? (finalProfit / totals.revenue) * 100 : 0;
+  const adsShareOfProfit = profitBeforeAds > 0 ? (extraCosts.ads / profitBeforeAds) * 100 : 0;
 
   const addCostLineFromProduct = (productId: string) => {
     if (!currentStore) return;
@@ -774,21 +778,66 @@ export default function ProfitAnalysis() {
               {/* Summary */}
               {mode === 'per-sku' ? (
                 <>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 md:gap-3 mb-3">
-                  <ProfitKpiCard className="border-t-2 border-t-border" icon={ShoppingCart} label="Vendas pagas" value={fmtBRL(totals.revenue)} sub={`${totals.units} un.`} />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-3">
+                  <ProfitKpiCard className="border-t-2 border-t-border" icon={ShoppingCart} label="Vendas pagas" value={fmtBRL(totals.revenue)} sub={`${totals.units} un. · ${activeLines.length} produtos`} />
                   <ProfitKpiCard className="border-t-2 border-t-border" icon={Package} label="Custo produtos" value={fmtBRL(totals.cost)} sub={totals.revenue > 0 ? `${fmtPct(effectiveCostPct)} das vendas` : undefined} />
                   <ProfitKpiCard className="border-t-2 border-t-border" icon={Percent} label="Taxas Shopee" value={fmtBRL(totals.fees)} sub={totals.revenue > 0 ? `${fmtPct((totals.fees / totals.revenue) * 100)} · auto` : 'auto'} />
-                  <ProfitKpiCard className="border-t-2 border-t-border" icon={Wallet} label="Imposto + Extras" value={fmtBRL(totals.taxes + extraCosts.ads + extraCosts.other)} sub={`Imp. ${fmtPct(taxRate)}`} />
-                  <ProfitKpiCard
-                    className="border-t-2 border-t-primary ring-1 ring-primary/20"
-                    icon={finalProfit >= 0 ? TrendingUp : TrendingDown}
-                    label="Lucro final"
-                    value={fmtBRL(finalProfit)}
-                    sub={`Margem ${fmtPct(finalMargin)}`}
-                    tone={finalProfit < 0 ? 'destructive' : finalMargin >= targetMargin ? 'success' : finalMargin >= targetMargin - 5 ? 'warning' : 'destructive'}
-                    bar={finalMargin <= 0 ? 0 : Math.min((finalMargin / 30) * 100, 100)}
-                  />
+                  <ProfitKpiCard className="border-t-2 border-t-border" icon={Wallet} label="Imposto + Outros" value={fmtBRL(totals.taxes + extraCosts.other)} sub={`Imp. ${fmtPct(taxRate)} · Outros ${fmtBRL(extraCosts.other)}`} />
                 </div>
+
+                {/* Painel de lucro */}
+                <div className="rounded-2xl border border-border bg-card overflow-hidden mb-3">
+                  <div className="px-4 md:px-5 py-3 border-b border-border/60 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-text-3 font-bold">Resultado do período</p>
+                      <p className="text-xs text-text-3 mt-0.5">Lucro do produto antes e depois do investimento em anúncios.</p>
+                    </div>
+                    <span className="hidden md:inline text-[11px] text-text-3 font-mono">{period.start} a {period.end}</span>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border/60">
+                    <div className="p-4 md:p-6">
+                      <p className="text-[10px] uppercase tracking-wider text-text-3 font-bold">Lucro (sem Ads)</p>
+                      <p className={cn(
+                        'text-3xl md:text-4xl font-black font-mono tabular-nums mt-1',
+                        profitBeforeAds < 0 ? 'text-destructive' : marginBeforeAds >= targetMargin ? 'text-success' : 'text-foreground',
+                      )}>
+                        {fmtBRL(profitBeforeAds)}
+                      </p>
+                      <p className="text-xs text-text-3 mt-1">Margem operacional {fmtPct(marginBeforeAds)}</p>
+                      <div className="mt-3 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                        <div
+                          className={cn('h-full rounded-full', profitBeforeAds < 0 ? 'bg-destructive' : 'bg-success')}
+                          style={{ width: `${Math.max(0, Math.min(100, (marginBeforeAds / 30) * 100))}%` }}
+                        />
+                      </div>
+                    </div>
+                    <div className="p-4 md:p-6 bg-primary/[0.04]">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[10px] uppercase tracking-wider text-primary font-bold">Lucro com Ads</p>
+                        {finalProfit >= 0
+                          ? <TrendingUp className="h-4 w-4 text-success" />
+                          : <TrendingDown className="h-4 w-4 text-destructive" />}
+                      </div>
+                      <p className={cn(
+                        'text-3xl md:text-4xl font-black font-mono tabular-nums mt-1',
+                        finalProfit < 0 ? 'text-destructive' : finalMargin >= targetMargin ? 'text-success' : 'text-foreground',
+                      )}>
+                        {fmtBRL(finalProfit)}
+                      </p>
+                      <p className="text-xs text-text-3 mt-1">
+                        Margem final {fmtPct(finalMargin)} · Ads {fmtBRL(extraCosts.ads)}
+                        {extraCosts.ads > 0 && profitBeforeAds > 0 ? ` (${fmtPct(adsShareOfProfit)} do lucro)` : ''}
+                      </p>
+                      <div className="mt-3 h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                        <div
+                          className={cn('h-full rounded-full', finalProfit < 0 ? 'bg-destructive' : finalMargin >= targetMargin ? 'bg-success' : 'bg-warning')}
+                          style={{ width: `${Math.max(0, Math.min(100, (finalMargin / 30) * 100))}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex flex-wrap gap-2 mb-4 text-caption">
                   <StatusChip color="emerald" active={activeLines.filter((l) => l.profit > 0).length > 0}>
                     {activeLines.filter((l) => l.profit > 0).length} com lucro
