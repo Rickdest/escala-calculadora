@@ -791,7 +791,7 @@ export default function ProfitAnalysis() {
                       <p className="text-[10px] uppercase tracking-wider text-text-3 font-bold">Resultado do período</p>
                       <p className="text-xs text-text-3 mt-0.5">Lucro do produto antes e depois do investimento em anúncios.</p>
                     </div>
-                    <span className="hidden md:inline text-[11px] text-text-3 font-mono">{period.from} a {period.to}</span>
+                    <span className="hidden md:inline text-[11px] text-text-3 font-mono">{period.start} a {period.end}</span>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border/60">
                     <div className="p-4 md:p-6">
