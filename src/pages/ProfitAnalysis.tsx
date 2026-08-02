@@ -245,7 +245,7 @@ export default function ProfitAnalysis() {
   // Per-product lines derived from rowState
   const parentSkuLines: ParentSkuLine[] = useMemo(() => {
     if (mode !== 'per-sku' || !currentStore) return [];
-    return productRows.map((r) => {
+    return productRows.filter((r) => (r.vendas_pago || 0) > 0 || (r.unidades_pagas || 0) > 0).map((r) => {
       const st = rowState[r.item_id];
       const linked = st?.productId ? currentStore.products.find((p) => p.id === st.productId) : null;
       let unitCost = 0;
