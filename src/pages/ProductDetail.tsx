@@ -403,11 +403,18 @@ export default function ProductDetail() {
                 <p className="label-metric mt-0.5 md:mt-1">ROAS empate</p>
               </div>
 
-              {/* Custo do produto - editável inline */}
+              {/* Custo - editável inline (da versão selecionada) */}
               <CostInlineCard
-                value={product.costPrice}
+                key={selectedVariantId ?? 'main'}
+                value={activeProduct.costPrice}
                 onSave={async (v) => {
-                  await updateProduct(product.id, { costPrice: v });
+                  if (selectedVariant) {
+                    await updateProduct(product.id, {
+                      priceVariants: priceVariants.map(pv => pv.id === selectedVariant.id ? { ...pv, costPrice: v } : pv),
+                    });
+                  } else {
+                    await updateProduct(product.id, { costPrice: v });
+                  }
                   toast.success('Custo atualizado!');
                 }}
               />
