@@ -155,7 +155,7 @@ export default function ProductDetail() {
   const bestChannelMargin = Math.max(...allChannels.map(c => Math.abs(c.margin)), 1);
 
   const allCostItems = [
-    { label: 'Custo do produto', value: product.costPrice, color: 'hsl(217 91% 60%)' },
+    { label: 'Custo do produto', value: activeProduct.costPrice, color: 'hsl(217 91% 60%)' },
     { label: `Taxa Shopee (${fee.percent}% + R$${fee.fixed})`, value: calculation.totalShopeeFee, color: 'hsl(var(--primary))' },
     { label: 'Embalagem', value: product.packagingCost, color: 'hsl(271 91% 65%)' },
     { label: `Impostos (${config.taxes}%)`, value: calculation.taxes, color: 'hsl(48 96% 53%)' },
