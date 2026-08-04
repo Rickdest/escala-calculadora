@@ -242,11 +242,16 @@ export default function ProductDetail() {
             <h1 className="font-bold text-foreground text-base md:text-xl leading-tight mb-1.5 line-clamp-2 md:line-clamp-2">
               {product.name}
             </h1>
-            {/* Micro-row: preço + custo */}
+            {/* Micro-row: preço + custo (da versão selecionada) */}
             <div className="flex items-center gap-1.5 text-xs md:text-sm text-muted-foreground font-mono mb-1.5 md:mb-2 flex-wrap">
-              <span className="text-primary font-semibold">{fmt(product.salePrice)}</span>
+              <span className="text-primary font-semibold">{fmt(activeProduct.salePrice)}</span>
               <span className="text-muted-foreground/50">·</span>
-              <span>custo {fmt(product.costPrice)}</span>
+              <span>custo {fmt(activeProduct.costPrice)}</span>
+              {selectedVariant && (
+                <span className="font-sans text-[10px] md:text-[11px] font-semibold px-1.5 py-0.5 rounded-md bg-accent/15 text-accent">
+                  {selectedVariant.name || 'Versão'}
+                </span>
+              )}
             </div>
             {/* Status badge - único, dentro do header */}
             <span className={cn('inline-flex items-center text-[11px] md:text-xs font-semibold px-2 md:px-2.5 py-0.5 md:py-1 rounded-full border', statusBadge.cls)}>
