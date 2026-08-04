@@ -315,6 +315,43 @@ export default function ProductDetail() {
               </span>
             </div>
 
+            {/* Seletor de versão de venda */}
+            {priceVariants.length > 0 && (
+              <div className="surface-card p-3 md:p-4">
+                <p className="section-label mb-2.5 flex items-center gap-2">
+                  <Package className="w-4 h-4 text-primary" />
+                  Versão analisada
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {versionRows.map(v => {
+                    const active = v.id === selectedVariantId;
+                    const m = v.calc.realMargin;
+                    return (
+                      <button
+                        key={v.id ?? 'main'}
+                        onClick={() => setSelectedVariantId(v.id)}
+                        className={cn(
+                          'flex items-center gap-2 h-9 px-3 rounded-lg border text-xs md:text-sm font-semibold transition-all',
+                          active
+                            ? 'bg-primary/10 border-primary text-foreground'
+                            : 'bg-secondary/40 border-border text-muted-foreground hover:text-foreground hover:bg-secondary'
+                        )}
+                      >
+                        <span className="truncate max-w-[160px]">{v.name}</span>
+                        <span className={cn('font-mono tabular-nums',
+                          m < 0 ? 'text-destructive' : m < config.desiredMargin ? 'text-warning' : 'text-success'
+                        )}>
+                          {m.toFixed(1)}%
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+
+
             {/* Hero KPI tiles 2x2 mobile / 5 cols desktop (com Custo editável) */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5 md:gap-3">
               {/* Lucro/un */}
