@@ -87,7 +87,14 @@ export function ProductCard({
       )}
 
       <div className="flex-1 min-w-0">
-        <h3 className="font-bold text-subtitle text-foreground truncate">{product.name}</h3>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <h3 className="font-bold text-subtitle text-foreground truncate">{product.name}</h3>
+          {(product.priceVariants?.length ?? 0) > 0 && (
+            <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-accent/15 text-accent">
+              {product.priceVariants!.length + 1} versões
+            </span>
+          )}
+        </div>
         <p className="text-small text-muted-foreground mt-0.5 truncate">
           <span className="font-semibold text-primary">{fmt(product.salePrice)}</span>
           <span className="mx-1">venda · custo</span>
