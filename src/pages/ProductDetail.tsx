@@ -167,7 +167,7 @@ export default function ProductDetail() {
   const hiddenCount = allCostItems.length - allCostItems.filter(c => c.value > 0).length;
 
   const projection = {
-    revenue: product.salePrice * monthlySales,
+    revenue: activeProduct.salePrice * monthlySales,
     costs: calculation.totalCosts * monthlySales,
     profit: calculation.netProfit * monthlySales,
     margin: calculation.realMargin,
