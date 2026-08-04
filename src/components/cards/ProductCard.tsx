@@ -221,6 +221,32 @@ export function ProductCard({
         </div>
       )}
 
+      {/* ── VERSÕES DE VENDA (kits) ── */}
+      {config && variantRows.length > 0 && (
+        <div className="mt-3">
+          <p className="label-metric mb-1.5">Versões de venda</p>
+          <div className="space-y-1.5">
+            {variantRows.map(v => (
+              <div key={v.id} className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-secondary/50 gap-2">
+                <span className="text-small font-medium text-foreground truncate min-w-0">
+                  {v.id === bestVariant?.id && v.margin > calculation.realMargin && (
+                    <span className="text-warning mr-0.5">★</span>
+                  )}
+                  {v.name || 'Sem nome'}
+                  <span className="text-muted-foreground ml-1.5 font-mono">{fmt(v.salePrice)}</span>
+                </span>
+                <span className={cn('text-small font-bold font-mono shrink-0',
+                  v.margin >= desiredMargin ? 'text-success' :
+                  v.margin >= 0 ? 'text-foreground' : 'text-destructive'
+                )}>
+                  {v.margin.toFixed(1)}%
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
 
       {/* ── FOOTER: stock + ver detalhes ── */}
       <div className="mt-3 pt-3 border-t border-border/30 flex items-center justify-between">
