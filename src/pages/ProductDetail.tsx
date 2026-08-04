@@ -105,6 +105,7 @@ export default function ProductDetail() {
   const [monthlySales, setMonthlySales] = useState(50);
   const [showProductForm, setShowProductForm] = useState(false);
   const [showAllCosts, setShowAllCosts] = useState(false);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
 
   if (!product || !config) {
     return (
@@ -116,11 +117,29 @@ export default function ProductDetail() {
     );
   }
 
-  const calculation = calculateProduct(product, config);
+  const priceVariants = product.priceVariants ?? [];
+  const selectedVariant = priceVariants.find(v => v.id === selectedVariantId) ?? null;
+  const activeProduct = selectedVariant
+    ? { ...product, costPrice: selectedVariant.costPrice, salePrice: selectedVariant.salePrice }
+    : product;
+
+  // Todas as versões (principal + kits) já calculadas
+  const versionRows = [
+    { id: null as string | null, name: 'Principal (un)', costPrice: product.costPrice, salePrice: product.salePrice },
+    ...priceVariants.map(v => ({ id: v.id, name: v.name || 'Sem nome', costPrice: v.costPrice, salePrice: v.salePrice })),
+  ].map(v => {
+    const calc = calculateProduct({ ...product, costPrice: v.costPrice, salePrice: v.salePrice }, config);
+    const r = calcFullRoas(v.salePrice, v.costPrice, config, product.packagingCost);
+    return { ...v, calc, roasEmpate: r.roasEmpate ?? null };
+  });
+  const bestVersion = [...versionRows].sort((a, b) => b.calc.realMargin - a.calc.realMargin)[0];
+  const maxAbsVersionMargin = Math.max(...versionRows.map(v => Math.abs(v.calc.realMargin)), 1);
+
+  const calculation = calculateProduct(activeProduct, config);
   const status = getMarginStatus(calculation.realMargin);
-  const roas = calcFullRoas(product.salePrice, product.costPrice, config, product.packagingCost);
+  const roas = calcFullRoas(activeProduct.salePrice, activeProduct.costPrice, config, activeProduct.packagingCost);
   const marginDiff = calculation.marginDifference;
-  const fee = getShopeeFeeForPrice(product.salePrice);
+  const fee = getShopeeFeeForPrice(activeProduct.salePrice);
 
   const outrosCanaisResults = calcOutrosCanais(product.outrosCanais ?? {}, config.taxes ?? 0);
   const shopeeChannel = {
