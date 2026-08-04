@@ -116,6 +116,21 @@ export function ProductCard({
     </div>
   );
 
+  // ── Versões de venda (kits) ──
+  const priceVariants = product.priceVariants ?? [];
+  const variantRows = config
+    ? priceVariants.map(v => {
+        const grossRevenue = v.salePrice;
+        const range = getShopeeFeeForPrice(grossRevenue);
+        const shopeeFee = grossRevenue * (range.percent / 100) + range.fixed;
+        const taxesValue = grossRevenue * ((config.taxes ?? 0) / 100);
+        const netProfit = grossRevenue - v.costPrice - shopeeFee - taxesValue;
+        const margin = grossRevenue > 0 ? (netProfit / grossRevenue) * 100 : 0;
+        return { ...v, margin };
+      })
+    : [];
+  const bestVariant = [...variantRows].sort((a, b) => b.margin - a.margin)[0];
+
   // ── Comparativo de Canais - apenas canais com dados reais cadastrados ──
   const channelResults = product.outrosCanais
     ? calcOutrosCanais(product.outrosCanais, taxes)
