@@ -1,6 +1,6 @@
 import React, { useRef, useCallback } from 'react';
 import { Package, MoreVertical, Copy, Trash2, Edit, ChevronRight } from 'lucide-react';
-import { Product, ProductCalculation, StoreConfig } from '@/types/store';
+import { Product, ProductCalculation, StoreConfig, getShopeeFeeForPrice } from '@/types/store';
 import { cn, getMarginStatus } from '@/lib/utils';
 import { calcFullRoas } from '@/lib/roasUtils';
 import { calcOutrosCanais } from '@/lib/outrosCanaisUtils';
