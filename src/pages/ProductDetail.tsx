@@ -105,6 +105,7 @@ export default function ProductDetail() {
   const [monthlySales, setMonthlySales] = useState(50);
   const [showProductForm, setShowProductForm] = useState(false);
   const [showAllCosts, setShowAllCosts] = useState(false);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
 
   if (!product || !config) {
     return (
@@ -116,11 +117,29 @@ export default function ProductDetail() {
     );
   }
 
-  const calculation = calculateProduct(product, config);
+  const priceVariants = product.priceVariants ?? [];
+  const selectedVariant = priceVariants.find(v => v.id === selectedVariantId) ?? null;
+  const activeProduct = selectedVariant
+    ? { ...product, costPrice: selectedVariant.costPrice, salePrice: selectedVariant.salePrice }
+    : product;
+
+  // Todas as versões (principal + kits) já calculadas
+  const versionRows = [
+    { id: null as string | null, name: 'Principal (un)', costPrice: product.costPrice, salePrice: product.salePrice },
+    ...priceVariants.map(v => ({ id: v.id, name: v.name || 'Sem nome', costPrice: v.costPrice, salePrice: v.salePrice })),
+  ].map(v => {
+    const calc = calculateProduct({ ...product, costPrice: v.costPrice, salePrice: v.salePrice }, config);
+    const r = calcFullRoas(v.salePrice, v.costPrice, config, product.packagingCost);
+    return { ...v, calc, roasEmpate: r.roasEmpate ?? null };
+  });
+  const bestVersion = [...versionRows].sort((a, b) => b.calc.realMargin - a.calc.realMargin)[0];
+  const maxAbsVersionMargin = Math.max(...versionRows.map(v => Math.abs(v.calc.realMargin)), 1);
+
+  const calculation = calculateProduct(activeProduct, config);
   const status = getMarginStatus(calculation.realMargin);
-  const roas = calcFullRoas(product.salePrice, product.costPrice, config, product.packagingCost);
+  const roas = calcFullRoas(activeProduct.salePrice, activeProduct.costPrice, config, activeProduct.packagingCost);
   const marginDiff = calculation.marginDifference;
-  const fee = getShopeeFeeForPrice(product.salePrice);
+  const fee = getShopeeFeeForPrice(activeProduct.salePrice);
 
   const outrosCanaisResults = calcOutrosCanais(product.outrosCanais ?? {}, config.taxes ?? 0);
   const shopeeChannel = {
@@ -136,7 +155,7 @@ export default function ProductDetail() {
   const bestChannelMargin = Math.max(...allChannels.map(c => Math.abs(c.margin)), 1);
 
   const allCostItems = [
-    { label: 'Custo do produto', value: product.costPrice, color: 'hsl(217 91% 60%)' },
+    { label: 'Custo do produto', value: activeProduct.costPrice, color: 'hsl(217 91% 60%)' },
     { label: `Taxa Shopee (${fee.percent}% + R$${fee.fixed})`, value: calculation.totalShopeeFee, color: 'hsl(var(--primary))' },
     { label: 'Embalagem', value: product.packagingCost, color: 'hsl(271 91% 65%)' },
     { label: `Impostos (${config.taxes}%)`, value: calculation.taxes, color: 'hsl(48 96% 53%)' },
@@ -148,7 +167,7 @@ export default function ProductDetail() {
   const hiddenCount = allCostItems.length - allCostItems.filter(c => c.value > 0).length;
 
   const projection = {
-    revenue: product.salePrice * monthlySales,
+    revenue: activeProduct.salePrice * monthlySales,
     costs: calculation.totalCosts * monthlySales,
     profit: calculation.netProfit * monthlySales,
     margin: calculation.realMargin,
@@ -223,11 +242,16 @@ export default function ProductDetail() {
             <h1 className="font-bold text-foreground text-base md:text-xl leading-tight mb-1.5 line-clamp-2 md:line-clamp-2">
               {product.name}
             </h1>
-            {/* Micro-row: preço + custo */}
+            {/* Micro-row: preço + custo (da versão selecionada) */}
             <div className="flex items-center gap-1.5 text-xs md:text-sm text-muted-foreground font-mono mb-1.5 md:mb-2 flex-wrap">
-              <span className="text-primary font-semibold">{fmt(product.salePrice)}</span>
+              <span className="text-primary font-semibold">{fmt(activeProduct.salePrice)}</span>
               <span className="text-muted-foreground/50">·</span>
-              <span>custo {fmt(product.costPrice)}</span>
+              <span>custo {fmt(activeProduct.costPrice)}</span>
+              {selectedVariant && (
+                <span className="font-sans text-[10px] md:text-[11px] font-semibold px-1.5 py-0.5 rounded-md bg-accent/15 text-accent">
+                  {selectedVariant.name || 'Versão'}
+                </span>
+              )}
             </div>
             {/* Status badge - único, dentro do header */}
             <span className={cn('inline-flex items-center text-[11px] md:text-xs font-semibold px-2 md:px-2.5 py-0.5 md:py-1 rounded-full border', statusBadge.cls)}>
@@ -291,6 +315,43 @@ export default function ProductDetail() {
               </span>
             </div>
 
+            {/* Seletor de versão de venda */}
+            {priceVariants.length > 0 && (
+              <div className="surface-card p-3 md:p-4">
+                <p className="section-label mb-2.5 flex items-center gap-2">
+                  <Package className="w-4 h-4 text-primary" />
+                  Versão analisada
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {versionRows.map(v => {
+                    const active = v.id === selectedVariantId;
+                    const m = v.calc.realMargin;
+                    return (
+                      <button
+                        key={v.id ?? 'main'}
+                        onClick={() => setSelectedVariantId(v.id)}
+                        className={cn(
+                          'flex items-center gap-2 h-9 px-3 rounded-lg border text-xs md:text-sm font-semibold transition-all',
+                          active
+                            ? 'bg-primary/10 border-primary text-foreground'
+                            : 'bg-secondary/40 border-border text-muted-foreground hover:text-foreground hover:bg-secondary'
+                        )}
+                      >
+                        <span className="truncate max-w-[160px]">{v.name}</span>
+                        <span className={cn('font-mono tabular-nums',
+                          m < 0 ? 'text-destructive' : m < config.desiredMargin ? 'text-warning' : 'text-success'
+                        )}>
+                          {m.toFixed(1)}%
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+
+
             {/* Hero KPI tiles 2x2 mobile / 5 cols desktop (com Custo editável) */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5 md:gap-3">
               {/* Lucro/un */}
@@ -342,11 +403,18 @@ export default function ProductDetail() {
                 <p className="label-metric mt-0.5 md:mt-1">ROAS empate</p>
               </div>
 
-              {/* Custo do produto - editável inline */}
+              {/* Custo - editável inline (da versão selecionada) */}
               <CostInlineCard
-                value={product.costPrice}
+                key={selectedVariantId ?? 'main'}
+                value={activeProduct.costPrice}
                 onSave={async (v) => {
-                  await updateProduct(product.id, { costPrice: v });
+                  if (selectedVariant) {
+                    await updateProduct(product.id, {
+                      priceVariants: priceVariants.map(pv => pv.id === selectedVariant.id ? { ...pv, costPrice: v } : pv),
+                    });
+                  } else {
+                    await updateProduct(product.id, { costPrice: v });
+                  }
                   toast.success('Custo atualizado!');
                 }}
               />
@@ -620,45 +688,85 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            {(product.priceVariants?.length ?? 0) > 0 && (
-              <div className="bg-card border border-border rounded-xl p-4 md:p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-sm font-semibold text-foreground">Versões de venda</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent/15 text-accent font-semibold">
-                    {product.priceVariants!.length}
+            {priceVariants.length > 0 && (
+              <div className="surface-card p-4 md:p-5">
+                <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+                  <p className="section-label flex items-center gap-2">
+                    <Package className="w-4 h-4 text-primary" />
+                    Comparativo de versões
+                  </p>
+                  <span className="text-[11px] text-muted-foreground">
+                    Toque em uma versão para analisá-la acima
                   </span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                  {product.priceVariants!.map((v) => {
-                    const draft = {
-                      ...product,
-                      costPrice: v.costPrice,
-                      salePrice: v.salePrice,
-                      packagingCost: 0,
-                      adsCost: 0,
-                    };
-                    const calc = calculateProduct(draft, config);
-                    const st = getMarginStatus(calc.realMargin);
+
+                <div className="space-y-2">
+                  {versionRows.map(v => {
+                    const isActive = v.id === selectedVariantId;
+                    const isBest = v.id === bestVersion.id && versionRows.length > 1;
+                    const m = v.calc.realMargin;
+                    const widthPct = Math.min(100, (Math.abs(m) / maxAbsVersionMargin) * 100);
+                    const diffVsMain = v.calc.netProfit - versionRows[0].calc.netProfit;
                     return (
-                      <div key={v.id} className="rounded-lg border border-border bg-secondary/40 p-3 space-y-1.5">
-                        <p className="text-sm font-medium text-foreground truncate">{v.name || 'Sem nome'}</p>
-                        <div className="flex justify-between text-[11px] text-muted-foreground">
-                          <span>Custo</span><span className="font-mono">{fmt(v.costPrice)}</span>
-                        </div>
-                        <div className="flex justify-between text-[11px] text-muted-foreground">
-                          <span>Venda</span><span className="font-mono">{fmt(v.salePrice)}</span>
-                        </div>
-                        <div className="flex justify-between text-[11px] text-muted-foreground">
-                          <span>Lucro/un</span>
-                          <span className={cn('font-mono font-semibold', calc.netProfit >= 0 ? 'text-success' : 'text-destructive')}>
-                            {fmt(calc.netProfit)}
+                      <button
+                        key={v.id ?? 'main'}
+                        onClick={() => setSelectedVariantId(v.id)}
+                        className={cn(
+                          'w-full text-left rounded-lg border px-3 py-2.5 transition-colors',
+                          isActive ? 'bg-primary/5 border-primary/50' : 'bg-secondary/40 border-border hover:bg-secondary/60'
+                        )}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <span className="text-sm font-semibold text-foreground truncate flex items-center gap-1.5 min-w-0">
+                            <span className="truncate">{v.name}</span>
+                            {isBest && (
+                              <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-success/10 text-success border border-success/30">
+                                Melhor
+                              </span>
+                            )}
+                          </span>
+                          <span className={cn('font-mono text-sm font-bold tabular-nums shrink-0',
+                            m < 0 ? 'text-destructive' : m < config.desiredMargin ? 'text-warning' : 'text-success'
+                          )}>
+                            {m.toFixed(1)}%
                           </span>
                         </div>
-                        <div className={cn('flex items-center justify-between px-2 py-1 rounded-md text-[11px] font-semibold border', st.bg, st.border)}>
-                          <span className={st.color}>{st.emoji} {calc.realMargin.toFixed(1)}%</span>
-                          <span className="text-muted-foreground">{st.label}</span>
+
+                        <div className="h-1 bg-secondary rounded-full overflow-hidden mb-2">
+                          <div className={cn('h-full',
+                            m < 0 ? 'bg-destructive' : m < config.desiredMargin ? 'bg-warning' : 'bg-success'
+                          )} style={{ width: `${widthPct}%` }} />
                         </div>
-                      </div>
+
+                        <div className="grid grid-cols-4 gap-2 text-[11px]">
+                          <div>
+                            <p className="font-mono text-foreground tabular-nums">{fmt(v.salePrice)}</p>
+                            <p className="text-muted-foreground">Venda</p>
+                          </div>
+                          <div>
+                            <p className="font-mono text-foreground tabular-nums">{fmt(v.costPrice)}</p>
+                            <p className="text-muted-foreground">Custo</p>
+                          </div>
+                          <div>
+                            <p className={cn('font-mono font-semibold tabular-nums', v.calc.netProfit >= 0 ? 'text-success' : 'text-destructive')}>
+                              {fmt(v.calc.netProfit)}
+                            </p>
+                            <p className="text-muted-foreground">Lucro/un</p>
+                          </div>
+                          <div>
+                            <p className="font-mono text-foreground tabular-nums">
+                              {v.roasEmpate ? `${v.roasEmpate.toFixed(2)}x` : '-'}
+                            </p>
+                            <p className="text-muted-foreground">ROAS empate</p>
+                          </div>
+                        </div>
+
+                        {v.id !== null && (
+                          <p className="mt-2 text-[11px] text-muted-foreground">
+                            {diffVsMain >= 0 ? '+' : ''}{fmt(diffVsMain)}/un vs versão principal
+                          </p>
+                        )}
+                      </button>
                     );
                   })}
                 </div>

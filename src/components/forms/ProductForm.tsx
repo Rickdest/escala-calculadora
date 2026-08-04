@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { calculateProduct as calculateProductFn } from '@/lib/calculateProduct';
 import { calcOutrosCanais, getBestChannel } from '@/lib/outrosCanaisUtils';
+import { calcFullRoas } from '@/lib/roasUtils';
 import { X, Camera, Calculator, TrendingUp, TrendingDown, AlertTriangle, Save, Loader2, ChevronDown, CalendarDays, Settings2, Info, ExternalLink, Lock, Plus, Trash2, Package } from 'lucide-react';
 import { ProductAdsSection } from '@/components/forms/ProductAdsSection';
 import { Product, ShopeeAceleraOption, getShopeeFeeForPrice, OutrosCanais, PriceVariant } from '@/types/store';
@@ -413,6 +414,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                   const sp = Number(v.salePrice) || 0;
                   let marginPct: number | null = null;
                   let profit = 0;
+                  let roasEmpate: number | null = null;
                   if (cp > 0 && sp > 0 && config) {
                     const draft: Product = {
                       id: '',
@@ -435,6 +437,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                     const calc = calculateProductFn(draft, config);
                     marginPct = calc.realMargin;
                     profit = calc.netProfit;
+                    roasEmpate = calcFullRoas(sp, cp, config, 0).roasEmpate ?? null;
                   }
                   const status = marginPct !== null ? getMarginStatus(marginPct) : null;
 
@@ -499,13 +502,27 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                       </div>
 
                       {status && (
-                        <div className={cn("flex items-center justify-between px-2.5 py-1.5 rounded-md text-[11px] font-medium", status.bg, status.border, "border")}>
-                          <span className={status.color}>
-                            {status.emoji} Margem {marginPct!.toFixed(1)}%
-                          </span>
-                          <span className="text-text-2">
-                            Lucro {formatCurrency(profit)}/un
-                          </span>
+                        <div className={cn("rounded-lg border p-2.5", status.bg, status.border)}>
+                          <div className="grid grid-cols-3 gap-2 text-center">
+                            <div>
+                              <p className={cn("font-mono text-base font-bold tabular-nums", status.color)}>
+                                {marginPct!.toFixed(1)}%
+                              </p>
+                              <p className="text-[10px] text-text-3 uppercase tracking-wide">Margem</p>
+                            </div>
+                            <div>
+                              <p className={cn("font-mono text-base font-bold tabular-nums", profit >= 0 ? "text-success" : "text-danger")}>
+                                {formatCurrency(profit)}
+                              </p>
+                              <p className="text-[10px] text-text-3 uppercase tracking-wide">Lucro/un</p>
+                            </div>
+                            <div>
+                              <p className="font-mono text-base font-bold tabular-nums text-text-1">
+                                {roasEmpate ? `${roasEmpate.toFixed(2)}x` : '-'}
+                              </p>
+                              <p className="text-[10px] text-text-3 uppercase tracking-wide">ROAS empate</p>
+                            </div>
+                          </div>
                         </div>
                       )}
                     </div>

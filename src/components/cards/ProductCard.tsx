@@ -1,6 +1,6 @@
 import React, { useRef, useCallback } from 'react';
 import { Package, MoreVertical, Copy, Trash2, Edit, ChevronRight } from 'lucide-react';
-import { Product, ProductCalculation, StoreConfig } from '@/types/store';
+import { Product, ProductCalculation, StoreConfig, getShopeeFeeForPrice } from '@/types/store';
 import { cn, getMarginStatus } from '@/lib/utils';
 import { calcFullRoas } from '@/lib/roasUtils';
 import { calcOutrosCanais } from '@/lib/outrosCanaisUtils';
@@ -87,7 +87,14 @@ export function ProductCard({
       )}
 
       <div className="flex-1 min-w-0">
-        <h3 className="font-bold text-subtitle text-foreground truncate">{product.name}</h3>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <h3 className="font-bold text-subtitle text-foreground truncate">{product.name}</h3>
+          {(product.priceVariants?.length ?? 0) > 0 && (
+            <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-accent/15 text-accent">
+              {product.priceVariants!.length + 1} versões
+            </span>
+          )}
+        </div>
         <p className="text-small text-muted-foreground mt-0.5 truncate">
           <span className="font-semibold text-primary">{fmt(product.salePrice)}</span>
           <span className="mx-1">venda · custo</span>
@@ -115,6 +122,21 @@ export function ProductCard({
       </DropdownMenu>
     </div>
   );
+
+  // ── Versões de venda (kits) ──
+  const priceVariants = product.priceVariants ?? [];
+  const variantRows = config
+    ? priceVariants.map(v => {
+        const grossRevenue = v.salePrice;
+        const range = getShopeeFeeForPrice(grossRevenue);
+        const shopeeFee = grossRevenue * (range.percent / 100) + range.fixed;
+        const taxesValue = grossRevenue * ((config.taxes ?? 0) / 100);
+        const netProfit = grossRevenue - v.costPrice - shopeeFee - taxesValue;
+        const margin = grossRevenue > 0 ? (netProfit / grossRevenue) * 100 : 0;
+        return { ...v, margin };
+      })
+    : [];
+  const bestVariant = [...variantRows].sort((a, b) => b.margin - a.margin)[0];
 
   // ── Comparativo de Canais - apenas canais com dados reais cadastrados ──
   const channelResults = product.outrosCanais
@@ -192,6 +214,32 @@ export function ProductCard({
                   c.margin >= 0 ? 'text-foreground' : 'text-destructive'
                 )}>
                   {c.margin.toFixed(1)}%
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── VERSÕES DE VENDA (kits) ── */}
+      {config && variantRows.length > 0 && (
+        <div className="mt-3">
+          <p className="label-metric mb-1.5">Versões de venda</p>
+          <div className="space-y-1.5">
+            {variantRows.map(v => (
+              <div key={v.id} className="flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-secondary/50 gap-2">
+                <span className="text-small font-medium text-foreground truncate min-w-0">
+                  {v.id === bestVariant?.id && v.margin > calculation.realMargin && (
+                    <span className="text-warning mr-0.5">★</span>
+                  )}
+                  {v.name || 'Sem nome'}
+                  <span className="text-muted-foreground ml-1.5 font-mono">{fmt(v.salePrice)}</span>
+                </span>
+                <span className={cn('text-small font-bold font-mono shrink-0',
+                  v.margin >= desiredMargin ? 'text-success' :
+                  v.margin >= 0 ? 'text-foreground' : 'text-destructive'
+                )}>
+                  {v.margin.toFixed(1)}%
                 </span>
               </div>
             ))}
