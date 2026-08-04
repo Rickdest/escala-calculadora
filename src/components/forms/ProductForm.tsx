@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { calculateProduct as calculateProductFn } from '@/lib/calculateProduct';
 import { calcOutrosCanais, getBestChannel } from '@/lib/outrosCanaisUtils';
+import { calcFullRoas } from '@/lib/roasUtils';
 import { X, Camera, Calculator, TrendingUp, TrendingDown, AlertTriangle, Save, Loader2, ChevronDown, CalendarDays, Settings2, Info, ExternalLink, Lock, Plus, Trash2, Package } from 'lucide-react';
 import { ProductAdsSection } from '@/components/forms/ProductAdsSection';
 import { Product, ShopeeAceleraOption, getShopeeFeeForPrice, OutrosCanais, PriceVariant } from '@/types/store';
