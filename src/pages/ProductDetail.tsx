@@ -688,45 +688,85 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            {(product.priceVariants?.length ?? 0) > 0 && (
-              <div className="bg-card border border-border rounded-xl p-4 md:p-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-sm font-semibold text-foreground">Versões de venda</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-accent/15 text-accent font-semibold">
-                    {product.priceVariants!.length}
+            {priceVariants.length > 0 && (
+              <div className="surface-card p-4 md:p-5">
+                <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+                  <p className="section-label flex items-center gap-2">
+                    <Package className="w-4 h-4 text-primary" />
+                    Comparativo de versões
+                  </p>
+                  <span className="text-[11px] text-muted-foreground">
+                    Toque em uma versão para analisá-la acima
                   </span>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                  {product.priceVariants!.map((v) => {
-                    const draft = {
-                      ...product,
-                      costPrice: v.costPrice,
-                      salePrice: v.salePrice,
-                      packagingCost: 0,
-                      adsCost: 0,
-                    };
-                    const calc = calculateProduct(draft, config);
-                    const st = getMarginStatus(calc.realMargin);
+
+                <div className="space-y-2">
+                  {versionRows.map(v => {
+                    const isActive = v.id === selectedVariantId;
+                    const isBest = v.id === bestVersion.id && versionRows.length > 1;
+                    const m = v.calc.realMargin;
+                    const widthPct = Math.min(100, (Math.abs(m) / maxAbsVersionMargin) * 100);
+                    const diffVsMain = v.calc.netProfit - versionRows[0].calc.netProfit;
                     return (
-                      <div key={v.id} className="rounded-lg border border-border bg-secondary/40 p-3 space-y-1.5">
-                        <p className="text-sm font-medium text-foreground truncate">{v.name || 'Sem nome'}</p>
-                        <div className="flex justify-between text-[11px] text-muted-foreground">
-                          <span>Custo</span><span className="font-mono">{fmt(v.costPrice)}</span>
-                        </div>
-                        <div className="flex justify-between text-[11px] text-muted-foreground">
-                          <span>Venda</span><span className="font-mono">{fmt(v.salePrice)}</span>
-                        </div>
-                        <div className="flex justify-between text-[11px] text-muted-foreground">
-                          <span>Lucro/un</span>
-                          <span className={cn('font-mono font-semibold', calc.netProfit >= 0 ? 'text-success' : 'text-destructive')}>
-                            {fmt(calc.netProfit)}
+                      <button
+                        key={v.id ?? 'main'}
+                        onClick={() => setSelectedVariantId(v.id)}
+                        className={cn(
+                          'w-full text-left rounded-lg border px-3 py-2.5 transition-colors',
+                          isActive ? 'bg-primary/5 border-primary/50' : 'bg-secondary/40 border-border hover:bg-secondary/60'
+                        )}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <span className="text-sm font-semibold text-foreground truncate flex items-center gap-1.5 min-w-0">
+                            <span className="truncate">{v.name}</span>
+                            {isBest && (
+                              <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-success/10 text-success border border-success/30">
+                                Melhor
+                              </span>
+                            )}
+                          </span>
+                          <span className={cn('font-mono text-sm font-bold tabular-nums shrink-0',
+                            m < 0 ? 'text-destructive' : m < config.desiredMargin ? 'text-warning' : 'text-success'
+                          )}>
+                            {m.toFixed(1)}%
                           </span>
                         </div>
-                        <div className={cn('flex items-center justify-between px-2 py-1 rounded-md text-[11px] font-semibold border', st.bg, st.border)}>
-                          <span className={st.color}>{st.emoji} {calc.realMargin.toFixed(1)}%</span>
-                          <span className="text-muted-foreground">{st.label}</span>
+
+                        <div className="h-1 bg-secondary rounded-full overflow-hidden mb-2">
+                          <div className={cn('h-full',
+                            m < 0 ? 'bg-destructive' : m < config.desiredMargin ? 'bg-warning' : 'bg-success'
+                          )} style={{ width: `${widthPct}%` }} />
                         </div>
-                      </div>
+
+                        <div className="grid grid-cols-4 gap-2 text-[11px]">
+                          <div>
+                            <p className="font-mono text-foreground tabular-nums">{fmt(v.salePrice)}</p>
+                            <p className="text-muted-foreground">Venda</p>
+                          </div>
+                          <div>
+                            <p className="font-mono text-foreground tabular-nums">{fmt(v.costPrice)}</p>
+                            <p className="text-muted-foreground">Custo</p>
+                          </div>
+                          <div>
+                            <p className={cn('font-mono font-semibold tabular-nums', v.calc.netProfit >= 0 ? 'text-success' : 'text-destructive')}>
+                              {fmt(v.calc.netProfit)}
+                            </p>
+                            <p className="text-muted-foreground">Lucro/un</p>
+                          </div>
+                          <div>
+                            <p className="font-mono text-foreground tabular-nums">
+                              {v.roasEmpate ? `${v.roasEmpate.toFixed(2)}x` : '-'}
+                            </p>
+                            <p className="text-muted-foreground">ROAS empate</p>
+                          </div>
+                        </div>
+
+                        {v.id !== null && (
+                          <p className="mt-2 text-[11px] text-muted-foreground">
+                            {diffVsMain >= 0 ? '+' : ''}{fmt(diffVsMain)}/un vs versão principal
+                          </p>
+                        )}
+                      </button>
                     );
                   })}
                 </div>
