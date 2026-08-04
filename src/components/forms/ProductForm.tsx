@@ -413,6 +413,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                   const sp = Number(v.salePrice) || 0;
                   let marginPct: number | null = null;
                   let profit = 0;
+                  let roasEmpate: number | null = null;
                   if (cp > 0 && sp > 0 && config) {
                     const draft: Product = {
                       id: '',
@@ -435,6 +436,7 @@ export function ProductForm({ product, onClose, onSave }: ProductFormProps) {
                     const calc = calculateProductFn(draft, config);
                     marginPct = calc.realMargin;
                     profit = calc.netProfit;
+                    roasEmpate = calcFullRoas(sp, cp, config, 0).roasEmpate ?? null;
                   }
                   const status = marginPct !== null ? getMarginStatus(marginPct) : null;
 
