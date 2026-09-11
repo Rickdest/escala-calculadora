@@ -48,8 +48,12 @@ export function buildCorsHeaders(req: Request): Record<string, string> {
   };
 }
 
-/** Static fallback for older code paths — uses the first whitelisted origin. */
+/**
+ * Static fallback for code paths without access to the Request object.
+ * These endpoints authenticate via the Authorization header (never cookies),
+ * so a wildcard origin does not expose credentialed data.
+ */
 export const corsHeadersStatic: Record<string, string> = {
   ...BASE_HEADERS,
-  "Access-Control-Allow-Origin": getWhitelist()[0] || "*",
+  "Access-Control-Allow-Origin": "*",
 };
