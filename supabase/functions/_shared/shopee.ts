@@ -5,15 +5,17 @@ export const SHOPEE_HOST = Deno.env.get("SHOPEE_ENV") === "production"
   ? "https://partner.shopeemobile.com"
   : "https://partner.test-stable.shopeemobile.com";
 
-export const PARTNER_ID: number = (() => {
+/**
+ * Resolve o Partner ID do app Seller. Lazy: nunca lança no boot do módulo,
+ * apenas quando realmente é usado (assim erros viram JSON legível, não 500 mudo).
+ */
+export function getPartnerId(): number {
   const envId = (Deno.env.get("SHOPEE_PARTNER_ID") || "").trim();
   if (envId && /^\d+$/.test(envId)) {
     return Number(envId);
   }
-  throw new Error("SHOPEE_PARTNER_ID secret não configurado. Configure no backend.");
-})();
-
-export const SHOPEE_PARTNER_ID = PARTNER_ID;
+  throw new Error("SHOPEE_PARTNER_ID secret não configurado ou inválido (precisa ser numérico).");
+}
 
 export type ShopeeCredentials = { partnerId: number; partnerKey: string };
 
