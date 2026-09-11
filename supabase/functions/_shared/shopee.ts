@@ -5,15 +5,17 @@ export const SHOPEE_HOST = Deno.env.get("SHOPEE_ENV") === "production"
   ? "https://partner.shopeemobile.com"
   : "https://partner.test-stable.shopeemobile.com";
 
-export const PARTNER_ID: number = (() => {
+/**
+ * Resolve o Partner ID do app Seller. Lazy: nunca lança no boot do módulo,
+ * apenas quando realmente é usado (assim erros viram JSON legível, não 500 mudo).
+ */
+export function getPartnerId(): number {
   const envId = (Deno.env.get("SHOPEE_PARTNER_ID") || "").trim();
   if (envId && /^\d+$/.test(envId)) {
     return Number(envId);
   }
-  throw new Error("SHOPEE_PARTNER_ID secret não configurado. Configure no backend.");
-})();
-
-export const SHOPEE_PARTNER_ID = PARTNER_ID;
+  throw new Error("SHOPEE_PARTNER_ID secret não configurado ou inválido (precisa ser numérico).");
+}
 
 export type ShopeeCredentials = { partnerId: number; partnerKey: string };
 
@@ -43,7 +45,9 @@ function getPartnerKey(): string {
 
 // Re-export shared CORS helpers so existing imports keep working.
 // Prefer `buildCorsHeaders(req)` for new code (validates Origin against whitelist).
-export { buildCorsHeaders, corsHeadersStatic as corsHeaders } from "./cors.ts";
+import { buildCorsHeaders, corsHeadersStatic } from "./cors.ts";
+export { buildCorsHeaders };
+export const corsHeaders = corsHeadersStatic;
 
 // ─── Parameterized helpers (for dual-app support) ────────────────────
 
@@ -165,7 +169,7 @@ export function getAdsCredentials(): ShopeeCredentials {
 }
 
 export function getSellerCredentials(): ShopeeCredentials {
-  return { partnerId: PARTNER_ID, partnerKey: getPartnerKey() };
+  return { partnerId: getPartnerId(), partnerKey: getPartnerKey() };
 }
 
 export function getCredentialsForAppType(appType: string): ShopeeCredentials {
@@ -198,7 +202,7 @@ export async function generateSign(
   accessToken?: string,
   shopId?: number | string
 ): Promise<string> {
-  return generateSignWith(PARTNER_ID, getPartnerKey(), path, timestamp, accessToken, shopId);
+  return generateSignWith(getPartnerId(), getPartnerKey(), path, timestamp, accessToken, shopId);
 }
 
 export const hmacSign = generateSign;
@@ -207,7 +211,7 @@ export const hmacSign = generateSign;
  * Build the Shopee OAuth authorization URL.
  */
 export async function getAuthUrl(redirectUrl: string, partnerId?: number, partnerKey?: string): Promise<string> {
-  const pid = partnerId ?? PARTNER_ID;
+  const pid = partnerId ?? getPartnerId();
   const pkey = partnerKey ?? getPartnerKey();
   const path = "/api/v2/shop/auth_partner";
   const timestamp = Math.floor(Date.now() / 1000);
@@ -232,7 +236,7 @@ export async function shopeeGet(
   shopId: string | number,
   extraParams: Record<string, string> = {}
 ) {
-  return shopeeGetWith(PARTNER_ID, getPartnerKey(), path, accessToken, shopId, extraParams);
+  return shopeeGetWith(getPartnerId(), getPartnerKey(), path, accessToken, shopId, extraParams);
 }
 
 /**
@@ -244,7 +248,7 @@ export async function shopeePost(
   shopId: string | number,
   body: Record<string, unknown> = {}
 ) {
-  return shopeePostWith(PARTNER_ID, getPartnerKey(), path, accessToken, shopId, body);
+  return shopeePostWith(getPartnerId(), getPartnerKey(), path, accessToken, shopId, body);
 }
 
 export function errorResponse(message: string, status = 400): Response {
