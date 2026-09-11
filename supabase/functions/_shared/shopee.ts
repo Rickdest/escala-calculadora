@@ -45,7 +45,9 @@ function getPartnerKey(): string {
 
 // Re-export shared CORS helpers so existing imports keep working.
 // Prefer `buildCorsHeaders(req)` for new code (validates Origin against whitelist).
-export { buildCorsHeaders, corsHeadersStatic as corsHeaders } from "./cors.ts";
+import { buildCorsHeaders, corsHeadersStatic } from "./cors.ts";
+export { buildCorsHeaders };
+export const corsHeaders = corsHeadersStatic;
 
 // ─── Parameterized helpers (for dual-app support) ────────────────────
 
