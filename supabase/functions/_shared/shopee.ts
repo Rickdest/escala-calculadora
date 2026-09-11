@@ -167,7 +167,7 @@ export function getAdsCredentials(): ShopeeCredentials {
 }
 
 export function getSellerCredentials(): ShopeeCredentials {
-  return { partnerId: PARTNER_ID, partnerKey: getPartnerKey() };
+  return { partnerId: getPartnerId(), partnerKey: getPartnerKey() };
 }
 
 export function getCredentialsForAppType(appType: string): ShopeeCredentials {
@@ -200,7 +200,7 @@ export async function generateSign(
   accessToken?: string,
   shopId?: number | string
 ): Promise<string> {
-  return generateSignWith(PARTNER_ID, getPartnerKey(), path, timestamp, accessToken, shopId);
+  return generateSignWith(getPartnerId(), getPartnerKey(), path, timestamp, accessToken, shopId);
 }
 
 export const hmacSign = generateSign;
@@ -209,7 +209,7 @@ export const hmacSign = generateSign;
  * Build the Shopee OAuth authorization URL.
  */
 export async function getAuthUrl(redirectUrl: string, partnerId?: number, partnerKey?: string): Promise<string> {
-  const pid = partnerId ?? PARTNER_ID;
+  const pid = partnerId ?? getPartnerId();
   const pkey = partnerKey ?? getPartnerKey();
   const path = "/api/v2/shop/auth_partner";
   const timestamp = Math.floor(Date.now() / 1000);
@@ -234,7 +234,7 @@ export async function shopeeGet(
   shopId: string | number,
   extraParams: Record<string, string> = {}
 ) {
-  return shopeeGetWith(PARTNER_ID, getPartnerKey(), path, accessToken, shopId, extraParams);
+  return shopeeGetWith(getPartnerId(), getPartnerKey(), path, accessToken, shopId, extraParams);
 }
 
 /**
@@ -246,7 +246,7 @@ export async function shopeePost(
   shopId: string | number,
   body: Record<string, unknown> = {}
 ) {
-  return shopeePostWith(PARTNER_ID, getPartnerKey(), path, accessToken, shopId, body);
+  return shopeePostWith(getPartnerId(), getPartnerKey(), path, accessToken, shopId, body);
 }
 
 export function errorResponse(message: string, status = 400): Response {
