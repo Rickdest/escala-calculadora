@@ -19,9 +19,13 @@ const BASE_HEADERS = {
 
 function getWhitelist(): string[] {
   const fromEnv = (Deno.env.get("ALLOWED_ORIGIN") || "").trim();
-  if (!fromEnv) return DEFAULT_ALLOWED;
-  // ALLOWED_ORIGIN can be a single origin or comma-separated list
-  return fromEnv.split(",").map((o) => o.trim()).filter(Boolean);
+  // ALLOWED_ORIGIN can be a single origin or comma-separated list.
+  // Ignore malformed values (anything that is not an http(s) origin).
+  const extra = fromEnv
+    .split(",")
+    .map((o) => o.trim())
+    .filter((o) => /^https?:\/\/[^\s,]+$/i.test(o));
+  return [...new Set([...DEFAULT_ALLOWED, ...extra])];
 }
 
 /**
@@ -44,8 +48,12 @@ export function buildCorsHeaders(req: Request): Record<string, string> {
   };
 }
 
-/** Static fallback for older code paths — uses the first whitelisted origin. */
+/**
+ * Static fallback for code paths without access to the Request object.
+ * These endpoints authenticate via the Authorization header (never cookies),
+ * so a wildcard origin does not expose credentialed data.
+ */
 export const corsHeadersStatic: Record<string, string> = {
   ...BASE_HEADERS,
-  "Access-Control-Allow-Origin": getWhitelist()[0] || "*",
+  "Access-Control-Allow-Origin": "*",
 };
